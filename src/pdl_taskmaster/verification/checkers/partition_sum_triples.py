@@ -4,7 +4,9 @@ Validates that:
 1. Every triple [a, b, c] satisfies the sum property (x + y == z).
 2. All triples are disjoint (no duplicate values across triples).
 3. All required input elements are partitioned completely without extras or omissions.
-4. For negative claims, search_exhausted is strictly True and nodes_explored > 0.
+4. For negative claims, search_exhausted is strictly True and nodes_explored > 1.
+5. Coverage of input elements is checked only when structured input_elements are supplied
+   (never scraped from prompt text).
 """
 
 from __future__ import annotations
@@ -191,15 +193,6 @@ class PartitionSumTriplesChecker(BaseChecker):
         if isinstance(input_elements, str):
             tokens = [tok.strip(",.[](){}") for tok in input_elements.split()]
             input_elements = [int(tok) for tok in tokens if tok.isdigit()]
-        if input_elements is None:
-            p_text = constraints.get("prompt_body") or constraints.get("user_message") or ""
-            if p_text:
-                for line in p_text.splitlines():
-                    tokens = [tok.strip(",.[](){}") for tok in line.split()]
-                    nums = [int(tok) for tok in tokens if tok.isdigit()]
-                    if len(nums) >= 9:
-                        input_elements = nums
-                        break
         if input_elements is not None:
             expected_set = set(int(x) for x in input_elements)
             actual_set = set(all_elements)
@@ -245,18 +238,10 @@ class PartitionSumTriplesChecker(BaseChecker):
             )
 
         if nodes_explored <= 1:
-            p_text = (constraints.get("prompt_body") or constraints.get("user_message") or "").lower()
-            method_text = str(witness.get("method") or "").lower()
-            body_text = str(body or "").lower()
-            has_math_proof = any(
-                term in method_text or term in body_text
-                for term in ("divisible", "multiple", "cardinality", "modulo", "parity", "not a multiple", "not divisible", "mathematical")
+            return VerificationVerdict(
+                valid=False,
+                diagnostic="Negative witness must report more than 1 explored node; a single-state search cannot certify non-existence.",
             )
-            if not has_math_proof and p_text:
-                return VerificationVerdict(
-                    valid=False,
-                    diagnostic="Negative witness search_exhausted is invalid: exploring <= 1 nodes cannot prove non-existence for a non-trivial integer partition problem without mathematical impossibility proof.",
-                )
 
         method = witness.get("method")
         if not isinstance(method, str) or not method.strip():

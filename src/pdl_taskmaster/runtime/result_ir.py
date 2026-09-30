@@ -82,7 +82,7 @@ def render_instructions(
             "\n\nWITNESS REQUIREMENT (ADR-0013 / ADR-0015): Because this task requires verified execution, your Result IR MUST include a 'witness' field certifying substantive correctness:\n"
             "- If a valid solution or partition exists: {\"polarity\": \"positive\", \"evidence\": {\"path\": \"execution://witness\"}, \"data\": {\"solution\": <list, path, partition triples, or mapping of verified result>}}\n"
             "- If no solution exists: {\"polarity\": \"negative\", \"evidence\": {\"path\": \"execution://witness\"}, \"search_exhausted\": true, \"nodes_explored\": <integer count of search states explored, > 1>, \"method\": \"<search algorithm name>\"}\n\n"
-            "GROUNDED EXECUTION & WITNESS CERTIFICATION: When code execution is required, include the complete executable script in your deliverable. Record the verified solution or negative search certificate in the Result IR 'witness' field. The host sandbox executes deliverable code to certify the witness against grounded output."
+            "WITNESS CERTIFICATION: When the deliverable includes code, the host sandbox executes it. Print exactly one line `WITNESS: <json>` to stdout; the host-reproduced witness replaces any witness asserted in the Result IR. A witness the host could not reproduce is reported as provisional."
         )
     return base
 

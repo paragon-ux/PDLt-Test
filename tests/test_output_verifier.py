@@ -133,17 +133,28 @@ def test_fallback_checker():
 def test_output_verifier_dispatch():
     verifier = OutputVerifier()
 
-    # Detects partition sum triples
-    domain = verifier.detect_domain("Partition 45 integers into Schur triples")
+    # Typed domain routes to its checker
+    domain = verifier.detect_domain({"domain": "partition_sum_triples"})
     assert domain == "partition_sum_triples"
     checker = verifier.get_checker(domain)
     assert checker.name == "partition_sum_triples"
 
-    # Unknown domain falls back
-    unknown_domain = verifier.detect_domain("Parse an HTML table")
-    assert unknown_domain is None
-    fallback_checker = verifier.get_checker(unknown_domain)
+    # Problem text is never inspected for domain vocabulary (GUARD-02)
+    assert verifier.detect_domain("Partition 45 integers into Schur triples") is None
+    fallback_checker = verifier.get_checker(None)
     assert fallback_checker.name == "fallback"
+
+
+def test_verifier_uses_typed_witness_domain():
+    verifier = OutputVerifier()
+    witness = {
+        "domain": "partition_sum_triples",
+        "polarity": "positive",
+        "data": {"triples": [[1, 2, 3], [3, 4, 7]]},
+    }
+    verdict = verifier.check(witness, {}, domain="general")
+    assert not verdict.valid  # strict checker selected by typed domain; triples not disjoint
+    assert "not disjoint" in verdict.diagnostic
 
 
 def test_validate_result_ir_empty_files_allowed(tmp_path):
@@ -218,30 +229,46 @@ def test_render_instructions_with_verified_execution():
 
 
 def test_partition_sum_triples_rejects_incomplete_partition():
-    from pdl_taskmaster.verification.output_verifier import OutputVerifier
-
     verifier = OutputVerifier()
-    prompt = """
-    solve Schur Triples problem:
-    71, 97, 54, 56, 44, 158, 45, 58, 82, 135, 113, 117, 86, 40, 12, 185, 63, 50, 111, 72, 90, 109, 61, 13, 92, 60, 91, 35, 114, 94, 105, 26, 15, 51, 102, 118, 76, 32, 108, 23, 22, 134, 83, 43, 64
-    """
-    # Only 2 triples provided instead of 15
+    # Only 2 triples provided; structured input_elements list 9 numbers
     incomplete_witness = {
         "polarity": "positive",
         "evidence": {"path": "execution://witness"},
-        "data": {"triples": [[71, 64, 135], [97, 12, 109]]},
+        "data": {"triples": [[1, 2, 3], [4, 5, 9]]},
     }
-    verdict = verifier.check(incomplete_witness, {"prompt_body": prompt})
+    verdict = verifier.check(
+        incomplete_witness,
+        {"input_elements": [1, 2, 3, 4, 5, 9, 6, 7, 13]},
+        domain="partition_sum_triples",
+    )
     assert not verdict.valid
     assert "Partition misses required elements" in verdict.diagnostic
 
 
-def test_partition_sum_triples_detect_domain_divided():
-    from pdl_taskmaster.verification.output_verifier import OutputVerifier
-
+def test_partition_sum_triples_does_not_scrape_prompt_text():
     verifier = OutputVerifier()
-    domain = verifier.detect_domain("can be divided into 15 disjoint triples (a_i, b_i, c_i)")
-    assert domain == "partition_sum_triples"
+    witness = {
+        "polarity": "positive",
+        "evidence": {"path": "execution://witness"},
+        "data": {"triples": [[1, 2, 3]]},
+    }
+    prompt = "1 2 3 4 5 6 7 8 9 10"
+    verdict = verifier.check(witness, {"prompt_body": prompt}, domain="partition_sum_triples")
+    assert verdict.valid  # coverage is not inferred from prompt text
+
+
+def test_negative_witness_single_node_rejected_regardless_of_wording():
+    checker = PartitionSumTriplesChecker()
+    witness = {
+        "polarity": "negative",
+        "search_exhausted": True,
+        "nodes_explored": 1,
+        "method": "mathematical parity argument, divisible by modulo",
+    }
+    verdict = checker.check(
+        witness, {}, body="mathematical divisible modulo parity cardinality"
+    )
+    assert not verdict.valid
 
 
 def test_reject_zero_nodes_explored_negative_witness():

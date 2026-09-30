@@ -329,7 +329,6 @@ class SessionEngine:
         self._requires_verified_execution: bool = False
         self._problem_domain: Any = None
         self._is_introspection: bool = False
-        self._plan_redrafts: int = 0
         if workspace_root is None:
             self.workspace_root = Path(tempfile.mkdtemp(prefix="pdl-c0-workspaces-"))
         else:
@@ -460,10 +459,13 @@ class SessionEngine:
         values: dict[str, Any],
         traces: list[CallTrace],
         parser: Callable[[str], Any] | None = None,
+        operator_correction: str | None = None,
     ) -> Any:
         """Invoke one operation. With a parser, retry ONCE on WireError with an
         operator correction so a sampling glitch (invalid JSON, dropped field)
-        costs one extra call instead of fatally failing the session."""
+        costs one extra call instead of fatally failing the session. A caller may
+        supply ``operator_correction`` (factual host-side findings only) for the
+        first attempt; it travels outside the projection document."""
         if self.workspace is None:
             raise WorkspaceError("workspace_not_initialized")
         request = self.bridge.request(
@@ -471,6 +473,7 @@ class SessionEngine:
             values,
             workspace=self.workspace,
             higher_priority_constraints=self.higher_priority_constraints,
+            operator_correction=operator_correction,
         )
         model_text = self._invoke(request, traces)
         if parser is None:
@@ -708,12 +711,9 @@ class SessionEngine:
             except Exception:
                 pass
         self._requires_verified_execution = requires_verified
-        if requires_verified:
-            from pdl_taskmaster.verification.output_verifier import OutputVerifier
-            det = OutputVerifier().detect_domain(substantive_request)
-            self._problem_domain = ProblemDomain.from_string(det) or ProblemDomain.GENERAL
-        else:
-            self._problem_domain = None
+        # GUARD-02: the harness never infers a problem domain from request text.
+        # The domain stays GENERAL unless the witness itself declares a typed domain.
+        self._problem_domain = ProblemDomain.GENERAL if requires_verified else None
 
         if self.workspace is not None:
             self.workspace.append_event(
@@ -754,6 +754,27 @@ class SessionEngine:
             )
             return EngineResponse(outcome.response, traces, closed=True)
         assert outcome.prompt_body is not None
+        from pdl_taskmaster.verification.plan_soundness import validate_plan_soundness
+        prompt_lint = validate_plan_soundness(outcome.prompt_body)
+        if not prompt_lint.valid:
+            self.workspace.append_event("PROMPT_LINT_RETRY", {"violations": prompt_lint.violations})
+            redraft = self._call(
+                "DRAFT_PROMPT",
+                {"HOST_PROTOCOL_STATE": protocol_state, "SUBSTANTIVE_REQUEST": compiled},
+                traces,
+                parser=self.bridge.parse_prompt_draft,
+                operator_correction="OPERATOR CORRECTION: " + prompt_lint.feedback,
+            )
+            if redraft.kind == "TASK_BLOCKED_BY_HIGHER_PRIORITY":
+                self.workspace.append_event(
+                    "PROTOCOL_BLOCKED",
+                    {"phase": "prompt_draft", "blocking_basis": redraft.blocking_basis},
+                )
+                return EngineResponse(redraft.response, traces, closed=True)
+            if redraft.prompt_body is not None:
+                outcome = redraft
+                if not validate_plan_soundness(outcome.prompt_body).valid:
+                    self.workspace.append_event("PROMPT_LINT_UNRESOLVED", {})
         self.controller = self._bind_new_controller(self.workspace)
         approach_source = substantive_request if outcome.approach_handoff == "CARRY_SOURCE_TO_PLAN" else None
         self.controller.commit_initial_prompt(outcome.prompt_body, approach_source)
@@ -823,7 +844,6 @@ class SessionEngine:
             self.workspace = prior
             self._previous_deliverable = chained_deliverable
             self._bound_payload_inputs = None
-            self._plan_redrafts = 0
             self._is_introspection = bool(
                 re.search(
                     r"(?i)\b(?:show\s+(?:your\s+)?work|show\s+steps|explain\s+(?:the\s+)?(?:last\s+)?step|explain\s+how|why\b|"
@@ -843,7 +863,6 @@ class SessionEngine:
             self.workspace = self._new_workspace()
             self._previous_deliverable = None
             self._bound_payload_inputs = None
-            self._plan_redrafts = 0
             self._is_introspection = False
         observation = observe_invocation(user_message)
         if observation.explicit:
@@ -902,30 +921,27 @@ class SessionEngine:
             traces,
             parser=self.bridge.parse_plan_body,
         )
-        if self._requires_verified_execution:
-            soundness = validate_plan_soundness(body, requires_verified_execution=True)
-            if not soundness.valid and self._plan_redrafts < 2:
-                self._plan_redrafts += 1
+        soundness = validate_plan_soundness(body)
+        if not soundness.valid:
+            self.workspace.append_event(
+                "PLAN_LINT_RETRY",
+                {"violations": soundness.violations},
+            )
+            body = self._call(
+                "DRAFT_PLAN",
+                {
+                    "CONFIRMED_PROMPT_BODY": prompt_body,
+                    "CARRIED_APPROACH_SOURCES": carried,
+                },
+                traces,
+                parser=self.bridge.parse_plan_body,
+                operator_correction="OPERATOR CORRECTION: " + soundness.feedback,
+            )
+            residual = validate_plan_soundness(body)
+            if not residual.valid:
                 self.workspace.append_event(
-                    "PLAN_SOUNDNESS_RETRY",
-                    {"violations": soundness.violations, "attempt": self._plan_redrafts},
-                )
-                carried_feedback = list(carried) + [
-                    "Operational approach requirement: " + "; ".join(soundness.violations)
-                ]
-                body = self._call(
-                    "DRAFT_PLAN",
-                    {
-                        "CONFIRMED_PROMPT_BODY": prompt_body,
-                        "CARRIED_APPROACH_SOURCES": carried_feedback,
-                    },
-                    traces,
-                    parser=self.bridge.parse_plan_body,
-                )
-            elif not soundness.valid:
-                self.workspace.append_event(
-                    "PLAN_SOUNDNESS_REJECTED",
-                    {"violations": soundness.violations},
+                    "PLAN_LINT_UNRESOLVED",
+                    {"violations": residual.violations},
                 )
         self.controller.commit_plan(body)
         self._publish_plan()
@@ -1017,14 +1033,6 @@ class SessionEngine:
         self.workspace.validate_confirmed_artifact("plan", plan.artifact_id, plan.body)
         prompt_body = self.workspace.read_artifact("prompt")[1]
         plan_body = self.workspace.read_artifact("plan")[1]
-        if self._requires_verified_execution:
-            from pdl_taskmaster.verification.plan_soundness import validate_plan_soundness
-            soundness = validate_plan_soundness(plan_body, requires_verified_execution=True)
-            if not soundness.valid:
-                self.workspace.append_event(
-                    "PLAN_SOUNDNESS_REJECTED",
-                    {"violations": soundness.violations},
-                )
         # Protocol v2: the supplied execution input is raw user content (in the
         # adversarial battery it IS the untrusted block). Route it through the
         # quarantine boundary — compile ops never receive unredacted threats.
@@ -1405,7 +1413,7 @@ class SessionEngine:
                 # together under the wire schema).
                 correction_ctx = dict(execute_context)
                 correction_ctx["REQUIRED_TASK_INPUTS"] = execute_context["REQUIRED_TASK_INPUTS"] + (
-                    "\n\nRESULT IR & DELIVERABLE VALIDATION ERRORS (host-side mechanical check): substantive verification or schema checks failed. Fix these violations by providing the complete executable Python solver inside a ```python ... ``` block and re-emitting the FULL response with the corrected deliverable and result_ir: "
+                    "\n\nRESULT IR & DELIVERABLE VALIDATION ERRORS (host-side mechanical check): verification or schema checks failed. Re-emit the FULL response with the corrected deliverable and result_ir: "
                     + " | ".join(errors)
                 )
                 outcome = self._call(

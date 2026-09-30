@@ -568,9 +568,9 @@ class ApiWorker:
                 "\n\nNORMATIVE GUIDELINES FOR PROMPT PSEUDOCODE (PDL-01 to PDL-08, PROMPT-01 to PROMPT-05):\n"
                 "1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
                 "   Example format:\n"
-                "   PARTITION the input string into palindrome substrings where each character belongs to exactly one palindrome\n"
-                "   MINIMIZE the number of cuts in the resulting partition\n"
-                "   RETURN the minimum-cut partition and cut count\n"
+                "   READ the monthly sales records from the supplied CSV data\n"
+                "   GROUP the records by region\n"
+                "   RETURN the total sales for each region\n"
                 "2. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n"
                 "3. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n"
                 "4. Purpose-Complete Target: Prompt Pseudocode defines the substantive requirements to be solved upon execution (PROMPT-01). DO NOT insert internal meta-rules, drafting instructions, or negative execution prohibitions (PROMPT-02, PDL-08)."
@@ -580,17 +580,15 @@ class ApiWorker:
                 "\n\nNORMATIVE GUIDELINES FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-08, PLAN-01 to PLAN-10):\n"
                 "1. Express the response plan in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
                 "   Example format:\n"
-                "   IDENTIFY all palindrome substrings within the target string\n"
-                "   COMPUTE the minimum number of cuts required to partition the string\n"
-                "   CONSTRUCT the partition corresponding to the minimum cut count\n"
-                "   EMIT the resulting partition and count\n"
+                "   PARSE the supplied CSV records\n"
+                "   AGGREGATE the sales amounts for each region\n"
+                "   EMIT the per-region totals\n"
                 "2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n"
                 "3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n"
                 "4. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04), and NEVER insert placeholder steps or meta-prohibitions like 'insert placeholders without performing computation' (PLAN-10).\n"
                 "5. Implementation Tasks: For prompts asking to implement, build, or write code, plan the software architecture and implementation steps (e.g. DEFINE, IMPLEMENT, RETURN, EMIT) to produce the complete deliverable. DO NOT plan interactive user input steps like 'RECEIVE input from user' or 'ASK for input' unless the user prompt explicitly requested an interactive dialogue.\n"
-                "6. Algorithmic and Search Tasks: For tasks involving search, optimization, or partition, specify the algorithm, data structures, and termination conditions required to produce a valid deliverable.\n"
-                "7. Analytical & Symbolic Tasks: For analytical reasoning, symbolic mathematics, word problems, or logic puzzles, plan the precise logical deduction or closed-form derivation directly. DO NOT plan backtracking search loops, numerical simulations, or fabricate concrete example values unless empirical code execution or concrete cases were explicitly requested.\n"
-                "8. Environmental Bounds: The execution environment is completely offline with no network or internet access."
+                "6. Analytical & Symbolic Tasks: For analytical reasoning, symbolic mathematics, word problems, or logic puzzles, plan the precise logical deduction or closed-form derivation directly. DO NOT plan backtracking search loops, numerical simulations, or fabricate concrete example values unless empirical code execution or concrete cases were explicitly requested.\n"
+                "7. Environmental Bounds: The execution environment is completely offline with no network or internet access."
             )
         elif operation_name in ("EXECUTE", "DRAFT_EXECUTE", "DRAFT_EXECUTION", "EMIT_RESULT_IR"):
             extra_guidance = (
@@ -602,7 +600,7 @@ class ApiWorker:
                 "- Implementation Tasks: When asked to implement, build, or write code for a function, module, scraper, or script (e.g. 'for a given input'), deliver the complete, self-contained implementation code (including a demonstration or sample input). DO NOT emit REQUEST_INPUT asking the user to provide sample data or runtime inputs.\n"
                 "- Analysis and Specification Tasks: When the prompt provides text, requirements, or policy excerpts (whether inline, quoted, or fenced), analyze the provided text directly and emit RESULT. DO NOT emit REQUEST_INPUT asking for the text that was already provided in the prompt.\n"
                 "- If SUPPLIED_EXECUTION_INPUT_SOURCE is provided, use it as the operative input data for your computation.\n"
-                "- MANDATORY FOR VERIFIED / ALGORITHMIC TASKS: For tasks requiring verified algorithmic execution, the deliverable 'body' MUST contain the complete, executable Python solver script inside a ```python ... ``` block. Output the witness in the Result IR certifying substantive correctness, or print the concrete solution dictionary so the mechanical sandbox verifier can ingest it. Never output fabricated or guessed solutions in prose without code."
+                "- Certification: When the deliverable includes code, the host executes it in the isolated sandbox. To certify a result, print exactly one line `WITNESS: <json>` to stdout. Analytical deliverables without code are valid; never present a guessed result as computed."
             )
 
         if instructions:

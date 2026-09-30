@@ -25,9 +25,11 @@ _NETWORK_PATTERNS = re.compile(
     r"download\s+from\s+https?://|connect\s+to\s+live\s+api|http\s+get|curl\s+https?://)\b"
 )
 
-_KNOWLEDGE_FUTURE_PATTERNS = re.compile(
-    r"(?i)\b(?:202[6-9]|20[3-9]\d)\s+(?:winners?|election|olympics|world\s+cup|award)\b"
-)
+
+def _env_value(env: dict[str, Any], key: str, var: str, default: str) -> Any:
+    """Explicit environment state wins (including falsy values such as False)."""
+    value = env.get(key)
+    return value if value is not None else os.environ.get(var, default)
 
 
 class ActivationRouteRecipe(Sys1Recipe):
@@ -56,9 +58,8 @@ class ActivationRouteRecipe(Sys1Recipe):
             return None, None
 
         env_dict = env or {}
-        policy_scope = env_dict.get("policy_scope") or os.environ.get("PDLT_POLICY_SCOPE", "technical")
-        sandbox_network = env_dict.get("sandbox_network") or os.environ.get("PDLT_SANDBOX_NETWORK", "false")
-        knowledge_cutoff = env_dict.get("knowledge_cutoff") or os.environ.get("PDLT_KNOWLEDGE_CUTOFF", "2024-06")
+        policy_scope = _env_value(env_dict, "policy_scope", "PDLT_POLICY_SCOPE", "technical")
+        sandbox_network = _env_value(env_dict, "sandbox_network", "PDLT_SANDBOX_NETWORK", "false")
 
         # 1. Out-of-scope medical/clinical requests
         if policy_scope == "technical" and _MEDICAL_PATTERNS.search(text):
@@ -76,21 +77,14 @@ class ActivationRouteRecipe(Sys1Recipe):
             )
             return "BLOCKED_BY_HIGHER_PRIORITY", refusal
 
-        # 3. Knowledge cutoff for future events without search
-        if _KNOWLEDGE_FUTURE_PATTERNS.search(text):
-            refusal = (
-                f"The requested event postdates the knowledge cutoff date ({knowledge_cutoff}), "
-                "and live external search is disabled in this environment."
-            )
-            return "BLOCKED_BY_HIGHER_PRIORITY", refusal
-
         return None, None
 
     def build_request(self, state: dict[str, Any], **kwargs: Any) -> Sys1Request:
         request_text = state.get("request", "")
         env = state.get("env") or {}
-        sandbox_network = env.get("sandbox_network") or os.environ.get("PDLT_SANDBOX_NETWORK", "false")
-        policy_scope = env.get("policy_scope") or os.environ.get("PDLT_POLICY_SCOPE", "technical")
+        sandbox_network = _env_value(env, "sandbox_network", "PDLT_SANDBOX_NETWORK", "false")
+        policy_scope = _env_value(env, "policy_scope", "PDLT_POLICY_SCOPE", "technical")
+        knowledge_cutoff = _env_value(env, "knowledge_cutoff", "PDLT_KNOWLEDGE_CUTOFF", "2024-06")
 
         instruction = as_decision_instruction(
             "Determine the correct routing for this user message: does it request substantive technical work "
@@ -103,7 +97,9 @@ class ActivationRouteRecipe(Sys1Recipe):
             "BYPASS": "The message is a pure greeting, farewell, or meta-interaction requiring no substantive work.",
             "BLOCKED_BY_HIGHER_PRIORITY": (
                 "The message must be refused immediately because it requests medical/clinical diagnosis or medication "
-                "dosages, requests external network access when network is disabled, or asks for post-cutoff events."
+                "dosages, requests external network access when network is disabled, or depends on events "
+                "occurring after the knowledge cutoff date stated in the state (knowledge_cutoff), which "
+                "cannot be known without live search."
             ),
         }
         question = Sys1Question(
@@ -116,6 +112,7 @@ class ActivationRouteRecipe(Sys1Recipe):
                 "request": request_text,
                 "sandbox_network": sandbox_network,
                 "policy_scope": policy_scope,
+                "knowledge_cutoff": knowledge_cutoff,
             },
             questions={"route": question},
         )

@@ -41,7 +41,8 @@ class OutputVerifier:
         return self._fallback
 
     def detect_domain(self, context_or_text: ProblemDomain | str | dict[str, Any] | None) -> str | None:
-        """Infer domain checker from typed context or problem text without regex heuristics."""
+        """Resolve the domain checker from a typed domain only (GUARD-02, GUARD-03). Problem
+        text is never inspected for domain vocabulary."""
         if not context_or_text:
             return None
 
@@ -62,15 +63,6 @@ class OutputVerifier:
         if direct is not None:
             return direct.value
 
-        # Standard domain signature detection via exact token containment
-        text_lower = text.lower()
-        if "schur" in text_lower or ("triples" in text_lower and any(w in text_lower for w in ("sum", "partition", "disjoint", "divide"))):
-            return ProblemDomain.PARTITION_SUM_TRIPLES.value
-        if "exact cover" in text_lower or "dlx" in text_lower:
-            return ProblemDomain.EXACT_COVER.value
-        if "subset sum" in text_lower:
-            return ProblemDomain.SUBSET_SUM.value
-
         return None
 
     def check(
@@ -86,10 +78,12 @@ class OutputVerifier:
         resolved_domain = None
         if domain is not None:
             resolved_domain = domain.value if isinstance(domain, ProblemDomain) else str(domain)
+        if not resolved_domain or resolved_domain == ProblemDomain.GENERAL.value:
+            typed = witness.get("domain") if isinstance(witness, dict) else getattr(witness, "domain", None)
+            if typed:
+                resolved_domain = typed.value if isinstance(typed, ProblemDomain) else str(typed)
         if not resolved_domain:
             resolved_domain = self.detect_domain(effective_constraints)
-        if not resolved_domain and body:
-            resolved_domain = self.detect_domain(body)
 
         checker = self.get_checker(resolved_domain)
         return checker.check(witness, effective_constraints, body=body)
