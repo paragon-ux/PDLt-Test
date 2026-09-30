@@ -256,3 +256,21 @@ def test_13_01_empty_solution_set_reports_unsatisfiability(tmp_path):
     for text in ("Solutions: []", 'WITNESS: {"data": {"solutions": []}}', "solutions = ()"):
         assert graders.grade_reports_no_solution(text, "") [0] == graders.PASS, text
     assert graders.grade_reports_no_solution("Solutions: [(1, 2, 1)]", "")[0] == graders.FAIL
+
+
+def test_runner_accounts_model_calls_from_events(tmp_path):
+    import run_catalogue
+
+    events = tmp_path / "session" / "W-1" / "turns" / "turn_001" / "events"
+    events.mkdir(parents=True)
+    lines = [
+        {"kind": "MODEL_OUTPUT_RECORDED", "payload": {"operation": "DRAFT_PROMPT"}},
+        {"kind": "MODEL_OUTPUT_RECORDED", "payload": {"operation": "EXECUTE"}},
+        {"kind": "VERIFICATION_REPAIR", "payload": {"errors": ["x"]}},
+        {"kind": "MODEL_OUTPUT_RECORDED", "payload": {"operation": "EXECUTE"}},
+        {"kind": "EXECUTION_ATTEMPTS", "payload": {"attempts": 2, "repairs_used": 1, "repairs_allowed": 1}},
+    ]
+    (events / "events.jsonl").write_text("\n".join(json.dumps(l) for l in lines) + "\n", encoding="utf-8")
+    calls = run_catalogue.call_accounting(tmp_path)
+    assert calls["total"] == 3 and calls["by_operation"]["EXECUTE"] == 2 and calls["repairs"] == 1
+    assert calls["execution_attempts"]["attempts"] == 2

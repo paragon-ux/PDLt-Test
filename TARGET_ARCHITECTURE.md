@@ -151,7 +151,7 @@ flowchart TD
     HasCode -- No (Symbolic/Deductive) --> VerifyContract
 
     VerifyContract -- Valid --> Success["Publish Deliverable<br/>Exit Code 0 (CLOSED_SUCCESS)"]
-    VerifyContract -- Invalid --> RetryOnce["Bounded Repair Loop<br/>(factual errors only)"]
+    VerifyContract -- Invalid --> RetryOnce["Bounded Repair Loop<br/>(factual errors only; repairs per routed tier)"]
     RetryOnce --> Execute
     RetryOnce -- Still Invalid --> Failed["Exit Code 1 (CLOSED_CANCELLED)"]
 ```
@@ -165,7 +165,7 @@ flowchart TD
 | **Phase 2: Plan Lint** | Response Plan | Deterministic grammar lint (`plan_soundness.py`): PDL-05 no fielded prefixes, PDL-06 no code fences, PDL-08 no deferral/meta markers. **No algorithm or execution keywords.** | Clean $\to$ Plan Gate<br>Violation $\to$ one re-draft, feedback via **operator correction** (never via `CARRIED_APPROACH_SOURCES`) |
 | **Phase 3: Plan Review** | User feedback or assent | Fast-path commands, then System 1 review intent | `CONFIRM` $\to$ Phase 4<br>`REVISE_APPROACH` $\to$ re-draft Plan<br>`REVISE_TASK` $\to$ Phase 1<br>`CANCEL` $\to$ Exit `1` |
 | **Phase 4: Execution** | Confirmed Prompt & Plan | System 2 `EXECUTE` | `RESULT` $\to$ Phase 5<br>`REQUEST_INPUT` $\to$ Exit `3` |
-| **Phase 5: Verification** | Deliverable + Sandbox Stdout | Deterministic Pydantic schemas (`output_verifier.py`), with witness authority per §2.1. Result IR citation bookkeeping (verbatim quotes, section markers, one reconciliation per requirement) is recorded as `RESULT_IR_CITATION_FINDINGS`, never blocking: it describes the deliverable, it is not its correctness | Pass $\to$ Exit `0` (`CLOSED_SUCCESS`)<br>Contract failure $\to$ bounded repair $\to$ Exit `1` |
+| **Phase 5: Verification** | Deliverable + Sandbox Stdout | Deterministic Pydantic schemas (`output_verifier.py`), with witness authority per §2.1. Result IR citation bookkeeping (verbatim quotes, section markers, one reconciliation per requirement) is recorded as `RESULT_IR_CITATION_FINDINGS`, never blocking: it describes the deliverable, it is not its correctness | Pass $\to$ Exit `0` (`CLOSED_SUCCESS`)<br>Contract failure $\to$ bounded repair (1 repair; 2 on `HEAVY_COMPUTE`) $\to$ Exit `1` |
 
 ### Headless Exit Codes (ADR-0019, amended)
 
@@ -249,13 +249,14 @@ The harness implements these discrete, calibrated System 1 recipes (`src/pdl_tas
 - **Labels (predicted step complexity, ordered):** `WITHIN_100K_STEPS | WITHIN_10M_STEPS | WITHIN_100M_STEPS | BEYOND_100M_STEPS`. A step is one executed Python bytecode instruction of the program's own code (including code run through `exec` and functions passed to library calls); standard-library and built-in internals are not counted, so importing a module is not the task's complexity.
 - **Function:** the prediction selects a budget from one fixed table (`verification/sandbox.py` `EXECUTION_BUDGETS`):
 
-  | Prediction | Tier | Step budget | Memory | Wall-clock safety |
-  |---|---|---|---|---|
-  | `WITHIN_100K_STEPS` | `MINIMAL` | 100,000 | 256 MB | 30 s |
-  | `WITHIN_10M_STEPS` | `STANDARD` | 10,000,000 | 256 MB | 30 s |
-  | `WITHIN_100M_STEPS` | `HEAVY_COMPUTE` | 100,000,000 | 512 MB | 120 s |
-  | `BEYOND_100M_STEPS` | `HEAVY_COMPUTE` | 100,000,000 | 512 MB | 120 s |
+  | Prediction | Tier | Step budget | Memory | Wall-clock safety | Repairs |
+  |---|---|---|---|---|---|
+  | `WITHIN_100K_STEPS` | `MINIMAL` | 100,000 | 256 MB | 30 s | 1 |
+  | `WITHIN_10M_STEPS` | `STANDARD` | 10,000,000 | 256 MB | 30 s | 1 |
+  | `WITHIN_100M_STEPS` | `HEAVY_COMPUTE` | 100,000,000 | 512 MB | 120 s | 2 |
+  | `BEYOND_100M_STEPS` | `HEAVY_COMPUTE` | 100,000,000 | 512 MB | 120 s | 2 |
 
+- **Repairs scale with the routed tier, not the prompt:** harder tiers get one extra verification repair. Every repair carries only the latest factual host findings (operator correction), never hints. Each result records its model calls (`model_calls`, counted from its events, wire retries included), and the scoreboard totals calls, EXECUTE calls and repairs, so a harness condition with more repairs is compared with a control at equal cost.
 - **Diffuse means uncertain:** a prediction is usable only when 85% of the mass lies within two adjacent magnitudes (a ~100x range). A flatter distribution is System 1 being uncertain and yields `STANDARD`, never the largest budget.
 - **Weighted, not argmax:** the labels are ordered, so the granted budget is the smallest one System 1 believes suffices with cumulative probability of at least 0.85. Probability split between neighbouring magnitudes resolves to the upper one rather than failing a confidence gate. The budget is deliberately as tight as the prediction justifies: an oversized budget would let work pass that the task's complexity does not warrant, a false positive by construction. The full distribution is recorded in `EXECUTION_PROFILE_ROUTED`.
 - **No zero tier:** the smallest budget (100,000 steps) still lets a deliverable check itself by execution; a zero budget would forbid code (method guidance, GUARD-04) and disable sandbox witness reproduction.

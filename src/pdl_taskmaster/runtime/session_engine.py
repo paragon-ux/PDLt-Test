@@ -1053,28 +1053,40 @@ class SessionEngine:
         outcome = self._call("EXECUTE", execute_context, traces, parser=self.bridge.parse_execution)
         final_body = outcome.body
         errors: list[str] = []
+        repairs_allowed = self._execution_budget.repairs
+        repairs_used = 0
         if outcome.kind == "RESULT":
             errors, final_body = self._verify_result(outcome, prompt_body, plan_body, requirements, result_ir_mode)
-            if errors:
-                # Bounded repair: exactly one re-execution, with host findings sent
-                # through the operator-correction channel (never as approach sources).
-                self.workspace.append_event("VERIFICATION_REPAIR", {"errors": errors})
-                outcome = self._call(
-                    "EXECUTE",
-                    execute_context,
-                    traces,
-                    parser=self.bridge.parse_execution,
-                    operator_correction=(
-                        "OPERATOR CORRECTION (host-side verification findings): the previous "
-                        "deliverable failed these checks: " + " | ".join(errors)
-                    ),
+        # Bounded repair: at most the routed tier's number of re-executions, each
+        # carrying only the latest factual host findings through the
+        # operator-correction channel (never as approach sources).
+        while outcome.kind == "RESULT" and errors and repairs_used < repairs_allowed:
+            repairs_used += 1
+            self.workspace.append_event(
+                "VERIFICATION_REPAIR",
+                {"errors": errors, "repair": repairs_used, "repairs_allowed": repairs_allowed},
+            )
+            outcome = self._call(
+                "EXECUTE",
+                execute_context,
+                traces,
+                parser=self.bridge.parse_execution,
+                operator_correction=(
+                    "OPERATOR CORRECTION (host-side verification findings): the previous "
+                    "deliverable failed these checks: " + " | ".join(errors)
+                ),
+            )
+            final_body = outcome.body
+            errors = []
+            if outcome.kind == "RESULT":
+                errors, final_body = self._verify_result(
+                    outcome, prompt_body, plan_body, requirements, result_ir_mode
                 )
-                final_body = outcome.body
-                errors = []
-                if outcome.kind == "RESULT":
-                    errors, final_body = self._verify_result(
-                        outcome, prompt_body, plan_body, requirements, result_ir_mode
-                    )
+        self.workspace.append_event(
+            "EXECUTION_ATTEMPTS",
+            {"attempts": 1 + repairs_used, "repairs_used": repairs_used, "repairs_allowed": repairs_allowed,
+             "tier": self._execution_budget.tier},
+        )
 
         if outcome.kind == "REQUEST_INPUT":
             assert outcome.expected_type is not None and outcome.description is not None

@@ -243,3 +243,60 @@ def test_activation_route_sees_the_execution_environment(tmp_path):
     _session(tmp_path, sys1)
     assert "standard library only" in sys1.state["execution_environment"]
     assert "execution_environment does not provide" in sys1.criteria["BLOCKED_BY_HIGHER_PRIORITY"]
+
+
+def _verified_session(tmp_path, prediction: str, execute_replies: list[dict]):
+    """A verified-execution session whose EXECUTE replies are scripted."""
+    replies = list(execute_replies)
+    executes: list = []
+
+    def model_call(req):
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({"kind": "ANALYSIS", "task_summary": "A task.", "approach_notes": "",
+                               "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return json.dumps({"kind": "PROMPT", "prompt_body": "COMPUTE the result", "approach_handoff": "NONE"})
+        if req.operation == "DRAFT_PLAN":
+            return json.dumps({"neutral_plan_body": "DERIVE the result"})
+        executes.append(req)
+        return json.dumps(replies.pop(0))
+
+    dist = {prediction: 0.97, "WITHIN_10M_STEPS" if prediction != "WITHIN_10M_STEPS" else "WITHIN_100K_STEPS": 0.03}
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=VerifiedPredictingSys1(dist))
+    for message in ("$confirm-with-pseudocode compute it", "/confirm", "/confirm"):
+        engine.handle_user_message(message)
+    return engine, executes, list(engine.workspace._events)
+
+
+_IR = {"files": [], "reconciliation": [{"requirement": "R1", "status": "satisfied", "evidence": {"path": "execution://body"}}],
+       "open_defects": []}
+_NO_WITNESS = {"kind": "RESULT", "body": "The answer is 9.", "result_ir": _IR}
+_STOPPED = {"kind": "RESULT", "body": "while True:\n    pass", "result_ir": _IR}
+_GOOD = {"kind": "RESULT", "body": "print('WITNESS: {\"answer\": 9}')", "result_ir": _IR}
+
+
+def test_heavy_tier_allows_two_repairs_each_with_the_latest_findings(tmp_path, monkeypatch):
+    monkeypatch.setitem(sandbox_module.EXECUTION_BUDGETS, "HEAVY_COMPUTE",
+                        ExecutionBudget("HEAVY_COMPUTE", 50_000, 30, 256 << 20, repairs=2))
+    engine, executes, events = _verified_session(tmp_path, "WITHIN_100M_STEPS", [_NO_WITNESS, _STOPPED, _GOOD])
+    assert len(executes) == 3 and engine.controller.state.stage.value == "CLOSED_SUCCESS"
+    assert "no program that ran successfully" in executes[1].prompt
+    assert "exceeded the 50,000-step budget" in executes[2].prompt
+    assert "exceeded the 50,000-step budget" not in executes[1].prompt  # each repair: the latest findings
+    attempts = next(e for e in events if e["kind"] == "EXECUTION_ATTEMPTS")["payload"]
+    assert attempts == {"attempts": 3, "repairs_used": 2, "repairs_allowed": 2, "tier": "HEAVY_COMPUTE"}
+
+
+def test_standard_and_minimal_tiers_allow_one_repair(tmp_path):
+    for prediction in ("WITHIN_100K_STEPS", "WITHIN_10M_STEPS"):
+        engine, executes, events = _verified_session(tmp_path / prediction, prediction,
+                                                     [_NO_WITNESS, _NO_WITNESS, _GOOD])
+        assert len(executes) == 2 and engine.controller.state.stage.value == "CLOSED_CANCELLED"
+        attempts = next(e for e in events if e["kind"] == "EXECUTION_ATTEMPTS")["payload"]
+        assert attempts["repairs_used"] == attempts["repairs_allowed"] == 1
+
+
+def test_repair_budgets_are_per_tier_and_fixed():
+    assert {t: b.repairs for t, b in sandbox_module.EXECUTION_BUDGETS.items()} == {
+        "MINIMAL": 1, "STANDARD": 1, "HEAVY_COMPUTE": 2,
+    }

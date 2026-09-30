@@ -47,7 +47,7 @@ else:
 
 PROMPTS_DIR = PDLT_TEST_ROOT / "prompts"
 MANIFEST_PATH = PROMPTS_DIR / "CATALOGUE_MANIFEST.jsonl"
-TIMEOUT_PER_PROMPT = 300
+TIMEOUT_PER_PROMPT = 600  # heavy-tier tasks may make 3 execute attempts (2 repairs)
 EXIT_SUCCESS = 0
 EXIT_CANCELLED = 1
 EXIT_UNCONFIRMED = 2
@@ -197,12 +197,37 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout):
         # Evaluator-only context from the manifest; never sent to the harness.
         "tester_note": entry.get("tester_note"),
         "multi_turn_script": entry.get("multi_turn_script"),
+        "model_calls": call_accounting(result_dir),
     }
 
     (result_dir / "result.json").write_text(
         json.dumps(result, indent=2), encoding="utf-8"
     )
     return result
+
+
+def call_accounting(result_dir: Path) -> dict:
+    """Model calls a run made, counted from its own events (wire retries included),
+    so harness conditions with more repairs are compared at equal cost."""
+    by_operation: dict[str, int] = {}
+    attempts = None
+    repairs = 0
+    for events in Path(result_dir).rglob("events.jsonl"):
+        for line in events.read_text(encoding="utf-8", errors="replace").splitlines():
+            if '"VERIFICATION_REPAIR"' in line:
+                repairs += 1
+            if '"MODEL_OUTPUT_RECORDED"' in line or '"EXECUTION_ATTEMPTS"' in line:
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    continue
+                if event.get("kind") == "MODEL_OUTPUT_RECORDED":
+                    op = event.get("payload", {}).get("operation", "UNKNOWN")
+                    by_operation[op] = by_operation.get(op, 0) + 1
+                elif event.get("kind") == "EXECUTION_ATTEMPTS":
+                    attempts = event.get("payload")
+    return {"total": sum(by_operation.values()), "by_operation": by_operation, "repairs": repairs,
+            "execution_attempts": attempts}
 
 
 def stage_pass(r):
@@ -269,6 +294,12 @@ def generate_scoreboard(results, run_dir, run_meta):
     ]
     manual = [r["id"] for r, g in grades if g == graders.MANUAL]
     total_time = sum(r["elapsed_seconds"] for r in results)
+    calls = [(r.get("model_calls") or {}) for r in results]
+    model_calls = {
+        "total": sum(c.get("total", 0) for c in calls),
+        "execute": sum((c.get("by_operation") or {}).get("EXECUTE", 0) for c in calls),
+        "repairs": sum(c.get("repairs", 0) for c in calls),
+    }
 
     scoreboard = {
         "run_id": run_meta["run_id"],
@@ -282,6 +313,7 @@ def generate_scoreboard(results, run_dir, run_meta):
         "manual_spot_check": manual,
         "pass_rate_pct": round(pass_rate, 1),
         "total_elapsed_seconds": round(total_time, 1),
+        "model_calls": model_calls,
         "ground_truth": ground_truth,
         "false_positives": false_positives,
         "by_verdict": by_verdict,
@@ -318,6 +350,8 @@ def generate_scoreboard(results, run_dir, run_meta):
         f"| Passed | {scoreboard['passed']} |",
         f"| Failed | {scoreboard['failed']} |",
         f"| **Pass Rate** | **{scoreboard['pass_rate_pct']}%** |",
+        f"| Model calls (total / EXECUTE / repairs) | {scoreboard['model_calls']['total']} / "
+        f"{scoreboard['model_calls']['execute']} / {scoreboard['model_calls']['repairs']} |",
         "",
         "---",
         "",
@@ -363,13 +397,13 @@ def generate_scoreboard(results, run_dir, run_meta):
             lines.append(f"| {r['id']} | {r['regression_ref']} | {r['verdict']} |")
 
     lines += ["", "---", "", "## Per-Prompt Results", "",
-              "| ID | Category | Difficulty | Verdict | Ground truth | Time (s) |",
-              "|----|----------|-----------|---------|--------------|----------|"]
+              "| ID | Category | Difficulty | Verdict | Ground truth | Model calls | Time (s) |",
+              "|----|----------|-----------|---------|--------------|-------------|----------|"]
     for r in results:
         icon = "PASS" if is_prompt_pass(r) else "FAIL"
         lines.append(
             f"| {icon} {r['id']} | {r['category']} | {r['difficulty']} "
-            f"| {r['verdict']} | {gt_grade(r)} | {r['elapsed_seconds']:.1f} |"
+            f"| {r['verdict']} | {gt_grade(r)} | {(r.get('model_calls') or {}).get('total', '')} | {r['elapsed_seconds']:.1f} |"
         )
 
     (run_dir / "SCOREBOARD.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -387,6 +421,7 @@ def regrade_run(run_dir: Path) -> int:
             result["ground_truth_grade"] = graders.grade(entry, result_file.parent, PROMPTS_DIR)
         result["tester_note"] = entry.get("tester_note")
         result["multi_turn_script"] = entry.get("multi_turn_script")
+        result["model_calls"] = call_accounting(result_file.parent)
         result_file.write_text(json.dumps(result, indent=2), encoding="utf-8")
         results.append(result)
     run_meta = json.loads((run_dir / "RUN_META.json").read_text(encoding="utf-8"))
@@ -505,6 +540,8 @@ def main():
 
     gt = scoreboard["ground_truth"]
     print(f"Stage only: {scoreboard['stage_passed']}/{scoreboard['total_prompts']} reached the expected stage")
+    mc = scoreboard["model_calls"]
+    print(f"Model calls: {mc['total']} total, {mc['execute']} EXECUTE, {mc['repairs']} verification repairs")
     print(f"Ground truth: PASS={gt['PASS']} FAIL={gt['FAIL']} MANUAL={gt['MANUAL']} "
           f"false_positives={len(scoreboard['false_positives'])}")
     for fp in scoreboard["false_positives"]:
