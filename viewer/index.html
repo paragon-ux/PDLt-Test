@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDLt Viewer</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --panel2: #0d1117; --line: #30363d;
+    --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff; --ok: #3fb950;
+    --bad: #f85149; --warn: #d29922; --info: #a371f7;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: #f6f8fa; --panel: #ffffff; --panel2: #f6f8fa; --line: #d0d7de;
+      --text: #1f2328; --muted: #57606a; --accent: #0969da; --ok: #1a7f37;
+      --bad: #cf222e; --warn: #9a6700; --info: #8250df; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { font-size: 15px; margin: 0; }
+  .grow { flex: 1; }
+  .stages { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .badge { padding: 2px 8px; border-radius: 12px; border: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 600; }
+  .badge.on { color: var(--accent); border-color: var(--accent); }
+  .badge.done { color: var(--ok); border-color: var(--ok); }
+  .badge.bad { color: var(--bad); border-color: var(--bad); }
+  main { display: grid; grid-template-columns: 300px minmax(0, 1fr) 340px; gap: 12px; padding: 12px 16px; height: calc(100vh - 62px); }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; height: auto; } .pane { max-height: 70vh; } }
+  .pane { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .pane h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0; padding: 10px 12px 6px; }
+  .tabs { display: flex; gap: 2px; padding: 6px 8px 0; border-bottom: 1px solid var(--line); }
+  .tab { background: none; border: 0; color: var(--muted); padding: 6px 10px; cursor: pointer; font: inherit; font-size: 12px; border-bottom: 2px solid transparent; }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .body { flex: 1; overflow: auto; padding: 10px 12px; min-height: 0; }
+  pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 12px; }
+  select, input[type=text] { width: 100%; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: inherit; font-size: 12px; margin-bottom: 8px; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; margin-bottom: 5px; cursor: pointer; font-size: 12px; }
+  .row:hover, .row.sel { border-color: var(--accent); }
+  .pill { font-size: 10px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .ok { color: var(--ok); border-color: var(--ok); } .bad { color: var(--bad); border-color: var(--bad); }
+  .warn { color: var(--warn); border-color: var(--warn); } .info { color: var(--info); border-color: var(--info); }
+  .stat { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 8px; }
+  .stat div { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 12px; }
+  .stat b { display: block; font-size: 15px; }
+  .box { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 8px; margin-bottom: 10px; }
+  .box .lbl { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+  .l-err { color: var(--bad); font-weight: 600; } .l-tel { color: var(--info); } .l-hdr { color: var(--warn); font-weight: 600; } .l-in { color: var(--accent); }
+  label.chk { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  button.btn { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>PDLt Viewer</h1>
+  <div class="stages" id="stages"></div>
+  <div class="grow"></div>
+  <label class="chk"><input type="checkbox" id="follow" checked> Follow newest session</label>
+  <span class="pill mono" id="session-id">NONE</span>
+</header>
+
+<main>
+  <!-- left: runs / catalogue -->
+  <section class="pane">
+    <div class="tabs">
+      <button class="tab active" data-left="runs">Runs</button>
+      <button class="tab" data-left="catalogue">Catalogue</button>
+    </div>
+    <div class="body" id="left-runs">
+      <select id="run-select"></select>
+      <div class="stat" id="run-stat"></div>
+      <input type="text" id="result-filter" placeholder="Filter (id, category, verdict, grade)">
+      <div id="result-list"></div>
+    </div>
+    <div class="body" id="left-catalogue" hidden>
+      <input type="text" id="cat-filter" placeholder="Filter prompts">
+      <div id="cat-list"></div>
+    </div>
+  </section>
+
+  <!-- centre: transcript / deliverable / prompt & plan / prompt text -->
+  <section class="pane">
+    <div class="tabs">
+      <button class="tab active" data-mid="transcript">Transcript</button>
+      <button class="tab" data-mid="deliverable">Deliverable</button>
+      <button class="tab" data-mid="pp">Prompt &amp; Plan</button>
+      <button class="tab" data-mid="ptext">Catalogue prompt</button>
+      <span class="grow"></span>
+      <label class="chk" style="padding-right:8px"><input type="checkbox" id="autoscroll" checked> Auto-scroll</label>
+    </div>
+    <div class="body mono" id="mid"></div>
+  </section>
+
+  <!-- right: result, code, witness -->
+  <section class="pane">
+    <h2>Result</h2>
+    <div class="body">
+      <div class="box"><span class="lbl">Verdict &amp; ground-truth grade</span><pre id="result-box">No result selected.</pre></div>
+      <div class="box"><span class="lbl">Code from deliverable</span><pre class="mono" id="code-box">None.</pre></div>
+      <div class="box"><span class="lbl">Witness (as published)</span><pre class="mono" id="witness-box">None.</pre></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const STAGES = ['PROMPT_REVIEW', 'PLAN_REVIEW', 'EXECUTION_READY', 'CLOSED_SUCCESS'];
+
+let state = { session: null, midTab: 'transcript', selectedPath: null, catalogue: [], run: null, promptText: '' };
+
+async function api(path) { const r = await fetch(path); return r.json(); }
+
+function renderStages(stage) {
+  const idx = STAGES.indexOf(stage);
+  const cancelled = stage === 'CLOSED_CANCELLED';
+  $('stages').innerHTML = STAGES.map((s, i) => {
+    let cls = 'badge';
+    if (s === stage) cls += ' on'; else if (idx > i) cls += ' done';
+    return `<span class="${cls}">${s}</span>`;
+  }).join('') + (cancelled ? '<span class="badge bad">CLOSED_CANCELLED</span>' : '')
+    + (stage === 'WAITING_INPUT' ? '<span class="badge on">WAITING_INPUT</span>' : '');
+}
+
+function fmtLine(line) {
+  const t = line.trim();
+  if (/\[error\]|Error:|ValidationError|WireError/.test(t)) return `<div class="l-err">${esc(line)}</div>`;
+  if (t.startsWith('>') || t.startsWith('USER>')) return `<div class="l-in">${esc(line)}</div>`;
+  if (/\[dev:telemetry\]|\[worker progress|\[protocol closed\]|\[headless/.test(line)) return `<div class="l-tel">${esc(line)}</div>`;
+  if (/Prompt Pseudocode|Response Plan Pseudocode/.test(line)) return `<div class="l-hdr">${esc(line)}</div>`;
+  return `<div>${esc(line)}</div>`;
+}
+
+function renderMid() {
+  const s = state.session || {};
+  const mid = $('mid');
+  const near = mid.scrollHeight - mid.scrollTop - mid.clientHeight < 80;
+  if (state.midTab === 'transcript') {
+    mid.innerHTML = (s.logs && s.logs.length) ? s.logs.map(fmtLine).join('') : '<em>No transcript yet.</em>';
+    if ($('autoscroll').checked && near) mid.scrollTop = mid.scrollHeight;
+  } else if (state.midTab === 'deliverable') {
+    mid.innerHTML = `<pre>${esc(s.deliverable || 'No published deliverable.')}</pre>`;
+  } else if (state.midTab === 'pp') {
+    mid.innerHTML = `<pre><b>PROMPT</b>\n${esc(s.prompt || '—')}\n\n<b>PLAN</b>\n${esc(s.plan || '—')}</pre>`;
+  } else {
+    mid.innerHTML = `<pre>${esc(state.promptText || 'Select a prompt in the Catalogue tab.')}</pre>`;
+  }
+}
+
+function renderRight() {
+  const s = state.session || {};
+  $('code-box').textContent = s.code_snippet || 'None.';
+  $('witness-box').textContent = s.witness ? JSON.stringify(s.witness, null, 2) : 'None.';
+  const r = s.result;
+  $('result-box').textContent = r
+    ? `${r.id}  ${r.verdict} (exit ${r.exit_code}, ${r.elapsed_seconds}s)\nexpected: ${r.expected_stage}\n` +
+      `ground truth: ${(r.ground_truth_grade || {}).grade || 'n/a'}${(r.ground_truth_grade || {}).reason ? ' — ' + r.ground_truth_grade.reason : ''}`
+    : 'No result.json for this session (live or interactive).';
+}
+
+function applySession(s) {
+  state.session = s;
+  $('session-id').textContent = s.session_id || 'NONE';
+  renderStages(s.stage);
+  renderMid(); renderRight();
+}
+
+async function poll() {
+  if ($('follow').checked && !state.selectedPath) {
+    try { applySession(await api('/api/status')); } catch (e) {}
+  }
+}
+
+async function selectResult(path) {
+  state.selectedPath = path;
+  $('follow').checked = false;
+  applySession(await api('/api/status?path=' + encodeURIComponent(path)));
+  document.querySelectorAll('#result-list .row').forEach(r => r.classList.toggle('sel', r.dataset.path === path));
+}
+
+function gradeClass(g) { return g === 'PASS' ? 'ok' : g === 'FAIL' ? 'bad' : g === 'MANUAL' ? 'warn' : ''; }
+function verdictClass(r) { return r.verdict === r.expected_stage || (r.expected_stage === 'WAITING_INPUT' && r.verdict === 'CLOSED_SUCCESS') ? 'ok' : 'bad'; }
+
+function renderResults() {
+  const run = state.run;
+  if (!run) { $('result-list').innerHTML = ''; return; }
+  const q = $('result-filter').value.toLowerCase();
+  const rows = run.results.filter(r => !q || [r.id, r.category, r.verdict, r.grade].join(' ').toLowerCase().includes(q));
+  $('result-list').innerHTML = rows.map(r => `
+    <div class="row ${state.selectedPath === r.path ? 'sel' : ''}" data-path="${esc(r.path)}">
+      <span class="mono">${esc(r.id)}</span>
+      <span><span class="pill ${verdictClass(r)}">${esc(r.verdict)}</span>
+      ${r.grade && r.grade !== 'N/A' ? `<span class="pill ${gradeClass(r.grade)}">${esc(r.grade)}</span>` : ''}</span>
+    </div>`).join('') || '<em>No results.</em>';
+  document.querySelectorAll('#result-list .row').forEach(el => el.onclick = () => selectResult(el.dataset.path));
+}
+
+async function loadRun(id) {
+  if (!id) { state.run = null; $('run-stat').innerHTML = ''; renderResults(); return; }
+  state.run = await api('/api/run?id=' + encodeURIComponent(id));
+  const b = (state.run && state.run.scoreboard) || {};
+  const gt = b.ground_truth || {};
+  $('run-stat').innerHTML =
+    `<div>Pass rate<b>${b.pass_rate_pct ?? '—'}%</b></div>` +
+    `<div>Passed<b>${b.passed ?? '—'} / ${b.total_prompts ?? state.run.results.length}</b></div>` +
+    `<div>Ground truth<b>${gt.PASS ?? 0} ✓ ${gt.FAIL ?? 0} ✗ ${gt.MANUAL ?? 0} ?</b></div>` +
+    `<div>False positives<b>${(b.false_positives || []).length}</b></div>`;
+  renderResults();
+}
+
+async function loadRuns() {
+  const runs = await api('/api/runs');
+  const keep = $('run-select').value;
+  $('run-select').innerHTML = runs.length
+    ? runs.map(r => `<option value="${esc(r.id)}">${esc(r.id)} — ${r.pass_rate_pct ?? '…'}% (${r.total})</option>`).join('')
+    : '<option value="">No runs yet</option>';
+  const pick = runs.some(r => r.id === keep) ? keep : (runs.length ? runs[0].id : '');
+  $('run-select').value = pick;
+  await loadRun(pick);
+}
+
+function renderCatalogue() {
+  const q = $('cat-filter').value.toLowerCase();
+  const rows = state.catalogue.filter(c => !q || [c.id, c.name, c.category].join(' ').toLowerCase().includes(q));
+  $('cat-list').innerHTML = rows.map(c => `
+    <div class="row" data-id="${esc(c.id)}"><span class="mono">${esc(c.id)}</span>
+    <span class="pill">${esc(c.name)}</span></div>`).join('');
+  document.querySelectorAll('#cat-list .row').forEach(el => el.onclick = async () => {
+    const p = await api('/api/prompt?id=' + encodeURIComponent(el.dataset.id));
+    state.promptText = `${el.dataset.id}\n\n${p.text || ''}`;
+    state.midTab = 'ptext';
+    document.querySelectorAll('[data-mid]').forEach(t => t.classList.toggle('active', t.dataset.mid === 'ptext'));
+    renderMid();
+  });
+}
+
+document.querySelectorAll('[data-left]').forEach(t => t.onclick = () => {
+  document.querySelectorAll('[data-left]').forEach(x => x.classList.toggle('active', x === t));
+  $('left-runs').hidden = t.dataset.left !== 'runs';
+  $('left-catalogue').hidden = t.dataset.left !== 'catalogue';
+});
+document.querySelectorAll('[data-mid]').forEach(t => t.onclick = () => {
+  state.midTab = t.dataset.mid;
+  document.querySelectorAll('[data-mid]').forEach(x => x.classList.toggle('active', x === t));
+  renderMid();
+});
+$('run-select').onchange = (e) => { state.selectedPath = null; loadRun(e.target.value); };
+$('result-filter').oninput = renderResults;
+$('cat-filter').oninput = renderCatalogue;
+$('follow').onchange = () => { if ($('follow').checked) state.selectedPath = null; };
+
+(async function init() {
+  renderStages('IDLE');
+  try { state.catalogue = await api('/api/catalogue'); renderCatalogue(); } catch (e) {}
+  try { await loadRuns(); } catch (e) {}
+  await poll();
+  setInterval(poll, 2000);
+  setInterval(() => { if ($('follow').checked) loadRuns().catch(() => {}); }, 15000);
+})();
+</script>
+</body>
+</html>

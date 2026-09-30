@@ -33,6 +33,18 @@ python run_catalogue.py                 # full 105-prompt run, one attempt each
 
 REPL fast path: `/confirm`, `/revise <feedback>`, `/stop`. `pdlt --help` lists the rest.
 
+### Viewer (local browser)
+
+```bash
+python -m viewer                # http://127.0.0.1:8090, opens your browser; --no-open, --port N
+```
+
+Read-only and localhost-only. Browse every `catalogue-runs/run-*` (scoreboard, per-prompt verdict and ground-truth grade, transcript, deliverable, code, witness), follow the newest live session, and read the 105 catalogue prompts. It lives in the evaluation plane and imports nothing from the harness.
+
+### Environment routing (System 1)
+
+`PDLT_POLICY_SCOPE` (default `technical`), `PDLT_SANDBOX_NETWORK` (default `false`) and `PDLT_KNOWLEDGE_CUTOFF` (default `2024-06`) are **System 1 recipe state**. System 1 routes every new request against them before any System 2 call; they never appear in a System 2 prompt, and nothing matches keywords or dates.
+
 ## Exit codes (headless, ADR-0019 as amended)
 
 | Code | Meaning |

@@ -18,9 +18,10 @@ Two planes. The **harness** (`src/pdl_taskmaster/`) is a deterministic protocol 
 | Result IR | `src/pdl_taskmaster/runtime/result_ir.py`, `wire_payloads.py` |
 | Grammar lint (PDL-05/06/08 only) | `src/pdl_taskmaster/verification/plan_soundness.py` |
 | Verifier + sandbox | `verification/output_verifier.py`, `verification/sandbox.py`, `verification/checkers/` |
-| System 1 | `providers/sys1/` (`client.py`, `gating.py`, `recipes/activation_route.py`, `problem_class.py`, `confirmation_match.py`, `review_facets.py`) |
+| System 1 | `providers/sys1/` (Phase 0 route runs first via `session_engine._s1_boundary_refusal`; `client.py`, `gating.py`, `recipes/activation_route.py`, `problem_class.py`, `confirmation_match.py`, `review_facets.py`) |
 | System 2 client | `providers/api_worker.py` |
 | Integrity gate | `tests/test_harness_anti_overfitting.py` |
+| Viewer (evaluation plane) | `viewer/server.py`, `viewer/index.html` |
 | Runner, graders, contract | `run_catalogue.py`, `graders.py`, `GOAL.md`, `prompts/CATALOGUE_MANIFEST.jsonl` |
 | Agent rules | `AGENTS.md` |
 
