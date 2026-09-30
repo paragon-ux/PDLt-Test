@@ -80,23 +80,63 @@ _sys.addaudithook(_sandbox_audit)
 """
 
 
+STEP_BUDGET_EXIT_CODE = 125
+_STEP_BUDGET_MARKER = "PDLT_STEP_BUDGET_EXCEEDED"
+
+# Deterministic complexity budget: every executed Python bytecode instruction is
+# one step, so loops written on one line and comprehensions are counted too. On
+# the first step past the limit the process exits at once, so the program cannot
+# catch it. Work inside built-in functions is not counted; the wall-clock limit
+# still bounds it.
+_STEP_BUDGET_PRELUDE = """
+import sys as _sys, os as _os, threading as _threading
+_STEP_LIMIT = {limit}
+_steps = [0]
+def _step_trace(frame, event, arg):
+    frame.f_trace_lines = False
+    frame.f_trace_opcodes = True
+    if event == "opcode":
+        _steps[0] += 1
+        if _steps[0] > _STEP_LIMIT:
+            _sys.stdout.flush()
+            _sys.stderr.write("{marker}: more than %d steps\\n" % _STEP_LIMIT)
+            _sys.stderr.flush()
+            _os._exit({exit_code})
+    return _step_trace
+_sys.settrace(_step_trace)
+_top = _sys._getframe()  # the script's own top-level frame
+_top.f_trace_lines = False
+_top.f_trace_opcodes = True
+_top.f_trace = _step_trace
+del _top
+_threading.settrace(_step_trace)
+def _step_guard(event, args):
+    if event in ("sys.settrace", "sys.setprofile"):
+        caller = _sys._getframe(1)  # sys.settrace is C code: frame 1 is its Python caller
+        if not (caller.f_code.co_name == "_bootstrap_inner" and caller.f_code.co_filename == _threading.__file__):
+            raise PermissionError("The step counter cannot be changed inside ExecutionSandbox (" + event + ")")
+_sys.addaudithook(_step_guard)
+"""
+
+
 @dataclass(frozen=True)
 class ExecutionBudget:
     """Resources the sandbox grants one task tier; enforced and declared from one place."""
 
     tier: str
-    timeout_seconds: float
+    step_limit: int
+    timeout_seconds: float  # wall-clock safety limit behind the step budget
     memory_limit_bytes: int
 
 
 _MB = 1024 * 1024
 
-# Per-tier budgets routed by System 1 (ExecutionProfileRecipe). Generic and fixed:
-# no task, prompt or problem class has its own entry.
+# Per-tier budgets routed by System 1 (ExecutionProfileRecipe predicts the step
+# complexity). Generic and fixed: no task, prompt or problem class has its own entry.
+# The wall-clock limit is only a safety net for work inside built-in functions.
 EXECUTION_BUDGETS: dict[str, ExecutionBudget] = {
-    "STANDARD": ExecutionBudget("STANDARD", 15.0, 256 * _MB),
-    "HEAVY_COMPUTE": ExecutionBudget("HEAVY_COMPUTE", 90.0, 512 * _MB),
-    "LARGE_MEMORY": ExecutionBudget("LARGE_MEMORY", 30.0, 2048 * _MB),
+    "STANDARD": ExecutionBudget("STANDARD", 10_000_000, 30.0, 256 * _MB),
+    "HEAVY_COMPUTE": ExecutionBudget("HEAVY_COMPUTE", 100_000_000, 120.0, 512 * _MB),
 }
 DEFAULT_BUDGET = EXECUTION_BUDGETS["STANDARD"]
 
@@ -111,10 +151,14 @@ class SandboxResult:
     timed_out: bool = False
     oom_killed: bool = False
     error: Optional[str] = None
+    step_budget_exceeded: bool = False
 
     @property
     def success(self) -> bool:
-        return self.exit_code == 0 and not self.timed_out and not self.oom_killed and self.error is None
+        return (
+            self.exit_code == 0 and not self.timed_out and not self.oom_killed
+            and not self.step_budget_exceeded and self.error is None
+        )
 
 
 
@@ -154,15 +198,23 @@ class ExecutionSandbox:
         version = ".".join(str(part) for part in sys.version_info[:2])
         timeout = budget.timeout_seconds if budget else self.timeout_seconds
         megabytes = (budget.memory_limit_bytes if budget else self.memory_limit_bytes) // (1024 * 1024)
+        steps = (
+            f"Each script may execute at most {budget.step_limit:,} steps, where one step is one executed Python "
+            "bytecode instruction (a simple statement is a few steps; every loop or comprehension iteration and "
+            "every line run inside standard-library modules written in Python counts). A script that exceeds the "
+            "step budget is stopped. Work inside built-in functions is not counted in steps but is bounded by a "
+            f"{timeout:g}-second wall-clock limit. "
+            if budget else f"Each script has a {timeout:g}-second time limit. "
+        )
         return [
             {
                 "name": "python",
                 "description": (
                     f"Python {version} with the standard library only; third-party packages are not installed. "
                     "The host runs the deliverable as a script when the whole deliverable is Python source; otherwise it "
-                    "runs every ```python fenced block as a separate script. Each script runs in an "
-                    f"empty temporary directory, with a {timeout:g}-second time limit and a "
-                    f"{megabytes} MB memory limit. Standard input is empty. Standard output, standard error "
+                    "runs every ```python fenced block as a separate script, in an empty temporary directory. "
+                    + steps
+                    + f"Memory is limited to {megabytes} MB. Standard input is empty. Standard output, standard error "
                     "and the exit status are captured by the host."
                 ),
             }
@@ -206,8 +258,11 @@ class ExecutionSandbox:
         timeout: float | None = None,
         memory_limit: int | None = None,
         env: dict[str, str] | None = None,
+        step_limit: int | None = None,
     ) -> SandboxResult:
-        """Execute a Python snippet in an isolated ephemeral scratchpad with OS-native limits."""
+        """Execute a Python snippet in an isolated ephemeral scratchpad with OS-native limits.
+
+        ``step_limit`` enforces the deterministic step budget (executed Python lines)."""
         effective_timeout = timeout if timeout is not None else self.timeout_seconds
         effective_memory = memory_limit if memory_limit is not None else self.memory_limit_bytes
 
@@ -218,16 +273,25 @@ class ExecutionSandbox:
             content_parts: list[str] = []
             if not self.allow_network:
                 content_parts.append(_NETWORK_BLOCK_PRELUDE)
+            if step_limit is not None:
+                content_parts.append(_STEP_BUDGET_PRELUDE.format(
+                    limit=int(step_limit), marker=_STEP_BUDGET_MARKER, exit_code=STEP_BUDGET_EXIT_CODE,
+                ))
             content_parts.append(code)
             entry_file.write_text("\n".join(content_parts), encoding="utf-8")
 
-            return self._execute_process(
+            result = self._execute_process(
                 [sys.executable, "-I", "-S", str(entry_file)],
                 cwd=scratchpad_path,
                 timeout=effective_timeout,
                 memory_limit_bytes=effective_memory,
                 env=env,
             )
+            if result.exit_code == STEP_BUDGET_EXIT_CODE and _STEP_BUDGET_MARKER in result.stderr:
+                from dataclasses import replace
+
+                result = replace(result, step_budget_exceeded=True)
+            return result
 
     def run_script(
         self,

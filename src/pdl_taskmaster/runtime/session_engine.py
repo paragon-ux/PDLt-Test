@@ -617,13 +617,14 @@ class SessionEngine:
         from pdl_taskmaster.providers.sys1.recipes.execution_profile import ExecutionProfileRecipe
         from pdl_taskmaster.verification.sandbox import DEFAULT_BUDGET, EXECUTION_BUDGETS
 
-        tier, passed = "STANDARD", False
+        prediction, tier, passed = None, "STANDARD", False
         if self.sys1_client is not None and self.sys1_client.is_configured:
             recipe = ExecutionProfileRecipe()
             try:
                 body, duration_ms = self.sys1_client.call(recipe.build_request({"request": request}))
                 result = recipe.parse_response(body, duration_ms=duration_ms)
-                tier, passed = recipe.map_to_wire(result)["tier"], result.passed_gating
+                routed = recipe.map_to_wire(result)
+                prediction, tier, passed = routed["prediction"], routed["tier"], result.passed_gating
             except Exception:
                 pass
         self._execution_budget = EXECUTION_BUDGETS.get(tier, DEFAULT_BUDGET)
@@ -633,8 +634,10 @@ class SessionEngine:
         self.workspace.append_event(
             "EXECUTION_PROFILE_ROUTED",
             {
+                "predicted_steps": prediction,
                 "tier": self._execution_budget.tier,
                 "passed_gating": passed,
+                "step_limit": self._execution_budget.step_limit,
                 "timeout_seconds": self._execution_budget.timeout_seconds,
                 "memory_mb": self._execution_budget.memory_limit_bytes // (1024 * 1024),
             },
@@ -1082,6 +1085,7 @@ class SessionEngine:
                 block,
                 timeout=self._execution_budget.timeout_seconds,
                 memory_limit=self._execution_budget.memory_limit_bytes,
+                step_limit=self._execution_budget.step_limit,
             )
             self.workspace.append_event(
                 "SANDBOX_RUN",
@@ -1089,6 +1093,7 @@ class SessionEngine:
                     "block": index,
                     "tier": self._execution_budget.tier,
                     "exit_code": run.exit_code,
+                    "step_budget_exceeded": run.step_budget_exceeded,
                     "timed_out": run.timed_out,
                     "oom_killed": run.oom_killed,
                     "duration_ms": round(run.duration_ms, 1),
@@ -1096,7 +1101,8 @@ class SessionEngine:
             )
             if not run.success:
                 reason = (
-                    "timed out" if run.timed_out
+                    f"exceeded the {self._execution_budget.step_limit:,}-step budget" if run.step_budget_exceeded
+                    else "timed out" if run.timed_out
                     else "exceeded the memory limit" if run.oom_killed
                     else f"exited with code {run.exit_code}"
                 )

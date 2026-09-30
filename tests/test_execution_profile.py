@@ -1,4 +1,5 @@
-"""System 1 routes a resource tier; the sandbox enforces it and the solver is told it."""
+"""System 1 predicts step complexity; the prediction selects a step budget that the
+sandbox enforces deterministically and that the solver is told."""
 from __future__ import annotations
 
 import json
@@ -9,32 +10,32 @@ import pytest
 from pdl_taskmaster.providers.sys1.recipes.execution_profile import ExecutionProfileRecipe
 from pdl_taskmaster.runtime.session_engine import SessionEngine
 from pdl_taskmaster.verification import sandbox as sandbox_module
-from pdl_taskmaster.verification.sandbox import ExecutionBudget
+from pdl_taskmaster.verification.sandbox import ExecutionBudget, ExecutionSandbox
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def _answer(choice: str, confidence: float = 0.97) -> dict:
-    other = "STANDARD" if choice != "STANDARD" else "HEAVY_COMPUTE"
+    other = "WITHIN_10M_STEPS" if choice != "WITHIN_10M_STEPS" else "WITHIN_100M_STEPS"
     return {"choice": choice, "confidence": confidence,
             "probabilities": {choice: confidence, other: round(1 - confidence, 4)}}
 
 
-class TieredSys1:
+class PredictingSys1:
     is_configured = True
     model = "fake-sys1"
 
-    def __init__(self, tier: str | None, confidence: float = 0.97):
-        self.tier, self.confidence = tier, confidence
+    def __init__(self, prediction: str | None, confidence: float = 0.97):
+        self.prediction, self.confidence = prediction, confidence
 
     def call(self, request):
         name = next(iter(request.questions))
         if name == "route":
             return {"answers": {name: _answer("APPLY_PROTOCOL")}}, 1.0
         if name == "execution_profile":
-            if self.tier is None:
+            if self.prediction is None:
                 raise RuntimeError("sys1 down")
-            return {"answers": {name: _answer(self.tier, self.confidence)}}, 1.0
+            return {"answers": {name: _answer(self.prediction, self.confidence)}}, 1.0
         return {"answers": {name: {"choice": "STANDARD_EXECUTION", "confidence": 0.97,
                                    "probabilities": {"STANDARD_EXECUTION": 0.97, "VERIFIED_EXECUTION": 0.03}}}}, 1.0
 
@@ -60,40 +61,70 @@ def _session(tmp_path, sys1, execute_body: str = "done"):
 
 
 @pytest.mark.parametrize(
-    "answer, tier",
-    [(_answer("HEAVY_COMPUTE"), "HEAVY_COMPUTE"), (_answer("LARGE_MEMORY"), "LARGE_MEMORY"),
-     (_answer("HEAVY_COMPUTE", 0.6), "STANDARD"), (_answer("SYMBOLIC_ONLY"), "STANDARD"), ({}, "STANDARD")],
+    "answer, prediction, tier",
+    [
+        (_answer("WITHIN_10M_STEPS"), "WITHIN_10M_STEPS", "STANDARD"),
+        (_answer("WITHIN_100M_STEPS"), "WITHIN_100M_STEPS", "HEAVY_COMPUTE"),
+        (_answer("BEYOND_100M_STEPS"), "BEYOND_100M_STEPS", "HEAVY_COMPUTE"),
+        (_answer("WITHIN_100M_STEPS", 0.6), "WITHIN_10M_STEPS", "STANDARD"),
+        (_answer("HEAVY_COMPUTE"), "WITHIN_10M_STEPS", "STANDARD"),
+        ({}, "WITHIN_10M_STEPS", "STANDARD"),
+    ],
 )
-def test_recipe_routes_only_known_gated_tiers(answer, tier):
+def test_recipe_maps_gated_predictions_to_tiers(answer, prediction, tier):
     recipe = ExecutionProfileRecipe()
     result = recipe.parse_response({"answers": {"execution_profile": answer}})
-    assert recipe.map_to_wire(result)["tier"] == tier
+    assert recipe.map_to_wire(result) == {"prediction": prediction, "tier": tier}
 
 
-def test_solver_is_told_the_routed_budget(tmp_path):
-    engine, executes, events = _session(tmp_path, TieredSys1("HEAVY_COMPUTE"))
+def test_solver_is_told_the_predicted_step_budget(tmp_path):
+    engine, executes, events = _session(tmp_path, PredictingSys1("BEYOND_100M_STEPS"))
     routed = next(e for e in events if e["kind"] == "EXECUTION_PROFILE_ROUTED")["payload"]
-    assert routed == {"tier": "HEAVY_COMPUTE", "passed_gating": True, "timeout_seconds": 90.0, "memory_mb": 512}
-    assert "90-second time limit and a 512 MB memory limit" in executes[0].prompt
+    assert routed["predicted_steps"] == "BEYOND_100M_STEPS" and routed["passed_gating"]
+    assert routed["tier"] == "HEAVY_COMPUTE" and routed["step_limit"] == 100_000_000
+    assert "at most 100,000,000 steps" in executes[0].prompt
 
 
-@pytest.mark.parametrize("sys1", [None, TieredSys1(None), TieredSys1("HEAVY_COMPUTE", 0.5)])
+@pytest.mark.parametrize("sys1", [None, PredictingSys1(None), PredictingSys1("WITHIN_100M_STEPS", 0.5)])
 def test_absent_or_uncertain_system1_means_standard(tmp_path, sys1):
-    engine, executes, events = _session(tmp_path, sys1)
+    engine, executes, _ = _session(tmp_path, sys1)
     assert engine._execution_budget.tier == "STANDARD"
-    assert "15-second time limit and a 256 MB memory limit" in executes[0].prompt
+    assert "at most 10,000,000 steps" in executes[0].prompt
 
 
-def test_sandbox_enforces_the_routed_budget(tmp_path, monkeypatch):
-    monkeypatch.setitem(sandbox_module.EXECUTION_BUDGETS, "STANDARD", ExecutionBudget("STANDARD", 1.0, 256 << 20))
-    monkeypatch.setitem(sandbox_module.EXECUTION_BUDGETS, "HEAVY_COMPUTE", ExecutionBudget("HEAVY_COMPUTE", 4.0, 256 << 20))
-    body = "import time\ntime.sleep(2)\nprint('finished')"
+def test_sandbox_enforces_the_routed_step_budget(tmp_path, monkeypatch):
+    monkeypatch.setitem(sandbox_module.EXECUTION_BUDGETS, "STANDARD", ExecutionBudget("STANDARD", 100_000, 30, 256 << 20))
+    monkeypatch.setitem(sandbox_module.EXECUTION_BUDGETS, "HEAVY_COMPUTE", ExecutionBudget("HEAVY_COMPUTE", 5_000_000, 30, 256 << 20))
+    body = "t = 0\nfor i in range(100000):\n    t += i\nprint(t)"
     runs = {}
-    for tier in ("STANDARD", "HEAVY_COMPUTE"):
-        _, _, events = _session(tmp_path / tier, TieredSys1(tier), execute_body=body)
-        runs[tier] = next(e for e in events if e["kind"] == "SANDBOX_RUN")["payload"]
-    assert runs["STANDARD"]["timed_out"] and runs["STANDARD"]["tier"] == "STANDARD"
-    assert not runs["HEAVY_COMPUTE"]["timed_out"] and runs["HEAVY_COMPUTE"]["exit_code"] == 0
+    for prediction in ("WITHIN_10M_STEPS", "WITHIN_100M_STEPS"):
+        _, _, events = _session(tmp_path / prediction, PredictingSys1(prediction), execute_body=body)
+        runs[prediction] = next(e for e in events if e["kind"] == "SANDBOX_RUN")["payload"]
+    assert runs["WITHIN_10M_STEPS"]["step_budget_exceeded"] and not runs["WITHIN_10M_STEPS"]["timed_out"]
+    assert not runs["WITHIN_100M_STEPS"]["step_budget_exceeded"] and runs["WITHIN_100M_STEPS"]["exit_code"] == 0
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        "while True: pass",  # one-line loop
+        "try:\n    while True: pass\nexcept BaseException:\n    pass",  # the program cannot catch the stop
+        "import sys\ntry:\n    sys.settrace(None)\nexcept PermissionError:\n    pass\nwhile True: pass",
+        "import threading\nt = threading.Thread(target=lambda: [0 for _ in iter(int, 1)])\nt.start(); t.join()",
+    ],
+)
+def test_step_budget_cannot_be_evaded(code):
+    run = ExecutionSandbox().run_code(code, step_limit=100_000, timeout=20)
+    assert run.step_budget_exceeded and not run.timed_out
+
+
+def test_step_budget_is_deterministic():
+    code = "print(sum(i * i for i in range(20000)))"
+    counts = []
+    for limit in (60_000, 200_000):
+        counts.append(ExecutionSandbox().run_code(code, step_limit=limit).step_budget_exceeded)
+    assert counts == [True, False]
+    assert ExecutionSandbox().run_code(code, step_limit=200_000).stdout.strip() == str(sum(i * i for i in range(20000)))
 
 
 def test_host_declared_tools_are_not_overridden(tmp_path):

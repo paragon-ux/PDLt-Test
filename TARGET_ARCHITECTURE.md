@@ -59,7 +59,7 @@ The target architecture enforces a strict tripartite separation of concerns:
 │                         BLOCKED_BY_HIGHER_PRIORITY                        │
 │      - ProblemClass:    VERIFIED_EXECUTION | STANDARD_EXECUTION           │
 │      - Review Intent:   ConfirmationMatch → ReviewFacets                  │
-│      - ExecutionProfile: STANDARD | HEAVY_COMPUTE | LARGE_MEMORY (budget) │
+│      - ExecutionProfile: predicted step complexity -> step budget         │
 │    • Invariant: Emits discrete labels only; code strictly owns state      │
 │      transitions; zero qualitative plan grading or prompt rewriting       │
 └──────────────────┬─────────────────────────────────────┬──────────────────┘
@@ -204,7 +204,7 @@ Session Start (SessionEngine.__init__)
 |---|---|
 | **Secret isolation** | The environment is rebuilt from an allowlist: `PATH`, `SYSTEMROOT`, `TEMP`, `TMP`, `PYTHONIOENCODING`, `PYTHONUNBUFFERED`. API keys never reach model-authored code. |
 | **Network & process denial** | A `sys.addaudithook` prelude raises `PermissionError` on `socket.connect`, `socket.bind`, `socket.getaddrinfo`, `subprocess.Popen`, `os.system`, `os.exec*`, `os.spawn*` and `os.posix_spawn`. It is skipped only when `allow_network=True`. |
-| **Resource limits** | Windows Job Objects (memory, kill-on-close) and POSIX `setrlimit(RLIMIT_AS)` with process-group kill on timeout. The time and memory limits are the task's routed budget (§5, `ExecutionProfileRecipe`). |
+| **Resource limits** | Windows Job Objects (memory, kill-on-close) and POSIX `setrlimit(RLIMIT_AS)` with process-group kill on timeout. The step budget, memory limit and wall-clock safety limit are the task's routed budget (§5, `ExecutionProfileRecipe`). |
 | **Interpreter isolation** | `python -I -s`, run in an ephemeral scratchpad cwd. |
 
 **Honest boundary statement:** these controls are defense in depth, not a VM or container boundary. Audit hooks run in-process, and hostile native code can defeat them. Stronger isolation (microVM, per ADR-0011) remains roadmap.
@@ -242,20 +242,21 @@ The harness implements these discrete, calibrated System 1 recipes (`src/pdl_tas
 - **Flow:** `ConfirmationMatch` (`agrees | rejects | unclear`) runs first. When that is unclear, `ReviewFacets` returns multi-label change dimensions. The fast-path commands `/confirm`, `/revise` and `/stop` bypass S1 entirely.
 - **Fallback:** below threshold, the input falls back to System 2 interpretation. The harness never assumes an intent.
 
-#### 4. `ExecutionProfileRecipe` (Resource Budget Routing)
+#### 4. `ExecutionProfileRecipe` (Step-Complexity Routing)
 - **Input:** the substantive request.
-- **Labels:** `STANDARD | HEAVY_COMPUTE | LARGE_MEMORY`.
-- **Function:** selects the task's sandbox budget from one fixed table (`verification/sandbox.py` `EXECUTION_BUDGETS`):
+- **Labels (predicted step complexity):** `WITHIN_10M_STEPS | WITHIN_100M_STEPS | BEYOND_100M_STEPS`. A step is one executed Python bytecode instruction, the order of magnitude "the most direct correct computation" would take.
+- **Function:** the prediction selects a budget from one fixed table (`verification/sandbox.py` `EXECUTION_BUDGETS`):
 
-  | Tier | Time per program | Memory |
-  |---|---|---|
-  | `STANDARD` | 15 s | 256 MB |
-  | `HEAVY_COMPUTE` | 90 s | 512 MB |
-  | `LARGE_MEMORY` | 30 s | 2 GB |
+  | Prediction | Tier | Step budget | Memory | Wall-clock safety |
+  |---|---|---|---|---|
+  | `WITHIN_10M_STEPS` | `STANDARD` | 10,000,000 | 256 MB | 30 s |
+  | `WITHIN_100M_STEPS` | `HEAVY_COMPUTE` | 100,000,000 | 512 MB | 120 s |
+  | `BEYOND_100M_STEPS` | `HEAVY_COMPUTE` | 100,000,000 | 512 MB | 120 s |
 
-- **One source of truth:** the same budget is enforced by the session sandbox and declared to System 2 in `AVAILABLE_EXECUTION_TOOLS`, so the solver plans against the resources it actually has, the way a control model knows its own compute. The event `EXECUTION_PROFILE_ROUTED` records the tier; graders re-run code with at least that budget.
-- **Resources only:** System 1 never decides the answer, the method, or whether code is written. The roadmap's `SYMBOLIC_ONLY` label is deliberately not built: declaring "symbolic only" would tell the solver not to write code, which is method guidance (GUARD-04), not a budget.
-- **Fallback:** System 1 absent, below the gate, failing, or returning an unknown label yields `STANDARD`. Budgets are per tier, never per task or prompt.
+- **Prediction routes, the counter decides:** the sandbox counts steps deterministically (an opcode trace installed before model code runs). On the first step past the budget the process exits (`step_budget_exceeded`); the program cannot catch it, and changing the tracer is denied by an audit hook. One-line loops, comprehensions, threads started through `threading`, and standard-library code written in Python all count. Work inside built-in functions is not counted in steps; the wall-clock limit bounds it. Tracing slows pure-Python code by about 27x, which affects only the wall-clock, never the step budget.
+- **One source of truth:** the budget the sandbox enforces is the budget declared to System 2 in `AVAILABLE_EXECUTION_TOOLS`, so impossibility is a checkable fact relative to a known budget, as a control model knows its own compute. `EXECUTION_PROFILE_ROUTED` records the prediction and budget; `SANDBOX_RUN` records whether the budget was exceeded; graders re-run code under the same budget.
+- **`BEYOND_100M_STEPS` is recorded, not refused:** the task gets the largest budget and the step counter decides. Comparing the recorded predictions with measured outcomes is how the prediction earns trust before it could ever gate a refusal; a prediction is not proof that no efficient method exists.
+- **Resources only:** System 1 never decides the answer, the method, or whether code is written (there is no "symbolic only" label: declaring it would be method guidance, GUARD-04). System 1 absent, below the gate, failing, or returning an unknown label yields `STANDARD`.
 
 ---
 
