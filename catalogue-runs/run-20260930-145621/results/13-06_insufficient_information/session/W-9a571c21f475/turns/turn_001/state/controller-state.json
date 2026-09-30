@@ -1,0 +1,32 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-24bdbabe27",
+  "stage": "WAITING_INPUT",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-24bdbabe27-P1",
+    "body": "OPTIMIZE the database query for maximum performance.\nIDENTIFY the target table(s) and columns referenced in the query.\nANALYZE current execution plan and indexes.\nRECOMMEND rewrites such as selecting only needed columns, adding appropriate indexes, and restructuring joins.\nENSURE the optimized query returns the same result set as the original.\nOUTPUT the revised SQL statement and a brief explanation of the performance improvements.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-24bdbabe27-R1",
+    "body": "IDENTIFY the target table(s) and columns referenced in the query.\nANALYZE the current execution plan and existing indexes.\nRECOMMEND query rewrites such as selecting only needed columns, adding appropriate indexes, and restructuring joins.\nVERIFY that the optimized query returns the same result set as the original.\nOUTPUT the revised SQL statement and a brief explanation of the performance improvements.",
+    "confirmed": true,
+    "source_prompt_id": "I-24bdbabe27-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": {
+    "input_id": "X-142da284e4",
+    "expected_type": "string",
+    "description": "Please provide the full original SQL query to be optimized, replacing the placeholder \"???\" with the actual SELECT state"
+  },
+  "in_flight_action": null
+}

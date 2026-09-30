@@ -1,0 +1,34 @@
+{
+  "id": "11-01",
+  "category": "cross_domain_composition",
+  "file": "11_cross_domain_composition/log_parse_diagnose_fix.txt",
+  "difficulty": "hard",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 41.72,
+  "start_time": "2026-09-30T19:00:09.739740+00:00",
+  "session_id": "catalogue-11-01-1790794809",
+  "transcript_file": "results\\11-01_log_parse_diagnose_fix\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-03",
+    "PDL-08"
+  ],
+  "tags": [
+    "log-parsing",
+    "diagnosis",
+    "patching"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null
+}

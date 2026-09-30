@@ -1,0 +1,108 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-150009\results\12-05_oauth2_pkce_flow\session\catalogue-12-05-1790795208\worker-progress.log]
+[api] response received in 1248ms
+[api] response received in 3457ms
+Prompt Pseudocode
+
+READ the OAuth2 Authorization Code Flow with PKCE requirements
+GENERATE a code_verifier (43-128 character random string)
+DERIVE a code_challenge using S256 hash of the code_verifier
+BUILD the authorization URL with parameters: client_id, redirect_uri, code_challenge, code_challenge_method, response_type, scope, state
+INCLUDE CSRF protection via the state parameter
+AFTER receiving the authorization code, POST to the token endpoint with the code, code_verifier, client_id, redirect_uri, grant_type=authorization_code to obtain access and refresh tokens
+IMPLEMENT token refresh by POSTing to the token endpoint with refresh_token and grant_type=refresh_token
+USE only the standard library modules: urllib, hashlib, secrets, base64
+PROVIDE a test that verifies the code_challenge is correctly derived from the code_verifier per RFC 7636
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-150009\results\12-05_oauth2_pkce_flow\session\catalogue-12-05-1790795208\worker-progress.log]
+[api] response received in 1461ms
+Response Plan Pseudocode
+
+READ the OAuth2 Authorization Code Flow with PKCE requirements
+GENERATE a code_verifier as a random string of 43-128 characters using the standard library
+DERIVE a code_challenge by applying an S256 hash to the code_verifier and encoding it with base64 URL-safe format
+BUILD the authorization URL including client_id, redirect_uri, code_challenge, code_challenge_method=S256, response_type=code, scope, and a randomly generated state parameter for CSRF protection
+REDIRECT the user agent to the authorization URL and await the redirect containing the authorization code
+POST to the token endpoint with grant_type=authorization_code, the received code, code_verifier, client_id, and redirect_uri to obtain access and refresh tokens
+POST to the token endpoint with grant_type=refresh_token, the refresh_token, and client_id to refresh the access token when needed
+PROVIDE a test that creates a known code_verifier, computes the expected code_challenge per RFC 7636, runs the DERIVE step, and asserts that the derived code_challenge matches the expected value
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-150009\results\12-05_oauth2_pkce_flow\session\catalogue-12-05-1790795208\worker-progress.log]
+[api] response received in 16874ms
+import base64, hashlib, secrets, urllib.parse, urllib.request
+
+# Configuration (replace with real values when using)
+CLIENT_ID = 'your_client_id'
+REDIRECT_URI = 'https://example.com/callback'
+AUTH_ENDPOINT = 'https://provider.com/oauth2/authorize'
+TOKEN_ENDPOINT = 'https://provider.com/oauth2/token'
+SCOPE = 'openid profile email'
+
+def generate_code_verifier(length: int = 64) -> str:
+    # PKCE requires 43-128 characters; use URL-safe base64 without padding
+    verifier = secrets.token_urlsafe(length)
+    return verifier[:max(43, min(128, len(verifier)))]
+
+def derive_code_challenge(verifier: str) -> str:
+    sha256 = hashlib.sha256(verifier.encode('utf-8')).digest()
+    challenge = base64.urlsafe_b64encode(sha256).decode('utf-8').rstrip('=')
+    return challenge
+
+def build_authorization_url(client_id: str, redirect_uri: str, code_challenge: str, state: str, scope: str) -> str:
+    params = {
+        'response_type': 'code',
+        'client_id': client_id,
+        'redirect_uri': redirect_uri,
+        'scope': scope,
+        'code_challenge': code_challenge,
+        'code_challenge_method': 'S256',
+        'state': state,
+    }
+    return f"{AUTH_ENDPOINT}?{urllib.parse.urlencode(params)}"
+
+def exchange_code_for_tokens(code: str, code_verifier: str, client_id: str, redirect_uri: str) -> dict:
+    data = urllib.parse.urlencode({
+        'grant_type': 'authorization_code',
+        'code': code,
+        'redirect_uri': redirect_uri,
+        'client_id': client_id,
+        'code_verifier': code_verifier,
+    }).encode('utf-8')
+    req = urllib.request.Request(TOKEN_ENDPOINT, data=data)
+    with urllib.request.urlopen(req) as resp:
+        return json.loads(resp.read().decode())
+
+def refresh_access_token(refresh_token: str, client_id: str) -> dict:
+    data = urllib.parse.urlencode({
+        'grant_type': 'refresh_token',
+        'refresh_token': refresh_token,
+        'client_id': client_id,
+    }).encode('utf-8')
+    req = urllib.request.Request(TOKEN_ENDPOINT, data=data)
+    with urllib.request.urlopen(req) as resp:
+        return json.loads(resp.read().decode())
+
+# -------------------- Test --------------------
+import unittest, json
+
+class TestPKCE(unittest.TestCase):
+    def test_code_challenge_derivation(self):
+        # Example from RFC 7636 Appendix B
+        verifier = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk'
+        expected_challenge = 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM'
+        self.assertEqual(derive_code_challenge(verifier), expected_challenge)
+
+if __name__ == '__main__':
+    unittest.main()
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

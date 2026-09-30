@@ -1,0 +1,17 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Parse the provided application error log to identify the root cause (TimeoutError when calling Stripe API), diagnose the failure, and produce a corrected version of the payment service that implements retry with exponential backoff, a circuit breaker pattern, and uses an idempotency key to prevent double charges on retry. The fix must modify the PaymentService and related gateway code, preserving existing interfaces such as process_payment and charge, and retain handling of order failures.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "PaymentService",
+    "process_payment",
+    "stripe_gateway",
+    "charge",
+    "TimeoutError",
+    "OrderService",
+    "complete_order",
+    "OrderFailedException",
+    "ORD-7842"
+  ]
+}

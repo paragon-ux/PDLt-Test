@@ -1,0 +1,26 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "CREATE a new table named addresses with columns id INT PK, user_id INT FK->users, street TEXT, city TEXT, state TEXT, zip TEXT, is_primary BOOL.\nADD a column shipping_address_id INT FK->addresses to the orders table.\nGENERATE forward migration SQL that includes the CREATE TABLE statement for addresses, the ALTER TABLE statement for orders, and any necessary constraint definitions.\nGENERATE rollback migration SQL that drops the shipping_address_id column from orders and drops the addresses table, restoring original schema.\nWRITE a backfill script that inserts a default address record for each existing user using placeholder data for street, city, state, zip, and sets is_primary to TRUE, then updates each order to reference the newly created address via shipping_address_id.\nCREATE a validation query that confirms no orders have a shipping_address_id value referencing a non‑existent address record after migration.\nPROVIDE all generated SQL statements, the backfill script, and the validation query as separate output sections."
+  ,
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "users",
+    "orders",
+    "addresses",
+    "id",
+    "INT",
+    "PK",
+    "TEXT",
+    "user_id",
+    "FK->users",
+    "shipping_address_id",
+    "FK->addresses",
+    "is_primary",
+    "BOOL",
+    "forward migration SQL",
+    "rollback migration SQL",
+    "backfill script",
+    "placeholder data",
+    "validation query"
+  ]
+}

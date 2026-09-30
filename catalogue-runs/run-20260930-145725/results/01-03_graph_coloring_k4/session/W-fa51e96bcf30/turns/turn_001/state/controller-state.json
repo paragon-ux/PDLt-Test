@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-538bf2b6ed",
+  "stage": "CLOSED_CANCELLED",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-538bf2b6ed-P1",
+    "body": "FIND a valid 4‑coloring of the wheel graph W_11 using colors {1,2,3,4} such that adjacent nodes receive different colors.\nPROVE that a 3‑coloring is insufficient because the odd peripheral cycle together with the hub node forces the need for a fourth color.\nINCLUDE the node identifiers W_11, 0, 1, 2, 3, 4, 11, 1, 2, 3, 4 exactly as specified.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-538bf2b6ed-R1",
+    "body": "DEFINE the wheel graph W_11 with hub node 0 and peripheral nodes 1 through 11 forming a cycle\nASSIGN colors {1,2,3,4} to nodes ensuring adjacent nodes receive different colors\n- COLOR hub node 0 with color 1\n- COLOR peripheral nodes sequentially using colors 2,3,4,2,3,4,2,3,4,2,3 to satisfy adjacency constraints on the cycle and hub edges\nVERIFY that all edges of W_11 connect nodes of different colors\nDOCUMENT the resulting color assignment for each node as the valid 4‑coloring\nPROVE that a 3‑coloring is impossible\n- NOTE that the peripheral cycle of length 11 is odd and therefore requires at least three colors\n- OBSERVE that the hub node is adjacent to every peripheral node, forcing the hub to use a color distinct from all colors used on the cycle\n- CONCLUDE that the combination of an odd peripheral cycle and the hub node forces the use of a fourth color, making a 3‑coloring insufficient\nPREPARE the proof outline referencing the node identifiers W_11, 0, 1‑11 as required",
+    "confirmed": true,
+    "source_prompt_id": "I-538bf2b6ed-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

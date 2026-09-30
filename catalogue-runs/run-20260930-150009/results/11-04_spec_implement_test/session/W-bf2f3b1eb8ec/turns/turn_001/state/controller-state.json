@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-425b7f1b27",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-425b7f1b27-P1",
+    "body": "READ the input password string\nIF the length of the password is less than 8 characters OR the password contains only letters THEN CLASSIFY the password as 'weak' AND RETURN a suggestion list including \"Increase length to at least 8 characters\" and \"Include digits or symbols\"\nELSE IF the length is between 8 and 12 characters inclusive AND the password contains at least one letter AND at least one digit THEN CLASSIFY the password as 'medium' AND RETURN a suggestion list including \"Add uppercase letters\" and \"Add special characters\" if they are missing\nELSE IF the length is greater than 12 characters AND the password contains uppercase letters, lowercase letters, digits, AND at least one special character from !@#$%^&* THEN CLASSIFY the password as 'strong' AND RETURN an empty suggestion list\nELSE CLASSIFY the password as 'medium' OR 'weak' based on which criteria are unmet and RETURN appropriate improvement suggestions",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-425b7f1b27-R1",
+    "body": "READ the input password string\nDETERMINE the password length\nEVALUATE whether the password contains only letters\nIF length < 8 OR only letters THEN CLASSIFY as 'weak' AND PREPARE suggestion list with \"Increase length to at least 8 characters\" and \"Include digits or symbols\"\nELSE IF length between 8 and 12 inclusive AND contains at least one letter AND at least one digit THEN CLASSIFY as 'medium' AND PREPARE suggestion list with \"Add uppercase letters\" and \"Add special characters\" if missing\nELSE IF length > 12 AND contains uppercase letters, lowercase letters, digits, AND at least one special character from !@#$%^&* THEN CLASSIFY as 'strong' AND PREPARE empty suggestion list\nELSE CLASSIFY as 'medium' OR 'weak' based on which criteria are unmet AND PREPARE appropriate improvement suggestions\nRETURN the classification and the corresponding suggestion list",
+    "confirmed": true,
+    "source_prompt_id": "I-425b7f1b27-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-425b7f1b27-X1",
+    "body": "19a3962f816225b13c1d3779df69997f0c536d52c35f677acfa1f66412ca6cfb",
+    "confirmed": true,
+    "source_prompt_id": "I-425b7f1b27-P1",
+    "source_plan_id": "I-425b7f1b27-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

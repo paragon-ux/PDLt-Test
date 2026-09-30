@@ -1,0 +1,5 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "READ the original Dockerfile supplied by the user\nCREATE a first stage (BUILD) using a suitable build base image (e.g., ubuntu or debian) and INSTALL build‑time dependencies such as gcc, make, libpq-dev, and any other required packages\nCOMPILE the application or perform the required build steps within the BUILD stage\nCREATE a second stage (FINAL) using a slim or distroless base image (e.g., gcr.io/distroless/base or alpine)\nCOPY only the compiled artifacts from the BUILD stage into the FINAL stage\nEXCLUDE all test files, source code, and build‑time tools from the FINAL stage\nREMOVE any unnecessary files or package manager caches to reduce layer size\nORDER the instructions to maximize Docker layer caching (e.g., place immutable dependency installations early, then copy source files, then run build commands)\nEXPLAIN each optimization applied, describing why it reduces image size or improves caching\nESTIMATE the size reduction achieved by the optimized multi‑stage image compared to the original Dockerfile image",
+  "approach_handoff": "NONE"
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-ca05159ada",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-ca05159ada-P1",
+    "body": "CREATE a new table named addresses with columns id INT PK, user_id INT FK->users, street TEXT, city TEXT, state TEXT, zip TEXT, is_primary BOOL.\nADD a column shipping_address_id INT FK->addresses to the orders table.\nGENERATE forward migration SQL that includes the CREATE TABLE statement for addresses, the ALTER TABLE statement for orders, and any necessary constraint definitions.\nGENERATE rollback migration SQL that drops the shipping_address_id column from orders and drops the addresses table, restoring original schema.\nWRITE a backfill script that inserts a default address record for each existing user using placeholder data for street, city, state, zip, and sets is_primary to TRUE, then updates each order to reference the newly created address via shipping_address_id.\nCREATE a validation query that confirms no orders have a shipping_address_id value referencing a non‑existent address record after migration.\nPROVIDE all generated SQL statements, the backfill script, and the validation query as separate output sections.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-ca05159ada-R1",
+    "body": "GENERATE forward migration SQL including CREATE TABLE addresses and ALTER TABLE orders with foreign key constraints\nGENERATE rollback migration SQL that drops shipping_address_id from orders and drops addresses table\nWRITE backfill script that inserts a default address for each existing user and updates orders to reference the new address\nCREATE validation query that checks for orders with shipping_address_id referencing non‑existent addresses\nEMIT all generated SQL statements, the backfill script, and the validation query as separate output sections",
+    "confirmed": true,
+    "source_prompt_id": "I-ca05159ada-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-ca05159ada-X1",
+    "body": "a09f18df9b19497342a653b76cd93164d60b32a7ef47fc0c24df7ed09f208928",
+    "confirmed": true,
+    "source_prompt_id": "I-ca05159ada-P1",
+    "source_plan_id": "I-ca05159ada-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

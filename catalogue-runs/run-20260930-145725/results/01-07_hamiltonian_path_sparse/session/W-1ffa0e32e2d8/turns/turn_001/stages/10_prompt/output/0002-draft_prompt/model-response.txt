@@ -1,0 +1,15 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "DETERMINE whether the undirected graph G with 12 nodes labeled 0-11 and the provided edge list contains a Hamiltonian path.\nIF a Hamiltonian path exists, OUTPUT the complete sequence of node labels representing the path.\nUSE a backtracking search with pruning to explore candidate paths.\nVERIFY that the resulting path visits all 12 nodes exactly once and that each consecutive pair of nodes in the path corresponds to a valid edge in the edge list.",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "Hamiltonian path",
+    "backtracking search",
+    "12 nodes",
+    "edge list",
+    "0",
+    "1",
+    "2",
+    "11"
+  ]
+}

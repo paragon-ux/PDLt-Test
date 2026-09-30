@@ -1,0 +1,33 @@
+{
+  "id": "11-02",
+  "category": "cross_domain_composition",
+  "file": "11_cross_domain_composition/schema_migrate_backfill.txt",
+  "difficulty": "hard",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 25.95,
+  "start_time": "2026-09-30T19:00:51.469269+00:00",
+  "session_id": "catalogue-11-02-1790794851",
+  "transcript_file": "results\\11-02_schema_migrate_backfill\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-03"
+  ],
+  "tags": [
+    "migration",
+    "SQL",
+    "backfill"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null
+}

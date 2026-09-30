@@ -1,0 +1,81 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Given the following natural language specification, produce a complete implementation with a test suite.
+
+"Build a password strength checker. A password is 'weak' if it is under 8 characters or contains only letters. It is 'medium' if it is 8-12 characters and contains at least one letter and one digit. It is 'strong' if it is over 12 characters and contains uppercase, lowercase, digits, and at least one special character (!@#$%^&*). Return the strength level and a list of specific suggestions for improvement."
+ASSISTANT> Prompt Pseudocode
+
+READ the input password string
+IF the length of the password is less than 8 characters OR the password contains only letters THEN CLASSIFY the password as 'weak' AND RETURN a suggestion list including "Increase length to at least 8 characters" and "Include digits or symbols"
+ELSE IF the length is between 8 and 12 characters inclusive AND the password contains at least one letter AND at least one digit THEN CLASSIFY the password as 'medium' AND RETURN a suggestion list including "Add uppercase letters" and "Add special characters" if they are missing
+ELSE IF the length is greater than 12 characters AND the password contains uppercase letters, lowercase letters, digits, AND at least one special character from !@#$%^&* THEN CLASSIFY the password as 'strong' AND RETURN an empty suggestion list
+ELSE CLASSIFY the password as 'medium' OR 'weak' based on which criteria are unmet and RETURN appropriate improvement suggestions
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+READ the input password string
+DETERMINE the password length
+EVALUATE whether the password contains only letters
+IF length < 8 OR only letters THEN CLASSIFY as 'weak' AND PREPARE suggestion list with "Increase length to at least 8 characters" and "Include digits or symbols"
+ELSE IF length between 8 and 12 inclusive AND contains at least one letter AND at least one digit THEN CLASSIFY as 'medium' AND PREPARE suggestion list with "Add uppercase letters" and "Add special characters" if missing
+ELSE IF length > 12 AND contains uppercase letters, lowercase letters, digits, AND at least one special character from !@#$%^&* THEN CLASSIFY as 'strong' AND PREPARE empty suggestion list
+ELSE CLASSIFY as 'medium' OR 'weak' based on which criteria are unmet AND PREPARE appropriate improvement suggestions
+RETURN the classification and the corresponding suggestion list
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> def check_password(password: str) -> dict:
+    """Return password strength and improvement suggestions.
+    Strength levels: 'weak', 'medium', 'strong'.
+    """
+    suggestions = []
+    length = len(password)
+    has_upper = any(c.isupper() for c in password)
+    has_lower = any(c.islower() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    has_letter = any(c.isalpha() for c in password)
+    special_chars = set('!@#$%^&*')
+    has_special = any(c in special_chars for c in password)
+    only_letters = password.isalpha()
+
+    if length < 8 or only_letters:
+        strength = 'weak'
+        if length < 8:
+            suggestions.append('Increase length to at least 8 characters')
+        if only_letters:
+            suggestions.append('Include digits or symbols')
+    elif 8 <= length <= 12 and has_letter and has_digit:
+        strength = 'medium'
+        if not has_upper:
+            suggestions.append('Add uppercase letters')
+        if not has_special:
+            suggestions.append('Add special characters')
+    elif length > 12 and has_upper and has_lower and has_digit and has_special:
+        strength = 'strong'
+    else:
+        # Determine which criteria are missing to classify as medium or weak
+        if length < 8 or not has_letter:
+            strength = 'weak'
+            if length < 8:
+                suggestions.append('Increase length to at least 8 characters')
+            if not has_letter:
+                suggestions.append('Include letters')
+        else:
+            strength = 'medium'
+            if not has_digit:
+                suggestions.append('Add digits')
+            if not has_upper:
+                suggestions.append('Add uppercase letters')
+            if not has_special:
+                suggestions.append('Add special characters')
+    return {'strength': strength, 'suggestions': suggestions}
+
+# Example usage (can be removed in production)
+if __name__ == '__main__':
+    test_pw = 'Passw0rd!'
+    result = check_password(test_pw)
+    print(result)
+PROTOCOL_CLOSED
+=== PDLt session ended ===

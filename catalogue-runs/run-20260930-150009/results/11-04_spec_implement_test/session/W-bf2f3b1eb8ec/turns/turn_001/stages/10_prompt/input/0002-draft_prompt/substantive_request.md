@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Build a password strength checker. Classify a password as 'weak' if it is under 8 characters or contains only letters; as 'medium' if it is 8-12 characters and contains at least one letter and one digit; as 'strong' if it is over 12 characters and contains uppercase, lowercase, digits, and at least one special character from !@#$%^&*. Return the strength level and a list of specific suggestions for improvement.
+APPROACH/RISK NOTES:

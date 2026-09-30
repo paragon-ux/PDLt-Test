@@ -1,0 +1,1 @@
+{"kind":"REQUEST_INPUT","body":"Please provide the full original SQL query to be optimized, replacing the placeholder \"???\" with the actual SELECT statement.","expected_type":"string"}

@@ -1,0 +1,16 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Profile the provided Python function find_duplicates that identifies duplicate values in a list, explain its O(n^2) time complexity, create an optimized version with better performance, measure execution time of both original and optimized functions on a list of 50000 random integers in the range [0, 10000], and verify that both produce identical sorted duplicate output.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "find_duplicates",
+    "duplicates",
+    "lst",
+    "data",
+    "50000",
+    "0",
+    "10000",
+    "sorted"
+  ]
+}

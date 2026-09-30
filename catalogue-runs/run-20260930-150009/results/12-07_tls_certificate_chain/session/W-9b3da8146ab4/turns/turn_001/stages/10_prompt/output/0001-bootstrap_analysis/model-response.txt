@@ -1,0 +1,7 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Explain the meaning of the OpenSSL verification errors \"unable to get local issuer certificate\" and \"unable to verify the first certificate\", describe why the displayed certificate chain contains only the server certificate, identify the intermediate CA certificate that is missing, and provide the exact steps to fix the issue both on the server side (including configuring the full certificate chain) and as a debugging aid (including OpenSSL commands to verify the chain and test the fix). Include the necessary OpenSSL commands for verification.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": []
+}

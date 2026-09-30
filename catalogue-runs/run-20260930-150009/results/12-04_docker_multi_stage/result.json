@@ -1,0 +1,33 @@
+{
+  "id": "12-04",
+  "category": "domain_knowledge",
+  "file": "12_domain_knowledge/docker_multi_stage.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 28.3,
+  "start_time": "2026-09-30T19:06:20.110081+00:00",
+  "session_id": "catalogue-12-04-1790795180",
+  "transcript_file": "results\\12-04_docker_multi_stage\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-03",
+    "PDL-06"
+  ],
+  "tags": [
+    "Docker",
+    "multi-stage",
+    "optimization"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null
+}

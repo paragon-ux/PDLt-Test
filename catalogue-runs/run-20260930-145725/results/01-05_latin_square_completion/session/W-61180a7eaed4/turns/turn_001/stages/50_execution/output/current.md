@@ -1,0 +1,250 @@
+# Latin square solver for the given 7x7 puzzle
+# The puzzle (0 denotes empty) is:
+# Row 1: [1, 0, 0, 0, 5, 6, 7]
+# Row 2: [0, 0, 0, 0, 0, 0, 0]
+# Row 3: [3, 0, 0, 0, 7, 0, 2]
+# Row 4: [4, 0, 0, 7, 0, 0, 0]
+# Row 5: [5, 6, 7, 1, 0, 3, 0]
+# Row 6: [0, 7, 1, 2, 0, 4, 0]
+# Row 7: [0, 0, 0, 0, 0, 0, 6]
+
+import sys
+from copy import deepcopy
+
+N = 7
+FULL_SET = set(range(1, N + 1))
+
+puzzle = [
+    [1, 0, 0, 0, 5, 6, 7],
+    [0, 0, 0, 0, 0, 0, 0],
+    [3, 0, 0, 0, 7, 0, 2],
+    [4, 0, 0, 7, 0, 0, 0],
+    [5, 6, 7, 1, 0, 3, 0],
+    [0, 7, 1, 2, 0, 4, 0],
+    [0, 0, 0, 0, 0, 0, 6],
+]
+
+def possible_values(grid, r, c):
+    if grid[r][c] != 0:
+        return set()
+    row_vals = {grid[r][j] for j in range(N) if grid[r][j] != 0}
+    col_vals = {grid[i][c] for i in range(N) if grid[i][c] != 0}
+    return FULL_SET - row_vals - col_vals
+
+def propagate(grid):
+    changed = True
+    while changed:
+        changed = False
+        for r in range(N):
+            for c in range(N):
+                if grid[r][c] == 0:
+                    opts = possible_values(grid, r, c)
+                    if len(opts) == 1:
+                        grid[r][c] = opts.pop()
+                        changed = True
+    return grid
+
+def is_valid(grid):
+    for i in range(N):
+        row = [v for v in grid[i] if v != 0]
+        col = [grid[r][i] for r in range(N) if grid[r][i] != 0]
+        if len(set(row)) != len(row) or len(set(col)) != len(col):
+            return False
+    return True
+
+def solved(grid):
+    return all(all(cell != 0 for cell in row) for row in grid)
+
+sys.setrecursionlimit(10000)
+
+def backtrack(grid):
+    grid = propagate(deepcopy(grid))
+    if not is_valid(grid):
+        return None
+    if solved(grid):
+        return grid
+    # choose cell with fewest possibilities
+    min_opts = None
+    min_pos = None
+    for r in range(N):
+        for c in range(N):
+            if grid[r][c] == 0:
+                opts = possible_values(grid, r, c)
+                if min_opts is None or len(opts) < len(min_opts):
+                    min_opts = opts
+                    min_pos = (r, c)
+    r, c = min_pos
+    for val in min_opts:
+        new_grid = deepcopy(grid)
+        new_grid[r][c] = val
+        result = backtrack(new_grid)
+        if result is not None:
+            return result
+    return None
+
+solution = backtrack(puzzle)
+if solution is None:
+    print("No solution found")
+    sys.exit(1)
+
+# Verify rows and columns are permutations of 1..7
+for idx, row in enumerate(solution):
+    assert set(row) == FULL_SET, f"Row {idx+1} is not a permutation"
+for col in range(N):
+    col_vals = [solution[row][col] for row in range(N)]
+    assert set(col_vals) == FULL_SET, f"Column {col+1} is not a permutation"
+
+print("Completed Latin square:")
+for row in solution:
+    print(row)
+
+# Witness output for the host
+import json
+witness = {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"solution": solution}}
+print("WITNESS: " + json.dumps(witness))
+
+```json
+{
+  "files": [
+    {
+      "filename": "latin_solver.py",
+      "satisfies": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5"
+      ],
+      "evidence": {
+        "path": "execution://body",
+        "section": null,
+        "observed": "# Latin square solver for the given 7x7 puzzle"
+      }
+    }
+  ],
+  "reconciliation": [
+    {
+      "requirement": "R1",
+      "status": "satisfied",
+      "evidence": {
+        "path": "execution://body",
+        "section": null,
+        "observed": "# Latin square solver for the given 7x7 puzzle"
+      }
+    },
+    {
+      "requirement": "R2",
+      "status": "satisfied",
+      "evidence": {
+        "path": "execution://body",
+        "section": null,
+        "observed": "def possible_values(grid, r, c):"
+      }
+    },
+    {
+      "requirement": "R3",
+      "status": "satisfied",
+      "evidence": {
+        "path": "execution://body",
+        "section": null,
+        "observed": "print(\\\"Completed Latin square:\\\")"
+      }
+    },
+    {
+      "requirement": "R4",
+      "status": "satisfied",
+      "evidence": {
+        "path": "execution://body",
+        "section": null,
+        "observed": "assert set(row) == FULL_SET"
+      }
+    },
+    {
+      "requirement": "R5",
+      "status": "satisfied",
+      "evidence": {
+        "path": "execution://body",
+        "section": null,
+        "observed": null,
+        "observed\":\"assert set(col_vals) == FULL_SET\"}}],": null,
+        "open_defects": []
+      }
+    }
+  ],
+  "open_defects": [],
+  "witness": {
+    "polarity": "positive",
+    "evidence": {
+      "path": "execution://witness"
+    },
+    "data": {
+      "solution": [
+        [
+          1,
+          2,
+          4,
+          3,
+          5,
+          6,
+          7
+        ],
+        [
+          2,
+          3,
+          5,
+          6,
+          4,
+          7,
+          1
+        ],
+        [
+          3,
+          1,
+          6,
+          4,
+          7,
+          5,
+          2
+        ],
+        [
+          4,
+          5,
+          2,
+          7,
+          6,
+          1,
+          3
+        ],
+        [
+          5,
+          6,
+          7,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          6,
+          7,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        [
+          7,
+          4,
+          3,
+          5,
+          1,
+          2,
+          6
+        ]
+      ]
+    },
+    "provisional": false
+  }
+}
+```

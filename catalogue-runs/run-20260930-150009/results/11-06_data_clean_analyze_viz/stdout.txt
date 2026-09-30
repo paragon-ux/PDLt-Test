@@ -1,0 +1,134 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-150009\results\11-06_data_clean_analyze_viz\session\catalogue-11-06-1790794972\worker-progress.log]
+[api] response received in 2585ms
+[api] response received in 3149ms
+Prompt Pseudocode
+
+READ the CSV data containing columns Name, Age, Salary, Department, and Start Date
+HANDLE missing or invalid values by appropriate filling, dropping, or flagging
+COMPUTE per-department statistics: count of employees, mean salary, median salary, and salary standard deviation
+CALCULATE each employee's tenure in years from Start Date to 2026-09-28
+OUTPUT a clean summary table with the computed statistics and tenure for each employee
+PREPARE data suitable for a bar chart of average salary by department
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-150009\results\11-06_data_clean_analyze_viz\session\catalogue-11-06-1790794972\worker-progress.log]
+[api] response received in 1459ms
+Response Plan Pseudocode
+
+READ the CSV data containing columns Name, Age, Salary, Department, and Start Date
+HANDLE missing or invalid values by appropriate filling, dropping, or flagging
+COMPUTE per-department statistics: count of employees, mean salary, median salary, and salary standard deviation
+CALCULATE each employee's tenure in years from Start Date to 2026-09-28
+OUTPUT a clean summary table with the computed statistics and tenure for each employee
+PREPARE data suitable for a bar chart of average salary by department
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-150009\results\11-06_data_clean_analyze_viz\session\catalogue-11-06-1790794972\worker-progress.log]
+[api] response received in 84690ms
+import csv
+import io
+import math
+from datetime import datetime
+from statistics import mean, median, stdev
+
+csv_data = """Name,Age,Salary,Department,Start Date
+Alice,30,75000,Engineering,2020-01-15
+Bob,,85000,Engineering,2019-06-01
+Charlie,28,,Marketing,2021-03-10
+Diana,35,92000,Engineering,2018-11-20
+Eve,42,78000,,2017-05-30
+Frank,29,71000,Marketing,invalid-date
+Grace,31,88000,Engineering,2020-08-12
+Hank,27,65000,Marketing,2022-01-05
+Ivy,,95000,Engineering,2019-09-15
+Jack,33,82000,Sales,2020-04-22
+,25,70000,Sales,2021-07-18
+Leo,38,91000,Engineering,2018-03-01
+"""
+
+# 1. Load and clean data
+rows = []
+reader = csv.DictReader(io.StringIO(csv_data))
+for r in reader:
+    # Flag missing name
+    if not r["Name"].strip():
+        r["Name"] = None
+    # Convert numeric fields, flag invalid
+    for field in ["Age", "Salary"]:
+        val = r[field].strip()
+        r[field] = int(val) if val.isdigit() else None
+    # Department missing -> None
+    r["Department"] = r["Department"].strip() or None
+    # Parse date, flag invalid
+    try:
+        r["Start Date"] = datetime.strptime(r["Start Date"].strip(), "%Y-%m-%d")
+    except Exception:
+        r["Start Date"] = None
+    rows.append(r)
+
+# Drop rows with critical missing Salary or Department for statistics
+valid_salary_rows = [r for r in rows if r["Salary"] is not None and r["Department"]]
+
+# 2. Per-department statistics
+stats = {}
+for dept in set(r["Department"] for r in valid_salary_rows):
+    dept_salaries = [r["Salary"] for r in valid_salary_rows if r["Department"] == dept]
+    cnt = len(dept_salaries)
+    avg = mean(dept_salaries) if cnt else None
+    med = median(dept_salaries) if cnt else None
+    std = stdev(dept_salaries) if cnt > 1 else 0.0
+    stats[dept] = {
+        "count": cnt,
+        "mean_salary": round(avg, 2) if avg is not None else None,
+        "median_salary": round(med, 2) if med is not None else None,
+        "salary_std": round(std, 2)
+    }
+
+# 3. Compute tenure
+reference_date = datetime(2026, 9, 28)
+for r in rows:
+    if r["Start Date"]:
+        delta = reference_date - r["Start Date"]
+        r["Tenure Years"] = round(delta.days / 365.25, 2)
+    else:
+        r["Tenure Years"] = None
+
+# 4. Summary table for each employee
+summary = []
+for r in rows:
+    summary.append({
+        "Name": r["Name"],
+        "Age": r["Age"],
+        "Department": r["Department"],
+        "Salary": r["Salary"],
+        "Tenure Years": r["Tenure Years"]
+    })
+
+# 5. Data for bar chart (average salary by department)
+bar_chart_data = [{"Department": dept, "Average Salary": stats[dept]["mean_salary"]} for dept in stats]
+
+# Output results (could be written to files; here we just print)
+print("Per-department statistics:")
+for dept, d in stats.items():
+    print(f"{dept}: {d}")
+
+print("
+Employee summary:")
+for s in summary:
+    print(s)
+
+print("
+Bar chart data (average salary by department):")
+for b in bar_chart_data:
+    print(b)
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

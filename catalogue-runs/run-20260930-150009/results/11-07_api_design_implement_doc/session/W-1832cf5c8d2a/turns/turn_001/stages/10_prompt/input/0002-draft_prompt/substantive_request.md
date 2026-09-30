@@ -1,0 +1,15 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Design, implement, and document a REST API for a simple bookmarks service. Define endpoints for CRUD operations on bookmarks (url, title, tags, created_at) and include search by tag. Implement the API using only Python standard library modules (http.server, json, urllib) without external frameworks. Generate an OpenAPI 3.0 specification (YAML or JSON) describing the endpoints, request/response schemas, status codes, and example values. Provide a self-contained test that starts the server, performs all CRUD operations, and verifies the responses.
+APPROACH/RISK NOTES:
+
+OPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):
+- url
+- title
+- tags
+- created_at
+- OpenAPI 3.0
+- YAML
+- JSON
+- http.server
+- json
+- urllib

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-45a06e5438",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-45a06e5438-P1",
+    "body": "READ the git history of the repository.\nIDENTIFY the commits on the 'feature' branch (including commit D and commit E) and the commits on the 'main' branch (including commit B).\nDETERMINE which commits conflict when rebasing 'feature' onto 'main', specifically locate the conflict between commit D and commit B on line 10 of config.py.\nSHOW the conflict markers that would appear in config.py during the rebase, using the standard <<<<<<<, =======, >>>>>>> format.\nEXPLAIN why the chosen resolution value for line 10 is appropriate, preserving the intent of both branches.\nINCLUDE the changes from the non‑conflicting commit E on line 20 of config.py in the final resolved file.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-45a06e5438-R1",
+    "body": "READ the git history of the repository\nIDENTIFY the commits on the feature branch (including D and E) and the commits on the main branch (including B)\nDETERMINE which commits conflict when rebasing feature onto main, locating the conflict between commit D and commit B on line 10 of config.py\nSHOW the conflict markers that would appear in config.py during the rebase using the standard <<<<<<<, =======, >>>>>>> format\nEXPLAIN why the chosen resolution value for line 10 is appropriate, preserving the intent of both branches\nINCLUDE the changes from the non‑conflicting commit E on line 20 of config.py in the final resolved file",
+    "confirmed": true,
+    "source_prompt_id": "I-45a06e5438-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-45a06e5438-X1",
+    "body": "8e67f25bd21c5556490d2bc9d9f08b125b12e0e47de9b4c731831c2e3f604e7c",
+    "confirmed": true,
+    "source_prompt_id": "I-45a06e5438-P1",
+    "source_plan_id": "I-45a06e5438-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}
