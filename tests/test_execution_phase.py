@@ -239,7 +239,19 @@ def test_declared_incomplete_without_any_attempt_is_not_accepted(tmp_path):
     reply = {"kind": "RESULT", "body": "After exhaustive search, no partition exists.", "result_ir": _incomplete_ir()}
     engine, _, executes, events = _run(tmp_path, [reply, reply], problem_class="VERIFIED_EXECUTION")
     assert len(executes) == 2 and engine.controller.state.stage == Stage.CLOSED_CANCELLED
-    assert "observed no attempt to obtain the result" in executes[1].prompt
+    assert "this attempt runs no program" in executes[1].prompt
+
+
+def test_failure_record_lists_every_attempt(tmp_path):
+    """Run 192251 01-01: the transcript showed only the final hedge, hiding that
+    attempt 1 ran a search that exhausted its step budget."""
+    search = {"kind": "RESULT", "body": "import sys\nsys.exit(125)", "result_ir": _ir()}
+    hedge = {"kind": "RESULT", "body": "The search did not finish within the step budget.",
+             "result_ir": _incomplete_ir()}
+    engine, response, executes, _ = _run(tmp_path, [search, hedge], problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 2 and engine.controller.state.stage == Stage.CLOSED_CANCELLED
+    assert "Attempt 1: python block 1 exited with code 125" in response.text
+    assert "Attempt 2: " in response.text and "this attempt runs no program" in response.text
 
 
 def test_open_requirement_without_a_defect_still_needs_a_witness(tmp_path):

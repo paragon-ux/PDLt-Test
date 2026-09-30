@@ -1122,6 +1122,7 @@ class SessionEngine:
         # Bounded repair: at most the routed tier's number of re-executions, each
         # carrying only the latest factual host findings through the
         # operator-correction channel (never as approach sources).
+        attempt_findings = [list(errors)]  # per attempt, for the published failure record
         while outcome.kind == "RESULT" and errors and repairs_used < repairs_allowed:
             repairs_used += 1
             self.workspace.append_event(
@@ -1144,6 +1145,7 @@ class SessionEngine:
                 errors, final_body = self._verify_result(
                     outcome, prompt_body, plan_body, requirements, result_ir_mode
                 )
+            attempt_findings.append(list(errors))
         self.workspace.append_event(
             "EXECUTION_ATTEMPTS",
             {"attempts": 1 + repairs_used, "repairs_used": repairs_used, "repairs_allowed": repairs_allowed,
@@ -1165,9 +1167,14 @@ class SessionEngine:
             return EngineResponse(outcome.body, traces, closed=True)
         if errors:
             self.workspace.append_event("VERIFICATION_FAILED", {"errors": errors})
+            # Every attempt is on the record: a transcript shows only the final body.
+            history = "\n".join(
+                f"Attempt {n}: {'; '.join(found) if found else 'passed verification'}"
+                for n, found in enumerate(attempt_findings, 1)
+            )
             final_body = (
                 "UNVERIFIED ANSWER: Substantive verification was not completed after repair attempts. "
-                f"Reason: {'; '.join(errors)}\n\nCandidate deliverable:\n{final_body}"
+                f"Reason: {'; '.join(errors)}\n\n{history}\n\nCandidate deliverable:\n{final_body}"
             )
             self.controller.cancel()
             if self.workspace.turn_id is not None:
@@ -1329,8 +1336,8 @@ class SessionEngine:
                     # run, an open requirement is an unattempted one, not an honest limit.
                     errors.append(
                         "Substantive verification error: the Result IR declares requirements open and carries no "
-                        "witness, but the deliverable contains no program; the host observed no attempt to "
-                        "obtain the result"
+                        "witness, but this attempt runs no program; a result can be declared not obtained only by "
+                        "an attempt that runs a program to obtain it"
                     )
                 self.workspace.append_event(
                     "VERIFICATION_NOT_APPLICABLE",
