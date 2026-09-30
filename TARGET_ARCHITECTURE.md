@@ -244,19 +244,22 @@ The harness implements these discrete, calibrated System 1 recipes (`src/pdl_tas
 
 #### 4. `ExecutionProfileRecipe` (Step-Complexity Routing)
 - **Input:** the substantive request.
-- **Labels (predicted step complexity):** `WITHIN_10M_STEPS | WITHIN_100M_STEPS | BEYOND_100M_STEPS`. A step is one executed Python bytecode instruction, the order of magnitude "the most direct correct computation" would take.
+- **Labels (predicted step complexity, ordered):** `WITHIN_100K_STEPS | WITHIN_10M_STEPS | WITHIN_100M_STEPS | BEYOND_100M_STEPS`. A step is one executed Python bytecode instruction, the order of magnitude "the most direct correct computation" would take.
 - **Function:** the prediction selects a budget from one fixed table (`verification/sandbox.py` `EXECUTION_BUDGETS`):
 
   | Prediction | Tier | Step budget | Memory | Wall-clock safety |
   |---|---|---|---|---|
+  | `WITHIN_100K_STEPS` | `MINIMAL` | 100,000 | 256 MB | 30 s |
   | `WITHIN_10M_STEPS` | `STANDARD` | 10,000,000 | 256 MB | 30 s |
   | `WITHIN_100M_STEPS` | `HEAVY_COMPUTE` | 100,000,000 | 512 MB | 120 s |
   | `BEYOND_100M_STEPS` | `HEAVY_COMPUTE` | 100,000,000 | 512 MB | 120 s |
 
+- **Weighted, not argmax:** the labels are ordered, so the granted budget is the smallest one System 1 believes suffices with cumulative probability of at least 0.85. Probability split between neighbouring magnitudes resolves to the upper one rather than failing a confidence gate. The budget is deliberately as tight as the prediction justifies: an oversized budget would let work pass that the task's complexity does not warrant, a false positive by construction. The full distribution is recorded in `EXECUTION_PROFILE_ROUTED`.
+- **No zero tier:** the smallest budget (100,000 steps) still lets a deliverable check itself by execution; a zero budget would forbid code (method guidance, GUARD-04) and disable sandbox witness reproduction.
 - **Prediction routes, the counter decides:** the sandbox counts steps deterministically (an opcode trace installed before model code runs). On the first step past the budget the process exits (`step_budget_exceeded`); the program cannot catch it, and changing the tracer is denied by an audit hook. One-line loops, comprehensions, threads started through `threading`, and standard-library code written in Python all count. Work inside built-in functions is not counted in steps; the wall-clock limit bounds it. Tracing slows pure-Python code by about 27x, which affects only the wall-clock, never the step budget.
 - **One source of truth:** the budget the sandbox enforces is the budget declared to System 2 in `AVAILABLE_EXECUTION_TOOLS`, so impossibility is a checkable fact relative to a known budget, as a control model knows its own compute. `EXECUTION_PROFILE_ROUTED` records the prediction and budget; `SANDBOX_RUN` records whether the budget was exceeded; graders re-run code under the same budget.
 - **`BEYOND_100M_STEPS` is recorded, not refused:** the task gets the largest budget and the step counter decides. Comparing the recorded predictions with measured outcomes is how the prediction earns trust before it could ever gate a refusal; a prediction is not proof that no efficient method exists.
-- **Resources only:** System 1 never decides the answer, the method, or whether code is written (there is no "symbolic only" label: declaring it would be method guidance, GUARD-04). System 1 absent, below the gate, failing, or returning an unknown label yields `STANDARD`.
+- **Resources only:** System 1 never decides the answer, the method, or whether code is written (there is no "symbolic only" label: declaring it would be method guidance, GUARD-04). System 1 absent, failing, or returning no usable distribution over the known labels yields `STANDARD`.
 
 ---
 

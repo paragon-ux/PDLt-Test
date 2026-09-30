@@ -617,7 +617,7 @@ class SessionEngine:
         from pdl_taskmaster.providers.sys1.recipes.execution_profile import ExecutionProfileRecipe
         from pdl_taskmaster.verification.sandbox import DEFAULT_BUDGET, EXECUTION_BUDGETS
 
-        prediction, tier, passed = None, "STANDARD", False
+        prediction, tier, passed, distribution = None, "STANDARD", False, {}
         if self.sys1_client is not None and self.sys1_client.is_configured:
             recipe = ExecutionProfileRecipe()
             try:
@@ -625,6 +625,7 @@ class SessionEngine:
                 result = recipe.parse_response(body, duration_ms=duration_ms)
                 routed = recipe.map_to_wire(result)
                 prediction, tier, passed = routed["prediction"], routed["tier"], result.passed_gating
+                distribution = {k: round(v, 4) for k, v in result.probabilities.items()}
             except Exception:
                 pass
         self._execution_budget = EXECUTION_BUDGETS.get(tier, DEFAULT_BUDGET)
@@ -635,6 +636,7 @@ class SessionEngine:
             "EXECUTION_PROFILE_ROUTED",
             {
                 "predicted_steps": prediction,
+                "distribution": distribution,
                 "tier": self._execution_budget.tier,
                 "passed_gating": passed,
                 "step_limit": self._execution_budget.step_limit,

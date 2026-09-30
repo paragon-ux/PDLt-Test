@@ -60,18 +60,28 @@ def _session(tmp_path, sys1, execute_body: str = "done"):
     return engine, executes, list(engine.workspace._events)
 
 
+def _dist(**probs: float) -> dict:
+    labels = {"k100": "WITHIN_100K_STEPS", "m10": "WITHIN_10M_STEPS", "m100": "WITHIN_100M_STEPS", "beyond": "BEYOND_100M_STEPS"}
+    probabilities = {labels[k]: v for k, v in probs.items()}
+    top = max(probabilities, key=probabilities.get)
+    return {"choice": top, "confidence": probabilities[top], "probabilities": probabilities}
+
+
 @pytest.mark.parametrize(
     "answer, prediction, tier",
     [
-        (_answer("WITHIN_10M_STEPS"), "WITHIN_10M_STEPS", "STANDARD"),
-        (_answer("WITHIN_100M_STEPS"), "WITHIN_100M_STEPS", "HEAVY_COMPUTE"),
-        (_answer("BEYOND_100M_STEPS"), "BEYOND_100M_STEPS", "HEAVY_COMPUTE"),
-        (_answer("WITHIN_100M_STEPS", 0.6), "WITHIN_10M_STEPS", "STANDARD"),
-        (_answer("HEAVY_COMPUTE"), "WITHIN_10M_STEPS", "STANDARD"),
+        (_dist(k100=0.95, m10=0.05), "WITHIN_100K_STEPS", "MINIMAL"),
+        (_dist(k100=0.5, m10=0.5), "WITHIN_10M_STEPS", "STANDARD"),  # split mass resolves upward
+        (_dist(k100=0.6, m10=0.2, m100=0.2), "WITHIN_100M_STEPS", "HEAVY_COMPUTE"),
+        (_dist(m100=0.9, beyond=0.1), "WITHIN_100M_STEPS", "HEAVY_COMPUTE"),
+        (_dist(k100=0.25, m10=0.25, m100=0.25, beyond=0.25), "BEYOND_100M_STEPS", "HEAVY_COMPUTE"),
+        ({"choice": "WITHIN_100K_STEPS", "confidence": 0.9}, "WITHIN_100K_STEPS", "MINIMAL"),
+        ({"choice": "WITHIN_100K_STEPS", "confidence": 0.5}, "WITHIN_10M_STEPS", "STANDARD"),
+        ({"choice": "HEAVY", "confidence": 0.99, "probabilities": {"HEAVY": 0.99}}, "WITHIN_10M_STEPS", "STANDARD"),
         ({}, "WITHIN_10M_STEPS", "STANDARD"),
     ],
 )
-def test_recipe_maps_gated_predictions_to_tiers(answer, prediction, tier):
+def test_weighted_prediction_grants_the_smallest_sufficient_budget(answer, prediction, tier):
     recipe = ExecutionProfileRecipe()
     result = recipe.parse_response({"answers": {"execution_profile": answer}})
     assert recipe.map_to_wire(result) == {"prediction": prediction, "tier": tier}
@@ -85,8 +95,8 @@ def test_solver_is_told_the_predicted_step_budget(tmp_path):
     assert "at most 100,000,000 steps" in executes[0].prompt
 
 
-@pytest.mark.parametrize("sys1", [None, PredictingSys1(None), PredictingSys1("WITHIN_100M_STEPS", 0.5)])
-def test_absent_or_uncertain_system1_means_standard(tmp_path, sys1):
+@pytest.mark.parametrize("sys1", [None, PredictingSys1(None)])
+def test_absent_system1_means_standard(tmp_path, sys1):
     engine, executes, _ = _session(tmp_path, sys1)
     assert engine._execution_budget.tier == "STANDARD"
     assert "at most 10,000,000 steps" in executes[0].prompt
@@ -134,3 +144,12 @@ def test_host_declared_tools_are_not_overridden(tmp_path):
     engine.workspace = engine._new_workspace()
     engine._route_execution_profile("anything")
     assert engine.available_execution_tools == declared
+
+
+def test_minimal_tier_is_declared_and_enforced(tmp_path):
+    engine, executes, events = _session(tmp_path, PredictingSys1("WITHIN_100K_STEPS", 0.95),
+                                        execute_body="t = 0\nfor i in range(10**6):\n    t += i")
+    routed = next(e for e in events if e["kind"] == "EXECUTION_PROFILE_ROUTED")["payload"]
+    assert routed["tier"] == "MINIMAL" and routed["distribution"]["WITHIN_100K_STEPS"] == 0.95
+    assert "at most 100,000 steps" in executes[0].prompt
+    assert next(e for e in events if e["kind"] == "SANDBOX_RUN")["payload"]["step_budget_exceeded"]

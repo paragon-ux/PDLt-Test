@@ -135,6 +135,7 @@ _MB = 1024 * 1024
 # complexity). Generic and fixed: no task, prompt or problem class has its own entry.
 # The wall-clock limit is only a safety net for work inside built-in functions.
 EXECUTION_BUDGETS: dict[str, ExecutionBudget] = {
+    "MINIMAL": ExecutionBudget("MINIMAL", 100_000, 30.0, 256 * _MB),
     "STANDARD": ExecutionBudget("STANDARD", 10_000_000, 30.0, 256 * _MB),
     "HEAVY_COMPUTE": ExecutionBudget("HEAVY_COMPUTE", 100_000_000, 120.0, 512 * _MB),
 }
