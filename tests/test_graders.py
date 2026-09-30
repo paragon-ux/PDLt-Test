@@ -274,3 +274,13 @@ def test_runner_accounts_model_calls_from_events(tmp_path):
     calls = run_catalogue.call_accounting(tmp_path)
     assert calls["total"] == 3 and calls["by_operation"]["EXECUTE"] == 2 and calls["repairs"] == 1
     assert calls["execution_attempts"]["attempts"] == 2
+
+
+def test_13_06_reads_sql_only_in_sql_context(tmp_path):
+    """Run 161942: 'read every row from the table' is prose, not a guessed table."""
+    advice = ("The database must read every row from the table.\n```sql\nSELECT a, b FROM <table>;\n"
+              "CREATE INDEX idx ON <table>(status);\n```")
+    grade = graders.grade(MANIFEST["13-06"], _published(tmp_path / "a", "RESULT", advice), PROMPTS, run_code=False)
+    assert grade["grade"] == graders.FAIL and "without asking" in grade["reason"]
+    prose_questions = "I need details taken from the table definition. Which table? Which engine?"
+    assert _g("13-06", _published(tmp_path / "b", "RESULT", prose_questions)) == graders.PASS
