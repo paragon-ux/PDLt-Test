@@ -1287,6 +1287,10 @@ def main() -> int:
     if not _is_interactive(args):
         status = runtime.host.status()
         ctrl = status.get("controller_state")
+        if ctrl is None and status.get("refused"):
+            # ADR-0019 amendment: a published boundary refusal is a complete answer.
+            print("[headless close] Session closed with a published refusal (closure=REFUSED, code 0).", file=sys.stderr, flush=True)
+            return 0
         if ctrl is not None:
             final_stage = ctrl.get("stage")
             if final_stage == "CLOSED_CANCELLED":

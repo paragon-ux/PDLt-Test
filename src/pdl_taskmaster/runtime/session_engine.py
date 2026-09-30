@@ -280,6 +280,7 @@ class EngineResponse:
     traces: list[CallTrace] = field(default_factory=list)
     bypass: bool = False
     closed: bool = False
+    refused: bool = False
 
 
 class SessionEngine:
@@ -329,6 +330,7 @@ class SessionEngine:
         self._requires_verified_execution: bool = False
         self._problem_domain: Any = None
         self._is_introspection: bool = False
+        self.refused: bool = False
         if workspace_root is None:
             self.workspace_root = Path(tempfile.mkdtemp(prefix="pdl-c0-workspaces-"))
         else:
@@ -505,6 +507,14 @@ class SessionEngine:
                 return parser(retry_text)
             except WireError:
                 raise first_error from None
+
+    def _refuse(self, text: str | None, traces: list[CallTrace], phase: str) -> EngineResponse:
+        """Close on a boundary refusal (ADR-0019 amendment): the refusal is a
+        complete, correct answer, published as-is and closed with REFUSED."""
+        assert self.workspace is not None
+        self.refused = True
+        self.workspace.append_event("PROTOCOL_REFUSED", {"phase": phase})
+        return EngineResponse(text or presentation.cancelled(), traces, closed=True, refused=True)
 
     def _publish_prompt(self) -> None:
         assert self.controller is not None and self.workspace is not None
@@ -728,8 +738,7 @@ class SessionEngine:
         compiled = self._semantic_read(substantive_request, traces)
         if compiled is None:
             self.workspace.append_event("PROTOCOL_BLOCKED", {"phase": "bootstrap"})
-            resp_text = getattr(self, "_blocked_response", None) or presentation.cancelled()
-            return EngineResponse(resp_text, traces, closed=True)
+            return self._refuse(getattr(self, "_blocked_response", None), traces, "bootstrap")
         entities = self._task_entities_cache.get((substantive_request, self._previous_deliverable), ())
         self._active_task_entities = entities
 
@@ -752,7 +761,7 @@ class SessionEngine:
                 "PROTOCOL_BLOCKED",
                 {"phase": "prompt_draft", "blocking_basis": outcome.blocking_basis},
             )
-            return EngineResponse(outcome.response, traces, closed=True)
+            return self._refuse(outcome.response, traces, "prompt_draft")
         assert outcome.prompt_body is not None
         from pdl_taskmaster.verification.plan_soundness import validate_plan_soundness
         prompt_lint = validate_plan_soundness(outcome.prompt_body)
@@ -770,7 +779,7 @@ class SessionEngine:
                     "PROTOCOL_BLOCKED",
                     {"phase": "prompt_draft", "blocking_basis": redraft.blocking_basis},
                 )
-                return EngineResponse(redraft.response, traces, closed=True)
+                return self._refuse(redraft.response, traces, "prompt_draft")
             if redraft.prompt_body is not None:
                 outcome = redraft
                 if not validate_plan_soundness(outcome.prompt_body).valid:
@@ -825,6 +834,7 @@ class SessionEngine:
         # continue in the same workspace under the next turn id. Only the prior
         # turn's confirmed deliverable carries forward; drafts, rejected plans,
         # and review dialogue are structurally unreachable in the new turn.
+        self.refused = False
         prior = self.workspace
         if (
             prior is not None
@@ -880,7 +890,7 @@ class SessionEngine:
             parser=self.bridge.parse_activation,
         )
         if decision.route == ActivationRoute.BLOCKED_BY_HIGHER_PRIORITY:
-            return EngineResponse(decision.response, traces, closed=True)
+            return self._refuse(decision.response, traces, "activation")
         if decision.route == ActivationRoute.BYPASS:
             return EngineResponse(None, traces, bypass=True)
         if decision.route == ActivationRoute.PROTOCOL_DISCUSSION:

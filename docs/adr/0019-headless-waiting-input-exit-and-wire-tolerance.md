@@ -55,3 +55,9 @@ A rejected alternative (Option B in `2026-09-29-request-clarification-routing-pa
 
 ### Tradeoffs
 * Test harnesses and CI scripts inspecting REPL process return codes must recognize code `3` alongside `0`, `1`, and `2`.
+
+---
+
+## Amendment (lean build): boundary refusals close as REFUSED with exit 0
+
+A boundary refusal (policy scope, offline sandbox, post-cutoff knowledge) is a complete and correct answer, not a protocol failure. When activation or the semantic bootstrap refuses before any controller exists, the engine records `PROTOCOL_REFUSED`, publishes the refusal text, and the headless host exits `0` with `closure=REFUSED`. This replaces the previous accidental exit `0` (no controller, fall-through) with an explicit, testable branch, and matches the frozen catalogue manifest where `13-05` expects `CLOSED_SUCCESS`. Exit `1` remains for cancellation, verification failure and fatal errors; a refusal issued *after* a controller exists (during `EXECUTE`) still cancels.

@@ -159,6 +159,7 @@ class PDLtHost:
             "workspace_id": self.engine.workspace.metadata.get("workspace_id") if self.engine.workspace else None,
             "workspace_path": str(self.engine.workspace.path) if self.engine.workspace else None,
             "controller_state": state,
+            "refused": bool(getattr(self.engine, "refused", False)),
         }
 
     def close(self) -> None:
