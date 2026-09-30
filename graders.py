@@ -255,15 +255,17 @@ def grade_latin_square(corpus: str, prompt: str) -> tuple[str, str]:
 def grade_first_fit(corpus: str, prompt: str) -> tuple[str, str]:
     cap = int(re.search(r"C\s*=\s*(\d+)", prompt).group(1))
     items = sorted(int(x) for x in re.search(r"Items\s*=\s*\[([^\]]*)\]", prompt).group(1).split(","))
-    ff_bins = 0
     remaining: list[int] = []
+    ff_packing: list[list[int]] = []
     for it in [int(x) for x in re.search(r"Items\s*=\s*\[([^\]]*)\]", prompt).group(1).split(",")]:
         for i, room in enumerate(remaining):
             if it <= room:
                 remaining[i] -= it
+                ff_packing[i].append(it)
                 break
         else:
             remaining.append(cap - it)
+            ff_packing.append([it])
     ff_bins = len(remaining)
     bins = [l for l in int_lists(corpus) if 1 <= len(l) <= 4 and sum(l) <= cap and set(l) <= set(items)]
 
@@ -284,7 +286,9 @@ def grade_first_fit(corpus: str, prompt: str) -> tuple[str, str]:
         return False
 
     optimal_ok = packs(items, ff_bins - 1, ())
-    ff_stated = re.search(rf"\b{ff_bins}\s+bins?\b", corpus, re.I) is not None
+    presented = int_lists(corpus)
+    ff_shown = any(presented[i:i + ff_bins] == ff_packing for i in range(len(presented) - ff_bins + 1))
+    ff_stated = ff_shown or re.search(rf"\b{ff_bins}\s+bins?\b", corpus, re.I) is not None
     if optimal_ok and ff_stated:
         return PASS, f"valid {ff_bins - 1}-bin packing presented and First Fit stated as {ff_bins} bins"
     return FAIL, f"optimal packing presented={optimal_ok}, First Fit={ff_bins} bins stated={ff_stated}"

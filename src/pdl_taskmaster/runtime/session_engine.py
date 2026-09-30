@@ -1126,6 +1126,7 @@ class SessionEngine:
         assert self.workspace is not None
         witness: dict[str, Any] | None = None
         failures: list[str] = []
+        self._last_program_outputs: list[str] = []
         for index, block in enumerate(_python_blocks(body), 1):
             run = self.sandbox.run_code(
                 block,
@@ -1161,6 +1162,9 @@ class SessionEngine:
             candidate = _parse_sandbox_witness(run.stdout)
             if candidate is not None:
                 witness = candidate
+            else:
+                tail = " / ".join((run.stdout or "").strip().splitlines()[-3:])[:300]
+                self._last_program_outputs.append(f"python block {index} exited 0" + (f" and printed: {tail}" if tail else " and printed nothing"))
         return witness, failures
 
     def _verify_result(
@@ -1258,7 +1262,14 @@ class SessionEngine:
                     },
                 )
             else:
-                errors.append(f"Substantive verification error: {verdict.diagnostic}")
+                observed = ""
+                if model_witness is None:
+                    outputs = getattr(self, "_last_program_outputs", [])
+                    observed = (
+                        " Host observation: " + "; ".join(outputs) + "; no line of the form `WITNESS: <json>` was printed."
+                        if outputs else " Host observation: the deliverable contains no program that ran successfully."
+                    )
+                errors.append(f"Substantive verification error: {verdict.diagnostic}{observed}")
 
         if errors:
             return errors, body

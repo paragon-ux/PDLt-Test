@@ -241,3 +241,11 @@ def test_13_02_and_13_03_accept_boundary_refusals(tmp_path):
     assert _g("13-02", _refused(tmp_path / "a", budget)) == graders.PASS
     assert _g("13-02", _refused(tmp_path / "b", "Not attempted.")) == graders.MANUAL
     assert _g("13-03", _refused(tmp_path / "c", "Outside the execution environment.")) == graders.PASS
+
+
+def test_01_06_first_fit_packing_shown_counts_as_stated():
+    prompt = (PROMPTS / MANIFEST["01-06"]["file"]).read_text(encoding="utf-8-sig")
+    shown = "First Fit: [5, 5], [5, 3], [3, 3], [7], [7]. Optimal: [5, 5], [5, 3], [3, 7], [3, 7]."
+    assert graders.grade_first_fit(shown, prompt)[0] == graders.PASS
+    wrong_ff = "First Fit: [5, 5], [5, 3], [3, 3, 7]. Optimal: [5, 5], [5, 3], [3, 7], [3, 7]."
+    assert graders.grade_first_fit(wrong_ff, prompt)[0] == graders.FAIL

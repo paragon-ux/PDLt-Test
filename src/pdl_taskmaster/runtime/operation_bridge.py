@@ -89,11 +89,17 @@ class ModelRequest:
 
 
 def _normalize_body_newlines(body: str) -> str:
-    """Normalize escaped newlines and whitespace from wire payloads.
+    """Normalize a wholly double-escaped wire payload.
 
-    Some model/provider combinations (e.g. Groq JSON mode) escape newlines as
-    literal '\\n' in string properties instead of actual linebreaks.
+    Some model/provider combinations (e.g. Groq JSON mode) escape every newline
+    as a literal '\\n' in string properties instead of an actual linebreak. That
+    case is recognised only when the body contains no real linebreak at all. A
+    body that already has linebreaks is left untouched: its '\\n' sequences are
+    content (for example escape sequences inside string literals in code), and
+    rewriting them would corrupt the deliverable.
     """
+    if "\n" in body:
+        return body
     if "\\n" in body:
         body = body.replace("\\r\\n", "\n").replace("\\n", "\n")
     if "\\t" in body:

@@ -274,3 +274,29 @@ def test_raw_newlines_inside_json_strings_are_accepted():
 
     outcome = OperationBridge(ROOT).parse_execution('{"kind": "RESULT", "body": "line one\nline two"}')
     assert outcome.body == "line one\nline two"
+
+
+def test_escape_sequences_in_code_are_not_rewritten(tmp_path):
+    """Run 145725 01-06: '\\n' inside string literals was turned into real linebreaks,
+    so the program no longer parsed and the host never ran it."""
+    body = 'import json\nmsg = "line one\\nline two"\nprint("WITNESS: " + json.dumps({"lines": msg.count("\\n") + 1}))'
+    engine, _, _, events = _run(tmp_path, [{"kind": "RESULT", "body": body, "result_ir": _ir()}],
+                                problem_class="VERIFIED_EXECUTION")
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
+    assert passed["sandbox_reproduced"]
+
+
+def test_wholly_double_escaped_payload_is_still_normalized():
+    from pdl_taskmaster.runtime.operation_bridge import _normalize_body_newlines
+
+    assert _normalize_body_newlines("READ the input\\nRETURN the result") == "READ the input\nRETURN the result"
+    assert _normalize_body_newlines('x = "a\\nb"\ny = 1') == 'x = "a\\nb"\ny = 1'
+
+
+def test_missing_witness_finding_states_what_the_host_observed(tmp_path):
+    bad = {"kind": "RESULT", "body": "print('Solutions: []')", "result_ir": _ir()}
+    _, _, executes, _ = _run(tmp_path, [bad, bad], problem_class="VERIFIED_EXECUTION")
+    correction = executes[1].prompt
+    assert "python block 1 exited 0 and printed: Solutions: []" in correction
+    assert "no line of the form `WITNESS: <json>` was printed" in correction
