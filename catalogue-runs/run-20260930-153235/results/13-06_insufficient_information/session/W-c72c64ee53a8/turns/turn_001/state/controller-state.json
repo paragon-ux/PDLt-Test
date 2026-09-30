@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-9d8dee3d2c",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-9d8dee3d2c-P1",
+    "body": "ANALYZE the provided SQL SELECT query for performance characteristics\nIDENTIFY potential bottlenecks in the query structure, including use of SELECT *, missing column lists, absent indexes, inefficient joins, and lack of query hints\nRECOMMEND improvements to maximize performance, specifying:\n- SELECT specific columns instead of SELECT *\n- ADD appropriate indexes on columns used in WHERE, JOIN, ORDER BY, and GROUP BY clauses\n- REWRITE joins to use optimal join types and ordering\n- APPLY suitable query hints or optimizer directives for the target database engine\n- SUGGEST any additional restructuring such as partitioning or query refactoring if applicable\nPROVIDE the recommendations as a concise list without executing or testing the query",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-9d8dee3d2c-R1",
+    "body": "ANALYZE the provided SQL SELECT query for performance characteristics\nIDENTIFY potential bottlenecks in the query structure, including SELECT *, missing column lists, absent indexes, inefficient joins, and lack of query hints\nGENERATE a concise list of recommendations to maximize performance, covering:\n- SELECT specific columns instead of SELECT *\n- ADD appropriate indexes on columns used in WHERE, JOIN, ORDER BY, and GROUP BY clauses\n- REWRITE joins to use optimal join types and ordering\n- APPLY suitable query hints or optimizer directives for the target database engine\n- SUGGEST additional restructuring such as partitioning or query refactoring if applicable",
+    "confirmed": true,
+    "source_prompt_id": "I-9d8dee3d2c-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-9d8dee3d2c-X1",
+    "body": "76d588ae9e4a8d2f1846300768e67ecba9b37dc6a5c711deacf5feb0f61cb874",
+    "confirmed": true,
+    "source_prompt_id": "I-9d8dee3d2c-P1",
+    "source_plan_id": "I-9d8dee3d2c-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

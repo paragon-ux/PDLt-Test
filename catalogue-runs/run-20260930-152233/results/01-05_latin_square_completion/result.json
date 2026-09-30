@@ -1,0 +1,37 @@
+{
+  "id": "01-05",
+  "category": "combinatorial_search",
+  "file": "01_combinatorial_search/latin_square_completion.txt",
+  "difficulty": "hard",
+  "expected_routing": "VERIFIED_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "verified",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 36.5,
+  "start_time": "2026-09-30T19:29:24.005348+00:00",
+  "session_id": "catalogue-01-05-1790796564",
+  "transcript_file": "results\\01-05_latin_square_completion\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/01_combinatorial_search/latin_square_completion.json",
+    "expected_behavior": null,
+    "polarity": "positive",
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "PASS",
+    "reason": "valid completion respecting all givens"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-07"
+  ],
+  "tags": [
+    "constraint-propagation",
+    "backtracking"
+  ],
+  "regression_ref": "REG-012",
+  "tester_note": null,
+  "multi_turn_script": null
+}

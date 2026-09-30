@@ -1,0 +1,1 @@
+{"kind":"PROMPT","prompt_body":"READ the sorting task specifications\nCONSTRAIN the algorithm to be comparison‑based\nCONSTRAIN the worst‑case time complexity to O(n)\nCONSTRAIN the algorithm to be stable\nCONSTRAIN the algorithm to sort in‑place using O(1) extra space\nRETURN a description of an algorithm that satisfies all listed constraints","approach_handoff":"NONE"}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-93ab853223",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-93ab853223-P1",
+    "body": "DETERMINE whether the undirected graph with nodes 0 through 11 and the given edge list contains a Hamiltonian path.\nIF a Hamiltonian path exists THEN OUTPUT the complete sequence of node labels that visits every node exactly once.\nVERIFY that the output sequence includes all 12 nodes.\nVERIFY that each consecutive pair of nodes in the sequence corresponds to a valid edge in the graph.\nIMPLEMENT the search using a backtracking algorithm with pruning to eliminate infeasible partial paths.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-93ab853223-R1",
+    "body": "PARSE the graph definition including node set and edge list\nINITIALIZE a backtracking search structure for paths\nDEFINE a recursive BACKTRACK function that:\nACCEPTS current path and visited node set\nIF path length equals total number of nodes THEN\nMARK path as a candidate Hamiltonian path\nRETURN\nFOR each neighbor of the last node in the current path DO\nIF neighbor has not been visited THEN\nEXTEND path with neighbor\nRECURSIVELY invoke BACKTRACK with updated path and visited set\nBACKTRACK (remove neighbor from path)\nAPPLY pruning heuristics to discard partial paths that cannot be extended to a full Hamiltonian path\nEXECUTE the BACKTRACK function starting from each possible start node until a candidate is found\nIF a Hamiltonian path candidate exists THEN\nVERIFY that the candidate includes all nodes exactly once\nVERIFY that each consecutive node pair corresponds to an edge in the graph\nPREPARE the sequence of node labels as the final output\nELSE\nPREPARE an indication that no Hamiltonian path exists",
+    "confirmed": true,
+    "source_prompt_id": "I-93ab853223-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-93ab853223-X1",
+    "body": "c1100bd165f226da91344a2c57714e445e87044f95080f2dc9d76025813e61b1",
+    "confirmed": true,
+    "source_prompt_id": "I-93ab853223-P1",
+    "source_plan_id": "I-93ab853223-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

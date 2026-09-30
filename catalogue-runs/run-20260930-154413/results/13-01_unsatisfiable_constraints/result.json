@@ -1,0 +1,38 @@
+{
+  "id": "13-01",
+  "category": "negative_and_impossible",
+  "file": "13_negative_and_impossible/unsatisfiable_constraints.txt",
+  "difficulty": "hard",
+  "expected_routing": "VERIFIED_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "verified",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 27.73,
+  "start_time": "2026-09-30T19:44:13.324795+00:00",
+  "session_id": "catalogue-13-01-1790797453",
+  "transcript_file": "results\\13-01_unsatisfiable_constraints\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/13_negative_and_impossible/unsatisfiable_constraints.json",
+    "expected_behavior": "Report UNSATISFIABLE with proof",
+    "polarity": "negative",
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "FAIL",
+    "reason": "does not report unsatisfiability"
+  },
+  "pdl_rules_stressed": [
+    "PDL-01",
+    "PDL-08"
+  ],
+  "tags": [
+    "negative-witness",
+    "unsatisfiable",
+    "CSP"
+  ],
+  "regression_ref": "REG-003",
+  "tester_note": null,
+  "multi_turn_script": null
+}

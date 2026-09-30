@@ -1,0 +1,65 @@
+{
+  "run_id": "run-20260930-154413",
+  "timestamp": "2026-09-30T19:44:13.324795+00:00",
+  "model": "openai/gpt-oss-120b",
+  "reasoning_effort": "low",
+  "total_prompts": 7,
+  "passed": 6,
+  "failed": 1,
+  "stage_passed": 7,
+  "manual_spot_check": [],
+  "pass_rate_pct": 85.7,
+  "total_elapsed_seconds": 59.5,
+  "ground_truth": {
+    "PASS": 6,
+    "FAIL": 1,
+    "MANUAL": 0,
+    "ERROR": 0
+  },
+  "false_positives": [
+    {
+      "id": "13-01",
+      "reason": "does not report unsatisfiability"
+    }
+  ],
+  "by_verdict": {
+    "CLOSED_SUCCESS": 6,
+    "WAITING_INPUT": 1
+  },
+  "by_category": {
+    "negative_and_impossible": {
+      "total": 7,
+      "pass": 6,
+      "fail": 1
+    }
+  },
+  "by_difficulty": {
+    "hard": {
+      "total": 3,
+      "pass": 2
+    },
+    "adversarial": {
+      "total": 3,
+      "pass": 3
+    },
+    "medium": {
+      "total": 1,
+      "pass": 1
+    }
+  },
+  "regressions_hit": [
+    {
+      "id": "13-01",
+      "regression_ref": "REG-003",
+      "verdict": "CLOSED_SUCCESS"
+    }
+  ],
+  "failures": [
+    {
+      "id": "13-01",
+      "category": "negative_and_impossible",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 27.73
+    }
+  ]
+}

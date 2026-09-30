@@ -1,0 +1,32 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-6569395ec6",
+  "stage": "WAITING_INPUT",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-6569395ec6-P1",
+    "body": "OPTIMIZE the database query for maximum performance.\nANALYZE the provided SELECT * FROM ??? statement.\nIDENTIFY inefficiencies in the query structure and execution plan.\nSUGGEST modifications to the SQL statement to improve speed, such as limiting selected columns, adding appropriate indexes, rewriting joins, and applying filters.\nENSURE the revised query returns the same result set as the original.\nREPORT the recommended query changes and the expected performance impact.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-6569395ec6-R1",
+    "body": "ANALYZE the provided SELECT statement and its execution plan\nIDENTIFY inefficiencies in query structure, column selection, joins, and indexing\nSUGGEST modifications to limit selected columns, add or adjust indexes, rewrite joins, and apply filters while preserving result semantics\nENSURE the revised query returns an equivalent result set to the original\nREPORT the recommended query changes together with the expected performance impact",
+    "confirmed": true,
+    "source_prompt_id": "I-6569395ec6-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": {
+    "input_id": "X-c445ccd074",
+    "expected_type": "string,",
+    "description": "Please provide the full original SQL query (including table names, joins, and any WHERE clauses) to be optimized."
+  },
+  "in_flight_action": null
+}

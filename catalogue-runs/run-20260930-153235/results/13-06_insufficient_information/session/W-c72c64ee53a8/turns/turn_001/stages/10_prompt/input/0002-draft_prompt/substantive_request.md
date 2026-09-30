@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+User requests optimization of a database query for maximum performance. The query provided is a SELECT * FROM ??? with unspecified table and criteria. The task involves analyzing the query structure, identifying performance bottlenecks, and recommending improvements such as selecting specific columns, adding appropriate indexes, rewriting joins, and applying query hints.
+APPROACH/RISK NOTES:

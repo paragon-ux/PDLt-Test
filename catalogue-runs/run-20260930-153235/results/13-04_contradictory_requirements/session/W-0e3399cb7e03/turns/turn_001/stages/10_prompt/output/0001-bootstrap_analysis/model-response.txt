@@ -1,0 +1,7 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "User requests a comparison-based sorting algorithm that runs in O(n) worst-case time, is stable, and sorts in-place using O(1) extra space.",
+  "approach_notes": "",
+  "risk_notes": "The request contains an infeasible constraint: a comparison-based sort cannot achieve O(n) worst-case time complexity, which conflicts with known computational lower bounds.",
+  "task_entities": []
+}

@@ -1,0 +1,9 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-154413\results\13-02_np_hard_exact_large\session\catalogue-13-02-1790797481\worker-progress.log]
+This request asks for a result that must be certified, and it is more likely than not to need more than 100,000,000 computation steps, the largest step budget of this environment. No verifier is available to certify such a result by other means, so an exact answer could not be produced or checked here and the request was not attempted. A smaller instance, or an explicitly approximate answer, fits within the environment.
+[dev:telemetry] controller stage: no_controller
+[protocol closed]

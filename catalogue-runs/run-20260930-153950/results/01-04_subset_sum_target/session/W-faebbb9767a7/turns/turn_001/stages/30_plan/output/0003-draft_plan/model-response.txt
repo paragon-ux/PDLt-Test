@@ -1,0 +1,1 @@
+{"neutral_plan_body":"READ the set S and target T\nGENERATE subsets of S using backtracking\nIF a subset sum equals T THEN EMIT the subset and VERIFY its sum\nCONTINUE until the entire search tree is explored\nCOUNT the emitted subsets\nREPORT the total count of solutions"}

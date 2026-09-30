@@ -1,0 +1,7 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Implement a sorting algorithm with the following constraints: must be comparison-based, must run in O(n) worst-case time complexity, must be stable, and must sort in-place using O(1) extra space.",
+  "approach_notes": "",
+  "risk_notes": "The request contains an impossible combination of constraints (comparison-based sort with O(n) worst-case time), which constitutes a logical conflict and may indicate a misunderstanding of algorithmic limits.",
+  "task_entities": []
+}

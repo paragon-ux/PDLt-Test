@@ -1,0 +1,13 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Execute the First Fit algorithm on the given item sequence for bin capacity C = 10, reporting the resulting packing. Determine an optimal packing that minimizes the number of bins for the same items. Report the gap between First Fit and the optimal solution, and explain why the arrival order leads First Fit to use more bins. Include a self-test that verifies both packings use all items exactly once and respect the capacity constraint.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "C = 10",
+    "Items = [5, 5, 5, 3, 3, 3, 7, 7]",
+    "First Fit",
+    "optimal packing",
+    "self-test"
+  ]
+}

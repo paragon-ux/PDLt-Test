@@ -1,0 +1,1 @@
+{"neutral_plan_body":"READ the set L of 45 distinct positive integers\nSEARCH for a collection of 15 disjoint triples (a_i, b_i, c_i) drawn from L such that a_i + b_i = c_i for each triple\nIF a valid collection of triples is found THEN PREPARE one complete example of such a partition\nELSE PREPARE a statement that no such partition exists"}

@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Create a constraint-propagation solver with backtracking that fills the provided partially completed 7x7 Latin square so that each row and each column contains the numbers 1 through 7 exactly once. The solver must output the completed square and verify that every row and column is a permutation of {1,...,7}.
+APPROACH/RISK NOTES:
