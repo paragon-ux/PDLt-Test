@@ -89,3 +89,19 @@ def compile_bootstrap_output(raw_source: str, analysis_text: str) -> tuple[str, 
     text = _UUID_SHAPE.sub(_redact_generalized, text)
     text = _LONG_HEX_RUN.sub(_redact_generalized, text)
     return text, meta
+
+
+def echoed_payload_tokens(raw_source: str | None, text: str | None) -> list[str]:
+    """EXEC-04 on the output side: payload tokens (canaries, tripwires, override
+    directives, exploit phrases) found in the untrusted source and repeated verbatim
+    in ``text``. Only tokens taken from this source count, so ordinary words in a
+    deliverable (a state named ACTIVATED, an essay about rootkits) never match."""
+    if not raw_source or not text:
+        return []
+    tokens = {
+        m.group(0)
+        for pattern in (_CANARY_OR_TRIPWIRE, _OVERRIDE_DIRECTIVE, _EXPLOIT_PHRASE)
+        for m in pattern.finditer(raw_source)
+    }
+    lowered = text.lower()
+    return sorted(t for t in tokens if t.lower() in lowered)

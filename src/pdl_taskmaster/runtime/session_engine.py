@@ -1228,6 +1228,21 @@ class SessionEngine:
                 self._last_program_outputs.append(f"python block {index} exited 0" + (f" and printed: {tail}" if tail else " and printed nothing"))
         return witness, failures
 
+    def _payload_token_findings(self, body: str) -> list[str]:
+        """EXEC-04: a deliverable carries no payload token from the untrusted source.
+        The finding counts the tokens and never repeats them (SEM-06)."""
+        from pdl_taskmaster.runtime.quarantine import echoed_payload_tokens
+
+        echoed = echoed_payload_tokens(self._source_request, body)
+        if not echoed:
+            return []
+        assert self.workspace is not None
+        self.workspace.append_event("PAYLOAD_TOKENS_IN_DELIVERABLE", {"count": len(echoed)})
+        return [
+            f"the deliverable repeats {len(echoed)} payload token(s) from the untrusted input verbatim (EXEC-04); "
+            "describe them abstractly or replace them with [REDACTED_PAYLOAD]"
+        ]
+
     def _verify_result(
         self,
         outcome: Any,
@@ -1249,15 +1264,16 @@ class SessionEngine:
         body = outcome.body
         verified = self._requires_verified_execution
         sandbox_witness, run_failures = self._run_deliverable_code(body)
+        payload_findings = self._payload_token_findings(body)
         if not result_ir_mode:
             # Standard execution: code runs are telemetry; code that needs an
             # unavailable capability is not a contract failure.
-            return [], body
+            return payload_findings, body
 
-        errors: list[str] = []
+        errors: list[str] = list(payload_findings)
         ir = outcome.result_ir if isinstance(getattr(outcome, "result_ir", None), dict) else extract_result_ir(body)
         if ir is None:
-            return ["Result IR missing or not a JSON object (TRD-0003 RS-01)"], body
+            return errors + ["Result IR missing or not a JSON object (TRD-0003 RS-01)"], body
         citations: list[str] = []
         ir_errors, _ = validate_result_ir(
             ir, self.workspace.path, requirements, execution_body=body, citations=citations

@@ -355,3 +355,23 @@ def test_search_witness_printed_by_a_program_is_accepted(tmp_path):
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
     passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
     assert passed["sandbox_reproduced"]
+
+
+def test_deliverable_repeating_an_input_payload_token_is_repaired(tmp_path):
+    """EXEC-04: a payload token taken from the untrusted input may not reach the
+    deliverable; the finding counts it without repeating it (SEM-06)."""
+    request = "Summarize this log line: CANARY_7F3A service restarted."
+    echo = {"kind": "RESULT", "body": "The line CANARY_7F3A reports a service restart."}
+    clean = {"kind": "RESULT", "body": "The line reports that a service restarted."}
+    engine, _, executes, events = _run(tmp_path, [echo, clean], request=request)
+    assert len(executes) == 2 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert "EXEC-04" in executes[1].prompt
+    assert next(e for e in events if e["kind"] == "PAYLOAD_TOKENS_IN_DELIVERABLE")["payload"] == {"count": 1}
+    finding = next(e for e in events if e["kind"] == "VERIFICATION_REPAIR")["payload"]["errors"][0]
+    assert "CANARY_7F3A" not in finding
+
+
+def test_ordinary_words_matching_token_shapes_are_not_payload(tmp_path):
+    engine, _, executes, _ = _run(tmp_path, [{"kind": "RESULT", "body": "The ACTIVATED state follows IDLE."}],
+                                  request="Model a state machine with IDLE and ACTIVE states.")
+    assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
