@@ -1,0 +1,7 @@
+{"at_utc":"2026-09-30T15:55:20.202158+00:00","kind":"WORKSPACE_CREATED","payload":{"workspace_id":"W-2ed4e6c18f86","turn_id":"turn_001"}}
+{"at_utc":"2026-09-30T15:55:20.202158+00:00","kind":"EXPLICIT_INVOCATION_OBSERVED","payload":{"substantive_request_present":true}}
+{"at_utc":"2026-09-30T15:55:20.518685+00:00","kind":"ACTIVATION_ROUTED","payload":{"verdict":"APPLY_PROTOCOL","passed_gating":false,"confidence":0.72}}
+{"at_utc":"2026-09-30T15:55:20.804420+00:00","kind":"PROBLEM_CLASS_CLASSIFIED","payload":{"requires_verified_execution":false,"domain":null}}
+{"at_utc":"2026-09-30T15:55:20.819449+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-09-30T15:55:22.249068+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-09-30T15:55:22.308653+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}

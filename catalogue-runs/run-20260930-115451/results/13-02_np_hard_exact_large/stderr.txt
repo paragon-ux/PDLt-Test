@@ -1,0 +1,1 @@
+[headless halt] Session paused at stage 'WAITING_INPUT' (input requested). Exiting (code 3).

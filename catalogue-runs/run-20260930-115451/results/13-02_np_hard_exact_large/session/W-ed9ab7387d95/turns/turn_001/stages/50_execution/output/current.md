@@ -1,0 +1,1 @@
+An ILP solver library (e.g., PuLP or OR-Tools) is required to compute the exact minimum vertex cover for the 50-node graph.
