@@ -1,0 +1,7 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Prove that the recursive function collatz_steps terminates for all non-negative integer inputs. The function is defined in Python as:\n```\ndef collatz_steps(n):\n    if n <= 1:\n        return 0\n    elif n % 2 == 0:\n        return 1 + collatz_steps(n // 2)\n    else:\n        return 1 + collatz_steps(3 * n + 1)\n``` The request asks for a mathematical proof of termination for every input n ≥ 0, covering all branches and ensuring no infinite recursion occurs.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": []
+}

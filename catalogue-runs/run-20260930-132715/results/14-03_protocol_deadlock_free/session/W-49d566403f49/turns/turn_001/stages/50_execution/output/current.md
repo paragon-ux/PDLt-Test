@@ -1,0 +1,47 @@
+Coordinator State Machine:
+- START: send PREPARE to all participants.
+- WAIT_VOTES: wait for votes from participants.
+   * on any ABORT vote -> transition to ABORT_SENT.
+   * on receiving all COMMIT votes -> transition to COMMIT_SENT.
+- COMMIT_SENT: send COMMIT to all participants, then transition to DONE.
+- ABORT_SENT: send ABORT to all participants, then transition to DONE.
+- DONE: final state.
+
+Participant State Machine:
+- IDLE: waiting for message from coordinator.
+- RECEIVE_PREPARE: upon PREPARE, decide to vote COMMIT or ABORT.
+   * send vote to coordinator, transition to WAIT_DECISION.
+- WAIT_DECISION: wait for final decision from coordinator.
+   * on COMMIT -> transition to COMMITTING.
+   * on ABORT -> transition to ABORTING.
+- COMMITTING: apply transaction, send ACK, transition to DONE.
+- ABORTING: rollback transaction, send ACK, transition to DONE.
+- DONE: final state.
+
+Argument on deadlock-freedom:
+Under the assumptions of no message loss and that all participants eventually respond, the two‑phase commit protocol is deadlock‑free. The coordinator only blocks while waiting for votes, but because all participants eventually send a vote, this wait terminates. After the decision is sent, participants also eventually receive it, so the protocol completes.
+
+Potential deadlock under message loss:
+If messages can be lost, a deadlock scenario arises when the coordinator's COMMIT (or ABORT) message is lost after participants have voted COMMIT and are waiting for the final decision. Participants remain in WAIT_DECISION indefinitely, and the coordinator, having sent the decision, assumes completion. This mismatch leads to a deadlock where some participants never finalize.
+
+Mitigation proposal:
+Introduce a timeout at participants: if a decision is not received within a bounded time after voting COMMIT, the participant assumes an ABORT (presumed abort) and rolls back. The coordinator can also timeout waiting for votes and abort the transaction. This timeout‑based presumed abort breaks the deadlock cycle.
+
+--- Result IR ---
+{
+  "files": [
+    {
+      "filename": "two_phase_commit.txt",
+      "satisfies": ["R1","R2","R3","R4","R5"],
+      "evidence": {"path": "execution://body"}
+    }
+  ],
+  "reconciliation": [
+    {"requirement": "R1", "status": "satisfied", "evidence": {"path": "execution://body"}},
+    {"requirement": "R2", "status": "satisfied", "evidence": {"path": "execution://body"}},
+    {"requirement": "R3", "status": "satisfied", "evidence": {"path": "execution://body"}},
+    {"requirement": "R4", "status": "satisfied", "evidence": {"path": "execution://body"}},
+    {"requirement": "R5", "status": "satisfied", "evidence": {"path": "execution://body"}}
+  ],
+  "open_defects": []
+}

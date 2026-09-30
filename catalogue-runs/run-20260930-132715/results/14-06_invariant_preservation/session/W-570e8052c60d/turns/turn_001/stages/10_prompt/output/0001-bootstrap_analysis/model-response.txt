@@ -1,0 +1,17 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Prove that the invariant \"At most one direction has a non-RED light at any time\" is preserved by all transitions of the traffic light controller state machines. Use induction on the number of transitions taken, and identify any assumptions required for the proof to hold.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "RED",
+    "GREEN",
+    "YELLOW",
+    "60 seconds",
+    "45 seconds",
+    "5 seconds",
+    "At most one direction has a non-RED light at any time",
+    "direction A",
+    "direction B"
+  ]
+}

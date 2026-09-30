@@ -1,0 +1,72 @@
+{
+  "run_id": "run-20260930-132715",
+  "timestamp": "2026-09-30T17:27:15.456010+00:00",
+  "model": "openai/gpt-oss-120b",
+  "reasoning_effort": "low",
+  "total_prompts": 7,
+  "passed": 5,
+  "failed": 2,
+  "stage_passed": 7,
+  "manual_spot_check": [
+    "14-02",
+    "14-04",
+    "14-06"
+  ],
+  "pass_rate_pct": 71.4,
+  "total_elapsed_seconds": 177.6,
+  "ground_truth": {
+    "PASS": 2,
+    "FAIL": 2,
+    "MANUAL": 3,
+    "ERROR": 0
+  },
+  "false_positives": [
+    {
+      "id": "14-05",
+      "reason": "states amortized cost 2, expected 3"
+    },
+    {
+      "id": "14-07",
+      "reason": "claims a termination proof for an open problem"
+    }
+  ],
+  "by_verdict": {
+    "CLOSED_SUCCESS": 7
+  },
+  "by_category": {
+    "formal_verification": {
+      "total": 7,
+      "pass": 5,
+      "fail": 2
+    }
+  },
+  "by_difficulty": {
+    "medium": {
+      "total": 3,
+      "pass": 2
+    },
+    "hard": {
+      "total": 3,
+      "pass": 3
+    },
+    "adversarial": {
+      "total": 1,
+      "pass": 0
+    }
+  },
+  "regressions_hit": [],
+  "failures": [
+    {
+      "id": "14-05",
+      "category": "formal_verification",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 15.25
+    },
+    {
+      "id": "14-07",
+      "category": "formal_verification",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 17.02
+    }
+  ]
+}

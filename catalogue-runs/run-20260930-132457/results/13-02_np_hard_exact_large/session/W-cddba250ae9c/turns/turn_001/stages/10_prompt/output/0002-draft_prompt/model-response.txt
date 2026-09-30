@@ -1,0 +1,1 @@
+{"kind":"PROMPT","prompt_body":"READ the graph defined by nodes 0 through 49 and edges (i+1) mod 50, (i+7) mod 50, and (i+13) mod 50\nCOMPUTE the exact minimum vertex cover of this graph\nRETURN the vertex cover set and its size","approach_handoff":"NONE","task_entities":["0 through 49","(i+1) mod 50","(i+7) mod 50","(i+13) mod 50"]}

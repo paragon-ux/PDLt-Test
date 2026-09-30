@@ -1,0 +1,38 @@
+{
+  "id": "14-05",
+  "category": "formal_verification",
+  "file": "14_formal_verification/amortized_analysis.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "verified",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 15.25,
+  "start_time": "2026-09-30T17:29:23.825082+00:00",
+  "session_id": "catalogue-14-05-1790789363",
+  "transcript_file": "results\\14-05_amortized_analysis\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/14_formal_verification/amortized_analysis.json",
+    "expected_behavior": "correct_amortized_analysis",
+    "polarity": null,
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "FAIL",
+    "reason": "states amortized cost 2, expected 3"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-07"
+  ],
+  "tags": [
+    "amortized",
+    "accounting",
+    "dynamic-array"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null
+}

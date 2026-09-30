@@ -1,0 +1,17 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Determine whether there exists an assignment of values from {1, 2, 3} to variables x, y, z that satisfies all given constraints: C1: x != y, C2: y != z, C3: z != x, C4: x + y + z = 4, C5: x >= y, C6: y >= z. If solutions exist, enumerate all of them; if not, provide a minimal explanation of the conflicting constraints.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "x",
+    "y",
+    "z",
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C6"
+  ]
+}

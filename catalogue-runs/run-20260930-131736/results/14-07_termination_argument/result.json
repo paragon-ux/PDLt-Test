@@ -20,8 +20,8 @@
     "note": "Ground truth available - manual or automated comparison required post-run"
   },
   "ground_truth_grade": {
-    "grade": "MANUAL",
-    "reason": "needs GOAL.md Step 5 human spot check"
+    "grade": "FAIL",
+    "reason": "claims a termination proof for an open problem"
   },
   "pdl_rules_stressed": [
     "PDL-01",

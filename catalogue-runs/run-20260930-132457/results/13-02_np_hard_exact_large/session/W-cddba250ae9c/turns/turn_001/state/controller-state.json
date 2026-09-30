@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-7d49498cef",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-7d49498cef-P1",
+    "body": "READ the graph defined by nodes 0 through 49 and edges (i+1) mod 50, (i+7) mod 50, and (i+13) mod 50\nCOMPUTE the exact minimum vertex cover of this graph\nRETURN the vertex cover set and its size",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-7d49498cef-R1",
+    "body": "READ the graph definition of nodes 0 through 49 and edges (i+1) mod 50, (i+7) mod 50, and (i+13) mod 50\nCONSTRUCT an internal representation of the graph (nodes and edges)\nAPPLY an exact minimum vertex cover algorithm to the graph representation\nCOLLECT the resulting vertex cover set\nOUTPUT the vertex cover set and its size",
+    "confirmed": true,
+    "source_prompt_id": "I-7d49498cef-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-7d49498cef-X1",
+    "body": "ecfe5b8206e06a47451a4d534973df218adb12fdf85dccd1a3d3a08645f0ebdc",
+    "confirmed": true,
+    "source_prompt_id": "I-7d49498cef-P1",
+    "source_plan_id": "I-7d49498cef-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

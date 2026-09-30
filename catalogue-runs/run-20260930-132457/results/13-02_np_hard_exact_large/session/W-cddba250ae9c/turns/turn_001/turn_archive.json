@@ -1,0 +1,220 @@
+{
+  "turn_id": "turn_001",
+  "status": "CLOSED_SUCCESS",
+  "deliverable_sha256": "ecfe5b8206e06a47451a4d534973df218adb12fdf85dccd1a3d3a08645f0ebdc",
+  "events": [
+    {
+      "at_utc": "2026-09-30T17:25:24.890734+00:00",
+      "kind": "WORKSPACE_CREATED",
+      "payload": {
+        "workspace_id": "W-cddba250ae9c",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:24.890734+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:25.176942+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 0.92
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:25.736237+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": true,
+        "domain": "general"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:25.750320+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:26.970032+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:26.985656+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:31.035858+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:31.052042+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-7d49498cef",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:31.052042+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-7d49498cef-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:31.082755+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-7d49498cef-P1"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:31.098420+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:32.520044+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:32.520044+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-7d49498cef-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:32.567933+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-7d49498cef-R1"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:32.586798+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:39.201646+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:39.218358+00:00",
+      "kind": "VERIFICATION_NOT_APPLICABLE",
+      "payload": {
+        "reason": "declared_incomplete",
+        "open_defects": 1
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:39.218358+00:00",
+      "kind": "RESULT_IR_VALIDATED",
+      "payload": {
+        "ir": {
+          "files": [],
+          "reconciliation": [
+            {
+              "requirement": "R1",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "The exact minimum vertex cover for the specified 50-node graph could not be determined within the provided computational constraints."
+              }
+            },
+            {
+              "requirement": "R2",
+              "status": "open",
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "The exact minimum vertex cover for the specified 50-node graph could not be determined within the provided computational constraints."
+              }
+            },
+            {
+              "requirement": "R3",
+              "status": "open",
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "The exact minimum vertex cover for the specified 50-node graph could not be determined within the provided computational constraints."
+              }
+            }
+          ],
+          "open_defects": [
+            {
+              "id": "D1",
+              "description": "Unable to compute the exact minimum vertex cover due to computational limits.",
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "The exact minimum vertex cover for the specified 50-node graph could not be determined within the provided computational constraints."
+              }
+            }
+          ],
+          "witness": null
+        }
+      }
+    },
+    {
+      "at_utc": "2026-09-30T17:25:39.226445+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_001",
+        "status": "CLOSED_SUCCESS"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-09-30T17:25:39.226960+00:00"
+}

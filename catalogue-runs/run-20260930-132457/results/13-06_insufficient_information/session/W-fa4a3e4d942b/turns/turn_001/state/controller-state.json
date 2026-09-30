@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-3197ac5298",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-3197ac5298-P1",
+    "body": "READ the current SELECT statement that selects all columns from the target table\nIDENTIFY the actual columns needed for the required result set\nRECOMMEND rewriting the query to explicitly list only those necessary columns\nEVALUATE existing indexes on the table and suggest adding or adjusting indexes to support the query predicates and selected columns\nSUGGEST query restructuring techniques such as limiting result sets, using appropriate JOINs, and applying WHERE clauses to filter data early\nPROVIDE guidance on optimizing the execution plan, including avoiding SELECT * and ensuring statistics are up‑to‑date\nRETURN a concise set of actionable recommendations for improving query performance",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-3197ac5298-R1",
+    "body": "READ the current SELECT statement that selects all columns from the target table\nIDENTIFY the actual columns needed for the required result set\nRECOMMEND rewriting the query to explicitly list only those necessary columns\nEVALUATE existing indexes on the table and suggest adding or adjusting indexes to support the query predicates and selected columns\nSUGGEST query restructuring techniques such as limiting result sets, using appropriate JOINs, and applying WHERE clauses to filter data early\nPROVIDE guidance on optimizing the execution plan, including avoiding SELECT * and ensuring statistics are up‑to‑date\nRETURN a concise set of actionable recommendations for improving query performance",
+    "confirmed": true,
+    "source_prompt_id": "I-3197ac5298-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-3197ac5298-X1",
+    "body": "c1ff7d7c946ca18247be7e2cd53f27be4d4fd9451f9466dfd0aabfbb64be14fc",
+    "confirmed": true,
+    "source_prompt_id": "I-3197ac5298-P1",
+    "source_plan_id": "I-3197ac5298-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

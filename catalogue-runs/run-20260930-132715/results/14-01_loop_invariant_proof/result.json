@@ -1,0 +1,39 @@
+{
+  "id": "14-01",
+  "category": "formal_verification",
+  "file": "14_formal_verification/loop_invariant_proof.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "verified",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 17.83,
+  "start_time": "2026-09-30T17:27:15.459009+00:00",
+  "session_id": "catalogue-14-01-1790789235",
+  "transcript_file": "results\\14-01_loop_invariant_proof\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/14_formal_verification/loop_invariant_proof.json",
+    "expected_behavior": "correct_loop_invariant_proof",
+    "polarity": null,
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "PASS",
+    "reason": "states total == sum(arr[:i]) with initialization, maintenance, termination and asserts"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-07",
+    "PDL-08"
+  ],
+  "tags": [
+    "loop-invariant",
+    "induction",
+    "proof"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null
+}

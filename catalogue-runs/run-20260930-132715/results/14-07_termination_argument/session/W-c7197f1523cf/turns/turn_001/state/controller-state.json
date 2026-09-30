@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-fceb47c7f5",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-fceb47c7f5-P1",
+    "body": "READ the request to prove termination of the recursive function collatz_steps for all non‑negative integer inputs\nANALYZE the function definition and its three branches (base case, even case, odd case)\nASSERT that each recursive call reduces the argument toward the base case (n ≤ 1) and that repeated application cannot produce an infinite descending sequence\nCONSTRUCT a mathematical proof that covers every possible input n ≥ 0, demonstrating that the recursion always reaches the base case and therefore terminates\nRETURN the proof without performing any actual computation or example evaluation",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-fceb47c7f5-R1",
+    "body": "READ the request to prove termination of the recursive function collatz_steps for all non‑negative integer inputs\nANALYZE the function definition and its three branches (base case, even case, odd case)\nASSERT that each recursive call reduces the argument toward the base case (n ≤ 1) and that repeated application cannot produce an infinite descending sequence\nCONSTRUCT a mathematical proof that covers every possible input n ≥ 0, demonstrating that the recursion always reaches the base case and therefore terminates\nRETURN the proof without performing any actual computation or example evaluation",
+    "confirmed": true,
+    "source_prompt_id": "I-fceb47c7f5-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-fceb47c7f5-X1",
+    "body": "2bd864200c5486911fe4b3f8b6333dc01dffb41706570d58a99b0247c0890ca7",
+    "confirmed": true,
+    "source_prompt_id": "I-fceb47c7f5-P1",
+    "source_plan_id": "I-fceb47c7f5-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

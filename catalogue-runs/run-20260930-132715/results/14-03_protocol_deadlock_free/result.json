@@ -1,0 +1,38 @@
+{
+  "id": "14-03",
+  "category": "formal_verification",
+  "file": "14_formal_verification/protocol_deadlock_free.txt",
+  "difficulty": "hard",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "verified",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 25.78,
+  "start_time": "2026-09-30T17:28:21.238237+00:00",
+  "session_id": "catalogue-14-03-1790789301",
+  "transcript_file": "results\\14-03_protocol_deadlock_free\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/14_formal_verification/protocol_deadlock_free.json",
+    "expected_behavior": "correct_analysis_with_caveat",
+    "polarity": null,
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "PASS",
+    "reason": "deadlock-free under the assumptions, blocks under message loss, timeout mitigation"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-07"
+  ],
+  "tags": [
+    "2PC",
+    "deadlock",
+    "state-machine"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null
+}

@@ -1,0 +1,39 @@
+{
+  "id": "14-02",
+  "category": "formal_verification",
+  "file": "14_formal_verification/type_system_soundness.txt",
+  "difficulty": "hard",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "verified",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 47.42,
+  "start_time": "2026-09-30T17:27:33.791840+00:00",
+  "session_id": "catalogue-14-02-1790789253",
+  "transcript_file": "results\\14-02_type_system_soundness\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/14_formal_verification/type_system_soundness.json",
+    "expected_behavior": "correct_progress_theorem_proof",
+    "polarity": null,
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "MANUAL",
+    "reason": "progress proof has every required part; validity needs a human check"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-07",
+    "PDL-08"
+  ],
+  "tags": [
+    "type-system",
+    "progress",
+    "preservation"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null
+}

@@ -12,9 +12,9 @@
 | Metric | Value |
 |--------|-------|
 | Total Prompts | 1 |
-| Passed | 1 |
-| Failed | 0 |
-| **Pass Rate** | **100.0%** |
+| Passed | 0 |
+| Failed | 1 |
+| **Pass Rate** | **0.0%** |
 
 ---
 
@@ -22,7 +22,7 @@
 
 | Category | Total | Pass | Fail | Rate |
 |----------|-------|------|------|------|
-| formal_verification | 1 | 1 | 0 | 100% |
+| formal_verification | 1 | 0 | 1 | 0% |
 
 ---
 
@@ -31,10 +31,11 @@
 | Grade | Count |
 |-------|-------|
 | PASS | 0 |
-| FAIL | 0 |
-| MANUAL | 1 |
+| FAIL | 1 |
+| MANUAL | 0 |
 | ERROR | 0 |
-| **False positives** (stage pass, wrong answer) | **0** |
+| **False positives** (stage pass, wrong answer) | **1** |
+|  - 14-07 | claims a termination proof for an open problem |
 
 ---
 
@@ -42,7 +43,15 @@
 
 | Difficulty | Total | Pass | Rate |
 |-----------|-------|------|------|
-| adversarial | 1 | 1 | 100% |
+| adversarial | 1 | 0 | 0% |
+
+---
+
+## Failures
+
+| ID | Category | Verdict | Time (s) |
+|----|----------|---------|----------|
+| 14-07 | formal_verification | CLOSED_SUCCESS | 32.6 |
 
 ---
 
@@ -50,4 +59,4 @@
 
 | ID | Category | Difficulty | Verdict | Ground truth | Time (s) |
 |----|----------|-----------|---------|--------------|----------|
-| PASS 14-07 | formal_verification | adversarial | CLOSED_SUCCESS | MANUAL | 32.6 |
+| FAIL 14-07 | formal_verification | adversarial | CLOSED_SUCCESS | FAIL | 32.6 |
