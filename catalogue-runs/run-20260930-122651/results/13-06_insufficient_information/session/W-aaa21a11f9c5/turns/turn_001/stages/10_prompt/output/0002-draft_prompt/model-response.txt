@@ -1,0 +1,1 @@
+{"kind":"PROMPT","prompt_body":"READ the user request to optimize a database query\nIDENTIFY missing information: table name, schema, database engine, indexes, data volume, access patterns\nASK clarifying questions to obtain each missing piece of information\nRETURN the list of clarification questions without providing any optimization suggestions","approach_handoff":"NONE"}

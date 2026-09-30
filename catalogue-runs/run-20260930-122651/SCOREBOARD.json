@@ -1,0 +1,44 @@
+{
+  "run_id": "run-20260930-122651",
+  "timestamp": "2026-09-30T16:26:51.296957+00:00",
+  "model": "openai/gpt-oss-120b",
+  "reasoning_effort": "low",
+  "total_prompts": 7,
+  "passed": 7,
+  "failed": 0,
+  "pass_rate_pct": 100.0,
+  "total_elapsed_seconds": 132.6,
+  "ground_truth": {
+    "PASS": 1,
+    "FAIL": 0,
+    "MANUAL": 6,
+    "ERROR": 0
+  },
+  "false_positives": [],
+  "by_verdict": {
+    "CLOSED_SUCCESS": 7
+  },
+  "by_category": {
+    "negative_and_impossible": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    }
+  },
+  "by_difficulty": {
+    "hard": {
+      "total": 3,
+      "pass": 3
+    },
+    "adversarial": {
+      "total": 3,
+      "pass": 3
+    },
+    "medium": {
+      "total": 1,
+      "pass": 1
+    }
+  },
+  "regressions_hit": [],
+  "failures": []
+}

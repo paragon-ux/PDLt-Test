@@ -1,0 +1,9 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-122651\results\13-07_stale_knowledge_cutoff\session\catalogue-13-07-1790785742\worker-progress.log]
+This request exceeds the supported policy and environmental scope boundaries of this system.
+[dev:telemetry] controller stage: no_controller
+[protocol closed]

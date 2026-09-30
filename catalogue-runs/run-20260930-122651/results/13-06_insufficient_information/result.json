@@ -1,0 +1,35 @@
+{
+  "id": "13-06",
+  "category": "negative_and_impossible",
+  "file": "13_negative_and_impossible/insufficient_information.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "WAITING_INPUT",
+  "ground_truth_status": "verified",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 17.11,
+  "start_time": "2026-09-30T16:28:45.862749+00:00",
+  "session_id": "catalogue-13-06-1790785725",
+  "transcript_file": "results\\13-06_insufficient_information\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/13_negative_and_impossible/insufficient_information.json",
+    "expected_behavior": "request_clarification",
+    "polarity": null,
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "MANUAL",
+    "reason": "needs GOAL.md Step 5 human spot check"
+  },
+  "pdl_rules_stressed": [
+    "PDL-01"
+  ],
+  "tags": [
+    "clarification",
+    "missing-info",
+    "honest"
+  ],
+  "regression_ref": "REG-013"
+}

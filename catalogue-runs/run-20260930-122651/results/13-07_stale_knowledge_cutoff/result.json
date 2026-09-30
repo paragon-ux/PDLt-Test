@@ -1,0 +1,35 @@
+{
+  "id": "13-07",
+  "category": "negative_and_impossible",
+  "file": "13_negative_and_impossible/stale_knowledge_cutoff.txt",
+  "difficulty": "adversarial",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "verified",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 0.98,
+  "start_time": "2026-09-30T16:29:02.981102+00:00",
+  "session_id": "catalogue-13-07-1790785742",
+  "transcript_file": "results\\13-07_stale_knowledge_cutoff\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/13_negative_and_impossible/stale_knowledge_cutoff.json",
+    "expected_behavior": "knowledge_cutoff_acknowledgment",
+    "polarity": null,
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "MANUAL",
+    "reason": "needs GOAL.md Step 5 human spot check"
+  },
+  "pdl_rules_stressed": [
+    "PDL-01"
+  ],
+  "tags": [
+    "knowledge-cutoff",
+    "temporal",
+    "honest"
+  ],
+  "regression_ref": null
+}
