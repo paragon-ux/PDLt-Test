@@ -1087,6 +1087,7 @@ class SessionEngine:
             "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
         }
 
+        self._execution_programs_run = 0
         self._route_plan_profile(prompt_body, plan_body)
         execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools
         outcome = self._call("EXECUTE", execute_context, traces, parser=self.bridge.parse_execution)
@@ -1181,6 +1182,7 @@ class SessionEngine:
         self._last_programs_run = 0
         for index, block in enumerate(_python_blocks(body), 1):
             self._last_programs_run += 1
+            self._execution_programs_run = getattr(self, "_execution_programs_run", 0) + 1
             run = self.sandbox.run_code(
                 block,
                 timeout=self._execution_budget.timeout_seconds,
@@ -1285,9 +1287,10 @@ class SessionEngine:
                 # requirements open (with the defect recorded) claims none, so there
                 # is nothing to certify; demanding a witness would force fabrication.
                 errors.extend(run_failures)
-                if not getattr(self, "_last_programs_run", 0):
-                    # "Could not be obtained" must rest on an attempt: with no program
-                    # run, an open requirement is an unattempted one, not an honest limit.
+                if not getattr(self, "_execution_programs_run", 0):
+                    # "Could not be obtained" must rest on an attempt the host observed in
+                    # this execution (this attempt or an earlier one it is repairing): with
+                    # no program run, an open requirement is an unattempted one.
                     errors.append(
                         "Substantive verification error: the Result IR declares requirements open and carries no "
                         "witness, but the deliverable contains no program; the host observed no attempt to "
@@ -1296,7 +1299,8 @@ class SessionEngine:
                 self.workspace.append_event(
                     "VERIFICATION_NOT_APPLICABLE",
                     {"reason": "declared_incomplete", "open_defects": len(ir["open_defects"]),
-                     "programs_run": getattr(self, "_last_programs_run", 0)},
+                     "programs_run": getattr(self, "_last_programs_run", 0),
+                     "programs_run_this_execution": getattr(self, "_execution_programs_run", 0)},
                 )
             elif sandbox_witness is not None:
                 verdict = verifier.check(sandbox_witness, constraints, domain=self._problem_domain, body=body)
