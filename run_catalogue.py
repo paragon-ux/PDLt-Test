@@ -32,6 +32,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import graders
 
 _script_dir = Path(__file__).resolve().parent
 if (_script_dir / "prompts").is_dir():
@@ -48,6 +49,7 @@ PROMPTS_DIR = PDLT_TEST_ROOT / "prompts"
 MANIFEST_PATH = PROMPTS_DIR / "CATALOGUE_MANIFEST.jsonl"
 TIMEOUT_PER_PROMPT = 300
 EXIT_SUCCESS = 0
+EXIT_CANCELLED = 1
 EXIT_UNCONFIRMED = 2
 EXIT_WAITING_INPUT = 3
 
@@ -101,6 +103,7 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout):
         "--new-session",
         "--session-id", session_id,
         "--transcript", str(transcript_path),
+        "--workspace-root", str(session_dir),
         "--workdir", str(session_dir),
         "--model", model,
         "--api-reasoning-effort", reasoning_effort,
@@ -121,9 +124,7 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout):
             errors="replace",
             timeout=timeout,
             cwd=str(PDLT_TEST_ROOT),
-            env={**os.environ, "PYTHONPATH": str(
-                PDLT_TEST_ROOT.parent / "PDL-Standard-REPL-Harness" / "src"
-            ), "PYTHONIOENCODING": "utf-8"},
+            env={**os.environ, "PYTHONPATH": str(PDLT_TEST_ROOT / "src"), "PYTHONIOENCODING": "utf-8"},
         )
         exit_code = proc.returncode
         stdout = proc.stdout
@@ -146,6 +147,8 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout):
         verdict = "TIMEOUT"
     elif exit_code == EXIT_SUCCESS:
         verdict = "CLOSED_SUCCESS"
+    elif exit_code == EXIT_CANCELLED:
+        verdict = "CLOSED_CANCELLED"
     elif exit_code == EXIT_WAITING_INPUT:
         verdict = "WAITING_INPUT"
     elif exit_code == EXIT_UNCONFIRMED:
@@ -165,6 +168,12 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout):
                 "note": "Ground truth available - manual or automated comparison required post-run",
             }
 
+    if timed_out:
+        verified = entry.get("ground_truth_status") == "verified"
+        grade = {"grade": graders.FAIL if verified else graders.NA, "reason": "timeout"}
+    else:
+        grade = graders.grade(entry, result_dir, PROMPTS_DIR)
+
     result = {
         "id": prompt_id,
         "category": entry["category"],
@@ -181,6 +190,7 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout):
         "session_id": session_id,
         "transcript_file": str(transcript_path.relative_to(run_dir)),
         "ground_truth_check": ground_truth_check,
+        "ground_truth_grade": grade,
         "pdl_rules_stressed": entry.get("pdl_rules_stressed", []),
         "tags": entry.get("tags", []),
         "regression_ref": entry.get("regression_ref"),
@@ -234,6 +244,15 @@ def generate_scoreboard(results, run_dir, run_meta):
 
     passed = sum(1 for r in results if is_prompt_pass(r))
     pass_rate = (passed / total * 100) if total > 0 else 0
+    grades = [(r, (r.get("ground_truth_grade") or {}).get("grade", graders.NA)) for r in results]
+    ground_truth = {
+        g: sum(1 for _, x in grades if x == g)
+        for g in (graders.PASS, graders.FAIL, graders.MANUAL, "ERROR")
+    }
+    false_positives = [
+        {"id": r["id"], "reason": r["ground_truth_grade"].get("reason")}
+        for r, g in grades if g == graders.FAIL and is_prompt_pass(r)
+    ]
     total_time = sum(r["elapsed_seconds"] for r in results)
 
     scoreboard = {
@@ -246,6 +265,8 @@ def generate_scoreboard(results, run_dir, run_meta):
         "failed": total - passed,
         "pass_rate_pct": round(pass_rate, 1),
         "total_elapsed_seconds": round(total_time, 1),
+        "ground_truth": ground_truth,
+        "false_positives": false_positives,
         "by_verdict": by_verdict,
         "by_category": by_category,
         "by_difficulty": by_difficulty,
@@ -292,6 +313,14 @@ def generate_scoreboard(results, run_dir, run_meta):
         c = scoreboard["by_category"][cat]
         rate = (c["pass"] / c["total"] * 100) if c["total"] > 0 else 0
         lines.append(f"| {cat} | {c['total']} | {c['pass']} | {c['fail']} | {rate:.0f}% |")
+
+    lines += ["", "---", "", "## Ground Truth (evaluation-plane graders)", "",
+              "| Grade | Count |", "|-------|-------|"]
+    for g, n in scoreboard["ground_truth"].items():
+        lines.append(f"| {g} | {n} |")
+    lines.append(f"| **False positives** (stage pass, wrong answer) | **{len(scoreboard['false_positives'])}** |")
+    for fp in scoreboard["false_positives"]:
+        lines.append(f"|  - {fp['id']} | {fp['reason']} |")
 
     lines += ["", "---", "", "## By Difficulty", "",
               "| Difficulty | Total | Pass | Rate |",
@@ -399,6 +428,7 @@ def main():
             "exit_on_close": True,
             "dev_mode": True,
             "structured_output": True,
+            "gate_policy": "evaluator_confirms_via_stdin",
         },
     }
     (run_dir / "RUN_META.json").write_text(
@@ -427,12 +457,19 @@ def main():
     print(f"Results: {run_dir}")
     print(f"Scoreboard: {run_dir / 'SCOREBOARD.md'}")
 
+    gt = scoreboard["ground_truth"]
+    print(f"Ground truth: PASS={gt['PASS']} FAIL={gt['FAIL']} MANUAL={gt['MANUAL']} "
+          f"false_positives={len(scoreboard['false_positives'])}")
     if scoreboard["regressions_hit"]:
         print(f"\nKNOWN REGRESSIONS HIT: {len(scoreboard['regressions_hit'])}")
         for r in scoreboard["regressions_hit"]:
             print(f"    {r['id']} ({r['regression_ref']}): {r['verdict']}")
 
-    exit_code = 1 if (scoreboard["regressions_hit"] or (args.fail_fast and scoreboard.get("failed", 0) > 0)) else 0
+    exit_code = 1 if (
+        scoreboard["regressions_hit"]
+        or scoreboard["false_positives"]
+        or (args.fail_fast and scoreboard.get("failed", 0) > 0)
+    ) else 0
     sys.exit(exit_code)
 
 
