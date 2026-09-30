@@ -153,6 +153,7 @@ flowchart TD
     VerifyContract -- Valid --> Success["Publish Deliverable<br/>Exit Code 0 (CLOSED_SUCCESS)"]
     VerifyContract -- Invalid --> RetryOnce["Bounded Repair Loop<br/>(factual errors only; repairs per routed tier)"]
     RetryOnce --> Execute
+    RetryOnce -- "Still invalid: step/time/memory limit exceeded (once per task)" --> DraftPlan
     RetryOnce -- Still Invalid --> Failed["Exit Code 1 (CLOSED_CANCELLED)"]
 ```
 
@@ -165,7 +166,7 @@ flowchart TD
 | **Phase 2: Plan Lint** | Response Plan | Deterministic grammar lint (`plan_soundness.py`): PDL-05 no fielded prefixes, PDL-06 no code fences, PDL-08 no deferral/meta markers. **No algorithm or execution keywords.** | Clean $\to$ Plan Gate<br>Violation $\to$ one re-draft, feedback via **operator correction** (never via `CARRIED_APPROACH_SOURCES`) |
 | **Phase 3: Plan Review** | User feedback or assent | Fast-path commands, then System 1 review intent | `CONFIRM` $\to$ Phase 4<br>`REVISE_APPROACH` $\to$ re-draft Plan<br>`REVISE_TASK` $\to$ Phase 1<br>`CANCEL` $\to$ Exit `1` |
 | **Phase 4: Execution** | Confirmed Prompt & Plan | System 2 `EXECUTE` | `RESULT` $\to$ Phase 5<br>`REQUEST_INPUT` $\to$ Exit `3` |
-| **Phase 5: Verification** | Deliverable + Sandbox Stdout | Deterministic Pydantic schemas (`output_verifier.py`), with witness authority per §2.1. Result IR citation bookkeeping (verbatim quotes, section markers, one reconciliation per requirement) is recorded as `RESULT_IR_CITATION_FINDINGS`, never blocking: it describes the deliverable, it is not its correctness | Pass $\to$ Exit `0` (`CLOSED_SUCCESS`)<br>Contract failure $\to$ bounded repair (1 repair; 2 on `HEAVY_COMPUTE`) $\to$ Exit `1` |
+| **Phase 5: Verification** | Deliverable + Sandbox Stdout | Deterministic Pydantic schemas (`output_verifier.py`), with witness authority per §2.1. Result IR citation bookkeeping (verbatim quotes, section markers, one reconciliation per requirement) is recorded as `RESULT_IR_CITATION_FINDINGS`, never blocking: it describes the deliverable, it is not its correctness | Pass $\to$ Exit `0` (`CLOSED_SUCCESS`)<br>Contract failure $\to$ bounded repair (1 repair; 2 on `HEAVY_COMPUTE`) $\to$ Exit `1`<br>Repairs exhausted on a resource failure (step budget, time, memory) $\to$ back to `DRAFT_PLAN` once, with the findings as an operator correction; the new plan passes `PLAN_REVIEW` again |
 
 ### Headless Exit Codes (ADR-0019, amended)
 

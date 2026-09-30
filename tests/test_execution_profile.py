@@ -300,3 +300,55 @@ def test_repair_budgets_are_per_tier_and_fixed():
     assert {t: b.repairs for t, b in sandbox_module.EXECUTION_BUDGETS.items()} == {
         "MINIMAL": 1, "STANDARD": 1, "HEAVY_COMPUTE": 2,
     }
+
+
+def _replan_session(tmp_path, monkeypatch, execute_replies: list[dict]):
+    monkeypatch.setitem(sandbox_module.EXECUTION_BUDGETS, "STANDARD", ExecutionBudget("STANDARD", 50_000, 30, 256 << 20))
+    replies = list(execute_replies)
+    plans: list = []
+    executes: list = []
+
+    def model_call(req):
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({"kind": "ANALYSIS", "task_summary": "A task.", "approach_notes": "",
+                               "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return json.dumps({"kind": "PROMPT", "prompt_body": "COMPUTE the result", "approach_handoff": "NONE"})
+        if req.operation == "DRAFT_PLAN":
+            plans.append(req)
+            return json.dumps({"neutral_plan_body": f"DERIVE the result using approach {len(plans)}"})
+        executes.append(req)
+        return json.dumps(replies.pop(0))
+
+    dist = {"WITHIN_10M_STEPS": 0.97, "WITHIN_100K_STEPS": 0.03}
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=VerifiedPredictingSys1(dist))
+    responses = [engine.handle_user_message(m) for m in ("$confirm-with-pseudocode compute it", "/confirm", "/confirm")]
+    return engine, plans, executes, responses
+
+
+def test_resource_failure_returns_to_plan_review_with_the_findings(tmp_path, monkeypatch):
+    engine, plans, executes, responses = _replan_session(tmp_path, monkeypatch, [_STOPPED, _STOPPED, _GOOD])
+    assert len(executes) == 2 and len(plans) == 2
+    assert engine.controller.state.stage.value == "PLAN_REVIEW"
+    assert "approach 2" in responses[-1].text and not responses[-1].closed
+    assert "exceeded the 50,000-step budget" in plans[1].prompt
+    assert "OPERATOR CORRECTION (host-side execution findings)" in plans[1].prompt
+    assert "exceeded" not in plans[0].prompt
+    # the re-drafted plan needs confirmation, then executes
+    final = engine.handle_user_message("/confirm")
+    assert len(executes) == 3 and final.closed
+    assert engine.controller.state.stage.value == "CLOSED_SUCCESS"
+    assert any(e["kind"] == "EXECUTION_REPLAN" for e in engine.workspace._events)
+
+
+def test_replanning_happens_at_most_once(tmp_path, monkeypatch):
+    engine, plans, executes, _ = _replan_session(tmp_path, monkeypatch, [_STOPPED, _STOPPED, _STOPPED, _STOPPED])
+    engine.handle_user_message("/confirm")
+    assert len(plans) == 2 and len(executes) == 4
+    assert engine.controller.state.stage.value == "CLOSED_CANCELLED"
+
+
+def test_format_failures_do_not_replan(tmp_path, monkeypatch):
+    engine, plans, executes, _ = _replan_session(tmp_path, monkeypatch, [_NO_WITNESS, _NO_WITNESS])
+    assert len(plans) == 1 and len(executes) == 2
+    assert engine.controller.state.stage.value == "CLOSED_CANCELLED"

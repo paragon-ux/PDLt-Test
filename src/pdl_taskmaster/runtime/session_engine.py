@@ -210,6 +210,7 @@ class SessionEngine:
         self._source_request: str | None = None
         self._requires_verified_execution: bool = False
         self._problem_domain: Any = None
+        self._replanned = False
         self.refused: bool = False
         if workspace_root is None:
             self.workspace_root = Path(tempfile.mkdtemp(prefix="pdl-c0-workspaces-"))
@@ -695,6 +696,7 @@ class SessionEngine:
     ) -> EngineResponse:
         assert self.workspace is not None
         self._source_request = substantive_request
+        self._replanned = False
         from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
         from pdl_taskmaster.verification.checkers.base import ProblemDomain
         requires_verified = False
@@ -874,7 +876,9 @@ class SessionEngine:
             protocol_state="ACTIVE_BY_SEMANTIC_REQUEST",
         )
 
-    def _draft_plan(self, transition: Transition, traces: list[CallTrace]) -> EngineResponse:
+    def _draft_plan(
+        self, transition: Transition, traces: list[CallTrace], operator_correction: str | None = None
+    ) -> EngineResponse:
         assert self.controller is not None and self.workspace is not None
         prompt = self.controller.state.current_prompt
         assert prompt is not None
@@ -893,6 +897,7 @@ class SessionEngine:
             },
             traces,
             parser=self.bridge.parse_plan_body,
+            operator_correction=operator_correction,
         )
         soundness = validate_plan_soundness(body)
         if not soundness.valid:
@@ -908,7 +913,9 @@ class SessionEngine:
                 },
                 traces,
                 parser=self.bridge.parse_plan_body,
-                operator_correction="OPERATOR CORRECTION: " + soundness.feedback,
+                operator_correction="\n\n".join(
+                    filter(None, [operator_correction, "OPERATOR CORRECTION: " + soundness.feedback])
+                ),
             )
             residual = validate_plan_soundness(body)
             if not residual.valid:
@@ -1101,6 +1108,23 @@ class SessionEngine:
             self.controller.cancel()
             self.workspace.publish_execution_outcome(outcome.kind, outcome.body)
             return EngineResponse(outcome.body, traces, closed=True)
+        if errors and getattr(self, "_last_resource_failure", False) and not self._replanned:
+            # The confirmed plan's approach did not fit the environment's resources;
+            # re-executing the same plan cannot change the approach. Return to
+            # planning once, with the factual findings as an operator correction;
+            # the new plan passes the plan review gate again.
+            self._replanned = True
+            self.workspace.append_event("EXECUTION_REPLAN", {"errors": errors})
+            self.controller.return_to_planning()
+            self.workspace.invalidate_artifact("plan", "execution_exceeded_resources")
+            return self._draft_plan(
+                Transition(NextAction.DRAFT_PLAN, {}),
+                traces,
+                operator_correction=(
+                    "OPERATOR CORRECTION (host-side execution findings): executing the previously confirmed "
+                    "plan did not fit the execution environment: " + " | ".join(errors)
+                ),
+            )
         if errors:
             self.workspace.append_event("VERIFICATION_FAILED", {"errors": errors})
             final_body = (
@@ -1139,6 +1163,7 @@ class SessionEngine:
         witness: dict[str, Any] | None = None
         failures: list[str] = []
         self._last_program_outputs: list[str] = []
+        self._last_resource_failure = False
         for index, block in enumerate(_python_blocks(body), 1):
             run = self.sandbox.run_code(
                 block,
@@ -1159,6 +1184,8 @@ class SessionEngine:
                 },
             )
             if not run.success:
+                if run.step_budget_exceeded or run.timed_out or run.oom_killed:
+                    self._last_resource_failure = True
                 reason = (
                     f"exceeded the {self._execution_budget.step_limit:,}-step budget" if run.step_budget_exceeded
                     else "timed out" if run.timed_out
