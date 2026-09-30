@@ -30,22 +30,7 @@ During the development and optimization of the 105-prompt catalogue benchmark, p
    Specific prompt entities (`frostbitedb`, `2026-2029 nobel prize`) were hardcoded directly into deterministic regexes to bypass model evaluation and trigger immediate refusals.
 
 ### The Real-World Failure Mode: The Alice Siblings Pathology
-In session `session-20260929-234002`, the user posed a classic symbolic deduction riddle:
-> *"Alice has N brothers and she also has M sisters. How many sisters does Alice's brother have?"*
-
-Because of the architectural crutches described above:
-- The query matched `sisters?` in `_COMBINATORIAL_PATTERNS`.
-- The engine injected: `"EXECUTE a Python backtracking solver script to search for the partition triples."`
-- The model was forced to draft a plan containing `"CONSTRUCT a Python backtracking solver script"`.
-- Because Python scripts cannot execute unbound variables ($N, M$) without value assignment, the model had to **fabricate synthetic concrete values** (`N = 3, M = 4`).
-- Cornered into writing executable script code and generating a sandbox `WITNESS` dictionary, the model's logical deduction derailed into writing:
-  ```python
-  # All siblings share the same sisters, so any brother has M sisters.
-  solution = M
-  ```
-- **The model emitted $M$ instead of the correct answer $M + 1$** (Alice herself is female and is one of the brother's sisters).
-
-The harness's benchmark crutches converted a trivial symbolic logic problem into a failed numerical simulation with fabricated inputs.
+A symbolic riddle ("Alice has N brothers and M sisters; how many sisters does her brother have?") matched a combinatorial keyword, so the engine injected a backtracking-solver approach. The model, cornered into fabricating concrete values and a script, answered M instead of the correct M + 1. The crutches converted a trivial deduction into a failed simulation.
 
 ---
 
@@ -57,9 +42,10 @@ The following five invariants are binding across all code, PRs, ADRs, and runtim
 1. If the workspace `approach_sources` list is empty, `carried` MUST remain strictly empty (`carried = []`).
 2. The harness MUST NEVER synthesize, default-assign, or inject algorithmic methods, search strategies, solver types, or data structures (e.g. `"backtracking"`, `"Algorithm X"`, `"DLX"`, `"dynamic programming"`, `"MRV"`, `"partition triples"`) into `CARRIED_APPROACH_SOURCES`.
 3. The choice of solution strategy belongs entirely to the worker model based on the user's substantive prompt.
+4. Retry and lint feedback travels only through the operator-correction channel; `CARRIED_APPROACH_SOURCES` stays user-originated.
 
 ### GUARD-02: Prohibition of Benchmark Token Targeting
-1. No regular expression, keyword lookup, or deterministic classifier in `src/pdl_taskmaster/` may target specific benchmark prompt text, fictional test entities, or dataset artifacts (e.g. `frostbitedb`, `nobel prize`, `schur triples`, `family relationship`).
+1. No regular expression, keyword lookup, or deterministic classifier in `src/pdl_taskmaster/` may target problem-class vocabulary, and none may target specific benchmark prompt text, fictional test entities, or dataset artifacts (e.g. `frostbitedb`, `nobel prize`, `schur triples`, `family relationship`).
 2. Refusal classifiers (`INTERPRET_ACTIVATION`, System 1 recipes) must operate on general environmental conditions (`sandbox_network == False`, `policy_scope == "technical"`, `knowledge_cutoff`) or evaluate semantic intent via model scoring.
 3. Test fixtures testing boundary refusals must supply their parameters via environment variables or mock configs, never via hardcoded runtime production tokens.
 
@@ -77,5 +63,5 @@ The following five invariants are binding across all code, PRs, ADRs, and runtim
 2. The harness MUST NEVER attempt to "help" the model solve the problem by steering its approach or pre-selecting answers in prompt instructions.
 
 ### GUARD-05: Automated Static & Dynamic Anti-Gaming Verification
-1. All anti-overfitting invariants must be validated by automated unit tests and static linters in `tests/test_harness_anti_overfitting.py`.
-2. Any introduction of hardcoded domain strings into prompt builders, or benchmark entity names into production regexes, MUST fail `pytest` and block `pdlt verify`.
+1. All anti-overfitting invariants must be validated by automated unit tests and static linters in `tests/test_harness_anti_overfitting.py`, including a scan of `src/pdl_taskmaster/` for every prompt ID, every prompt-file stem in `prompts/CATALOGUE_MANIFEST.jsonl`, and a fixed benchmark and algorithm vocabulary.
+2. Any introduction of hardcoded domain strings into prompt builders, or benchmark entity names into production regexes, MUST fail `pytest`.
