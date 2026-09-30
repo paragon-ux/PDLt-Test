@@ -307,7 +307,7 @@ class ExecutionSandbox:
             entry_file.write_text("\n".join(content_parts), encoding="utf-8")
 
             result = self._execute_process(
-                [sys.executable, "-I", "-S", str(entry_file)],
+                [sys.executable, "-I", "-S", "-X", "utf8", str(entry_file)],
                 cwd=scratchpad_path,
                 timeout=effective_timeout,
                 memory_limit_bytes=effective_memory,
@@ -335,7 +335,7 @@ class ExecutionSandbox:
 
         with tempfile.TemporaryDirectory(prefix="pdl_sandbox_") as scratchpad:
             scratchpad_path = Path(scratchpad).resolve()
-            cmd = [sys.executable, "-I", "-S", str(resolved_script)]
+            cmd = [sys.executable, "-I", "-S", "-X", "utf8", str(resolved_script)]
             if args:
                 cmd.extend(args)
 

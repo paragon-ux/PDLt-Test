@@ -233,3 +233,24 @@ def test_open_requirement_without_a_defect_still_needs_a_witness(tmp_path):
     engine, _, executes, _ = _run(tmp_path, [reply, reply], problem_class="VERIFIED_EXECUTION")
     assert len(executes) == 2
     assert engine.controller.state.stage == Stage.CLOSED_CANCELLED
+
+
+def test_non_ascii_output_runs_on_every_platform():
+    """-I ignores PYTHONIOENCODING; UTF-8 mode keeps Windows from failing on '✓'."""
+    from pdl_taskmaster.verification.sandbox import ExecutionSandbox
+
+    run = ExecutionSandbox().run_code("print('✓ — é')", step_limit=10_000)
+    assert run.success and run.stdout.strip() == "✓ — é"
+
+
+def test_citation_bookkeeping_is_recorded_not_blocking(tmp_path):
+    ir = _ir({"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"answer": 9}})
+    ir["reconciliation"] = [{"requirement": "R1", "status": "partial",
+                             "evidence": {"path": "execution://body", "observed": "a quote that is nowhere"}}]
+    engine, _, executes, events = _run(
+        tmp_path, [{"kind": "RESULT", "body": "The answer is 9.", "result_ir": ir}], problem_class="VERIFIED_EXECUTION"
+    )
+    assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    findings = next(e for e in events if e["kind"] == "RESULT_IR_CITATION_FINDINGS")["payload"]["findings"]
+    assert any("not a verbatim substring" in f for f in findings)
+    assert any("R2 is not reconciled" in f for f in findings)

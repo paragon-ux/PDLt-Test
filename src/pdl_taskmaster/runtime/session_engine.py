@@ -1152,8 +1152,16 @@ class SessionEngine:
         ir = outcome.result_ir if isinstance(getattr(outcome, "result_ir", None), dict) else extract_result_ir(body)
         if ir is None:
             return ["Result IR missing or not a JSON object (TRD-0003 RS-01)"], body
-        ir_errors, _ = validate_result_ir(ir, self.workspace.path, requirements, execution_body=body)
+        citations: list[str] = []
+        ir_errors, _ = validate_result_ir(
+            ir, self.workspace.path, requirements, execution_body=body, citations=citations
+        )
         errors.extend(ir_errors)
+        if citations:
+            # The model's bookkeeping about its deliverable (verbatim quotes, section
+            # markers, one reconciliation per requirement) is recorded, not blocking:
+            # it is not the deliverable's correctness.
+            self.workspace.append_event("RESULT_IR_CITATION_FINDINGS", {"findings": citations})
 
         if verified:
             verifier = OutputVerifier()

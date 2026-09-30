@@ -207,13 +207,17 @@ def validate_result_ir(
     workspace_path: str | Path,
     requirements: list[str],
     execution_body: str | None = None,
+    citations: list[str] | None = None,
 ) -> tuple[list[str], dict]:
     """Mechanically validate a Result IR against the workspace filesystem.
 
     Returns (errors, normalized_ir). Empty errors means every structural,
-    coverage, and evidence-citation constraint held.
+    coverage, and evidence-citation constraint held. When ``citations`` is given,
+    coverage and evidence-citation findings (the model's bookkeeping about its
+    deliverable, not the deliverable) are appended there instead of ``errors``.
     """
     errors: list[str] = []
+    cite = citations if citations is not None else errors
     ws = Path(workspace_path).resolve()
     if not isinstance(ir, dict):
         return ["Result IR must be a JSON object"], {}
@@ -234,7 +238,7 @@ def validate_result_ir(
     recon = ir.get("reconciliation", [])
     defects = ir.get("open_defects", [])
     if requirements and not recon:
-        errors.append("'reconciliation' must be a non-empty array")
+        cite.append("'reconciliation' must be a non-empty array")
 
     # Requirement coverage: every derived ID reconciled exactly once.
     seen: dict[str, int] = {}
@@ -249,7 +253,7 @@ def validate_result_ir(
             if status not in _VALID_STATUS:
                 errors.append(f"reconciliation[{i}] ({rid}): invalid status {status!r}")
             if rid not in {f"R{j}" for j in range(1, len(requirements) + 1)}:
-                errors.append(f"reconciliation[{i}]: unknown requirement ID {rid!r}")
+                cite.append(f"reconciliation[{i}]: unknown requirement ID {rid!r}")
             ev = entry.get("evidence")
             req_idx = int(rid[1:]) - 1 if rid.startswith("R") and rid[1:].isdigit() else -1
             req_text = requirements[req_idx] if 0 <= req_idx < len(requirements) else ""
@@ -259,15 +263,15 @@ def validate_result_ir(
                 # requirement, and 'observed' is optional explanatory text or requirement echo.
                 ev_to_resolve = dict(ev)
                 ev_to_resolve.pop("observed", None)
-                _resolve_evidence(ev_to_resolve, ws, errors, f"reconciliation[{i}] ({rid})", execution_body)
+                _resolve_evidence(ev_to_resolve, ws, cite, f"reconciliation[{i}] ({rid})", execution_body)
             else:
-                _resolve_evidence(ev, ws, errors, f"reconciliation[{i}] ({rid})", execution_body)
+                _resolve_evidence(ev, ws, cite, f"reconciliation[{i}] ({rid})", execution_body)
     total = {f"R{j}" for j in range(1, len(requirements) + 1)}
     for rid in sorted(total - set(seen)):
-        errors.append(f"requirement {rid} is not reconciled")
+        cite.append(f"requirement {rid} is not reconciled")
     for rid, n in sorted(seen.items()):
         if n > 1 and rid in total:
-            errors.append(f"requirement {rid} reconciled {n} times (expected exactly once)")
+            cite.append(f"requirement {rid} reconciled {n} times (expected exactly once)")
 
     if isinstance(files, list):
         for i, f in enumerate(files, 1):
@@ -279,11 +283,11 @@ def validate_result_ir(
                 f_ev_to_resolve = dict(f_ev)
                 f_ev_to_resolve.pop("observed", None)
                 _resolve_evidence(
-                    f_ev_to_resolve, ws, errors, f"files[{i}] ({f.get('filename')})", execution_body
+                    f_ev_to_resolve, ws, cite, f"files[{i}] ({f.get('filename')})", execution_body
                 )
             else:
                 _resolve_evidence(
-                    f_ev, ws, errors, f"files[{i}] ({f.get('filename')})", execution_body
+                    f_ev, ws, cite, f"files[{i}] ({f.get('filename')})", execution_body
                 )
 
     if isinstance(defects, list):
@@ -291,7 +295,7 @@ def validate_result_ir(
             if not isinstance(d, dict) or not str(d.get("description", "")).strip():
                 errors.append(f"open_defects[{i}]: 'description' required")
                 continue
-            _resolve_evidence(d.get("evidence"), ws, errors, f"open_defects[{i}]", execution_body)
+            _resolve_evidence(d.get("evidence"), ws, cite, f"open_defects[{i}]", execution_body)
 
     witness = ir.get("witness")
     if witness is not None:
@@ -310,7 +314,7 @@ def validate_result_ir(
                     loc = ".".join(str(part) for part in err["loc"])
                     errors.append(f"'witness{('.' + loc) if loc else ''}': {err['msg']}")
             if "evidence" in witness:
-                _resolve_evidence(witness.get("evidence"), ws, errors, "witness", execution_body)
+                _resolve_evidence(witness.get("evidence"), ws, cite, "witness", execution_body)
 
     return errors, (ir if not errors else {})
 
