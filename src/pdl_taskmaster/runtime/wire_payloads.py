@@ -326,6 +326,8 @@ class PositiveWitness(BaseModel):
     polarity: Literal["positive"] = "positive"
     evidence: Evidence = Field(default_factory=lambda: Evidence(path="execution://witness"))
     data: dict[str, Any]
+    domain: Optional[str] = None  # typed checker selector (GUARD-02); never inferred from text
+    provisional: Optional[bool] = None  # set by the host when no sandbox run reproduced the witness
 
 
 class NegativeWitness(BaseModel):
@@ -335,6 +337,8 @@ class NegativeWitness(BaseModel):
     search_exhausted: Literal[True] = True
     nodes_explored: PositiveInt
     method: str = Field(min_length=3)
+    domain: Optional[str] = None
+    provisional: Optional[bool] = None
 
 
 WitnessPayload = Annotated[

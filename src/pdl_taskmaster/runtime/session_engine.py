@@ -23,6 +23,7 @@ from pdl_taskmaster.controller.mechanical_controller import (
 )
 from pdl_taskmaster.runtime.operation_bridge import ActivationRoute, ModelRequest, OperationBridge, WireError
 from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output
+from pdl_taskmaster.verification.sandbox import ExecutionSandbox
 
 
 def _norm(text: str) -> str:
@@ -77,138 +78,44 @@ def _extract_data_payload(raw_text: str) -> str | None:
     return None
 
 
-def _normalize_witness_dict(d: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Normalize positive witness dictionary ensuring triples alias mapping is consistent."""
-    if not d or not isinstance(d, dict):
+def _wrap_witness(d: dict[str, Any]) -> dict[str, Any]:
+    """A printed witness without an explicit polarity is a positive witness whose
+    payload is exactly what the sandbox printed."""
+    if "polarity" in d:
         return d
-    if d.get("polarity") == "positive":
-        if isinstance(d.get("data"), dict):
-            d_data = d["data"]
-            if "triples" not in d_data:
-                for k in ("solution", "partition", "result", "partitions"):
-                    cand = d_data.get(k)
-                    if isinstance(cand, list) and cand and all(isinstance(x, (list, tuple)) and len(x) == 3 for x in cand):
-                        d_data["triples"] = [list(x) for x in cand]
-                        break
-        elif "data" not in d:
-            for k in ("triples", "solution", "partition", "result", "partitions"):
-                cand = d.get(k)
-                if isinstance(cand, list) and cand and all(isinstance(x, (list, tuple)) and len(x) == 3 for x in cand):
-                    d["data"] = {"triples": [list(x) for x in cand]}
-                    break
-    return d
-
-
-def _raw_parse_sandbox_witness(stdout_text: str) -> dict[str, Any] | None:
-    """Parse candidate witness data from sandboxed code execution stdout."""
-    text = (stdout_text or "").strip()
-    if not text:
-        return None
-    import ast
-
-    # 1. Search for explicit WITNESS token
-    m_wit = re.search(r"WITNESS\s*[:=]?\s*(\{.*?\})\s*$", text, re.MULTILINE | re.DOTALL)
-    if m_wit:
-        blob = m_wit.group(1).strip()
-        try:
-            d = json.loads(blob)
-            if isinstance(d, dict):
-                if "polarity" in d:
-                    return d
-                return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": d}
-        except Exception:
-            pass
-        try:
-            d = ast.literal_eval(blob)
-            if isinstance(d, dict):
-                if "polarity" in d:
-                    return d
-                return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": d}
-        except Exception:
-            pass
-
-    # 2. Entire stdout as JSON or Python literal
-    try:
-        data = json.loads(text)
-        if isinstance(data, dict):
-            if "polarity" in data:
-                return data
-            if "triples" in data:
-                return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": data}
-            if "data" in data and isinstance(data["data"], dict) and "triples" in data["data"]:
-                return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": data["data"]}
-            return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": data}
-        elif isinstance(data, list):
-            if all(isinstance(x, (list, tuple)) and len(x) == 3 for x in data):
-                return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"triples": data}}
-            return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"solution": data}}
-    except Exception:
-        pass
-    try:
-        p_obj = ast.literal_eval(text)
-        if isinstance(p_obj, dict):
-            if "polarity" in p_obj:
-                return p_obj
-            if "triples" in p_obj:
-                return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": p_obj}
-            if "data" in p_obj and isinstance(p_obj["data"], dict) and "triples" in p_obj["data"]:
-                return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": p_obj["data"]}
-            return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": p_obj}
-        elif isinstance(p_obj, list):
-            if all(isinstance(x, (list, tuple)) and len(x) == 3 for x in p_obj):
-                return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"triples": [list(x) for x in p_obj]}}
-            return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"solution": list(p_obj)}}
-    except Exception:
-        pass
-
-    # 3. Search for embedded JSON object with 'triples' or 'polarity'
-    for m in re.finditer(r"(\{.*?\})", text, re.DOTALL):
-        try:
-            cand_obj = json.loads(m.group(1))
-            if isinstance(cand_obj, dict):
-                if "polarity" in cand_obj:
-                    return cand_obj
-                if "triples" in cand_obj:
-                    return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": cand_obj}
-                if "data" in cand_obj and isinstance(cand_obj["data"], dict) and "triples" in cand_obj["data"]:
-                    return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": cand_obj["data"]}
-        except Exception:
-            pass
-
-    # 4. Search for labeled solution output: e.g. "Hamiltonian path found: [...]", "solution: [...]", "path = [...]"
-    m_label = re.search(
-        r"(?i)(?:path|solution|assignment|result|cover|partition|witness)\s*(?:is|found)?\s*[:=]\s*(\[[^\]]+\]|\{[^\}]+\})",
-        text,
-    )
-    if m_label:
-        raw_val = m_label.group(1).strip()
-        parsed_val = None
-        try:
-            parsed_val = json.loads(raw_val)
-        except Exception:
-            pass
-        if parsed_val is None:
-            try:
-                parsed_val = ast.literal_eval(raw_val)
-            except Exception:
-                pass
-        if parsed_val is not None:
-            if isinstance(parsed_val, dict):
-                if "polarity" in parsed_val:
-                    return parsed_val
-                return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": parsed_val}
-            elif isinstance(parsed_val, list):
-                if all(isinstance(x, (list, tuple)) and len(x) == 3 for x in parsed_val):
-                    return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"triples": [list(x) for x in parsed_val]}}
-                return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"solution": parsed_val}}
-    return None
+    return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": d}
 
 
 def _parse_sandbox_witness(stdout_text: str) -> dict[str, Any] | None:
-    """Parse and normalize candidate witness data from sandboxed code execution stdout."""
-    res = _raw_parse_sandbox_witness(stdout_text)
-    return _normalize_witness_dict(res)
+    """Parse the host-reproduced witness from sandbox stdout (ADR-0018).
 
+    Exactly two forms are recognised: a ``WITNESS: <json>`` protocol line (the last
+    one wins), or an entire stdout that is one JSON object. Nothing else in stdout
+    is scanned, guessed, or re-labelled.
+    """
+    import ast
+
+    text = (stdout_text or "").strip()
+    if not text:
+        return None
+    for line in reversed(text.splitlines()):
+        m = re.match(r"^\s*WITNESS:\s*(.+?)\s*$", line)
+        if not m:
+            continue
+        blob = m.group(1)
+        for loader in (json.loads, ast.literal_eval):
+            try:
+                d = loader(blob)
+            except Exception:
+                continue
+            if isinstance(d, dict):
+                return _wrap_witness(d)
+        break
+    try:
+        d = json.loads(text)
+    except Exception:
+        return None
+    return _wrap_witness(d) if isinstance(d, dict) else None
 
 
 def _normalize_deliverable_blocks(body: str, ir_dict: dict[str, Any]) -> str:
@@ -308,6 +215,8 @@ class SessionEngine:
         self.higher_priority_constraints = higher_priority_constraints
         self.available_execution_tools = available_execution_tools
         self.bridge = OperationBridge(self.repo_root, render_compact=render_compact)
+        # Axiom 3: one session-scoped sandbox, constructed at boot and reused by every run.
+        self.sandbox = ExecutionSandbox(timeout_seconds=15.0)
         self.controller: Optional[MechanicalController] = None
         self.workspace: Optional[WorkspaceRun] = None
         if sys1_client is not None:
@@ -1271,43 +1180,7 @@ class SessionEngine:
                         ir, workspace_path, requirements, execution_body=final_body
                     )
                     if self._requires_verified_execution:
-                        from pdl_taskmaster.verification.output_verifier import OutputVerifier
-                        from pdl_taskmaster.verification.sandbox import ExecutionSandbox
-                        verifier = OutputVerifier()
-                        witness = ir.get("witness")
-                        verification_constraints = {
-                            "prompt_body": prompt_body,
-                            "plan_body": plan_body,
-                            "requirements": requirements,
-                            "domain": self._problem_domain,
-                        }
-                        verdict = None
-                        # Sandboxed synthesis check (ADR-0015): if deliverable contains executable code,
-                        # execute it in the OS-native ExecutionSandbox to recover/validate the grounded witness.
-                        py_blocks = re.findall(r"```(?:python|py)?\s*\n(.*?)```", final_body, re.S)
-                        py_was_bare = False
-                        raw_py = ""
-                        if not py_blocks and ("import " in final_body or "def " in final_body) and "print(" in final_body:
-                            raw_py = re.split(r"```(?:json)?\s*\{", final_body)[0].strip()
-                            if raw_py:
-                                py_blocks = [raw_py]
-                                py_was_bare = True
-                        for block in reversed(py_blocks):
-                            if "print(" in block or "def " in block or "triples" in block:
-                                sb_timeout = 15.0 if self._requires_verified_execution else 5.0
-                                sb = ExecutionSandbox(timeout_seconds=sb_timeout)
-                                sb_out = sb.run_code(block)
-                                if sb_out.success and sb_out.stdout:
-                                    cand = _parse_sandbox_witness(sb_out.stdout)
-                                    if cand:
-                                        v_cand = verifier.check(cand, verification_constraints, domain=self._problem_domain, body=final_body)
-                                        if v_cand.valid:
-                                            if witness is None:
-                                                witness = cand
-                                            verdict = v_cand
-                                            break
-                        if verdict is None:
-                            verdict = verifier.check(witness, verification_constraints, domain=self._problem_domain, body=final_body)
+                        verdict = self._verify_witness(ir, final_body, prompt_body, plan_body, requirements)
                         if not verdict.valid:
                             ir_errors.append(f"Substantive verification error: {verdict.diagnostic}")
                         else:
@@ -1363,37 +1236,7 @@ class SessionEngine:
                             ir2, workspace_path, requirements, execution_body=final_body
                         )
                         if self._requires_verified_execution:
-                            from pdl_taskmaster.verification.output_verifier import OutputVerifier
-                            from pdl_taskmaster.verification.sandbox import ExecutionSandbox
-                            verifier = OutputVerifier()
-                            witness = ir2.get("witness")
-                            verification_constraints = {
-                                "prompt_body": prompt_body,
-                                "plan_body": plan_body,
-                                "requirements": requirements,
-                                "domain": self._problem_domain,
-                            }
-                            verdict = None
-                            py_blocks = re.findall(r"```(?:python|py)?\s*\n(.*?)```", final_body, re.S)
-                            if not py_blocks and ("import " in final_body or "def " in final_body) and "print(" in final_body:
-                                raw_py = re.split(r"```(?:json)?\s*\{", final_body)[0].strip()
-                                if raw_py:
-                                    py_blocks = [raw_py]
-                            for block in reversed(py_blocks):
-                                if "print(" in block or "def " in block or "triples" in block:
-                                    sb_timeout = 15.0 if self._requires_verified_execution else 5.0
-                                    sb = ExecutionSandbox(timeout_seconds=sb_timeout)
-                                    sb_out = sb.run_code(block)
-                                    if sb_out.success and sb_out.stdout:
-                                        cand = _parse_sandbox_witness(sb_out.stdout)
-                                        if cand:
-                                            v_cand = verifier.check(cand, verification_constraints, domain=self._problem_domain, body=final_body)
-                                            if v_cand.valid:
-                                                ir2["witness"] = cand
-                                                verdict = v_cand
-                                                break
-                            if verdict is None:
-                                verdict = verifier.check(witness, verification_constraints, domain=self._problem_domain, body=final_body)
+                            verdict = self._verify_witness(ir2, final_body, prompt_body, plan_body, requirements)
                             if not verdict.valid:
                                 e2.append(f"Substantive verification error: {verdict.diagnostic}")
                             else:
@@ -1489,6 +1332,61 @@ class SessionEngine:
             },
         )
         return EngineResponse(final_body, traces, closed=True)
+
+    def _verify_witness(
+        self,
+        ir: dict[str, Any],
+        final_body: str,
+        prompt_body: str,
+        plan_body: str,
+        requirements: list[str],
+    ) -> Any:
+        """Verify the Result IR witness (ADR-0015 / ADR-0018).
+
+        A witness reproduced by running the deliverable's code in the session
+        sandbox is authoritative and replaces any model-asserted witness in ``ir``.
+        A witness no sandbox run reproduced is only checked structurally and is
+        reported as provisional, never as verified.
+        """
+        from dataclasses import replace
+
+        from pdl_taskmaster.verification.output_verifier import OutputVerifier
+
+        assert self.workspace is not None
+        verifier = OutputVerifier()
+        model_witness = ir.get("witness")
+        constraints = {
+            "prompt_body": prompt_body,
+            "plan_body": plan_body,
+            "requirements": requirements,
+            "domain": self._problem_domain,
+        }
+        py_blocks = re.findall(r"```(?:python|py)?\s*\n(.*?)```", final_body, re.S)
+        if not py_blocks and ("import " in final_body or "def " in final_body) and "print(" in final_body:
+            raw_py = re.split(r"```(?:json)?\s*\{", final_body)[0].strip()
+            if raw_py:
+                py_blocks = [raw_py]
+        for block in reversed(py_blocks):
+            if "print(" not in block:
+                continue
+            sb_out = self.sandbox.run_code(block)
+            if not (sb_out.success and sb_out.stdout):
+                continue
+            cand = _parse_sandbox_witness(sb_out.stdout)
+            if not cand:
+                continue
+            verdict = verifier.check(cand, constraints, domain=self._problem_domain, body=final_body)
+            if verdict.valid:
+                if model_witness is not None and model_witness != cand:
+                    self.workspace.append_event("WITNESS_OVERRIDDEN_BY_SANDBOX", {})
+                ir["witness"] = cand
+                return verdict
+        verdict = verifier.check(model_witness, constraints, domain=self._problem_domain, body=final_body)
+        if verdict.valid:
+            if isinstance(ir.get("witness"), dict):
+                ir["witness"]["provisional"] = True
+            verdict = replace(verdict, provisional=True)
+        return verdict
 
     def _answer_protocol(self, user_message: str, traces: list[CallTrace]) -> EngineResponse:
         assert self.controller is not None

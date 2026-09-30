@@ -44,6 +44,7 @@ def test_sandbox_network_blocking():
     code = """
 import socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect(("127.0.0.1", 9))
 """
     result = sandbox.run_code(code)
     assert not result.success
@@ -74,3 +75,31 @@ def test_sandbox_low_overhead():
     assert "2" in result.stdout.strip()
     # Python startup + Windows Job Object assignment should complete promptly
     assert result.duration_ms < 2500.0
+
+
+def test_sandbox_env_has_no_secrets(monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-test-secret-value")
+    monkeypatch.setenv("SYS1_API_KEY", "sk-test-secret-value-2")
+    result = ExecutionSandbox().run_code("import os\nprint(sorted(os.environ))")
+    assert result.success, result.stderr
+    assert "OPENROUTER_API_KEY" not in result.stdout
+    assert "SYS1_API_KEY" not in result.stdout
+    assert "sk-test-secret" not in result.stdout
+
+
+def test_sandbox_blocks_network_and_process_creation():
+    sandbox = ExecutionSandbox()
+    for code in (
+        "import socket\nsocket.create_connection(('127.0.0.1', 9))",
+        "import _socket\ns = _socket.socket()\ns.connect(('127.0.0.1', 9))",
+        "import subprocess\nsubprocess.run(['echo', 'hi'])",
+        "import os\nos.system('echo hi')",
+    ):
+        result = sandbox.run_code(code)
+        assert not result.success, code
+        assert "PermissionError" in result.stderr, (code, result.stderr)
+
+
+def test_sandbox_allow_network_skips_prelude():
+    result = ExecutionSandbox(allow_network=True).run_code("import subprocess\nprint('ok')")
+    assert result.success

@@ -59,14 +59,24 @@ if _IS_WINDOWS:
         ]
 
 
+# Environment variables model-authored code may see. Everything else, including
+# API keys and tokens, is withheld (GUARD-04 containment).
+_ENV_ALLOWLIST = ("PATH", "SYSTEMROOT", "TEMP", "TMP")
+
+# Defense in depth, not a VM boundary: an in-process audit hook denies outbound
+# network and process creation. It cannot be removed once installed.
 _NETWORK_BLOCK_PRELUDE = """
 # Deterministic Sandbox Isolation Prelude
-import socket as _socket
-def _disabled_network(*args, **kwargs):
-    raise PermissionError("Network access is strictly disabled inside ExecutionSandbox")
-_socket.socket = _disabled_network
-_socket.create_connection = _disabled_network
-_socket.getaddrinfo = _disabled_network
+import sys as _sys
+_DENIED_EVENTS = frozenset({
+    "socket.connect", "socket.bind", "socket.getaddrinfo", "socket.gethostbyname",
+    "socket.sendto", "subprocess.Popen", "os.system", "os.exec", "os.posix_spawn",
+    "os.spawn", "os.fork", "os.forkpty",
+})
+def _sandbox_audit(event, args):
+    if event in _DENIED_EVENTS:
+        raise PermissionError("Network access and process creation are strictly disabled inside ExecutionSandbox (" + event + ")")
+_sys.addaudithook(_sandbox_audit)
 """
 
 
@@ -95,7 +105,9 @@ class ExecutionSandbox:
       setrlimit on POSIX).
     - Ephemeral scratchpad filesystem containment.
     - Deterministic wall-clock timeout and memory ceilings.
-    - Zero outbound network access.
+    - Withheld environment: only an allowlist of variables is passed (no secrets).
+    - Outbound network and process creation denied by an audit hook (defense in depth,
+      not a VM boundary).
     """
 
     DEFAULT_TIMEOUT_SECONDS: float = 5.0
@@ -210,13 +222,11 @@ class ExecutionSandbox:
         memory_limit_bytes: int,
         env: dict[str, str] | None = None,
     ) -> SandboxResult:
-        base_env = {
-            **os.environ,
-            "SYSTEMROOT": os.environ.get("SYSTEMROOT", "C:\\Windows"),
-            "PATH": os.environ.get("PATH", ""),
-            "PYTHONIOENCODING": "utf-8",
-            "PYTHONUNBUFFERED": "1",
-        }
+        base_env = {k: os.environ[k] for k in _ENV_ALLOWLIST if k in os.environ}
+        base_env["PYTHONIOENCODING"] = "utf-8"
+        base_env["PYTHONUNBUFFERED"] = "1"
+        if _IS_WINDOWS:
+            base_env.setdefault("SYSTEMROOT", "C:\\Windows")
         if env:
             base_env.update(env)
 

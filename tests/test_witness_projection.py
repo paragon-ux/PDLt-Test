@@ -116,48 +116,44 @@ YES
     assert "Do NOT fabricate, invent, or reconstruct" in block
 
 
-def test_parse_sandbox_witness_and_body_projection():
+def test_parse_sandbox_witness_protocol_forms():
     from pdl_taskmaster.runtime.session_engine import _parse_sandbox_witness
-    from pdl_taskmaster.verification.output_verifier import OutputVerifier
 
-    # 1. Test json stdout parsing
-    out1 = '{"triples": [[1, 2, 3], [4, 5, 9]]}'
-    cand1 = _parse_sandbox_witness(out1)
+    # 1. Whole-stdout JSON object is the printed witness payload
+    cand1 = _parse_sandbox_witness('{"items": [[1, 2, 3], [4, 5, 9]]}')
     assert cand1 is not None
     assert cand1["polarity"] == "positive"
-    assert cand1["data"]["triples"] == [[1, 2, 3], [4, 5, 9]]
+    assert cand1["data"]["items"] == [[1, 2, 3], [4, 5, 9]]
 
-    # 2. Test python tuple list stdout parsing
-    out2 = '[(1, 2, 3), (4, 5, 9), (6, 7, 13)]'
+    # 2. WITNESS protocol line (last line wins), surrounded by other output
+    out2 = 'progress...\nWITNESS: {"answer": 1}\nWITNESS: {"answer": 2}\n'
     cand2 = _parse_sandbox_witness(out2)
-    assert cand2 is not None
-    assert cand2["polarity"] == "positive"
-    assert cand2["data"]["triples"] == [[1, 2, 3], [4, 5, 9], [6, 7, 13]]
+    assert cand2["data"] == {"answer": 2}
 
-    # 3. Test labeled path/solution stdout parsing (e.g. Hamiltonian path)
-    out3 = "Hamiltonian path found: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]"
+    # 3. Explicit polarity is preserved
+    out3 = 'WITNESS: {"polarity": "negative", "search_exhausted": true, "nodes_explored": 42, "method": "dfs"}'
     cand3 = _parse_sandbox_witness(out3)
-    assert cand3 is not None
-    assert cand3["polarity"] == "positive"
-    assert cand3["data"]["solution"] == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    assert cand3["polarity"] == "negative"
+    assert cand3["nodes_explored"] == 42
 
-    # 4. Test structured negative search stdout parsing
-    out4 = 'WITNESS = {"polarity": "negative", "search_exhausted": true, "nodes_explored": 42, "method": "dfs"}'
-    cand4 = _parse_sandbox_witness(out4)
-    assert cand4 is not None
-    assert cand4["polarity"] == "negative"
-    assert cand4["search_exhausted"] is True
-    assert cand4["nodes_explored"] == 42
 
-    # 5. Test that missing witness fails closed without regex-scraping body text (ADR-0018 / GUARD-03)
-    verifier = OutputVerifier()
-    body_with_triples = "The solution triples are (1, 2, 3), (4, 5, 9), and (6, 7, 13)."
-    verdict = verifier.check(
+def test_parse_sandbox_witness_does_not_scrape_free_text():
+    from pdl_taskmaster.runtime.session_engine import _parse_sandbox_witness
+
+    assert _parse_sandbox_witness("Hamiltonian path found: [0, 1, 2, 3]") is None
+    assert _parse_sandbox_witness("[(1, 2, 3), (4, 5, 9)]") is None
+    assert _parse_sandbox_witness('note {"triples": [[1, 2, 3]]} embedded in prose') is None
+    assert _parse_sandbox_witness("") is None
+
+
+def test_missing_witness_fails_closed_without_scraping_body():
+    from pdl_taskmaster.verification.output_verifier import OutputVerifier
+
+    verdict = OutputVerifier().check(
         None,
-        {"prompt_body": "PARTITION list into sum triples", "supplied_input": "1, 2, 3, 4, 5, 9, 6, 7, 13"},
-        body=body_with_triples,
+        {"prompt_body": "PARTITION the list", "supplied_input": "1, 2, 3, 4, 5, 9, 6, 7, 13"},
+        domain="partition_sum_triples",
+        body="The solution is (1, 2, 3), (4, 5, 9), and (6, 7, 13).",
     )
     assert verdict.valid is False
     assert "Missing witness in Result IR" in (verdict.diagnostic or "")
-
-
