@@ -82,6 +82,7 @@ _sys.addaudithook(_sandbox_audit)
 
 STEP_BUDGET_EXIT_CODE = 125
 _STEP_BUDGET_MARKER = "PDLT_STEP_BUDGET_EXCEEDED"
+_STEPS_USED_MARKER = "PDLT_STEPS_USED"
 
 # Deterministic complexity budget: one step is one executed bytecode instruction
 # of the script's own code (including code it runs through exec and functions it
@@ -124,6 +125,16 @@ def _step_guard(event, args):
         if not (caller.f_code.co_name == "_bootstrap_inner" and caller.f_code.co_filename == _threading.__file__):
             raise PermissionError("The step counter cannot be changed inside ExecutionSandbox (" + event + ")")
 _sys.addaudithook(_step_guard)
+# Steps used, reported at exit for telemetry. The reporter is compiled under a
+# "<frozen" filename so the counter skips it; the host strips the line from stderr.
+exec(compile(
+    "import atexit\\n"
+    "def _report_steps():\\n"
+    "    _sys.stderr.write('{steps_marker}: %d\\\\n' % _steps[0])\\n"
+    "    _sys.stderr.flush()\\n"
+    "atexit.register(_report_steps)\\n",
+    "<frozen pdl_step_report>", "exec",
+))
 """
 
 
@@ -162,6 +173,7 @@ class SandboxResult:
     oom_killed: bool = False
     error: Optional[str] = None
     step_budget_exceeded: bool = False
+    steps_used: Optional[int] = None  # the program's own steps, when a step budget was set
 
     @property
     def success(self) -> bool:
@@ -303,6 +315,7 @@ class ExecutionSandbox:
             if step_limit is not None:
                 content_parts.append(_STEP_BUDGET_PRELUDE.format(
                     limit=int(step_limit), marker=_STEP_BUDGET_MARKER, exit_code=STEP_BUDGET_EXIT_CODE,
+                    steps_marker=_STEPS_USED_MARKER,
                 ))
             content_parts.append(code)
             entry_file.write_text("\n".join(content_parts), encoding="utf-8")
@@ -314,10 +327,18 @@ class ExecutionSandbox:
                 memory_limit_bytes=effective_memory,
                 env=env,
             )
-            if result.exit_code == STEP_BUDGET_EXIT_CODE and _STEP_BUDGET_MARKER in result.stderr:
-                from dataclasses import replace
+            from dataclasses import replace
 
-                result = replace(result, step_budget_exceeded=True)
+            if step_limit is not None:
+                steps_used, kept = None, []
+                for line in (result.stderr or "").splitlines(keepends=True):
+                    if line.startswith(_STEPS_USED_MARKER + ": "):
+                        steps_used = int(line.split(": ", 1)[1])
+                    else:
+                        kept.append(line)
+                result = replace(result, stderr="".join(kept), steps_used=steps_used)
+            if result.exit_code == STEP_BUDGET_EXIT_CODE and _STEP_BUDGET_MARKER in result.stderr:
+                result = replace(result, step_budget_exceeded=True, steps_used=int(step_limit) + 1)
             return result
 
     def run_script(

@@ -79,10 +79,16 @@ class ExecutionProfileRecipe(Sys1Recipe):
         return BUDGET_QUANTILE
 
     def build_request(self, state: dict[str, Any], **kwargs: Any) -> Sys1Request:
+        # With a confirmed procedure in the state (the plan-time decision) System 1
+        # predicts the cost of that procedure; otherwise of the most direct computation.
+        procedure = state.get("procedure")
+        target = (
+            "following the procedure in the state" if procedure else "for the most direct correct computation"
+        )
         question = Sys1Question(
             instructions=as_decision_instruction(
                 "Given the execution environment and step definition in the state, predict how many steps a "
-                "program carrying out this request exactly would take, for the most direct correct computation."
+                f"program carrying out this request exactly would take, {target}."
             ),
             criteria={
                 "WITHIN_100K_STEPS": (
@@ -103,7 +109,12 @@ class ExecutionProfileRecipe(Sys1Recipe):
             f"{label} grants {EXECUTION_BUDGETS[tier].step_limit:,} steps" for label, tier in PREDICTION_TIERS.items()
         )
         return Sys1Request(
-            state={"request": state.get("request", ""), **(state.get("environment") or {}), "step_budgets": budgets},
+            state={
+                "request": state.get("request", ""),
+                **({"procedure": procedure} if procedure else {}),
+                **(state.get("environment") or {}),
+                "step_budgets": budgets,
+            },
             questions={"execution_profile": question},
         )
 

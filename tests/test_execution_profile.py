@@ -174,17 +174,76 @@ def test_system1_sees_the_task_and_the_sandbox(tmp_path):
     class Recording(PredictingSys1):
         def call(self, request):
             if "execution_profile" in request.questions:
-                self.state = request.state
+                self.states = getattr(self, "states", []) + [request.state]
             return super().call(request)
 
     sys1 = Recording("WITHIN_10M_STEPS")
     _session(tmp_path, sys1)
-    state = sys1.state
+    state = sys1.states[0]
+    assert "procedure" not in state
     assert state["request"] == "compute it"
     assert "standard library only" in state["execution_environment"]
     assert "network access is disabled" in state["execution_environment"]
     assert "program's own code" in state["step_definition"]
     assert "WITHIN_100K_STEPS grants 100,000 steps" in state["step_budgets"]
+
+
+class PlanPredictingSys1(PredictingSys1):
+    """Predicts one magnitude from the request and another from the confirmed plan."""
+
+    def __init__(self, request_prediction: str, plan_prediction: str | None):
+        super().__init__(request_prediction)
+        self.plan_prediction, self.states = plan_prediction, []
+
+    def call(self, request):
+        if "execution_profile" in request.questions:
+            self.states.append(request.state)
+            if "procedure" in request.state:
+                if self.plan_prediction is None:
+                    raise RuntimeError("sys1 down")
+                return {"answers": {"execution_profile": _answer(self.plan_prediction)}}, 1.0
+        return super().call(request)
+
+
+def test_plan_time_prediction_sees_the_confirmed_prompt_and_plan(tmp_path):
+    sys1 = PlanPredictingSys1("WITHIN_10M_STEPS", "WITHIN_10M_STEPS")
+    _session(tmp_path, sys1)
+    assert len(sys1.states) == 2
+    assert sys1.states[1]["request"] == "COMPUTE the result"
+    assert sys1.states[1]["procedure"] == "DERIVE the result"
+    assert "standard library only" in sys1.states[1]["execution_environment"]
+
+
+def test_plan_time_prediction_can_raise_the_budget(tmp_path):
+    engine, executes, events = _session(tmp_path, PlanPredictingSys1("WITHIN_10M_STEPS", "WITHIN_100M_STEPS"))
+    routed = next(e for e in events if e["kind"] == "PLAN_PROFILE_ROUTED")["payload"]
+    assert routed["request_tier"] == "STANDARD" and routed["plan_tier"] == "HEAVY_COMPUTE"
+    assert routed["budget_raised"] and routed["tier"] == "HEAVY_COMPUTE"
+    assert engine._execution_budget.tier == "HEAVY_COMPUTE"
+    assert "at most 100,000,000 steps" in executes[0].prompt
+
+
+@pytest.mark.parametrize("plan_prediction", ["WITHIN_100K_STEPS", None])
+def test_plan_time_prediction_never_lowers_the_budget(tmp_path, plan_prediction):
+    engine, executes, events = _session(tmp_path, PlanPredictingSys1("WITHIN_10M_STEPS", plan_prediction))
+    routed = next(e for e in events if e["kind"] == "PLAN_PROFILE_ROUTED")["payload"]
+    assert not routed["budget_raised"] and routed["tier"] == "STANDARD"
+    assert "at most 10,000,000 steps" in executes[0].prompt
+
+
+def test_plan_time_prediction_is_not_shown_to_the_solver(tmp_path):
+    _, executes, _ = _session(tmp_path, PlanPredictingSys1("WITHIN_10M_STEPS", "WITHIN_100M_STEPS"))
+    for token in ("WITHIN_100M_STEPS", "PLAN_PROFILE", "predicted"):
+        assert token not in executes[0].prompt
+
+
+def test_sandbox_reports_steps_used_without_showing_them_to_the_program():
+    run = ExecutionSandbox().run_code("t = 0\nfor i in range(1000):\n    t += i\nprint(t)", step_limit=100_000)
+    assert run.success and run.stdout == "499500\n" and run.stderr == ""
+    assert 1000 < run.steps_used < 20_000
+    over = ExecutionSandbox().run_code("while True:\n    pass", step_limit=1000)
+    assert over.step_budget_exceeded and over.steps_used == 1001
+    assert ExecutionSandbox().run_code("print(1)").steps_used is None
 
 
 class VerifiedPredictingSys1(PredictingSys1):

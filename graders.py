@@ -101,7 +101,11 @@ def build_corpus(result_dir: Path, *, run_code: bool = True) -> str | None:
             text += f"\n\n[GRADER: deliverable code exit {out.exit_code}]"
             if out.stdout:
                 text += "\n[GRADER: deliverable code stdout]\n" + out.stdout
-    return f"[OUTCOME: {kind}]\n{text}"
+    return f"[OUTCOME: {kind}]\n{text.translate(_TYPOGRAPHY)}"
+
+
+# Typographic dashes and spaces read as their ASCII forms ("deadlock\u2011free").
+_TYPOGRAPHY = str.maketrans({c: "-" for c in "\u2010\u2011\u2012\u2013\u2014\u2212"} | {"\u00a0": " ", "\u202f": " "})
 
 
 def outcome_of(corpus: str) -> str:
@@ -515,7 +519,7 @@ def grade_two_phase_commit(corpus: str, prompt: str) -> tuple[str, str]:
         return FAIL, f"no analysis delivered (outcome {kind})"
     missing = _missing(low, {
         "deadlock-free under the stated assumptions": ("deadlock-free", "deadlock free", "free of deadlock", "no deadlock", "does not deadlock", "cannot deadlock"),
-        "blocking under message loss": ("block",),
+        "blocking under message loss": ("block", "indefinitely", "forever", "stuck", "hang"),
         "timeout mitigation": ("timeout", "time-out", "time out"),
     })
     if missing:

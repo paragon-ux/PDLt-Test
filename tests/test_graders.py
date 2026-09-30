@@ -199,6 +199,10 @@ def test_14_03_two_phase_commit(tmp_path):
             "forever; a timeout with presumed abort mitigates it.")
     assert _g("14-03", _published(tmp_path / "a", "RESULT", good)) == graders.PASS
     assert _g("14-03", _published(tmp_path / "b", "RESULT", "The protocol is deadlock-free.")) == graders.FAIL
+    # run 171129: typographic hyphen, and blocking described without the word "block"
+    typographic = ("With these assumptions the protocol is deadlock\u2011free. If the COMMIT message is lost, "
+                   "participants remain indefinitely in WaitingForDecision. Mitigation: a timeout.")
+    assert _g("14-03", _published(tmp_path / "c", "RESULT", typographic)) == graders.PASS
 
 
 def test_14_05_amortized_cost(tmp_path):

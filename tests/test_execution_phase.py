@@ -205,6 +205,8 @@ def test_python_program_detection_is_grammatical():
     assert _python_blocks("Therefore no algorithm satisfies all three constraints.") == []
     assert _python_blocks("42") == [] and _python_blocks('"""only a docstring"""') == []
     assert _python_blocks("Answer:\n```python\nprint(2)\n```") == ["print(2)\n"]
+    # CPython raises MemoryError, not SyntaxError, on long runs of bare words.
+    assert _python_blocks("word " * 3000 + "\n\n```python\nprint(3)\n```") == ["print(3)\n"]
 
 
 def _incomplete_ir() -> dict:

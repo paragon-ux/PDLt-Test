@@ -81,7 +81,9 @@ def _python_blocks(body: str) -> list[str]:
     text = body or ""
     try:
         module = ast.parse(text)
-    except (SyntaxError, ValueError):
+    except (SyntaxError, ValueError, MemoryError, RecursionError):
+        # CPython's parser raises MemoryError, not SyntaxError, on long runs of
+        # bare words (prose); either way the body is not a program.
         module = None
     if module is not None and any(
         not (isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant))
@@ -650,25 +652,11 @@ class SessionEngine:
         The tier's fixed budget is what the sandbox enforces and what the solver is
         told. System 1 absent, uncertain or failing leaves the STANDARD budget.
         """
-        from pdl_taskmaster.providers.sys1.recipes.execution_profile import ExecutionProfileRecipe
         from pdl_taskmaster.verification.sandbox import DEFAULT_BUDGET, EXECUTION_BUDGETS
 
-        prediction, tier, passed, distribution = None, "STANDARD", False, {}
-        self._profile_distribution = {}
-        if self.sys1_client is not None and self.sys1_client.is_configured:
-            recipe = ExecutionProfileRecipe()
-            try:
-                sys1_request = recipe.build_request(
-                    {"request": request, "environment": self.sandbox.decision_state()}
-                )
-                body, duration_ms = self.sys1_client.call(sys1_request)
-                result = recipe.parse_response(body, duration_ms=duration_ms)
-                routed = recipe.map_to_wire(result)
-                prediction, tier, passed = routed["prediction"], routed["tier"], result.passed_gating
-                distribution = {k: round(v, 4) for k, v in result.probabilities.items()}
-                self._profile_distribution = dict(result.probabilities)
-            except Exception:
-                pass
+        prediction, tier, passed, probabilities = self._predict_profile({"request": request})
+        distribution = {k: round(v, 4) for k, v in probabilities.items()}
+        self._profile_distribution = dict(probabilities)
         self._execution_budget = EXECUTION_BUDGETS.get(tier, DEFAULT_BUDGET)
         if self._host_execution_tools is None:
             self.available_execution_tools = self.sandbox.describe(self._execution_budget)
@@ -683,6 +671,55 @@ class SessionEngine:
                 "step_limit": self._execution_budget.step_limit,
                 "timeout_seconds": self._execution_budget.timeout_seconds,
                 "memory_mb": self._execution_budget.memory_limit_bytes // (1024 * 1024),
+            },
+        )
+
+    def _predict_profile(self, state: dict[str, Any]) -> tuple[str | None, str, bool, dict[str, float]]:
+        """One ExecutionProfileRecipe decision: (prediction, tier, passed_gating,
+        probabilities). System 1 absent or failing yields the STANDARD tier."""
+        from pdl_taskmaster.providers.sys1.recipes.execution_profile import ExecutionProfileRecipe
+
+        if self.sys1_client is None or not self.sys1_client.is_configured:
+            return None, "STANDARD", False, {}
+        recipe = ExecutionProfileRecipe()
+        try:
+            sys1_request = recipe.build_request({**state, "environment": self.sandbox.decision_state()})
+            body, duration_ms = self.sys1_client.call(sys1_request)
+            result = recipe.parse_response(body, duration_ms=duration_ms)
+            routed = recipe.map_to_wire(result)
+        except Exception:
+            return None, "STANDARD", False, {}
+        return routed["prediction"], routed["tier"], result.passed_gating, dict(result.probabilities)
+
+    def _route_plan_profile(self, prompt_body: str, plan_body: str) -> None:
+        """Plan-time routing (TARGET_ARCHITECTURE §5): System 1 predicts the step cost
+        of the confirmed procedure. One-way: nothing about the prediction reaches the
+        solver except the environment it declares. A usable prediction may raise the
+        budget tier routed from the request, never lower it."""
+        from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS
+
+        prediction, tier, passed, probabilities = self._predict_profile(
+            {"request": prompt_body, "procedure": plan_body}
+        )
+        order = list(EXECUTION_BUDGETS)
+        before = self._execution_budget
+        raised = passed and tier in EXECUTION_BUDGETS and order.index(tier) > order.index(before.tier)
+        if raised:
+            self._execution_budget = EXECUTION_BUDGETS[tier]
+            if self._host_execution_tools is None:
+                self.available_execution_tools = self.sandbox.describe(self._execution_budget)
+        assert self.workspace is not None
+        self.workspace.append_event(
+            "PLAN_PROFILE_ROUTED",
+            {
+                "predicted_steps": prediction,
+                "distribution": {k: round(v, 4) for k, v in probabilities.items()},
+                "passed_gating": passed,
+                "request_tier": before.tier,
+                "plan_tier": tier if passed else None,
+                "tier": self._execution_budget.tier,
+                "budget_raised": raised,
+                "step_limit": self._execution_budget.step_limit,
             },
         )
 
@@ -1050,6 +1087,8 @@ class SessionEngine:
             "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
         }
 
+        self._route_plan_profile(prompt_body, plan_body)
+        execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools
         outcome = self._call("EXECUTE", execute_context, traces, parser=self.bridge.parse_execution)
         final_body = outcome.body
         errors: list[str] = []
@@ -1155,6 +1194,7 @@ class SessionEngine:
                     "tier": self._execution_budget.tier,
                     "exit_code": run.exit_code,
                     "step_budget_exceeded": run.step_budget_exceeded,
+                    "steps_used": run.steps_used,
                     "timed_out": run.timed_out,
                     "oom_killed": run.oom_killed,
                     "duration_ms": round(run.duration_ms, 1),
