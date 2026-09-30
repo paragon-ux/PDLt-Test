@@ -512,7 +512,7 @@ def main():
     if scoreboard["manual_spot_check"]:
         print(f"Needs human spot check (not verified): {', '.join(scoreboard['manual_spot_check'])}")
     if scoreboard["regressions_hit"]:
-        print(f"\nKNOWN REGRESSIONS HIT: {len(scoreboard['regressions_hit'])}")
+        print(f"\nKNOWN REGRESSIONS HIT: {len(scoreboard['regressions_hit'])} (failed prompts the manifest tags with a past regression)")
         for r in scoreboard["regressions_hit"]:
             print(f"    {r['id']} ({r['regression_ref']}): {r['verdict']}")
 

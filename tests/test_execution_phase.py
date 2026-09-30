@@ -202,3 +202,34 @@ def test_python_program_detection_is_grammatical():
     assert _python_blocks("Therefore no algorithm satisfies all three constraints.") == []
     assert _python_blocks("42") == [] and _python_blocks('"""only a docstring"""') == []
     assert _python_blocks("Answer:\n```python\nprint(2)\n```") == ["print(2)\n"]
+
+
+def _incomplete_ir() -> dict:
+    return {
+        "files": [],
+        "reconciliation": [
+            {"requirement": "R1", "status": "open", "evidence": {"path": "execution://body"}},
+            {"requirement": "R2", "status": "open", "evidence": {"path": "execution://body"}},
+        ],
+        "open_defects": [{"id": "D1", "description": "The exact result could not be computed here.",
+                          "evidence": {"path": "execution://body"}}],
+    }
+
+
+def test_declared_incomplete_result_needs_no_witness(tmp_path):
+    """A witness certifies a claimed result; an honest 'could not obtain it' claims none."""
+    reply = {"kind": "RESULT", "body": "The exact answer could not be computed here.", "result_ir": _incomplete_ir()}
+    engine, _, executes, events = _run(tmp_path, [reply], problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 1
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert "VERIFICATION_NOT_APPLICABLE" in _kinds(events)
+    assert "VERIFICATION_PASSED" not in _kinds(events)
+
+
+def test_open_requirement_without_a_defect_still_needs_a_witness(tmp_path):
+    ir = _incomplete_ir()
+    ir["open_defects"] = []
+    reply = {"kind": "RESULT", "body": "Partial.", "result_ir": ir}
+    engine, _, executes, _ = _run(tmp_path, [reply, reply], problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 2
+    assert engine.controller.state.stage == Stage.CLOSED_CANCELLED

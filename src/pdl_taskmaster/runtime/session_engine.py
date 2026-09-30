@@ -1109,7 +1109,25 @@ class SessionEngine:
                 "domain": self._problem_domain,
             }
             model_witness = ir.get("witness")
-            if sandbox_witness is not None:
+            declared_incomplete = (
+                model_witness is None
+                and sandbox_witness is None
+                and bool(ir.get("open_defects"))
+                and any(
+                    isinstance(item, dict) and item.get("status") == "open"
+                    for item in ir.get("reconciliation") or []
+                )
+            )
+            if declared_incomplete:
+                # A witness certifies a claimed result. A deliverable that declares
+                # requirements open (with the defect recorded) claims none, so there
+                # is nothing to certify; demanding a witness would force fabrication.
+                errors.extend(run_failures)
+                self.workspace.append_event(
+                    "VERIFICATION_NOT_APPLICABLE",
+                    {"reason": "declared_incomplete", "open_defects": len(ir["open_defects"])},
+                )
+            elif sandbox_witness is not None:
                 verdict = verifier.check(sandbox_witness, constraints, domain=self._problem_domain, body=body)
                 if verdict.valid:
                     sandbox_witness["provisional"] = False
@@ -1122,7 +1140,9 @@ class SessionEngine:
                 if verdict.valid:
                     ir["witness"]["provisional"] = True
                     verdict = replace(verdict, provisional=True)
-            if verdict.valid:
+            if declared_incomplete:
+                pass
+            elif verdict.valid:
                 self.workspace.append_event(
                     "VERIFICATION_PASSED",
                     {

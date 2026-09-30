@@ -38,16 +38,11 @@ def test_every_verified_entry_has_a_grader_or_manual_marker():
     verified = [e for e in MANIFEST.values() if e["ground_truth_status"] == "verified"]
     assert len(verified) == 21
     machine = [e["id"] for e in verified if e["id"] in graders.GRADERS]
-    assert machine == ["01-01", "01-02", "01-03", "01-04", "01-05", "01-06", "01-07",
-                       "13-01", "13-02", "13-03", "13-04", "13-05", "13-06", "13-07"]
+    assert machine == [e["id"] for e in verified]  # every verified prompt has a grader
 
 
 def test_non_verified_entries_are_not_applicable(tmp_path):
     assert graders.grade(MANIFEST["06-04"], tmp_path, PROMPTS)["grade"] == graders.NA
-
-
-def test_manual_for_verified_without_machine_check(tmp_path):
-    assert graders.grade(MANIFEST["14-01"], tmp_path, PROMPTS)["grade"] == graders.MANUAL
 
 
 def test_missing_deliverable_fails(tmp_path):
@@ -186,3 +181,43 @@ def test_stage_match_with_wrong_answer_is_not_a_pass():
     manual = {"expected_stage": "CLOSED_SUCCESS", "verdict": "CLOSED_SUCCESS", "ground_truth_grade": {"grade": "MANUAL"}}
     assert run_catalogue.stage_pass(fp) and not run_catalogue.is_prompt_pass(fp)
     assert run_catalogue.is_prompt_pass(manual)
+
+
+# --------------------------------------------------------------------------- category 14
+
+def test_14_01_loop_invariant(tmp_path):
+    good = ("Invariant: total == sum(arr[:i]). Initialization: i = 0. Maintenance: adds arr[i]. "
+            "Termination: i == len(arr).\ndef array_sum(arr):\n    assert total == sum(arr[:i])")
+    assert _g("14-01", _published(tmp_path / "a", "RESULT", good)) == graders.PASS
+    ran_badly = good + "\n\n[GRADER: deliverable code exit 1]"
+    assert graders.grade_loop_invariant("[OUTCOME: RESULT]\n" + ran_badly, "")[0] == graders.FAIL
+    assert _g("14-01", _published(tmp_path / "b", "RESULT", "Initialization holds. Termination holds.")) == graders.FAIL
+
+
+def test_14_03_two_phase_commit(tmp_path):
+    good = ("With no loss the protocol is deadlock-free. Under message loss a prepared participant can block "
+            "forever; a timeout with presumed abort mitigates it.")
+    assert _g("14-03", _published(tmp_path / "a", "RESULT", good)) == graders.PASS
+    assert _g("14-03", _published(tmp_path / "b", "RESULT", "The protocol is deadlock-free.")) == graders.FAIL
+
+
+def test_14_05_amortized_cost(tmp_path):
+    good = "Assign amortized cost 3 to each push. The bank balance never goes negative."
+    assert _g("14-05", _published(tmp_path / "a", "RESULT", good)) == graders.PASS
+    wrong = "Assign amortized cost 2 to each push. The balance never goes negative."
+    assert _g("14-05", _published(tmp_path / "b", "RESULT", wrong)) == graders.FAIL
+
+
+def test_14_proofs_need_every_component_and_stay_manual(tmp_path):
+    complete = ("Termination: the length decreases. Sorted: merge keeps non-decreasing order. "
+                "Permutation: multiset preserved. Merge lemma by induction.")
+    assert _g("14-04", _published(tmp_path / "a", "RESULT", complete)) == graders.MANUAL
+    assert _g("14-04", _published(tmp_path / "b", "RESULT", "Merge sort is sorted by induction.")) == graders.FAIL
+    assert _g("14-06", _published(tmp_path / "c", "REQUEST_INPUT", "Which timing?")) == graders.FAIL
+
+
+def test_14_07_open_problem(tmp_path):
+    honest = "This is the Collatz conjecture, an open problem; no known proof of termination exists."
+    assert _g("14-07", _published(tmp_path / "a", "RESULT", honest)) == graders.PASS
+    bogus = "Proof. The measure decreases, hence collatz_steps terminates for all n."
+    assert _g("14-07", _published(tmp_path / "b", "RESULT", bogus)) == graders.FAIL
