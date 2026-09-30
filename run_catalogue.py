@@ -33,10 +33,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-PDLT_TEST_ROOT = Path(__file__).resolve().parent.parent
+_script_dir = Path(__file__).resolve().parent
+if (_script_dir / "prompts").is_dir():
+    PDLT_TEST_ROOT = _script_dir
+    RUNS_DIR = _script_dir / "catalogue-runs"
+elif (_script_dir.parent / "prompts").is_dir():
+    PDLT_TEST_ROOT = _script_dir.parent
+    RUNS_DIR = _script_dir
+else:
+    PDLT_TEST_ROOT = _script_dir
+    RUNS_DIR = _script_dir / "catalogue-runs"
+
 PROMPTS_DIR = PDLT_TEST_ROOT / "prompts"
 MANIFEST_PATH = PROMPTS_DIR / "CATALOGUE_MANIFEST.jsonl"
-RUNS_DIR = Path(__file__).resolve().parent
 TIMEOUT_PER_PROMPT = 300
 EXIT_SUCCESS = 0
 EXIT_UNCONFIRMED = 2
