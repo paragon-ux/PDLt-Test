@@ -1,0 +1,365 @@
+{
+  "turn_id": "turn_001",
+  "status": "CLOSED_SUCCESS",
+  "deliverable_sha256": "18d14831b74e51ba5ca48d16ea2d6d0c700eb4d7e143ef4c9e9531087632b8f6",
+  "events": [
+    {
+      "at_utc": "2026-09-30T20:15:24.797579+00:00",
+      "kind": "WORKSPACE_CREATED",
+      "payload": {
+        "workspace_id": "W-5cf27a76338d",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:24.797579+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:25.152991+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 0.99
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:26.683053+00:00",
+      "kind": "EXECUTION_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "distribution": {
+          "WITHIN_100M_STEPS": 0.05,
+          "WITHIN_100K_STEPS": 0.39,
+          "WITHIN_10M_STEPS": 0.54,
+          "BEYOND_100M_STEPS": 0.02
+        },
+        "tier": "STANDARD",
+        "passed_gating": true,
+        "step_limit": 10000000,
+        "timeout_seconds": 30.0,
+        "memory_mb": 256
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:26.683053+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": true,
+        "domain": "general"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:26.701291+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:28.144768+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:28.155833+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:31.192952+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:31.212903+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-757b413e4d",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:31.226616+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-757b413e4d-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:31.273749+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-757b413e4d-P1"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:31.292852+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:32.455641+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:32.462655+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-757b413e4d-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:32.502934+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-757b413e4d-R1"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:32.532646+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:55.379281+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:55.528977+00:00",
+      "kind": "SANDBOX_RUN",
+      "payload": {
+        "block": 1,
+        "tier": "STANDARD",
+        "exit_code": 0,
+        "step_budget_exceeded": false,
+        "timed_out": false,
+        "oom_killed": false,
+        "duration_ms": 140.4
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:55.530985+00:00",
+      "kind": "VERIFICATION_PASSED",
+      "payload": {
+        "provisional": false,
+        "sandbox_reproduced": true,
+        "domain_checked": false,
+        "details": {
+          "polarity": "positive",
+          "data_keys": [
+            "solution"
+          ]
+        }
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:55.530985+00:00",
+      "kind": "RESULT_IR_VALIDATED",
+      "payload": {
+        "ir": {
+          "files": [
+            {
+              "filename": "solver.py",
+              "satisfies": [
+                "R1",
+                "R2",
+                "R3",
+                "R4",
+                "R5"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "import sys\\nfrom typing import List, Tuple\\n\\ndef parse_grid() -> List[List[int]]:\\n    # The input grid is embedded in the script for self‑containment.\\n    return [...]"
+              }
+            }
+          ],
+          "reconciliation": [
+            {
+              "requirement": "R1",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "parse_grid() reads the partially filled 7x7 grid input"
+              }
+            },
+            {
+              "requirement": "R2",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "solve(grid) applies constraint propagation with backtracking"
+              }
+            },
+            {
+              "requirement": "R3",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "is_valid(solved) checks each row is a permutation of {1..7}"
+              }
+            },
+            {
+              "requirement": "R4",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "is_valid(solved) also checks each column permutation"
+              }
+            },
+            {
+              "requirement": "R5",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "for row in solved: print(row) outputs the completed square"
+              }
+            }
+          ],
+          "open_defects": [],
+          "witness": {
+            "polarity": "positive",
+            "evidence": {
+              "path": "execution://witness"
+            },
+            "data": {
+              "solution": [
+                [
+                  1,
+                  2,
+                  4,
+                  3,
+                  5,
+                  6,
+                  7
+                ],
+                [
+                  2,
+                  3,
+                  5,
+                  6,
+                  4,
+                  7,
+                  1
+                ],
+                [
+                  3,
+                  1,
+                  6,
+                  4,
+                  7,
+                  5,
+                  2
+                ],
+                [
+                  4,
+                  5,
+                  2,
+                  7,
+                  6,
+                  1,
+                  3
+                ],
+                [
+                  5,
+                  6,
+                  7,
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                [
+                  6,
+                  7,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                [
+                  7,
+                  4,
+                  3,
+                  5,
+                  1,
+                  2,
+                  6
+                ]
+              ]
+            },
+            "provisional": false
+          }
+        }
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:55.532972+00:00",
+      "kind": "EXECUTION_ATTEMPTS",
+      "payload": {
+        "attempts": 1,
+        "repairs_used": 0,
+        "repairs_allowed": 1,
+        "tier": "STANDARD"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T20:15:55.536224+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_001",
+        "status": "CLOSED_SUCCESS"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-09-30T20:15:55.537214+00:00"
+}

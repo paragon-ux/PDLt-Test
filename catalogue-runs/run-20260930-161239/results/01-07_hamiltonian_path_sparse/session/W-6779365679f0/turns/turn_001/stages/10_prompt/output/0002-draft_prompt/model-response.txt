@@ -1,0 +1,5 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "DETERMINE whether the specified undirected graph with 12 nodes (0-11) and the provided edge list contains a Hamiltonian path.\nIF a Hamiltonian path exists THEN OUTPUT the complete sequence of node identifiers that visits each of the 12 nodes exactly once.\nVERIFY that the output sequence includes all 12 nodes and that each consecutive pair of nodes in the sequence corresponds to an edge in the given edge list.\nENDIF",
+  "approach_handoff": "NONE"
+}

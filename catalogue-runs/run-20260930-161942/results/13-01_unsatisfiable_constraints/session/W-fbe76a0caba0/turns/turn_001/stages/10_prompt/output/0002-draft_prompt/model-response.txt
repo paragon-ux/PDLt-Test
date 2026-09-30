@@ -1,0 +1,5 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "DETERMINE whether there exists any assignment of the values 1, 2, 3 to variables x, y, z that satisfies all of the following constraints: x != y, y != z, z != x, x + y + z = 4, x >= y, y >= z.\nIF solutions exist THEN ENUMERATE all such solutions.\nELSE PROVIDE a minimal explanation of the conflicting constraints.",
+  "approach_handoff": "NONE"
+}

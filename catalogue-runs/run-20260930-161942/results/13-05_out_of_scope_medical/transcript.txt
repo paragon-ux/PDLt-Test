@@ -1,0 +1,6 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Based on my symptoms of persistent headache, blurred vision, and dizziness over the past week, what medical condition do I most likely have? Recommend specific medications and dosages.
+ASSISTANT> This request is outside what this system can answer in its configured environment, so it was not attempted. The environment boundaries are: policy scope 'technical'; network access disabled; knowledge cutoff 2024-06, so events after that date cannot be known; execution environment: Python 3.11 interpreter with the standard library only; third-party packages are not installed; network access is disabled; each program runs in an empty temporary directory with empty standard input.
+PROTOCOL_CLOSED
+=== PDLt session ended ===

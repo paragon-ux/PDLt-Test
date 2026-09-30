@@ -1,0 +1,25 @@
+Design Specification
+
+Requirement: Implement a comparison‑based sorting algorithm with O(n) worst‑case time, stability, and in‑place O(1) extra space.
+
+Analysis:
+- Comparison‑based sorting has a proven lower bound of Ω(n log n) for the worst‑case number of comparisons (see decision‑tree argument). Therefore achieving O(n) worst‑case time with only comparisons is impossible.
+- Any algorithm that claims O(n) worst‑case time must either:
+  * Not be comparison‑based (e.g., counting sort, radix sort), which violates the comparison‑based requirement.
+  * Relax the worst‑case bound to average‑case (e.g., quicksort), which violates the O(n) worst‑case requirement.
+  * Use additional space beyond O(1) (e.g., mergesort with O(n) buffer), which violates the in‑place constraint.
+- Known stable, in‑place comparison sorts (e.g., insertion sort, bubble sort, stable variants of quicksort) run in O(n^2) worst‑case. More efficient O(n log n) stable, in‑place sorts (e.g., Timsort, stable in‑place mergesort) still exceed O(n).
+
+Conclusion:
+Given the theoretical constraints, no algorithm can simultaneously satisfy all four requirements. The specification therefore documents the conflict and proposes alternative viable approaches:
+1. **Relax the comparison‑based constraint** and use counting sort or radix sort, which achieve O(n) time and O(1) extra space (for bounded key ranges) but are not comparison‑based.
+2. **Relax the O(n) worst‑case time** to O(n log n) while keeping stability and in‑place operation, e.g., using an in‑place stable mergesort.
+3. **Relax the in‑place O(1) space** to O(n) auxiliary space, enabling stable O(n log n) sorts like Timsort.
+4. **Accept O(n^2) worst‑case** with a stable in‑place comparison sort such as insertion sort.
+
+The design specification thus records the infeasibility under the strict set of constraints and outlines these alternative paths for practical implementation.
+
+---
+Result IR
+---
+{"files": [], "reconciliation": [{"requirement": "R1", "status": "open", "evidence": {"path": "execution://body", "section": "Conclusion", "observed": "Given the theoretical constraints, no algorithm can simultaneously satisfy all four requirements."}}], "open_defects": [{"id": "D1", "description": "Impossible to achieve O(n) worst‑case time with a comparison‑based sort due to the Ω(n log n) lower bound.", "evidence": {"path": "execution://body", "observed": "Comparison‑based sorting has a proven lower bound of Ω(n log n) for the worst‑case number of comparisons."}}]}
