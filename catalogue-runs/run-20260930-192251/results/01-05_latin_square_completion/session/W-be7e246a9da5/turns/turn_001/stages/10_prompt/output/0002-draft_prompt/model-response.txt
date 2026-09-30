@@ -1,0 +1,5 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "READ the 7x7 Latin square grid with cells marked 0 as input\nSOLVE the puzzle by filling all zero cells so that each row contains each number from 1 to 7 exactly once\nSOLVE the puzzle by filling all zero cells so that each column contains each number from 1 to 7 exactly once\nVERIFY that the completed grid is a permutation of {1,…,7} in every row\nVERIFY that the completed grid is a permutation of {1,…,7} in every column",
+  "approach_handoff": "NONE"
+}

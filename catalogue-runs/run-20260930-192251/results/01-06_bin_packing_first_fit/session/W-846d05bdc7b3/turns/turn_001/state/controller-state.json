@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-ef050f0a3e",
+  "stage": "EXECUTION_READY",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-ef050f0a3e-P1",
+    "body": "READ the list of items [5, 5, 5, 3, 3, 3, 7, 7]\nREAD the bin capacity C = 10\nAPPLY the First Fit algorithm to pack the items into bins\nOUTPUT the resulting packing produced by First Fit\nCOMPUTE an optimal packing that minimizes the number of bins for the same items and capacity\nOUTPUT the optimal packing\nCALCULATE the gap between the number of bins used by First Fit and the optimal packing\nEXPLAIN why the arrival order of items causes First Fit to use more bins than optimal\nINCLUDE a self‑test that verifies both packings use all items exactly once and respect the capacity constraint",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-ef050f0a3e-R1",
+    "body": "READ the list of items [5, 5, 5, 3, 3, 3, 7, 7]\nREAD the bin capacity C = 10\nAPPLY the First Fit algorithm to pack the items into bins\nOUTPUT the resulting First Fit packing\nCOMPUTE an optimal packing that minimizes the number of bins for the same items and capacity\nOUTPUT the optimal packing\nCALCULATE the gap between the number of bins used by First Fit and the optimal packing\nEXPLAIN why the arrival order of items causes First Fit to use more bins than optimal\nPERFORM a self‑test that verifies both packings use all items exactly once and respect the capacity constraint",
+    "confirmed": true,
+    "source_prompt_id": "I-ef050f0a3e-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}
