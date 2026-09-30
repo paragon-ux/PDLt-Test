@@ -1,0 +1,3 @@
+{
+  "kind": "RESULT",
+  "body": "import itertools\nimport math\nfrom typing import List\n\n# Build the graph\nN = 50\nedges = set()\nfor i in range(N):\n    edges.add(tuple(sorted((i, (i + 1) % N))))\n    edges.add(tuple(sorted((i, (i + 7) % N))))\n    edges.add(tuple(sorted((i, (i + 13) % N))))\nedges = list(edges)\n\n# Use a simple exact solver via brute‑force search with pruning\n# since the graph is small (50 nodes, 150 edges) we can attempt a\n# branch‑and‑bound recursion.\nbest_cover: List[int] = []\nbest_size = N + 1\n\nadj = {i: set() for i in range(N)}\nfor u, v\n\"\"\"\n\"\"\"\n"}

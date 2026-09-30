@@ -1,0 +1,61 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-131112\results\13-02_np_hard_exact_large\session\catalogue-13-02-1790788338\worker-progress.log]
+[api] response received in 1713ms
+[api] response received in 7144ms
+Prompt Pseudocode
+
+FIND the exact minimum vertex cover of the 50-node regular graph where each node i (0 to 49) is connected to nodes (i+1) mod 50, (i+7) mod 50, and (i+13) mod 50, totaling 150 edges.
+ENSURE the solution is provably optimal and not an approximation.
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-131112\results\13-02_np_hard_exact_large\session\catalogue-13-02-1790788338\worker-progress.log]
+[api] response received in 3508ms
+Response Plan Pseudocode
+
+CONSTRUCT the 50-node regular graph with edges (i+1) mod 50, (i+7) mod 50, (i+13) mod 50 for each node i
+FORMULATE the exact minimum vertex cover problem as an integer linear program (binary variable per node, covering constraints for each edge)
+SELECT an exact optimization solver capable of guaranteeing optimality (e.g., branch‑and‑bound MILP solver)
+EXECUTE the solver on the formulated model
+EXTRACT the set of nodes whose variables are true in the optimal solution
+EMIT the optimal vertex‑cover set as the final deliverable
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-131112\results\13-02_np_hard_exact_large\session\catalogue-13-02-1790788338\worker-progress.log]
+[api] response received in 8033ms
+[api] response received in 4998ms
+UNVERIFIED ANSWER: Substantive verification was not completed after repair attempts. Reason: Result IR missing or not a JSON object (TRD-0003 RS-01)
+
+Candidate deliverable:
+import itertools
+import math
+from typing import List
+
+# Build the graph
+N = 50
+edges = set()
+for i in range(N):
+    edges.add(tuple(sorted((i, (i + 1) % N))))
+    edges.add(tuple(sorted((i, (i + 7) % N))))
+    edges.add(tuple(sorted((i, (i + 13) % N))))
+edges = list(edges)
+
+# Use a simple exact solver via brute‑force search with pruning
+# since the graph is small (50 nodes, 150 edges) we can attempt a
+# branch‑and‑bound recursion.
+best_cover: List[int] = []
+best_size = N + 1
+
+adj = {i: set() for i in range(N)}
+for u, v
+"""
+"""
+[dev:telemetry] controller stage: CLOSED_CANCELLED
+[protocol closed]

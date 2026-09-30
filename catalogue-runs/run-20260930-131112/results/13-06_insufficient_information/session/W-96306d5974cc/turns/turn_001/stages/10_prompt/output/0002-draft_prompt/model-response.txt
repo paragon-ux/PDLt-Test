@@ -1,0 +1,8 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "READ the database query \"SELECT * FROM ???\"\nANALYZE the query for performance bottlenecks\nOPTIMIZE the query to achieve maximum performance\nOUTPUT the revised SQL statement and a brief explanation of changes\nINCLUDE any recommended indexes or restructuring suggestions\n\nTASK ENTITY: SELECT * FROM ???",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "- SELECT * FROM ???"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "READ the database query request: SELECT * FROM ???\nANALYZE the query for performance bottlenecks\nIDENTIFY indexes, joins, filters, and table structures that affect execution\nRECOMMEND modifications to maximize performance without altering requested result set\nOUTPUT the optimized SQL statement and a brief rationale for each change",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "SELECT * FROM ???"
+  ]
+}

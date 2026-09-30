@@ -20,8 +20,8 @@
     "note": "Ground truth available - manual or automated comparison required post-run"
   },
   "ground_truth_grade": {
-    "grade": "MANUAL",
-    "reason": "needs GOAL.md Step 5 human spot check"
+    "grade": "PASS",
+    "reason": "states the comparison-sort lower bound makes the request impossible"
   },
   "pdl_rules_stressed": [
     "PDL-01",

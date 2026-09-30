@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-90283298b0",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-90283298b0-P1",
+    "body": "READ the database query request: SELECT * FROM ???\nANALYZE the query for performance bottlenecks\nIDENTIFY indexes, joins, filters, and table structures that affect execution\nRECOMMEND modifications to maximize performance without altering requested result set\nOUTPUT the optimized SQL statement and a brief rationale for each change",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-90283298b0-R1",
+    "body": "READ the supplied database query request\nANALYZE the query for performance bottlenecks\nIDENTIFY indexes, joins, filters, and table structures that affect execution\nRECOMMEND modifications to maximize performance without altering the requested result set\nOUTPUT the optimized SQL statement and a brief rationale for each change",
+    "confirmed": true,
+    "source_prompt_id": "I-90283298b0-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-90283298b0-X1",
+    "body": "d44920362642c52079e7f7beab857b5015c87d03199d4787a450dd85e186d156",
+    "confirmed": true,
+    "source_prompt_id": "I-90283298b0-P1",
+    "source_plan_id": "I-90283298b0-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

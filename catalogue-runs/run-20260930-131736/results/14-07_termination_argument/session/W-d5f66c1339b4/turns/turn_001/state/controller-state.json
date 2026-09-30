@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-00cbd8c0e5",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-00cbd8c0e5-P1",
+    "body": "PROVE that the recursive Python function collatz_steps(n) terminates for all non‑negative integer inputs. The function returns 0 for n <= 1, otherwise returns 1 plus a recursive call on n//2 when n is even, or on 3*n+1 when n is odd. INCLUDE a rigorous mathematical proof covering the entire domain of non‑negative integers, demonstrating that every possible execution path reaches the base case (n <= 1) in a finite number of steps.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-00cbd8c0e5-R1",
+    "body": "DEFINE the theorem: collatz_steps(n) terminates for all non‑negative integers\nANALYZE base case n <= 1 and recursive cases for even and odd n\nSELECT a well‑founded measure (e.g., natural number ordering) on the input values\nPROVE that each recursive call produces a strictly smaller measure value\nARGUE that the measure cannot decrease indefinitely, guaranteeing eventual reach of the base case\nCONSTRUCT a formal termination proof using the established measure and case analysis\nFORMAT the proof as a rigorous mathematical exposition",
+    "confirmed": true,
+    "source_prompt_id": "I-00cbd8c0e5-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-00cbd8c0e5-X1",
+    "body": "a6871388815fc269d87d81cce4cdae1c2e8c6992ce2f17ec015294fe3d3b5ce6",
+    "confirmed": true,
+    "source_prompt_id": "I-00cbd8c0e5-P1",
+    "source_plan_id": "I-00cbd8c0e5-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

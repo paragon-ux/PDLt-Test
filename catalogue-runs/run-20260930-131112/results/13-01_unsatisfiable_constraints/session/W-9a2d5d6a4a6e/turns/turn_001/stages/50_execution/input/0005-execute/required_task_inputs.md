@@ -1,0 +1,26 @@
+CONFIRMED REQUIREMENTS (mechanically derived; reconcile EVERY ID):
+R1: READ the variables x, y, z each from the set {1, 2, 3}
+R2: READ the constraints C1: x != y
+R3: READ the constraints C2: y != z
+R4: READ the constraints C3: z != x
+R5: READ the constraints C4: x + y + z = 4
+R6: READ the constraints C5: x >= y
+R7: READ the constraints C6: y >= z
+R8: DETERMINE whether any assignments satisfy all constraints
+R9: IF solutions exist THEN
+R10: LIST all satisfying assignments
+R11: ELSE
+R12: PROVIDE a minimal explanation of the conflicting constraints preventing a solution
+R13: ENDIF
+
+The response MUST end with a fenced ```json block containing the Result IR object, exactly this shape:
+{"files": [{"filename": "<name>.py", "satisfies": ["R<n>"], "evidence": {"path": "<workspace-relative path>", "section": "<verbatim section marker, optional>"}}], "reconciliation": [{"requirement": "R<n>", "status": "satisfied|partial|open", "evidence": {"path": "...", "section": "...", "observed": "<verbatim quote from the cited artifact>"}}], "open_defects": [{"id": "D<n>", "description": "<defect>", "evidence": {"path": "...", "observed": "<verbatim quote>"}}]}
+Evidence rules: the path "execution://body" refers to THIS response's own deliverable text (use it for code and claims that exist only in this response); any other path MUST be one of the AVAILABLE EVIDENCE PATHS listed below; every "observed" string MUST be copied verbatim from the cited artifact; every requirement ID MUST appear in "reconciliation" exactly once; do not invent paths, sections, quotes, or requirement IDs; the host mechanically validates every citation and rejects fabrication.
+AVAILABLE EVIDENCE PATHS: - execution://body
+- execution://witness
+
+WITNESS REQUIREMENT (ADR-0013 / ADR-0015): Because this task requires verified execution, your Result IR MUST include a 'witness' field certifying substantive correctness:
+- If a solution exists: {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {<the concrete result, keyed by name>}}
+- If no solution exists: {"polarity": "negative", "evidence": {"path": "execution://witness"}, "basis": "proof", "argument": "<the impossibility argument>"} or, for an exhausted search, {"polarity": "negative", "basis": "search", "search_exhausted": true, "nodes_explored": <states explored>, "method": "<method>"}
+
+WITNESS CERTIFICATION: When the deliverable includes code, the host sandbox executes it. Print exactly one line `WITNESS: <json>` to stdout; the host-reproduced witness replaces any witness asserted in the Result IR. A witness the host could not reproduce is reported as provisional.

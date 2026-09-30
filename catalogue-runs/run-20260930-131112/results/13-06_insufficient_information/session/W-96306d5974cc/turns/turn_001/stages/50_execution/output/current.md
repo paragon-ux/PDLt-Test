@@ -1,0 +1,29 @@
+--- Optimized SQL Statement ---
+-- Original query: SELECT * FROM ???
+
+-- Since the specific table and columns are not provided, we apply generic performance best‑practices.
+-- 1. Avoid SELECT * – list only required columns.
+-- 2. Ensure appropriate indexes exist on columns used in WHERE clauses, JOIN conditions, ORDER BY, and GROUP BY.
+-- 3. If the table is large, consider partitioning or materialized views for frequent aggregations.
+-- 4. Use explicit joins with ON clauses rather than implicit joins.
+-- 5. Filter rows as early as possible.
+
+-- Example of an optimized pattern (replace placeholders with actual columns and conditions):
+SELECT col1, col2, col3
+FROM your_table t
+/* Apply filters early */
+WHERE t.status = 'active' AND t.created_date >= '2023-01-01'
+/* Use indexed columns in joins */
+JOIN another_table a ON a.id = t.foreign_id
+/* Limit result set if appropriate */
+ORDER BY t.created_date DESC
+LIMIT 1000;
+
+--- Rationale for Changes ---
+1. **Select Specific Columns** – Reduces I/O and memory usage by fetching only needed data.
+2. **Index Recommendations** – Indexes on `status`, `created_date`, and `foreign_id` speed up filtering and join operations.
+3. **Early Filtering** – Applying WHERE conditions before joins limits the number of rows processed in joins.
+4. **Explicit Joins** – Improves readability and allows the optimizer to choose better join strategies.
+5. **LIMIT Clause** – Prevents returning an excessively large result set when only a subset is needed.
+
+*Note*: Replace the placeholder table name (`your_table`), column names (`col1, col2, col3`), and filter conditions with the actual schema details for maximum effectiveness.

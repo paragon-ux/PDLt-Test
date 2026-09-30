@@ -1,0 +1,1 @@
+{"neutral_plan_body":"CONNECT to FrostbiteDB using the frostbitedb SDK\nCREATE a new collection in the connected database\nINSERT three documents into the collection\nQUERY the collection to retrieve the inserted documents"}

@@ -1,0 +1,10 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "User requests Python code that uses the FrostbiteDB Python SDK (package name: frostbitedb) to connect to a FrostbiteDB instance, create a collection, insert three documents, and query the documents back.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "frostbitedb",
+    "3"
+  ]
+}

@@ -4,17 +4,28 @@
   "model": "openai/gpt-oss-120b",
   "reasoning_effort": "low",
   "total_prompts": 7,
-  "passed": 6,
-  "failed": 1,
-  "pass_rate_pct": 85.7,
+  "passed": 4,
+  "failed": 3,
+  "stage_passed": 6,
+  "manual_spot_check": [],
+  "pass_rate_pct": 57.1,
   "total_elapsed_seconds": 141.8,
   "ground_truth": {
-    "PASS": 1,
-    "FAIL": 0,
-    "MANUAL": 6,
+    "PASS": 4,
+    "FAIL": 3,
+    "MANUAL": 0,
     "ERROR": 0
   },
-  "false_positives": [],
+  "false_positives": [
+    {
+      "id": "13-03",
+      "reason": "uses the nonexistent frostbitedb API"
+    },
+    {
+      "id": "13-07",
+      "reason": "answers or refuses without acknowledging the knowledge limitation"
+    }
+  ],
   "by_verdict": {
     "CLOSED_SUCCESS": 5,
     "WAITING_INPUT": 2
@@ -22,8 +33,8 @@
   "by_category": {
     "negative_and_impossible": {
       "total": 7,
-      "pass": 6,
-      "fail": 1
+      "pass": 4,
+      "fail": 3
     }
   },
   "by_difficulty": {
@@ -33,20 +44,38 @@
     },
     "adversarial": {
       "total": 3,
-      "pass": 3
+      "pass": 1
     },
     "medium": {
       "total": 1,
       "pass": 1
     }
   },
-  "regressions_hit": [],
+  "regressions_hit": [
+    {
+      "id": "13-03",
+      "regression_ref": "REG-003",
+      "verdict": "CLOSED_SUCCESS"
+    }
+  ],
   "failures": [
     {
       "id": "13-02",
       "category": "negative_and_impossible",
       "verdict": "WAITING_INPUT",
       "elapsed": 11.48
+    },
+    {
+      "id": "13-03",
+      "category": "negative_and_impossible",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 12.48
+    },
+    {
+      "id": "13-07",
+      "category": "negative_and_impossible",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 0.86
     }
   ]
 }
