@@ -220,13 +220,24 @@ def _incomplete_ir() -> dict:
 
 
 def test_declared_incomplete_result_needs_no_witness(tmp_path):
-    """A witness certifies a claimed result; an honest 'could not obtain it' claims none."""
-    reply = {"kind": "RESULT", "body": "The exact answer could not be computed here.", "result_ir": _incomplete_ir()}
+    """A witness certifies a claimed result; an honest 'could not obtain it', after an
+    attempt the host observed, claims none."""
+    body = "print('partial search finished without a complete answer')"
+    reply = {"kind": "RESULT", "body": body, "result_ir": _incomplete_ir()}
     engine, _, executes, events = _run(tmp_path, [reply], problem_class="VERIFIED_EXECUTION")
     assert len(executes) == 1
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
     assert "VERIFICATION_NOT_APPLICABLE" in _kinds(events)
     assert "VERIFICATION_PASSED" not in _kinds(events)
+
+
+def test_declared_incomplete_without_any_attempt_is_not_accepted(tmp_path):
+    """Run 165728 01-01: 'After exhaustive search, no partition exists' with one
+    requirement left open, no program and no witness."""
+    reply = {"kind": "RESULT", "body": "After exhaustive search, no partition exists.", "result_ir": _incomplete_ir()}
+    engine, _, executes, events = _run(tmp_path, [reply, reply], problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 2 and engine.controller.state.stage == Stage.CLOSED_CANCELLED
+    assert "observed no attempt to obtain the result" in executes[1].prompt
 
 
 def test_open_requirement_without_a_defect_still_needs_a_witness(tmp_path):

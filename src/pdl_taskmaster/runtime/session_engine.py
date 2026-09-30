@@ -1139,7 +1139,9 @@ class SessionEngine:
         witness: dict[str, Any] | None = None
         failures: list[str] = []
         self._last_program_outputs: list[str] = []
+        self._last_programs_run = 0
         for index, block in enumerate(_python_blocks(body), 1):
+            self._last_programs_run += 1
             run = self.sandbox.run_code(
                 block,
                 timeout=self._execution_budget.timeout_seconds,
@@ -1243,9 +1245,18 @@ class SessionEngine:
                 # requirements open (with the defect recorded) claims none, so there
                 # is nothing to certify; demanding a witness would force fabrication.
                 errors.extend(run_failures)
+                if not getattr(self, "_last_programs_run", 0):
+                    # "Could not be obtained" must rest on an attempt: with no program
+                    # run, an open requirement is an unattempted one, not an honest limit.
+                    errors.append(
+                        "Substantive verification error: the Result IR declares requirements open and carries no "
+                        "witness, but the deliverable contains no program; the host observed no attempt to "
+                        "obtain the result"
+                    )
                 self.workspace.append_event(
                     "VERIFICATION_NOT_APPLICABLE",
-                    {"reason": "declared_incomplete", "open_defects": len(ir["open_defects"])},
+                    {"reason": "declared_incomplete", "open_defects": len(ir["open_defects"]),
+                     "programs_run": getattr(self, "_last_programs_run", 0)},
                 )
             elif sandbox_witness is not None:
                 verdict = verifier.check(sandbox_witness, constraints, domain=self._problem_domain, body=body)

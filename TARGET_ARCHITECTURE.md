@@ -98,6 +98,7 @@ The target architecture enforces a strict tripartite separation of concerns:
 ### 2.1 Witness Authority
 
 - **Sandbox-reproduced witness is authoritative.** When the deliverable contains executable code, the witness is what the sandbox prints: exactly one `WITNESS: <json>` line, or an entire stdout that parses as JSON. A validated sandbox witness **replaces** any model-asserted witness in the Result IR, and a `WITNESS_OVERRIDDEN_BY_SANDBOX` event is recorded whenever the two differ.
+- **An incomplete result must rest on an attempt.** A Result IR that declares requirements open, records the defect and carries no witness needs no witness, but only when a program actually ran in that attempt. With no program, the open requirement was never attempted: that is a verification error, not an honest limit.
 - **Claims of computation must come from computation.** A negative witness that reports an exhausted search (`basis: search`, or `search_exhausted` / `nodes_explored` under any basis) is accepted only when a program run by the host printed it. Otherwise it is a verification error, since no search happened. Proof-based negative witnesses (an argument, no search telemetry) remain first-class under GUARD-03.
 - **Model-asserted witnesses are provisional.** A witness that no sandbox run reproduced is labelled `provisional` in telemetry and in the deliverable card. It is never presented as verified.
 - **No scraping.** There is no label-regex scan of stdout, no embedded-object search, and no bypass keyed on words in the deliverable body or prompt text.
