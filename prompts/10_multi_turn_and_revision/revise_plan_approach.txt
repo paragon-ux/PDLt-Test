@@ -1,3 +1,1 @@
 ﻿Implement a web scraper that extracts all links from a given HTML page.
-
-(This prompt is designed for multi-turn testing. After the model drafts the Response Plan, the tester should /revise the plan: "Don't use requests or beautifulsoup — use only the standard library html.parser module.")

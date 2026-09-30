@@ -303,7 +303,7 @@ timeline
 
 ## 8. Known Limitations
 
-- **Tester notes in immutable prompts.** Seven prompts (09-05 and 13-02 to 13-07) contain "Note to tester" text that states the expected behavior. Prompts are frozen inputs, so this text reaches the model unchanged. A future catalogue version should move these notes into the manifest.
-- **Multi-turn category.** The category 10 prompts describe multi-turn scripts, but the manifest defines them as single-turn runs, and the runner executes them that way.
+- **Evaluator notes live in the manifest.** Tester notes (13-02 to 13-07, 14-07) and the category 10 multi-turn scripts are manifest fields (`tester_note`, `multi_turn_script`), not prompt text. The runner sends only the prompt file to the harness and copies these fields into `result.json` for the human spot check. `tests/test_catalogue_integrity.py` fails if tester-facing text reappears in a prompt.
+- **Multi-turn category.** The category 10 prompts are run single-turn, as the manifest defines them. Their scripts are kept in `multi_turn_script` for a future multi-turn runner.
 - **Headless gate policy.** In headless runs the evaluator confirms review gates by piping `/confirm`. This is the existing protocol, and it is recorded in `RUN_META.json` as `gate_policy`. The benchmark therefore measures autonomous drafting under lint gates, not human review.
 - **Live runs need credentials.** Catalogue execution requires `OPENROUTER_API_KEY`. Offline tests cover the protocol, containment and graders.

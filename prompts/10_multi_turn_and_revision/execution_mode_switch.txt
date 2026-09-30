@@ -1,3 +1,1 @@
 ﻿Write a function that converts temperatures between Celsius, Fahrenheit, and Kelvin.
-
-(Multi-turn test: During plan confirmation, first confirm as "standard" output mode, then switch to "pseudocode" result mode. Verify the mode switch is handled correctly.)

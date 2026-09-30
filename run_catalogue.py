@@ -194,6 +194,9 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout):
         "pdl_rules_stressed": entry.get("pdl_rules_stressed", []),
         "tags": entry.get("tags", []),
         "regression_ref": entry.get("regression_ref"),
+        # Evaluator-only context from the manifest; never sent to the harness.
+        "tester_note": entry.get("tester_note"),
+        "multi_turn_script": entry.get("multi_turn_script"),
     }
 
     (result_dir / "result.json").write_text(
