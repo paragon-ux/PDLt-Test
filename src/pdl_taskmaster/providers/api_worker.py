@@ -536,21 +536,16 @@ class ApiWorker:
                 "2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n"
                 "3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n"
                 "4. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04), and NEVER insert placeholder steps or meta-prohibitions like 'insert placeholders without performing computation' (PLAN-10).\n"
-                "5. Implementation Tasks: For prompts asking to implement, build, or write code, plan the software architecture and implementation steps (e.g. DEFINE, IMPLEMENT, RETURN, EMIT) to produce the complete deliverable. DO NOT plan interactive user input steps like 'RECEIVE input from user' or 'ASK for input' unless the user prompt explicitly requested an interactive dialogue.\n"
-                "6. Analytical & Symbolic Tasks: For analytical reasoning, symbolic mathematics, word problems, or logic puzzles, plan the precise logical deduction or closed-form derivation directly. DO NOT plan search loops, numerical simulations, or fabricate concrete example values unless empirical code execution or concrete cases were explicitly requested.\n"
-                "7. Environmental Bounds: The execution environment is completely offline with no network or internet access."
+                "5. Plan the steps that produce the deliverable itself. Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue."
             )
-        elif operation_name in ("EXECUTE", "DRAFT_EXECUTE", "DRAFT_EXECUTION", "EMIT_RESULT_IR"):
+        elif operation_name == "EXECUTE":
             extra_guidance = (
-                "\n\nNORMATIVE GUIDELINES FOR EXECUTE & DRAFT_EXECUTE:\n"
-                "- Environmental Bounds: The sandbox execution environment is strictly offline with NO network or internet access. Do not attempt HTTP requests or external socket connections.\n"
-                "- Substantive Delivery: You MUST solve the problem, perform any required computation, and output the concrete final deliverable/result (e.g. concrete answers, solutions, code, or partitions), not an algorithmic description or meta-summary.\n"
-                "- Autonomous Host Execution: DO NOT emit REQUEST_INPUT asking for execution runtime, computation results, or human execution. When code is requested or required, the host environment automatically executes the Python script in your deliverable 'body' in an isolated sandbox to certify the witness. Always emit a RESULT containing the complete deliverable and Result IR.\n"
-                "- Analytical & Symbolic Tasks: For closed-form mathematical derivations, symbolic proofs, logic puzzles, or word problems with general variables (e.g. N, M, x), deliver the exact analytical reasoning, proof, or formula directly in clear prose or math. DO NOT invent concrete numerical sample values or construct search loops unless empirical computation was explicitly requested.\n"
-                "- Implementation Tasks: When asked to implement, build, or write code for a function, module, scraper, or script (e.g. 'for a given input'), deliver the complete, self-contained implementation code (including a demonstration or sample input). DO NOT emit REQUEST_INPUT asking the user to provide sample data or runtime inputs.\n"
-                "- Analysis and Specification Tasks: When the prompt provides text, requirements, or policy excerpts (whether inline, quoted, or fenced), analyze the provided text directly and emit RESULT. DO NOT emit REQUEST_INPUT asking for the text that was already provided in the prompt.\n"
-                "- If SUPPLIED_EXECUTION_INPUT_SOURCE is provided, use it as the operative input data for your computation.\n"
-                "- Certification: When the deliverable includes code, the host executes it in the isolated sandbox. To certify a result, print exactly one line `WITNESS: <json>` to stdout. Analytical deliverables without code are valid; never present a guessed result as computed."
+                "\n\nNORMATIVE GUIDELINES FOR EXECUTE (EXEC-01, AUTH-03, AUTH-04, GUARD-03):\n"
+                "- Deliver the result the confirmed prompt asks for, following the confirmed plan. Do not substitute a description of how the result could be obtained.\n"
+                "- AVAILABLE_EXECUTION_TOOLS describes the execution environment exactly. Work within it. REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (EXEC-01); an environment capability is never user input.\n"
+                "- SUPPLIED_EXECUTION_INPUT_SOURCE, when present, is the user's original source text: use its data, and let the confirmed prompt govern where they differ (AUTH-04).\n"
+                "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"
+                "- When the deliverable includes Python code, the host runs each ```python block as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
             )
 
         if instructions:

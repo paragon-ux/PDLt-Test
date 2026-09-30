@@ -26,58 +26,6 @@ from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output
 from pdl_taskmaster.verification.sandbox import ExecutionSandbox
 
 
-def _norm(text: str) -> str:
-    """Whitespace-normalized form for verbatim entity matching: collapses all
-    whitespace runs to single spaces so formatting variance does not cause
-    false entity-miss retries (the 4B check is about content, not layout)."""
-    return " ".join((text or "").split())
-
-
-def _extract_data_payload(raw_text: str) -> str | None:
-    """Extract candidate literal execution data blocks from raw user input.
-
-    Recognizes explicit input/data labels (e.g. Input:, Data:, Dataset:,
-    Payload:, Target:, Sample:, String:, etc.) or labeled structured blocks,
-    as well as fenced or backticked data blocks (e.g. ```csv, ```tsv, ```json, ```data).
-    Returns the raw extracted payload string, or None if no data block is found.
-    """
-    if not raw_text or not raw_text.strip():
-        return None
-
-    # 1. Search for fenced or backticked data blocks (e.g. csv, json, data, tsv, yaml, xml)
-    m_fence = re.search(
-        r"(?:```|`)(?:csv|tsv|json|data|text|xml|yaml)?\s*\n(.*?)(?:```|`)",
-        raw_text,
-        re.DOTALL,
-    )
-    if m_fence:
-        fenced = m_fence.group(1).strip()
-        # Avoid matching python code definitions
-        if fenced and not fenced.startswith("def ") and ("\n" in fenced or "," in fenced or "{" in fenced or "[" in fenced):
-            return fenced
-
-    # 2. Search for an explicit input/data section delimiter or variable assignment with data literal
-    m = re.search(
-        r"(?im)^\s*(?:input|inputs|data|dataset|payload|sample\s*input|test\s*cases?|target|query|string|text|array|nums|matrix|trace|sequence|(?:(?!pipeline|step)[a-zA-Z0-9_\s()-]+?)\s*[:=]\s*[\{\[\(\"'\d])\s*[:=]?",
-        raw_text,
-    )
-    if m:
-        candidate = raw_text[m.start():].strip()
-        # If there is a trailing note or instruction separated by double newlines, trim it
-        parts = re.split(r"\n\s*\n(?=(?:pipeline|steps|for each|note|please|make sure|confirm|do not)\b)", candidate, flags=re.IGNORECASE)
-        if parts and parts[0].strip():
-            return parts[0].strip()
-
-    # 3. Search for substantial quoted strings (e.g. policy excerpts, specifications, documents)
-    m_quotes = re.findall(r'"([^"\n]{40,}(?:\n[^"]*)*?)"', raw_text, re.DOTALL)
-    if m_quotes:
-        longest = max(m_quotes, key=len).strip()
-        if len(longest) >= 50:
-            return longest
-
-    return None
-
-
 def _wrap_witness(d: dict[str, Any]) -> dict[str, Any]:
     """A printed witness without an explicit polarity is a positive witness whose
     payload is exactly what the sandbox printed."""
@@ -118,24 +66,22 @@ def _parse_sandbox_witness(stdout_text: str) -> dict[str, Any] | None:
     return _wrap_witness(d) if isinstance(d, dict) else None
 
 
-def _normalize_deliverable_blocks(body: str, ir_dict: dict[str, Any]) -> str:
-    """Ensure deliverable Python code is properly fenced and synchronized with Result IR JSON."""
+_PYTHON_BLOCK = re.compile(r"```(?:python|py)[ \t]*\n(.*?)```", re.S)
+
+
+def _python_blocks(body: str) -> list[str]:
+    """Executable Python is declared, never guessed: only fenced blocks tagged
+    ``python`` or ``py`` are run by the host."""
+    return [block for block in _PYTHON_BLOCK.findall(body or "") if block.strip()]
+
+
+def _attach_result_ir(body: str, ir_dict: dict[str, Any]) -> str:
+    """Publish the host-validated Result IR (which carries the authoritative witness)
+    in place of the IR block the model emitted, or append it when none was fenced."""
     ir_json_str = json.dumps(ir_dict, indent=2, ensure_ascii=False)
-    py_blocks = re.findall(r"```(?:python|py)?\s*\n(.*?)```", body, re.S)
-    if not py_blocks and ("import " in body or "def " in body) and "print(" in body:
-        raw_py = re.split(r"```(?:json)?\s*\{", body)[0].strip()
-        if raw_py:
-            fname = "solver.py"
-            if ir_dict.get("files") and isinstance(ir_dict["files"], list) and ir_dict["files"][0].get("filename"):
-                fname = ir_dict["files"][0]["filename"]
-            sec_hdr = f"### {fname}\n" if f"### {fname}" not in raw_py else ""
-            return f"{sec_hdr}```python\n{raw_py}\n```\n\n```json\n{ir_json_str}\n```"
     fence_pattern = re.compile(r"```(?:json)?\s*\{.*?\"(?:files|witness|reconciliation)\".*?\}\s*```", re.S)
     if fence_pattern.search(body):
-        return fence_pattern.sub(f"```json\n{ir_json_str}\n```", body, count=1)
-    trailing_match = re.search(r"(?:Result IR:|\n|^)\s*\{\s*\"(?:files|witness|reconciliation)\".*\}\s*$", body, re.S)
-    if trailing_match:
-        return body[:trailing_match.start()].rstrip() + f"\n\n```json\n{ir_json_str}\n```"
+        return fence_pattern.sub(lambda _m: f"```json\n{ir_json_str}\n```", body, count=1)
     return body.rstrip() + f"\n\n```json\n{ir_json_str}\n```"
 
 
@@ -213,18 +159,19 @@ class SessionEngine:
         self.repo_root = Path(repo_root)
         self.model_call = model_call
         self.higher_priority_constraints = higher_priority_constraints
-        self.available_execution_tools = available_execution_tools
         self.bridge = OperationBridge(self.repo_root, render_compact=render_compact)
         # Axiom 3: one session-scoped sandbox, constructed at boot and reused by every run.
         self.sandbox = ExecutionSandbox(timeout_seconds=15.0)
+        # The solver is told the truth about where its code runs (EXEC-01).
+        self.available_execution_tools = (
+            available_execution_tools if available_execution_tools is not None else self.sandbox.describe()
+        )
         self.controller: Optional[MechanicalController] = None
         self.workspace: Optional[WorkspaceRun] = None
-        if sys1_client is not None:
-            self.sys1_client = sys1_client
-        else:
-            from pdl_taskmaster.providers.sys1.client import Sys1Client
-            sys1_key = os.environ.get("SYS1_API_KEY") or os.environ.get("OPENROUTER_API_KEY") or ""
-            self.sys1_client = Sys1Client(api_key=sys1_key) if sys1_key else None
+        # System 1 is injected by the host (the live worker owns it). The engine never
+        # builds a network client from ambient environment variables, so an engine
+        # constructed without one is fully offline.
+        self.sys1_client = sys1_client
         # Protocol v2: semantic-bootstrap containment (structural, non-optional).
         # Raw untrusted content is read by BOOTSTRAP_ANALYSIS only; every compile
         # operation receives the sanitized compiled analysis. Cache is keyed on
@@ -235,10 +182,11 @@ class SessionEngine:
         # None for first turns and legacy single-turn workspaces.
         self._previous_deliverable: str | None = None
         self._active_task_entities: tuple[str, ...] = ()
-        self._bound_payload_inputs: str | None = None
+        # AUTH-04: the user's original request is source data for execution; the
+        # confirmed prompt governs task semantics where the two differ.
+        self._source_request: str | None = None
         self._requires_verified_execution: bool = False
         self._problem_domain: Any = None
-        self._is_introspection: bool = False
         self.refused: bool = False
         if workspace_root is None:
             self.workspace_root = Path(tempfile.mkdtemp(prefix="pdl-c0-workspaces-"))
@@ -508,8 +456,6 @@ class SessionEngine:
             self._bootstrap_cache[cache_key] = ""
             self._blocked_response = outcome.get("response")
             return None
-        import hashlib
-
         compiled, _meta = compile_bootstrap_output(raw_text, outcome["task_summary"])
         # Containment-boundary durability: a lazy semantic read that classifies
         # substantive raw content as instruction-free loses the entire task
@@ -648,7 +594,7 @@ class SessionEngine:
         protocol_state: str,
     ) -> EngineResponse:
         assert self.workspace is not None
-        self._bound_payload_inputs = _extract_data_payload(substantive_request)
+        self._source_request = substantive_request
         from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
         from pdl_taskmaster.verification.checkers.base import ProblemDomain
         requires_verified = False
@@ -747,29 +693,6 @@ class SessionEngine:
             if body != state.current_plan.body:
                 self.controller.replace_current_unconfirmed_body("plan", body)
 
-    def build_introspection_projection(self, deliverable_text: str | None) -> str:
-        from pdl_taskmaster.runtime.result_ir import load_ir_from_deliverable
-        prior_ir = load_ir_from_deliverable(deliverable_text) if deliverable_text else None
-        prior_witness = prior_ir.get("witness") if isinstance(prior_ir, dict) else None
-
-        if prior_witness:
-            return (
-                "\n\n## PRIOR TURN WITNESS RECORD (PROJECTED GROUND TRUTH)\n"
-                + json.dumps(prior_witness, indent=2)
-                + "\n\nCRITICAL INTROSPECTION INSTRUCTIONS:\n"
-                "- Cite ONLY the verified data from the projected witness record above.\n"
-                "- Do NOT generate, infer, or extrapolate additional elements, sets, or justifications.\n"
-            )
-        else:
-            return (
-                "\n\n## PRIOR TURN WITNESS RECORD (PROJECTED GROUND TRUTH)\n"
-                "NO WITNESS RECORD RETAINED FOR PRIOR TURN.\n\n"
-                "CRITICAL INTROSPECTION INSTRUCTIONS:\n"
-                "- No derivation trace or witness exists from the previous turn.\n"
-                "- You MUST state plainly that no trace or witness was retained for the prior answer.\n"
-                "- Do NOT fabricate, invent, or reconstruct any intermediate steps, sets, or mathematical proofs.\n"
-            )
-
     def _activation(self, user_message: str, traces: list[CallTrace]) -> EngineResponse | None:
         # S4 cross-turn chaining (ADR-0008 §4): when the SAME session's prior
         # turn reached a terminal stage and the user issues a new command,
@@ -795,27 +718,18 @@ class SessionEngine:
             prior.start_turn(prior.next_turn_id())
             self.workspace = prior
             self._previous_deliverable = chained_deliverable
-            self._bound_payload_inputs = None
-            self._is_introspection = bool(
-                re.search(
-                    r"(?i)\b(?:show\s+(?:your\s+)?work|show\s+steps|explain\s+(?:the\s+)?(?:last\s+)?step|explain\s+how|why\b|"
-                    r"how\s+did\s+you|what\s+was\s+the\s+(?:derivation|proof|work|partition|solution))\b",
-                    user_message,
-                )
-            )
+            self._source_request = None
             self.workspace.append_event(
                 "TURN_CHAINED",
                 {
                     "turn_id": prior.turn_id,
                     "previous_deliverable": chained_deliverable is not None,
-                    "is_introspection": self._is_introspection,
                 },
             )
         else:
             self.workspace = self._new_workspace()
             self._previous_deliverable = None
-            self._bound_payload_inputs = None
-            self._is_introspection = False
+            self._source_request = None
         observation = observe_invocation(user_message)
         if observation.explicit:
             self.workspace.append_event(
@@ -978,6 +892,8 @@ class SessionEngine:
         return EngineResponse(presentation.plan_artifact(body), traces)
 
     def _execute(self, transition: Transition, traces: list[CallTrace]) -> EngineResponse:
+        """Phases 4 and 5 (TARGET_ARCHITECTURE §3): one EXECUTE call, deterministic
+        verification, at most one repair carrying factual findings, then close."""
         assert self.controller is not None and self.workspace is not None
         if not self.controller.can_execute():
             raise ControllerError("execute_gate")
@@ -988,347 +904,74 @@ class SessionEngine:
         self.workspace.validate_confirmed_artifact("plan", plan.artifact_id, plan.body)
         prompt_body = self.workspace.read_artifact("prompt")[1]
         plan_body = self.workspace.read_artifact("plan")[1]
-        # Protocol v2: the supplied execution input is raw user content (in the
-        # adversarial battery it IS the untrusted block). Route it through the
-        # quarantine boundary — compile ops never receive unredacted threats.
-        supplied_raw = transition.payload.get("execution_input_source") or self._bound_payload_inputs
-        if supplied_raw:
-            sanitized_payload, _ = compile_bootstrap_output(supplied_raw, supplied_raw)
-            supplied_compiled = sanitized_payload.strip()
-        else:
-            supplied_compiled = None
-        # Cross-epoch deliverable chaining (ADR-0008 §4 + ADR-0004): the prior
-        # epoch's confirmed deliverable is host-published, gate-passed content
-        # (see _semantic_read S4 note). Chain it byte-exact into the execution
-        # phase so continuation/revision epochs condition on the actual prior
-        # artifact instead of a pseudocode summary. First epochs have no prior
-        # deliverable and keep the previous null behavior.
-        required_task_inputs = self._previous_deliverable
-        if self._is_introspection:
-            required_task_inputs = (required_task_inputs or "") + self.build_introspection_projection(self._previous_deliverable)
-        # ADR-0009 / TRD-0003 (RS-09, RS-10): feature-gated Result IR mode.
-        # Adds structured result-decomposition instructions, chains the prior
-        # validated Result IR beside the deliverable, and mechanically
-        # validates the emitted IR (coverage + evidence resolution).
-        result_ir_mode = (os.environ.get("PDLT_RESULT_IR") == "1") or self._requires_verified_execution
+
         from pdl_taskmaster.runtime.result_ir import (
-            arithmetic_checks,
             derive_requirements,
-            entity_enforcement_misses,
-            extract_result_ir,
             load_ir_from_deliverable,
-            parse_typed_entities,
-            render_execution_brief,
             render_instructions,
             render_prior_ir_section,
-            validate_result_ir,
         )
+
+        # Source data (AUTH-04): user-supplied execution input, else the original
+        # request, passed through the same quarantine sanitizer as every compile input.
+        supplied_raw = transition.payload.get("execution_input_source") or self._source_request
+        supplied = compile_bootstrap_output(supplied_raw, supplied_raw)[0].strip() if supplied_raw else None
+
+        verified = self._requires_verified_execution
+        result_ir_mode = verified or os.environ.get("PDLT_RESULT_IR") == "1"
         requirements = derive_requirements(prompt_body) if result_ir_mode else []
-        execute_context = {
-            "CONFIRMED_PROMPT_BODY": prompt_body,
-            "CONFIRMED_PLAN_BODY": plan_body,
-            "REQUIRED_TASK_INPUTS": required_task_inputs,
-            "SUPPLIED_EXECUTION_INPUT_SOURCE": supplied_compiled,
-            "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
-        }
+        task_inputs: list[str] = []
+        if self._previous_deliverable:
+            task_inputs.append(self._previous_deliverable)
         if result_ir_mode:
-            # TRD-0003: the IR channel rides inside the contract-whitelisted
-            # REQUIRED_TASK_INPUTS symbol (adding new symbols would violate the
-            # EXECUTION_CONTRACT allow-list). Value = instructions + numbered
-            # requirements + (when chained) the prior validated IR.
-            evidence_paths = ["execution://body"]
-            if self._requires_verified_execution:
-                evidence_paths.append("execution://witness")
-            if self._previous_deliverable and self.workspace.closed_turns():
-                closed = [t for t in self.workspace.closed_turns() if t.get("status") == "CLOSED_SUCCESS"]
-                if closed:
-                    evidence_paths.append(
-                        f"turns/{closed[-1]['turn_id']}/stages/50_execution/output/current.md"
-                    )
-            ir_channel = render_instructions(
+            evidence_paths = ["execution://body"] + (["execution://witness"] if verified else [])
+            closed = [t for t in self.workspace.closed_turns() if t.get("status") == "CLOSED_SUCCESS"]
+            if self._previous_deliverable and closed:
+                evidence_paths.append(f"turns/{closed[-1]['turn_id']}/stages/50_execution/output/current.md")
+            channel = render_instructions(
                 requirements,
                 repo_root=self.repo_root,
                 evidence_paths=evidence_paths,
-                requires_verified_execution=self._requires_verified_execution,
+                requires_verified_execution=verified,
             )
             prior_ir = load_ir_from_deliverable(self._previous_deliverable)
             if prior_ir:
-                ir_channel += render_prior_ir_section(prior_ir)
-                ir_channel += render_execution_brief(prior_ir, requirements)
-            base_inputs = required_task_inputs or ""
-            if supplied_compiled:
-                supplied_section = f"## SUPPLIED TASK INPUT\n{supplied_compiled}\n\n"
-                base_inputs = (supplied_section + base_inputs) if base_inputs else supplied_section
-            channel_value = (base_inputs + ir_channel) if base_inputs else ir_channel
-            # Delivery markers are synthesized BEFORE the draft (4B class): the
-            # brief must pin them so the first emission is correctly labeled
-            # and no full re-emission is needed.
-            declared_names = sorted(
-                set(
-                    re.findall(
-                        r"\b[\w-]+\.(?:py|md|json|txt|cfg|toml)\b",
-                        prompt_body + "\n" + plan_body + "\n" + channel_value,
-                    )
-                )
-            )
-            marker_entities = tuple(f"### {n}" for n in declared_names)
-            if marker_entities:
-                channel_value += (
-                    "\nDELIVERY FORMAT: file sections MUST be headed exactly by their marker lines "
-                    "(e.g. a line reading exactly '### cnf.py' immediately followed by that file's code): "
-                    + "; ".join(marker_entities)
-                )
-            if self._requires_verified_execution:
-                channel_value += (
-                    "\n\nMANDATORY VERIFICATION REQUIREMENT: This task requires verified execution. "
-                    "The deliverable must contain a valid witness certifying substantive correctness."
-                )
-            # DRAFT_EXECUTE (ADR-0009): entity extraction at the execute
-            # boundary, mirroring DRAFT_PROMPT's task-entity channel. Turns are
-            # structurally lossy; the draft declares the verbatim-critical
-            # entities (wire formats, constants, signatures) before any code is
-            # written, and the host enforces their survival mechanically.
-            draft_context = {
-                "HOST_PROTOCOL_STATE": "EXECUTION_DRAFT",
-                "CONFIRMED_PROMPT_BODY": prompt_body,
-                "CONFIRMED_PLAN_BODY": plan_body,
-                "REQUIRED_TASK_INPUTS": channel_value,
-            }
-            draft = self._call(
-                "DRAFT_EXECUTE",
-                draft_context,
-                traces,
-                parser=self.bridge.parse_execution_draft,
-            )
-            # Typed entity pipeline (parser over entities, not string filters):
-            # the host classifies, arithmetically validates, and applies
-            # kind-appropriate enforcement. meta entities are never enforced
-            # against the deliverable.
-            typed = parse_typed_entities(draft.execution_entities)
-            arithmetic = arithmetic_checks(typed)
-            if arithmetic:
-                self.workspace.append_event(
-                    "EXECUTE_DRAFT_ARITHMETIC_RETRY", {"errors": arithmetic}
-                )
-                draft_context["REQUIRED_TASK_INPUTS"] = channel_value + (
-                    "\n\n\n\nOPERATOR CORRECTION (host-side mechanical check): the declared wire-format "
-                    "arithmetic is inconsistent and MUST be fixed before execution: "
-                    + " | ".join(arithmetic)
-                )
-                draft = self._call(
-                    "DRAFT_EXECUTE",
-                    draft_context,
-                    traces,
-                    parser=self.bridge.parse_execution_draft,
-                )
-                typed = parse_typed_entities(draft.execution_entities)
-                arithmetic = arithmetic_checks(typed)
-                if arithmetic:
-                    self.workspace.append_event(
-                        "EXECUTE_DRAFT_ARITHMETIC_INVALID",
-                        {"errors": arithmetic, "scored": "model_error"},
-                    )
-            containment_pool = channel_value + prompt_body + plan_body
-            kept = [e for e in typed if _norm(e["value"]) in _norm(containment_pool)]
-            dropped = len(typed) - len(kept)
-            if dropped:
-                self.workspace.append_event(
-                    "EXECUTE_ENTITY_DROPPED_UNSAFE", {"count": dropped}
-                )
-            # Delivery markers are always enforced entities (4B class): the
-            # section headers themselves are lossy across turns.
-            declared_names = sorted(
-                set(
-                    re.findall(
-                        r"[\w-]+\.(?:py|md|json|txt|cfg|toml)",
-                        prompt_body + " " + plan_body + " " + channel_value,
-                    )
-                )
-            )
-            existing_values = {e["value"] for e in kept}
-            kept = kept + [
-                {"kind": "delivery_marker", "value": f"### {n}", "name": None,
-                 "struct_format": None, "declared_size": None}
-                for n in declared_names
-                if f"### {n}" not in existing_values
-            ]
-            brief_misses, _ = entity_enforcement_misses(kept, draft.brief_body, None)
-            if brief_misses:
-                self.workspace.append_event(
-                    "EXECUTE_ENTITY_COVERAGE_RETRY", {"missing": len(brief_misses)}
-                )
-                draft_context["REQUIRED_TASK_INPUTS"] = channel_value + (
-                    "\n\n\n\nOPERATOR CORRECTION (host-side mechanical check): the following execution "
-                    "entities are missing from the brief body and MUST appear verbatim, "
-                    "character-for-character: " + " | ".join(brief_misses)
-                )
-                draft = self._call(
-                    "DRAFT_EXECUTE",
-                    draft_context,
-                    traces,
-                    parser=self.bridge.parse_execution_draft,
-                )
-            entity_block = (
-                "\n## EXECUTION BRIEF (entity-dense; drafted prior to execution)\n"
-                + draft.brief_body
-                + "\nCRITICAL VERBATIM ENTITIES (each MUST appear verbatim in the deliverable; "
-                "the host checks this mechanically):\n"
-                + "\n" + "\n".join(f"- [{e['kind']}] {e['value']}]" for e in kept)
-                + "\nDELIVERY FORMAT: file sections MUST be headed exactly by their marker lines "
-                "(e.g. a line reading exactly '### cnf.py' immediately followed by that file's code)."
-            )
-            execute_context["REQUIRED_TASK_INPUTS"] = (
-                (base_inputs + entity_block + ir_channel) if base_inputs else (entity_block + ir_channel)
-            )
-            execute_entities = kept
-        else:
-            execute_entities = ()
-        if self._requires_verified_execution:
-            py_mandate = (
-                "\n\nMANDATORY VERIFICATION REQUIREMENT: This task requires verified execution. "
-                "The deliverable must contain a valid witness certifying substantive correctness."
-            )
-            execute_context["REQUIRED_TASK_INPUTS"] = (
-                (execute_context.get("REQUIRED_TASK_INPUTS") or "") + py_mandate
-            )
-        outcome = self._call(
-            "EXECUTE",
-            execute_context,
-            traces,
-            parser=self.bridge.parse_execution,
-        )
+                channel += render_prior_ir_section(prior_ir)
+            task_inputs.append(channel)
+        execute_context = {
+            "CONFIRMED_PROMPT_BODY": prompt_body,
+            "CONFIRMED_PLAN_BODY": plan_body,
+            "REQUIRED_TASK_INPUTS": "\n\n".join(task_inputs) or None,
+            "SUPPLIED_EXECUTION_INPUT_SOURCE": supplied,
+            "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
+        }
+
+        outcome = self._call("EXECUTE", execute_context, traces, parser=self.bridge.parse_execution)
         final_body = outcome.body
-        if result_ir_mode and outcome.kind == "RESULT":
-            workspace_path = self.workspace.path
-            attempts = 0
-            repaired = False
-            while True:
-                wire_ir = getattr(outcome, "result_ir", None)
-                if isinstance(wire_ir, dict):
-                    # Option 2 (ADR-0009): the IR arrived as a schema-enforced
-                    # wire field; body scanning is only the recorded-path
-                    # fallback.
-                    ir = wire_ir
-                else:
-                    ir = extract_result_ir(final_body)
-                if ir is not None:
-                    ir_errors, _ = validate_result_ir(
-                        ir, workspace_path, requirements, execution_body=final_body
-                    )
-                    if self._requires_verified_execution:
-                        verdict = self._verify_witness(ir, final_body, prompt_body, plan_body, requirements)
-                        if not verdict.valid:
-                            ir_errors.append(f"Substantive verification error: {verdict.diagnostic}")
-                        else:
-                            final_body = _normalize_deliverable_blocks(final_body, ir)
-                            self.workspace.append_event(
-                                "VERIFICATION_PASSED",
-                                {"provisional": verdict.provisional, "details": verdict.details},
-                            )
-                else:
-                    ir_errors = ["Result IR missing or not a JSON object (TRD-0003 RS-01)"]
-                _, entity_missing = entity_enforcement_misses(
-                    execute_entities, "", final_body
-                )
-                if entity_missing:
-                    self.workspace.append_event(
-                        "EXECUTE_ENTITY_MISSING", {"count": len(entity_missing)}
-                    )
-                errors = ir_errors + [
-                    f"critical execution entity missing from the deliverable: {e!r}" for e in entity_missing
-                ]
-                if not errors or attempts >= 2:
-                    break
-                attempts += 1
-                has_substantive_error = any("Substantive verification error" in str(e) for e in ir_errors)
-                if not entity_missing and not has_substantive_error:
-                    # IR-only repair (TRD-0003 RS-08): a dedicated
-                    # schema-enforced repair op re-emits ONLY the corrected
-                    # result_ir, so the retry budget affords multiple cheap
-                    # attempts instead of one full re-emission.
-                    repair_ctx = {
-                        "HOST_PROTOCOL_STATE": "RESULT_IR_REPAIR",
-                        "DELIVERABLE_BODY": final_body,
-                        "RESULT_IR_REQUIREMENTS": render_instructions(
-                            requirements,
-                            repo_root=self.repo_root,
-                            evidence_paths=evidence_paths,
-                            requires_verified_execution=self._requires_verified_execution,
-                        ),
-                        "RESULT_IR_ERRORS": " | ".join(ir_errors),
-                    }
-                    repair = self._call(
-                        "EMIT_RESULT_IR",
-                        repair_ctx,
-                        traces,
-                        parser=self.bridge.parse_result_ir_repair,
-                    )
-                    if isinstance(repair, dict):
-                        ir2 = repair.get("result_ir") or (repair if "files" in repair or "witness" in repair else None)
-                    else:
-                        ir2 = None
-                    if ir2 is not None:
-                        e2, _ = validate_result_ir(
-                            ir2, workspace_path, requirements, execution_body=final_body
-                        )
-                        if self._requires_verified_execution:
-                            verdict = self._verify_witness(ir2, final_body, prompt_body, plan_body, requirements)
-                            if not verdict.valid:
-                                e2.append(f"Substantive verification error: {verdict.diagnostic}")
-                            else:
-                                self.workspace.append_event(
-                                    "VERIFICATION_PASSED",
-                                    {"provisional": verdict.provisional, "details": verdict.details},
-                                )
-                        if not e2:
-                            final_body = _normalize_deliverable_blocks(final_body, ir2)
-                            repaired = True
-                            ir = ir2
-                            errors = []
-                            self.workspace.append_event(
-                                "RESULT_IR_REPAIRED", {"attempts": attempts}
-                            )
-                            break
-                        ir_errors = e2
-                        errors = e2 + [
-                            f"critical execution entity missing from the deliverable: {e!r}" for e in entity_missing
-                        ]
-                    self.workspace.append_event(
-                        "RESULT_IR_REPAIR_RETRY", {"attempt": attempts}
-                    )
-                    continue
-                # Code-defect retry: the deliverable itself is wrong; a full
-                # re-emission is unavoidable (option 2: body + IR travel
-                # together under the wire schema).
-                correction_ctx = dict(execute_context)
-                correction_ctx["REQUIRED_TASK_INPUTS"] = execute_context["REQUIRED_TASK_INPUTS"] + (
-                    "\n\nRESULT IR & DELIVERABLE VALIDATION ERRORS (host-side mechanical check): verification or schema checks failed. Re-emit the FULL response with the corrected deliverable and result_ir: "
-                    + " | ".join(errors)
-                )
+        errors: list[str] = []
+        if outcome.kind == "RESULT":
+            errors, final_body = self._verify_result(outcome, prompt_body, plan_body, requirements, result_ir_mode)
+            if errors:
+                # Bounded repair: exactly one re-execution, with host findings sent
+                # through the operator-correction channel (never as approach sources).
+                self.workspace.append_event("VERIFICATION_REPAIR", {"errors": errors})
                 outcome = self._call(
                     "EXECUTE",
-                    correction_ctx,
+                    execute_context,
                     traces,
                     parser=self.bridge.parse_execution,
+                    operator_correction=(
+                        "OPERATOR CORRECTION (host-side verification findings): the previous "
+                        "deliverable failed these checks: " + " | ".join(errors)
+                    ),
                 )
                 final_body = outcome.body
-            if repaired:
-                self.workspace.append_event(
-                    "RESULT_IR_VALIDATED", {"ir": ir, "repaired": True}
-                )
-            elif errors:
-                self.workspace.append_event(
-                    "RESULT_IR_INVALID", {"errors": errors, "scored": "model_error"}
-                )
-                if self._requires_verified_execution:
-                    self.workspace.append_event("VERIFICATION_FAILED", {"errors": errors})
-                    final_body = (
-                        f"UNVERIFIED ANSWER: Substantive verification was not completed after repair attempts. Reason: {'; '.join(errors)}\n\n"
-                        f"Candidate deliverable:\n{final_body}"
+                errors = []
+                if outcome.kind == "RESULT":
+                    errors, final_body = self._verify_result(
+                        outcome, prompt_body, plan_body, requirements, result_ir_mode
                     )
-            else:
-                final_body = _normalize_deliverable_blocks(final_body, ir)
-                self.workspace.append_event("RESULT_IR_VALIDATED", {"ir": ir})
+
         if outcome.kind == "REQUEST_INPUT":
             assert outcome.expected_type is not None and outcome.description is not None
             self.controller.request_execution_input(outcome.expected_type, outcome.description)
@@ -1342,15 +985,16 @@ class SessionEngine:
             self.controller.cancel()
             self.workspace.publish_execution_outcome(outcome.kind, outcome.body)
             return EngineResponse(outcome.body, traces, closed=True)
-        if self._requires_verified_execution and errors:
+        if errors:
+            self.workspace.append_event("VERIFICATION_FAILED", {"errors": errors})
+            final_body = (
+                "UNVERIFIED ANSWER: Substantive verification was not completed after repair attempts. "
+                f"Reason: {'; '.join(errors)}\n\nCandidate deliverable:\n{final_body}"
+            )
             self.controller.cancel()
             if self.workspace.turn_id is not None:
                 self.workspace.mark_turn_status("CLOSED_CANCELLED")
-            self.workspace.publish_execution_outcome(
-                "VERIFICATION_FAILED",
-                final_body,
-                {"errors": errors},
-            )
+            self.workspace.publish_execution_outcome("VERIFICATION_FAILED", final_body, {"errors": errors})
             return EngineResponse(final_body, traces, closed=True)
         result_body_hash = hashlib.sha256(final_body.encode("utf-8")).hexdigest()
         self.controller.complete_success(result_body_hash)
@@ -1369,60 +1013,117 @@ class SessionEngine:
         )
         return EngineResponse(final_body, traces, closed=True)
 
-    def _verify_witness(
+    def _run_deliverable_code(self, body: str) -> tuple[dict[str, Any] | None, list[str]]:
+        """Run every declared Python block in the session sandbox.
+
+        Returns the host-reproduced witness (the last block that printed one wins)
+        and one factual finding per block that did not run cleanly.
+        """
+        assert self.workspace is not None
+        witness: dict[str, Any] | None = None
+        failures: list[str] = []
+        for index, block in enumerate(_python_blocks(body), 1):
+            run = self.sandbox.run_code(block)
+            self.workspace.append_event(
+                "SANDBOX_RUN",
+                {
+                    "block": index,
+                    "exit_code": run.exit_code,
+                    "timed_out": run.timed_out,
+                    "oom_killed": run.oom_killed,
+                    "duration_ms": round(run.duration_ms, 1),
+                },
+            )
+            if not run.success:
+                reason = (
+                    "timed out" if run.timed_out
+                    else "exceeded the memory limit" if run.oom_killed
+                    else f"exited with code {run.exit_code}"
+                )
+                tail = (run.stderr or "").strip().splitlines()[-3:]
+                failures.append(
+                    f"python block {index} {reason} in the sandbox"
+                    + (f" (stderr: {' / '.join(tail)})" if tail else "")
+                )
+                continue
+            candidate = _parse_sandbox_witness(run.stdout)
+            if candidate is not None:
+                witness = candidate
+        return witness, failures
+
+    def _verify_result(
         self,
-        ir: dict[str, Any],
-        final_body: str,
+        outcome: Any,
         prompt_body: str,
         plan_body: str,
         requirements: list[str],
-    ) -> Any:
-        """Verify the Result IR witness (ADR-0015 / ADR-0018).
+        result_ir_mode: bool,
+    ) -> tuple[list[str], str]:
+        """Phase 5: deterministic contract checks over a RESULT (ADR-0018, §2.1).
 
-        A witness reproduced by running the deliverable's code in the session
-        sandbox is authoritative and replaces any model-asserted witness in ``ir``.
-        A witness no sandbox run reproduced is only checked structurally and is
-        reported as provisional, never as verified.
+        Returns the factual findings (empty when valid) and the body to publish.
         """
         from dataclasses import replace
 
+        from pdl_taskmaster.runtime.result_ir import extract_result_ir, validate_result_ir
         from pdl_taskmaster.verification.output_verifier import OutputVerifier
 
         assert self.workspace is not None
-        verifier = OutputVerifier()
-        model_witness = ir.get("witness")
-        constraints = {
-            "prompt_body": prompt_body,
-            "plan_body": plan_body,
-            "requirements": requirements,
-            "domain": self._problem_domain,
-        }
-        py_blocks = re.findall(r"```(?:python|py)?\s*\n(.*?)```", final_body, re.S)
-        if not py_blocks and ("import " in final_body or "def " in final_body) and "print(" in final_body:
-            raw_py = re.split(r"```(?:json)?\s*\{", final_body)[0].strip()
-            if raw_py:
-                py_blocks = [raw_py]
-        for block in reversed(py_blocks):
-            if "print(" not in block:
-                continue
-            sb_out = self.sandbox.run_code(block)
-            if not (sb_out.success and sb_out.stdout):
-                continue
-            cand = _parse_sandbox_witness(sb_out.stdout)
-            if not cand:
-                continue
-            verdict = verifier.check(cand, constraints, domain=self._problem_domain, body=final_body)
+        body = outcome.body
+        verified = self._requires_verified_execution
+        sandbox_witness, run_failures = self._run_deliverable_code(body)
+        if not result_ir_mode:
+            # Standard execution: code runs are telemetry; code that needs an
+            # unavailable capability is not a contract failure.
+            return [], body
+
+        errors: list[str] = []
+        ir = outcome.result_ir if isinstance(getattr(outcome, "result_ir", None), dict) else extract_result_ir(body)
+        if ir is None:
+            return ["Result IR missing or not a JSON object (TRD-0003 RS-01)"], body
+        ir_errors, _ = validate_result_ir(ir, self.workspace.path, requirements, execution_body=body)
+        errors.extend(ir_errors)
+
+        if verified:
+            verifier = OutputVerifier()
+            constraints = {
+                "prompt_body": prompt_body,
+                "plan_body": plan_body,
+                "requirements": requirements,
+                "domain": self._problem_domain,
+            }
+            model_witness = ir.get("witness")
+            if sandbox_witness is not None:
+                verdict = verifier.check(sandbox_witness, constraints, domain=self._problem_domain, body=body)
+                if verdict.valid:
+                    sandbox_witness["provisional"] = False
+                    if model_witness is not None and model_witness != sandbox_witness:
+                        self.workspace.append_event("WITNESS_OVERRIDDEN_BY_SANDBOX", {})
+                    ir["witness"] = sandbox_witness
+            else:
+                errors.extend(run_failures)
+                verdict = verifier.check(model_witness, constraints, domain=self._problem_domain, body=body)
+                if verdict.valid:
+                    ir["witness"]["provisional"] = True
+                    verdict = replace(verdict, provisional=True)
             if verdict.valid:
-                if model_witness is not None and model_witness != cand:
-                    self.workspace.append_event("WITNESS_OVERRIDDEN_BY_SANDBOX", {})
-                ir["witness"] = cand
-                return verdict
-        verdict = verifier.check(model_witness, constraints, domain=self._problem_domain, body=final_body)
-        if verdict.valid:
-            if isinstance(ir.get("witness"), dict):
-                ir["witness"]["provisional"] = True
-            verdict = replace(verdict, provisional=True)
-        return verdict
+                self.workspace.append_event(
+                    "VERIFICATION_PASSED",
+                    {
+                        # §2.1: provisional means no sandbox run reproduced the witness.
+                        "provisional": sandbox_witness is None,
+                        "sandbox_reproduced": sandbox_witness is not None,
+                        "domain_checked": not verdict.provisional,
+                        "details": verdict.details,
+                    },
+                )
+            else:
+                errors.append(f"Substantive verification error: {verdict.diagnostic}")
+
+        if errors:
+            return errors, body
+        self.workspace.append_event("RESULT_IR_VALIDATED", {"ir": ir})
+        return [], _attach_result_ir(body, ir)
 
     def _answer_protocol(self, user_message: str, traces: list[CallTrace]) -> EngineResponse:
         assert self.controller is not None

@@ -556,7 +556,7 @@ def _handle_dev_command(
             "provider_pinning": getattr(worker, "provider_pinning", None),
             "model_by_operation": getattr(worker, "model_by_operation", None),
             "reasoning_by_operation": getattr(worker, "reasoning_by_operation", None),
-            "bound_payload_inputs": getattr(engine, "_bound_payload_inputs", None) if engine else None,
+            "source_request_bound": bool(getattr(engine, "_source_request", None)) if engine else False,
         }
         print(json.dumps(status_data, indent=2, default=str), flush=True)
         return True, dev_mode
@@ -1245,6 +1245,9 @@ def main() -> int:
             except KeyboardInterrupt:
                 print("\n[operation interrupted by user]", flush=True)
                 _write_transcript("USER_INTERRUPTED")
+                if not _is_interactive(args):
+                    # Headless: an interrupt ends the run; piped lines must not restart it.
+                    raise
                 continue
             except Exception as exc:
                 message = f"{type(exc).__name__}: {exc}"
@@ -1274,6 +1277,13 @@ def main() -> int:
                 print("[protocol closed]", flush=True)
                 _write_transcript("PROTOCOL_CLOSED")
                 if runtime.exit_on_close:
+                    break
+            if not _is_interactive(args):
+                engine = getattr(runtime.host, "engine", None)
+                ctrl = getattr(engine, "controller", None)
+                if ctrl is not None and ctrl.state.stage.value == "WAITING_INPUT":
+                    # ADR-0019: headless runs pause cleanly here; remaining piped
+                    # review commands do not apply to an input request.
                     break
     finally:
         _disable_bracketed_paste()

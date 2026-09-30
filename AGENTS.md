@@ -12,7 +12,7 @@
 - No drafting meta-rules or deferrals in the prompt or plan bodies (`PROMPT-01`, `PDL-08`).
 
 ## Architecture & Verification Governance (ADR-0018, ADR-0019, ADR-0020)
-- **Pydantic SSOT (ADR-0018)**: NEVER use heuristic regex for domain detection, witness extraction, or wire verification. All parsing and validation MUST go through strict, schema-first Pydantic models with alias coercion (`OutputVerifier`, `PartitionSumTriplesChecker`).
+- **Pydantic SSOT (ADR-0018)**: NEVER use heuristic regex for domain detection, witness extraction, or wire verification. All parsing and validation MUST go through strict, schema-first Pydantic models with alias coercion (`OutputVerifier`, `wire_payloads.WitnessPayload`). No problem-specific checker ships in the harness plane.
 - **Autonomous Host Execution & First-Class Reasoning (GUARD-03)**:
   - When Python code or solver scripts are present, the host sandbox automatically executes them to capture stdout witnesses. NEVER emit `REQUEST_INPUT` asking the user to run code.
   - Analytical derivations, symbolic mathematics, word problems, and logical deductions are first-class deliverables (`GUARD-03`). The harness MUST NOT coerce symbolic or reasoning tasks into executable Python scripts or force models to fabricate concrete values for symbolic variables.

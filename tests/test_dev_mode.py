@@ -150,10 +150,10 @@ def test_format_friendly_deliverable():
     from pdl_taskmaster.runtime.result_ir import format_friendly_deliverable
 
     # Normal verified deliverable
-    raw = """Here is the solution to the partition problem.
+    raw = """Here is the solution.
 
 ```python
-triples = [(1, 2, 3), (4, 5, 9)]
+groups = [(1, 2, 3), (4, 5, 9)]
 ```
 
 ```json
@@ -166,8 +166,9 @@ triples = [(1, 2, 3), (4, 5, 9)]
   "open_defects": [],
   "witness": {
     "polarity": "positive",
+    "provisional": false,
     "evidence": {"path": "execution://witness"},
-    "data": {"triples": [[1, 2, 3], [4, 5, 9]]}
+    "data": {"groups": [[1, 2, 3], [4, 5, 9]]}
   }
 }
 ```"""
@@ -177,10 +178,12 @@ triples = [(1, 2, 3), (4, 5, 9)]
     assert "[+] R1: satisfied" in formatted
     assert "[+] R2: satisfied" in formatted
     assert "* Files: 0 modified" in formatted
-    assert "* Verification: Positive witness verified (2 triples partitioned)" in formatted
+    assert "* Verification: Positive witness (reproduced by the host sandbox) [groups]" in formatted
+    provisional = format_friendly_deliverable(raw.replace('"provisional": false', '"provisional": true'))
+    assert "* Verification: Positive witness (provisional, not reproduced by the host) [groups]" in provisional
 
     # Unverified deliverable
-    unverified_raw = """UNVERIFIED ANSWER: Substantive verification was not completed after repair attempts. Reason: partition misses required elements
+    unverified_raw = """UNVERIFIED ANSWER: Substantive verification was not completed after repair attempts. Reason: required elements missing
 
 Candidate deliverable:
 I explored some nodes and concluded false.
@@ -200,6 +203,6 @@ Result IR:
 }"""
     u_formatted = format_friendly_deliverable(unverified_raw)
     assert "[!] UNVERIFIED DELIVERABLE" in u_formatted
-    assert "Reason: partition misses required elements" in u_formatted
-    assert "Negative witness (unexhausted, 1 nodes explored via greedy)" in u_formatted
+    assert "Reason: required elements missing" in u_formatted
+    assert "Negative witness (search not exhausted, 1 states via greedy; not verified)" in u_formatted
 

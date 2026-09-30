@@ -161,3 +161,71 @@ def test_repl_headless_exit_waiting_input_code_3(monkeypatch, capsys, tmp_path: 
     assert "[headless halt] Session paused at stage 'WAITING_INPUT' (input requested). Exiting (code 3)." in captured.err
 
 
+
+
+def _headless_runtime(monkeypatch, tmp_path: Path, handle, stage: str):
+    from types import SimpleNamespace
+
+    from pdl_taskmaster.host import repl
+
+    class MockHost:
+        def __init__(self):
+            self.engine = SimpleNamespace(
+                controller=SimpleNamespace(state=SimpleNamespace(stage=SimpleNamespace(value=stage)))
+            )
+
+        def status(self):
+            return {"controller_state": {"stage": stage}}
+
+    class MockRuntime:
+        def __init__(self, session_dir):
+            self.host = MockHost()
+            self.session_dir = session_dir
+            self.exit_on_close = True
+            self.transcript = (session_dir / "transcript.txt").open("w", encoding="utf-8")
+            self.handled: list[str] = []
+
+        def handle(self, line):
+            self.handled.append(line)
+            return handle(line)
+
+        def close(self):
+            self.transcript.close()
+
+    runtime = MockRuntime(tmp_path)
+    lines = iter(["solve it", "/confirm", "/confirm", "/confirm"])
+
+    def read(prompt="> "):
+        try:
+            return next(lines)
+        except StopIteration:
+            raise EOFError()
+
+    monkeypatch.setattr(repl, "open_session", lambda *args, **kwargs: runtime)
+    monkeypatch.setattr(repl, "_read_repl_input", read)
+    monkeypatch.setattr(repl, "_disable_bracketed_paste", lambda: None)
+    monkeypatch.setattr(sys, "argv", [
+        "pdlt", "--non-interactive", "--candidate-repo", str(ROOT), "--evidence", str(FIXTURE),
+        "--worker", "recorded", "--session-id", "mock-headless",
+    ])
+    return repl, runtime
+
+
+def test_headless_interrupt_ends_the_run(monkeypatch, tmp_path: Path) -> None:
+    """A Ctrl+C in a headless run must not be swallowed while piped lines restart the task."""
+    def interrupted(line):
+        raise KeyboardInterrupt()
+
+    repl, runtime = _headless_runtime(monkeypatch, tmp_path, interrupted, "PROMPT_REVIEW")
+    with pytest.raises(KeyboardInterrupt):
+        repl.main()
+    assert runtime.handled == ["solve it"]
+
+
+def test_headless_stops_reading_at_waiting_input(monkeypatch, tmp_path: Path) -> None:
+    from types import SimpleNamespace
+
+    turn = SimpleNamespace(text="Which file?", closed=False, traces=[])
+    repl, runtime = _headless_runtime(monkeypatch, tmp_path, lambda line: turn, "WAITING_INPUT")
+    assert repl.main() == 3
+    assert runtime.handled == ["solve it"]

@@ -103,7 +103,7 @@ class ExecutionSandbox:
     Conformant to ADR-0013:
     - Zero-dependency local process isolation (Windows Job Objects on Windows,
       setrlimit on POSIX).
-    - Ephemeral scratchpad filesystem containment.
+    - Ephemeral scratchpad filesystem containment; standard library only (``-I -S``).
     - Deterministic wall-clock timeout and memory ceilings.
     - Withheld environment: only an allowlist of variables is passed (no secrets).
     - Outbound network and process creation denied by an audit hook (defense in depth,
@@ -123,6 +123,27 @@ class ExecutionSandbox:
         self.timeout_seconds = float(timeout_seconds)
         self.memory_limit_bytes = int(memory_limit_bytes)
         self.allow_network = allow_network
+
+    def describe(self) -> list[dict[str, str]]:
+        """The execution environment exactly as model-authored code will see it.
+
+        This is the AVAILABLE_EXECUTION_TOOLS declaration: factual capabilities of
+        the session sandbox, never task guidance.
+        """
+        version = ".".join(str(part) for part in sys.version_info[:2])
+        megabytes = self.memory_limit_bytes // (1024 * 1024)
+        return [
+            {
+                "name": "python",
+                "description": (
+                    f"Python {version} with the standard library only; third-party packages are not installed. "
+                    "The host runs every ```python fenced block in the deliverable as a separate script in an "
+                    f"empty temporary directory, with a {self.timeout_seconds:g}-second time limit and a "
+                    f"{megabytes} MB memory limit. Standard input is empty. Standard output, standard error "
+                    "and the exit status are captured by the host."
+                ),
+            }
+        ]
 
     def _create_windows_job(self, memory_limit_bytes: int) -> int | None:
         """Create and configure a Windows Job Object with memory and process lifecycle limits."""
@@ -178,7 +199,7 @@ class ExecutionSandbox:
             entry_file.write_text("\n".join(content_parts), encoding="utf-8")
 
             return self._execute_process(
-                [sys.executable, "-I", "-s", str(entry_file)],
+                [sys.executable, "-I", "-S", str(entry_file)],
                 cwd=scratchpad_path,
                 timeout=effective_timeout,
                 memory_limit_bytes=effective_memory,
@@ -201,7 +222,7 @@ class ExecutionSandbox:
 
         with tempfile.TemporaryDirectory(prefix="pdl_sandbox_") as scratchpad:
             scratchpad_path = Path(scratchpad).resolve()
-            cmd = [sys.executable, "-I", "-s", str(resolved_script)]
+            cmd = [sys.executable, "-I", "-S", str(resolved_script)]
             if args:
                 cmd.extend(args)
 

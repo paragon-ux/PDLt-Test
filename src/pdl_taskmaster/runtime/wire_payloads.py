@@ -99,7 +99,7 @@ _PDL05_FIELDED_SCHEMA_PATTERN = re.compile(
 )
 
 _PDL08_META_RULE_PATTERN = re.compile(
-    r"(?i)\b(?:(?:do not|never)\s+(?:perform|execute|calculate|compute|solve|partition|do)\s+(?:any\s+|the\s+)?(?:computation|work|calculation|partitioning|task)|(?:only\s+describe|describe\s+only)\s+(?:the\s+)?(?:required\s+)?(?:task|result|output|deliverable)|without\s+performing\s+any\s+(?:computation|work|calculation|selection|partitioning)|no\s+(?:actual|algorithmic|substantive)\s+(?:computation|work|calculation)|defer\s+(?:all\s+)?computation\s+to\s+(?:the\s+)?execution\s+stage)\b"
+    r"(?i)\b(?:(?:do not|never)\s+(?:perform|execute|calculate|compute|solve|do)\s+(?:any\s+|the\s+)?(?:computation|work|calculation|task)|(?:only\s+describe|describe\s+only)\s+(?:the\s+)?(?:required\s+)?(?:task|result|output|deliverable)|without\s+performing\s+any\s+(?:computation|work|calculation|selection)|no\s+(?:actual|algorithmic|substantive)\s+(?:computation|work|calculation)|defer\s+(?:all\s+)?computation\s+to\s+(?:the\s+)?execution\s+stage)\b"
 )
 
 _PLAN_PLACEHOLDER_PATTERN = re.compile(
@@ -117,7 +117,7 @@ def validate_prompt_pdl_conformance(body: str) -> str:
         matched_str = fielded_match.group(0).strip()
         raise ValueError(
             f"prompt_body violates PDL-05 by inventing fielded schema prefix '{matched_str}'. "
-            "Express steps directly in Structured English with uppercase action verbs (e.g. 'PARTITION the string...', 'RETURN the result')."
+            "Express steps directly in Structured English with uppercase action verbs (e.g. 'SORT the records...', 'RETURN the result')."
         )
 
     meta_match = _PDL08_META_RULE_PATTERN.search(body)
@@ -331,14 +331,39 @@ class PositiveWitness(BaseModel):
 
 
 class NegativeWitness(BaseModel):
+    """A claim that no solution exists, on one of two first-class bases (GUARD-03):
+    an exhausted search (with its explored-state count) or a proof (with its argument)."""
+
     model_config = ConfigDict(extra="forbid")
     polarity: Literal["negative"] = "negative"
     evidence: Evidence = Field(default_factory=lambda: Evidence(path="execution://witness"))
-    search_exhausted: Literal[True] = True
-    nodes_explored: PositiveInt
-    method: str = Field(min_length=3)
+    basis: Literal["search", "proof"] = "search"
+    search_exhausted: Optional[bool] = None
+    nodes_explored: Optional[PositiveInt] = None
+    method: Optional[str] = None
+    argument: Optional[str] = None
     domain: Optional[str] = None
     provisional: Optional[bool] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _infer_basis(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "basis" not in data:
+            if data.get("argument") and data.get("nodes_explored") is None:
+                return {**data, "basis": "proof"}
+        return data
+
+    @model_validator(mode="after")
+    def _basis_complete(self) -> "NegativeWitness":
+        if self.basis == "search":
+            if self.search_exhausted is False:
+                raise ValueError("a search-based negative witness requires an exhausted search")
+            if self.nodes_explored is None:
+                raise ValueError("a search-based negative witness requires nodes_explored")
+            self.search_exhausted = True
+        elif not (self.argument or "").strip():
+            raise ValueError("a proof-based negative witness requires a non-empty argument")
+        return self
 
 
 WitnessPayload = Annotated[

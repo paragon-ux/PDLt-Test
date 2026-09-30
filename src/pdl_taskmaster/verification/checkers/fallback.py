@@ -69,7 +69,7 @@ class FallbackChecker(BaseChecker):
             )
         elif polarity == "negative":
             try:
-                NegativeWitness.model_validate(w_dict)
+                negative = NegativeWitness.model_validate(w_dict)
             except ValidationError as val_err:
                 err_msg = "; ".join(f"{'.'.join(str(p) for p in e['loc'])}: {e['msg']}" for e in val_err.errors())
                 return VerificationVerdict(
@@ -79,8 +79,8 @@ class FallbackChecker(BaseChecker):
             return VerificationVerdict(
                 valid=True,
                 provisional=True,
-                diagnostic="Provisional result: negative search claim not mechanically verified by domain checker.",
-                details={"polarity": "negative", "search_exhausted": True},
+                diagnostic="Provisional result: negative claim not mechanically verified by a domain checker.",
+                details={"polarity": "negative", "basis": negative.basis},
             )
 
         return VerificationVerdict(

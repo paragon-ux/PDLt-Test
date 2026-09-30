@@ -69,17 +69,6 @@ def test_guard02_activation_route_no_hardcoded_refusal_literals():
     )
 
 
-def test_guard03_output_verifier_triples_not_standalone():
-    """GUARD-03: output_verifier must not match standalone 'triples' without partition context."""
-    output_verifier_file = ROOT / "src" / "pdl_taskmaster" / "verification" / "output_verifier.py"
-    text = output_verifier_file.read_text(encoding="utf-8")
-
-    # Must not contain unconditioned '"triples" in text_lower'
-    assert 'if "triples" in text_lower or' not in text, (
-        "GUARD-03 VIOLATION: Found unconditioned 'triples' containment check in output_verifier.py."
-    )
-
-
 def test_guard05_contract_manifest_sha256_synchronized():
     """GUARD-05: CONTRACT_MANIFEST.json must have 0 SHA-256 hash divergences."""
     manifest_file = ROOT / "contracts" / "CONTRACT_MANIFEST.json"
@@ -138,11 +127,12 @@ def test_guard_no_mrv_or_algorithmic_coaching_in_harness():
 
 def test_guard_no_witness_fabrication_or_regex_scraping():
     """GUARD-03: Verifiers must NOT regex-scrape deliverable text or invent fake exploration numbers."""
-    checker_file = ROOT / "src" / "pdl_taskmaster" / "verification" / "checkers" / "partition_sum_triples.py"
-    checker_text = checker_file.read_text(encoding="utf-8")
-    assert "_extract_triples_from_text" not in checker_text, (
-        "GUARD-03 VIOLATION: Found text regex scraping in partition_sum_triples.py"
-    )
+    from pdl_taskmaster.verification.checkers.base import ProblemDomain
+    from pdl_taskmaster.verification.output_verifier import OutputVerifier
+
+    # No problem-specific checker ships in the harness plane (GUARD-02).
+    assert OutputVerifier()._checkers == {}
+    assert [d.value for d in ProblemDomain] == ["general"]
 
     session_engine_file = ROOT / "src" / "pdl_taskmaster" / "runtime" / "session_engine.py"
     se_text = session_engine_file.read_text(encoding="utf-8")
@@ -169,6 +159,28 @@ def _manifest_stems() -> list[str]:
     return stems
 
 
+# Hyphenated manifest tags that name protocol concepts, not problem classes.
+_PROTOCOL_TAGS = {
+    "pdl-05", "utf-8", "code-fence", "cross-turn", "fielded-schema", "knowledge-cutoff",
+    "negative-witness", "plan-review", "prompt-review", "self-reference", "state-machine",
+    "system-prompt",
+}
+
+
+def _manifest_tag_patterns() -> list[str]:
+    """Problem-class vocabulary derived from the manifest: every multi-word tag
+    (exact-cover, subset-sum, bin-packing, ...) matched across space/underscore/hyphen."""
+    manifest = ROOT / "prompts" / "CATALOGUE_MANIFEST.jsonl"
+    tags: set[str] = set()
+    for line in manifest.read_text(encoding="utf-8-sig").splitlines():
+        if line.strip():
+            tags.update(t.lower() for t in json.loads(line)["tags"] if "-" in t)
+    return [
+        r"\b" + r"[\s_-]".join(re.escape(part) for part in tag.split("-")) + r"\b"
+        for tag in sorted(tags - _PROTOCOL_TAGS)
+    ]
+
+
 def test_benchmark_contamination_scan():
     """GUARD-01/02/04/05: harness plane has ZERO benchmark IDs, prompt stems, or problem vocabulary."""
     src_dir = ROOT / "src" / "pdl_taskmaster"
@@ -176,8 +188,11 @@ def test_benchmark_contamination_scan():
     word_tokens = [
         r"frostbite", r"schur", r"\bdlx\b", r"dancing\s+link", r"algorithm\s+x", r"backtrack",
         r"\bmrv\b", r"nobel", r"hamiltonian", r"palindrome", r"wheel\s+graph", r"alice\s+has",
-        r"catalogue_manifest", r"prompts/", r"solutions/",
+        r"catalogue_manifest", r"prompts/", r"solutions/", r"\btriples?\b",
+        r"\bpartition(?:s|ed|ing)?\b(?!\()",
     ]
+    tag_patterns = _manifest_tag_patterns()
+    assert len(tag_patterns) > 50
     stem_tokens = _manifest_stems()
     assert len(stem_tokens) == 105
 
@@ -194,6 +209,9 @@ def test_benchmark_contamination_scan():
         for pat in word_tokens:
             if re.search(pat, lower):
                 violations.append(f"{rel}: contains benchmark/algorithm vocabulary /{pat}/")
+        for pat in tag_patterns:
+            if re.search(pat, lower):
+                violations.append(f"{rel}: contains manifest problem-class tag /{pat}/")
         for stem in stem_tokens:
             if stem in lower:
                 violations.append(f"{rel}: contains benchmark prompt stem '{stem}'")

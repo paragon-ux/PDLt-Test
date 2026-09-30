@@ -9,11 +9,13 @@ from typing import Any, Optional
 
 
 class ProblemDomain(str, Enum):
-    """Canonical domain identifier for substantive verification."""
+    """Typed domain selector for substantive verification.
 
-    PARTITION_SUM_TRIPLES = "partition_sum_triples"
-    EXACT_COVER = "exact_cover"
-    SUBSET_SUM = "subset_sum"
+    The harness registers no problem-specific checkers (GUARD-02): a witness may
+    declare a ``domain``, and only a checker registered under that exact name is
+    used. Everything else is checked structurally and reported provisional.
+    """
+
     GENERAL = "general"
 
     @classmethod

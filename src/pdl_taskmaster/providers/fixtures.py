@@ -117,7 +117,7 @@ def build_recorded_fixture(
                 repo,
                 model_call,
                 higher_priority_constraints="Obey applicable provider/platform safety, privacy, permission, and tool constraints.",
-                available_execution_tools=[],
+                available_execution_tools=None,
                 workspace_root=tmp,
             )
             for turn in row.get("turns", []):

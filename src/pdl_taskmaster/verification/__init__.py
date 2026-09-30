@@ -3,7 +3,6 @@
 from pdl_taskmaster.verification.checkers import (
     BaseChecker,
     FallbackChecker,
-    PartitionSumTriplesChecker,
     ProblemDomain,
     VerificationVerdict,
 )
@@ -19,7 +18,6 @@ __all__ = [
     "ExecutionSandbox",
     "FallbackChecker",
     "OutputVerifier",
-    "PartitionSumTriplesChecker",
     "PlanSoundnessResult",
     "ProblemDomain",
     "SandboxResult",

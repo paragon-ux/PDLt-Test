@@ -102,20 +102,20 @@ def _normalize_body_newlines(body: str) -> str:
 
 
 _META_RULE_PATTERNS = [
-    # Prohibitions on computation/execution/solving/partitioning + describing only:
-    # e.g. "DO NOT perform the actual partitioning or verification at this stage; only specify the required result."
+    # Prohibitions on computation/execution/solving + describing only:
+    # e.g. "DO NOT perform the actual verification at this stage; only specify the required result."
     # e.g. "Do not perform any computation; only describe the required task."
-    # e.g. "DO NOT perform any calculations or produce the actual partition in this step."
+    # e.g. "DO NOT perform any calculations or produce the actual result in this step."
     re.compile(
-        r"(?i)\b(?:do not|never)\s+(?:perform|execute|calculate|compute|solve|partition|do|produce)\s+(?:any\s+|the\s+|actual\s+|the\s+actual\s+)?(?:computation|work|calculation|calculations|partitioning|partition|verification|task|search)\b[^.\n]*[.!]?",
+        r"(?i)\b(?:do not|never)\s+(?:perform|execute|calculate|compute|solve|do|produce)\s+(?:any\s+|the\s+|actual\s+|the\s+actual\s+)?(?:computation|work|calculation|calculations|verification|task|search)\b[^.\n]*[.!]?",
     ),
     # Standalone "only describe / only specify / describe only the required task/result/output":
     re.compile(
         r"(?i)\b(?:only\s+(?:describe|specify)|(?:describe|specify)\s+only)\s+(?:the\s+)?(?:required\s+)?(?:task|result|output|deliverable)\b[^.\n]*[.!]?",
     ),
-    # "without performing any / the actual computation/work/calculation/selection/partitioning/search"
+    # "without performing any / the actual computation/work/calculation/selection/search"
     re.compile(
-        r"(?i)\bwithout\s+performing\s+(?:any\s+|the\s+|actual\s+|the\s+actual\s+)?(?:computation|work|calculation|selection|partitioning|search)\b[^.\n]*[.!]?",
+        r"(?i)\bwithout\s+performing\s+(?:any\s+|the\s+|actual\s+|the\s+actual\s+)?(?:computation|work|calculation|selection|search)\b[^.\n]*[.!]?",
     ),
     # "at this stage / in this step ... only specify / describe"
     re.compile(
@@ -154,7 +154,7 @@ def _strip_meta_rule_bleed(body: str) -> str:
     """Filter out negative meta-constraints hallucinated from PROTO-03 / PROMPT-02.
 
     If the model includes meta-rules like 'Do not perform any computation; only describe
-    the required task', or 'DO NOT perform the partitioning; only describe the required result',
+    the required task', or 'DO NOT perform the computation; only describe the required result',
     strip them so they do not contaminate downstream execution. Also splits inlined
     faux-field schemas per PDL-02 / PDL-05.
     """

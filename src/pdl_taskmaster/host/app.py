@@ -82,7 +82,7 @@ class PDLtHost:
                     lambda request: "",
                     self.restore_path,
                     higher_priority_constraints=self.higher_priority_constraints,
-                    available_execution_tools=[],
+                    available_execution_tools=None,
                     render_compact=self.render_compact,
                     sys1_client=getattr(self.worker, "sys1_client", None),
                 )
@@ -97,7 +97,7 @@ class PDLtHost:
                 str(self.candidate_repo),
                 lambda request: "",
                 higher_priority_constraints=self.higher_priority_constraints,
-                available_execution_tools=[],
+                available_execution_tools=None,
                 workspace_root=self.workspace_root,
                 render_compact=self.render_compact,
                 sys1_client=getattr(self.worker, "sys1_client", None),

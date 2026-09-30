@@ -213,7 +213,7 @@ class ObservedSession:
             repo,
             lambda request: "",
             higher_priority_constraints=higher_priority_constraints,
-            available_execution_tools=available_execution_tools or [],
+            available_execution_tools=available_execution_tools,
             workspace_root=workspace_root,
         )
         return cls(engine, sink, run_id=run_id, case_id=case_id, include_bodies=include_bodies, worker=worker)

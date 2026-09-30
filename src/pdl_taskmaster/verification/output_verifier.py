@@ -14,9 +14,6 @@ from pdl_taskmaster.verification.checkers.base import (
     VerificationVerdict,
 )
 from pdl_taskmaster.verification.checkers.fallback import FallbackChecker
-from pdl_taskmaster.verification.checkers.partition_sum_triples import (
-    PartitionSumTriplesChecker,
-)
 
 
 class OutputVerifier:
@@ -25,9 +22,6 @@ class OutputVerifier:
     def __init__(self) -> None:
         self._checkers: dict[str, BaseChecker] = {}
         self._fallback = FallbackChecker()
-
-        # Register default checkers
-        self.register(PartitionSumTriplesChecker())
 
     def register(self, checker: BaseChecker) -> None:
         """Register a domain-specific checker."""

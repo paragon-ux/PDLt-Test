@@ -42,3 +42,11 @@ def test_refused_flag_resets_on_next_turn(tmp_path):
     )
     engine.handle_user_message("$confirm-with-pseudocode second")
     assert engine.refused
+
+
+def test_engine_never_builds_live_sys1_from_environment(tmp_path, monkeypatch):
+    """An engine without an injected System 1 stays offline even when credentials exist."""
+    monkeypatch.setenv("OPENROUTER_API_KEY", "k")
+    monkeypatch.setenv("SYS1_API_KEY", "k")
+    engine = _engine(tmp_path, {"kind": "BLOCKED_BY_HIGHER_PRIORITY", "response": "x"})
+    assert engine.sys1_client is None

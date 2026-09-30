@@ -3,118 +3,7 @@ from __future__ import annotations
 import pytest
 
 from pdl_taskmaster.verification.checkers.fallback import FallbackChecker
-from pdl_taskmaster.verification.checkers.partition_sum_triples import (
-    PartitionSumTriplesChecker,
-)
 from pdl_taskmaster.verification.output_verifier import OutputVerifier
-
-
-def test_partition_sum_triples_valid_positive():
-    checker = PartitionSumTriplesChecker()
-    # 2 valid triples: [2, 3, 5], [1, 7, 8]
-    witness = {
-        "polarity": "positive",
-        "evidence": {"path": "execution://witness"},
-        "data": {
-            "triples": [
-                [2, 3, 5],
-                [1, 7, 8],
-            ]
-        },
-    }
-    constraints = {
-        "input_elements": [1, 2, 3, 5, 7, 8],
-        "expected_triples_count": 2,
-    }
-    verdict = checker.check(witness, constraints)
-    assert verdict.valid
-    assert verdict.diagnostic is None
-    assert verdict.details["triples_verified"] == 2
-
-
-def test_partition_sum_triples_arithmetic_failure():
-    checker = PartitionSumTriplesChecker()
-    # [2, 3, 6] -> 2 + 3 != 6
-    witness = {
-        "polarity": "positive",
-        "evidence": {"path": "execution://witness"},
-        "data": {
-            "triples": [
-                [2, 3, 6],
-            ]
-        },
-    }
-    verdict = checker.check(witness, {})
-    assert not verdict.valid
-    assert "violates sum constraint" in verdict.diagnostic
-
-
-def test_partition_sum_triples_duplicate_elements_failure():
-    checker = PartitionSumTriplesChecker()
-    # 3 appears in both triples
-    witness = {
-        "polarity": "positive",
-        "evidence": {"path": "execution://witness"},
-        "data": {
-            "triples": [
-                [1, 2, 3],
-                [3, 4, 7],
-            ]
-        },
-    }
-    verdict = checker.check(witness, {})
-    assert not verdict.valid
-    assert "Triples are not disjoint" in verdict.diagnostic
-    assert "duplicate elements" in verdict.diagnostic
-
-
-def test_partition_sum_triples_missing_element_failure():
-    checker = PartitionSumTriplesChecker()
-    witness = {
-        "polarity": "positive",
-        "evidence": {"path": "execution://witness"},
-        "data": {
-            "triples": [
-                [1, 2, 3],
-            ]
-        },
-    }
-    # Expected inputs include 10, but 10 is missing
-    constraints = {"input_elements": [1, 2, 3, 10]}
-    verdict = checker.check(witness, constraints)
-    assert not verdict.valid
-    assert "misses required elements" in verdict.diagnostic
-    assert "10" in verdict.diagnostic
-
-
-def test_partition_sum_triples_valid_negative():
-    checker = PartitionSumTriplesChecker()
-    witness = {
-        "polarity": "negative",
-        "evidence": {"path": "execution://witness"},
-        "search_exhausted": True,
-        "nodes_explored": 4820,
-        "method": "backtracking_mrv",
-    }
-    verdict = checker.check(witness, {})
-    assert verdict.valid
-    assert verdict.diagnostic is None
-    assert verdict.details["search_exhausted"] is True
-
-
-def test_partition_sum_triples_incomplete_negative_failure():
-    checker = PartitionSumTriplesChecker()
-    # search_exhausted is False -> unproven
-    witness = {
-        "polarity": "negative",
-        "evidence": {"path": "execution://witness"},
-        "search_exhausted": False,
-        "nodes_explored": 100,
-        "method": "greedy_pass",
-    }
-    verdict = checker.check(witness, {})
-    assert not verdict.valid
-    assert "search_exhausted" in verdict.diagnostic
 
 
 def test_fallback_checker():
@@ -128,33 +17,6 @@ def test_fallback_checker():
     assert verdict.valid
     assert verdict.provisional
     assert "Provisional" in verdict.diagnostic
-
-
-def test_output_verifier_dispatch():
-    verifier = OutputVerifier()
-
-    # Typed domain routes to its checker
-    domain = verifier.detect_domain({"domain": "partition_sum_triples"})
-    assert domain == "partition_sum_triples"
-    checker = verifier.get_checker(domain)
-    assert checker.name == "partition_sum_triples"
-
-    # Problem text is never inspected for domain vocabulary (GUARD-02)
-    assert verifier.detect_domain("Partition 45 integers into Schur triples") is None
-    fallback_checker = verifier.get_checker(None)
-    assert fallback_checker.name == "fallback"
-
-
-def test_verifier_uses_typed_witness_domain():
-    verifier = OutputVerifier()
-    witness = {
-        "domain": "partition_sum_triples",
-        "polarity": "positive",
-        "data": {"triples": [[1, 2, 3], [3, 4, 7]]},
-    }
-    verdict = verifier.check(witness, {}, domain="general")
-    assert not verdict.valid  # strict checker selected by typed domain; triples not disjoint
-    assert "not disjoint" in verdict.diagnostic
 
 
 def test_validate_result_ir_empty_files_allowed(tmp_path):
@@ -181,7 +43,7 @@ def test_validate_result_ir_empty_files_allowed(tmp_path):
     errors, normalized = validate_result_ir(
         ir,
         workspace_path=tmp_path,
-        requirements=["R1: DEFINE problem as Schur Triples detection."],
+        requirements=["R1: DEFINE the problem."],
         execution_body="false",
     )
     assert not errors
@@ -199,7 +61,7 @@ def test_validate_result_ir_echoed_requirement_on_satisfied(tmp_path):
                 "status": "satisfied",
                 "evidence": {
                     "path": "execution://body",
-                    "observed": "DEFINE problem as Schur Triples detection.",
+                    "observed": "DEFINE the problem.",
                 },
             }
         ],
@@ -209,7 +71,7 @@ def test_validate_result_ir_echoed_requirement_on_satisfied(tmp_path):
     errors, normalized = validate_result_ir(
         ir,
         workspace_path=tmp_path,
-        requirements=["DEFINE problem as Schur Triples detection."],
+        requirements=["DEFINE the problem."],
         execution_body="false",
     )
     assert not errors
@@ -219,7 +81,7 @@ def test_render_instructions_with_verified_execution():
     from pdl_taskmaster.runtime.result_ir import render_instructions
 
     instructions = render_instructions(
-        ["DEFINE problem as Schur Triples detection."],
+        ["DEFINE the problem."],
         requires_verified_execution=True,
     )
     assert "WITNESS REQUIREMENT" in instructions
@@ -228,130 +90,61 @@ def test_render_instructions_with_verified_execution():
     assert "negative" in instructions
 
 
-def test_partition_sum_triples_rejects_incomplete_partition():
-    verifier = OutputVerifier()
-    # Only 2 triples provided; structured input_elements list 9 numbers
-    incomplete_witness = {
-        "polarity": "positive",
-        "evidence": {"path": "execution://witness"},
-        "data": {"triples": [[1, 2, 3], [4, 5, 9]]},
-    }
-    verdict = verifier.check(
-        incomplete_witness,
-        {"input_elements": [1, 2, 3, 4, 5, 9, 6, 7, 13]},
-        domain="partition_sum_triples",
-    )
-    assert not verdict.valid
-    assert "Partition misses required elements" in verdict.diagnostic
-
-
-def test_partition_sum_triples_does_not_scrape_prompt_text():
-    verifier = OutputVerifier()
-    witness = {
-        "polarity": "positive",
-        "evidence": {"path": "execution://witness"},
-        "data": {"triples": [[1, 2, 3]]},
-    }
-    prompt = "1 2 3 4 5 6 7 8 9 10"
-    verdict = verifier.check(witness, {"prompt_body": prompt}, domain="partition_sum_triples")
-    assert verdict.valid  # coverage is not inferred from prompt text
-
-
-def test_negative_witness_single_node_rejected_regardless_of_wording():
-    checker = PartitionSumTriplesChecker()
-    witness = {
-        "polarity": "negative",
-        "search_exhausted": True,
-        "nodes_explored": 1,
-        "method": "mathematical parity argument, divisible by modulo",
-    }
-    verdict = checker.check(
-        witness, {}, body="mathematical divisible modulo parity cardinality"
-    )
-    assert not verdict.valid
-
-
-def test_reject_zero_nodes_explored_negative_witness():
-    from pdl_taskmaster.verification.checkers.partition_sum_triples import PartitionSumTriplesChecker
-    from pdl_taskmaster.verification.checkers.fallback import FallbackChecker
-
-    pst = PartitionSumTriplesChecker()
-    fb = FallbackChecker()
-
-    dummy_neg = {
-        "polarity": "negative",
-        "evidence": {"path": "execution://witness"},
-        "search_exhausted": True,
-        "nodes_explored": 0,
-        "method": "MRV backtracking",
-    }
-    v_pst = pst.check(dummy_neg, {"prompt_body": "test problem"}, body="dummy code")
-    assert not v_pst.valid
-    assert "nodes_explored" in v_pst.diagnostic
-    assert "greater than 0" in v_pst.diagnostic
-
-    v_fb = fb.check(dummy_neg, {})
-    assert not v_fb.valid
-    assert "nodes_explored" in v_fb.diagnostic
-    assert "greater than 0" in v_fb.diagnostic
-
-
-def test_reject_contradictory_reconciliation(tmp_path):
+def test_requirement_wording_is_never_scanned_for_vocabulary(tmp_path):
+    """GUARD-02/03: an honest negative result is judged by its schema, not by the
+    verbs in the requirement it reconciles."""
     from pdl_taskmaster.runtime.result_ir import validate_result_ir
 
     ir = {
-        "files": [
-            {
-                "filename": "solver.py",
-                "satisfies": ["R1", "R2", "R3"],
-                "evidence": {"path": "execution://body", "observed": "import sys"},
-            }
-        ],
+        "files": [],
         "reconciliation": [
-            {
-                "requirement": "R1",
-                "status": "satisfied",
-                "evidence": {"path": "execution://body", "observed": "import sys"},
-            },
-            {
-                "requirement": "R2",
-                "status": "satisfied",
-                "evidence": {"path": "execution://witness", "observed": 'polarity": "negative"'},
-            },
+            {"requirement": "R1", "status": "satisfied", "evidence": {"path": "execution://body"}},
+            {"requirement": "R2", "status": "satisfied", "evidence": {"path": "execution://body"}},
         ],
         "open_defects": [],
-        "witness": {
-            "polarity": "negative",
-            "evidence": {"path": "execution://witness"},
-            "search_exhausted": True,
-            "nodes_explored": 500,
-            "method": "MRV backtracking",
-        },
+        "witness": {"polarity": "negative", "basis": "proof", "argument": "Parity forbids it."},
     }
-    requirements = [
-        "R1: VERIFY whether a partition exists.",
-        "R2: GENERATE one concrete example of 15 triples.",
-    ]
-    errors, normalized = validate_result_ir(
-        ir,
-        workspace_path=tmp_path,
-        requirements=requirements,
-        execution_body="import sys",
+    errors, _ = validate_result_ir(
+        ir, workspace_path=tmp_path,
+        requirements=["VERIFY whether a solution exists.", "GENERATE one concrete example."],
+        execution_body="No example exists.",
     )
-    assert errors
-    assert any("A negative witness cannot satisfy a generation requirement" in e for e in errors)
+    assert errors == []
 
 
-def test_problem_domain_enum_routing():
-    from pdl_taskmaster.verification.checkers.base import ProblemDomain
-    from pdl_taskmaster.verification.output_verifier import OutputVerifier
-
+def test_output_verifier_dispatch():
     verifier = OutputVerifier()
-    domain = verifier.detect_domain(ProblemDomain.PARTITION_SUM_TRIPLES)
-    assert domain == "partition_sum_triples"
-    checker = verifier.get_checker(ProblemDomain.PARTITION_SUM_TRIPLES)
-    assert checker.name == "partition_sum_triples"
+    # No problem-specific checker ships in the harness: every domain is checked by the fallback.
+    assert verifier.detect_domain({"domain": "general"}) == "general"
+    assert verifier.get_checker("general").name == "fallback"
+    assert verifier.get_checker("some_declared_domain").name == "fallback"
+    # Problem text is never inspected for domain vocabulary (GUARD-02)
+    assert verifier.detect_domain("find a cover of these sets") is None
 
 
+def test_unregistered_typed_domain_is_provisional():
+    verdict = OutputVerifier().check(
+        {"domain": "undeclared", "polarity": "positive", "data": {"answer": [1, 2]}}, {}
+    )
+    assert verdict.valid and verdict.provisional
 
 
+def test_negative_search_witness_requires_positive_state_count():
+    verdict = FallbackChecker().check(
+        {"polarity": "negative", "search_exhausted": True, "nodes_explored": 0, "method": "search"}, {}
+    )
+    assert not verdict.valid
+    assert "nodes_explored" in verdict.diagnostic
+
+
+def test_negative_witness_by_proof_is_first_class():
+    """GUARD-03: an impossibility proof needs no fabricated search telemetry."""
+    verdict = FallbackChecker().check(
+        {"polarity": "negative", "basis": "proof", "argument": "The constraints sum to an odd total."}, {}
+    )
+    assert verdict.valid and verdict.provisional
+    assert verdict.details["basis"] == "proof"
+    inferred = FallbackChecker().check({"polarity": "negative", "argument": "Parity contradiction."}, {})
+    assert inferred.valid and inferred.details["basis"] == "proof"
+    empty = FallbackChecker().check({"polarity": "negative", "basis": "proof", "argument": " "}, {})
+    assert not empty.valid
