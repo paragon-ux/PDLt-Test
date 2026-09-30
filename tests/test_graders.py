@@ -249,3 +249,10 @@ def test_01_06_first_fit_packing_shown_counts_as_stated():
     assert graders.grade_first_fit(shown, prompt)[0] == graders.PASS
     wrong_ff = "First Fit: [5, 5], [5, 3], [3, 3, 7]. Optimal: [5, 5], [5, 3], [3, 7], [3, 7]."
     assert graders.grade_first_fit(wrong_ff, prompt)[0] == graders.FAIL
+
+
+def test_13_01_empty_solution_set_reports_unsatisfiability(tmp_path):
+    """Run 154413: the program enumerated all 27 assignments and printed 'Solutions: []'."""
+    for text in ("Solutions: []", 'WITNESS: {"data": {"solutions": []}}', "solutions = ()"):
+        assert graders.grade_reports_no_solution(text, "") [0] == graders.PASS, text
+    assert graders.grade_reports_no_solution("Solutions: [(1, 2, 1)]", "")[0] == graders.FAIL

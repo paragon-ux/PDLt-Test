@@ -315,9 +315,16 @@ _UNSAT = re.compile(
 )
 
 
+# An exhaustive enumeration that reports an empty solution collection, e.g. the
+# program output "Solutions: []" or a witness {"solutions": []}.
+_EMPTY_SOLUTIONS = re.compile(r"\bsolutions?\b[\"']?\s*[:=]\s*[\[\(\{]\s*[\]\)\}]", re.IGNORECASE)
+
+
 def grade_reports_no_solution(corpus: str, prompt: str) -> tuple[str, str]:
     if _UNSAT.search(corpus):
         return PASS, "reports that no solution exists"
+    if _EMPTY_SOLUTIONS.search(corpus):
+        return PASS, "reports an empty solution set from the enumeration"
     return FAIL, "does not report unsatisfiability"
 
 
