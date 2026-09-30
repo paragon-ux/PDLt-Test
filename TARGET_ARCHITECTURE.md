@@ -59,6 +59,7 @@ The target architecture enforces a strict tripartite separation of concerns:
 │                         BLOCKED_BY_HIGHER_PRIORITY                        │
 │      - ProblemClass:    VERIFIED_EXECUTION | STANDARD_EXECUTION           │
 │      - Review Intent:   ConfirmationMatch → ReviewFacets                  │
+│      - ExecutionProfile: STANDARD | HEAVY_COMPUTE | LARGE_MEMORY (budget) │
 │    • Invariant: Emits discrete labels only; code strictly owns state      │
 │      transitions; zero qualitative plan grading or prompt rewriting       │
 └──────────────────┬─────────────────────────────────────┬──────────────────┘
@@ -203,7 +204,7 @@ Session Start (SessionEngine.__init__)
 |---|---|
 | **Secret isolation** | The environment is rebuilt from an allowlist: `PATH`, `SYSTEMROOT`, `TEMP`, `TMP`, `PYTHONIOENCODING`, `PYTHONUNBUFFERED`. API keys never reach model-authored code. |
 | **Network & process denial** | A `sys.addaudithook` prelude raises `PermissionError` on `socket.connect`, `socket.bind`, `socket.getaddrinfo`, `subprocess.Popen`, `os.system`, `os.exec*`, `os.spawn*` and `os.posix_spawn`. It is skipped only when `allow_network=True`. |
-| **Resource limits** | Windows Job Objects (memory, kill-on-close) and POSIX `setrlimit(RLIMIT_AS)` with process-group kill on timeout. These limits are unchanged. |
+| **Resource limits** | Windows Job Objects (memory, kill-on-close) and POSIX `setrlimit(RLIMIT_AS)` with process-group kill on timeout. The time and memory limits are the task's routed budget (§5, `ExecutionProfileRecipe`). |
 | **Interpreter isolation** | `python -I -s`, run in an ephemeral scratchpad cwd. |
 
 **Honest boundary statement:** these controls are defense in depth, not a VM or container boundary. Audit hooks run in-process, and hostile native code can defeat them. Stronger isolation (microVM, per ADR-0011) remains roadmap.
@@ -241,8 +242,20 @@ The harness implements these discrete, calibrated System 1 recipes (`src/pdl_tas
 - **Flow:** `ConfirmationMatch` (`agrees | rejects | unclear`) runs first. When that is unclear, `ReviewFacets` returns multi-label change dimensions. The fast-path commands `/confirm`, `/revise` and `/stop` bypass S1 entirely.
 - **Fallback:** below threshold, the input falls back to System 2 interpretation. The harness never assumes an intent.
 
-#### Roadmap (not built in the lean build): `ExecutionProfileRecipe`
-Per-task resource tiers (`STANDARD_EXECUTION | HEAVY_COMPUTE | LARGE_MEMORY | SYMBOLIC_ONLY`) are deferred. The lean build applies one uniform set of sandbox limits to every task. That also means no per-task resource tuning can creep in.
+#### 4. `ExecutionProfileRecipe` (Resource Budget Routing)
+- **Input:** the substantive request.
+- **Labels:** `STANDARD | HEAVY_COMPUTE | LARGE_MEMORY`.
+- **Function:** selects the task's sandbox budget from one fixed table (`verification/sandbox.py` `EXECUTION_BUDGETS`):
+
+  | Tier | Time per program | Memory |
+  |---|---|---|
+  | `STANDARD` | 15 s | 256 MB |
+  | `HEAVY_COMPUTE` | 90 s | 512 MB |
+  | `LARGE_MEMORY` | 30 s | 2 GB |
+
+- **One source of truth:** the same budget is enforced by the session sandbox and declared to System 2 in `AVAILABLE_EXECUTION_TOOLS`, so the solver plans against the resources it actually has, the way a control model knows its own compute. The event `EXECUTION_PROFILE_ROUTED` records the tier; graders re-run code with at least that budget.
+- **Resources only:** System 1 never decides the answer, the method, or whether code is written. The roadmap's `SYMBOLIC_ONLY` label is deliberately not built: declaring "symbolic only" would tell the solver not to write code, which is method guidance (GUARD-04), not a budget.
+- **Fallback:** System 1 absent, below the gate, failing, or returning an unknown label yields `STANDARD`. Budgets are per tier, never per task or prompt.
 
 ---
 
@@ -284,7 +297,7 @@ timeline
       Session cleanup hooks : Target v2.7.0-P1
     section Phase 2 : Condition Routing
       Knowledge cutoff via S1 state (no regex) : Lean Build
-      Deploy ExecutionProfileRecipe in sys1 : Target v2.7.0-P2
+      Deploy ExecutionProfileRecipe in sys1 : Lean Build
     section Phase 3 : First-Class Deductions
       Witness authority & provisional labelling : Lean Build
       Formalize symbolic deliverables in output_verifier : Target v2.7.0-P3

@@ -178,9 +178,15 @@ class SessionEngine:
         self.bridge = OperationBridge(self.repo_root, render_compact=render_compact)
         # Axiom 3: one session-scoped sandbox, constructed at boot and reused by every run.
         self.sandbox = ExecutionSandbox(timeout_seconds=15.0)
-        # The solver is told the truth about where its code runs (EXEC-01).
+        # The solver is told the truth about where its code runs (EXEC-01): the
+        # sandbox under the task's routed budget, unless the host declares its own.
+        from pdl_taskmaster.verification.sandbox import DEFAULT_BUDGET
+
+        self._host_execution_tools = available_execution_tools
+        self._execution_budget = DEFAULT_BUDGET
         self.available_execution_tools = (
-            available_execution_tools if available_execution_tools is not None else self.sandbox.describe()
+            available_execution_tools if available_execution_tools is not None
+            else self.sandbox.describe(DEFAULT_BUDGET)
         )
         self.controller: Optional[MechanicalController] = None
         self.workspace: Optional[WorkspaceRun] = None
@@ -602,6 +608,38 @@ class SessionEngine:
             )
         return outcome
 
+    def _route_execution_profile(self, request: str) -> None:
+        """System 1 routes the task to a resource tier (TARGET_ARCHITECTURE §5).
+
+        The tier's fixed budget is what the sandbox enforces and what the solver is
+        told. System 1 absent, uncertain or failing leaves the STANDARD budget.
+        """
+        from pdl_taskmaster.providers.sys1.recipes.execution_profile import ExecutionProfileRecipe
+        from pdl_taskmaster.verification.sandbox import DEFAULT_BUDGET, EXECUTION_BUDGETS
+
+        tier, passed = "STANDARD", False
+        if self.sys1_client is not None and self.sys1_client.is_configured:
+            recipe = ExecutionProfileRecipe()
+            try:
+                body, duration_ms = self.sys1_client.call(recipe.build_request({"request": request}))
+                result = recipe.parse_response(body, duration_ms=duration_ms)
+                tier, passed = recipe.map_to_wire(result)["tier"], result.passed_gating
+            except Exception:
+                pass
+        self._execution_budget = EXECUTION_BUDGETS.get(tier, DEFAULT_BUDGET)
+        if self._host_execution_tools is None:
+            self.available_execution_tools = self.sandbox.describe(self._execution_budget)
+        assert self.workspace is not None
+        self.workspace.append_event(
+            "EXECUTION_PROFILE_ROUTED",
+            {
+                "tier": self._execution_budget.tier,
+                "passed_gating": passed,
+                "timeout_seconds": self._execution_budget.timeout_seconds,
+                "memory_mb": self._execution_budget.memory_limit_bytes // (1024 * 1024),
+            },
+        )
+
     def _draft_initial_prompt(
         self,
         substantive_request: str,
@@ -625,6 +663,7 @@ class SessionEngine:
             except Exception:
                 pass
         self._requires_verified_execution = requires_verified
+        self._route_execution_profile(substantive_request)
         # GUARD-02: the harness never infers a problem domain from request text.
         # The domain stays GENERAL unless the witness itself declares a typed domain.
         self._problem_domain = ProblemDomain.GENERAL if requires_verified else None
@@ -1039,11 +1078,16 @@ class SessionEngine:
         witness: dict[str, Any] | None = None
         failures: list[str] = []
         for index, block in enumerate(_python_blocks(body), 1):
-            run = self.sandbox.run_code(block)
+            run = self.sandbox.run_code(
+                block,
+                timeout=self._execution_budget.timeout_seconds,
+                memory_limit=self._execution_budget.memory_limit_bytes,
+            )
             self.workspace.append_event(
                 "SANDBOX_RUN",
                 {
                     "block": index,
+                    "tier": self._execution_budget.tier,
                     "exit_code": run.exit_code,
                     "timed_out": run.timed_out,
                     "oom_killed": run.oom_killed,

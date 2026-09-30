@@ -81,6 +81,27 @@ _sys.addaudithook(_sandbox_audit)
 
 
 @dataclass(frozen=True)
+class ExecutionBudget:
+    """Resources the sandbox grants one task tier; enforced and declared from one place."""
+
+    tier: str
+    timeout_seconds: float
+    memory_limit_bytes: int
+
+
+_MB = 1024 * 1024
+
+# Per-tier budgets routed by System 1 (ExecutionProfileRecipe). Generic and fixed:
+# no task, prompt or problem class has its own entry.
+EXECUTION_BUDGETS: dict[str, ExecutionBudget] = {
+    "STANDARD": ExecutionBudget("STANDARD", 15.0, 256 * _MB),
+    "HEAVY_COMPUTE": ExecutionBudget("HEAVY_COMPUTE", 90.0, 512 * _MB),
+    "LARGE_MEMORY": ExecutionBudget("LARGE_MEMORY", 30.0, 2048 * _MB),
+}
+DEFAULT_BUDGET = EXECUTION_BUDGETS["STANDARD"]
+
+
+@dataclass(frozen=True)
 class SandboxResult:
     """Outcome of sandboxed script execution."""
     stdout: str
@@ -124,14 +145,15 @@ class ExecutionSandbox:
         self.memory_limit_bytes = int(memory_limit_bytes)
         self.allow_network = allow_network
 
-    def describe(self) -> list[dict[str, str]]:
+    def describe(self, budget: ExecutionBudget | None = None) -> list[dict[str, str]]:
         """The execution environment exactly as model-authored code will see it.
 
         This is the AVAILABLE_EXECUTION_TOOLS declaration: factual capabilities of
-        the session sandbox, never task guidance.
+        the session sandbox under the task's budget, never task guidance.
         """
         version = ".".join(str(part) for part in sys.version_info[:2])
-        megabytes = self.memory_limit_bytes // (1024 * 1024)
+        timeout = budget.timeout_seconds if budget else self.timeout_seconds
+        megabytes = (budget.memory_limit_bytes if budget else self.memory_limit_bytes) // (1024 * 1024)
         return [
             {
                 "name": "python",
@@ -139,7 +161,7 @@ class ExecutionSandbox:
                     f"Python {version} with the standard library only; third-party packages are not installed. "
                     "The host runs the deliverable as a script when the whole deliverable is Python source; otherwise it "
                     "runs every ```python fenced block as a separate script. Each script runs in an "
-                    f"empty temporary directory, with a {self.timeout_seconds:g}-second time limit and a "
+                    f"empty temporary directory, with a {timeout:g}-second time limit and a "
                     f"{megabytes} MB memory limit. Standard input is empty. Standard output, standard error "
                     "and the exit status are captured by the host."
                 ),

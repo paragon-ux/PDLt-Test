@@ -71,6 +71,19 @@ def published_outcome(result_dir: Path) -> tuple[str, str | None]:
     return "NONE", None
 
 
+def _run_budget_seconds(result_dir: Path) -> float:
+    """Re-run code with at least the time budget the harness granted the run."""
+    budget = 30.0
+    for events in Path(result_dir).rglob("events.jsonl"):
+        for line in events.read_text(encoding="utf-8", errors="replace").splitlines():
+            if '"EXECUTION_PROFILE_ROUTED"' in line:
+                try:
+                    budget = max(budget, float(json.loads(line)["payload"]["timeout_seconds"]))
+                except (ValueError, KeyError, TypeError):
+                    pass
+    return budget
+
+
 def build_corpus(result_dir: Path, *, run_code: bool = True) -> str | None:
     kind, text = published_outcome(result_dir)
     if text is None:
@@ -80,7 +93,7 @@ def build_corpus(result_dir: Path, *, run_code: bool = True) -> str | None:
         if blocks:
             from pdl_taskmaster.verification.sandbox import ExecutionSandbox
 
-            out = ExecutionSandbox(timeout_seconds=30.0).run_code(blocks[-1])
+            out = ExecutionSandbox(timeout_seconds=_run_budget_seconds(result_dir)).run_code(blocks[-1])
             text += f"\n\n[GRADER: deliverable code exit {out.exit_code}]"
             if out.stdout:
                 text += "\n[GRADER: deliverable code stdout]\n" + out.stdout
