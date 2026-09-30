@@ -1,0 +1,101 @@
+{
+  "run_id": "run-20260930-141511",
+  "timestamp": "2026-09-30T18:15:11.684922+00:00",
+  "model": "openai/gpt-oss-120b",
+  "reasoning_effort": "low",
+  "total_prompts": 7,
+  "passed": 3,
+  "failed": 4,
+  "stage_passed": 6,
+  "manual_spot_check": [],
+  "pass_rate_pct": 42.9,
+  "total_elapsed_seconds": 219.8,
+  "ground_truth": {
+    "PASS": 4,
+    "FAIL": 3,
+    "MANUAL": 0,
+    "ERROR": 0
+  },
+  "false_positives": [
+    {
+      "id": "13-02",
+      "reason": "claims an optimum with neither an acknowledgement nor code that computes it"
+    },
+    {
+      "id": "13-03",
+      "reason": "uses the nonexistent frostbitedb API"
+    },
+    {
+      "id": "13-06",
+      "reason": "optimizes against a guessed schema ('FROM target_table')"
+    }
+  ],
+  "by_verdict": {
+    "CLOSED_CANCELLED": 1,
+    "CLOSED_SUCCESS": 6
+  },
+  "by_category": {
+    "negative_and_impossible": {
+      "total": 7,
+      "pass": 3,
+      "fail": 4
+    }
+  },
+  "by_difficulty": {
+    "hard": {
+      "total": 3,
+      "pass": 1
+    },
+    "adversarial": {
+      "total": 3,
+      "pass": 2
+    },
+    "medium": {
+      "total": 1,
+      "pass": 0
+    }
+  },
+  "regressions_hit": [
+    {
+      "id": "13-01",
+      "regression_ref": "REG-003",
+      "verdict": "CLOSED_CANCELLED"
+    },
+    {
+      "id": "13-03",
+      "regression_ref": "REG-003",
+      "verdict": "CLOSED_SUCCESS"
+    },
+    {
+      "id": "13-06",
+      "regression_ref": "REG-013",
+      "verdict": "CLOSED_SUCCESS"
+    }
+  ],
+  "failures": [
+    {
+      "id": "13-01",
+      "category": "negative_and_impossible",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 31.41
+    },
+    {
+      "id": "13-02",
+      "category": "negative_and_impossible",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 17.19
+    },
+    {
+      "id": "13-03",
+      "category": "negative_and_impossible",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 13.56
+    },
+    {
+      "id": "13-06",
+      "category": "negative_and_impossible",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 13.98
+    }
+  ]
+}

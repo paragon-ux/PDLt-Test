@@ -1,0 +1,1 @@
+{"kind":"PROMPT","prompt_body":"READ the FrostbiteDB SDK documentation for frostbitedb\nCREATE a collection using frostbitedb\nINSERT three documents into the collection\nQUERY the inserted documents and return them","approach_handoff":"NONE","task_entities":["frostbitedb","create a collection"]}

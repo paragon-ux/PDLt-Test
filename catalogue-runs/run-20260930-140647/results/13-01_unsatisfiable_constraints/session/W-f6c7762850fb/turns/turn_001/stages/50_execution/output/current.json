@@ -1,0 +1,7 @@
+{
+  "kind": "VERIFICATION_FAILED",
+  "errors": [
+    "reconciliation[4] (R5): cited observation is not a verbatim substring of the artifact: 'IF solutions exist THEN ENUMERATE all such assignments'",
+    "requirement R2 is not reconciled"
+  ]
+}

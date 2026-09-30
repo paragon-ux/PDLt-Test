@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-ada64079b0",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-ada64079b0-P1",
+    "body": "READ the FrostbiteDB Python SDK (package: frostbitedb)\nCONNECT to the FrostbiteDB instance\nCREATE a collection named \"example_collection\"\nINSERT three documents into the collection\nQUERY the collection to retrieve the inserted documents\nRETURN the retrieved documents as the result",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-ada64079b0-R1",
+    "body": "READ the FrostbiteDB Python SDK (package: frostbitedb)\nCONNECT to the FrostbiteDB instance\nCREATE a collection named \"example_collection\"\nINSERT three documents into the collection\nQUERY the collection to retrieve the inserted documents\nRETURN the retrieved documents as the result",
+    "confirmed": true,
+    "source_prompt_id": "I-ada64079b0-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-ada64079b0-X1",
+    "body": "a45d97522c13cb2bd66fbba0d7b0c6df7dfb70e77cfb5ff0e7e2a3914d19c9ba",
+    "confirmed": true,
+    "source_prompt_id": "I-ada64079b0-P1",
+    "source_plan_id": "I-ada64079b0-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

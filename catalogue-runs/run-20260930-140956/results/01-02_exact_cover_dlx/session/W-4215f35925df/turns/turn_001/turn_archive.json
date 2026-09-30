@@ -1,0 +1,288 @@
+{
+  "turn_id": "turn_001",
+  "status": "CLOSED_SUCCESS",
+  "deliverable_sha256": "7f7953c3a89b33c02b91ac62d56021adf84c41251cc8ded4a0b91924220ffd0d",
+  "events": [
+    {
+      "at_utc": "2026-09-30T18:10:49.416214+00:00",
+      "kind": "WORKSPACE_CREATED",
+      "payload": {
+        "workspace_id": "W-4215f35925df",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:49.416214+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:49.705032+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 0.99
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:50.199932+00:00",
+      "kind": "EXECUTION_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "tier": "STANDARD",
+        "passed_gating": true,
+        "step_limit": 10000000,
+        "timeout_seconds": 30.0,
+        "memory_mb": 256
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:50.199932+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": true,
+        "domain": "general"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:50.215166+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:51.579963+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:51.584290+00:00",
+      "kind": "TASK_ENTITY_DROPPED_UNSAFE",
+      "payload": {
+        "count": 9
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:51.585539+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:54.172218+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:54.203485+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-3605a4c163",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:54.219112+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-3605a4c163-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:54.266939+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-3605a4c163-P1"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:54.282584+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:55.411354+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:55.411354+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-3605a4c163-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:55.479983+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-3605a4c163-R1"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:55.513925+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:11:11.843179+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:11:12.015558+00:00",
+      "kind": "SANDBOX_RUN",
+      "payload": {
+        "block": 1,
+        "tier": "STANDARD",
+        "exit_code": 0,
+        "step_budget_exceeded": false,
+        "timed_out": false,
+        "oom_killed": false,
+        "duration_ms": 168.9
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:11:12.031169+00:00",
+      "kind": "VERIFICATION_PASSED",
+      "payload": {
+        "provisional": false,
+        "sandbox_reproduced": true,
+        "domain_checked": false,
+        "details": {
+          "polarity": "positive",
+          "data_keys": [
+            "solutions"
+          ]
+        }
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:11:12.031169+00:00",
+      "kind": "RESULT_IR_VALIDATED",
+      "payload": {
+        "ir": {
+          "files": [
+            {
+              "filename": "solution.py",
+              "satisfies": [
+                "R1",
+                "R2",
+                "R3"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "# solution.py"
+              }
+            }
+          ],
+          "reconciliation": [
+            {
+              "requirement": "R1",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "def exact_cover(...)"
+              }
+            },
+            {
+              "requirement": "R2",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "def cover(col: Column):"
+              }
+            },
+            {
+              "requirement": "R3",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "def validate_solution(sol: List[str]) -> bool:"
+              }
+            }
+          ],
+          "open_defects": [],
+          "witness": {
+            "polarity": "positive",
+            "evidence": {
+              "path": "execution://witness"
+            },
+            "data": {
+              "solutions": [
+                [
+                  "S1",
+                  "S2",
+                  "S3"
+                ],
+                [
+                  "S4",
+                  "S5",
+                  "S6"
+                ],
+                [
+                  "S7",
+                  "S8",
+                  "S9"
+                ]
+              ]
+            },
+            "provisional": false
+          }
+        }
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:11:12.031169+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_001",
+        "status": "CLOSED_SUCCESS"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-09-30T18:11:12.031169+00:00"
+}

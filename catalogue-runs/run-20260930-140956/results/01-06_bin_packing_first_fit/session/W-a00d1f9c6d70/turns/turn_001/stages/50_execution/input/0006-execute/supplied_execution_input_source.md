@@ -1,0 +1,8 @@
+Consider the bin packing problem with bin capacity C = 10 and items arriving in the following order:
+Items = [5, 5, 5, 3, 3, 3, 7, 7]
+
+1. Run the First Fit algorithm on the items in the given arrival order and report the resulting packing.
+2. Find an optimal packing that minimizes the number of bins.
+3. Report the gap between First Fit and optimal, and explain why the arrival order causes FF to use more bins.
+
+Include a self-test that verifies both packings use all items exactly once and respect the capacity constraint.
