@@ -64,8 +64,8 @@ class ExecutionProfileRecipe(Sys1Recipe):
     def build_request(self, state: dict[str, Any], **kwargs: Any) -> Sys1Request:
         question = Sys1Question(
             instructions=as_decision_instruction(
-                "Predict how many elementary computation steps (Python bytecode instructions) carrying out this "
-                "request exactly would take, for the most direct correct computation."
+                "Given the execution environment and step definition in the state, predict how many steps a "
+                "program carrying out this request exactly would take, for the most direct correct computation."
             ),
             criteria={
                 "WITHIN_100K_STEPS": (
@@ -78,7 +78,17 @@ class ExecutionProfileRecipe(Sys1Recipe):
             },
             choices=list(PREDICTION_TIERS),
         )
-        return Sys1Request(state={"request": state.get("request", "")}, questions={"execution_profile": question})
+        # Recipe state: the task and the sandbox it would run in (Axiom 1: System 1
+        # routes the sandbox conditions, so it must see them).
+        from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS
+
+        budgets = "; ".join(
+            f"{label} grants {EXECUTION_BUDGETS[tier].step_limit:,} steps" for label, tier in PREDICTION_TIERS.items()
+        )
+        return Sys1Request(
+            state={"request": state.get("request", ""), **(state.get("environment") or {}), "step_budgets": budgets},
+            questions={"execution_profile": question},
+        )
 
     def parse_response(self, response_body: dict[str, Any], *, duration_ms: float = 0.0) -> RecipeResult:
         answer = response_body.get("answers", {}).get("execution_profile", {})

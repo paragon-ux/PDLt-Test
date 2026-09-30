@@ -83,18 +83,19 @@ _sys.addaudithook(_sandbox_audit)
 STEP_BUDGET_EXIT_CODE = 125
 _STEP_BUDGET_MARKER = "PDLT_STEP_BUDGET_EXCEEDED"
 
-# Deterministic complexity budget: every executed Python bytecode instruction is
-# one step, so loops written on one line and comprehensions are counted too. On
-# the first step past the limit the process exits at once, so the program cannot
-# catch it. Work inside built-in functions is not counted; the wall-clock limit
-# still bounds it.
+# Deterministic complexity budget: one step is one executed bytecode instruction
+# of the script's own code (including code it runs through exec and functions it
+# hands to library calls), so loops written on one line and comprehensions are
+# counted too. Code inside the standard library is not counted: importing a module
+# is not the task's complexity. Built-ins and the standard library are bounded by
+# the wall-clock limit instead. On the first step past the limit the process exits
+# at once, so the program cannot catch it.
 _STEP_BUDGET_PRELUDE = """
 import sys as _sys, os as _os, threading as _threading
 _STEP_LIMIT = {limit}
+_STDLIB = _os.path.dirname(_os.__file__)
 _steps = [0]
-def _step_trace(frame, event, arg):
-    frame.f_trace_lines = False
-    frame.f_trace_opcodes = True
+def _count(frame, event, arg):
     if event == "opcode":
         _steps[0] += 1
         if _steps[0] > _STEP_LIMIT:
@@ -102,12 +103,19 @@ def _step_trace(frame, event, arg):
             _sys.stderr.write("{marker}: more than %d steps\\n" % _STEP_LIMIT)
             _sys.stderr.flush()
             _os._exit({exit_code})
-    return _step_trace
+    return _count
+def _step_trace(frame, event, arg):
+    filename = frame.f_code.co_filename
+    if filename.startswith(_STDLIB) or filename.startswith("<frozen"):
+        return None
+    frame.f_trace_lines = False
+    frame.f_trace_opcodes = True
+    return _count
 _sys.settrace(_step_trace)
 _top = _sys._getframe()  # the script's own top-level frame
 _top.f_trace_lines = False
 _top.f_trace_opcodes = True
-_top.f_trace = _step_trace
+_top.f_trace = _count
 del _top
 _threading.settrace(_step_trace)
 def _step_guard(event, args):
@@ -190,6 +198,23 @@ class ExecutionSandbox:
         self.memory_limit_bytes = int(memory_limit_bytes)
         self.allow_network = allow_network
 
+    def decision_state(self) -> dict[str, str]:
+        """The sandbox as System 1 routing state: what the environment provides and
+        what one step is, from the same source the sandbox enforces."""
+        version = ".".join(str(part) for part in sys.version_info[:2])
+        return {
+            "execution_environment": (
+                f"Python {version} interpreter with the standard library only; third-party packages are not "
+                f"installed; network access is {'enabled' if self.allow_network else 'disabled'}; each program "
+                "runs in an empty temporary directory with empty standard input."
+            ),
+            "step_definition": (
+                "One step is one executed Python bytecode instruction of the program's own code, including every "
+                "loop or comprehension iteration; work inside the standard library and built-in functions is not "
+                "counted."
+            ),
+        }
+
     def describe(self, budget: ExecutionBudget | None = None) -> list[dict[str, str]]:
         """The execution environment exactly as model-authored code will see it.
 
@@ -201,10 +226,10 @@ class ExecutionSandbox:
         megabytes = (budget.memory_limit_bytes if budget else self.memory_limit_bytes) // (1024 * 1024)
         steps = (
             f"Each script may execute at most {budget.step_limit:,} steps, where one step is one executed Python "
-            "bytecode instruction (a simple statement is a few steps; every loop or comprehension iteration and "
-            "every line run inside standard-library modules written in Python counts). A script that exceeds the "
-            "step budget is stopped. Work inside built-in functions is not counted in steps but is bounded by a "
-            f"{timeout:g}-second wall-clock limit. "
+            "bytecode instruction of the script's own code, including every loop or comprehension iteration, code "
+            "run through exec, and functions the script passes to library calls. Code inside the standard library "
+            "and built-in functions is not counted in steps. A script that exceeds the step budget is stopped. "
+            f"Everything, including uncounted work, is bounded by a {timeout:g}-second wall-clock limit. "
             if budget else f"Each script has a {timeout:g}-second time limit. "
         )
         return [

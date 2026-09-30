@@ -153,3 +153,33 @@ def test_minimal_tier_is_declared_and_enforced(tmp_path):
     assert routed["tier"] == "MINIMAL" and routed["distribution"]["WITHIN_100K_STEPS"] == 0.95
     assert "at most 100,000 steps" in executes[0].prompt
     assert next(e for e in events if e["kind"] == "SANDBOX_RUN")["payload"]["step_budget_exceeded"]
+
+
+def test_imports_do_not_consume_the_step_budget():
+    """Importing the standard library is not the task's complexity (json alone was ~94k steps)."""
+    code = "import json, dataclasses, typing, re, fractions\nprint('WITNESS: ' + json.dumps({'a': 1}))"
+    run = ExecutionSandbox().run_code(code, step_limit=1_000)
+    assert run.success and run.stdout.strip() == 'WITNESS: {"a": 1}'
+
+
+def test_program_code_run_through_library_calls_is_counted():
+    sandbox = ExecutionSandbox()
+    assert sandbox.run_code("sorted(range(5000), key=lambda x: -x)", step_limit=5_000).step_budget_exceeded
+    assert sandbox.run_code("exec('for i in range(5000): pass')", step_limit=5_000).step_budget_exceeded
+
+
+def test_system1_sees_the_task_and_the_sandbox(tmp_path):
+    class Recording(PredictingSys1):
+        def call(self, request):
+            if "execution_profile" in request.questions:
+                self.state = request.state
+            return super().call(request)
+
+    sys1 = Recording("WITHIN_10M_STEPS")
+    _session(tmp_path, sys1)
+    state = sys1.state
+    assert state["request"] == "compute it"
+    assert "standard library only" in state["execution_environment"]
+    assert "network access is disabled" in state["execution_environment"]
+    assert "program's own code" in state["step_definition"]
+    assert "WITHIN_100K_STEPS grants 100,000 steps" in state["step_budgets"]

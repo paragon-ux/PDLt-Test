@@ -621,7 +621,10 @@ class SessionEngine:
         if self.sys1_client is not None and self.sys1_client.is_configured:
             recipe = ExecutionProfileRecipe()
             try:
-                body, duration_ms = self.sys1_client.call(recipe.build_request({"request": request}))
+                sys1_request = recipe.build_request(
+                    {"request": request, "environment": self.sandbox.decision_state()}
+                )
+                body, duration_ms = self.sys1_client.call(sys1_request)
                 result = recipe.parse_response(body, duration_ms=duration_ms)
                 routed = recipe.map_to_wire(result)
                 prediction, tier, passed = routed["prediction"], routed["tier"], result.passed_gating
