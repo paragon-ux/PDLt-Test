@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-4926561c43",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-4926561c43-P1",
+    "body": "ASSERT that the FrostbiteDB Python SDK (package name: frostbitedb) does not exist and cannot be imported.\nINFORM the user that no functional code can be provided because the database/package is nonexistent.\nDO NOT fabricate example code or suggest usage of a non‑existent API.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-4926561c43-R1",
+    "body": "VERIFY that attempting to import the FrostbiteDB Python SDK (package name: frostbitedb) raises an ImportError or indicates the package is unavailable\nDETERMINE that the SDK does not exist in the environment\nINFORM the user that the FrostbiteDB package is nonexistent and therefore no functional code can be provided",
+    "confirmed": true,
+    "source_prompt_id": "I-4926561c43-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-4926561c43-X1",
+    "body": "059e3ae14200342ea96aacd075be88f51a114c84c7d2061826641a326a76fd97",
+    "confirmed": true,
+    "source_prompt_id": "I-4926561c43-P1",
+    "source_plan_id": "I-4926561c43-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

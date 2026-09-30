@@ -1,0 +1,17 @@
+{"at_utc":"2026-09-30T15:26:25.653573+00:00","kind":"WORKSPACE_CREATED","payload":{"workspace_id":"W-c86e297dc287","turn_id":"turn_001"}}
+{"at_utc":"2026-09-30T15:26:25.653573+00:00","kind":"EXPLICIT_INVOCATION_OBSERVED","payload":{"substantive_request_present":true}}
+{"at_utc":"2026-09-30T15:26:25.906789+00:00","kind":"PROBLEM_CLASS_CLASSIFIED","payload":{"requires_verified_execution":false,"domain":null}}
+{"at_utc":"2026-09-30T15:26:25.922302+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-09-30T15:26:26.649528+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-09-30T15:26:26.649528+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}
+{"at_utc":"2026-09-30T15:26:30.819846+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}
+{"at_utc":"2026-09-30T15:26:30.836112+00:00","kind":"PROTOCOL_BOUND","payload":{"instance_id":"I-2d952056b8","turn_id":"turn_001"}}
+{"at_utc":"2026-09-30T15:26:30.844936+00:00","kind":"ARTIFACT_PUBLISHED","payload":{"kind":"prompt","artifact_id":"I-2d952056b8-P1","confirmed":false}}
+{"at_utc":"2026-09-30T15:26:30.886188+00:00","kind":"ARTIFACT_CONFIRMED","payload":{"kind":"prompt","artifact_id":"I-2d952056b8-P1"}}
+{"at_utc":"2026-09-30T15:26:30.897810+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PLAN","stage":"30_plan","invocation_id":"0003-draft_plan"}}
+{"at_utc":"2026-09-30T15:26:31.797705+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PLAN","stage":"30_plan","invocation_id":"0003-draft_plan"}}
+{"at_utc":"2026-09-30T15:26:31.813259+00:00","kind":"ARTIFACT_PUBLISHED","payload":{"kind":"plan","artifact_id":"I-2d952056b8-R1","confirmed":false}}
+{"at_utc":"2026-09-30T15:26:31.860559+00:00","kind":"ARTIFACT_CONFIRMED","payload":{"kind":"plan","artifact_id":"I-2d952056b8-R1"}}
+{"at_utc":"2026-09-30T15:26:31.876176+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"EXECUTE","stage":"50_execution","invocation_id":"0004-execute"}}
+{"at_utc":"2026-09-30T15:26:34.449906+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"EXECUTE","stage":"50_execution","invocation_id":"0004-execute"}}
+{"at_utc":"2026-09-30T15:26:34.459980+00:00","kind":"EXECUTION_OUTCOME_PUBLISHED","payload":{"kind":"REQUEST_INPUT","expected_type":"text/plain; charset=utf-8; format=plain list of laureates per category\",\"description\":\"The task requires factual data about 2027 Nobel laureates which is not available in the current context. Provide the names of laureates for each specified category to enable extraction and summarization.","description":"Please provide the list of winners from the 2027 Nobel Prize ceremonies for Physics, Chemistry, and Literature."}}

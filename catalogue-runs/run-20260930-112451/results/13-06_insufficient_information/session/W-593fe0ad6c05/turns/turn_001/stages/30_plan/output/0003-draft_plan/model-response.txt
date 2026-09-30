@@ -1,0 +1,1 @@
+{"neutral_plan_body":"READ the user request to optimize a database query for maximum performance\nIDENTIFY missing critical information: table name, database schema, database engine, existing indexes, data volume, and typical access patterns\nASK the user to provide each missing detail\nRETURN the clarifying questions to the user"}

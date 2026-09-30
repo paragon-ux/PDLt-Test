@@ -1,0 +1,46 @@
+{
+  "operation": "DRAFT_EXECUTE",
+  "included_symbols": [
+    "OPERATION_ID",
+    "HOST_PROTOCOL_STATE",
+    "CONFIRMED_PROMPT_BODY",
+    "CONFIRMED_PLAN_BODY",
+    "REQUIRED_TASK_INPUTS",
+    "APPLICABLE_STANDARD_CLAUSES",
+    "HIGHER_PRIORITY_CONSTRAINTS"
+  ],
+  "excluded_symbols": [
+    "REJECTED_ARTIFACTS",
+    "REVISION_CONVERSATION",
+    "CONFIRMATION_CONVERSATION",
+    "ARTIFACT_GENERATION_EXAMPLES",
+    "GLOBAL_PROTOCOL_PROSE",
+    "CALIBRATION_CORPUS",
+    "REPOSITORY_DISCOVERY"
+  ],
+  "requirement_ids": [
+    "EXEC-01",
+    "EXEC-05",
+    "TASK-02",
+    "SEM-04",
+    "PDL-05"
+  ],
+  "clause_sha256": {
+    "EXEC-01": "7eb41702c5d3963804b5d61238337ccda7740edb214a0c00e1957c66b0cd9772",
+    "EXEC-05": "e00ac302c27005bcb5a4021db20bd3aa968f0731c6021a5b102fd4bfddffd122",
+    "TASK-02": "ba16a29e8f14b1cfb8388e8ca5c8a8582e4433fc684e6ee135942fb00eed42c9",
+    "SEM-04": "d70c36ae28ffc49d9cf6506564032a9a917ba6940fc68131afdc658bf7fe0a78",
+    "PDL-05": "a980974be4f1700b4c01e8e41a2a1a4ec60526aa5c74cecf2cddaa4408025353"
+  },
+  "output_kind": "EXECUTION_DRAFT_OUTCOME",
+  "output_fields": [
+    "kind",
+    "brief_body",
+    "execution_entities",
+    "blocking_basis",
+    "response"
+  ],
+  "output_schema": "scripts/controller/schemas/execution_draft.schema.json",
+  "output_schema_sha256": "d3f9a37349a71d47f1b99eef395c89e4d3dad98f99bae02a83efed423e091c67",
+  "projection_sha256": "2864f8ba97f1d35d38d04a97d9d49e5083065e47f44907155152af4a27177e57"
+}

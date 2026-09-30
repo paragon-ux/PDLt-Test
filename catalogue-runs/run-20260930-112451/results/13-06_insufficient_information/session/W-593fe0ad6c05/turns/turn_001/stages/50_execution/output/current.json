@@ -1,0 +1,5 @@
+{
+  "kind": "REQUEST_INPUT",
+  "expected_type": "text/plain; charset=utf-8,utf-8,utf8,utf-16,utf16,utf-32,utf32,utf_8,utf_16,utf_32,utf_8_le,utf_8_be,utf_16_be,utf_16_le,utf_32_be,utf_32_le,utf-16-be,utf-16-le,utf-32-be,utf-32-le,utf8,utf16,utf32,ascii,UTF-8,ASCII,ISO-8859-1,ISO8859-1,ISO-8859-15,ISO8859-15,UTF-16,UTF-32,utf8le,utf8be,utf16le,utf16be,utf32le,utf32be,binary,bin,utf8-sig,utf16-sig,utf32-sig,latin1,cp1252,cp1251,cp1250,cp1253,cp1254,cp1255,cp1256,cp1257,cp1258,cp932,cp936,cp949,cp950,cp874,cp437,cp850,cp858,cp866,cp874,cp1250,cp1251,cp1252,cp1253,cp1254,cp1255,cp1256,cp1257,cp1258,utf-7,utf-1,utf-32-be,utf-32-le,utf-16-be,utf-16-le,utf-8-sig,EUC-JP,EUC-KR,GB18030,GB2312,GBK,ISO-2022-JP,ISO-2022-KR,ISO-2022-CN,Shift_JIS,Big5,KOI8-R,KOI8-U,MacRoman,MacCentralEurope,MacCroatian,MacCyrillic,MacDanish,MacGreek,MacHebrew,MacIceland,MacRomania,MacThai,MacTurkish,MacUkraine,MacWesternEuropean,UTF-7,UTF-1",
+  "description": "Please provide the following details to enable query optimization:"
+}

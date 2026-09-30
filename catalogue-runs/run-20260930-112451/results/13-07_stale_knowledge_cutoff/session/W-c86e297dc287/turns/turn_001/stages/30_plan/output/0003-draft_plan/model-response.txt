@@ -1,0 +1,1 @@
+{"neutral_plan_body":"READ the list of winners from the 2027 Nobel Prize ceremonies for Physics, Chemistry, and Literature\nEXTRACT the laureate names for each specified category\nSUMMARIZE the key findings, identifying each winner and their awarded field\nPRESENT the summary in a concise format, listing each category followed by its laureate(s)"}

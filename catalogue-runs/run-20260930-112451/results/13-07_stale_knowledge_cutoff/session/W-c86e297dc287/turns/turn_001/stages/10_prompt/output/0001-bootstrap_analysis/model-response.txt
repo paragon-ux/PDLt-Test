@@ -1,0 +1,7 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Summarize the key findings from the 2027 Nobel Prize ceremonies, specifically identifying the winners of the Physics, Chemistry, and Literature prizes.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": []
+}

@@ -1,0 +1,8 @@
+{
+  "kind": "RESULT",
+  "source_prompt_id": "I-defbac5597-P1",
+  "source_plan_id": "I-defbac5597-R1",
+  "result_body_hash": "79c94b690fe5a7f955c32183ec0f371967c8c8db86abf01c84aaa80182d67d15",
+  "confirmed_prompt_hash": "136ce4546e6d975947ebe94b594b7414c1280530d2c2ee2e29b36f621e535820",
+  "confirmed_plan_hash": "ca622f2d8c53c6763975aa6ed2dd5168302e645793a480b7e251f9d2372a2cc5"
+}

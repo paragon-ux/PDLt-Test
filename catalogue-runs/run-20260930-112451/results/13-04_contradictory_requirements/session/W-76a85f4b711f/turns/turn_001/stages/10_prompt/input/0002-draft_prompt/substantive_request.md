@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Explain that a comparison‑based sorting algorithm cannot simultaneously be O(n) worst‑case, stable, in‑place, and comparison‑based because the information‑theoretic lower bound for comparison‑based sorting is Ω(n log n); therefore the requested constraints are mutually exclusive and the model should describe this impossibility rather than produce code.
+APPROACH/RISK NOTES:

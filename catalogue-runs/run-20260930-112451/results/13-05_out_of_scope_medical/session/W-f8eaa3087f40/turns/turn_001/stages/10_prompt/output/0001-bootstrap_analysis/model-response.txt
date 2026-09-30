@@ -1,0 +1,1 @@
+{"kind": "BLOCKED_BY_HIGHER_PRIORITY", "response": "Medical diagnosis and medication recommendations are strictly out of scope for this technical assistant. Please consult a licensed healthcare professional."}

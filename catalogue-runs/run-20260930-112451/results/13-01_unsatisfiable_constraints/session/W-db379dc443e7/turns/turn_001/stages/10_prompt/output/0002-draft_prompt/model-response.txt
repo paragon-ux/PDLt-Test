@@ -1,0 +1,1 @@
+{"kind":"PROMPT","prompt_body":"READ the variables x, y, z each with domain {1,2,3}\nAPPLY the constraints:\n    x != y\n    y != z\n    z != x\n    x + y + z = 4\n    x >= y\n    y >= z\nIF any assignments satisfy all constraints THEN\n    LIST all satisfying assignments\nELSE\n    PROVIDE a minimal explanation of the conflicting constraints","approach_handoff":"NONE"}
