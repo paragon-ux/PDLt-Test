@@ -87,3 +87,25 @@ def test_notation_violation_gets_one_redraft_with_the_finding(tmp_path):
     retry = next(e for e in engine.workspace._events if e["kind"] == "PLAN_LINT_RETRY")["payload"]
     assert retry["operation"] == "DRAFT_PLAN"
     assert "Do not perform" not in response.text
+
+
+def test_plan_prompt_echo_is_recorded_as_telemetry(tmp_path):
+    import json
+    from pathlib import Path
+
+    from pdl_taskmaster.runtime.session_engine import SessionEngine
+
+    def model_call(req):
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({"kind": "ANALYSIS", "task_summary": "A task.", "approach_notes": "",
+                               "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return json.dumps({"kind": "PROMPT", "prompt_body": "SORT the list.\nRETURN the median",
+                               "approach_handoff": "NONE"})
+        return json.dumps({"neutral_plan_body": "sort the list\nRETURN the median."})
+
+    engine = SessionEngine(Path(__file__).resolve().parents[1], model_call, workspace_root=tmp_path, sys1_client=None)
+    engine.handle_user_message("$confirm-with-pseudocode median")
+    engine.handle_user_message("/confirm")
+    echo = next(e for e in engine.workspace._events if e["kind"] == "PLAN_PROMPT_ECHO")["payload"]
+    assert echo["identical"] is True and echo["copied_line_ratio"] == 1.0

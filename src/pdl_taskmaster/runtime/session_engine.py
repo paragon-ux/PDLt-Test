@@ -69,6 +69,12 @@ def _parse_sandbox_witness(stdout_text: str) -> dict[str, Any] | None:
 _PYTHON_BLOCK = re.compile(r"```(?:python|py)[ \t]*\n(.*?)```", re.S)
 
 
+def _normalized_lines(body: str) -> list[str]:
+    """Non-empty lines, lowercased, with punctuation and whitespace runs collapsed."""
+    lines = (" ".join(re.sub(r"[^\w\s]", " ", line.lower()).split()) for line in (body or "").splitlines())
+    return [line for line in lines if line]
+
+
 def _python_blocks(body: str) -> list[str]:
     """The Python the host runs, decided by grammar, never by keywords.
 
@@ -460,6 +466,18 @@ class SessionEngine:
             confirmed_prompt_hash=hashlib.sha256(prompt.body.encode("utf-8")).hexdigest(),
         )
         self.workspace.publish_approach_sources(list(self.controller.state.approach_sources))
+        # Telemetry only: how much of the plan restates the prompt (PLAN-02 / PROMPT-02).
+        prompt_lines = _normalized_lines(prompt.body)
+        plan_lines = _normalized_lines(plan.body)
+        copied = sum(1 for line in plan_lines if line in set(prompt_lines))
+        self.workspace.append_event(
+            "PLAN_PROMPT_ECHO",
+            {
+                "plan_id": plan.artifact_id,
+                "identical": bool(plan_lines) and plan_lines == prompt_lines,
+                "copied_line_ratio": round(copied / len(plan_lines), 3) if plan_lines else 0.0,
+            },
+        )
 
     def _semantic_read(self, raw_text: str, traces: list[CallTrace]) -> str | None:
         """Protocol v2 structural containment: the ONLY operation that sees raw

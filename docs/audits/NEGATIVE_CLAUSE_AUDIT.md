@@ -90,13 +90,13 @@ Across all 137 stored prompt/plan pairs:
 
 PLAN-09 requires the plan to "represent the agent's responsive action" to a SEM-05 message-act. The standards currently *design* greetings to run the full protocol. A SEM-05 rewording that stops a greeting from opening an instance must also retire PLAN-09, or the two clauses contradict each other. Honouring a gated `BYPASS` in Phase 0 (finding 2) is what actually stops pseudocode being drafted for "hello".
 
-## Proposed changes (after the full run; none are applied)
+## Changes applied (after run 171129)
 
-1. Honour a gated `BYPASS` / `PROTOCOL_DISCUSSION` in Phase 0 for explicit invocations (engine; matches §3).
-2. Reword SEM-05 around the act a message performs, and retire PLAN-09 (standards).
-3. Remove `_strip_meta_rule_bleed`; violations go to the lint redraft instead of being rewritten.
-4. Consolidate PDL-05, PDL-08 and the PLAN-10 placeholder check into `plan_soundness` (lint, one redraft); remove the wire-level regexes so a lint violation is never a hard parse failure.
-5. Lint deliverables for payload tokens with the quarantine patterns (EXEC-04).
-6. Add plan/prompt identity (normalized, exact) as telemetry first; add it to the lint only if the full run shows it matters.
+1. **Applied.** A gated `BYPASS` / `PROTOCOL_DISCUSSION` answers directly for explicit invocations (event `DIRECT_ANSWER_ROUTED`; the headless loop stops after a direct answer).
+2. **Applied.** SEM-05 reworded around the act a message performs (requests no task, answered directly outside any instance); PLAN-09 retired and replaced by SEM-05 in the plan operations and V-PLAN-S.
+3. **Applied.** `_strip_meta_rule_bleed` removed; the host no longer edits Prompt or Plan bodies.
+4. **Applied.** PDL-05, PDL-08 and the PLAN-10 placeholder check live only in `plan_soundness` (one redraft, first drafts and revisions); the wire regexes are gone.
+5. **Applied.** Deliverables are checked for payload tokens taken from their own untrusted input (EXEC-04; event `PAYLOAD_TOKENS_IN_DELIVERABLE`, one factual repair).
+6. **Applied as telemetry.** `PLAN_PROMPT_ECHO` records whether the plan is identical to the prompt and the share of copied lines; the scoreboard totals both. It joins the lint only if a full run shows it matters.
 
 Every standards edit must update both copies plus the `CONTRACT_MANIFEST.json` hashes, or the integrity test fails.

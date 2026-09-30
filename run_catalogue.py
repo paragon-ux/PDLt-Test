@@ -211,11 +211,17 @@ def call_accounting(result_dir: Path) -> dict:
     so harness conditions with more repairs are compared at equal cost."""
     by_operation: dict[str, int] = {}
     attempts = None
+    echo = None  # the last plan's PLAN_PROMPT_ECHO (telemetry)
     repairs = 0
     for events in Path(result_dir).rglob("events.jsonl"):
         for line in events.read_text(encoding="utf-8", errors="replace").splitlines():
             if '"VERIFICATION_REPAIR"' in line:
                 repairs += 1
+            if '"PLAN_PROMPT_ECHO"' in line:
+                try:
+                    echo = json.loads(line).get("payload")
+                except ValueError:
+                    pass
             if '"MODEL_OUTPUT_RECORDED"' in line or '"EXECUTION_ATTEMPTS"' in line:
                 try:
                     event = json.loads(line)
@@ -227,7 +233,7 @@ def call_accounting(result_dir: Path) -> dict:
                 elif event.get("kind") == "EXECUTION_ATTEMPTS":
                     attempts = event.get("payload")
     return {"total": sum(by_operation.values()), "by_operation": by_operation, "repairs": repairs,
-            "execution_attempts": attempts}
+            "execution_attempts": attempts, "plan_echo": echo}
 
 
 def stage_pass(r):
@@ -300,6 +306,12 @@ def generate_scoreboard(results, run_dir, run_meta):
         "execute": sum((c.get("by_operation") or {}).get("EXECUTE", 0) for c in calls),
         "repairs": sum(c.get("repairs", 0) for c in calls),
     }
+    echoes = [c.get("plan_echo") for c in calls if c.get("plan_echo")]
+    plan_echo = {
+        "plans": len(echoes),
+        "identical": sorted(r["id"] for r, c in zip(results, calls) if (c.get("plan_echo") or {}).get("identical")),
+        "copied_80pct": sum(1 for e in echoes if e.get("copied_line_ratio", 0) >= 0.8),
+    }
 
     scoreboard = {
         "run_id": run_meta["run_id"],
@@ -314,6 +326,7 @@ def generate_scoreboard(results, run_dir, run_meta):
         "pass_rate_pct": round(pass_rate, 1),
         "total_elapsed_seconds": round(total_time, 1),
         "model_calls": model_calls,
+        "plan_echo": plan_echo,
         "ground_truth": ground_truth,
         "false_positives": false_positives,
         "by_verdict": by_verdict,
@@ -352,6 +365,8 @@ def generate_scoreboard(results, run_dir, run_meta):
         f"| **Pass Rate** | **{scoreboard['pass_rate_pct']}%** |",
         f"| Model calls (total / EXECUTE / repairs) | {scoreboard['model_calls']['total']} / "
         f"{scoreboard['model_calls']['execute']} / {scoreboard['model_calls']['repairs']} |",
+        f"| Plans identical to prompt / >=80% copied (of plans) | {len(scoreboard['plan_echo']['identical'])} / "
+        f"{scoreboard['plan_echo']['copied_80pct']} (of {scoreboard['plan_echo']['plans']}) |",
         "",
         "---",
         "",
@@ -542,6 +557,8 @@ def main():
     print(f"Stage only: {scoreboard['stage_passed']}/{scoreboard['total_prompts']} reached the expected stage")
     mc = scoreboard["model_calls"]
     print(f"Model calls: {mc['total']} total, {mc['execute']} EXECUTE, {mc['repairs']} verification repairs")
+    pe = scoreboard["plan_echo"]
+    print(f"Plan echo: {len(pe['identical'])} identical to prompt, {pe['copied_80pct']} >=80% copied (of {pe['plans']} plans)")
     print(f"Ground truth: PASS={gt['PASS']} FAIL={gt['FAIL']} MANUAL={gt['MANUAL']} "
           f"false_positives={len(scoreboard['false_positives'])}")
     for fp in scoreboard["false_positives"]:
