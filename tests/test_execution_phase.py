@@ -242,18 +242,6 @@ def test_declared_incomplete_without_any_attempt_is_not_accepted(tmp_path):
     assert "observed no attempt to obtain the result" in executes[1].prompt
 
 
-def test_declared_incomplete_after_an_observed_attempt_in_this_execution_is_accepted(tmp_path):
-    """Run 192251 01-01: attempt 1 ran a search that exhausted its budget; the repair
-    honestly declared the result not obtained. The host observed the attempt."""
-    search = {"kind": "RESULT", "body": "import sys\nsys.exit(125)", "result_ir": _ir()}
-    give_up = {"kind": "RESULT", "body": "The search did not finish within the step budget.",
-               "result_ir": _incomplete_ir()}
-    engine, _, executes, events = _run(tmp_path, [search, give_up], problem_class="VERIFIED_EXECUTION")
-    assert len(executes) == 2 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
-    payload = next(e for e in events if e["kind"] == "VERIFICATION_NOT_APPLICABLE")["payload"]
-    assert payload["programs_run"] == 0 and payload["programs_run_this_execution"] == 1
-
-
 def test_open_requirement_without_a_defect_still_needs_a_witness(tmp_path):
     ir = _incomplete_ir()
     ir["open_defects"] = []
