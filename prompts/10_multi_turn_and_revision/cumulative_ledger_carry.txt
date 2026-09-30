@@ -1,0 +1,3 @@
+﻿Implement FizzBuzz for numbers 1 to 100.
+
+(Multi-turn test: After the first turn completes with CLOSED_SUCCESS, submit a follow-up in the same session: "Now explain the time complexity of your FizzBuzz implementation and whether it could be optimized." Verify the model references the actual code from Turn 1 via the cumulative ledger, not a hallucinated version.)

@@ -1,0 +1,7 @@
+﻿{
+  "ground_truth_status": "verified",
+  "verified_by": "information-theoretic lower bound for comparison sorts",
+  "expected_behavior": "impossibility_proof",
+  "reasoning": "Any comparison-based sorting algorithm requires Omega(n log n) comparisons in the worst case (decision tree lower bound). The requirements demand O(n) worst-case AND comparison-based, which is a proven impossibility.",
+  "what_would_be_wrong": "Producing code that claims to be O(n) comparison-based sort"
+}

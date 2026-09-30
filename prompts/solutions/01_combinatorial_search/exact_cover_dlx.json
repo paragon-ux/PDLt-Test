@@ -1,0 +1,12 @@
+﻿{
+  "ground_truth_status": "verified",
+  "verified_by": "brute-force enumeration (Python itertools.combinations)",
+  "polarity": "positive",
+  "solution_count": 3,
+  "witnesses": [
+    {"cover": ["S1", "S2", "S3"], "sets": [[1,2,3], [4,5,6], [7,8,9]]},
+    {"cover": ["S4", "S5", "S6"], "sets": [[1,4,7], [2,5,8], [3,6,9]]},
+    {"cover": ["S7", "S8", "S9"], "sets": [[1,5,9], [2,6,7], [3,4,8]]}
+  ],
+  "verification": "Each cover uses disjoint sets whose union equals {1,...,9}"
+}

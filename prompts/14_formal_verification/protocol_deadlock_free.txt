@@ -1,0 +1,9 @@
+﻿Consider the following simplified two-phase commit protocol:
+
+Coordinator sends PREPARE to all participants.
+Each participant votes COMMIT or ABORT.
+If all vote COMMIT, coordinator sends COMMIT to all.
+If any votes ABORT, coordinator sends ABORT to all.
+Participants acknowledge and complete.
+
+Model this as a state machine (states and transitions for both coordinator and participants). Argue whether the protocol is deadlock-free under the assumption that: (a) no messages are lost, (b) all participants eventually respond. If it IS susceptible to deadlock under message loss, describe the scenario and a mitigation (e.g., timeout-based presumed abort).

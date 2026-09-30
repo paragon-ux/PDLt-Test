@@ -1,0 +1,26 @@
+﻿{
+  "ground_truth_status": "verified",
+  "verified_by": "Python simulation of First Fit + manual optimal packing construction",
+  "polarity": "positive",
+  "first_fit_result": {
+    "bins": 5,
+    "packing": [
+      {"bin": 1, "items": [5, 5], "sum": 10},
+      {"bin": 2, "items": [5, 3], "sum": 8},
+      {"bin": 3, "items": [3, 3], "sum": 6},
+      {"bin": 4, "items": [7], "sum": 7},
+      {"bin": 5, "items": [7], "sum": 7}
+    ]
+  },
+  "optimal_result": {
+    "bins": 4,
+    "packing": [
+      {"bin": 1, "items": [7, 3], "sum": 10},
+      {"bin": 2, "items": [7, 3], "sum": 10},
+      {"bin": 3, "items": [5, 5], "sum": 10},
+      {"bin": 4, "items": [5, 3], "sum": 8}
+    ]
+  },
+  "gap": 1,
+  "verification": "Both packings use all 8 items exactly once, all bin sums <= 10"
+}

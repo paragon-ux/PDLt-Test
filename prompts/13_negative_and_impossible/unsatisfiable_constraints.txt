@@ -1,0 +1,12 @@
+﻿Given the following constraint satisfaction problem, determine whether a solution exists:
+
+Variables: x, y, z, each taking values from {1, 2, 3}
+Constraints:
+  C1: x != y
+  C2: y != z
+  C3: z != x
+  C4: x + y + z = 4
+  C5: x >= y
+  C6: y >= z
+
+Find all solutions, or prove that none exist. If unsatisfiable, provide a minimal explanation of which constraints conflict.

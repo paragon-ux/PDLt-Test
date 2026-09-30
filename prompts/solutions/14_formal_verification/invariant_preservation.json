@@ -1,0 +1,5 @@
+﻿{
+  "ground_truth_status": "verified",
+  "expected_behavior": "correct_invariant_proof_by_induction",
+  "key_insight": "The invariant holds if the transition rules guarantee that direction B only enters GREEN after direction A enters RED. This requires the state machine to enforce mutual exclusion at the controller level. The proof is by induction on transition count: base case (both start RED, invariant holds), inductive step (each transition preserves the mutex)."
+}

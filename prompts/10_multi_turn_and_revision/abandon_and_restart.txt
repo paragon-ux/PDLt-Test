@@ -1,0 +1,3 @@
+﻿Implement a Caesar cipher encoder and decoder.
+
+(Multi-turn test: After the prompt review stage, the tester should /stop, then submit an entirely new prompt: "Implement a ROT13 encoder." Verify the session starts completely clean with no state bleed from the abandoned Caesar cipher task.)

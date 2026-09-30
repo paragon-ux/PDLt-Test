@@ -1,0 +1,16 @@
+﻿The following SQL query runs slowly on a table with 10 million rows. Rewrite it for performance and explain the indexing strategy.
+
+`sql
+SELECT u.name, u.email, COUNT(o.id) as order_count, SUM(o.total) as total_spent
+FROM users u
+LEFT JOIN orders o ON o.user_id = u.id
+WHERE u.created_at >= '2025-01-01'
+  AND u.status = 'active'
+  AND o.status != 'cancelled'
+GROUP BY u.id, u.name, u.email
+HAVING SUM(o.total) > 1000
+ORDER BY total_spent DESC
+LIMIT 50;
+`
+
+Identify: which indexes should exist, whether the query plan likely does a seq scan or index scan, how the LEFT JOIN interacts with the WHERE clause on o.status, and provide the corrected query with CREATE INDEX statements.

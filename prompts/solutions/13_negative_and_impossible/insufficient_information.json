@@ -1,0 +1,6 @@
+﻿{
+  "ground_truth_status": "verified",
+  "expected_behavior": "request_clarification",
+  "missing_information": ["table name", "column schema", "database engine", "existing indexes", "data volume", "query access patterns", "performance requirements"],
+  "what_would_be_wrong": "Guessing a table name and providing optimization advice based on assumptions"
+}

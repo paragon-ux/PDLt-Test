@@ -1,0 +1,7 @@
+﻿{
+  "ground_truth_status": "verified",
+  "expected_behavior": "correct_amortized_analysis",
+  "amortized_cost_per_push": 3,
+  "reasoning": "Charge 3 per push. Actual cost of push without resize: 1 (save 2 as credit). When resize doubles from n to 2n, cost is n+1. The n/2 elements inserted since the last resize each contributed 2 credits = n total credits. This covers the n copies. The +1 is covered by the current push's 1-unit actual cost. Credits never go negative.",
+  "conclusion": "Amortized O(1) per push operation"
+}

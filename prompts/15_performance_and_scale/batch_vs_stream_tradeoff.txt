@@ -1,0 +1,9 @@
+﻿A data pipeline processes clickstream events. Currently it runs as a nightly batch job (processes all events from the past 24 hours in one MapReduce job). The team wants to evaluate switching to stream processing (process each event as it arrives).
+
+Given:
+- 50 million events per day, ~600 events/second average, 3000 events/second peak
+- Events are 500 bytes average
+- Current batch job takes 45 minutes to complete
+- Downstream dashboards currently refresh once per day
+
+Analyze: (1) the latency tradeoff (batch: 24h + 45min vs stream: seconds), (2) the cost tradeoff (batch: one large compute job vs stream: always-on infrastructure), (3) the complexity tradeoff (batch: simple retry vs stream: exactly-once, watermarks, late data), (4) a recommendation with justification for which approach to use.

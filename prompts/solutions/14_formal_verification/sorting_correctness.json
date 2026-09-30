@@ -1,0 +1,9 @@
+﻿{
+  "ground_truth_status": "verified",
+  "expected_behavior": "correct_inductive_proof",
+  "proof_structure": {
+    "termination": "Each recursive call receives a list of strictly smaller length. Length is a natural number (well-founded). Therefore terminates.",
+    "sorted": "By induction: merge of two sorted sublists produces a sorted list (merge takes the smaller head at each step).",
+    "permutation": "By induction: no elements are created or destroyed. Split produces sublists whose multiset union equals the input. Merge produces output whose multiset equals the multiset union of its inputs."
+  }
+}

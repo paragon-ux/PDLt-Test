@@ -1,0 +1,5 @@
+﻿Implement a write-ahead log (WAL) in Python with crash recovery:
+1. append(record: bytes) -> int: Appends a record and returns its sequence number. Each record is prefixed with a 4-byte length, 4-byte CRC32 checksum, and 8-byte sequence number.
+2. recover() -> list[bytes]: Reads the log file from disk and returns all valid records, stopping at the first corrupted or truncated record.
+3. sync(): Forces an fsync to disk.
+4. Test: Write 100 records, close the log, truncate the file mid-record to simulate a crash, reopen and verify recover() returns exactly the intact records with correct checksums.

@@ -1,0 +1,5 @@
+﻿{
+  "ground_truth_status": "verified",
+  "expected_behavior": "correct_progress_theorem_proof",
+  "key_insight": "Progress follows by case analysis on the typing derivation. Each typing rule either produces a value (base cases: literals) or requires subexpressions to step (inductive cases). The critical case is if-then-else where e1 : Bool guarantees e1 is either true/false (value) or can step."
+}

@@ -1,0 +1,13 @@
+﻿Derive the optimal connection pool size for a web application given the following measurements:
+- Average request processing time: 50ms (of which 20ms is waiting for database)
+- Database query execution time: 15ms average
+- Network round-trip to database: 5ms
+- Application server threads: 200
+- Request rate: 2000 requests/second
+- Database server CPU cores: 16
+
+Use Little's Law (L = lambda * W) and Amdahl's Law to derive:
+1. The theoretical optimal pool size
+2. What happens if the pool is too small (thread starvation)
+3. What happens if the pool is too large (connection overhead, database contention)
+4. A recommended pool size with justification

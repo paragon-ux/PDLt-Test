@@ -1,0 +1,10 @@
+﻿{
+  "ground_truth_status": "verified",
+  "expected_behavior": "correct_loop_invariant_proof",
+  "loop_invariant": "At the start of iteration i: total == sum(arr[0:i])",
+  "proof_structure": {
+    "initialization": "Before first iteration: i=0, total=0, sum(arr[0:0])=0. Invariant holds.",
+    "maintenance": "If total == sum(arr[0:i]) at start, then after total += arr[i] and i += 1, total == sum(arr[0:i+1]). Invariant preserved.",
+    "termination": "Loop exits when i == len(arr). Invariant gives total == sum(arr[0:len(arr)]) == sum(arr). Correct."
+  }
+}

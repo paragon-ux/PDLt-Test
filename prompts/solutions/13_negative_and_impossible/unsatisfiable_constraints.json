@@ -1,0 +1,9 @@
+﻿{
+  "ground_truth_status": "verified",
+  "verified_by": "brute-force exhaustive enumeration over {1,2,3}^3",
+  "polarity": "negative",
+  "expected_behavior": "Report UNSATISFIABLE with proof",
+  "proof": "Constraints C1,C2,C3 require all-different values. Over domain {1,2,3}, the only all-different assignment (up to ordering) uses 1,2,3 with sum 6. Constraint C4 requires sum = 4. Since 6 != 4, no solution exists.",
+  "minimal_unsatisfiable_core": ["C1 (x!=y)", "C2 (y!=z)", "C3 (z!=x)", "C4 (x+y+z=4)"],
+  "verification": "Exhaustive search over all 27 assignments confirms 0 solutions"
+}

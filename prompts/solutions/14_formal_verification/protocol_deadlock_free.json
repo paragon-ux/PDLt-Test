@@ -1,0 +1,6 @@
+﻿{
+  "ground_truth_status": "verified",
+  "expected_behavior": "correct_analysis_with_caveat",
+  "key_insight": "Under no message loss and guaranteed response, 2PC is deadlock-free. However, under message loss, a participant that has voted COMMIT but not received the coordinator's decision is blocked indefinitely (cannot unilaterally commit or abort). This is the classic 2PC blocking problem.",
+  "mitigation": "Timeout-based presumed abort: if participant doesn't hear from coordinator within timeout, presume abort."
+}

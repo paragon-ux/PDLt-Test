@@ -1,0 +1,31 @@
+﻿Given the following openssl s_client output showing a broken certificate chain, diagnose the issue and explain how to fix it.
+
+`
+CONNECTED(00000003)
+depth=0 CN = api.example.com
+verify error:num=20:unable to get local issuer certificate
+verify return:1
+depth=0 CN = api.example.com
+verify error:num=21:unable to verify the first certificate
+verify return:1
+---
+Certificate chain
+ 0 s:CN = api.example.com
+   i:CN = Example Intermediate CA, O = Example Inc
+---
+Server certificate
+-----BEGIN CERTIFICATE-----
+MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQsFADBh
+...
+-----END CERTIFICATE-----
+subject=CN = api.example.com
+issuer=CN = Example Intermediate CA, O = Example Inc
+---
+No client certificate CA names sent
+---
+SSL handshake has read 1521 bytes and written 347 bytes
+Verification: FAILED
+---
+`
+
+Explain: what "unable to get local issuer certificate" means, why the chain has only 1 certificate, what the intermediate CA certificate is and where it should come from, and the exact steps to fix this (both server-side and as a debugging aid). Include the openssl commands to verify the fix.

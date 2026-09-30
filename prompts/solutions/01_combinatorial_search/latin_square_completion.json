@@ -1,0 +1,16 @@
+﻿{
+  "ground_truth_status": "verified",
+  "verified_by": "constructed from valid cyclic Latin square with entries removed (seed=42)",
+  "polarity": "positive",
+  "original_complete_square": [
+    [1,2,3,4,5,6,7],
+    [2,3,4,5,6,7,1],
+    [3,4,5,6,7,1,2],
+    [4,5,6,7,1,2,3],
+    [5,6,7,1,2,3,4],
+    [6,7,1,2,3,4,5],
+    [7,1,2,3,4,5,6]
+  ],
+  "note": "Multiple valid completions may exist; any completion where every row and column is a permutation of {1,...,7} is correct",
+  "verification": "The original square from which entries were removed is itself a valid Latin square"
+}

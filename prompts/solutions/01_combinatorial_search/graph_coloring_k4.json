@@ -1,0 +1,12 @@
+﻿{
+  "ground_truth_status": "verified",
+  "verified_by": "four color theorem (any planar graph is 4-colorable) + W_11 chromatic number = 4",
+  "polarity": "positive",
+  "chromatic_number": 4,
+  "proof_3_insufficient": "W_11 has an odd cycle (11-cycle); hub is adjacent to all cycle nodes. Hub must differ from all 11 nodes. An odd cycle requires 3 colors. Hub needs a 4th color since it touches nodes of all 3 cycle colors.",
+  "example_coloring": {
+    "0": 4, "1": 1, "2": 2, "3": 1, "4": 2, "5": 1,
+    "6": 2, "7": 1, "8": 2, "9": 1, "10": 2, "11": 3
+  },
+  "verification": "No two adjacent nodes share a color; hub (node 0) has unique color 4"
+}

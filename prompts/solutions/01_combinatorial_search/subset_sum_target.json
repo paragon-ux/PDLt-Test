@@ -1,0 +1,14 @@
+﻿{
+  "ground_truth_status": "verified",
+  "verified_by": "brute-force enumeration (Python itertools.combinations)",
+  "polarity": "positive",
+  "solution_count": 19,
+  "sample_witnesses": [
+    {"subset": [19, 21], "sum": 40},
+    {"subset": [3, 26, 11], "sum": 40},
+    {"subset": [7, 12, 21], "sum": 40},
+    {"subset": [12, 26, 2], "sum": 40},
+    {"subset": [11, 8, 21], "sum": 40}
+  ],
+  "verification": "All 19 subsets independently verified to sum to 40"
+}

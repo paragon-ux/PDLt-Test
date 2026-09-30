@@ -1,0 +1,9 @@
+﻿Perform amortized analysis of dynamic array resizing using the banker's method (accounting method).
+
+A dynamic array starts with capacity 1. When a push exceeds capacity, the array is resized to 2x its current capacity, copying all existing elements. Individual push without resize costs 1. Resize copies all n elements (cost n) plus the push itself (cost 1).
+
+Using the accounting method:
+1. Assign an amortized cost to each push operation.
+2. Prove that the amortized cost is O(1) per push.
+3. Show that the "bank balance" (prepaid credits) never goes negative.
+4. Compute the exact amortized cost per operation.

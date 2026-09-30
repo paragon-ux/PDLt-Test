@@ -1,0 +1,5 @@
+﻿Implement a union-find (disjoint set) data structure in Python with rollback support:
+1. Use union-by-rank (no path compression, since path compression prevents rollback).
+2. Support: make_set(x), find(x), union(x, y), and save()/restore() for snapshotting.
+3. save() captures the current state; restore() reverts to the last saved state, undoing all unions performed since the save.
+4. Include tests verifying: basic union-find correctness, rollback restoring previous component structure, and nested save/restore sequences.

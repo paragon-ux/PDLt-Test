@@ -1,0 +1,13 @@
+﻿{
+  "ground_truth_status": "verified",
+  "verified_by": "PDLt Arm 4 session-20260927-085921 + independent computation",
+  "polarity": "positive",
+  "solution_count": "at_least_1",
+  "witness": [
+    [71, 64, 135], [97, 12, 109], [54, 40, 94], [56, 102, 158],
+    [44, 32, 76], [45, 13, 58], [82, 35, 117], [113, 72, 185],
+    [86, 22, 108], [63, 51, 114], [50, 61, 111], [90, 15, 105],
+    [92, 26, 118], [60, 23, 83], [91, 43, 134]
+  ],
+  "verification": "All 15 triples verified: a+b=c, 45 distinct elements used, no element repeated"
+}

@@ -1,0 +1,6 @@
+﻿Implement a stack-based bytecode virtual machine in Python for a tiny arithmetic language:
+1. The language supports: integer literals, +, -, *, /, variables, assignment (let x = expr), and print.
+2. Compile source code to bytecode instructions: PUSH_CONST, ADD, SUB, MUL, DIV, LOAD_VAR, STORE_VAR, PRINT.
+3. The VM executes bytecode using an operand stack and a variable environment.
+4. Include a compiler (source -> bytecode) and a VM (bytecode -> execution).
+5. Test with: "let x = 3 + 4 * 2; let y = x - 1; print y" should output 10.

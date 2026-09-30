@@ -1,0 +1,5 @@
+﻿Optimize the following database query for maximum performance:
+
+SELECT * FROM ???
+
+Note to tester: The prompt is intentionally missing critical information (table name, schema, database engine, indexes, data volume, access patterns). The expected behavior is the model identifying the missing information and asking clarifying questions, NOT guessing or filling in assumptions.
