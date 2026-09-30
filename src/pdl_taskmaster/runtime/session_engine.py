@@ -402,14 +402,14 @@ class SessionEngine:
         self.workspace.append_event("PROTOCOL_REFUSED", {"phase": phase})
         return EngineResponse(text or presentation.cancelled(), traces, closed=True, refused=True)
 
-    def _s1_boundary_refusal(self, text: str) -> str | None:
+    def _s1_activation(self, text: str) -> tuple[str, str | None] | None:
         """Phase 0 (TARGET_ARCHITECTURE §3): System 1 routes the request against the
         environment recipe state (policy scope, offline sandbox, knowledge cutoff).
 
         System 1 only: System 2 never sees the environment settings, and nothing here
-        matches keywords or dates. Returns the refusal text only for a gated
-        BLOCKED_BY_HIGHER_PRIORITY decision; System 1 absent, uncertain, or failing
-        yields None (no System 1 evidence, no refusal).
+        matches keywords or dates. Returns (route, refusal text) for a gated decision
+        other than APPLY_PROTOCOL; System 1 absent, uncertain, or failing yields None
+        (no System 1 evidence: the explicit invocation stands).
         """
         client = self.sys1_client
         if not (text or "").strip() or client is None or not client.is_configured:
@@ -432,9 +432,11 @@ class SessionEngine:
                 "confidence": result.confidence,
             },
         )
-        if not result.passed_gating or result.verdict != "BLOCKED_BY_HIGHER_PRIORITY":
+        if not result.passed_gating or result.verdict == "APPLY_PROTOCOL":
             return None
-        return recipe.map_to_wire(result)["response"]
+        if result.verdict == "BLOCKED_BY_HIGHER_PRIORITY":
+            return result.verdict, recipe.map_to_wire(result)["response"]
+        return result.verdict, None
 
     def _publish_prompt(self) -> None:
         assert self.controller is not None and self.workspace is not None
@@ -877,9 +879,16 @@ class SessionEngine:
                 "EXPLICIT_INVOCATION_OBSERVED",
                 {"substantive_request_present": bool(observation.substantive_request)},
             )
-            refusal = self._s1_boundary_refusal(observation.substantive_request)
-            if refusal is not None:
-                return self._refuse(refusal, traces, "activation")
+            routed = self._s1_activation(observation.substantive_request)
+            if routed is not None:
+                route, refusal = routed
+                if route == "BLOCKED_BY_HIGHER_PRIORITY":
+                    return self._refuse(refusal, traces, "activation")
+                # BYPASS / PROTOCOL_DISCUSSION: a direct answer, no protocol instance (§3).
+                self.workspace.append_event("DIRECT_ANSWER_ROUTED", {"route": route})
+                if route == "PROTOCOL_DISCUSSION":
+                    return self._discuss_protocol(observation.substantive_request, traces)
+                return EngineResponse(None, traces, bypass=True)
             return self._draft_initial_prompt(
                 observation.substantive_request,
                 traces,
@@ -894,17 +903,7 @@ class SessionEngine:
         if decision.route == ActivationRoute.BYPASS:
             return EngineResponse(None, traces, bypass=True)
         if decision.route == ActivationRoute.PROTOCOL_DISCUSSION:
-            return EngineResponse(self._call(
-                "ANSWER_PROTOCOL_DISCUSSION",
-                {
-                    "RAW_PROTOCOL_QUESTION": user_message,
-                    "CURRENT_STAGE_CLASS": None,
-                    "BOUND_REVIEW_SUBJECT_KIND": None,
-                    "BOUND_REVIEW_SUBJECT_BODY": None,
-                },
-                traces,
-                parser=self.bridge.parse_protocol_discussion,
-            ), traces)
+            return self._discuss_protocol(user_message, traces)
         return self._draft_initial_prompt(
             user_message.strip(),
             traces,
@@ -1359,6 +1358,20 @@ class SessionEngine:
             return errors, body
         self.workspace.append_event("RESULT_IR_VALIDATED", {"ir": ir})
         return [], _attach_result_ir(body, ir)
+
+    def _discuss_protocol(self, question: str, traces: list[CallTrace]) -> EngineResponse:
+        """A protocol question outside any instance: answered directly, no instance opened."""
+        return EngineResponse(self._call(
+            "ANSWER_PROTOCOL_DISCUSSION",
+            {
+                "RAW_PROTOCOL_QUESTION": question,
+                "CURRENT_STAGE_CLASS": None,
+                "BOUND_REVIEW_SUBJECT_KIND": None,
+                "BOUND_REVIEW_SUBJECT_BODY": None,
+            },
+            traces,
+            parser=self.bridge.parse_protocol_discussion,
+        ), traces, bypass=True)
 
     def _answer_protocol(self, user_message: str, traces: list[CallTrace]) -> EngineResponse:
         assert self.controller is not None

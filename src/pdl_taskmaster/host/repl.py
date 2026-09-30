@@ -1281,6 +1281,9 @@ def main() -> int:
             if not _is_interactive(args):
                 engine = getattr(runtime.host, "engine", None)
                 ctrl = getattr(engine, "controller", None)
+                if ctrl is None and getattr(turn, "bypass", False):
+                    # A direct answer opens no instance; piped review commands do not apply.
+                    break
                 if ctrl is not None and ctrl.state.stage.value == "WAITING_INPUT":
                     # ADR-0019: headless runs pause cleanly here; remaining piped
                     # review commands do not apply to an input request.

@@ -98,3 +98,35 @@ def test_refusal_states_the_configured_boundaries(tmp_path, monkeypatch):
     assert response.refused
     assert CUTOFF in response.text and "network access disabled" in response.text
     assert "policy scope 'technical'" in response.text
+
+
+def test_gated_bypass_answers_directly_for_explicit_invocations(tmp_path, monkeypatch):
+    """TARGET_ARCHITECTURE §3: BYPASS goes to a direct answer even when the host
+    prefixed the message with the explicit invocation; no instance is opened."""
+    sys1, s2_calls = FakeSys1(route_choice="BYPASS"), []
+    engine = _engine(tmp_path, sys1, s2_calls, monkeypatch)
+    response = engine.handle_user_message("$confirm-with-pseudocode hello")
+    assert response.bypass and response.text is None and not response.closed
+    assert s2_calls == [] and engine.controller is None
+    assert any(e["kind"] == "DIRECT_ANSWER_ROUTED" for e in engine.workspace._events)
+
+
+def test_gated_protocol_discussion_answers_directly_for_explicit_invocations(tmp_path, monkeypatch):
+    sys1, s2_calls = FakeSys1(route_choice="PROTOCOL_DISCUSSION"), []
+    monkeypatch.setenv("PDLT_KNOWLEDGE_CUTOFF", CUTOFF)
+
+    def model_call(request):
+        s2_calls.append(request)
+        return json.dumps({"body": "The protocol drafts a prompt, then a plan."})
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=sys1)
+    response = engine.handle_user_message("$confirm-with-pseudocode how does this protocol work?")
+    assert [c.operation for c in s2_calls] == ["ANSWER_PROTOCOL_DISCUSSION"]
+    assert response.bypass and engine.controller is None
+
+
+def test_ungated_bypass_keeps_the_explicit_invocation(tmp_path, monkeypatch):
+    sys1, s2_calls = FakeSys1(route_choice="BYPASS", confidence=0.6), []
+    engine = _engine(tmp_path, sys1, s2_calls, monkeypatch)
+    engine.handle_user_message("$confirm-with-pseudocode hello")
+    assert s2_calls and s2_calls[0].operation == "BOOTSTRAP_ANALYSIS"
