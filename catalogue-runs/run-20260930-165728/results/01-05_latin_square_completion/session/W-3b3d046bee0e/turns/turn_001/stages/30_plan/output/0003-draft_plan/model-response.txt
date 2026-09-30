@@ -1,0 +1,1 @@
+{"neutral_plan_body":"READ the partially filled 7x7 Latin square input\nSOLVE the Latin square by filling all cells marked with 0 using constraint‑propagation with backtracking\nVERIFY that each row contains the numbers 1 through 7 exactly once\nVERIFY that each column contains the numbers 1 through 7 exactly once\nOUTPUT the completed Latin square"}

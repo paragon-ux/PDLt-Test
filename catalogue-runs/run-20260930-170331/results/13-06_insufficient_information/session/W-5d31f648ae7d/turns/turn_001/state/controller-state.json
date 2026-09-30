@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-6b84751191",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-6b84751191-P1",
+    "body": "OPTIMIZE the database query for maximum performance\nCONSIDER generic optimization strategies such as limiting selected columns, adding appropriate indexes, avoiding SELECT *, and ensuring proper query structure\nAPPLY these strategies to the query pattern SELECT * FROM ???",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-6b84751191-R1",
+    "body": "ANALYZE the provided query pattern to determine required result columns\nIDENTIFY the minimal set of columns needed for the intended result\nREWRITE the query to SELECT only those necessary columns instead of SELECT *\nEXAMINE the tables involved to determine appropriate indexing opportunities\nCREATE or RECOMMEND indexes on columns used in WHERE clauses, JOIN conditions, and ORDER BY clauses\nVERIFY that query syntax follows best practices for proper clause ordering and use of explicit JOINs\nEVALUATE the revised query for performance improvements using EXPLAIN or similar profiling tools",
+    "confirmed": true,
+    "source_prompt_id": "I-6b84751191-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-6b84751191-X1",
+    "body": "1019d1ce2607e2addd7cf3100037561635e2e2beb3863446ed7af7db12de67e2",
+    "confirmed": true,
+    "source_prompt_id": "I-6b84751191-P1",
+    "source_plan_id": "I-6b84751191-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

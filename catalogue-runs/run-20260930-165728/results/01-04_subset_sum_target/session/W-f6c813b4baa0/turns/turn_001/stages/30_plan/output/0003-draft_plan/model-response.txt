@@ -1,0 +1,1 @@
+{"neutral_plan_body":"BACKTRACK through the set S to generate all possible subsets\nFOR each generated subset\n    IF the subset sum equals T\n        EMIT the subset\n        VERIFY that the sum of the emitted subset equals T\n        INCREMENT a solution counter\n    ENDIF\nENDFOR\nREPORT the total number of solutions found"}

@@ -1,0 +1,20 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "DETERMINE all assignments of the variables x, y, z drawn from the set {1, 2, 3} that satisfy the constraints C1 through C6. LIST each solution that meets every constraint, or if no solution exists, PROVIDE a minimal explanation identifying the conflicting constraints that make the problem unsatisfiable.\n\nCONSTRAINTS:\n- C1: x != y\n- C2: y != z\n- C3: z != x\n- C4: x + y + z = 4\n- C5: x >= y\n- C6: y >= z",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "x",
+    "y",
+    "z",
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C6",
+    "1",
+    "2",
+    "3",
+    "4"
+  ]
+}

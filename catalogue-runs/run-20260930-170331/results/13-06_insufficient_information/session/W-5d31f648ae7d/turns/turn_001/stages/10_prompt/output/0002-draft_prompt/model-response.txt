@@ -1,0 +1,1 @@
+{"kind":"PROMPT","prompt_body":"OPTIMIZE the database query for maximum performance\nCONSIDER generic optimization strategies such as limiting selected columns, adding appropriate indexes, avoiding SELECT *, and ensuring proper query structure\nAPPLY these strategies to the query pattern SELECT * FROM ???","approach_handoff":"NONE","task_entities":["SELECT * FROM ???"]}
