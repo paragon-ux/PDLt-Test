@@ -527,17 +527,6 @@ class MechanicalController:
         self.state.approach_sources = []
         self._commit()
 
-    def return_to_planning(self) -> None:
-        """Execution of the confirmed plan exceeded the environment's resources:
-        drop the plan (the approach) and require a new one, keeping the confirmed
-        prompt (the task). The new plan passes the plan review gate again."""
-        if not self.can_execute():
-            raise ControllerError("replan_stage")
-        self.state.current_plan = None
-        self.state.pending_change = None
-        self.state.stage = Stage.PLAN_REQUIRED
-        self._commit()
-
     def cancel(self) -> None:
         if self.state.stage in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED}:
             return
