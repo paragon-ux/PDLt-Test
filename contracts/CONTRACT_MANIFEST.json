@@ -70,7 +70,6 @@
     "PLAN-06": "contracts/standards/RESPONSE_PLAN_STANDARD.md",
     "PLAN-07": "contracts/standards/RESPONSE_PLAN_STANDARD.md",
     "PLAN-08": "contracts/standards/RESPONSE_PLAN_STANDARD.md",
-    "PLAN-09": "contracts/standards/RESPONSE_PLAN_STANDARD.md",
     "PLAN-10": "contracts/standards/RESPONSE_PLAN_STANDARD.md",
     "PROMPT-01": "contracts/standards/PROMPT_STANDARD.md",
     "PROMPT-02": "contracts/standards/PROMPT_STANDARD.md",
@@ -147,7 +146,7 @@
     },
     {
       "path": "contracts/EXECUTION_CONTRACT.json",
-      "sha256": "b69aa00bc26982aec9d2a708bdf8c44aa8cd2dc6df315331f17015520ba545da"
+      "sha256": "fcf920c724901b7387b745faf148899de9fa8d16af30a9e87b340150bad23a04"
     },
     {
       "path": "contracts/IMPLEMENTATION_BOUNDARY.json",
@@ -155,7 +154,7 @@
     },
     {
       "path": "contracts/VERIFICATION_CONTRACT.json",
-      "sha256": "72eb0c6f93a56b21c32fdf466e8258b5a6701e41f178d2a3cfdd353ddf36262d"
+      "sha256": "7c4e8c45576d0f08246db281051e1b99a00648644ed79a4e972d570199028397"
     },
     {
       "path": "contracts/standards/ARTIFACT_STANDARD.md",
@@ -199,7 +198,7 @@
     },
     {
       "path": "contracts/standards/RESPONSE_PLAN_STANDARD.md",
-      "sha256": "f544c6ea74859f800a2064accc646a7c204cda3d9900cb71169662094860f980"
+      "sha256": "8533f8df0a89ba119aac281ad0df2fae310b306de9697ad1af924355fb9f159d"
     },
     {
       "path": "contracts/standards/REVIEW_STANDARD.md",
@@ -207,7 +206,7 @@
     },
     {
       "path": "contracts/standards/SEMANTIC_INPUT_STANDARD.md",
-      "sha256": "e6a7a356681c551a812f93677c099927ec64607c15045c48e13c64afcb47d705"
+      "sha256": "21a953fe8eac1f957e081647b9e833bf7e0e0f952521d8a5b0497b1fa51ba279"
     },
     {
       "path": "contracts/standards/TASK_SEMANTICS_STANDARD.md",

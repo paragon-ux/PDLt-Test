@@ -63,7 +63,8 @@ def test_revise_prompt_has_full_sem_family():
     assert {"SEM-01", "SEM-02", "SEM-03", "SEM-04", "SEM-05"} <= ids
 
 
-def test_plan09_reaches_draft_plan_and_revise_plan():
+def test_sem05_reaches_draft_plan_and_revise_plan():
+    """PLAN-09 is retired; SEM-05 carries the plan-side rule for message-acts."""
     compiler = ContextCompiler(ROOT)
     common = {
         "CONFIRMED_PROMPT_BODY": "The user greets the assistant.",
@@ -75,7 +76,11 @@ def test_plan09_reaches_draft_plan_and_revise_plan():
     }
     for operation, values in per_operation.items():
         projection = compiler.compile(operation, values, higher_priority_constraints=None)
-        assert "PLAN-09" in _requirement_ids(projection.document), operation
+        ids = _requirement_ids(projection.document)
+        assert "SEM-05" in ids and "PLAN-09" not in ids, operation
+
+
+def test_sem05_text_is_load_bearing():
     compiler = ContextCompiler(ROOT)
     values = {
         "HOST_PROTOCOL_STATE": {"stage": "10_prompt", "has_prior_prompt": False},
@@ -83,7 +88,7 @@ def test_plan09_reaches_draft_plan_and_revise_plan():
     }
     projection = compiler.compile("DRAFT_PROMPT", values, higher_priority_constraints=None)
     text = _clause_text(projection.document, "SEM-05")
-    # The clause must name the user as the required actor and must forbid
-    # substituting the agent's anticipated response for the user's act.
-    assert "MUST name the user as the actor" in text
-    assert "MUST NOT substitute the agent's anticipated response" in text
+    # The act is the user's, requests no task, and is answered directly.
+    assert "is the user performing that act and requests no task" in text
+    assert "answered directly, outside any protocol instance" in text
+    assert "the user MUST be named as the actor of the act" in text

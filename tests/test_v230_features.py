@@ -92,7 +92,7 @@ def test_verification_contract_contains_v230_standards():
     data = json.loads(contract_path.read_text(encoding="utf-8"))
 
     v_plan_s = next(c for c in data["checks"] if c["id"] == "V-PLAN-S")
-    assert "PLAN-09" in v_plan_s["requirements"]
+    assert "SEM-05" in v_plan_s["requirements"] and "PLAN-09" not in v_plan_s["requirements"]
     assert "PLAN-10" in v_plan_s["requirements"]
 
     v_exec_s = next(c for c in data["checks"] if c["id"] == "V-EXEC-S")
