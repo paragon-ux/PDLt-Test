@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Prove that merge sort is correct by providing: (1) termination proof using list length as a well-founded measure, (2) proof that the output list is sorted in non-decreasing order, and (3) proof that the output list is a permutation of the input. Use structural induction on list length and prove the merge subroutine separately, showing that merging two sorted lists yields a sorted list that is a permutation of their concatenation.
+APPROACH/RISK NOTES:

@@ -1,0 +1,1 @@
+{"neutral_plan_body":"INTERPRET load test results to DETERMINE saturation point where throughput plateaus\nIDENTIFY primary bottleneck resource causing performance limits\nANALYZE cause of throughput decrease when concurrent users reach 1000\nCALCULATE maximum recommended number of concurrent users for the system\nPROVIDE specific scaling recommendations based on the analysis"}

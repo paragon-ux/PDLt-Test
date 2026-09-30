@@ -1,0 +1,9 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "READ the request to implement a Markdown-to-HTML converter in Python\nSUPPORT conversion of headers (# through ######) to corresponding <h1>–<h6> tags\nSUPPORT bold formatting using **text** and __text** to <strong> tags\nSUPPORT italic formatting using *text* and _text_ to <em> tags\nSUPPORT inline code delimited by `code` to <code> tags\nSUPPORT links of the form [text](url) to <a href=\"url\">text</a> tags\nSUPPORT unordered lists where lines start with - or * to <ul><li>...</li></ul> structures\nSUPPORT code blocks indicated by 4-space indentation or fenced with ``` to <pre><code>...</code></pre> tags\nWRAP consecutive non-blank lines that are not otherwise formatted in <p> tags\nDO NOT use any external libraries\nPROVIDE at least ten tests that cover all supported features, including nested formatting and edge cases",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "Markdown-to-HTML converter",
+    "Python"
+  ]
+}

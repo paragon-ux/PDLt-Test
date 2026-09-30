@@ -1,0 +1,1 @@
+{"neutral_plan_body":"DEFINE a function that accepts a string representing an email address\nCOMPILE a regular expression that matches standard email format rules\nAPPLY the regular expression to the input string\nRETURN True if the pattern matches, otherwise RETURN False"}

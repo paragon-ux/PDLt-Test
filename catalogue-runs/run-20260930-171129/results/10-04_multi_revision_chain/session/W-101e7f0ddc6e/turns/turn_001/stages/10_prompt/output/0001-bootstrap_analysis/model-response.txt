@@ -1,0 +1,1 @@
+{"kind":"ANALYSIS","task_summary":"Write a Python function that validates email addresses using regex.","approach_notes":"","risk_notes":"","task_entities":[]}

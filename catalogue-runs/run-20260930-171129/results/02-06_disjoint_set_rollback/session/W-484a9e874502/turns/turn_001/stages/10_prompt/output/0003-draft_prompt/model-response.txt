@@ -1,0 +1,16 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "IMPLEMENT a union-find (disjoint set) data structure in Python using union-by-rank (no path compression).\nPROVIDE the following operations:\n- make_set(x) to create a singleton set containing element x.\n- find(x) to return the representative of the set containing x.\n- union(x, y) to merge the sets containing x and y according to union-by-rank.\n- save() to capture the current state of the data structure.\n- restore() to revert to the most recently saved state, undoing all unions performed since that save.\nINCLUDE tests that verify:\n- basic union-find correctness for make_set, find, and union.\n- rollback functionality correctly restores the component structure after a restore.\n- nested save and restore sequences behave as expected.",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "union-find",
+    "disjoint set",
+    "Python",
+    "union-by-rank",
+    "make_set",
+    "find",
+    "union",
+    "save",
+    "restore"
+  ]
+}

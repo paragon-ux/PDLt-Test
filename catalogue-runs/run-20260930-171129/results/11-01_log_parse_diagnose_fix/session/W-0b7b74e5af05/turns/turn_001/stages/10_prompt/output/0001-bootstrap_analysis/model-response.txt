@@ -1,0 +1,25 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Parse the provided application error log to identify the root cause of payment failures, diagnose why the Stripe charge request times out, and generate a corrected version of the payment service that adds retry with exponential backoff, a circuit breaker pattern, and an idempotency key to prevent double charges on retries.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "PaymentService",
+    "process_payment",
+    "stripe_gateway.py",
+    "charge",
+    "_client.post",
+    "http_client.py",
+    "post",
+    "TimeoutError",
+    "OrderService",
+    "complete_order",
+    "payment_service",
+    "order",
+    "ORD-7842",
+    "retry",
+    "exponential backoff",
+    "circuit breaker",
+    "idempotency key"
+  ]
+}

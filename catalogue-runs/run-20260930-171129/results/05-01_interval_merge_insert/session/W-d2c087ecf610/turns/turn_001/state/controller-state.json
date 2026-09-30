@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-a224cfb645",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-a224cfb645-P1",
+    "body": "IMPLEMENT a function that, given a sorted list of non-overlapping intervals and a new interval, inserts the new interval into the list and merges any overlapping intervals, RETURNING the resulting sorted list. ENSURE the algorithm runs in O(n) time.\nGENERATE tests that cover:\n- INSERTION at the beginning of the list.\n- INSERTION at the end of the list.\n- INSERTION in the middle of the list.\n- A new interval that MERGES all existing intervals into a single interval.\n- A new interval that OVERLAPS none of the existing intervals.\n- THE case where the initial list is empty.\nALL tests must verify that the returned list is sorted and contains non‑overlapping intervals.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-a224cfb645-R1",
+    "body": "DEFINE a function that takes a sorted list of non‑overlapping intervals and a new interval\nMERGE the new interval into the list while preserving order and non‑overlap in O(n) time\nRETURN the resulting sorted list of intervals\nCREATE a test suite containing distinct test cases for:\nINSERTION at the beginning of the list\nINSERTION at the end of the list\nINSERTION in the middle of the list\nA new interval that merges all existing intervals into a single interval\nA new interval that overlaps none of the existing intervals\nThe case where the initial list is empty\nFOR each test case, VERIFY that the function output is sorted and contains no overlapping intervals",
+    "confirmed": true,
+    "source_prompt_id": "I-a224cfb645-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-a224cfb645-X1",
+    "body": "6b1daa84498c8d94acc18b238ffb7e06945a86aaad177ba457736992ac236cdc",
+    "confirmed": true,
+    "source_prompt_id": "I-a224cfb645-P1",
+    "source_plan_id": "I-a224cfb645-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

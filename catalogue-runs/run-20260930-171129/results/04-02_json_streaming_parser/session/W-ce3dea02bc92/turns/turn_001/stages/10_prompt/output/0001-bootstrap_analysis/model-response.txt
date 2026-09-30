@@ -1,0 +1,22 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Implement a SAX-style streaming JSON parser in Python that provides a parse(stream, handler) function reading from a file-like object chunk by chunk. The handler receives callbacks: on_object_start, on_object_end, on_array_start, on_array_end, on_key(key), on_value(value), on_string(s), on_number(n), on_bool(b), on_null. The parser must correctly handle escaped characters (\\\\, \\n, \\t, \\\", \\uXXXX), support arbitrarily deep nesting, and include a test that streams a 1000-element JSON array, verifying all callbacks fire correctly without retaining more than one element in memory.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "parse",
+    "handler",
+    "on_object_start",
+    "on_object_end",
+    "on_array_start",
+    "on_array_end",
+    "on_key",
+    "on_value",
+    "on_string",
+    "on_number",
+    "on_bool",
+    "on_null",
+    "Python",
+    "1000-element"
+  ]
+}

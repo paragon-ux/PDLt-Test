@@ -1,0 +1,7 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Extract a concrete specification from the stakeholder request to \"Build a CRM\". Identify at least five core entities with their attributes, eight business rules or constraints, five edge cases the stakeholder probably hasn't considered, and three clarifying questions needed before implementation.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": []
+}

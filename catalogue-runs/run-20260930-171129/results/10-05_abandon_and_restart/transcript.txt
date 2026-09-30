@@ -1,0 +1,71 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Implement a Caesar cipher encoder and decoder.
+ASSISTANT> Prompt Pseudocode
+
+IMPLEMENT a Caesar cipher encoder that shifts alphabetic characters by a specified integer offset.
+IMPLEMENT a Caesar cipher decoder that reverses the shift applied by the encoder.
+ACCEPT input text and shift value as parameters for both encoder and decoder.
+OUTPUT the transformed text for each operation.
+INCLUDE only alphabetic characters in the shift; preserve case and non‑alphabetic characters unchanged.
+DO NOT provide example usage or sample code; restrict to describing the required functionality.
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+RECEIVE input text and integer shift value for encoding
+VALIDATE that shift is an integer
+FOR each character in the input text
+IF character is alphabetic
+DETERMINE its case (uppercase or lowercase)
+SHIFT the character forward by the given offset within the alphabet, wrapping around as needed
+PRESERVE original case in the result
+ELSE
+PRESERVE the character unchanged
+OUTPUT the resulting encoded text
+
+RECEIVE input text and integer shift value for decoding
+VALIDATE that shift is an integer
+FOR each character in the input text
+IF character is alphabetic
+DETERMINE its case (uppercase or lowercase)
+SHIFT the character backward by the given offset within the alphabet, wrapping around as needed
+PRESERVE original case in the result
+ELSE
+PRESERVE the character unchanged
+OUTPUT the resulting decoded text
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> # Caesar cipher encoder and decoder implementation
+
+def caesar_encode(text: str, shift: int) -> str:
+    """Encode *text* by shifting alphabetic characters forward by *shift* positions.
+    Non‑alphabetic characters are left unchanged. Case is preserved.
+    """
+    result = []
+    for ch in text:
+        if 'a' <= ch <= 'z':
+            # lower‑case shift with wrap‑around
+            offset = (ord(ch) - ord('a') + shift) % 26
+            result.append(chr(ord('a') + offset))
+        elif 'A' <= ch <= 'Z':
+            # upper‑case shift with wrap‑around
+            offset = (ord(ch) - ord('A') + shift) % 26
+            result.append(chr(ord('A') + offset))
+        else:
+            result.append(ch)
+    return ''.join(result)
+
+def caesar_decode(text: str, shift: int) -> str:
+    """Decode *text* that was encoded with a Caesar cipher of *shift*.
+    The operation shifts alphabetic characters backward, preserving case and
+    leaving non‑alphabetic characters unchanged.
+    """
+    return caesar_encode(text, -shift)
+
+# The module provides two functions: caesar_encode and caesar_decode.
+# No executable code or example usage is included as per the specification.
+PROTOCOL_CLOSED
+=== PDLt session ended ===

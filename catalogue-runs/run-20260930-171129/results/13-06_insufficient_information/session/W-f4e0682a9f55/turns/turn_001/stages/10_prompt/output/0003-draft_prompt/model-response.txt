@@ -1,0 +1,1 @@
+{"kind":"PROMPT","prompt_body":"QUERY: OPTIMIZE THE FOLLOWING DATABASE QUERY FOR MAXIMUM PERFORMANCE\nDETAIL: SELECT * FROM ???","approach_handoff":"NONE","task_entities":["SELECT * FROM ???"]}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-3aead5941a",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-3aead5941a-P1",
+    "body": "READ cron expression string as cron_expr\nPARSE the 5 fields (minute, hour, day-of-month, month, day-of-week) supporting specific values, ranges, steps, lists, wildcard\nDEFINE FUNCTION matches(cron_expr, datetime) RETURN boolean indicating if datetime matches the expression\nDEFINE FUNCTION next_fire(cron_expr, after_datetime) RETURN the next datetime after after_datetime that matches the expression\nINCLUDE tests:\nVERIFY that matches for \"*/15 * * * *\" is true at minutes 0, 15, 30, 45 of any hour\nVERIFY that matches for \"0 9 * * 1-5\" is true at 9:00 on weekdays\nVERIFY that matches for \"0 0 1 1 *\" is true at midnight on January 1st",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-3aead5941a-R1",
+    "body": "READ cron expression string as cron_expr\nPARSE the 5 fields (minute, hour, day-of-month, month, day-of-week) supporting specific values, ranges, steps, lists, wildcard\nDEFINE FUNCTION matches(cron_expr, datetime) RETURN boolean indicating if datetime matches the expression\nDEFINE FUNCTION next_fire(cron_expr, after_datetime) RETURN the next datetime after after_datetime that matches the expression\nVERIFY that matches for \"*/15 * * * *\" is true at minutes 0, 15, 30, 45 of any hour\nVERIFY that matches for \"0 9 * * 1-5\" is true at 9:00 on weekdays\nVERIFY that matches for \"0 0 1 1 *\" is true at midnight on January 1st",
+    "confirmed": true,
+    "source_prompt_id": "I-3aead5941a-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-3aead5941a-X1",
+    "body": "d115a8300cf5a2e70a97d6d5a404545637c8ee6f17c3418f60577bda8da31010",
+    "confirmed": true,
+    "source_prompt_id": "I-3aead5941a-P1",
+    "source_plan_id": "I-3aead5941a-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

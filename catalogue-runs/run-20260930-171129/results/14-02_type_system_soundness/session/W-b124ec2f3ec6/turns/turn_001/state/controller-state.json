@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-3acb3f095b",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-3acb3f095b-P1",
+    "body": "DEFINE the small-step operational semantics for the tiny language consisting of integer literals, boolean literals, addition, less‑than, and conditional expressions using the syntax constructs n, if, then, else, and type annotation T.\nPROVIDE the typing rules for expressions of type T.\nSTATE the Progress theorem: FOR any expression e, IF the typing judgment e : T holds, THEN either e is a value (integer literal or boolean literal) OR there exists an expression e' such that e → e'.\nPROVE the Progress theorem by STRUCTURAL INDUCTION on the typing derivation of e, covering each typing rule case.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-3acb3f095b-R1",
+    "body": "DEFINE the small-step operational semantics for the tiny language using the syntax constructs n, if, then, else, and type annotation T\nPROVIDE the typing rules for expressions of type T\nSTATE the Progress theorem: FOR any expression e, IF the typing judgment e : T holds, THEN either e is a value (integer literal or boolean literal) OR there exists an expression e' such that e → e'\nPROVE the Progress theorem by structural induction on the typing derivation of e, covering each typing rule case",
+    "confirmed": true,
+    "source_prompt_id": "I-3acb3f095b-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-3acb3f095b-X1",
+    "body": "5facc402e7534f311527b045962e3bb3a71ef1c12d2468c6347b5fb21f53fe37",
+    "confirmed": true,
+    "source_prompt_id": "I-3acb3f095b-P1",
+    "source_plan_id": "I-3acb3f095b-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

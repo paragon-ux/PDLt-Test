@@ -1,0 +1,1 @@
+PROVE that collatz_steps terminates for all non-negative integer inputs, where collatz_steps is defined as: if n <= 1 return 0; else if n is even return 1 + collatz_steps(n // 2); else return 1 + collatz_steps(3 * n + 1).

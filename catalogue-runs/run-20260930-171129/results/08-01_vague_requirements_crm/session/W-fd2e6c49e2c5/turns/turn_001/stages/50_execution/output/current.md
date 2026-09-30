@@ -1,0 +1,30 @@
+CRM Specification
+
+**Core Entities and Attributes**
+1. **Contact** – id, first_name, last_name, email, phone, address, company_id, created_at, updated_at
+2. **Company** – id, name, industry, website, address, phone, created_at, updated_at
+3. **Opportunity** – id, name, value, stage, close_date, contact_id, company_id, owner_id, created_at, updated_at
+4. **Interaction** – id, type (call/email/meeting), date, notes, contact_id, opportunity_id, owner_id, created_at, updated_at
+5. **User** – id, username, email, role (admin/sales/manager), hashed_password, created_at, updated_at
+
+**Business Rules / Constraints**
+1. A Contact must belong to a Company (company_id not null).
+2. An Opportunity may only be created for an existing Contact and Company.
+3. Interaction records must reference an existing Contact.
+4. Only Users with role "sales" or "admin" can create Opportunities.
+5. Opportunity stage progression must follow: Prospect → Qualification → Proposal → Negotiation → Closed Won/Lost.
+6. Closed Won opportunities cannot be edited except for status notes.
+7. Email addresses must be unique across Contacts and Users.
+8. Deleting a Company must cascade delete its Contacts, Opportunities, and Interactions, or require reassignment.
+
+**Edge Cases**
+1. Importing a large CSV of contacts where duplicates exist.
+2. Handling Opportunities with a value of zero or negative.
+3. Users changing roles mid‑process (e.g., sales to manager) affecting permissions.
+4. Simultaneous edits to the same Contact from multiple users (race condition).
+5. Time‑zone differences affecting due dates and interaction timestamps.
+
+**Clarifying Questions**
+1. Should the CRM support multi‑company contacts (a contact belonging to multiple companies)?
+2. What level of reporting/analytics is required (e.g., pipeline forecasts, sales performance dashboards)?
+3. Are there any integration points (email, calendar, external ERP) that need to be considered?

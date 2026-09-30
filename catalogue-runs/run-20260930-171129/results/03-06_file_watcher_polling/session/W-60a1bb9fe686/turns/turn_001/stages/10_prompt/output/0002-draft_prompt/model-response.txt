@@ -1,0 +1,14 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "READ the request to implement a cross‑platform file change detector in Python using only os.stat\nDEFINE the function watch(directory, callback, interval=1.0)\nPOLL the directory tree every interval seconds\nDETECT file creation, deletion, and modification by comparing mtimes obtained via os.stat\nCALL callback(event_type, filepath) for each detected change\nHANDLE subdirectory creation and deletion during polling\nINCLUDE a test that creates a temporary directory, starts the watcher, performs file operations (create, modify, delete), waits for callbacks, and verifies that all events were detected\n",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "watch",
+    "directory",
+    "callback",
+    "interval",
+    "event_type",
+    "filepath",
+    "os.stat"
+  ]
+}

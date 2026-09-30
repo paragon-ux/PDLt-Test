@@ -1,0 +1,93 @@
+# Functional implementation using map, filter, reduce, and comprehensions
+
+def process_sales(records):
+    """Process sales records into a summary per region.
+    This functional version mirrors the imperative logic:
+    1. Filter out refunds and non‑positive amounts
+    2. Apply regional tax rates
+    3. Group by region
+    4. Compute per‑region totals and counts
+    """
+    # Step 1: filter
+    valid = list(filter(lambda r: r['amount'] > 0 and r['status'] != 'refunded', records))
+
+    # Step 2: tax rates and compute total per record
+    tax_rates = {'US': 0.08, 'EU': 0.20, 'UK': 0.20, 'JP': 0.10}
+    def apply_tax(r):
+        rate = tax_rates.get(r['region'], 0.15)
+        total = round(r['amount'] * (1 + rate), 2)
+        r2 = {**r, 'total': total, 'tax_rate': rate}
+        return r2
+    taxed = list(map(apply_tax, valid))
+
+    # Step 3: group by region using a dict comprehension
+    groups = {region: list(filter(lambda x: x['region'] == region, taxed))
+              for region in {r['region'] for r in taxed}}
+
+    # Step 4: compute summary per region using reduce
+    from functools import reduce
+    summary = {}
+    for region, items in groups.items():
+        total = reduce(lambda acc, itm: acc + itm['total'], items, 0.0)
+        summary[region] = {'count': len(items), 'total': round(total, 2)}
+    return summary
+
+# Test suite
+if __name__ == "__main__":
+    sample_records = [
+        {'id': 1, 'amount': 100, 'status': 'completed', 'region': 'US'},
+        {'id': 2, 'amount': 200, 'status': 'completed', 'region': 'EU'},
+        {'id': 3, 'amount': -50, 'status': 'completed', 'region': 'US'},  # negative amount, should be filtered
+        {'id': 4, 'amount': 150, 'status': 'refunded', 'region': 'UK'},   # refunded, should be filtered
+        {'id': 5, 'amount': 120, 'status': 'completed', 'region': 'JP'},
+        {'id': 6, 'amount': 80, 'status': 'completed', 'region': 'CA'},   # unknown region, default tax 0.15
+    ]
+
+    # Expected result using the original imperative implementation (re‑implemented here for verification)
+    def process_sales_imperative(records):
+        valid = []
+        for r in records:
+            if r['amount'] > 0 and r['status'] != 'refunded':
+                valid.append(r)
+        tax_rates = {'US': 0.08, 'EU': 0.20, 'UK': 0.20, 'JP': 0.10}
+        taxed = []
+        for r in valid:
+            rate = tax_rates.get(r['region'], 0.15)
+            total = round(r['amount'] * (1 + rate), 2)
+            taxed.append({**r, 'total': total, 'tax_rate': rate})
+        groups = {}
+        for r in taxed:
+            region = r['region']
+            groups.setdefault(region, []).append(r)
+        summary = {}
+        for region, items in groups.items():
+            total = 0
+            for item in items:
+                total += item['total']
+            summary[region] = {'count': len(items), 'total': round(total, 2)}
+        return summary
+
+    imp = process_sales_imperative(sample_records)
+    func = process_sales(sample_records)
+    assert imp == func, f"Functional version differs: {func} vs {imp}"
+    print("All tests passed. Summary:")
+    print(func)
+
+# Result IR
+json_result_ir = {
+    "files": [
+        {
+            "filename": "process_sales_functional.py",
+            "satisfies": ["R1", "R2", "R3", "R4"],
+            "evidence": {"path": "execution://body", "section": null, "observed": null}
+        }
+    ],
+    "reconciliation": [
+        {"requirement": "R1", "status": "satisfied", "evidence": {"path": "execution://body", "section": null, "observed": "READ the imperative Python function `process_sales(records)`"}},
+        {"requirement": "R2", "status": "satisfied", "evidence": {"path": "execution://body", "section": null, "observed": "CONVERT the function into an equivalent functional implementation"}},
+        {"requirement": "R3", "status": "satisfied", "evidence": {"path": "execution://body", "section": null, "observed": "CREATE a test suite with a sample dataset"}},
+        {"requirement": "R4", "status": "satisfied", "evidence": {"path": "execution://body", "section": null, "observed": "ENSURE the functional version and tests reference the operative task entities"}}
+    ],
+    "open_defects": []
+}
+print("WITNESS: " + json.dumps(json_result_ir))

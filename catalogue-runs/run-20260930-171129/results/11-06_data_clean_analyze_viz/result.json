@@ -1,0 +1,49 @@
+{
+  "id": "11-06",
+  "category": "cross_domain_composition",
+  "file": "11_cross_domain_composition/data_clean_analyze_viz.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 16.05,
+  "start_time": "2026-09-30T21:43:28.624833+00:00",
+  "session_id": "catalogue-11-06-1790804608",
+  "transcript_file": "results\\11-06_data_clean_analyze_viz\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-03"
+  ],
+  "tags": [
+    "data-cleaning",
+    "statistics",
+    "visualization"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 4,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "repairs_allowed": 1,
+      "tier": "MINIMAL"
+    }
+  }
+}

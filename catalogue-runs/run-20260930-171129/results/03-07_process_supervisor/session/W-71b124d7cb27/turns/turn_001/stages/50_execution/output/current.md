@@ -1,0 +1,148 @@
+# supervisor.py
+import subprocess
+import threading
+import time
+import os
+import signal
+from collections import defaultdict, deque
+
+class ProcessInfo:
+    def __init__(self, name, cmd):
+        self.name = name
+        self.cmd = cmd
+        self.process = None
+        self.backoff = 1  # seconds, exponential
+        self.crash_times = deque()  # timestamps of recent crashes
+        self.failed = False
+        self.restart_lock = threading.Lock()
+
+class Supervisor:
+    def __init__(self):
+        self.registry = {}
+        self.lock = threading.Lock()
+        self.monitor_thread = None
+        self.stop_event = threading.Event()
+
+    # REGISTER a process name with its command line
+    def register(self, name, cmd):
+        with self.lock:
+            self.registry[name] = ProcessInfo(name, cmd)
+
+    # START_ALL to launch every registered process
+    def start_all(self):
+        with self.lock:
+            for info in self.registry.values():
+                self._launch(info)
+        self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
+        self.monitor_thread.start()
+
+    def _launch(self, info):
+        if info.failed:
+            return
+        info.process = subprocess.Popen(info.cmd, shell=True, preexec_fn=os.setsid)
+        info.backoff = 1  # reset backoff on successful start
+
+    # MONITOR each child process
+    def _monitor_loop(self):
+        while not self.stop_event.is_set():
+            with self.lock:
+                for info in list(self.registry.values()):
+                    proc = info.process
+                    if proc is None:
+                        continue
+                    ret = proc.poll()
+                    if ret is None:
+                        continue  # still running
+                    # IF a child exits with a non‑zero exit code THEN restart it using exponential backoff delays
+                    if ret != 0:
+                        self._handle_crash(info)
+                    else:
+                        # normal exit, clear state
+                        info.process = None
+            time.sleep(0.1)
+
+    # handle crash with backoff and failure threshold
+    def _handle_crash(self, info):
+        now = time.time()
+        info.crash_times.append(now)
+        # keep only crashes within 60‑second window
+        while info.crash_times and now - info.crash_times[0] > 60:
+            info.crash_times.popleft()
+        if len(info.crash_times) >= 5:
+            # IF the same child crashes 5 times within a 60‑second window THEN mark the process as failed
+            info.failed = True
+            info.process = None
+            print(f"{info.name} marked as failed after repeated crashes.")
+            return
+        # exponential backoff up to 30 seconds
+        delay = min(info.backoff, 30)
+        print(f"Restarting {info.name} in {delay}s (backoff={info.backoff})")
+        time.sleep(delay)
+        info.backoff = min(info.backoff * 2, 30)
+        self._launch(info)
+
+    # STOP_ALL to gracefully terminate all children by sending SIGTERM
+    def stop_all(self):
+        self.stop_event.set()
+        with self.lock:
+            for info in self.registry.values():
+                proc = info.process
+                if proc is None:
+                    continue
+                try:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                except ProcessLookupError:
+                    continue
+        # IF a child does not exit within 5 seconds after SIGTERM THEN send SIGKILL
+        deadline = time.time() + 5
+        while time.time() < deadline:
+            all_done = True
+            with self.lock:
+                for info in self.registry.values():
+                    proc = info.process
+                    if proc and proc.poll() is None:
+                        all_done = False
+            if all_done:
+                break
+            time.sleep(0.1)
+        # kill remaining
+        with self.lock:
+            for info in self.registry.values():
+                proc = info.process
+                if proc and proc.poll() is None:
+                    try:
+                        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+        if self.monitor_thread:
+            self.monitor_thread.join()
+
+# INCLUDE a test script that simulates a child process that crashes three times before succeeding
+# test_child.py
+if __name__ == "__main__":
+    state_file = "crash_state.txt"
+    try:
+        with open(state_file, "r") as f:
+            count = int(f.read())
+    except FileNotFoundError:
+        count = 0
+    if count < 3:
+        count += 1
+        with open(state_file, "w") as f:
+            f.write(str(count))
+        print(f"Crash #{count}")
+        exit(1)
+    else:
+        print("Success after crashes")
+        # cleanup
+        os.remove(state_file)
+        exit(0)
+
+# VERIFY that the supervisor restarts the simulated child with the appropriate backoff timings
+if __name__ == "__main__":
+    sup = Supervisor()
+    sup.register("test", "python test_child.py")
+    sup.start_all()
+    # let it run enough time to observe restarts (approx 1+2+4 seconds ≈7s)
+    time.sleep(12)
+    sup.stop_all()

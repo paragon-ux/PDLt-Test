@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-912bcfa512",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-912bcfa512-P1",
+    "body": "BUILD a REST API client for the JSONPlaceholder API\nSUPPORT listing posts\nSUPPORT creating new posts\nSUPPORT deleting existing posts",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-912bcfa512-R1",
+    "body": "DEFINE base URL as https://jsonplaceholder.typicode.com\nCREATE HTTP client configured for JSON communication\nIMPLEMENT function LIST_POSTS that SENDS a GET request to /posts and RETURNS the response data\nIMPLEMENT function CREATE_POST that ACCEPTS post data, SENDS a POST request to /posts with the payload, and RETURNS the created resource response\nIMPLEMENT function DELETE_POST that ACCEPTS a post identifier, SENDS a DELETE request to /posts/{id}, and RETURNS the status of the deletion\nPACKAGE the client with the three functions for external use",
+    "confirmed": true,
+    "source_prompt_id": "I-912bcfa512-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-912bcfa512-X1",
+    "body": "8fe418a712db79df5fd92847ccb8a473bcc0d23f5265dbcd2fa49872608a9fb5",
+    "confirmed": true,
+    "source_prompt_id": "I-912bcfa512-P1",
+    "source_plan_id": "I-912bcfa512-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

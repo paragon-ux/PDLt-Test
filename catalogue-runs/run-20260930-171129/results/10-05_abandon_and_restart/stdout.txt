@@ -1,0 +1,82 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-171129\results\10-05_abandon_and_restart\session\catalogue-10-05-1790804483\worker-progress.log]
+[api] response received in 771ms
+[api] response received in 2324ms
+Prompt Pseudocode
+
+IMPLEMENT a Caesar cipher encoder that shifts alphabetic characters by a specified integer offset.
+IMPLEMENT a Caesar cipher decoder that reverses the shift applied by the encoder.
+ACCEPT input text and shift value as parameters for both encoder and decoder.
+OUTPUT the transformed text for each operation.
+INCLUDE only alphabetic characters in the shift; preserve case and non‑alphabetic characters unchanged.
+DO NOT provide example usage or sample code; restrict to describing the required functionality.
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-171129\results\10-05_abandon_and_restart\session\catalogue-10-05-1790804483\worker-progress.log]
+[api] response received in 1423ms
+Response Plan Pseudocode
+
+RECEIVE input text and integer shift value for encoding
+VALIDATE that shift is an integer
+FOR each character in the input text
+IF character is alphabetic
+DETERMINE its case (uppercase or lowercase)
+SHIFT the character forward by the given offset within the alphabet, wrapping around as needed
+PRESERVE original case in the result
+ELSE
+PRESERVE the character unchanged
+OUTPUT the resulting encoded text
+
+RECEIVE input text and integer shift value for decoding
+VALIDATE that shift is an integer
+FOR each character in the input text
+IF character is alphabetic
+DETERMINE its case (uppercase or lowercase)
+SHIFT the character backward by the given offset within the alphabet, wrapping around as needed
+PRESERVE original case in the result
+ELSE
+PRESERVE the character unchanged
+OUTPUT the resulting decoded text
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-171129\results\10-05_abandon_and_restart\session\catalogue-10-05-1790804483\worker-progress.log]
+[api] response received in 7148ms
+# Caesar cipher encoder and decoder implementation
+
+def caesar_encode(text: str, shift: int) -> str:
+    """Encode *text* by shifting alphabetic characters forward by *shift* positions.
+    Non‑alphabetic characters are left unchanged. Case is preserved.
+    """
+    result = []
+    for ch in text:
+        if 'a' <= ch <= 'z':
+            # lower‑case shift with wrap‑around
+            offset = (ord(ch) - ord('a') + shift) % 26
+            result.append(chr(ord('a') + offset))
+        elif 'A' <= ch <= 'Z':
+            # upper‑case shift with wrap‑around
+            offset = (ord(ch) - ord('A') + shift) % 26
+            result.append(chr(ord('A') + offset))
+        else:
+            result.append(ch)
+    return ''.join(result)
+
+def caesar_decode(text: str, shift: int) -> str:
+    """Decode *text* that was encoded with a Caesar cipher of *shift*.
+    The operation shifts alphabetic characters backward, preserving case and
+    leaving non‑alphabetic characters unchanged.
+    """
+    return caesar_encode(text, -shift)
+
+# The module provides two functions: caesar_encode and caesar_decode.
+# No executable code or example usage is included as per the specification.
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

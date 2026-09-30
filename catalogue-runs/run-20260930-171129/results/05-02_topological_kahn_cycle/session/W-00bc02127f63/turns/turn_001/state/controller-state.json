@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-67d6d095b0",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-67d6d095b0-P1",
+    "body": "READ the directed graph supplied as an adjacency list\nEXECUTE Kahn's algorithm to produce a topological ordering of the nodes\nIF a cycle is detected THEN OUTPUT an error that includes the nodes forming the cycle\nPROVIDE a test case with a valid DAG of eight nodes and verify that the returned ordering respects all edges\nPROVIDE a test case with a graph that contains a cycle and verify that the reported cycle is correct",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-67d6d095b0-R1",
+    "body": "READ the directed graph supplied as an adjacency list\nEXECUTE Kahn's algorithm to produce a topological ordering of the nodes\nIF a cycle is detected THEN OUTPUT an error that includes the nodes forming the cycle\nPROVIDE a test case with a valid DAG of eight nodes and verify that the returned ordering respects all edges\nPROVIDE a test case with a graph that contains a cycle and verify that the reported cycle is correct",
+    "confirmed": true,
+    "source_prompt_id": "I-67d6d095b0-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-67d6d095b0-X1",
+    "body": "8e922b719dd2b88300e7d48d467c3ef2ddb601a359134abf3111ac9cb887599d",
+    "confirmed": true,
+    "source_prompt_id": "I-67d6d095b0-P1",
+    "source_plan_id": "I-67d6d095b0-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

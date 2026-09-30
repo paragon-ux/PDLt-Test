@@ -1,0 +1,25 @@
+The following code uses string comparisons for state management. Refactor to use proper enums with exhaustive matching.
+
+`python
+def process_order(order):
+    if order['status'] == 'pending':
+        if order['payment'] == 'received':
+            order['status'] = 'confirmed'
+        elif order['payment'] == 'failed':
+            order['status'] = 'cancelled'
+    elif order['status'] == 'confirmed':
+        if order['shipped']:
+            order['status'] = 'shipped'
+    elif order['status'] == 'shipped':
+        if order['delivered']:
+            order['status'] = 'delivered'
+    elif order['status'] == 'delivered':
+        if order.get('returned'):
+            order['status'] = 'returned'
+    elif order['status'] == 'cancelled':
+        pass  # terminal state
+    # BUG: 'returned' status is never handled if we get here
+    return order
+`
+
+Use enum.Enum for OrderStatus and PaymentStatus. Ensure every enum value is handled (no silent fallthrough). Include a test that triggers the original bug and proves the refactored version catches it.

@@ -1,0 +1,1 @@
+{"neutral_plan_body":"REWRITE the provided SQL query to improve performance\nEXPLAIN an appropriate indexing strategy for the query\nDETERMINE whether the query plan will use a sequential scan or an index scan\nANALYZE how the LEFT JOIN interacts with the WHERE clause on o.status\nPROVIDE the corrected SQL query together with the necessary CREATE INDEX statements"}

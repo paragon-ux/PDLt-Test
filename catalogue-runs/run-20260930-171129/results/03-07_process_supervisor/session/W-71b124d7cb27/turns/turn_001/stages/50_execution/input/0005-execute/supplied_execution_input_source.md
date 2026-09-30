@@ -1,0 +1,7 @@
+Implement a process supervisor in Python that manages child processes with restart-on-crash:
+1. register(name, cmd): Register a named process with its command line.
+2. start_all(): Launch all registered processes.
+3. The supervisor monitors children. If any child exits with a non-zero code, restart it with exponential backoff (1s, 2s, 4s, max 30s).
+4. If a child crashes 5 times within 60 seconds, mark it as failed and stop restarting.
+5. stop_all(): Gracefully terminate all children (SIGTERM, then SIGKILL after 5s timeout).
+6. Include a test with a child script that crashes 3 times then succeeds, verifying the supervisor restarts it correctly with backoff.

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-2b90c1e337",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-2b90c1e337-P1",
+    "body": "READ the requirement to implement a TCP echo server in Python using the select module\nCONFIGURE the server to listen on a configurable port\nSET the maximum number of simultaneous connections to 64\nUSE the socket library to create a TCP socket\nCALL listen on the socket to accept incoming connections\nUSE select to monitor the listening socket and client sockets for readability\nWHEN the listening socket is readable, ACCEPT a new client connection\nIF the current number of connections is less than 64, ADD the new client socket to the select set\nELSE SEND an appropriate rejection message to the connecting client and CLOSE the connection\nFOR each client socket that becomes readable, READ lines from the client preserving newlines\nFOR each line received, SEND the line back to the same client (echo)\nIF a client disconnects, REMOVE the client socket from the select set and CLOSE the socket\nINCLUDE a test that spawns the server, CONNECT three clients concurrently, SEND different messages from each client, VERIFY each client receives the correctly echoed messages, DISCONNECT the clients, and VERIFY the server cleans up resources",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-2b90c1e337-R1",
+    "body": "READ the requirement to implement a TCP echo server in Python using the select module\nCONFIGURE the server to listen on a configurable port\nSET the maximum number of simultaneous connections to 64\nUSE the socket library to create a TCP socket\nCALL listen on the socket to accept incoming connections\nUSE select to monitor the listening socket and client sockets for readability\nWHEN the listening socket is readable, ACCEPT a new client connection\nIF the current number of connections is less than 64, ADD the new client socket to the select set\nELSE SEND an appropriate rejection message to the connecting client and CLOSE the connection\nFOR each client socket that becomes readable, READ lines from the client preserving newlines\nFOR each line received, SEND the line back to the same client (echo)\nIF a client disconnects, REMOVE the client socket from the select set and CLOSE the socket\nIMPLEMENT a test that spawns the server, CONNECT three clients concurrently, SEND different messages from each client, VERIFY each client receives the correctly echoed messages, DISCONNECT the clients, and VERIFY the server cleans up resources",
+    "confirmed": true,
+    "source_prompt_id": "I-2b90c1e337-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-2b90c1e337-X1",
+    "body": "74c6098b4556ec8d270c6b7f5c9a6e88bbbb2cae8ea6612184e61df5ba0019ba",
+    "confirmed": true,
+    "source_prompt_id": "I-2b90c1e337-P1",
+    "source_plan_id": "I-2b90c1e337-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

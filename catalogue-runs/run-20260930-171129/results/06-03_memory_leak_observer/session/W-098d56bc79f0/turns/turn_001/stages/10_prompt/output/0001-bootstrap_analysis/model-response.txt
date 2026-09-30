@@ -1,0 +1,20 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Identify the memory leak caused by the EventEmitter observer pattern where DataProcessor instances are never unsubscribed, explain why the leak prevents garbage collection, and modify the code to manage the lifecycle of observers so that each DataProcessor unregisters its listener after processing. Provide a test that demonstrates the leak exists when process_batch is called many times and shows that memory usage stabilizes after applying the fix.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "EventEmitter",
+    "_listeners",
+    "on",
+    "emit",
+    "DataProcessor",
+    "emitter",
+    "results",
+    "handle_data",
+    "process_batch",
+    "batch",
+    "item",
+    "value"
+  ]
+}

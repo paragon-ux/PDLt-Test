@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-71c2b813ea",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-71c2b813ea-P1",
+    "body": "IMPLEMENT a Least Frequently Used (LFU) cache in Python.\nENSURE that both GET(key) and PUT(key, value) operations run in O(1) average time complexity.\nWHEN the cache exceeds its capacity, EVICT the least frequently used key.\nIF multiple keys share the minimum frequency, EVICT the least recently used among them.\nACCESSING a key via GET() OR UPDATING via PUT() MUST INCREMENT its usage frequency.\nPROVIDE a self‑contained test suite that VERIFIES capacity limits, correct frequency updates, and LRU tie‑breaking behavior.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-71c2b813ea-R1",
+    "body": "DEFINE a class LFUCache with constructor accepting capacity\nINITIALIZE internal data structures: key‑to‑node map, frequency‑to‑ordered‑dict map, and minFrequency tracker\nIMPLEMENT GET(key) operation:\nIF key not in key‑to‑node map RETURN indicator for miss\nRETRIEVE node, UPDATE its frequency using a helper that moves node to the next frequency list and updates minFrequency as needed\nRETURN node value\nIMPLEMENT PUT(key, value) operation:\nIF capacity is zero RETURN immediately\nIF key exists THEN update its value and treat as an access (invoke frequency update)\nELSE\nIF current size equals capacity THEN EVICT the least frequently used key:\nSELECT the ordered‑dict for minFrequency and REMOVE its oldest entry (LRU tie‑break)\nDELETE the evicted key from key‑to‑node map\nCREATE a new node with frequency 1, store in key‑to‑node map\nADD node to frequency‑to‑ordered‑dict under frequency 1\nSET minFrequency to 1\nDEVELOP a self‑contained test suite that:\nINSTANTIATES LFUCache with a small capacity\nPERFORMS a sequence of PUT and GET calls to validate:\ncapacity enforcement and eviction of correct key when cache is full\nfrequency increment on each GET and PUT access\nLRU tie‑breaking when multiple keys share the minimum frequency\nASSERTS expected return values and internal state after each operation\nPACKAGE the LFUCache class and its test suite as a single Python module",
+    "confirmed": true,
+    "source_prompt_id": "I-71c2b813ea-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-71c2b813ea-X1",
+    "body": "f14398e2ad1e8fd8789cca47fe4a0bc8f3c2d2a90c43f79567473f8ad8536284",
+    "confirmed": true,
+    "source_prompt_id": "I-71c2b813ea-P1",
+    "source_plan_id": "I-71c2b813ea-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

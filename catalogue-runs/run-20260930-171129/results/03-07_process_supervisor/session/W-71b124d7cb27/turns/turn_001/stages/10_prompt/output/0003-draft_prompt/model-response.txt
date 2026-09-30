@@ -1,0 +1,14 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "REGISTER a process name with its command line\nSTART_ALL to launch every registered process\nMONITOR each child process\nIF a child exits with a non-zero exit code THEN restart it using exponential backoff delays of 1 second, 2 seconds, 4 seconds, up to a maximum of 30 seconds\nIF the same child crashes 5 times within a 60‑second window THEN mark the process as failed and cease restarting it\nSTOP_ALL to gracefully terminate all children by sending SIGTERM\nIF a child does not exit within 5 seconds after SIGTERM THEN send SIGKILL\nINCLUDE a test script that simulates a child process that crashes three times before succeeding and VERIFY that the supervisor restarts the child with the appropriate backoff timings",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "register",
+    "start_all",
+    "stop_all",
+    "SIGTERM",
+    "SIGKILL",
+    "exponential backoff",
+    "5 times"
+  ]
+}

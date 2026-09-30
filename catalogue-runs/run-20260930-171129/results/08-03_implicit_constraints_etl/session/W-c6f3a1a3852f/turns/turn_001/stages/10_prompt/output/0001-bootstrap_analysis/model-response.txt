@@ -1,0 +1,17 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Identify implicit ordering dependencies in the described ETL pipeline and produce a correct execution DAG. The pipeline extracts data from three sources: the sales database (PostgreSQL), the inventory CSV export, and the customer API (rate‑limited to 100 requests per minute). Sales records are enriched with customer names and addresses. Inventory levels are joined with sales to compute stock‑out risk. A daily summary combining all three datasets is generated and loaded into the data warehouse. After loading, stale data older than 90 days is purged from the warehouse.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "sales database",
+    "PostgreSQL",
+    "inventory CSV export",
+    "customer API",
+    "rate limit of 100 requests per minute",
+    "daily summary",
+    "data warehouse",
+    "purge",
+    "90 days"
+  ]
+}

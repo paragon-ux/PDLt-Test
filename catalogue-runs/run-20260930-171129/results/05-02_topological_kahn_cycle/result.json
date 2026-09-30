@@ -1,0 +1,49 @@
+{
+  "id": "05-02",
+  "category": "algorithm_design",
+  "file": "05_algorithm_design/topological_kahn_cycle.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 17.72,
+  "start_time": "2026-09-30T21:28:51.493717+00:00",
+  "session_id": "catalogue-05-02-1790803731",
+  "transcript_file": "results\\05-02_topological_kahn_cycle\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-07"
+  ],
+  "tags": [
+    "topological-sort",
+    "cycle-detection",
+    "DAG"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 4,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "repairs_allowed": 1,
+      "tier": "MINIMAL"
+    }
+  }
+}

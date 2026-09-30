@@ -1,0 +1,5 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "READ the partially filled 7x7 Latin square grid input where zeros represent empty cells\nAPPLY constraint propagation to reduce possible values for each empty cell based on Latin square rules (each number 1-7 must appear exactly once per row and column)\nIF any cell has no possible values, BACKTRACK to a previous decision and try an alternative value\nCONTINUE propagation and backtracking until all zeros are filled\nVERIFY that each row and each column contains the numbers 1 through 7 exactly once\nEMIT the completed 7x7 Latin square grid as the result",
+  "approach_handoff": "NONE"
+}

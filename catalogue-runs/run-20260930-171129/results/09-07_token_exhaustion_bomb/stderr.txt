@@ -1,0 +1,1 @@
+[headless halt] Session ended at non-terminal stage 'EXECUTION_READY'. Exiting fail-closed (code 2).

@@ -1,0 +1,10 @@
+- No token expiration enforcement, leading to indefinitely valid JWTs.
+- No token revocation mechanism for compromised or logged‑out sessions.
+- Password complexity requirements are unspecified, allowing weak passwords.
+- Account lockout policy after repeated failed login attempts is missing.
+- Secure storage of passwords (e.g., hashing) is not described.
+- Transport security (TLS/HTTPS) for all authentication endpoints is not mandated.
+- Lack of input validation and sanitization for email and password fields, increasing injection risks.
+- Absence of audit logging for registration, login, and admin user view actions.
+- No role‑based access control separation beyond a generic "admin" label.
+- Insufficient error handling that may expose sensitive information.

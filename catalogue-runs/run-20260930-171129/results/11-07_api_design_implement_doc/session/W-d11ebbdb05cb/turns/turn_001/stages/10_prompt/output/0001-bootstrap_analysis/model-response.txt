@@ -1,0 +1,15 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Design, implement, and document a REST API for a simple bookmarks service. Define CRUD endpoints for bookmarks with fields url, title, tags, created_at, and include search by tag. Implement the API using only Python standard library modules http.server, json, urllib (no external frameworks). Generate an OpenAPI 3.0 specification (YAML or JSON) describing the endpoints, request/response schemas, status codes, and example values. Provide a self-contained test that starts the server, performs all CRUD operations, and verifies the responses.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "url",
+    "title",
+    "tags",
+    "created_at",
+    "http.server",
+    "json",
+    "urllib"
+  ]
+}

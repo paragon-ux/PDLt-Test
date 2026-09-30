@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-39591977e7",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-39591977e7-P1",
+    "body": "IDENTIFY implicit ordering dependencies in the described ETL pipeline and produce a correct execution DAG.\nEXTRACT data from the sales database (PostgreSQL).\nEXTRACT data from the inventory CSV export.\nEXTRACT data from the customer API (rate‑limited to 100 requests per minute).\nENRICH sales records with customer names and addresses.\nJOIN inventory levels with sales to compute stock‑out risk.\nGENERATE a daily summary combining sales database, inventory CSV export, and customer API data.\nLOAD the daily summary into the data warehouse.\nPURGE stale data older than 90 days from the data warehouse.\nOUTPUT the execution DAG representing the above steps and their ordering dependencies.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-39591977e7-R1",
+    "body": "EXTRACT data from the sales database (PostgreSQL)\nEXTRACT data from the inventory CSV export\nEXTRACT data from the customer API (rate‑limited to 100 requests per minute)\nENRICH sales records with customer names and addresses\nJOIN inventory levels with sales to compute stock‑out risk\nGENERATE a daily summary combining sales database, inventory CSV export, and customer API data\nLOAD the daily summary into the data warehouse\nPURGE stale data older than 90 days from the data warehouse",
+    "confirmed": true,
+    "source_prompt_id": "I-39591977e7-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-39591977e7-X1",
+    "body": "2622c57a37f5f738fd6c5e7c592a572899e27df31c37f110bae52f52bfac745b",
+    "confirmed": true,
+    "source_prompt_id": "I-39591977e7-P1",
+    "source_plan_id": "I-39591977e7-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

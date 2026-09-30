@@ -1,0 +1,18 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Implement a TCP echo server in Python using only the select module (no asyncio, no threading). The server must listen on a configurable port, accept multiple concurrent clients, and echo back every line received from each client while preserving newlines. It must handle client disconnection gracefully by removing the client from the select set and closing the socket. The server must support up to 64 simultaneous connections and reject additional connections with an appropriate message. Include a test that spawns the server, connects three clients concurrently, sends different messages from each, verifies that each client receives the correct echoed messages, then disconnects the clients and verifies that the server cleans up resources.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "select",
+    "socket",
+    "listen",
+    "accept",
+    "recv",
+    "send",
+    "close",
+    "TCP",
+    "port",
+    "64"
+  ]
+}

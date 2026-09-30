@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Identify each contradiction in the provided API specification and propose a resolution for each. The contradictions involve response codes for POST /users, handling of duplicate emails, authentication requirements for POST /users, and the format of user IDs. For each contradictory pair, state the conflict and suggest a consistent rule or design choice that resolves the inconsistency.
+APPROACH/RISK NOTES:

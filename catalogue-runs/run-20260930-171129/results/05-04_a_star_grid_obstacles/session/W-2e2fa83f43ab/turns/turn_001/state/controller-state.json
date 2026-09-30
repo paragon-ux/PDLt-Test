@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-16ba331eaa",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-16ba331eaa-P1",
+    "body": "IMPLEMENT A* pathfinding on a weighted grid in Python.\nUSE a grid represented as an NxM matrix where each cell contains a non-negative movement cost, with -1 indicating an impassable cell.\nALLOW 4-directional movement (up, down, left, right); moving into a cell incurs that cell's cost.\nAPPLY Manhattan distance as the heuristic function.\nRETURN the shortest path as an ordered list of (row, col) coordinates together with the total path cost.\nINCLUDE a test case using a 10x10 grid that contains walls and varying terrain costs.\nVERIFY that the path cost returned by the A* implementation matches the optimal path cost produced by Dijkstra's algorithm on the same grid.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-16ba331eaa-R1",
+    "body": "VALIDATE the supplied grid matrix dimensions and cell cost values\nINITIALIZE open set data structure for A* search\nDEFINE Manhattan distance function as heuristic\nDEFINE function to retrieve walkable 4-directional neighbors, excluding cells with cost -1\nWHILE open set is not empty\nSELECT node with lowest f-score (g + heuristic) from open set\nIF selected node is the goal cell\nRECONSTRUCT path by backtracking predecessor links\nCALCULATE total path cost as sum of entered cell costs\nRETURN ordered list of (row, col) coordinates and total cost\nENDIF\nFOR each neighbor of selected node\nCOMPUTE tentative g-score as current g-score plus neighbor cell cost\nIF neighbor not in open set OR tentative g-score is lower than recorded g-score\nRECORD neighbor predecessor as current node\nUPDATE neighbor g-score and f-score\nADD neighbor to open set if not present\nENDIF\nENDFOR\nENDWHILE\nIF goal not reached\nRETURN indication of no viable path\nENDIF\nEXECUTE a Dijkstra algorithm on the same grid to obtain optimal path cost for verification\nCOMPARE A* returned total cost with Dijkstra optimal cost for consistency\nDEFINE a 10x10 test grid containing impassable cells (-1) and varied terrain costs\nRUN the A* implementation on the test grid\nOUTPUT the resulting path list and total cost along with verification result",
+    "confirmed": true,
+    "source_prompt_id": "I-16ba331eaa-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-16ba331eaa-X1",
+    "body": "e62922d46fe126bcc3640561cc8bf9338746acfe5768bbb188fa9dc3b18ee5f9",
+    "confirmed": true,
+    "source_prompt_id": "I-16ba331eaa-P1",
+    "source_plan_id": "I-16ba331eaa-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

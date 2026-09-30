@@ -1,0 +1,136 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> The following module uses global mutable state. Refactor it to use dependency injection so that the module is testable in isolation.
+
+`python
+import os, time
+
+DB_HOST = os.environ.get('DB_HOST', 'localhost')
+DB_PORT = int(os.environ.get('DB_PORT', '5432'))
+_cache = {}
+_request_count = 0
+
+def get_connection():
+    return f"postgresql://{DB_HOST}:{DB_PORT}/mydb"
+
+def query(sql):
+    global _request_count
+    _request_count += 1
+    if sql in _cache:
+        return _cache[sql]
+    conn = get_connection()
+    result = f"[result of '{sql}' from {conn}]"
+    _cache[sql] = result
+    return result
+
+def get_stats():
+    return {'requests': _request_count, 'cache_size': len(_cache), 'host': DB_HOST}
+
+def reset():
+    global _cache, _request_count
+    _cache = {}
+    _request_count = 0
+`
+
+After refactoring, tests should be able to inject a mock database and verify query behavior without setting environment variables or touching globals.
+ASSISTANT> Prompt Pseudocode
+
+REFactor the Python module to eliminate all global mutable state and environment variable dependencies.
+INTRODUCE dependency injection for the database connection and cache objects.
+MODIFY functions get_connection, query, get_stats, and reset to accept injected dependencies as parameters or via a configurable context.
+ENSURE that the original functionality of get_connection, query, get_stats, and reset remains unchanged when using real dependencies.
+ALLOW tests to supply mock database and cache instances to verify query behavior in isolation without side effects.
+MAINTAIN the module's public interface while internally delegating to the injected components.
+PRESERVE existing semantics and output formats of all functions.
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+REFRACTOR the Python module to isolate and eliminate all global mutable state and environment variable dependencies
+INTRODUCE dependency injection mechanisms for database connection and cache objects
+MODIFY function get_connection to accept a database connection parameter or retrieve it from an injected context
+MODIFY function query to accept the injected database connection and cache objects as parameters or via the context
+MODIFY function get_stats to accept required dependencies through parameters or the injected context
+MODIFY function reset to accept injected dependencies and perform reset operations without accessing globals
+ENSURE that each modified function preserves its original behavior when real dependencies are supplied
+EXPOSE the original public interface signatures unchanged while internally delegating to the injected components
+ENABLE test suites to supply mock database and cache instances to the functions for isolated verification
+DOCUMENT the dependency injection approach and usage examples for both production and testing scenarios
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> import os
+from dataclasses import dataclass, field
+from typing import Any, Dict, Optional
+
+# Dependency injection context
+@dataclass
+class DBContext:
+    host: str = field(default_factory=lambda: os.environ.get('DB_HOST', 'localhost'))
+    port: int = field(default_factory=lambda: int(os.environ.get('DB_PORT', '5432')))
+    cache: Dict[str, str] = field(default_factory=dict)
+    request_count: int = 0
+
+    def connection_string(self) -> str:
+        return f"postgresql://{self.host}:{self.port}/mydb"
+
+# Helper to obtain a context; callers can provide their own for testing
+def _get_context(provided: Optional[DBContext] = None) -> DBContext:
+    return provided if provided is not None else DBContext()
+
+# Public API – signatures unchanged
+def get_connection(context: Optional[DBContext] = None) -> str:
+    """Return a PostgreSQL connection string.
+    In production the context is created from environment variables.
+    Tests can inject a mock DBContext.
+    """
+    ctx = _get_context(context)
+    return ctx.connection_string()
+
+def query(sql: str, *, context: Optional[DBContext] = None) -> str:
+    """Execute a SQL query with caching.
+    The function increments a request counter and caches results per context.
+    """
+    ctx = _get_context(context)
+    ctx.request_count += 1
+    if sql in ctx.cache:
+        return ctx.cache[sql]
+    conn = ctx.connection_string()
+    result = f"[result of '{sql}' from {conn}]"
+    ctx.cache[sql] = result
+    return result
+
+def get_stats(context: Optional[DBContext] = None) -> Dict[str, Any]:
+    """Return statistics about requests and cache size.
+    The host information comes from the context.
+    """
+    ctx = _get_context(context)
+    return {
+        'requests': ctx.request_count,
+        'cache_size': len(ctx.cache),
+        'host': ctx.host,
+    }
+
+def reset(context: Optional[DBContext] = None) -> None:
+    """Reset cache and request counter for the given context.
+    If no context is supplied a fresh one is created (no‑op on the caller).
+    """
+    if context is None:
+        # No external context to reset – nothing to do.
+        return
+    context.cache.clear()
+    context.request_count = 0
+
+# Example usage (production):
+# ctx = DBContext()
+# print(get_connection(ctx))
+# print(query('SELECT 1', context=ctx))
+# print(get_stats(ctx))
+# reset(ctx)
+
+# Example usage (testing):
+# mock_ctx = DBContext(host='mockhost', port=1234)
+# assert query('SELECT 1', context=mock_ctx) == "[result of 'SELECT 1' from postgresql://mockhost:1234/mydb]"
+PROTOCOL_CLOSED
+=== PDLt session ended ===

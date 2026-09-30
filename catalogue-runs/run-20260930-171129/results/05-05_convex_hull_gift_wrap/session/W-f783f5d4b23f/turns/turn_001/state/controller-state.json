@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-7fdfd71d1e",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-7fdfd71d1e-P1",
+    "body": "READ the list of 2D points provided as (x, y) tuples\nEXECUTE the Jarvis march (gift wrapping) algorithm to compute the convex hull\nINCLUDE all points that lie on the hull boundary, preserving collinear points\nOUTPUT the convex hull vertices in counter‑clockwise order\nTEST the implementation with the following cases:\nCASE a: a simple convex polygon\nCASE b: points that form collinear edges\nCASE c: all points collinear (degenerate case)\nCASE d: duplicate points\nENSURE the output list contains each hull vertex exactly once and respects the required ordering",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-7fdfd71d1e-R1",
+    "body": "READ the list of 2D points provided as (x, y) tuples\nEXECUTE the Jarvis march (gift wrapping) algorithm, ensuring inclusion of collinear points on hull edges and preserving duplicate handling\nOUTPUT the convex hull vertices in counter‑clockwise order, guaranteeing each vertex appears exactly once\nTEST the implementation with the specified cases:\nCASE a: a simple convex polygon\nCASE b: points that form collinear edges\nCASE c: all points collinear (degenerate case)\nCASE d: duplicate points\nVERIFY that for each test case the output list meets the ordering and uniqueness requirements",
+    "confirmed": true,
+    "source_prompt_id": "I-7fdfd71d1e-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-7fdfd71d1e-X1",
+    "body": "a7184a2192a64556428fdb64c75d78bcaec10eb3517b10c7bcc1f067694c4056",
+    "confirmed": true,
+    "source_prompt_id": "I-7fdfd71d1e-P1",
+    "source_plan_id": "I-7fdfd71d1e-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

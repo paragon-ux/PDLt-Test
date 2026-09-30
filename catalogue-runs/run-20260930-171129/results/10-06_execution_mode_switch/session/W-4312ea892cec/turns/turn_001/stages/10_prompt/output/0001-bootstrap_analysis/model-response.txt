@@ -1,0 +1,7 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Write a function that converts temperatures between Celsius, Fahrenheit, and Kelvin, handling input temperature values and specifying the target unit for conversion.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": []
+}

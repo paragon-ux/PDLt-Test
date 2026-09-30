@@ -1,0 +1,17 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Identify the bug in the provided Python binary_search function that can miss elements or loop infinitely, explain why it occurs, correct the implementation, and create a test suite that demonstrates the original bug with the given array and target list and verifies the corrected version works for all specified targets.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "binary_search",
+    "arr",
+    "target",
+    "lo",
+    "hi",
+    "mid",
+    "[1, 3, 5, 7, 9, 11, 13]",
+    "targets",
+    "[1, 7, 13, 4, 0, 14]"
+  ]
+}

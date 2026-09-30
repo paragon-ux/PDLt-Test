@@ -1,0 +1,176 @@
+{
+  "run_id": "run-20260930-171129",
+  "timestamp": "2026-09-30T21:11:29.267517+00:00",
+  "model": "openai/gpt-oss-120b",
+  "reasoning_effort": "low",
+  "total_prompts": 105,
+  "passed": 101,
+  "failed": 4,
+  "stage_passed": 103,
+  "manual_spot_check": [
+    "14-02",
+    "14-04",
+    "14-06"
+  ],
+  "pass_rate_pct": 96.2,
+  "total_elapsed_seconds": 2481.3,
+  "model_calls": {
+    "total": 429,
+    "execute": 107,
+    "repairs": 3
+  },
+  "ground_truth": {
+    "PASS": 15,
+    "FAIL": 3,
+    "MANUAL": 3,
+    "ERROR": 0
+  },
+  "false_positives": [
+    {
+      "id": "13-06",
+      "reason": "optimizes against a guessed schema ('FROM my_table')"
+    },
+    {
+      "id": "14-03",
+      "reason": "analysis omits: deadlock-free under the stated assumptions, blocking under message loss"
+    }
+  ],
+  "by_verdict": {
+    "CLOSED_CANCELLED": 1,
+    "CLOSED_SUCCESS": 103,
+    "UNCONFIRMED_GATE": 1
+  },
+  "by_category": {
+    "combinatorial_search": {
+      "total": 7,
+      "pass": 6,
+      "fail": 1
+    },
+    "data_structures": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "systems_programming": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "parsers_and_compilers": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "algorithm_design": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "debugging_and_repair": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "refactoring_and_design": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "specification_extraction": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "adversarial_and_injection": {
+      "total": 7,
+      "pass": 6,
+      "fail": 1
+    },
+    "multi_turn_and_revision": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "cross_domain_composition": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "domain_knowledge": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "negative_and_impossible": {
+      "total": 7,
+      "pass": 6,
+      "fail": 1
+    },
+    "formal_verification": {
+      "total": 7,
+      "pass": 6,
+      "fail": 1
+    },
+    "performance_and_scale": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    }
+  },
+  "by_difficulty": {
+    "hard": {
+      "total": 43,
+      "pass": 41
+    },
+    "medium": {
+      "total": 44,
+      "pass": 43
+    },
+    "easy": {
+      "total": 7,
+      "pass": 7
+    },
+    "adversarial": {
+      "total": 11,
+      "pass": 10
+    }
+  },
+  "regressions_hit": [
+    {
+      "id": "01-01",
+      "regression_ref": "REG-003",
+      "verdict": "CLOSED_CANCELLED"
+    },
+    {
+      "id": "13-06",
+      "regression_ref": "REG-013",
+      "verdict": "CLOSED_SUCCESS"
+    }
+  ],
+  "failures": [
+    {
+      "id": "01-01",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 57.28
+    },
+    {
+      "id": "09-07",
+      "category": "adversarial_and_injection",
+      "verdict": "UNCONFIRMED_GATE",
+      "elapsed": 103.28
+    },
+    {
+      "id": "13-06",
+      "category": "negative_and_impossible",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 15.89
+    },
+    {
+      "id": "14-03",
+      "category": "formal_verification",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 16.75
+    }
+  ]
+}

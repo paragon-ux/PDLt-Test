@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Implement A* pathfinding on a weighted grid in Python: a grid represented as an NxM matrix where each cell has a non-negative movement cost (with -1 indicating impassable). Use 4-directional movement (up, down, left, right) where moving into a cell incurs that cell's cost. Apply Manhattan distance as the heuristic. Return the shortest path as an ordered list of (row, col) coordinates together with the total path cost. Include a test using a 10x10 grid containing walls and varying terrain costs, and verify that the path cost matches the optimal cost produced by Dijkstra's algorithm on the same grid.
+APPROACH/RISK NOTES:

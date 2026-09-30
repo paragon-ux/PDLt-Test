@@ -1,0 +1,9 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "IMPLEMENT a function that, given a sorted list of non-overlapping intervals and a new interval, inserts the new interval into the list and merges any overlapping intervals, RETURNING the resulting sorted list. ENSURE the algorithm runs in O(n) time.\nGENERATE tests that cover:\n- INSERTION at the beginning of the list.\n- INSERTION at the end of the list.\n- INSERTION in the middle of the list.\n- A new interval that MERGES all existing intervals into a single interval.\n- A new interval that OVERLAPS none of the existing intervals.\n- THE case where the initial list is empty.\nALL tests must verify that the returned list is sorted and contains non‑overlapping intervals.",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "intervals",
+    "O(n)"
+  ]
+}

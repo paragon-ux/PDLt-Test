@@ -1,0 +1,1 @@
+{"neutral_plan_body":"IDENTIFY the bug in the provided binary_search function\nEXPLAIN why the bug occurs\nCORRECT the binary_search implementation\nCREATE a test suite that demonstrates the original bug using the given arr and target list\nVERIFY that the corrected binary_search works for all specified targets"}

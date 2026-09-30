@@ -1,0 +1,11 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Find the median of two sorted arrays nums1 and nums2 in O(log(min(m, n))) time using a binary search approach that partitions both arrays simultaneously. Provide implementation and verify with the given test cases.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "nums1",
+    "nums2",
+    "O(log(min(m, n)))"
+  ]
+}

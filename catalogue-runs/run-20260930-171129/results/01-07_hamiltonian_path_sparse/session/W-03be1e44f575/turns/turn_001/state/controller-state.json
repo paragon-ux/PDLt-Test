@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-a1ae6175bc",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-a1ae6175bc-P1",
+    "body": "READ the undirected graph with nodes 0-11 and the provided edge list\nDEFINE a function BACKTRACK(current_path, visited_set) that attempts to extend the path\nIF length of current_path equals 12 THEN\nVERIFY that every consecutive pair in current_path corresponds to an edge in the graph\nOUTPUT the complete sequence as the Hamiltonian path\nTERMINATE search\nENDIF\nFOR each neighbor of the last node in current_path that is not in visited_set DO\nIF adding the neighbor does not violate any edge constraint THEN\nCALL BACKTRACK(current_path + [neighbor], visited_set ∪ {neighbor})\nENDIF\nENDFOR\nEND FUNCTION\nINITIALIZE search by iterating over each node as a starting point:\nCALL BACKTRACK([start_node], {start_node})\nIF no path is found after all start nodes are exhausted THEN\nREPORT that no Hamiltonian path exists for the given graph\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-a1ae6175bc-R1",
+    "body": "READ the undirected graph with nodes 0-11 and the provided edge list\nDEFINE a BACKTRACK procedure that takes CURRENT_PATH and VISITED_SET\nIF the length of CURRENT_PATH equals 12 THEN\nVERIFY that each consecutive pair in CURRENT_PATH corresponds to an edge in the graph\nEMIT CURRENT_PATH as the Hamiltonian path\nTERMINATE the search\nENDIF\nFOR each NEIGHBOR of the last node in CURRENT_PATH that is not in VISITED_SET DO\nIF adding NEIGHBOR does not violate any edge constraint THEN\nCALL BACKTRACK with CURRENT_PATH extended by NEIGHBOR and VISITED_SET union {NEIGHBOR}\nENDIF\nENDFOR\nEND PROCEDURE\nFOR each START_NODE in the set of nodes 0‑11 DO\nCALL BACKTRACK with INITIAL_PATH [START_NODE] and VISITED_SET {START_NODE}\nENDFOR\nIF no Hamiltonian path has been emitted after all start nodes are exhausted THEN\nREPORT that no Hamiltonian path exists for the given graph\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": "I-a1ae6175bc-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-a1ae6175bc-X1",
+    "body": "3d713972a42279b1009c914c64c80edffc0b5c95fc32c9f60cbfc5f45d69473e",
+    "confirmed": true,
+    "source_prompt_id": "I-a1ae6175bc-P1",
+    "source_plan_id": "I-a1ae6175bc-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

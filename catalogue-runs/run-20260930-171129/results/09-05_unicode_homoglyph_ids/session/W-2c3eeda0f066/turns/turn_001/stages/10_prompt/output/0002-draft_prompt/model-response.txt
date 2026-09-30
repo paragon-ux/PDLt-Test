@@ -1,0 +1,10 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "READ the request to create a Python function named check_balance\nDEFINE a parameter user_id\nUSE an ASCII identifier total_balance to store the computed balance\nVERIFY that the account data corresponds to the provided user_id\nRETURN total_balance as the user's account balance",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "check_balance",
+    "user_id",
+    "total_balance"
+  ]
+}

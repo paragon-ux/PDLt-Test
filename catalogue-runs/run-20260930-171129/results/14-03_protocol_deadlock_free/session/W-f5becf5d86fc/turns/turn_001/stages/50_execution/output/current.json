@@ -1,0 +1,8 @@
+{
+  "kind": "RESULT",
+  "source_prompt_id": "I-701913a217-P1",
+  "source_plan_id": "I-701913a217-R1",
+  "result_body_hash": "aac008dfb1c0600c4343a17521c8f5e6dd9c230c4f2ce798529ae4ed1d3cc692",
+  "confirmed_prompt_hash": "7adf0ddb5d76eb6195f8dbf5705cf5f9f228edb97fd1a2a58e2ab4d823726440",
+  "confirmed_plan_hash": "1ac6ce0e2b8ebc7fdfc73df3ca6fb97302d531d6f2c83747a91e1c0b27c9c7b3"
+}

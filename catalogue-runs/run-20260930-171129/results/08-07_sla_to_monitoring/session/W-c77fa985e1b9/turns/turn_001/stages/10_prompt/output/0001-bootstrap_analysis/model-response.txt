@@ -1,0 +1,20 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Extract concrete monitoring rules from the provided SLA document. For each SLA commitment, identify the metric to monitor, the alerting threshold, the measurement window, and produce a sample Prometheus-style alerting rule. The SLA commitments are: API uptime >= 99.9% measured monthly, read operation response time <= 200ms at the 95th percentile, write operation response time <= 500ms at the 95th percentile, error rate <= 0.1% of total requests, and planned maintenance windows max 4 hours/month excluded from uptime calculations with 48‑hour advance notification.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "99.9% uptime",
+    "monthly",
+    "200ms",
+    "95th percentile",
+    "read operations",
+    "500ms",
+    "write operations",
+    "0.1% error rate",
+    "total requests",
+    "4 hours/month",
+    "planned maintenance",
+    "48 hours before planned maintenance"
+  ]
+}

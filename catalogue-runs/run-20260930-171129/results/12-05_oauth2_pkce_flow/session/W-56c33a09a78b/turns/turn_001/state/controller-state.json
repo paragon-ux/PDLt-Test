@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-af75e3609d",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-af75e3609d-P1",
+    "body": "READ OAuth2 Authorization Code Flow with PKCE specifications\nGENERATE a code_verifier (43-128 character random string)\nDERIVE a code_challenge using S256 hash of code_verifier\nBUILD an authorization URL including client_id, redirect_uri, code_challenge, code_challenge_method, response_type, scope, and state for CSRF protection\nUSE urllib to open the authorization URL\nAFTER receiving the authorization code, POST to token endpoint with code, code_verifier, client_id, redirect_uri, grant_type=authorization_code using urllib\nEXTRACT access token and refresh_token from the response\nIMPLEMENT token refresh by POSTing to token endpoint with refresh_token and grant_type=refresh_token using urllib\nINCLUDE a test that verifies code_challenge equals BASE64URL-ENCODE(SHA256(code_verifier)) per RFC 7636\nUSE only the Python standard library modules: urllib, hashlib, secrets, base64",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-af75e3609d-R1",
+    "body": "READ the OAuth2 Authorization Code Flow with PKCE specification\nGENERATE a code_verifier as a random string of 43-128 characters using secrets\nDERIVE a code_challenge by applying SHA256 to the code_verifier and encoding the result with base64url\nBUILD the authorization URL including client_id, redirect_uri, response_type=code, scope, state, code_challenge, and code_challenge_method=S256\nOPEN the authorization URL with urllib to initiate user authentication\nRECEIVE the authorization code from the redirect response\nPOST to the token endpoint using urllib with parameters: grant_type=authorization_code, code, redirect_uri, client_id, code_verifier\nEXTRACT access_token and refresh_token from the token response\nPOST to the token endpoint using urllib with parameters: grant_type=refresh_token, refresh_token, client_id to obtain a new access token\nVERIFY that code_challenge equals BASE64URL-ENCODE(SHA256(code_verifier)) as required by RFC 7636",
+    "confirmed": true,
+    "source_prompt_id": "I-af75e3609d-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-af75e3609d-X1",
+    "body": "b192e227d8da8b160bb8d161b98d8872b7aed804bdc639ec41da6e01b1b4b0ce",
+    "confirmed": true,
+    "source_prompt_id": "I-af75e3609d-P1",
+    "source_plan_id": "I-af75e3609d-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

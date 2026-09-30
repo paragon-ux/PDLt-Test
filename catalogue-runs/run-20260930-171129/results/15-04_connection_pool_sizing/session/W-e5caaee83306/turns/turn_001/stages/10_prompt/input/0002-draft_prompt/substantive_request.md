@@ -1,0 +1,15 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Derive the optimal connection pool size for a web application using the provided measurements: average request processing time 50ms (20ms waiting for database), database query execution time 15ms average, network round-trip to database 5ms, application server threads 200, request rate 2000 requests/second, database server CPU cores 16. Apply Little's Law (L = λ * W) and Amdahl's Law to calculate the theoretical optimal pool size, explain consequences of too small or too large pool sizes, and recommend a justified pool size.
+APPROACH/RISK NOTES:
+
+OPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):
+- 50ms
+- 20ms
+- 15ms
+- 5ms
+- 200
+- 2000
+- 16
+- optimal connection pool size
+- Little's Law
+- Amdahl's Law

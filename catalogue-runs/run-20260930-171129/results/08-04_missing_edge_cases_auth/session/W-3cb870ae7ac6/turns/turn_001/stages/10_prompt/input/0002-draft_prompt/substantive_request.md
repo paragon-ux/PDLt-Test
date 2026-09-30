@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Identify at least seven missing security or usability requirements in the provided authentication system specification. The specification describes user registration and login with email/password, JWT issuance, Authorization header usage, admin ability to view all users, and user ability to view only their own profile. The analysis must list missing requirements that could cause security vulnerabilities or user-facing bugs, such as token expiration, revocation, password complexity, account lockout, secure storage, transport security, input validation, audit logging, role separation, and error handling.
+APPROACH/RISK NOTES:

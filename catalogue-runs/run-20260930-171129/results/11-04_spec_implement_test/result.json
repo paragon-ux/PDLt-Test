@@ -1,0 +1,49 @@
+{
+  "id": "11-04",
+  "category": "cross_domain_composition",
+  "file": "11_cross_domain_composition/spec_implement_test.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 20.73,
+  "start_time": "2026-09-30T21:42:54.859307+00:00",
+  "session_id": "catalogue-11-04-1790804574",
+  "transcript_file": "results\\11-04_spec_implement_test\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-01",
+    "PDL-08"
+  ],
+  "tags": [
+    "spec-to-code",
+    "testing",
+    "full-stack"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 5,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 2,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "repairs_allowed": 1,
+      "tier": "MINIMAL"
+    }
+  }
+}

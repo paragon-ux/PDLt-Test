@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-503fb42765",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-503fb42765-P1",
+    "body": "READ the input password string\nIF length < 8 OR password contains only letters THEN SET strength to weak\nELSE IF length >= 8 AND length <= 12 AND password contains at least one letter AND password contains at least one digit THEN SET strength to medium\nELSE IF length > 12 AND password contains uppercase AND password contains lowercase AND password contains digits AND password contains at least one special character from !@#$%^&* THEN SET strength to strong\nENDIF\nRETURN the strength level and a list of specific suggestions for improvement, such as:\n- IF length < 8 THEN suggest increasing length to at least 8 characters\n- IF password contains only letters THEN suggest adding digits\n- IF length between 8 and 12 AND missing digits THEN suggest adding digits\n- IF length > 12 AND missing uppercase THEN suggest adding uppercase letters\n- IF length > 12 AND missing lowercase THEN suggest adding lowercase letters\n- IF length > 12 AND missing digits THEN suggest adding digits\n- IF length > 12 AND missing special character THEN suggest adding a special character from !@#$%^&*",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-503fb42765-R1",
+    "body": "READ the input password string\nIF length < 8 OR password contains only letters THEN SET strength to weak\nELSE IF length >= 8 AND length <= 12 AND password contains at least one letter AND password contains at least one digit THEN SET strength to medium\nELSE IF length > 12 AND password contains uppercase AND password contains lowercase AND password contains digits AND password contains at least one special character from !@#$%^&* THEN SET strength to strong\nENDIF\nGENERATE a list of improvement suggestions based on the evaluated conditions:\n- IF length < 8 THEN suggest increasing length to at least 8 characters\n- IF password contains only letters THEN suggest adding digits\n- IF length between 8 and 12 AND missing digits THEN suggest adding digits\n- IF length > 12 AND missing uppercase THEN suggest adding uppercase letters\n- IF length > 12 AND missing lowercase THEN suggest adding lowercase letters\n- IF length > 12 AND missing digits THEN suggest adding digits\n- IF length > 12 AND missing special character THEN suggest adding a special character from !@#$%^&*\nRETURN the strength level and the generated suggestion list",
+    "confirmed": true,
+    "source_prompt_id": "I-503fb42765-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-503fb42765-X1",
+    "body": "a20a8be09c382b4ef9436b48a8b91d1059d18878a3fbb58b91722744d06648d6",
+    "confirmed": true,
+    "source_prompt_id": "I-503fb42765-P1",
+    "source_plan_id": "I-503fb42765-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

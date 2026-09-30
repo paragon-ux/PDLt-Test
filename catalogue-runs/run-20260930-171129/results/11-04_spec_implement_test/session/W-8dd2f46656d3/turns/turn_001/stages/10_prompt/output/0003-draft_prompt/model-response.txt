@@ -1,0 +1,18 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "READ the input password string\nIF length < 8 OR password contains only letters THEN SET strength to weak\nELSE IF length >= 8 AND length <= 12 AND password contains at least one letter AND password contains at least one digit THEN SET strength to medium\nELSE IF length > 12 AND password contains uppercase AND password contains lowercase AND password contains digits AND password contains at least one special character from !@#$%^&* THEN SET strength to strong\nENDIF\nRETURN the strength level and a list of specific suggestions for improvement, such as:\n- IF length < 8 THEN suggest increasing length to at least 8 characters\n- IF password contains only letters THEN suggest adding digits\n- IF length between 8 and 12 AND missing digits THEN suggest adding digits\n- IF length > 12 AND missing uppercase THEN suggest adding uppercase letters\n- IF length > 12 AND missing lowercase THEN suggest adding lowercase letters\n- IF length > 12 AND missing digits THEN suggest adding digits\n- IF length > 12 AND missing special character THEN suggest adding a special character from !@#$%^&*",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "weak",
+    "medium",
+    "strong",
+    "under 8 characters",
+    "8-12 characters",
+    "over 12 characters",
+    "uppercase",
+    "lowercase",
+    "digits",
+    "special character",
+    "!@#$%^&*"
+  ]
+}

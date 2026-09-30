@@ -1,0 +1,1 @@
+{"neutral_plan_body":"DEFINE a Python function that accepts a string input\nRETURN the input string reversed using a language-appropriate operation\nEMIT the complete function source code"}

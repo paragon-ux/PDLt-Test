@@ -1,0 +1,22 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Provide a formal definition of the small-step operational semantics for the given tiny language (integers, booleans, addition, less‑than, and if‑then‑else) and give a proof of the Progress theorem: for any expression e such that the typing judgment e : T holds, either e is a value (integer literal or boolean literal) or there exists an expression e' with e → e'. The proof must be carried out by structural induction on the typing derivation.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "Int",
+    "Bool",
+    "n",
+    "true",
+    "false",
+    "+",
+    "<",
+    "if",
+    "then",
+    "else",
+    "e1",
+    "e2",
+    "e3",
+    "T"
+  ]
+}

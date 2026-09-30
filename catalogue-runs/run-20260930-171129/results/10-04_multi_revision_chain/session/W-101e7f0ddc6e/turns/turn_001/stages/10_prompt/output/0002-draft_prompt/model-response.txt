@@ -1,0 +1,1 @@
+{"kind":"PROMPT","prompt_body":"DEFINE a Python function that accepts a string representing an email address\nVALIDATE the string using a regular expression that matches standard email format rules\nRETURN True if the pattern matches, otherwise return False","approach_handoff":"NONE"}

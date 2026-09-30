@@ -1,0 +1,13 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "IMPLEMENT a persistent red-black tree in Python USING path copying.\nDEFINE function insert(tree, key) THAT RETURNS a new_tree WITH the key inserted WHILE LEAVING the original tree unchanged.\nDEFINE function lookup(tree, key) THAT RETURNS a boolean INDICATING membership of key in the tree.\nDEFINE function to_sorted_list(tree) THAT RETURNS a list RESULTING FROM an in-order traversal of the tree.\nWRITE tests THAT VERIFY persistence: MODIFICATIONS to the new_tree DO NOT affect the original tree.\nWRITE tests THAT VERIFY red-black invariants: THE ROOT IS black, NO red-red parent-child relationships EXIST, AND ALL ROOT-TO-LEAF paths HAVE equal black-height.\nWRITE tests THAT VERIFY binary search tree ordering: LEFT CHILD KEYS ARE less THAN node KEY AND RIGHT CHILD KEYS ARE greater.\nINCLUDE the OPERATIVE TASK ENTITIES verbatim: insert, lookup, to_sorted_list, persistent, red-black tree, path copying.",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "insert",
+    "lookup",
+    "to_sorted_list",
+    "persistent",
+    "red-black tree",
+    "path copying"
+  ]
+}

@@ -1,0 +1,288 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-171129\results\07-06_monolith_to_modules\session\catalogue-07-06-1790804133\worker-progress.log]
+[api] response received in 1551ms
+[api] response received in 2395ms
+Prompt Pseudocode
+
+READ the single-file Python script that processes CSV files
+PARTITION the script functionality into the following modules of the package 'mypackage':
+- __init__.py
+- io.py (handle CSV file reading and writing)
+- validation.py (perform data validation checks)
+- transform.py (apply transformation logic to the data)
+- report.py (generate summary reports or outputs)
+ORGANIZE each extracted function or class into the appropriate module based on its responsibility
+CREATE a tests/ directory with unit test files for each module (test_io.py, test_validation.py, test_transform.py, test_report.py) ensuring coverage of core behaviors
+ENSURE the package is importable and includes a setup.cfg or pyproject.toml for packaging metadata
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-171129\results\07-06_monolith_to_modules\session\catalogue-07-06-1790804133\worker-progress.log]
+[api] response received in 1470ms
+Response Plan Pseudocode
+
+READ the single-file Python script that processes CSV files
+EXTRACT each function or class from the script
+CREATE package directory 'mypackage'
+CREATE module mypackage/__init__.py
+CREATE module mypackage/io.py
+CREATE module mypackage/validation.py
+CREATE module mypackage/transform.py
+CREATE module mypackage/report.py
+ASSIGN each extracted function or class to the appropriate module based on its responsibility (CSV I/O to io.py, validation checks to validation.py, transformation logic to transform.py, report generation to report.py)
+WRITE import statements in mypackage/__init__.py to expose public symbols
+CREATE a tests/ directory at the project root
+CREATE test file tests/test_io.py covering core I/O behaviors
+CREATE test file tests/test_validation.py covering validation checks
+CREATE test file tests/test_transform.py covering transformation logic
+CREATE test file tests/test_report.py covering report generation
+ENSURE each test imports the corresponding module from mypackage and asserts expected outcomes
+ADD a packaging metadata file (setup.cfg or pyproject.toml) with package name, version, and required metadata
+VERIFY that the package can be imported without errors
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-171129\results\07-06_monolith_to_modules\session\catalogue-07-06-1790804133\worker-progress.log]
+[api] response received in 17635ms
+# Package structure
+
+## mypackage/__init__.py
+```python
+"""Top-level package for CSV processing utilities.
+Exports the public API of the package.
+"""
+
+from .io import read_csv, write_csv
+from .validation import validate_row
+from .transform import transform
+from .report import summarize, write_report
+
+__all__ = [
+    "read_csv",
+    "write_csv",
+    "validate_row",
+    "transform",
+    "summarize",
+    "write_report",
+]
+```
+
+## mypackage/io.py
+```python
+"""I/O helpers for CSV files.
+Provides functions to read from and write to CSV files.
+"""
+
+import csv
+from typing import List, Dict
+
+
+def read_csv(path: str) -> List[Dict[str, str]]:
+    """Read a CSV file and return a list of rows as dictionaries."""
+    with open(path, newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def write_csv(path: str, rows: List[Dict[str, str]], fieldnames: List[str]) -> None:
+    """Write a list of dictionaries to a CSV file.
+
+    Args:
+        path: Destination file path.
+        rows: Iterable of row dictionaries.
+        fieldnames: Column order for the output file.
+    """
+    with open(path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+```
+
+## mypackage/validation.py
+```python
+"""Validation utilities for CSV rows.
+Implements basic rule‑based validation.
+"""
+
+from datetime import datetime
+from typing import Dict, List
+
+
+def validate_row(row: Dict[str, str], rules: Dict[str, str]) -> List[str]:
+    """Validate a single CSV row against a set of rules.
+
+    Supported rules:
+        - "required": field must be present and non‑empty.
+        - "numeric": field must contain a numeric value (float/int).
+        - "date": field must match YYYY‑MM‑DD.
+    """
+    errors: List[str] = []
+    for field, rule in rules.items():
+        val = row.get(field, "")
+        if rule == "required" and not val:
+            errors.append(f"Missing {field}")
+        elif rule == "numeric" and val:
+            try:
+                float(val)
+            except ValueError:
+                errors.append(f"{field} not numeric: {val}")
+        elif rule == "date" and val:
+            try:
+                datetime.strptime(val, "%Y-%m-%d")
+            except ValueError:
+                errors.append(f"{field} bad date: {val}")
+    return errors
+```
+
+## mypackage/transform.py
+```python
+"""Data transformation utilities.
+Maps source fields to destination fields.
+"""
+
+from typing import List, Dict, Any
+
+
+def transform(rows: List[Dict[str, Any]], mappings: Dict[str, str]) -> List[Dict[str, Any]]:
+    """Transform rows according to a field‑mapping dictionary.
+
+    ``mappings`` maps *destination* column names to *source* column names.
+    """
+    result: List[Dict[str, Any]] = []
+    for row in rows:
+        new: Dict[str, Any] = {}
+        for dst, src in mappings.items():
+            new[dst] = row.get(src, "")
+        result.append(new)
+    return result
+```
+
+## mypackage/report.py
+```python
+"""Reporting utilities.
+Generates statistical summaries and writes JSON reports.
+"""
+
+import json
+import statistics
+from typing import List, Dict, Any
+
+
+def summarize(rows: List[Dict[str, Any]], numeric_fields: List[str]) -> Dict[str, Dict[str, float]]:
+    """Create a summary for each numeric field.
+
+    Returns a mapping of field name to statistics (mean, median, stdev, count).
+    """
+    summary: Dict[str, Dict[str, float]] = {}
+    for field in numeric_fields:
+        values = [float(r[field]) for r in rows if r.get(field)]
+        if not values:
+            stats = {"mean": 0, "median": 0, "stdev": 0, "count": 0}
+        else:
+            stats = {
+                "mean": statistics.mean(values),
+                "median": statistics.median(values),
+                "stdev": statistics.stdev(values) if len(values) > 1 else 0,
+                "count": len(values),
+            }
+        summary[field] = stats
+    return summary
+
+
+def write_report(summary: Dict[str, Any], path: str) -> None:
+    """Write the summary dictionary to ``path`` as pretty‑printed JSON."""
+    with open(path, "w") as f:
+        json.dump(summary, f, indent=2)
+```
+
+## pyproject.toml
+```toml
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mypackage"
+version = "0.1.0"
+description = "A small package for CSV reading, validation, transformation, and reporting."
+authors = [{name = "Generated", email = "generated@example.com"}]
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+
+[project.urls]
+Homepage = "https://example.com/mypackage"
+```
+
+## tests/test_io.py
+```python
+import os
+import tempfile
+import csv
+from mypackage.io import read_csv, write_csv
+
+def test_read_write_csv():
+    data = [{"a": "1", "b": "2"}, {"a": "3", "b": "4"}]
+    fieldnames = ["a", "b"]
+    with tempfile.TemporaryDirectory() as td:
+        path = os.path.join(td, "sample.csv")
+        write_csv(path, data, fieldnames)
+        read_back = read_csv(path)
+        assert read_back == data
+```
+
+## tests/test_validation.py
+```python
+import pytest
+from mypackage.validation import validate_row
+
+@pytest.mark.parametrize(
+    "row,rules,expected",
+    [
+        ({"id": "", "age": "twenty"}, {"id": "required", "age": "numeric"}, ["Missing id", "age not numeric: twenty"]),
+        ({"date": "2023-13-01"}, {"date": "date"}, ["date bad date: 2023-13-01"]),
+        ({"name": "Alice"}, {"name": "required"}, []),
+    ],
+)
+def test_validate(row, rules, expected):
+    assert validate_row(row, rules) == expected
+```
+
+## tests/test_transform.py
+```python
+from mypackage.transform import transform
+
+def test_transform_basic():
+    rows = [{"first": "John", "last": "Doe"}, {"first": "Jane", "last": "Smith"}]
+    mappings = {"full_name": "first", "surname": "last"}
+    result = transform(rows, mappings)
+    expected = [{"full_name": "John", "surname": "Doe"}, {"full_name": "Jane", "surname": "Smith"}]
+    assert result == expected
+```
+
+## tests/test_report.py
+```python
+import json
+import os
+import tempfile
+from mypackage.report import summarize, write_report
+
+def test_summarize_and_write_report():
+    rows = [{"score": "10"}, {"score": "20"}, {"score": "30"}]
+    summary = summarize(rows, ["score"])
+    assert summary["score"]["mean"] == 20
+    assert summary["score"]["count"] == 3
+    with tempfile.TemporaryDirectory() as td:
+        path = os.path.join(td, "out.json")
+        write_report(summary, path)
+        with open(path) as f:
+            loaded = json.load(f)
+        assert loaded == summary
+```
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

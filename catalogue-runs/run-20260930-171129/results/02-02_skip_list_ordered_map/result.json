@@ -1,0 +1,48 @@
+{
+  "id": "02-02",
+  "category": "data_structures",
+  "file": "02_data_structures/skip_list_ordered_map.txt",
+  "difficulty": "hard",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 295.2,
+  "start_time": "2026-09-30T21:15:10.022872+00:00",
+  "session_id": "catalogue-02-02-1790802910",
+  "transcript_file": "results\\02-02_skip_list_ordered_map\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-01",
+    "PDL-06"
+  ],
+  "tags": [
+    "skip-list",
+    "probabilistic"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 5,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 2
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "repairs_allowed": 1,
+      "tier": "STANDARD"
+    }
+  }
+}

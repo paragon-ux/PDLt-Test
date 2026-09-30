@@ -1,0 +1,14 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "EXTRACT concrete monitoring rules from the provided SLA document.\nFOR EACH SLA commitment, IDENTIFY the metric to monitor, the alerting threshold, and the measurement window.\nPRODUCE a sample Prometheus‑style alerting rule for each commitment.\nINCLUDE the following operative task entities verbatim where referenced: monthly, 200ms, 95th percentile, 500ms, total requests, 4 hours/month, planned maintenance.",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "monthly",
+    "200ms",
+    "95th percentile",
+    "500ms",
+    "total requests",
+    "4 hours/month",
+    "planned maintenance"
+  ]
+}

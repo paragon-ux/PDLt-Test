@@ -1,0 +1,17 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "CALCULATE the theoretical optimal connection pool size for the web application using the supplied measurements.\nAPPLY Little's Law (L = λ * W) with request rate 2000 requests/second and average total request time derived from the given components.\nAPPLY Amdahl's Law to account for the parallelizable portion of request processing and the limitation of database server CPU cores (16).\nEXPLAIN the consequences of a pool size that is too small (queue buildup, increased latency) and too large (excess thread contention, resource exhaustion).\nRECOMMEND a justified optimal connection pool size based on the calculations and explained trade‑offs.\nINCLUDE the following operative task entities verbatim in the description: 50ms, 20ms, 15ms, 5ms, 200, 2000, 16, optimal connection pool size, Little's Law, Amdahl's Law.",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "50ms",
+    "20ms",
+    "15ms",
+    "5ms",
+    "200",
+    "2000",
+    "16",
+    "optimal connection pool size",
+    "Little's Law",
+    "Amdahl's Law"
+  ]
+}

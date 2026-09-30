@@ -1,0 +1,1 @@
+{"neutral_plan_body":"PARSE the provided API specification\nIDENTIFY pairs of statements that are mutually contradictory\nFOR each contradictory pair DO\n    STATE the nature of the conflict\n    SUGGEST a consistent rule or design choice that resolves the inconsistency\nENDDO\nFORMAT the results as a list of contradictions with their resolutions"}

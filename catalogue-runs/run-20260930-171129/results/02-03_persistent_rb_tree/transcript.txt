@@ -1,0 +1,206 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Implement a persistent (functional) red-black tree in Python using path copying. The tree must support:
+- insert(tree, key) -> new_tree: Returns a new tree with the key inserted (original unchanged)
+- lookup(tree, key) -> bool: Check membership
+- to_sorted_list(tree) -> list: In-order traversal
+
+The key constraint is immutability: after insert(t1, k) -> t2, t1 must still be valid and unchanged. Include tests that verify persistence (modify t2, check t1 still works), red-black invariants (root is black, no red-red parent-child, equal black-height on all paths), and BST ordering.
+ASSISTANT> Prompt Pseudocode
+
+IMPLEMENT a persistent red-black tree in Python USING path copying.
+DEFINE function insert(tree, key) THAT RETURNS a new_tree WITH the key inserted WHILE LEAVING the original tree unchanged.
+DEFINE function lookup(tree, key) THAT RETURNS a boolean INDICATING membership of key in the tree.
+DEFINE function to_sorted_list(tree) THAT RETURNS a list RESULTING FROM an in-order traversal of the tree.
+WRITE tests THAT VERIFY persistence: MODIFICATIONS to the new_tree DO NOT affect the original tree.
+WRITE tests THAT VERIFY red-black invariants: THE ROOT IS black, NO red-red parent-child relationships EXIST, AND ALL ROOT-TO-LEAF paths HAVE equal black-height.
+WRITE tests THAT VERIFY binary search tree ordering: LEFT CHILD KEYS ARE less THAN node KEY AND RIGHT CHILD KEYS ARE greater.
+INCLUDE the OPERATIVE TASK ENTITIES verbatim: insert, lookup, to_sorted_list, persistent, red-black tree, path copying.
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+DESIGN immutable node representation with fields: key, color, left, right
+DESIGN tree wrapper holding reference to root node
+IMPLEMENT insert(tree, key) AS:
+PERFORM path-copy traversal from root to insertion point creating new nodes along the path
+INSERT new red node as leaf
+REBALANCE via recoloring and rotations while preserving persistence, returning new root
+IMPLEMENT lookup(tree, key) AS:
+TRAVERSE from root comparing key, RETURN true if found else false
+IMPLEMENT to_sorted_list(tree) AS:
+PERFORM in-order traversal of the immutable structure, COLLECT keys into list, RETURN list
+WRITE tests for persistence:
+CREATE initial tree, CALL insert to obtain new_tree, ASSERT original tree unchanged and new_tree contains key
+WRITE tests for red-black invariants on each resulting tree:
+ASSERT root is black
+ASSERT no red node has red child
+ASSERT all paths from root to leaves have equal black-height
+WRITE tests for binary search tree ordering on each resulting tree:
+ASSERT in-order traversal yields sorted sequence
+ASSERT for each node left child keys < node key < right child keys
+PACKAGE implementation and tests as deliverable
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> """Persistent Red-Black Tree using path copying.
+
+Provides immutable insert, lookup, and in‑order traversal functions together with a unittest suite
+that checks persistence, red‑black invariants and binary‑search‑tree ordering.
+"""
+
+from __future__ import annotations
+from dataclasses import dataclass
+from enum import Enum
+import unittest
+
+class Color(Enum):
+    RED = 0
+    BLACK = 1
+
+@dataclass(frozen=True)
+class Node:
+    key: int
+    color: Color
+    left: Node | None = None
+    right: Node | None = None
+
+    def is_red(self) -> bool:
+        return self.color == Color.RED
+
+    def with_left(self, left: Node | None) -> Node:
+        return Node(self.key, self.color, left, self.right)
+
+    def with_right(self, right: Node | None) -> Node:
+        return Node(self.key, self.color, self.left, right)
+
+    def with_color(self, color: Color) -> Node:
+        return Node(self.key, color, self.left, self.right)
+
+# Helper functions for rotations and colour flips (persistent)
+
+def rotate_left(h: Node) -> Node:
+    assert h.right is not None and h.right.is_red()
+    x = h.right
+    h_new = h.with_right(x.left).with_color(Color.RED)
+    return x.with_left(h_new).with_color(h.color)
+
+def rotate_right(h: Node) -> Node:
+    assert h.left is not None and h.left.is_red()
+    x = h.left
+    h_new = h.with_left(x.right).with_color(Color.RED)
+    return x.with_right(h_new).with_color(h.color)
+
+def flip_colors(h: Node) -> Node:
+    left = h.left.with_color(Color.BLACK) if h.left else None
+    right = h.right.with_color(Color.BLACK) if h.right else None
+    return Node(h.key, Color.RED, left, right)
+
+def _insert(node: Node | None, key: int) -> Node:
+    if node is None:
+        return Node(key, Color.RED)
+    if key < node.key:
+        new_left = _insert(node.left, key)
+        node = node.with_left(new_left)
+    elif key > node.key:
+        new_right = _insert(node.right, key)
+        node = node.with_right(new_right)
+    else:
+        # key already present – return node unchanged (immutability preserved)
+        return node
+
+    # Rebalance
+    if node.right and node.right.is_red() and not (node.left and node.left.is_red()):
+        node = rotate_left(node)
+    if node.left and node.left.is_red() and node.left.left and node.left.left.is_red():
+        node = rotate_right(node)
+    if node.left and node.left.is_red() and node.right and node.right.is_red():
+        node = flip_colors(node)
+    return node
+
+def insert(tree: Node | None, key: int) -> Node:
+    """Return a new persistent red‑black tree with *key* inserted.
+
+    The original *tree* is left unchanged.
+    """
+    root = _insert(tree, key)
+    # Ensure root is black
+    if root.is_red():
+        root = root.with_color(Color.BLACK)
+    return root
+
+def lookup(tree: Node | None, key: int) -> bool:
+    """Check whether *key* is present in the tree."""
+    node = tree
+    while node is not None:
+        if key < node.key:
+            node = node.left
+        elif key > node.key:
+            node = node.right
+        else:
+            return True
+    return False
+
+def _inorder(node: Node | None, acc: list[int]) -> None:
+    if node is None:
+        return
+    _inorder(node.left, acc)
+    acc.append(node.key)
+    _inorder(node.right, acc)
+
+def to_sorted_list(tree: Node | None) -> list[int]:
+    """Return the keys of *tree* in sorted order via in‑order traversal."""
+    result: list[int] = []
+    _inorder(tree, result)
+    return result
+
+# ------------------- Tests -------------------
+class TestPersistentRBTree(unittest.TestCase):
+    def test_persistence(self):
+        t1 = None
+        t2 = insert(t1, 10)
+        t3 = insert(t2, 5)
+        # t1 should still be empty
+        self.assertIsNone(t1)
+        self.assertTrue(lookup(t2, 10))
+        self.assertFalse(lookup(t2, 5))
+        self.assertTrue(lookup(t3, 10))
+        self.assertTrue(lookup(t3, 5))
+
+    def test_red_black_invariants(self):
+        def check_invariants(root: Node | None) -> None:
+            # root is black
+            if root:
+                self.assertFalse(root.is_red(), "Root must be black")
+
+            # No red node has red child
+            def dfs(node: Node | None) -> int:
+                if node is None:
+                    return 0
+                if node.is_red():
+                    self.assertFalse(node.left and node.left.is_red(), "Red node has red left child")
+                    self.assertFalse(node.right and node.right.is_red(), "Red node has red right child")
+                left_black = dfs(node.left)
+                right_black = dfs(node.right)
+                self.assertEqual(left_black, right_black, "Black-height mismatch")
+                return left_black + (1 if node.color == Color.BLACK else 0)
+            dfs(root)
+
+        t = None
+        for k in [20, 15, 25, 10, 18, 22, 30]:
+            t = insert(t, k)
+            check_invariants(t)
+
+    def test_bst_ordering(self):
+        keys = [50, 30, 70, 20, 40, 60, 80]
+        t = None
+        for k in keys:
+            t = insert(t, k)
+        sorted_keys = to_sorted_list(t)
+        self.assertEqual(sorted_keys, sorted(keys))
+
+if __name__ == "__main__":
+    unittest.main()
+PROTOCOL_CLOSED
+=== PDLt session ended ===

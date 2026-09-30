@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-b278055aac",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-b278055aac-P1",
+    "body": "ANALYZE the latency, cost, and complexity tradeoffs between the current nightly batch processing of clickstream events and a proposed stream processing approach for 50 million events per day (~600 average, 3000 peak events/second) with 500-byte average size, considering that the batch job runs nightly with a latency of 24h+45min, costs a single large compute job, and has simple retry complexity, while the stream approach processes events in seconds, incurs always‑on infrastructure cost, and involves exactly‑once semantics, watermarks, and handling of late data; THEN PROVIDE a recommendation with justification for which approach to use, citing the comparative latency, cost, and complexity factors.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-b278055aac-R1",
+    "body": "ANALYZE the latency characteristics of the nightly batch processing approach\nANALYZE the cost structure of the nightly batch processing approach\nANALYZE the operational complexity of the nightly batch processing approach\nANALYZE the latency characteristics of the always‑on stream processing approach\nANALYZE the cost structure of the always‑on stream processing approach\nANALYZE the operational complexity of the always‑on stream processing approach\nCOMPARE the latency metrics between batch and stream approaches\nCOMPARE the cost metrics between batch and stream approaches\nCOMPARE the complexity metrics between batch and stream approaches\nFORMULATE a recommendation that references the comparative latency, cost, and complexity factors",
+    "confirmed": true,
+    "source_prompt_id": "I-b278055aac-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-b278055aac-X1",
+    "body": "2d477323aa6067ec8fee8d9f624f2f199179b67601f2e0ec1b138fd2ed2d9d18",
+    "confirmed": true,
+    "source_prompt_id": "I-b278055aac-P1",
+    "source_plan_id": "I-b278055aac-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

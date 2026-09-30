@@ -1,0 +1,53 @@
+{
+  "id": "01-06",
+  "category": "combinatorial_search",
+  "file": "01_combinatorial_search/bin_packing_first_fit.txt",
+  "difficulty": "medium",
+  "expected_routing": "VERIFIED_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "verified",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 25.8,
+  "start_time": "2026-09-30T21:13:38.188075+00:00",
+  "session_id": "catalogue-01-06-1790802818",
+  "transcript_file": "results\\01-06_bin_packing_first_fit\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/01_combinatorial_search/bin_packing_first_fit.json",
+    "expected_behavior": null,
+    "polarity": "positive",
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "PASS",
+    "reason": "valid 4-bin packing presented and First Fit stated as 5 bins"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-08"
+  ],
+  "tags": [
+    "bin-packing",
+    "optimality-gap"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 5,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 2,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "repairs_allowed": 1,
+      "tier": "MINIMAL"
+    }
+  }
+}

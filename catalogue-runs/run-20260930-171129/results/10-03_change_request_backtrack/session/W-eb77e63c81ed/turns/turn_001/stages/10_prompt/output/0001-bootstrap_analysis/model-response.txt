@@ -1,0 +1,13 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Build a REST API client for the JSONPlaceholder API that supports listing posts, creating new posts, and deleting existing posts.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "JSONPlaceholder",
+    "/posts",
+    "list posts",
+    "create post",
+    "delete post"
+  ]
+}

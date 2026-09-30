@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-4b21f666cf",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-4b21f666cf-P1",
+    "body": "READ the original Dockerfile supplied by the user\nCONVERT the Dockerfile into a multi‑stage Dockerfile that separates build‑time dependencies (e.g., gcc, libpq-dev) from runtime\nSELECT a minimal base image (e.g., alpine‑slim or distroless) for the final stage\nEXCLUDE test files, build tools, and any intermediate artifacts from the final image\nSTRUCTURE the stages to maximize layer caching for incremental builds\nEXPLAIN each optimization step, including why each dependency is moved to a build stage, why the chosen base reduces size, and how layer ordering improves cache reuse\nPROVIDE an estimate of the size reduction of the final image compared to the original image, expressed as an approximate megabyte difference or percentage\nRETURN the complete optimized multi‑stage Dockerfile and the accompanying explanation",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-4b21f666cf-R1",
+    "body": "READ the original Dockerfile supplied by the user\nCONVERT the Dockerfile into a multi‑stage Dockerfile separating build‑time dependencies from runtime dependencies\nSELECT a minimal base image (e.g., alpine‑slim or distroless) for the final stage\nEXCLUDE test files, build tools, and any intermediate artifacts from the final image\nSTRUCTURE the stages to maximize layer caching for incremental builds\nEXPLAIN each optimization step, including why each dependency is moved to a build stage, why the chosen base reduces size, and how layer ordering improves cache reuse\nPROVIDE an estimate of the size reduction of the final image compared to the original image, expressed as an approximate megabyte difference or percentage\nRETURN the complete optimized multi‑stage Dockerfile and the accompanying explanation",
+    "confirmed": true,
+    "source_prompt_id": "I-4b21f666cf-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-4b21f666cf-X1",
+    "body": "3447b3e7dbf3a21af07d420b4d20579b516b5579fc826d21e8d1b93bc5b38bf6",
+    "confirmed": true,
+    "source_prompt_id": "I-4b21f666cf-P1",
+    "source_plan_id": "I-4b21f666cf-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

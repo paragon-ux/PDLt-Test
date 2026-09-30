@@ -1,0 +1,129 @@
+# resolver.py
+import socket
+import struct
+import random
+
+# DNS message construction helpers
+def build_query(hostname, qtype=1):
+    # Header: ID, flags, QDCOUNT, ANCOUNT, NSCOUNT, ARCOUNT
+    transaction_id = random.randint(0, 0xFFFF)
+    flags = 0x0100  # standard query
+    qdcount = 1
+    header = struct.pack('!HHHHHH', transaction_id, flags, qdcount, 0, 0, 0)
+    # Question section
+    qname = b''.join((bytes([len(part)]) + part.encode() for part in hostname.split('.'))) + b'\x00'
+    question = qname + struct.pack('!HH', qtype, 1)  # QTYPE=A, QCLASS=IN
+    return transaction_id, header + question
+
+def parse_response(data):
+    # Very minimal parsing: extract answer IP if present
+    transaction_id, flags, qdcount, ancount, nscount, arcount = struct.unpack('!HHHHHH', data[:12])
+    offset = 12
+    # skip question
+    for _ in range(qdcount):
+        while data[offset] != 0:
+            offset += data[offset] + 1
+        offset += 5  # null byte + qtype(2) + qclass(2)
+    answers = []
+    for _ in range(ancount):
+        # handle name (could be pointer)
+        if data[offset] & 0xC0 == 0xC0:
+            offset += 2
+        else:
+            while data[offset] != 0:
+                offset += data[offset] + 1
+            offset += 1
+        rtype, rclass, ttl, rdlength = struct.unpack('!HHIH', data[offset:offset+10])
+        offset += 10
+        rdata = data[offset:offset+rdlength]
+        offset += rdlength
+        if rtype == 1 and rdlength == 4:  # A record
+            ip = '.'.join(str(b) for b in rdata)
+            answers.append(ip)
+    return answers
+
+def udp_query(server, hostname):
+    transaction_id, query = build_query(hostname)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.settimeout(2)
+    sock.sendto(query, (server, 53))
+    data, _ = sock.recvfrom(512)
+    sock.close()
+    return parse_response(data)
+
+# Simplified root hints (a few well‑known root servers)
+ROOT_SERVERS = [
+    '198.41.0.4',      # a.root-servers.net
+    '199.9.14.201',    # b.root-servers.net
+    '192.33.4.12',     # c.root-servers.net
+]
+
+def iterative_resolve(domain):
+    # Start at a root server
+    name = domain.rstrip('.')
+    for root in ROOT_SERVERS:
+        try:
+            # Query root for NS of the TLD
+            tld = name.split('.')[-1]
+            tld_ns = udp_query(root, tld)
+            if tld_ns:
+                break
+        except Exception:
+            continue
+    else:
+        raise RuntimeError('No responsive root server')
+
+    # Resolve TLD NS to IPs (using root hints again)
+    current_ns_ips = []
+    for ns in tld_ns:
+        # ns is an IP from the previous answer (often empty); try to resolve via root again
+        try:
+            ips = udp_query(root, ns)
+            if ips:
+                current_ns_ips.extend(ips)
+        except Exception:
+            pass
+    if not current_ns_ips:
+        # Fallback: assume the returned names are already IPs
+        current_ns_ips = tld_ns
+
+    # Walk down the hierarchy
+    labels = name.split('.')
+    for i in range(len(labels)-1, 0, -1):
+        sub = '.'.join(labels[i:])  # current zone
+        next_ns_ips = []
+        for ns_ip in current_ns_ips:
+            try:
+                answers = udp_query(ns_ip, sub)
+                if answers:
+                    next_ns_ips.extend(answers)
+            except Exception:
+                continue
+        if not next_ns_ips:
+            # Could be a CNAME; query for CNAME record
+            for ns_ip in current_ns_ips:
+                try:
+                    cname_ans = udp_query(ns_ip, name)
+                    if cname_ans:
+                        return cname_ans  # simple handling
+                except Exception:
+                    continue
+        current_ns_ips = next_ns_ips
+
+    # Final query to authoritative server
+    for auth_ip in current_ns_ips:
+        try:
+            final_ans = udp_query(auth_ip, name)
+            if final_ans:
+                return final_ans
+        except Exception:
+            continue
+    raise RuntimeError('Resolution failed')
+
+if __name__ == '__main__':
+    domain = 'api.staging.example.com'
+    try:
+        result = iterative_resolve(domain)
+        print(f'{domain} resolves to: {result}')
+    except Exception as e:
+        print('Error:', e)

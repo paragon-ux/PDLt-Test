@@ -1,0 +1,115 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-171129\results\14-04_sorting_correctness\session\catalogue-14-04-1790804897\worker-progress.log]
+[api] response received in 1316ms
+[api] response received in 3562ms
+[api] response received in 4317ms
+Prompt Pseudocode
+
+PROVE that MERGE SORT is correct
+USE structural induction on list length
+BASE CASE: SHOW that sorting an empty list or a singleton list terminates, returns a sorted list that is a permutation of the input
+INDUCTIVE STEP: ASSUME termination, sortedness, and permutation properties for all lists of length < n
+FOR a list of length n, APPLY the MERGE SORT algorithm
+RECURSIVELY SORT the left half (length < n)
+RECURSIVELY SORT the right half (length < n)
+MERGE the two sorted sublists using the MERGE subroutine
+PROVE termination by noting each recursive call reduces list length
+PROVE sortedness of the result by proving the MERGE subroutine yields a non‑decreasing sequence when given two sorted sequences
+PROVE permutation by showing MERGE outputs a list containing exactly the elements of the two inputs, and by the induction hypothesis each half is a permutation of its original segment
+PROVE the MERGE subroutine separately:
+SHOW that merging two sorted lists terminates (each step consumes one element from one of the inputs)
+SHOW that the merged list is sorted (the smallest head element is selected at each step)
+SHOW that the merged list is a permutation of the concatenation of the inputs (elements are output exactly once)
+CONCLUDE that for any input list, MERGE SORT terminates, returns a sorted list, and returns a permutation of the original list
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-171129\results\14-04_sorting_correctness\session\catalogue-14-04-1790804897\worker-progress.log]
+[api] response received in 1330ms
+[api] response received in 1428ms
+Response Plan Pseudocode
+
+PARSE the request for a correctness proof of MERGE SORT using structural induction on list length
+ESTABLISH the base case by proving termination, sortedness, and permutation for empty and singleton lists
+FORMULATE the inductive hypothesis assuming termination, sortedness, and permutation for all lists of length < n
+APPLY the MERGE SORT algorithm to a list of length n
+RECURSIVELY SORT the left half (length < n) under the inductive hypothesis
+RECURSIVELY SORT the right half (length < n) under the inductive hypothesis
+PROVE termination by noting each recursive call reduces list length
+PROVE sortedness of the merged result by proving the MERGE subroutine yields a non‑decreasing sequence when given two sorted sequences
+PROVE permutation of the merged result by showing MERGE outputs exactly the elements of the two inputs and each half is a permutation of its original segment
+PROVE the MERGE subroutine separately: TERMINATE merging two sorted lists, ENSURE the merged list is sorted, ENSURE the merged list is a permutation of the concatenation of inputs
+DERIVE the conclusion that for any input list, MERGE SORT terminates, returns a sorted list, and returns a permutation of the original list
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-171129\results\14-04_sorting_correctness\session\catalogue-14-04-1790804897\worker-progress.log]
+[api] response received in 10082ms
+Proof of Correctness of Merge Sort Using Structural Induction
+
+**Theorem**: For any finite list *L* of elements from a totally ordered set, the Merge Sort algorithm terminates, returns a list that is sorted in non‑decreasing order, and returns a permutation of *L*.
+
+The proof proceeds by structural induction on the length *n = |L|* of the input list.
+
+---
+### 1. Base Cases
+
+*Case n = 0 (empty list)*
+- The algorithm checks the length; since *n ≤ 1*, it returns the list unchanged. This clearly terminates.
+- The returned list is empty, which is vacuously sorted.
+- The empty list contains exactly the elements of the input (none), so it is a permutation of the input.
+
+*Case n = 1 (singleton list)*
+- The length check again triggers the “already sorted” branch, returning the list unchanged. Termination is immediate.
+- A one‑element list is trivially sorted.
+- The output list contains the same single element as the input, hence a permutation.
+
+Thus termination, sortedness, and permutation hold for *n = 0,1*.
+
+---
+### 2. Inductive Hypothesis
+Assume that for all lists of length *k* with *k < n* (where *n ≥ 2*), Merge Sort terminates, returns a sorted list, and that list is a permutation of the input.
+
+---
+### 3. Inductive Step for a List *L* of Length *n*
+1. **Split** *L* into two sub‑lists *L₁* and *L₂* of lengths ⌊*n*/2⌋ and ⌈*n*/2⌉. Both lengths are **strictly less** than *n*.
+2. **Recursive calls**
+   - By the inductive hypothesis, `merge_sort(L₁)` terminates, yields a sorted list *S₁* that is a permutation of *L₁*.
+   - Similarly, `merge_sort(L₂)` terminates, yields a sorted list *S₂* that is a permutation of *L₂*.
+3. **Merge** the two sorted lists *S₁* and *S₂* using the `merge` sub‑routine.
+
+We must now show that the merge step preserves the three properties.
+
+---
+### 4. Correctness of the Merge Sub‑routine
+The `merge` routine repeatedly compares the heads of two sorted input lists and appends the smaller (or equal) head to the output list, advancing the pointer of the list from which the element was taken. The process stops when both input lists are exhausted.
+
+**Termination**: Each iteration consumes one element from at least one input list. Because the inputs are finite, after exactly |S₁| + |S₂| iterations both become empty, and the routine stops.
+
+**Sortedness**: At each step the smallest remaining head element among the two inputs is appended to the output. Hence the output list is built in non‑decreasing order; no later element can be smaller than an earlier one.
+
+**Permutation**: Every element taken from the inputs is appended exactly once to the output, and no element is created or discarded. Consequently the output list contains precisely the multiset union of the two inputs, i.e., a permutation of *S₁ ∪ S₂*.
+
+---
+### 5. Completion of the Inductive Step
+Applying the merge routine to *S₁* and *S₂* yields a list *M* such that:
+- **Termination** follows from the termination of the recursive calls and the merge routine.
+- **Sortedness**: Since *S₁* and *S₂* are sorted and merge preserves sortedness, *M* is sorted.
+- **Permutation**: *M* is a permutation of *S₁ ∪ S₂*, which by the inductive hypothesis is a permutation of *L₁ ∪ L₂ = L*.
+
+Thus all three properties hold for a list of length *n*.
+
+---
+### 6. Conclusion
+By structural induction, Merge Sort terminates for every finite input list, returns a list that is sorted in non‑decreasing order, and returns a permutation of the original list. The proof of the merge sub‑routine guarantees that the composition of the recursive calls yields the claimed result.
+
+---
+*QED*
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

@@ -1,0 +1,1 @@
+{"neutral_plan_body":"READ the range from 1 to 100\nFOR each number in the range\nIF the number is divisible by 3 AND the number is divisible by 5\nOUTPUT \"FizzBuzz\"\nELSE IF the number is divisible by 3\nOUTPUT \"Fizz\"\nELSE IF the number is divisible by 5\nOUTPUT \"Buzz\"\nELSE\nOUTPUT the number"}

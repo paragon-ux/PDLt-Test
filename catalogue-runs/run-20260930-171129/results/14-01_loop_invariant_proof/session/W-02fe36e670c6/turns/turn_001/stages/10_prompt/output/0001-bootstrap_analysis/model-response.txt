@@ -1,0 +1,15 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Provide the loop invariant for the given Python function `array_sum(arr)` that sums an array using a while loop, prove initialization, maintenance, and termination of the invariant, and produce a version of the function that includes assert statements to mechanically check the invariant at each iteration.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "array_sum",
+    "arr",
+    "total",
+    "i",
+    "len",
+    "while",
+    "assert"
+  ]
+}

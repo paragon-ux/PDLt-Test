@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Implement a thread-safe sharded LRU cache in Python. The cache should be divided into N shards (default 16), each shard having its own lock and capacity. Keys are routed to shards using hash(key) % N. Each shard must maintain its own LRU eviction order. Get and put operations must not hold a global lock. Additionally, provide a multi-threaded stress test that uses 8 threads performing concurrent reads and writes, verifying that there is no data corruption and that eviction behaves correctly.
+APPROACH/RISK NOTES:
