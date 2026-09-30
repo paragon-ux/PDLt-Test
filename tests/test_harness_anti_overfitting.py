@@ -233,8 +233,13 @@ def test_verifier_never_infers_domain_from_text():
         assert verifier.detect_domain(text) is None
 
 
-def test_problem_class_has_no_keyword_fast_path():
-    """GUARD-02: ProblemClass is System 1 only."""
-    from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
-
-    assert ProblemClassRecipe.classify_text_deterministic("determine whether a valid partition exists") is False
+def test_routing_recipes_have_no_pattern_matching():
+    """GUARD-02: System 1 routes environment recipe state; recipes never match keywords or dates."""
+    recipes = ROOT / "src" / "pdl_taskmaster" / "providers" / "sys1" / "recipes"
+    for name in ("activation_route.py", "problem_class.py"):
+        text = (recipes / name).read_text(encoding="utf-8")
+        assert "re.compile" not in text, name
+        assert "import re" not in text, name
+        assert "classify_text_deterministic" not in text, name
+    worker = (ROOT / "src" / "pdl_taskmaster" / "providers" / "api_worker.py").read_text(encoding="utf-8")
+    assert "classify_text_deterministic" not in worker

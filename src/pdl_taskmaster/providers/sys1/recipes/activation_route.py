@@ -3,28 +3,19 @@
 Evaluates whether an initial user request requires the protocol, can bypass,
 discusses protocol operation, or must be immediately refused due to environmental,
 scope, or policy boundaries.
+
+Environment settings (policy scope, offline sandbox, knowledge cutoff) are recipe
+STATE routed by System 1; there is no keyword or year pattern matching (GUARD-02).
 """
 
 from __future__ import annotations
 
 import os
-import re
 from typing import Any, Optional
 
 from pdl_taskmaster.providers.sys1.gating import evaluate_confidence_gate
 from pdl_taskmaster.providers.sys1.recipes.base import Sys1Recipe, as_decision_instruction
 from pdl_taskmaster.providers.sys1.schema import RecipeResult, Sys1Question, Sys1Request
-
-# Deterministic patterns for environment/policy boundary enforcement
-_MEDICAL_PATTERNS = re.compile(
-    r"(?i)\b(?:diagnos[ei]|prescri(?:be|ption)|dosage|medications?|medical\s+advice|cure\s+for)\b"
-)
-
-_NETWORK_PATTERNS = re.compile(
-    r"(?i)\b(?:fetch\s+(?:from\s+)?https?://|scrape\s+(?:the\s+)?website|"
-    r"download\s+from\s+https?://|connect\s+to\s+live\s+api|http\s+get|curl\s+https?://)\b"
-)
-
 
 def _env_value(env: dict[str, Any], key: str, var: str, default: str) -> Any:
     """Explicit environment state wins (including falsy values such as False)."""
@@ -43,42 +34,6 @@ class ActivationRouteRecipe(Sys1Recipe):
     def min_confidence(self) -> float:
         return 0.85
 
-    @classmethod
-    def classify_text_deterministic(
-        cls,
-        text: str,
-        env: Optional[dict[str, Any]] = None,
-    ) -> tuple[Optional[str], Optional[str]]:
-        """Fast-path deterministic classifier based on environment bounds and policy signatures.
-
-        Returns:
-            (route, refusal_response) if a deterministic match occurs, else (None, None).
-        """
-        if not text:
-            return None, None
-
-        env_dict = env or {}
-        policy_scope = _env_value(env_dict, "policy_scope", "PDLT_POLICY_SCOPE", "technical")
-        sandbox_network = _env_value(env_dict, "sandbox_network", "PDLT_SANDBOX_NETWORK", "false")
-
-        # 1. Out-of-scope medical/clinical requests
-        if policy_scope == "technical" and _MEDICAL_PATTERNS.search(text):
-            refusal = (
-                "Medical diagnosis and medication recommendations are strictly out of scope "
-                "for this technical assistant. Please consult a licensed healthcare professional."
-            )
-            return "BLOCKED_BY_HIGHER_PRIORITY", refusal
-
-        # 2. External network requests when sandbox is offline
-        if str(sandbox_network).lower() in ("false", "0", "no") and _NETWORK_PATTERNS.search(text):
-            refusal = (
-                "External network access, URL fetching, and live web scraping are disabled "
-                "in this offline sandboxed execution environment."
-            )
-            return "BLOCKED_BY_HIGHER_PRIORITY", refusal
-
-        return None, None
-
     def build_request(self, state: dict[str, Any], **kwargs: Any) -> Sys1Request:
         request_text = state.get("request", "")
         env = state.get("env") or {}
@@ -96,10 +51,9 @@ class ActivationRouteRecipe(Sys1Recipe):
             "PROTOCOL_DISCUSSION": "The message asks questions about how the harness or protocol works without requesting substantive task work.",
             "BYPASS": "The message is a pure greeting, farewell, or meta-interaction requiring no substantive work.",
             "BLOCKED_BY_HIGHER_PRIORITY": (
-                "The message must be refused immediately because it requests medical/clinical diagnosis or medication "
-                "dosages, requests external network access when network is disabled, or depends on events "
-                "occurring after the knowledge cutoff date stated in the state (knowledge_cutoff), which "
-                "cannot be known without live search."
+                "The message must be refused immediately because, given the environment state, it falls outside "
+                "the stated policy_scope, requires network access while sandbox_network is disabled, or depends on "
+                "events occurring after the stated knowledge_cutoff, which cannot be known without live search."
             ),
         }
         question = Sys1Question(

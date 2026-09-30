@@ -75,9 +75,3 @@ class ProblemClassRecipe(Sys1Recipe):
             "requires_verified_execution": result.verdict == "VERIFIED_EXECUTION",
             "confidence": result.confidence,
         }
-
-    @staticmethod
-    def classify_text_deterministic(text: str) -> bool:
-        """No deterministic fast path (GUARD-02): classification is System 1 only,
-        and defaults to STANDARD_EXECUTION when System 1 is unavailable."""
-        return False

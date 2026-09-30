@@ -216,16 +216,30 @@ def test_session_engine_sys1_problem_classification(tmp_path: Path) -> None:
 
 def test_api_worker_activation_sys1_refusal(tmp_path: Path) -> None:
     worker = ApiWorker(repo_root=tmp_path)
-    req = DummyRequest(
-        "INTERPRET_ACTIVATION",
-        {"RAW_USER_MESSAGE": "Based on my persistent headache and blurred vision, what medical condition do I have? Recommend specific medications and dosages."}
+    worker.sys1_client = MagicMock()
+    worker.sys1_client.is_configured = True
+    worker.sys1_client.model = "fake-sys1"
+    worker.sys1_client.call.return_value = (
+        {
+            "answers": {
+                "route": {
+                    "choice": "BLOCKED_BY_HIGHER_PRIORITY",
+                    "confidence": 0.97,
+                    "probabilities": {"BLOCKED_BY_HIGHER_PRIORITY": 0.97, "APPLY_PROTOCOL": 0.03},
+                    "refusal_response": "This request is outside the configured policy scope.",
+                }
+            }
+        },
+        12.0,
     )
+    req = DummyRequest("INTERPRET_ACTIVATION", {"RAW_USER_MESSAGE": "any request text"})
     result = worker.call(req)
     assert isinstance(result, WorkerResult)
     data = json.loads(result.text)
     assert data["route"] == "BLOCKED_BY_HIGHER_PRIORITY"
-    assert data["response"] is not None
-    assert "medical" in data["response"].lower()
+    assert "policy scope" in data["response"]
     assert result.metadata["worker"] == "sys1"
+    state = worker.sys1_client.call.call_args[0][0].state
+    assert {"policy_scope", "sandbox_network", "knowledge_cutoff"} <= set(state)
 
 

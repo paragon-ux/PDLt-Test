@@ -402,24 +402,6 @@ class ApiWorker:
                     from pdl_taskmaster.providers.sys1.recipes.activation_route import ActivationRouteRecipe
                     recipe = ActivationRouteRecipe()
 
-                    # Fast-path deterministic scope & environment refusal (ADR-0020)
-                    det_route, det_resp = recipe.classify_text_deterministic(user_msg)
-                    if det_route:
-                        wire_payload = {
-                            "route": det_route,
-                            "response": det_resp,
-                        }
-                        metadata = {
-                            "worker": "sys1",
-                            "model": "sys1-deterministic",
-                            "observed_model": "sys1-deterministic",
-                            "recipe": recipe.name,
-                            "confidence": 1.0,
-                            "latency_ms": 0.5,
-                            "operation": operation_name,
-                        }
-                        return WorkerResult(json.dumps(wire_payload), metadata)
-
                     if not self.sys1_client.is_configured:
                         safe_k = self._resolve_api_key_safe()
                         if safe_k:
@@ -440,38 +422,6 @@ class ApiWorker:
                                 "operation": operation_name,
                             }
                             return WorkerResult(json.dumps(wire_payload), metadata)
-            except Exception:
-                pass
-
-        elif operation_name == "BOOTSTRAP_ANALYSIS":
-            try:
-                raw_text = ""
-                proj = getattr(request, "projection", None)
-                if proj and isinstance(getattr(proj, "document", None), dict):
-                    raw_text = proj.document.get("operation_inputs", {}).get("RAW_UNTRUSTED_CONTENT", "")
-                if not raw_text:
-                    try:
-                        parsed_in = json.loads(request.prompt.split("\n\n", 1)[-1])
-                        raw_text = parsed_in.get("operation_inputs", {}).get("RAW_UNTRUSTED_CONTENT", "")
-                    except Exception:
-                        pass
-                if raw_text:
-                    from pdl_taskmaster.providers.sys1.recipes.activation_route import ActivationRouteRecipe
-                    det_route, det_resp = ActivationRouteRecipe.classify_text_deterministic(raw_text)
-                    if det_route == "BLOCKED_BY_HIGHER_PRIORITY":
-                        wire_payload = {
-                            "kind": "BLOCKED_BY_HIGHER_PRIORITY",
-                            "response": det_resp,
-                        }
-                        metadata = {
-                            "worker": "sys1",
-                            "model": "sys1-deterministic",
-                            "observed_model": "sys1-deterministic",
-                            "confidence": 1.0,
-                            "latency_ms": 0.5,
-                            "operation": operation_name,
-                        }
-                        return WorkerResult(json.dumps(wire_payload), metadata)
             except Exception:
                 pass
 

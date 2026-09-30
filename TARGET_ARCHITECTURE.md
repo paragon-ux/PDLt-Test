@@ -158,7 +158,7 @@ flowchart TD
 
 | Phase | Input | Evaluation Mechanism | Permitted Outputs / Transitions |
 |---|---|---|---|
-| **Phase 0: Activation** | Raw user request | System 1 `activation_route`, with a deterministic fast path for general environment conditions only | `APPLY_PROTOCOL` $\to$ Phase 1<br>`BLOCKED_BY_HIGHER_PRIORITY` $\to$ refusal published, Exit `0` (`closure=REFUSED`)<br>`BYPASS` / `PROTOCOL_DISCUSSION` $\to$ direct answer |
+| **Phase 0: Activation** | Raw user request | System 1 `activation_route` over environment **recipe state** (policy scope, offline sandbox, knowledge cutoff). No keyword, pattern, or date matching. Runs first on every new request, including explicit `$confirm-with-pseudocode` invocations | `APPLY_PROTOCOL` $\to$ Phase 1<br>`BLOCKED_BY_HIGHER_PRIORITY` $\to$ refusal published, Exit `0` (`closure=REFUSED`)<br>`BYPASS` / `PROTOCOL_DISCUSSION` $\to$ direct answer |
 | **Phase 1: Prompt Review** | Drafted prompt + user feedback or assent | Grammar lint, then fast-path commands (`/confirm`, `/revise`, `/stop`), then System 1 review intent | `CONFIRM` $\to$ Phase 2<br>`REVISE_TASK` $\to$ re-draft Prompt<br>`CANCEL` $\to$ Exit `1`<br>`UNCONFIRMED` $\to$ Exit `2` |
 | **Phase 2: Plan Lint** | Response Plan | Deterministic grammar lint (`plan_soundness.py`): PDL-05 no fielded prefixes, PDL-06 no code fences, PDL-08 no deferral/meta markers. **No algorithm or execution keywords.** | Clean $\to$ Plan Gate<br>Violation $\to$ one re-draft, feedback via **operator correction** (never via `CARRIED_APPROACH_SOURCES`) |
 | **Phase 3: Plan Review** | User feedback or assent | Fast-path commands, then System 1 review intent | `CONFIRM` $\to$ Phase 4<br>`REVISE_APPROACH` $\to$ re-draft Plan<br>`REVISE_TASK` $\to$ Phase 1<br>`CANCEL` $\to$ Exit `1` |
@@ -225,10 +225,8 @@ The harness implements these discrete, calibrated System 1 recipes (`src/pdl_tas
 #### 1. `ActivationRouteRecipe` (Physical Boundary Enforcement)
 - **Input:** raw user task string plus the environment state.
 - **Labels:** `APPLY_PROTOCOL | PROTOCOL_DISCUSSION | BYPASS | BLOCKED_BY_HIGHER_PRIORITY`.
-- **Deterministic fast path, for general environment conditions only:**
-  - `PDLT_POLICY_SCOPE == "technical"` $\implies$ medical diagnosis and prescription requests are refused.
-  - `PDLT_SANDBOX_NETWORK` false $\implies$ explicit URL-fetch, scrape and live-API requests are refused.
-- **Model-conditioned routing:** `PDLT_KNOWLEDGE_CUTOFF` is injected into the recipe state, and the S1 model decides whether a request depends on post-cutoff events. There is no year or event regex.
+- **Recipe state, not prompt text:** the environment settings are System 1 recipe **state**: `policy_scope` (`PDLT_POLICY_SCOPE`), `sandbox_network` (`PDLT_SANDBOX_NETWORK`) and `knowledge_cutoff` (`PDLT_KNOWLEDGE_CUTOFF`). They are the first thing Jev routes. The recipe criterion for `BLOCKED_BY_HIGHER_PRIORITY` refers to those three fields, and the S1 model decides. There is no keyword, pattern or year matching anywhere, and **the environment settings never reach System 2**.
+- **Phase 0 always runs:** the engine invokes this route before any System 2 call, for explicit invocations too (`SessionEngine._s1_boundary_refusal`). A gated `BLOCKED_BY_HIGHER_PRIORITY` publishes the refusal (`closure=REFUSED`, exit 0). System 1 absent, uncertain or failing yields no refusal, never a guess.
 - **Not a refusal:** mathematical impossibility, unsatisfiability and contradictory requirements are **deliverables** under GUARD-03, not boundary refusals.
 - **Invariant:** hardcoding benchmark entity names (e.g. `frostbitedb`) or prompt-specific tokens is banned.
 

@@ -10,10 +10,8 @@ from pdl_taskmaster.verification.plan_soundness import (
 def test_problem_class_recipe_is_system1_only():
     recipe = ProblemClassRecipe()
     assert recipe.name == "problem-class"
-
-    # No deterministic keyword fast path (GUARD-02)
-    assert not recipe.classify_text_deterministic("Write a Python function to parse JSON files")
-    assert not recipe.classify_text_deterministic("Determine whether a valid assignment exists")
+    # No deterministic keyword fast path exists at all (GUARD-02)
+    assert not hasattr(recipe, "classify_text_deterministic")
 
     req = recipe.build_request({"request": "Find whether an assignment exists"})
     assert "problem_class" in req.questions

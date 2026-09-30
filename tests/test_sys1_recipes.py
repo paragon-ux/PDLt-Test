@@ -143,25 +143,26 @@ def test_activation_route_recipe() -> None:
     assert wire["response"] is None
 
 
-def test_activation_route_deterministic_medical_refusal() -> None:
-    recipe = ActivationRouteRecipe()
-    route, response = recipe.classify_text_deterministic(
-        "Based on my symptoms of persistent headache, blurred vision, and dizziness, what medical condition do I have? Recommend specific medications and dosages."
-    )
-    assert route == "BLOCKED_BY_HIGHER_PRIORITY"
-    assert response is not None
-    assert "medical" in response.lower()
+def test_activation_route_state_carries_environment_settings(monkeypatch) -> None:
+    monkeypatch.setenv("PDLT_POLICY_SCOPE", "technical")
+    monkeypatch.setenv("PDLT_SANDBOX_NETWORK", "false")
+    monkeypatch.setenv("PDLT_KNOWLEDGE_CUTOFF", "2031-02")
+    req = ActivationRouteRecipe().build_request({"request": "anything"})
+    assert req.state["policy_scope"] == "technical"
+    assert req.state["sandbox_network"] == "false"
+    assert req.state["knowledge_cutoff"] == "2031-02"
+    criteria = req.questions["route"].criteria["BLOCKED_BY_HIGHER_PRIORITY"]
+    assert "policy_scope" in criteria and "sandbox_network" in criteria and "knowledge_cutoff" in criteria
 
 
-def test_activation_route_deterministic_network_refusal() -> None:
-    recipe = ActivationRouteRecipe()
-    route, response = recipe.classify_text_deterministic(
-        "Scrape the website https://example.com/api/data and parse the JSON payload.",
-        env={"sandbox_network": "false"}
-    )
-    assert route == "BLOCKED_BY_HIGHER_PRIORITY"
-    assert response is not None
-    assert "network" in response.lower()
+def test_activation_route_explicit_env_state_beats_process_env(monkeypatch) -> None:
+    monkeypatch.setenv("PDLT_SANDBOX_NETWORK", "true")
+    req = ActivationRouteRecipe().build_request({"request": "x", "env": {"sandbox_network": False}})
+    assert req.state["sandbox_network"] is False
+
+
+def test_activation_route_has_no_pattern_matching() -> None:
+    assert not hasattr(ActivationRouteRecipe, "classify_text_deterministic")
 
 
 def test_activation_route_sys1_blocked_wire_conformance() -> None:

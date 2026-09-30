@@ -425,6 +425,39 @@ class SessionEngine:
         self.workspace.append_event("PROTOCOL_REFUSED", {"phase": phase})
         return EngineResponse(text or presentation.cancelled(), traces, closed=True, refused=True)
 
+    def _s1_boundary_refusal(self, text: str) -> str | None:
+        """Phase 0 (TARGET_ARCHITECTURE §3): System 1 routes the request against the
+        environment recipe state (policy scope, offline sandbox, knowledge cutoff).
+
+        System 1 only: System 2 never sees the environment settings, and nothing here
+        matches keywords or dates. Returns the refusal text only for a gated
+        BLOCKED_BY_HIGHER_PRIORITY decision; System 1 absent, uncertain, or failing
+        yields None (no System 1 evidence, no refusal).
+        """
+        client = self.sys1_client
+        if not (text or "").strip() or client is None or not client.is_configured:
+            return None
+        from pdl_taskmaster.providers.sys1.recipes.activation_route import ActivationRouteRecipe
+
+        recipe = ActivationRouteRecipe()
+        try:
+            body, duration_ms = client.call(recipe.build_request({"request": text}))
+            result = recipe.parse_response(body, duration_ms=duration_ms)
+        except Exception:
+            return None
+        assert self.workspace is not None
+        self.workspace.append_event(
+            "ACTIVATION_ROUTED",
+            {
+                "verdict": result.verdict,
+                "passed_gating": result.passed_gating,
+                "confidence": result.confidence,
+            },
+        )
+        if not result.passed_gating or result.verdict != "BLOCKED_BY_HIGHER_PRIORITY":
+            return None
+        return recipe.map_to_wire(result)["response"]
+
     def _publish_prompt(self) -> None:
         assert self.controller is not None and self.workspace is not None
         prompt = self.controller.state.current_prompt
@@ -618,8 +651,8 @@ class SessionEngine:
         self._bound_payload_inputs = _extract_data_payload(substantive_request)
         from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
         from pdl_taskmaster.verification.checkers.base import ProblemDomain
-        requires_verified = ProblemClassRecipe.classify_text_deterministic(substantive_request)
-        if not requires_verified and self.sys1_client and self.sys1_client.is_configured:
+        requires_verified = False
+        if self.sys1_client and self.sys1_client.is_configured:
             try:
                 recipe = ProblemClassRecipe()
                 sys1_req = recipe.build_request({"request": substantive_request})
@@ -789,6 +822,9 @@ class SessionEngine:
                 "EXPLICIT_INVOCATION_OBSERVED",
                 {"substantive_request_present": bool(observation.substantive_request)},
             )
+            refusal = self._s1_boundary_refusal(observation.substantive_request)
+            if refusal is not None:
+                return self._refuse(refusal, traces, "activation")
             return self._draft_initial_prompt(
                 observation.substantive_request,
                 traces,
