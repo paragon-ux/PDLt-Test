@@ -1,0 +1,3 @@
+{
+  "neutral_plan_body": "VERIFY the input list contains 45 distinct positive integers\nGENERATE all possible triples (a, b, c) from the list such that a + b = c\nBUILD a collection of candidate triples\nSEARCH for a set of 15 disjoint triples that together cover every element of the list exactly once (e.g., using backtracking or exact‑cover algorithm)\nIF such a set is found THEN\n    FORMAT the 15 triples as the required partition example\nELSE\n    INDICATE that no valid partition exists"
+}
