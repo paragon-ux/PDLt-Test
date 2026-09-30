@@ -38,19 +38,33 @@ BEYOND_BUDGET_REFUSAL_PROBABILITY = 0.5
 FALLBACK_PREDICTION = "WITHIN_10M_STEPS"  # no usable evidence: the standard budget
 
 
+# A prediction is usable only when BUDGET_QUANTILE of the mass lies within this
+# many adjacent magnitudes (a ~100x range); a flatter distribution is System 1
+# being uncertain, which yields the standard budget, never the largest one.
+MAX_PREDICTION_SPAN = 2
+
+
 def budget_prediction(probabilities: dict[str, float]) -> str | None:
     """Smallest magnitude whose cumulative probability reaches BUDGET_QUANTILE, or
-    None when the distribution carries no usable evidence."""
-    known = {label: max(0.0, float(probabilities.get(label, 0.0))) for label in PREDICTION_TIERS}
+    None when the distribution carries no usable evidence (empty, or too diffuse)."""
+    labels = list(PREDICTION_TIERS)
+    known = {label: max(0.0, float(probabilities.get(label, 0.0))) for label in labels}
     total = sum(known.values())
     if total <= 0.0:
         return None
+    mass = [known[label] / total for label in labels]
+    concentrated = any(
+        sum(mass[i:i + MAX_PREDICTION_SPAN]) >= BUDGET_QUANTILE - 1e-9
+        for i in range(len(labels) - MAX_PREDICTION_SPAN + 1)
+    )
+    if not concentrated:
+        return None
     cumulative = 0.0
-    for label in PREDICTION_TIERS:
-        cumulative += known[label] / total
+    for label, share in zip(labels, mass):
+        cumulative += share
         if cumulative >= BUDGET_QUANTILE - 1e-9:
             return label
-    return list(PREDICTION_TIERS)[-1]
+    return labels[-1]
 
 
 class ExecutionProfileRecipe(Sys1Recipe):

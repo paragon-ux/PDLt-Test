@@ -3,6 +3,8 @@ and the single bounded repair."""
 from __future__ import annotations
 
 import json
+
+import pytest
 from pathlib import Path
 
 from pdl_taskmaster.controller.mechanical_controller import Stage
@@ -300,3 +302,31 @@ def test_missing_witness_finding_states_what_the_host_observed(tmp_path):
     correction = executes[1].prompt
     assert "python block 1 exited 0 and printed: Solutions: []" in correction
     assert "no line of the form `WITNESS: <json>` was printed" in correction
+
+
+_SEARCH_CLAIM = {"polarity": "negative", "evidence": {"path": "execution://witness"}, "basis": "search",
+                 "search_exhausted": True, "nodes_explored": 123456, "method": "exact cover search"}
+
+
+@pytest.mark.parametrize("witness", [
+    _SEARCH_CLAIM,
+    # run 1522 01-01: search telemetry labelled a proof, with no program run
+    {**_SEARCH_CLAIM, "basis": "proof", "argument": "Exhaustive search found no solution."},
+])
+def test_search_claims_no_program_produced_are_rejected(tmp_path, witness):
+    reply = {"kind": "RESULT", "body": "After exhaustive search, no partition exists.", "result_ir": _ir(witness)}
+    engine, _, executes, events = _run(tmp_path, [reply, reply], problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 2 and engine.controller.state.stage == Stage.CLOSED_CANCELLED
+    errors = next(e for e in events if e["kind"] == "VERIFICATION_FAILED")["payload"]["errors"]
+    assert any("no program run by the host printed it" in e for e in errors)
+
+
+def test_search_witness_printed_by_a_program_is_accepted(tmp_path):
+    code = ("import json\nnodes = 0\nfor x in range(27):\n    nodes += 1\n"
+            "print('WITNESS: ' + json.dumps({'polarity': 'negative', 'basis': 'search', 'search_exhausted': True, "
+            "'nodes_explored': nodes, 'method': 'enumeration'}))")
+    engine, _, _, events = _run(tmp_path, [{"kind": "RESULT", "body": code, "result_ir": _ir()}],
+                                problem_class="VERIFIED_EXECUTION")
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
+    assert passed["sandbox_reproduced"]

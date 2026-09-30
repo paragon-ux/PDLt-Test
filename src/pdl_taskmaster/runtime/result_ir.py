@@ -66,7 +66,7 @@ def render_instructions(
         base += (
             "\n\nWITNESS REQUIREMENT (ADR-0013 / ADR-0015): Because this task requires verified execution, your Result IR MUST include a 'witness' field certifying any result it claims:\n"
             "- If a solution exists: {\"polarity\": \"positive\", \"evidence\": {\"path\": \"execution://witness\"}, \"data\": {<the concrete result, keyed by name>}}\n"
-            "- If no solution exists: {\"polarity\": \"negative\", \"evidence\": {\"path\": \"execution://witness\"}, \"basis\": \"proof\", \"argument\": \"<the impossibility argument>\"} or, for an exhausted search, {\"polarity\": \"negative\", \"basis\": \"search\", \"search_exhausted\": true, \"nodes_explored\": <states explored>, \"method\": \"<method>\"}\n"
+            "- If no solution exists: {\"polarity\": \"negative\", \"evidence\": {\"path\": \"execution://witness\"}, \"basis\": \"proof\", \"argument\": \"<the impossibility argument>\"} or, for an exhausted search, {\"polarity\": \"negative\", \"basis\": \"search\", \"search_exhausted\": true, \"nodes_explored\": <states explored>, \"method\": \"<method>\"} printed as a WITNESS line by the program that ran the search\n"
             "- If the result could not be obtained: emit no witness; mark each unmet requirement \"open\" in 'reconciliation' and record the reason in 'open_defects'.\n\n"
             "WITNESS CERTIFICATION: When the deliverable includes code, the host sandbox executes it. Print exactly one line `WITNESS: <json>` to stdout; the host-reproduced witness replaces any witness asserted in the Result IR. A witness the host could not reproduce is reported as provisional."
         )

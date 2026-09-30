@@ -72,9 +72,11 @@ def _dist(**probs: float) -> dict:
     [
         (_dist(k100=0.95, m10=0.05), "WITHIN_100K_STEPS", "MINIMAL"),
         (_dist(k100=0.5, m10=0.5), "WITHIN_10M_STEPS", "STANDARD"),  # split mass resolves upward
-        (_dist(k100=0.6, m10=0.2, m100=0.2), "WITHIN_100M_STEPS", "HEAVY_COMPUTE"),
+        (_dist(k100=0.6, m10=0.2, m100=0.2), "WITHIN_10M_STEPS", "STANDARD"),  # 85% needs 3 magnitudes: diffuse
         (_dist(m100=0.9, beyond=0.1), "WITHIN_100M_STEPS", "HEAVY_COMPUTE"),
-        (_dist(k100=0.25, m10=0.25, m100=0.25, beyond=0.25), "BEYOND_100M_STEPS", "HEAVY_COMPUTE"),
+        (_dist(k100=0.25, m10=0.25, m100=0.25, beyond=0.25), "WITHIN_10M_STEPS", "STANDARD"),
+        (_dist(k100=0.26, m10=0.39, m100=0.17, beyond=0.18), "WITHIN_10M_STEPS", "STANDARD"),  # run 1522 01-01
+        (_dist(k100=0.1, m100=0.2, beyond=0.7), "BEYOND_100M_STEPS", "HEAVY_COMPUTE"),
         ({"choice": "WITHIN_100K_STEPS", "confidence": 0.9}, "WITHIN_100K_STEPS", "MINIMAL"),
         ({"choice": "WITHIN_100K_STEPS", "confidence": 0.5}, "WITHIN_10M_STEPS", "STANDARD"),
         ({"choice": "HEAVY", "confidence": 0.99, "probabilities": {"HEAVY": 0.99}}, "WITHIN_10M_STEPS", "STANDARD"),
