@@ -1,0 +1,1 @@
+FIND the exact minimum vertex cover of the regular graph with 50 nodes labeled 0 to 49 where each node i is connected to nodes (i+1) mod 50, (i+7) mod 50, and (i+13) mod 50, totaling 150 edges. ENSURE the solution is provably optimal and not an approximation.

@@ -1,0 +1,5 @@
+{
+  "kind": "REQUEST_INPUT",
+  "expected_type": "text/plain",
+  "description": "Please provide the table name and its schema (column names, data types, indexes) as well as the intended query predicate"
+}

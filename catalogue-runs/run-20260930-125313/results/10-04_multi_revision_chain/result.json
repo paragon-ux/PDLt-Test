@@ -1,0 +1,33 @@
+{
+  "id": "10-04",
+  "category": "multi_turn_and_revision",
+  "file": "10_multi_turn_and_revision/multi_revision_chain.txt",
+  "difficulty": "hard",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 19.56,
+  "start_time": "2026-09-30T16:53:56.361189+00:00",
+  "session_id": "catalogue-10-04-1790787236",
+  "transcript_file": "results\\10-04_multi_revision_chain\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-01",
+    "PDL-08"
+  ],
+  "tags": [
+    "multi-revision",
+    "state-integrity",
+    "chain"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": "(Multi-turn test: This prompt should be revised 3+ times in sequence:\n  Revision 1: \"Also validate that the domain has at least one dot\"\n  Revision 2: \"Add support for plus-addressing (user+tag@domain.com)\"\n  Revision 3: \"Return a structured result with {valid: bool, local_part: str, domain: str, tag: str|None}\"\nVerify state is not corrupted across revisions.)"
+}

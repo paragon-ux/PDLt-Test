@@ -1,0 +1,1 @@
+{"kind":"PROMPT","prompt_body":"BUILD a REST API client for the JSONPlaceholder API\nSUPPORT listing posts via GET /posts\nSUPPORT creating a new post via POST /posts with JSON body containing title, body, and userId\nSUPPORT deleting a post via DELETE /posts/{id}\nRETURN responses including HTTP status codes and response bodies where applicable","approach_handoff":"NONE"}

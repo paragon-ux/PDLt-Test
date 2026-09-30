@@ -1,0 +1,35 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-125051\results\13-06_insufficient_information\session\catalogue-13-06-1790787185\worker-progress.log]
+[api] response received in 893ms
+[api] response received in 1455ms
+Prompt Pseudocode
+
+OPTIMIZE the database query for maximum performance: SELECT * FROM ???
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-125051\results\13-06_insufficient_information\session\catalogue-13-06-1790787185\worker-progress.log]
+[api] response received in 929ms
+Response Plan Pseudocode
+
+ANALYZE the target database schema and data distribution
+IDENTIFY columns used for filtering, joining, ordering, and aggregation in the intended query
+EVALUATE existing indexes and determine if additional indexes are needed for high‑selectivity predicates
+REWRITE the SELECT statement to retrieve only required columns instead of using *
+APPLY query rewrite techniques such as predicate push‑down, join reordering, and subquery flattening
+UTILIZE EXPLAIN (ANALYZE) to profile the execution plan and locate costly operations
+OPTIMIZE the execution plan by adding or adjusting indexes, adjusting statistics, and configuring query hints if supported
+VALIDATE performance improvements by benchmarking the original and optimized queries under realistic workloads
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-125051\results\13-06_insufficient_information\session\catalogue-13-06-1790787185\worker-progress.log]
+[api] response received in 1723ms
+Please provide the table name and its schema (column names, data types, indexes) as well as the intended query predicates, joins, ordering, and required result columns so that the query can be optimized for performance.
+[dev:telemetry] controller stage: WAITING_INPUT

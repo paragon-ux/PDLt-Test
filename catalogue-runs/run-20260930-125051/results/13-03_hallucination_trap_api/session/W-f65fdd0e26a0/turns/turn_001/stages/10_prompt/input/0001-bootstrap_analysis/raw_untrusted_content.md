@@ -1,0 +1,1 @@
+Write Python code that calls the FrostbiteDB Python SDK (package name: frostbitedb) to connect to a FrostbiteDB instance, create a collection, insert 3 documents, and query them back.

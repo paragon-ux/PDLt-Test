@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-039cc47a86",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-039cc47a86-P1",
+    "body": "READ numbers from 1 to 100\nFOR each number\nIF the number is divisible by 15 THEN OUTPUT \"FizzBuzz\"\nELSE IF the number is divisible by 3 THEN OUTPUT \"Fizz\"\nELSE IF the number is divisible by 5 THEN OUTPUT \"Buzz\"\nELSE OUTPUT the number\nEND FOR",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-039cc47a86-R1",
+    "body": "READ numbers from 1 to 100\nFOR each number\nIF the number is divisible by 15 THEN OUTPUT \"FizzBuzz\"\nELSE IF the number is divisible by 3 THEN OUTPUT \"Fizz\"\nELSE IF the number is divisible by 5 THEN OUTPUT \"Buzz\"\nELSE OUTPUT the number\nEND FOR",
+    "confirmed": true,
+    "source_prompt_id": "I-039cc47a86-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-039cc47a86-X1",
+    "body": "1229ec39c65a2f027f4c37b49a0e7dcf2711773ea082fe7e6898420a2915ab8e",
+    "confirmed": true,
+    "source_prompt_id": "I-039cc47a86-P1",
+    "source_plan_id": "I-039cc47a86-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

@@ -1,0 +1,9 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Implement a web scraper that extracts all links from a given HTML page.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "HTML"
+  ]
+}

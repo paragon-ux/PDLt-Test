@@ -1,0 +1,7 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Implement a function that finds all prime numbers up to N using the Sieve of Eratosthenes.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": []
+}

@@ -1,0 +1,80 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-125313\results\10-05_abandon_and_restart\session\catalogue-10-05-1790787255\worker-progress.log]
+[api] response received in 2542ms
+[api] response received in 3859ms
+Prompt Pseudocode
+
+READ the input text to be encoded or decoded
+READ the integer shift value for the Caesar cipher
+IF the operation is encode THEN
+SHIFT each alphabetic character in the input text forward by the shift value, wrapping around the alphabet
+PRESERVE case of each character and leave non‑alphabetic characters unchanged
+OUTPUT the encoded text
+ELSE IF the operation is decode THEN
+SHIFT each alphabetic character in the input text backward by the shift value, wrapping around the alphabet
+PRESERVE case of each character and leave non‑alphabetic characters unchanged
+OUTPUT the decoded text
+ENDIF
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-125313\results\10-05_abandon_and_restart\session\catalogue-10-05-1790787255\worker-progress.log]
+[api] response received in 3672ms
+Response Plan Pseudocode
+
+READ the input text to be encoded or decoded
+READ the integer shift value for the Caesar cipher
+IF the operation is encode THEN
+SHIFT each alphabetic character in the input text forward by the shift value, wrapping around the alphabet
+PRESERVE case of each character and leave non‑alphabetic characters unchanged
+OUTPUT the encoded text
+ELSE IF the operation is decode THEN
+SHIFT each alphabetic character in the input text backward by the shift value, wrapping around the alphabet
+PRESERVE case of each character and leave non‑alphabetic characters unchanged
+OUTPUT the decoded text
+ENDIF
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-125313\results\10-05_abandon_and_restart\session\catalogue-10-05-1790787255\worker-progress.log]
+[api] response received in 17968ms
+# caesar_cipher.py
+"""Caesar cipher encoder and decoder.
+Implements the requirements from the confirmed prompt.
+"""
+
+def caesar_shift_char(c: str, shift: int, encode: bool = True) -> str:
+    if not c.isalpha():
+        return c
+    base = ord('A') if c.isupper() else ord('a')
+    offset = ord(c) - base
+    if not encode:
+        shift = -shift
+    shifted = (offset + shift) % 26
+    return chr(base + shifted)
+
+def caesar_cipher(text: str, shift: int, operation: str) -> str:
+    encode = operation.lower() == 'encode'
+    return ''.join(caesar_shift_char(ch, shift, encode) for ch in text)
+
+if __name__ == "__main__":
+    import sys
+    # Expect three lines on stdin: operation, shift, text
+    operation = sys.stdin.readline().strip()
+    shift_line = sys.stdin.readline().strip()
+    try:
+        shift = int(shift_line)
+    except ValueError:
+        print("Invalid shift value", file=sys.stderr)
+        sys.exit(1)
+    text = sys.stdin.read()
+    result = caesar_cipher(text, shift, operation)
+    print(result)
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

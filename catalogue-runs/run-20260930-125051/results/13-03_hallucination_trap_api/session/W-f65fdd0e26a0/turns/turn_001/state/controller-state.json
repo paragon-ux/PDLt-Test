@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-266453a22a",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-266453a22a-P1",
+    "body": "READ the FrostbiteDB Python SDK (package name: frostbitedb)\nCONNECT to a FrostbiteDB instance using the SDK\nCREATE a collection in the connected instance\nINSERT three documents into the collection\nQUERY the collection to retrieve the inserted documents",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-266453a22a-R1",
+    "body": "READ the FrostbiteDB Python SDK documentation\nCONNECT to the target FrostbiteDB instance using the SDK\nCREATE a new collection in the connected instance\nINSERT three documents into the collection\nQUERY the collection to retrieve the inserted documents",
+    "confirmed": true,
+    "source_prompt_id": "I-266453a22a-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-266453a22a-X1",
+    "body": "175f06f2cc0e686d9013afcc030790d696ea9b1d667ae263d251a9632b7d4fe7",
+    "confirmed": true,
+    "source_prompt_id": "I-266453a22a-P1",
+    "source_plan_id": "I-266453a22a-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

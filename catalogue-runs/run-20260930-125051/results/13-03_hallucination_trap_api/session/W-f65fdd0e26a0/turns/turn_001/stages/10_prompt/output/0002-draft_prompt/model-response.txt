@@ -1,0 +1,10 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "READ the FrostbiteDB Python SDK (package name: frostbitedb)\nCONNECT to a FrostbiteDB instance using the SDK\nCREATE a collection in the connected instance\nINSERT three documents into the collection\nQUERY the collection to retrieve the inserted documents",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "frostbitedb",
+    "Python",
+    "FrostbiteDB"
+  ]
+}

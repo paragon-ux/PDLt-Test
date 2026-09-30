@@ -1,0 +1,63 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Write a function that converts temperatures between Celsius, Fahrenheit, and Kelvin.
+ASSISTANT> Prompt Pseudocode
+
+WRITE a function that converts temperatures between Celsius, Fahrenheit, and Kelvin.
+OUTPUT the function definition with appropriate parameters for input temperature and source/target units.
+ENSURE the function correctly applies conversion formulas for all unit combinations.
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+DEFINE a function with parameters: input temperature value, source unit, target unit
+VALIDATE that source and target units are among Celsius, Fahrenheit, Kelvin
+IF source unit equals target unit THEN RETURN the input temperature unchanged
+ELSE DETERMINE the conversion pathway:
+IF converting from Celsius to Fahrenheit THEN APPLY (value * 9/5) + 32
+IF converting from Celsius to Kelvin THEN APPLY value + 273.15
+IF converting from Fahrenheit to Celsius THEN APPLY (value - 32) * 5/9
+IF converting from Fahrenheit to Kelvin THEN APPLY ((value - 32) * 5/9) + 273.15
+IF converting from Kelvin to Celsius THEN APPLY value - 273.15
+IF converting from Kelvin to Fahrenheit THEN APPLY ((value - 273.15) * 9/5) + 32
+RETURN the computed temperature value
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> def convert_temperature(value, source_unit, target_unit):
+    """Convert temperature between Celsius, Fahrenheit, and Kelvin.
+
+    Parameters:
+        value (float): Temperature value to convert.
+        source_unit (str): Unit of the input temperature. Must be 'C', 'F', or 'K'.
+        target_unit (str): Desired unit for output temperature. Must be 'C', 'F', or 'K'.
+
+    Returns:
+        float: Converted temperature value.
+    """
+    source = source_unit.upper()
+    target = target_unit.upper()
+    if source not in {'C', 'F', 'K'} or target not in {'C', 'F', 'K'}:
+        raise ValueError('source and target units must be one of C, F, K')
+    if source == target:
+        return value
+    # Convert source to Celsius first
+    if source == 'C':
+        celsius = value
+    elif source == 'F':
+        celsius = (value - 32) * 5/9
+    else:  # source == 'K'
+        celsius = value - 273.15
+    # Convert Celsius to target
+    if target == 'C':
+        return celsius
+    elif target == 'F':
+        return (celsius * 9/5) + 32
+    else:  # target == 'K'
+        return celsius + 273.15
+
+# Example usage:
+# print(convert_temperature(0, 'C', 'F'))  # 32.0
+PROTOCOL_CLOSED
+=== PDLt session ended ===

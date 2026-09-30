@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-c2c100b505",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-c2c100b505-P1",
+    "body": "READ the input text to be encoded or decoded\nREAD the integer shift value for the Caesar cipher\nIF the operation is encode THEN\nSHIFT each alphabetic character in the input text forward by the shift value, wrapping around the alphabet\nPRESERVE case of each character and leave non‑alphabetic characters unchanged\nOUTPUT the encoded text\nELSE IF the operation is decode THEN\nSHIFT each alphabetic character in the input text backward by the shift value, wrapping around the alphabet\nPRESERVE case of each character and leave non‑alphabetic characters unchanged\nOUTPUT the decoded text\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-c2c100b505-R1",
+    "body": "READ the input text to be encoded or decoded\nREAD the integer shift value for the Caesar cipher\nIF the operation is encode THEN\nSHIFT each alphabetic character in the input text forward by the shift value, wrapping around the alphabet\nPRESERVE case of each character and leave non‑alphabetic characters unchanged\nOUTPUT the encoded text\nELSE IF the operation is decode THEN\nSHIFT each alphabetic character in the input text backward by the shift value, wrapping around the alphabet\nPRESERVE case of each character and leave non‑alphabetic characters unchanged\nOUTPUT the decoded text\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": "I-c2c100b505-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-c2c100b505-X1",
+    "body": "fa2a4a08a7321d1a7666fdab7880d3a00d2cf9158ced63995e2be94648511c0e",
+    "confirmed": true,
+    "source_prompt_id": "I-c2c100b505-P1",
+    "source_plan_id": "I-c2c100b505-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}
