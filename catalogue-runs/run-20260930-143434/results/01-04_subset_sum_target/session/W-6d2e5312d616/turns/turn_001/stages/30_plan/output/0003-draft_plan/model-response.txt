@@ -1,0 +1,1 @@
+{"neutral_plan_body":"READ the set S and the target value T\nGENERATE every possible subset of S\nFILTER subsets whose elements sum to T\nFOR each filtered subset:\n    OUTPUT the subset\n    VERIFY that the sum of its elements equals T\nCOUNT the number of filtered subsets\nREPORT the total number of solutions found"}

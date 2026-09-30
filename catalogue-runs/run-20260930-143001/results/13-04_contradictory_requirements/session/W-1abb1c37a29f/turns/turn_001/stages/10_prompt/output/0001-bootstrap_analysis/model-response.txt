@@ -1,0 +1,13 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Implement a sorting algorithm with the following requirements: 1. Must be a comparison-based sort. 2. Must run in O(n) worst-case time complexity. 3. Must be stable (preserve relative order of equal elements). 4. Must sort in-place (O(1) extra space).",
+  "approach_notes": "",
+  "risk_notes": "The request contains contradictory constraints that make the task infeasible: a comparison‑based sort cannot achieve O(n) worst‑case time complexity, and an in‑place stable sort with O(1) extra space is not achievable for arbitrary data. These contradictions represent a logical inconsistency in the specification.",
+  "task_entities": [
+    "comparison-based",
+    "O(n)",
+    "stable",
+    "in-place",
+    "O(1)"
+  ]
+}

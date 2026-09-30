@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-6005bfeade",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-6005bfeade-P1",
+    "body": "DETERMINE whether the undirected graph G with 12 nodes (0-11) and the specified edge list contains a Hamiltonian path.\nIF a Hamiltonian path exists, OUTPUT the complete sequence of node identifiers.\nVERIFY that the path visits all 12 nodes.\nVERIFY that each consecutive pair in the path corresponds to a valid edge in the graph.\nUSE a backtracking search with pruning to find the path.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-6005bfeade-R1",
+    "body": "PARSE the supplied edge list and construct an adjacency representation of the undirected graph G with nodes 0‑11.\nINITIALIZE a backtracking search that attempts to build a Hamiltonian path by extending a partial node sequence.\nAT each step, SELECT an unvisited node that is adjacent to the last node in the current sequence.\nPRUNE the search branch if no such adjacent unvisited node exists or if remaining unvisited nodes cannot be reached due to connectivity constraints.\nCONTINUE extending the sequence until all 12 nodes are included.\nIF a complete sequence of 12 nodes is found, VERIFY that each consecutive pair corresponds to a valid edge in the graph.\nEMIT the verified Hamiltonian path sequence as the final output.",
+    "confirmed": true,
+    "source_prompt_id": "I-6005bfeade-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-6005bfeade-X1",
+    "body": "bad1e34f4091d933fc6063a39a19f077faf5214815d11ce33415b770a93c0a97",
+    "confirmed": true,
+    "source_prompt_id": "I-6005bfeade-P1",
+    "source_plan_id": "I-6005bfeade-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-7186c6b816",
+  "stage": "WAITING_INPUT",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-7186c6b816-P1",
+    "body": "READ the database query string \"SELECT * FROM ???\"\nOPTIMIZE the query for maximum performance\nRETURN the optimized query statement",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-7186c6b816-R1",
+    "body": "READ the supplied database query string\nANALYZE the query for performance characteristics and potential bottlenecks\nREWRITE the query to improve execution efficiency while preserving semantics\nVALIDATE the optimized query syntax\nRETURN the optimized query statement",
+    "confirmed": true,
+    "source_prompt_id": "I-7186c6b816-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": {
+    "input_id": "X-ac9da7ef01",
+    "expected_type": "string, non-empty table identifier",
+    "description": "Please provide the actual table name (or schema) to replace the placeholder \"???\" in the SELECT statement so it can be o"
+  },
+  "in_flight_action": null
+}
