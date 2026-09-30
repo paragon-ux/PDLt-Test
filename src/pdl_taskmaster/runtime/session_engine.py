@@ -920,8 +920,7 @@ class SessionEngine:
         if carried_raw != self.controller.state.approach_sources:
             raise WorkspaceError("approach_source_handoff")
         carried = [self._compile_approach_context(s, traces) for s in carried_raw]
-        from pdl_taskmaster.verification.plan_soundness import validate_plan_soundness
-        body = self._call(
+        body = self._linted_call(
             "DRAFT_PLAN",
             {
                 "CONFIRMED_PROMPT_BODY": prompt_body,
@@ -929,32 +928,37 @@ class SessionEngine:
             },
             traces,
             parser=self.bridge.parse_plan_body,
+            artifact="PLAN",
         )
-        soundness = validate_plan_soundness(body)
-        if not soundness.valid:
-            self.workspace.append_event(
-                "PLAN_LINT_RETRY",
-                {"violations": soundness.violations},
-            )
-            body = self._call(
-                "DRAFT_PLAN",
-                {
-                    "CONFIRMED_PROMPT_BODY": prompt_body,
-                    "CARRIED_APPROACH_SOURCES": carried,
-                },
-                traces,
-                parser=self.bridge.parse_plan_body,
-                operator_correction="OPERATOR CORRECTION: " + soundness.feedback,
-            )
-            residual = validate_plan_soundness(body)
-            if not residual.valid:
-                self.workspace.append_event(
-                    "PLAN_LINT_UNRESOLVED",
-                    {"violations": residual.violations},
-                )
         self.controller.commit_plan(body)
         self._publish_plan()
         return EngineResponse(presentation.plan_artifact(body), traces)
+
+    def _linted_call(
+        self, operation: str, context: dict[str, Any], traces: list[CallTrace], *, parser: Any, artifact: str
+    ) -> str:
+        """Call an operation that returns pseudocode and lint the body (plan_soundness).
+        A violation gets exactly one redraft carrying the finding; a residual
+        violation is recorded and the body stands for the user's review."""
+        from pdl_taskmaster.verification.plan_soundness import validate_plan_soundness
+
+        assert self.workspace is not None
+        body = self._call(operation, context, traces, parser=parser)
+        lint = validate_plan_soundness(body)
+        if lint.valid:
+            return body
+        self.workspace.append_event(
+            f"{artifact}_LINT_RETRY", {"operation": operation, "violations": lint.violations}
+        )
+        body = self._call(
+            operation, context, traces, parser=parser, operator_correction="OPERATOR CORRECTION: " + lint.feedback
+        )
+        residual = validate_plan_soundness(body)
+        if not residual.valid:
+            self.workspace.append_event(
+                f"{artifact}_LINT_UNRESOLVED", {"operation": operation, "violations": residual.violations}
+            )
+        return body
 
     def _revise_prompt(self, transition: Transition, traces: list[CallTrace]) -> EngineResponse:
         assert self.controller is not None and self.workspace is not None
@@ -966,7 +970,7 @@ class SessionEngine:
         change_id = transition.payload["change_id"]
         had_plan = self.controller.state.current_plan is not None
         try:
-            body = self._call(
+            body = self._linted_call(
                 "REVISE_PROMPT",
                 {
                     "CURRENT_PROMPT_BODY": prompt_body,
@@ -978,6 +982,7 @@ class SessionEngine:
                 },
                 traces,
                 parser=self.bridge.parse_prompt_body,
+                artifact="PROMPT",
             )
             self.controller.commit_prompt_revision(change_id, body)
             # Mechanical coverage regression check on revisions: entities the
@@ -1011,7 +1016,7 @@ class SessionEngine:
         if carried_raw != self.controller.state.approach_sources:
             raise WorkspaceError("approach_source_handoff")
         try:
-            body = self._call(
+            body = self._linted_call(
                 "REVISE_PLAN",
                 {
                     "CONFIRMED_PROMPT_BODY": prompt_body,
@@ -1023,6 +1028,7 @@ class SessionEngine:
                 },
                 traces,
                 parser=self.bridge.parse_plan_body,
+                artifact="PLAN",
             )
             self.controller.commit_plan_revision(change_id, body)
         except Exception:

@@ -55,3 +55,35 @@ def test_lint_is_method_neutral_for_every_task_class():
             result = validate_plan_soundness(plan, requires_verified_execution=flag)
             assert isinstance(result, PlanSoundnessResult)
             assert result.valid, (plan, flag, result.violations)
+
+
+def test_notation_violation_gets_one_redraft_with_the_finding(tmp_path):
+    """A plan carrying a drafting meta-rule is redrafted once with the lint finding;
+    the host never edits the body itself."""
+    import json
+    from pathlib import Path
+
+    from pdl_taskmaster.runtime.session_engine import SessionEngine
+
+    plans = ["SPLIT the string\nDo not perform any computation; only describe the required result.",
+             "SPLIT the string into palindromes\nRETURN the minimum number of cuts"]
+    calls = []
+
+    def model_call(req):
+        calls.append(req)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({"kind": "ANALYSIS", "task_summary": "A task.", "approach_notes": "",
+                               "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return json.dumps({"kind": "PROMPT", "prompt_body": "PARTITION the string", "approach_handoff": "NONE"})
+        return json.dumps({"neutral_plan_body": plans.pop(0)})
+
+    engine = SessionEngine(Path(__file__).resolve().parents[1], model_call, workspace_root=tmp_path, sys1_client=None)
+    engine.handle_user_message("$confirm-with-pseudocode partition it")
+    response = engine.handle_user_message("/confirm")
+    drafts = [c for c in calls if c.operation == "DRAFT_PLAN"]
+    assert len(drafts) == 2 and "PDL-08" in drafts[1].prompt
+    assert engine.controller.state.current_plan.body == "SPLIT the string into palindromes\nRETURN the minimum number of cuts"
+    retry = next(e for e in engine.workspace._events if e["kind"] == "PLAN_LINT_RETRY")["payload"]
+    assert retry["operation"] == "DRAFT_PLAN"
+    assert "Do not perform" not in response.text

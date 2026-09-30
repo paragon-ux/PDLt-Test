@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from enum import Enum
 from typing import Annotated, Any, Literal, Optional, Union
 from pydantic import (
@@ -93,55 +92,17 @@ BootstrapAnalysisPayload = Annotated[
 ]
 
 
-_PDL05_FIELDED_SCHEMA_PATTERN = re.compile(
-    r"(?:^\s*(?:TASK|OUTPUT|INCLUDE|INPUT|CONSTRAINTS?|REQUIREMENTS?|ACTION|RESULT|STATUS|GOAL|OBJECTIVE)\s*:|(?<=\S)\s+(?:OUTPUT|INCLUDE|INPUT|ACTION|RESULT|STATUS)\s*:)",
-    re.IGNORECASE | re.MULTILINE,
-)
-
-_PDL08_META_RULE_PATTERN = re.compile(
-    r"(?i)\b(?:(?:do not|never)\s+(?:perform|execute|calculate|compute|solve|do)\s+(?:any\s+|the\s+)?(?:computation|work|calculation|task)|(?:only\s+describe|describe\s+only)\s+(?:the\s+)?(?:required\s+)?(?:task|result|output|deliverable)|without\s+performing\s+any\s+(?:computation|work|calculation|selection)|no\s+(?:actual|algorithmic|substantive)\s+(?:computation|work|calculation)|defer\s+(?:all\s+)?computation\s+to\s+(?:the\s+)?execution\s+stage)\b"
-)
-
-_PLAN_PLACEHOLDER_PATTERN = re.compile(
-    r"(?i)(?:INSERT\s+placeholders?\s+for\s+(?:the\s+)?substantive\s+results?|placeholders?\s+without\s+performing\s+any\s+computation|\b(?:do not|never)\s+(?:perform|execute|calculate|compute|solve)\s+(?:any\s+)?(?:computation|work|calculation)\b|without\s+performing\s+any\s+(?:computation|work|calculation))"
-)
-
-
+# Pseudocode notation (PDL-05 / PDL-08 / PLAN-10) is linted after parsing, with one
+# redraft (verification/plan_soundness.py); the wire schema checks shape only.
 def validate_prompt_pdl_conformance(body: str) -> str:
-    """Validate prompt_body conforms to PDL-01..08, PROMPT-01..05."""
     if not body or not body.strip():
         raise ValueError("prompt_body: prompt_body must not be empty")
-
-    fielded_match = _PDL05_FIELDED_SCHEMA_PATTERN.search(body)
-    if fielded_match:
-        matched_str = fielded_match.group(0).strip()
-        raise ValueError(
-            f"prompt_body violates PDL-05 by inventing fielded schema prefix '{matched_str}'. "
-            "Express steps directly in Structured English with uppercase action verbs (e.g. 'SORT the records...', 'RETURN the result')."
-        )
-
-    meta_match = _PDL08_META_RULE_PATTERN.search(body)
-    if meta_match:
-        matched_str = meta_match.group(0).strip()
-        raise ValueError(
-            f"prompt_body violates PDL-08 / PROMPT-01 by containing drafting meta-rule or execution prohibition '{matched_str}'. "
-            "Prompt Pseudocode defines what execution must deliver, never negative execution constraints."
-        )
     return body
 
 
 def validate_plan_pdl_conformance(body: str) -> str:
-    """Validate neutral_plan_body conforms to PDL-01..08, PLAN-01..10."""
     if not body or not body.strip():
         raise ValueError("neutral_plan_body: neutral_plan_body must not be empty")
-
-    placeholder_match = _PLAN_PLACEHOLDER_PATTERN.search(body)
-    if placeholder_match:
-        matched_str = placeholder_match.group(0).strip()
-        raise ValueError(
-            f"neutral_plan_body violates PLAN-04 / PLAN-10 by containing placeholder step or meta-prohibition '{matched_str}'. "
-            "Plan the high-level steps to solve and deliver the result upon execution."
-        )
     return body
 
 
@@ -557,14 +518,8 @@ def map_validation_error_to_wire_reason(
     if "response" in loc or "blocked_response" in msg:
         return "blocked_response"
     if "prompt_body" in loc or "prompt_body" in msg:
-        if "PDL-05" in msg or "fielded" in msg:
-            return "prompt_pdl_field_schema_prohibited"
-        if "PDL-08" in msg or "PROMPT-01" in msg or "meta-rule" in msg or "prohibition" in msg:
-            return "prompt_pdl_meta_rule_bleed"
         return "prompt_body"
     if "neutral_plan_body" in loc or "neutral_plan_body" in msg:
-        if "PLAN-04" in msg or "PLAN-10" in msg or "placeholder" in msg or "prohibition" in msg:
-            return "plan_pdl_placeholder_bleed"
         return "neutral_plan_body"
     if "execution_code_fence_required" in loc or "execution_code_fence_required" in msg:
         return "execution_code_fence_required"

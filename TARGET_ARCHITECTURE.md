@@ -86,7 +86,7 @@ The target architecture enforces a strict tripartite separation of concerns:
 │ 3. VERIFIER (Deterministic Python & Session-Scoped Host Sandbox)          │
 │    • Responsibility: Formal contract evaluation & host execution          │
 │    • Operations:                                                          │
-│      - Grammar Lint: Enforces PDL-05/06/08 on prompt & plan, no keywords  │
+│      - Grammar Lint: PDL-05/06/08, PLAN-10 on prompt & plan, one redraft  │
 │      - Host Sandbox: Executes code with CPU, memory & containment limits  │
 │      - Witness Capture: `WITNESS: <json>` line or whole-stdout JSON only  │
 │      - Pydantic SSOT (ADR-0018): Schema validation with alias coercion    │
@@ -121,7 +121,7 @@ flowchart TD
     S1_Activate -- APPLY_PROTOCOL --> S1_Class{"S1: Problem Class"}
     S1_Class --> DraftPrompt["S2: DRAFT_PROMPT<br/>(Generate Prompt Pseudocode)"]
 
-    DraftPrompt --> PromptLint{"Grammar Lint<br/>(PDL-05/06/08)"}
+    DraftPrompt --> PromptLint{"Grammar Lint<br/>(PDL-05/06/08, PLAN-10)"}
     PromptLint -- Violations (once) --> DraftPrompt
     PromptLint -- Clean --> PromptGate["PROMPT_REVIEW Gate<br/>Render Pseudocode to User / Runner"]
     PromptGate --> S1_PromptIntent{"S1: Review Intent"}
@@ -130,7 +130,7 @@ flowchart TD
     S1_PromptIntent -- UNCONFIRMED --> StallPrompt["Exit Code 2 (UNCONFIRMED_GATE)"]
     S1_PromptIntent -- CONFIRM --> DraftPlan["S2: DRAFT_PLAN<br/>(Generate Plan Pseudocode)"]
 
-    DraftPlan --> PlanLint{"Grammar Lint<br/>(PDL-05/06/08)"}
+    DraftPlan --> PlanLint{"Grammar Lint<br/>(PDL-05/06/08, PLAN-10)"}
     PlanLint -- Violations (once, via operator correction) --> DraftPlan
     PlanLint -- Clean --> PlanGate["PLAN_REVIEW Gate<br/>Render Response Plan"]
 
@@ -163,7 +163,7 @@ flowchart TD
 |---|---|---|---|
 | **Phase 0: Activation** | Raw user request | System 1 `activation_route` over environment **recipe state** (policy scope, offline sandbox, knowledge cutoff). No keyword, pattern, or date matching. Runs first on every new request, including explicit `$confirm-with-pseudocode` invocations; a gated decision overrides the invocation, an ungated one leaves it standing | `APPLY_PROTOCOL` $\to$ Phase 1<br>`BLOCKED_BY_HIGHER_PRIORITY` $\to$ refusal published, Exit `0` (`closure=REFUSED`)<br>`BYPASS` / `PROTOCOL_DISCUSSION` $\to$ direct answer |
 | **Phase 1: Prompt Review** | Drafted prompt + user feedback or assent | Grammar lint, then fast-path commands (`/confirm`, `/revise`, `/stop`), then System 1 review intent | `CONFIRM` $\to$ Phase 2<br>`REVISE_TASK` $\to$ re-draft Prompt<br>`CANCEL` $\to$ Exit `1`<br>`UNCONFIRMED` $\to$ Exit `2` |
-| **Phase 2: Plan Lint** | Response Plan | Deterministic grammar lint (`plan_soundness.py`): PDL-05 no fielded prefixes, PDL-06 no code fences, PDL-08 no deferral/meta markers. **No algorithm or execution keywords.** | Clean $\to$ Plan Gate<br>Violation $\to$ one re-draft, feedback via **operator correction** (never via `CARRIED_APPROACH_SOURCES`) |
+| **Phase 2: Plan Lint** | Response Plan | Deterministic grammar lint (`plan_soundness.py`): PDL-05 no fielded prefixes, PDL-06 no code fences, PDL-08 no deferral/meta markers, PLAN-10 no placeholder steps, on first drafts and revisions. It is the only place these rules are enforced: a violation gets one redraft carrying the finding, never a wire failure, and the host never rewrites a body. **No algorithm or execution keywords.** | Clean $\to$ Plan Gate<br>Violation $\to$ one re-draft, feedback via **operator correction** (never via `CARRIED_APPROACH_SOURCES`) |
 | **Phase 3: Plan Review** | User feedback or assent | Fast-path commands, then System 1 review intent | `CONFIRM` $\to$ Phase 4<br>`REVISE_APPROACH` $\to$ re-draft Plan<br>`REVISE_TASK` $\to$ Phase 1<br>`CANCEL` $\to$ Exit `1` |
 | **Phase 4: Execution** | Confirmed Prompt & Plan | System 2 `EXECUTE` | `RESULT` $\to$ Phase 5<br>`REQUEST_INPUT` $\to$ Exit `3` |
 | **Phase 5: Verification** | Deliverable + Sandbox Stdout | Deterministic Pydantic schemas (`output_verifier.py`), with witness authority per §2.1. Result IR citation bookkeeping (verbatim quotes, section markers, one reconciliation per requirement) is recorded as `RESULT_IR_CITATION_FINDINGS`, never blocking: it describes the deliverable, it is not its correctness | Pass $\to$ Exit `0` (`CLOSED_SUCCESS`)<br>Contract failure $\to$ bounded repair (1 repair; 2 on `HEAVY_COMPUTE`) $\to$ Exit `1` |

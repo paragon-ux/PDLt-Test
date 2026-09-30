@@ -107,83 +107,6 @@ def _normalize_body_newlines(body: str) -> str:
     return body
 
 
-_META_RULE_PATTERNS = [
-    # Prohibitions on computation/execution/solving + describing only:
-    # e.g. "DO NOT perform the actual verification at this stage; only specify the required result."
-    # e.g. "Do not perform any computation; only describe the required task."
-    # e.g. "DO NOT perform any calculations or produce the actual result in this step."
-    re.compile(
-        r"(?i)\b(?:do not|never)\s+(?:perform|execute|calculate|compute|solve|do|produce)\s+(?:any\s+|the\s+|actual\s+|the\s+actual\s+)?(?:computation|work|calculation|calculations|verification|task|search)\b[^.\n]*[.!]?",
-    ),
-    # Standalone "only describe / only specify / describe only the required task/result/output":
-    re.compile(
-        r"(?i)\b(?:only\s+(?:describe|specify)|(?:describe|specify)\s+only)\s+(?:the\s+)?(?:required\s+)?(?:task|result|output|deliverable)\b[^.\n]*[.!]?",
-    ),
-    # "without performing any / the actual computation/work/calculation/selection/search"
-    re.compile(
-        r"(?i)\bwithout\s+performing\s+(?:any\s+|the\s+|actual\s+|the\s+actual\s+)?(?:computation|work|calculation|selection|search)\b[^.\n]*[.!]?",
-    ),
-    # "at this stage / in this step ... only specify / describe"
-    re.compile(
-        r"(?i)\b(?:at\s+this\s+stage|in\s+this\s+step)[;,]?\s*only\s+(?:specify|describe|state)\b[^.\n]*[.!]?",
-    ),
-    # "no actual/algorithmic/substantive computation/work is performed"
-    re.compile(
-        r"(?i)\bno\s+(?:actual|algorithmic|substantive)\s+(?:computation|work|calculation)\s+(?:is\s+)?(?:performed|done)\b[^.\n]*[.!]?",
-    ),
-    # "defer computation to execution stage"
-    re.compile(
-        r"(?i)\bdefer\s+(?:all\s+)?computation\s+to\s+(?:the\s+)?execution\s+stage\b[^.\n]*[.!]?",
-    ),
-    # "INSERT placeholders for (the) substantive results..."
-    re.compile(
-        r"(?im)^\s*(?:(?:STEP\s*\d+|[-*•])\s*[:.-]\s*)?INSERT\s+placeholders?\s+for\s+(?:the\s+)?substantive\s+results?\b.*$",
-    ),
-    # "placeholders without performing any computation"
-    re.compile(
-        r"(?i)\bplaceholders?\s+without\s+performing\s+any\s+computation\b[^.\n]*[.!]?",
-    ),
-    # Legacy line-start bleed pattern
-    re.compile(
-        r"(?i)^\s*[-*•\d\.]*\s*(?:do not perform any computation|do not compute|only describe the required task|no actual computation is performed|defer computation to execution stage|describe only)\b.*$",
-        re.MULTILINE,
-    ),
-]
-
-_FAUX_FIELD_INLINE = re.compile(
-    r"(?<=\S)\s+(?:OUTPUT|INCLUDE|INPUT|CONSTRAINTS?|REQUIREMENTS?|ACTION|RESULT|STATUS|GOAL|OBJECTIVE)\s*:\s*",
-    re.IGNORECASE,
-)
-
-
-def _strip_meta_rule_bleed(body: str) -> str:
-    """Filter out negative meta-constraints hallucinated from PROTO-03 / PROMPT-02.
-
-    If the model includes meta-rules like 'Do not perform any computation; only describe
-    the required task', or 'DO NOT perform the computation; only describe the required result',
-    strip them so they do not contaminate downstream execution. Also splits inlined
-    faux-field schemas per PDL-02 / PDL-05.
-    """
-    if not body:
-        return body
-
-    cleaned = body
-    for pattern in _META_RULE_PATTERNS:
-        cleaned = pattern.sub("", cleaned)
-
-    cleaned = _FAUX_FIELD_INLINE.sub("\n", cleaned)
-
-    lines = []
-    for line in cleaned.splitlines():
-        line_s = line.strip()
-        if line_s in ("-", "*", "•", ".", ";", ":", "- .", "* ."):
-            continue
-        lines.append(line_s)
-
-    result = re.sub(r"\n{3,}", "\n\n", "\n".join(lines))
-    return result.strip()
-
-
 class OperationBridge:
     def __init__(self, repo_root: str | Path, *, render_compact: bool = False):
         self.repo_root = Path(repo_root)
@@ -327,7 +250,7 @@ class OperationBridge:
         if isinstance(payload, PromptDraftData):
             return PromptDraftOutcome(
                 payload.kind,
-                _strip_meta_rule_bleed(_normalize_body_newlines(payload.prompt_body.strip())),
+                _normalize_body_newlines(payload.prompt_body.strip()),
                 payload.approach_handoff,
                 task_entities=tuple(payload.task_entities) if payload.task_entities else (),
             )
@@ -347,15 +270,15 @@ class OperationBridge:
         body = value[field]
         if not isinstance(body, str) or not body.strip():
             raise WireError(field)
-        return _strip_meta_rule_bleed(_normalize_body_newlines(body.strip()))
+        return _normalize_body_newlines(body.strip())
 
     def parse_prompt_body(self, model_text: str) -> str:
         payload: PromptBodyPayload = self._validate("REVISE_PROMPT", PromptBodyPayload, model_text)
-        return _strip_meta_rule_bleed(_normalize_body_newlines(payload.prompt_body.strip()))
+        return _normalize_body_newlines(payload.prompt_body.strip())
 
     def parse_plan_body(self, model_text: str) -> str:
         payload: NeutralPlanBodyPayload = self._validate("DRAFT_PLAN", NeutralPlanBodyPayload, model_text)
-        return _strip_meta_rule_bleed(_normalize_body_newlines(payload.neutral_plan_body.strip()))
+        return _normalize_body_newlines(payload.neutral_plan_body.strip())
 
     def _parse_artifact_review(self, model_text: str, is_plan: bool = False) -> dict[str, Any]:
         op = "INTERPRET_PLAN_REVIEW" if is_plan else "INTERPRET_PROMPT_REVIEW"

@@ -171,36 +171,28 @@ def test_parse_prompt_body_unescapes_literal_newlines() -> None:
     assert parsed == "PARTITION the input string.\n\nMINIMIZE the cuts."
 
 
-def test_pydantic_rejects_pdl05_fielded_schema() -> None:
-    wire = r'{"prompt_body": "TASK: Partition the string.\nOUTPUT: Return min cuts."}'
-    with pytest.raises(WireError) as excinfo:
-        BRIDGE.parse_prompt_body(wire)
-    assert excinfo.value.reason == "prompt_pdl_field_schema_prohibited"
-    assert "PDL-05" in (excinfo.value.operator_feedback or "")
+# Pseudocode notation is linted after parsing (plan_soundness, one redraft), never
+# enforced as a wire failure and never rewritten by the host (AUTH-05).
+_NOTATION_CASES = [
+    ("prompt", r'{"prompt_body": "TASK: Partition the string.\nOUTPUT: Return min cuts."}', "PDL-05"),
+    # Session 7 Run 2 prompt payload
+    ("prompt", '{"prompt_body": "PARTITION the string into palindrome substrings.\\n'
+               'DO NOT perform the partitioning; only describe the required result."}', "PDL-08"),
+    # Session 7 Run 2 plan payload
+    ("plan", '{"neutral_plan_body": "IDENTIFY palindromes.\\n'
+             'INSERT placeholders for the substantive results without performing any computation"}', "PLAN-10"),
+]
 
 
-def test_pydantic_rejects_pdl08_meta_rule_bleed() -> None:
-    # Exact Session 7 Run 2 failure payload
-    wire = (
-        '{"prompt_body": "PARTITION the string into palindrome substrings.\\n'
-        'DO NOT perform the partitioning; only describe the required result."}'
-    )
-    with pytest.raises(WireError) as excinfo:
-        BRIDGE.parse_prompt_body(wire)
-    assert excinfo.value.reason == "prompt_pdl_meta_rule_bleed"
-    assert "PDL-08" in (excinfo.value.operator_feedback or "") or "PROMPT-01" in (excinfo.value.operator_feedback or "")
+@pytest.mark.parametrize("kind, wire, clause", _NOTATION_CASES)
+def test_notation_violations_parse_unchanged_and_are_linted(kind, wire, clause) -> None:
+    from pdl_taskmaster.verification.plan_soundness import validate_plan_soundness
 
-
-def test_pydantic_rejects_plan_placeholders() -> None:
-    # Exact Session 7 Run 2 plan failure payload
-    wire = (
-        '{"neutral_plan_body": "IDENTIFY palindromes.\\n'
-        'INSERT placeholders for the substantive results without performing any computation"}'
-    )
-    with pytest.raises(WireError) as excinfo:
-        BRIDGE.parse_plan_body(wire)
-    assert excinfo.value.reason == "plan_pdl_placeholder_bleed"
-    assert "PLAN-04" in (excinfo.value.operator_feedback or "") or "PLAN-10" in (excinfo.value.operator_feedback or "")
+    body = BRIDGE.parse_prompt_body(wire) if kind == "prompt" else BRIDGE.parse_plan_body(wire)
+    field = "prompt_body" if kind == "prompt" else "neutral_plan_body"
+    assert body == json.loads(wire)[field].strip()  # no host rewrite
+    lint = validate_plan_soundness(body)
+    assert not lint.valid and clause in lint.feedback
 
 
 def test_parse_plan_review_disambiguates_action_to_revise_approach() -> None:
@@ -209,23 +201,6 @@ def test_parse_plan_review_disambiguates_action_to_revise_approach() -> None:
     wire = '{"kind": "REVIEW_FACTS", "task_change_dimensions": ["ACTION_SUBJECT_OR_OBJECT"], "approach_change_dimensions": [], "progression_requested": false}'
     res = BRIDGE.parse_plan_review(wire)
     assert res == {"intent": "REVISE_APPROACH"}
-
-
-def test_strip_meta_rule_bleed_removes_negative_meta_constraints() -> None:
-    from pdl_taskmaster.runtime.operation_bridge import _strip_meta_rule_bleed
-    text = (
-        "### Task Definition\n"
-        "Partition the string into palindrome substrings.\n\n"
-        "### Constraints\n"
-        "- Every character belongs to exactly one palindrome.\n"
-        "- Minimize the number of cuts.\n"
-        "- Do not perform any computation; only describe the required task.\n"
-    )
-    cleaned = _strip_meta_rule_bleed(text)
-    assert "Do not perform any computation" not in cleaned
-    assert "only describe the required task" not in cleaned
-    assert "Minimize the number of cuts." in cleaned
-    assert "Every character belongs to exactly one palindrome." in cleaned
 
 
 def test_api_worker_provider_pinning_and_fallbacks() -> None:
