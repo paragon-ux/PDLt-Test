@@ -89,3 +89,12 @@ def test_sys1_failure_or_absence_does_not_refuse(tmp_path, monkeypatch):
         engine = _engine(tmp_path / ("a" if sys1 else "b"), sys1, s2_calls, monkeypatch)
         engine.handle_user_message("$confirm-with-pseudocode any request text")
         assert s2_calls
+
+
+def test_refusal_states_the_configured_boundaries(tmp_path, monkeypatch):
+    sys1, s2_calls = FakeSys1(route_choice="BLOCKED_BY_HIGHER_PRIORITY"), []
+    engine = _engine(tmp_path, sys1, s2_calls, monkeypatch)
+    response = engine.handle_user_message("$confirm-with-pseudocode any request text")
+    assert response.refused
+    assert CUTOFF in response.text and "network access disabled" in response.text
+    assert "policy scope 'technical'" in response.text

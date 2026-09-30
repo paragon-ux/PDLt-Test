@@ -137,7 +137,8 @@ class ExecutionSandbox:
                 "name": "python",
                 "description": (
                     f"Python {version} with the standard library only; third-party packages are not installed. "
-                    "The host runs every ```python fenced block in the deliverable as a separate script in an "
+                    "The host runs the deliverable as a script when the whole deliverable is Python source; otherwise it "
+                    "runs every ```python fenced block as a separate script. Each script runs in an "
                     f"empty temporary directory, with a {self.timeout_seconds:g}-second time limit and a "
                     f"{megabytes} MB memory limit. Standard input is empty. Standard output, standard error "
                     "and the exit status are captured by the host."

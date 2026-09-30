@@ -205,11 +205,22 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout):
     return result
 
 
-def is_prompt_pass(r):
+def stage_pass(r):
+    """The run reached the manifest's expected stage."""
     exp = r.get("expected_stage", "CLOSED_SUCCESS")
     if exp == "WAITING_INPUT":
         return r.get("verdict") in {"WAITING_INPUT", "CLOSED_SUCCESS"}
     return r.get("verdict") == exp
+
+
+def gt_grade(r):
+    return (r.get("ground_truth_grade") or {}).get("grade", graders.NA)
+
+
+def is_prompt_pass(r):
+    """Expected stage AND no ground-truth failure. A stage match with a wrong
+    answer is a false positive, never a pass; MANUAL is reported separately."""
+    return stage_pass(r) and gt_grade(r) not in {graders.FAIL, "ERROR"}
 
 
 def generate_scoreboard(results, run_dir, run_meta):
@@ -254,8 +265,9 @@ def generate_scoreboard(results, run_dir, run_meta):
     }
     false_positives = [
         {"id": r["id"], "reason": r["ground_truth_grade"].get("reason")}
-        for r, g in grades if g == graders.FAIL and is_prompt_pass(r)
+        for r, g in grades if g == graders.FAIL and stage_pass(r)
     ]
+    manual = [r["id"] for r, g in grades if g == graders.MANUAL]
     total_time = sum(r["elapsed_seconds"] for r in results)
 
     scoreboard = {
@@ -266,6 +278,8 @@ def generate_scoreboard(results, run_dir, run_meta):
         "total_prompts": total,
         "passed": passed,
         "failed": total - passed,
+        "stage_passed": sum(1 for r in results if stage_pass(r)),
+        "manual_spot_check": manual,
         "pass_rate_pct": round(pass_rate, 1),
         "total_elapsed_seconds": round(total_time, 1),
         "ground_truth": ground_truth,
@@ -349,17 +363,42 @@ def generate_scoreboard(results, run_dir, run_meta):
             lines.append(f"| {r['id']} | {r['regression_ref']} | {r['verdict']} |")
 
     lines += ["", "---", "", "## Per-Prompt Results", "",
-              "| ID | Category | Difficulty | Verdict | Time (s) |",
-              "|----|----------|-----------|---------|----------|"]
+              "| ID | Category | Difficulty | Verdict | Ground truth | Time (s) |",
+              "|----|----------|-----------|---------|--------------|----------|"]
     for r in results:
         icon = "PASS" if is_prompt_pass(r) else "FAIL"
         lines.append(
             f"| {icon} {r['id']} | {r['category']} | {r['difficulty']} "
-            f"| {r['verdict']} | {r['elapsed_seconds']:.1f} |"
+            f"| {r['verdict']} | {gt_grade(r)} | {r['elapsed_seconds']:.1f} |"
         )
 
     (run_dir / "SCOREBOARD.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return scoreboard
+
+
+def regrade_run(run_dir: Path) -> int:
+    """Apply the current graders to a finished run (no model calls)."""
+    manifest = {e["id"]: e for e in load_manifest()}
+    results = []
+    for result_file in sorted((run_dir / "results").glob("*/result.json")):
+        result = json.loads(result_file.read_text(encoding="utf-8"))
+        entry = manifest[result["id"]]
+        if not result.get("timed_out"):
+            result["ground_truth_grade"] = graders.grade(entry, result_file.parent, PROMPTS_DIR)
+        result["tester_note"] = entry.get("tester_note")
+        result["multi_turn_script"] = entry.get("multi_turn_script")
+        result_file.write_text(json.dumps(result, indent=2), encoding="utf-8")
+        results.append(result)
+    run_meta = json.loads((run_dir / "RUN_META.json").read_text(encoding="utf-8"))
+    scoreboard = generate_scoreboard(results, run_dir, run_meta)
+    for r in results:
+        icon = "PASS" if is_prompt_pass(r) else "FAIL"
+        grade = r["ground_truth_grade"]
+        print(f"{icon} {r['id']:6s} {r['verdict']:16s} gt={gt_grade(r):7s} {grade.get('reason', '')}")
+    print(f"Pass Rate: {scoreboard['pass_rate_pct']}% ({scoreboard['passed']}/{scoreboard['total_prompts']}); "
+          f"stage only {scoreboard['stage_passed']}/{scoreboard['total_prompts']}; "
+          f"false_positives={len(scoreboard['false_positives'])}")
+    return 1 if scoreboard["false_positives"] else 0
 
 
 def main():
@@ -377,13 +416,17 @@ def main():
                         help="Alias for --category with comma-separated list")
     parser.add_argument("--fail-fast", "--stop-on-failure", action="store_true",
                         help="Stop execution immediately upon any prompt failure")
-    parser.add_argument("--prompt-id", default=None,
+    parser.add_argument("--prompt-id", "--id", dest="prompt_id", default=None,
                         help="Run only a specific prompt by ID (e.g. '01-02')")
     parser.add_argument("--dry-run", action="store_true",
                         help="List prompts that would be run without executing")
     parser.add_argument("--timeout", type=int, default=TIMEOUT_PER_PROMPT,
                         help=f"Per-prompt timeout in seconds (default: {TIMEOUT_PER_PROMPT})")
+    parser.add_argument("--regrade", metavar="RUN_DIR", default=None,
+                        help="re-grade a finished run with the current graders and rewrite its scoreboard")
     args = parser.parse_args()
+    if args.regrade:
+        sys.exit(regrade_run(Path(args.regrade)))
 
     entries = load_manifest(category_filter=args.category)
     if args.prompt_id:
@@ -445,7 +488,7 @@ def main():
         result = run_single_prompt(entry, run_dir, args.model, args.reasoning, args.timeout)
         results.append(result)
         icon = "PASS" if is_prompt_pass(result) else "FAIL"
-        print(f"{icon} {result['verdict']:20s} ({result['elapsed_seconds']:.1f}s)")
+        print(f"{icon} {result['verdict']:20s} gt={gt_grade(result):7s} ({result['elapsed_seconds']:.1f}s)")
 
         if args.fail_fast and not is_prompt_pass(result):
             print(f"\n[FAIL-FAST] Stopping execution immediately after failure on {prompt_id} ({result['verdict']}).")
@@ -461,8 +504,13 @@ def main():
     print(f"Scoreboard: {run_dir / 'SCOREBOARD.md'}")
 
     gt = scoreboard["ground_truth"]
+    print(f"Stage only: {scoreboard['stage_passed']}/{scoreboard['total_prompts']} reached the expected stage")
     print(f"Ground truth: PASS={gt['PASS']} FAIL={gt['FAIL']} MANUAL={gt['MANUAL']} "
           f"false_positives={len(scoreboard['false_positives'])}")
+    for fp in scoreboard["false_positives"]:
+        print(f"    FALSE POSITIVE {fp['id']}: {fp['reason']}")
+    if scoreboard["manual_spot_check"]:
+        print(f"Needs human spot check (not verified): {', '.join(scoreboard['manual_spot_check'])}")
     if scoreboard["regressions_hit"]:
         print(f"\nKNOWN REGRESSIONS HIT: {len(scoreboard['regressions_hit'])}")
         for r in scoreboard["regressions_hit"]:

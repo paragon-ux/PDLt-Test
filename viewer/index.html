@@ -180,7 +180,11 @@ async function selectResult(path) {
 }
 
 function gradeClass(g) { return g === 'PASS' ? 'ok' : g === 'FAIL' ? 'bad' : g === 'MANUAL' ? 'warn' : ''; }
-function verdictClass(r) { return r.verdict === r.expected_stage || (r.expected_stage === 'WAITING_INPUT' && r.verdict === 'CLOSED_SUCCESS') ? 'ok' : 'bad'; }
+function verdictClass(r) {
+  // Same rule as run_catalogue.is_prompt_pass: expected stage and no ground-truth failure.
+  const stage = r.verdict === r.expected_stage || (r.expected_stage === 'WAITING_INPUT' && r.verdict === 'CLOSED_SUCCESS');
+  return stage && r.grade !== 'FAIL' && r.grade !== 'ERROR' ? 'ok' : 'bad';
+}
 
 function renderResults() {
   const run = state.run;

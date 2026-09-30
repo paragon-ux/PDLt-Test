@@ -545,7 +545,7 @@ class ApiWorker:
                 "- AVAILABLE_EXECUTION_TOOLS describes the execution environment exactly. Work within it. REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (EXEC-01); an environment capability is never user input.\n"
                 "- SUPPLIED_EXECUTION_INPUT_SOURCE, when present, is the user's original source text: use its data, and let the confirmed prompt govern where they differ (AUTH-04).\n"
                 "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"
-                "- When the deliverable includes Python code, the host runs each ```python block as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
+                "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
             )
 
         if instructions:

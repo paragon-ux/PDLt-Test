@@ -29,6 +29,7 @@ python run_catalogue.py --dry-run       # validate manifest, list prompts
 python run_catalogue.py --prompt-id 06-04
 python run_catalogue.py --category 13 --fail-fast
 python run_catalogue.py                 # full 105-prompt run, one attempt each
+python run_catalogue.py --regrade catalogue-runs/run-<ts>   # re-score a finished run, no model calls
 ```
 
 REPL fast path: `/confirm`, `/revise <feedback>`, `/stop`. `pdlt --help` lists the rest.
@@ -56,7 +57,7 @@ Read-only and localhost-only. Browse every `catalogue-runs/run-*` (scoreboard, p
 
 ## Scoring
 
-`run_catalogue.py` writes `catalogue-runs/run-<ts>/` with `RUN_META.json`, `SCOREBOARD.{json,md}` and per-prompt `result.json` + transcript. The pass definition (`is_prompt_pass`) is stage-based and unchanged; `graders.py` adds ground-truth grades (PASS / FAIL / MANUAL / N/A) and reports **false positives** (a stage pass with a wrong answer). See [`GOAL.md`](GOAL.md) for the execution contract.
+`run_catalogue.py` writes `catalogue-runs/run-<ts>/` with `RUN_META.json`, `SCOREBOARD.{json,md}` and per-prompt `result.json` + transcript. A prompt passes (`is_prompt_pass`) when it reaches its manifest stage **and** its ground-truth grade is not FAIL. `graders.py` grades answers (PASS / FAIL / MANUAL / N/A); a stage match with a FAIL grade is a **false positive**, reported by id and never counted as a pass. MANUAL prompts are listed for the human spot check. See [`GOAL.md`](GOAL.md) for the execution contract.
 
 ## Sandbox
 

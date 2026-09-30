@@ -70,9 +70,25 @@ _PYTHON_BLOCK = re.compile(r"```(?:python|py)[ \t]*\n(.*?)```", re.S)
 
 
 def _python_blocks(body: str) -> list[str]:
-    """Executable Python is declared, never guessed: only fenced blocks tagged
-    ``python`` or ``py`` are run by the host."""
-    return [block for block in _PYTHON_BLOCK.findall(body or "") if block.strip()]
+    """The Python the host runs, decided by grammar, never by keywords.
+
+    A deliverable body that is itself a Python module (it parses, and it does more
+    than state a bare literal) is one program. Otherwise every fenced block tagged
+    ``python`` or ``py`` is a program. Prose never parses as a module.
+    """
+    import ast
+
+    text = body or ""
+    try:
+        module = ast.parse(text)
+    except (SyntaxError, ValueError):
+        module = None
+    if module is not None and any(
+        not (isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant))
+        for node in module.body
+    ):
+        return [text]
+    return [block for block in _PYTHON_BLOCK.findall(text) if block.strip()]
 
 
 def _attach_result_ir(body: str, ir_dict: dict[str, Any]) -> str:

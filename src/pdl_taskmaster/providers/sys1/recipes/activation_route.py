@@ -23,6 +23,22 @@ def _env_value(env: dict[str, Any], key: str, var: str, default: str) -> Any:
     return value if value is not None else os.environ.get(var, default)
 
 
+def boundary_refusal(state: dict[str, Any]) -> str:
+    """The published refusal: the configured environment boundaries, stated as facts.
+
+    The same text for every refused request; System 1 decided the route, and this
+    names the boundaries it routed against without guessing which one applied.
+    """
+    network = str(state.get("sandbox_network", "")).strip().lower()
+    network_text = "enabled" if network in {"1", "true", "yes", "on", "enabled"} else "disabled"
+    return (
+        "This request is outside what this system can answer in its configured environment, so it "
+        "was not attempted. The environment boundaries are: policy scope "
+        f"'{state.get('policy_scope')}'; network access {network_text}; knowledge cutoff "
+        f"{state.get('knowledge_cutoff')}, so events after that date cannot be known."
+    )
+
+
 class ActivationRouteRecipe(Sys1Recipe):
     """Evaluates whether an initial user request requires the protocol or can bypass."""
 
@@ -61,13 +77,13 @@ class ActivationRouteRecipe(Sys1Recipe):
             criteria=criteria,
             choices=["APPLY_PROTOCOL", "PROTOCOL_DISCUSSION", "BYPASS", "BLOCKED_BY_HIGHER_PRIORITY"],
         )
+        self.environment_state = {
+            "sandbox_network": sandbox_network,
+            "policy_scope": policy_scope,
+            "knowledge_cutoff": knowledge_cutoff,
+        }
         return Sys1Request(
-            state={
-                "request": request_text,
-                "sandbox_network": sandbox_network,
-                "policy_scope": policy_scope,
-                "knowledge_cutoff": knowledge_cutoff,
-            },
+            state={"request": request_text, **self.environment_state},
             questions={"route": question},
         )
 
@@ -82,8 +98,8 @@ class ActivationRouteRecipe(Sys1Recipe):
         metadata = dict(response_body.get("metadata", {}))
 
         if choice == "BLOCKED_BY_HIGHER_PRIORITY":
-            refusal_response = ans.get("response") or ans.get("refusal_response") or (
-                "This request exceeds the supported policy and environmental scope boundaries of this system."
+            refusal_response = ans.get("response") or ans.get("refusal_response") or boundary_refusal(
+                getattr(self, "environment_state", None) or {}
             )
             metadata["refusal_response"] = refusal_response
 
@@ -103,9 +119,8 @@ class ActivationRouteRecipe(Sys1Recipe):
         route = result.verdict if result.passed_gating else "APPLY_PROTOCOL"
         response = None
         if route == "BLOCKED_BY_HIGHER_PRIORITY":
-            response = (
-                result.metadata.get("refusal_response")
-                or "This request exceeds the supported policy and environmental scope boundaries of this system."
+            response = result.metadata.get("refusal_response") or boundary_refusal(
+                getattr(self, "environment_state", None) or {}
             )
         return {
             "route": route,

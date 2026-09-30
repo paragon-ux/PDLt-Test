@@ -180,3 +180,25 @@ def test_request_input_pauses(tmp_path):
     )
     assert engine.controller.state.stage == Stage.WAITING_INPUT
     assert not response.closed
+
+
+def test_unfenced_program_body_is_run(tmp_path):
+    """Models return code as the raw body; grammar, not fences or keywords, decides."""
+    body = 'import json\nprint("WITNESS: " + json.dumps({"answer": 7}))'
+    engine, _, _, events = _run(
+        tmp_path, [{"kind": "RESULT", "body": body, "result_ir": _ir()}],
+        problem_class="VERIFIED_EXECUTION",
+    )
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert "SANDBOX_RUN" in _kinds(events)
+    passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
+    assert passed["sandbox_reproduced"]
+
+
+def test_python_program_detection_is_grammatical():
+    from pdl_taskmaster.runtime.session_engine import _python_blocks
+
+    assert _python_blocks("import json\nprint(1)") == ["import json\nprint(1)"]
+    assert _python_blocks("Therefore no algorithm satisfies all three constraints.") == []
+    assert _python_blocks("42") == [] and _python_blocks('"""only a docstring"""') == []
+    assert _python_blocks("Answer:\n```python\nprint(2)\n```") == ["print(2)\n"]
