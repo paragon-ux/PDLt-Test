@@ -1,0 +1,385 @@
+{
+  "turn_id": "turn_001",
+  "status": "CLOSED_SUCCESS",
+  "deliverable_sha256": "710925da54cea445b16e41f34df6c2d2b3532d18ea30bc52eeb268cfe6d1dba4",
+  "events": [
+    {
+      "at_utc": "2026-09-30T18:09:56.796981+00:00",
+      "kind": "WORKSPACE_CREATED",
+      "payload": {
+        "workspace_id": "W-3ab7d38417c7",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:09:56.796981+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:09:57.269598+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 0.99
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:09:57.939520+00:00",
+      "kind": "EXECUTION_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "tier": "STANDARD",
+        "passed_gating": false,
+        "step_limit": 10000000,
+        "timeout_seconds": 30.0,
+        "memory_mb": 256
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:09:57.942518+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": true,
+        "domain": "general"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:09:57.960500+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:09:59.928385+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:09:59.930636+00:00",
+      "kind": "TASK_ENTITY_DROPPED_UNSAFE",
+      "payload": {
+        "count": 43
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:09:59.941658+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:03.456181+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:03.471759+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-9a4abe18cb",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:03.487353+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-9a4abe18cb-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:03.527623+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-9a4abe18cb-P1"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:03.534635+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:04.547672+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:04.547672+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-9a4abe18cb-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:04.594547+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-9a4abe18cb-R1"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:04.611177+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:31.996872+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:31.999878+00:00",
+      "kind": "VERIFICATION_REPAIR",
+      "payload": {
+        "errors": [
+          "Substantive verification error: Missing witness in Result IR for task requiring verified execution."
+        ]
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:32.002944+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0005-execute"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:45.961645+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0005-execute"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:46.982963+00:00",
+      "kind": "SANDBOX_RUN",
+      "payload": {
+        "block": 1,
+        "tier": "STANDARD",
+        "exit_code": 0,
+        "step_budget_exceeded": false,
+        "timed_out": false,
+        "oom_killed": false,
+        "duration_ms": 1022.0
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:46.982963+00:00",
+      "kind": "VERIFICATION_PASSED",
+      "payload": {
+        "provisional": false,
+        "sandbox_reproduced": true,
+        "domain_checked": false,
+        "details": {
+          "polarity": "positive",
+          "data_keys": [
+            "triples"
+          ]
+        }
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:46.982963+00:00",
+      "kind": "RESULT_IR_VALIDATED",
+      "payload": {
+        "ir": {
+          "files": [
+            {
+              "filename": "partition_search.py",
+              "satisfies": [
+                "R1",
+                "R2",
+                "R3",
+                "R4"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "import itertools, sys, json\\nL = {71, 97, 54, 56, 44, 158, 45, 58, 82, 135, 113, 117, 86, 40, 12, 185, 63, 50, 111, 72, 90, 109, 61, 13, 92, 60, 91, 35, 114, 94, 105, 26, 15, 51, 102, 118, 76, 32, 108, 23, 22, 134, 83, 43, 64}"
+              }
+            }
+          ],
+          "reconciliation": [
+            {
+              "requirement": "R1",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "L = {71, 97, 54, 56, 44, 158, 45, 58, 82, 135, 113, 117, 86, 40, 12, 185, 63, 50, 111, 72, 90, 109, 61, 13, 92, 60, 91, 35, 114, 94, 105, 26, 15, 51, 102, 118, 76, 32, 108, 23, 22, 134, 83, 43, 64}"
+              }
+            },
+            {
+              "requirement": "R2",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "triples = [(a,b,a+b) for a,b in itertools.combinations(L,2) if a+b in L]"
+              }
+            },
+            {
+              "requirement": "R3",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "if backtrack():\\n    result = {\\\"triples\\\": solution}"
+              }
+            },
+            {
+              "requirement": "R4",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "print('WITNESS: ' + json.dumps(...))"
+              }
+            }
+          ],
+          "open_defects": [],
+          "witness": {
+            "polarity": "positive",
+            "evidence": {
+              "path": "execution://witness"
+            },
+            "data": {
+              "triples": [
+                [
+                  13,
+                  92,
+                  105
+                ],
+                [
+                  12,
+                  97,
+                  109
+                ],
+                [
+                  15,
+                  43,
+                  58
+                ],
+                [
+                  56,
+                  102,
+                  158
+                ],
+                [
+                  22,
+                  61,
+                  83
+                ],
+                [
+                  32,
+                  86,
+                  118
+                ],
+                [
+                  35,
+                  82,
+                  117
+                ],
+                [
+                  26,
+                  50,
+                  76
+                ],
+                [
+                  45,
+                  63,
+                  108
+                ],
+                [
+                  64,
+                  71,
+                  135
+                ],
+                [
+                  44,
+                  90,
+                  134
+                ],
+                [
+                  23,
+                  91,
+                  114
+                ],
+                [
+                  40,
+                  54,
+                  94
+                ],
+                [
+                  51,
+                  60,
+                  111
+                ],
+                [
+                  72,
+                  113,
+                  185
+                ]
+              ]
+            },
+            "provisional": false
+          }
+        }
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:10:46.994983+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_001",
+        "status": "CLOSED_SUCCESS"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-09-30T18:10:46.994983+00:00"
+}

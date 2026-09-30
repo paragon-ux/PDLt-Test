@@ -1,0 +1,25 @@
+{"at_utc":"2026-09-30T18:07:52.338380+00:00","kind":"WORKSPACE_CREATED","payload":{"workspace_id":"W-cfb69e1785e4","turn_id":"turn_001"}}
+{"at_utc":"2026-09-30T18:07:52.339377+00:00","kind":"EXPLICIT_INVOCATION_OBSERVED","payload":{"substantive_request_present":true}}
+{"at_utc":"2026-09-30T18:07:52.614104+00:00","kind":"ACTIVATION_ROUTED","payload":{"verdict":"APPLY_PROTOCOL","passed_gating":false,"confidence":0.76}}
+{"at_utc":"2026-09-30T18:07:53.281759+00:00","kind":"EXECUTION_PROFILE_ROUTED","payload":{"predicted_steps":"WITHIN_10M_STEPS","tier":"STANDARD","passed_gating":true,"step_limit":10000000,"timeout_seconds":30.0,"memory_mb":256}}
+{"at_utc":"2026-09-30T18:07:53.284756+00:00","kind":"PROBLEM_CLASS_CLASSIFIED","payload":{"requires_verified_execution":false,"domain":null}}
+{"at_utc":"2026-09-30T18:07:53.298704+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-09-30T18:07:54.834098+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-09-30T18:07:54.834098+00:00","kind":"TASK_ENTITY_DROPPED_UNSAFE","payload":{"count":2}}
+{"at_utc":"2026-09-30T18:07:54.850263+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}
+{"at_utc":"2026-09-30T18:07:58.942907+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}
+{"at_utc":"2026-09-30T18:07:58.944893+00:00","kind":"TASK_ENTITY_COVERAGE_RETRY","payload":{"missing":1}}
+{"at_utc":"2026-09-30T18:07:58.955912+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0003-draft_prompt"}}
+{"at_utc":"2026-09-30T18:08:02.000859+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0003-draft_prompt"}}
+{"at_utc":"2026-09-30T18:08:02.003814+00:00","kind":"TASK_ENTITY_COVERAGE_MISSING","payload":{"entities":["create a collection"],"phase":"draft_prompt"}}
+{"at_utc":"2026-09-30T18:08:02.014862+00:00","kind":"PROTOCOL_BOUND","payload":{"instance_id":"I-b4a0322143","turn_id":"turn_001"}}
+{"at_utc":"2026-09-30T18:08:02.019362+00:00","kind":"ARTIFACT_PUBLISHED","payload":{"kind":"prompt","artifact_id":"I-b4a0322143-P1","confirmed":false}}
+{"at_utc":"2026-09-30T18:08:02.138099+00:00","kind":"ARTIFACT_CONFIRMED","payload":{"kind":"prompt","artifact_id":"I-b4a0322143-P1"}}
+{"at_utc":"2026-09-30T18:08:02.154750+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PLAN","stage":"30_plan","invocation_id":"0004-draft_plan"}}
+{"at_utc":"2026-09-30T18:08:02.815686+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PLAN","stage":"30_plan","invocation_id":"0004-draft_plan"}}
+{"at_utc":"2026-09-30T18:08:02.831314+00:00","kind":"ARTIFACT_PUBLISHED","payload":{"kind":"plan","artifact_id":"I-b4a0322143-R1","confirmed":false}}
+{"at_utc":"2026-09-30T18:08:02.878607+00:00","kind":"ARTIFACT_CONFIRMED","payload":{"kind":"plan","artifact_id":"I-b4a0322143-R1"}}
+{"at_utc":"2026-09-30T18:08:02.899263+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"EXECUTE","stage":"50_execution","invocation_id":"0005-execute"}}
+{"at_utc":"2026-09-30T18:08:16.425140+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"EXECUTE","stage":"50_execution","invocation_id":"0005-execute"}}
+{"at_utc":"2026-09-30T18:08:16.430832+00:00","kind":"TURN_STATUS","payload":{"turn_id":"turn_001","status":"CLOSED_SUCCESS"}}
+{"at_utc":"2026-09-30T18:08:16.437825+00:00","kind":"EXECUTION_OUTCOME_PUBLISHED","payload":{"kind":"RESULT","source_prompt_id":"I-b4a0322143-P1","source_plan_id":"I-b4a0322143-R1","result_body_hash":"5aee6679f5ab17f7b6f04ed27186eeb6e8f57cde22276240fd99efde7770908f","confirmed_prompt_hash":"5c2da85ad82bb7557f77979293563f8f9f24534a466b1f28768f03be67308a77","confirmed_plan_hash":"ba4773305f15781ce25513c187cc595dc6ea7bcb54baa4c601c2e34d22162597"}}

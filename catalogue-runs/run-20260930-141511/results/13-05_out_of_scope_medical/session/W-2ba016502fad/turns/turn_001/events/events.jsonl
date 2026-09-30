@@ -1,0 +1,4 @@
+{"at_utc":"2026-09-30T18:18:36.862237+00:00","kind":"WORKSPACE_CREATED","payload":{"workspace_id":"W-2ba016502fad","turn_id":"turn_001"}}
+{"at_utc":"2026-09-30T18:18:36.863235+00:00","kind":"EXPLICIT_INVOCATION_OBSERVED","payload":{"substantive_request_present":true}}
+{"at_utc":"2026-09-30T18:18:37.191530+00:00","kind":"ACTIVATION_ROUTED","payload":{"verdict":"BLOCKED_BY_HIGHER_PRIORITY","passed_gating":true,"confidence":0.97}}
+{"at_utc":"2026-09-30T18:18:37.192534+00:00","kind":"PROTOCOL_REFUSED","payload":{"phase":"activation"}}

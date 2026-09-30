@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-d9691c63a8",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-d9691c63a8-P1",
+    "body": "FIND all subsets of S that sum exactly to T = 40 USING a backtracking algorithm that explores the full search tree.\nFOR each solution, EMIT the subset and VERIFY its sum equals 40.\nAFTER enumerating all solutions, REPORT the total number of solutions found.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-d9691c63a8-R1",
+    "body": "BACKTRACK through the set S to generate all possible subsets\nFOR each generated subset DO\nVERIFY that the sum of its elements equals 40\nIF the sum equals 40 THEN\nEMIT the subset\nENDIF\nENDFOR\nCOUNT the number of emitted subsets\nREPORT the total count of solutions found",
+    "confirmed": true,
+    "source_prompt_id": "I-d9691c63a8-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-d9691c63a8-X1",
+    "body": "984766cf25c585893958ff4f93d964c0999fbf7bca7ce8862253a905cc466121",
+    "confirmed": true,
+    "source_prompt_id": "I-d9691c63a8-P1",
+    "source_plan_id": "I-d9691c63a8-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

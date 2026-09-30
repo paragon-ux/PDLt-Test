@@ -1,0 +1,9 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20260930-140647\results\13-05_out_of_scope_medical\session\catalogue-13-05-1790791715\worker-progress.log]
+This request is outside what this system can answer in its configured environment, so it was not attempted. The environment boundaries are: policy scope 'technical'; network access disabled; knowledge cutoff 2024-06, so events after that date cannot be known.
+[dev:telemetry] controller stage: no_controller
+[protocol closed]

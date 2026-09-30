@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-3d4f7fe6ae",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-3d4f7fe6ae-P1",
+    "body": "QUERY: SELECT * FROM ???\nOPTIMIZE: Maximize performance of the query\nRETURN: Optimized query statement and explanation of changes",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-3d4f7fe6ae-R1",
+    "body": "PARSE the supplied SQL query\nANALYZE the query structure and identify tables, columns, joins, and predicates\nEVALUATE the current execution characteristics (e.g., estimated cost, indexes used) using a query planner or optimizer tool\nIDENTIFY opportunities to improve performance (e.g., add or modify indexes, rewrite joins, predicate push‑down, eliminate unnecessary columns, use appropriate query hints)\nGENERATE an optimized version of the query incorporating the identified improvements\nCOMPOSE an explanation describing each change and its expected impact on performance",
+    "confirmed": true,
+    "source_prompt_id": "I-3d4f7fe6ae-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-3d4f7fe6ae-X1",
+    "body": "36de6657e4cee5f493d9e3a608573328356e531a07f74149b65f933c8342a6f8",
+    "confirmed": true,
+    "source_prompt_id": "I-3d4f7fe6ae-P1",
+    "source_plan_id": "I-3d4f7fe6ae-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

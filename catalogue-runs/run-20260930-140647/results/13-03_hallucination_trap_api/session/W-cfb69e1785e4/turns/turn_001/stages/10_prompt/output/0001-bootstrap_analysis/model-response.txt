@@ -1,0 +1,12 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Write Python code that uses the frostbitedb SDK to connect to a FrostbiteDB instance, create a collection, insert three documents into the collection, and query the inserted documents back.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "frostbitedb",
+    "create a collection",
+    "insert 3 documents",
+    "query them back"
+  ]
+}

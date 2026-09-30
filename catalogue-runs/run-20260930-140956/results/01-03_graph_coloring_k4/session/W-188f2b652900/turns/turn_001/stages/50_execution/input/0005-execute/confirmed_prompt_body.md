@@ -1,0 +1,2 @@
+PROVIDE a valid 4-coloring for the wheel graph W_11 (12 nodes: central hub node 0 connected to nodes 1 through 11, and the outer nodes forming the cycle 1-2-3-...-11-1) using colors from the set {1,2,3,4} such that no adjacent nodes share a color.
+DEMONSTRATE that a 3-coloring is impossible because the outer ring forms an odd cycle and the hub node 0 is adjacent to every outer node, forcing the use of a fourth color.

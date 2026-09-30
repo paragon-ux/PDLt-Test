@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-dc7c46f095",
+  "stage": "CLOSED_CANCELLED",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-dc7c46f095-P1",
+    "body": "READ the variables x, y, and z and the constraints C1, C2, C3, C4, C5, and C6\nDETERMINE whether there exists an assignment of integer values 1, 2, or 3 to x, y, and z that satisfies all constraints\nIF such assignments exist THEN LIST all satisfying assignments\nELSE PROVIDE a minimal explanation of the conflicting constraints",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-dc7c46f095-R1",
+    "body": "READ the variables x, y, and z and the constraints C1 through C6\nGENERATE all possible assignments of integer values 1, 2, or 3 to x, y, and z\nFOR each assignment\nEVALUATE whether the assignment satisfies every constraint C1, C2, C3, C4, C5, and C6\nIF the assignment satisfies all constraints THEN ADD the assignment to a collection of satisfying assignments\nENDFOR\nIF the collection of satisfying assignments is non‑empty THEN\nPREPARE a list of all satisfying assignments for output\nELSE\nIDENTIFY a minimal subset of constraints that are mutually contradictory\nPREPARE a brief explanation of the conflicting constraints for output\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": "I-dc7c46f095-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

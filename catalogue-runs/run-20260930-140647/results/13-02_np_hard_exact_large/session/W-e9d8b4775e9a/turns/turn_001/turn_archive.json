@@ -1,0 +1,310 @@
+{
+  "turn_id": "turn_001",
+  "status": "CLOSED_SUCCESS",
+  "deliverable_sha256": "c9b03f107e8f80714e6431ca819212eb7b4ac988718e1c3fe6a47e6ad56b2daa",
+  "events": [
+    {
+      "at_utc": "2026-09-30T18:07:19.521465+00:00",
+      "kind": "WORKSPACE_CREATED",
+      "payload": {
+        "workspace_id": "W-e9d8b4775e9a",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:19.521465+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:19.883839+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 0.91
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:20.400898+00:00",
+      "kind": "EXECUTION_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "tier": "STANDARD",
+        "passed_gating": false,
+        "step_limit": 10000000,
+        "timeout_seconds": 30.0,
+        "memory_mb": 256
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:20.403897+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": true,
+        "domain": "general"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:20.415996+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:22.805558+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:22.817962+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:26.277919+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:26.293922+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-6c9eda7a5e",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:26.304925+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-6c9eda7a5e-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:26.359614+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-6c9eda7a5e-P1"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:26.371935+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:27.471648+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:27.487261+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-6c9eda7a5e-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:27.548989+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-6c9eda7a5e-R1"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:27.587018+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:50.827981+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:50.906458+00:00",
+      "kind": "SANDBOX_RUN",
+      "payload": {
+        "block": 1,
+        "tier": "STANDARD",
+        "exit_code": 0,
+        "step_budget_exceeded": false,
+        "timed_out": false,
+        "oom_killed": false,
+        "duration_ms": 71.3
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:50.922061+00:00",
+      "kind": "WITNESS_OVERRIDDEN_BY_SANDBOX",
+      "payload": {}
+    },
+    {
+      "at_utc": "2026-09-30T18:07:50.922061+00:00",
+      "kind": "VERIFICATION_PASSED",
+      "payload": {
+        "provisional": false,
+        "sandbox_reproduced": true,
+        "domain_checked": false,
+        "details": {
+          "polarity": "positive",
+          "data_keys": [
+            "cover",
+            "size",
+            "matching_size"
+          ]
+        }
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:50.922061+00:00",
+      "kind": "RESULT_IR_VALIDATED",
+      "payload": {
+        "ir": {
+          "files": [
+            {
+              "filename": "min_vertex_cover.py",
+              "satisfies": [
+                "R1",
+                "R2",
+                "R3",
+                "R4"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "import itertools\\n\\ndef build_graph(n=50):\\n    edges = set()\\n    for i in range(n):\\n        for offset in (1, 7, 13):\\n            j = (i + offset) % n\\n            a, b = min(i, j), max(i, j)\\n            edges.add((a, b))\\n    return {i: set() for i in range(n)}, edges\\n...\\n    print(f\\\"WITNESS: {result}\\\")"
+              }
+            }
+          ],
+          "reconciliation": [
+            {
+              "requirement": "R1",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "def build_graph(n=50):\\n    edges = set()\\n    for i in range(n):\\n        for offset in (1, 7, 13):\\n            j = (i + offset) % n\\n            a, b = min(i, j), max(i, j)\\n            edges.add((a, b))\\n    return {i: set() for i in range(n)}, edges"
+              }
+            },
+            {
+              "requirement": "R2",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "cover = left  # all even vertices form a minimum vertex cover"
+              }
+            },
+            {
+              "requirement": "R3",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "matching_size, _, _ = hopcroft_karp(adj, left, right)\\n    min_cover_size = matching_size  # König's theorem"
+              }
+            },
+            {
+              "requirement": "R4",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": null,
+                "observed": "print(f\\\"WITNESS: {result}\\\")"
+              }
+            }
+          ],
+          "open_defects": [],
+          "witness": {
+            "polarity": "positive",
+            "evidence": {
+              "path": "execution://witness"
+            },
+            "data": {
+              "cover": [
+                0,
+                2,
+                4,
+                6,
+                8,
+                10,
+                12,
+                14,
+                16,
+                18,
+                20,
+                22,
+                24,
+                26,
+                28,
+                30,
+                32,
+                34,
+                36,
+                38,
+                40,
+                42,
+                44,
+                46,
+                48
+              ],
+              "size": 25,
+              "matching_size": 25
+            },
+            "provisional": false
+          }
+        }
+      }
+    },
+    {
+      "at_utc": "2026-09-30T18:07:50.922061+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_001",
+        "status": "CLOSED_SUCCESS"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-09-30T18:07:50.922061+00:00"
+}

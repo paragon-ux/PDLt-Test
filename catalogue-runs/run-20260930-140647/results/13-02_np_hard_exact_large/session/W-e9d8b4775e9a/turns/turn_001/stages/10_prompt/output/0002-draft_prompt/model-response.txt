@@ -1,0 +1,5 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "READ the definition of the 50-node regular graph where each node i connects to nodes (i+1) mod 50, (i+7) mod 50, and (i+13) mod 50\nCOMPUTE the minimum vertex cover of this graph\nENSURE the result is provably optimal, not an approximation\nRETURN the exact set of vertices constituting the minimum vertex cover",
+  "approach_handoff": "NONE"
+}

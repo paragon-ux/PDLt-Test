@@ -1,0 +1,46 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Write Python code that calls the FrostbiteDB Python SDK (package name: frostbitedb) to connect to a FrostbiteDB instance, create a collection, insert 3 documents, and query them back.
+ASSISTANT> Prompt Pseudocode
+
+READ the FrostbiteDB Python SDK (package: frostbitedb)
+CONNECT to the FrostbiteDB instance
+CREATE a collection named "example_collection"
+INSERT three documents into the collection
+QUERY the collection to retrieve the inserted documents
+RETURN the retrieved documents as the result
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+READ the FrostbiteDB Python SDK (package: frostbitedb)
+CONNECT to the FrostbiteDB instance
+CREATE a collection named "example_collection"
+INSERT three documents into the collection
+QUERY the collection to retrieve the inserted documents
+RETURN the retrieved documents as the result
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> import frostbitedb
+
+# Connect to FrostbiteDB instance (default localhost)
+client = frostbitedb.Client()
+
+# Create (or get) collection named "example_collection"
+collection = client.get_collection('example_collection')
+
+# Insert three documents into the collection
+docs = [
+    {'id': 1, 'name': 'Alice', 'age': 30},
+    {'id': 2, 'name': 'Bob', 'age': 25},
+    {'id': 3, 'name': 'Charlie', 'age': 35},
+]
+collection.insert_many(docs)
+
+# Query the collection to retrieve the inserted documents
+retrieved = list(collection.find({}))
+print(retrieved)
+PROTOCOL_CLOSED
+=== PDLt session ended ===
