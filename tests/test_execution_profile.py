@@ -183,3 +183,61 @@ def test_system1_sees_the_task_and_the_sandbox(tmp_path):
     assert "network access is disabled" in state["execution_environment"]
     assert "program's own code" in state["step_definition"]
     assert "WITHIN_100K_STEPS grants 100,000 steps" in state["step_budgets"]
+
+
+class VerifiedPredictingSys1(PredictingSys1):
+    """Classifies the task as needing verified execution and returns a fixed step distribution."""
+
+    def __init__(self, distribution: dict):
+        super().__init__("WITHIN_10M_STEPS")
+        self.distribution = distribution
+
+    def call(self, request):
+        name = next(iter(request.questions))
+        if name == "execution_profile":
+            top = max(self.distribution, key=self.distribution.get)
+            return {"answers": {name: {"choice": top, "confidence": self.distribution[top],
+                                       "probabilities": self.distribution}}}, 1.0
+        if name == "problem_class":
+            return {"answers": {name: {"choice": "VERIFIED_EXECUTION", "confidence": 0.97,
+                                       "probabilities": {"VERIFIED_EXECUTION": 0.97, "STANDARD_EXECUTION": 0.03}}}}, 1.0
+        return super().call(request)
+
+
+def test_budget_gate_refuses_uncertifiable_beyond_budget_tasks(tmp_path):
+    """More likely than not beyond the largest budget, certified result required, no verifier: refuse."""
+    calls: list = []
+    sys1 = VerifiedPredictingSys1({"BEYOND_100M_STEPS": 0.65, "WITHIN_10M_STEPS": 0.35})
+    engine = SessionEngine(ROOT, lambda r: calls.append(r) or "", workspace_root=tmp_path, sys1_client=sys1)
+    response = engine.handle_user_message("$confirm-with-pseudocode find the exact optimum")
+    assert response.refused and "100,000,000" in response.text and "certif" in response.text
+    assert calls == []  # System 2 never ran
+    assert any(e["kind"] == "BUDGET_REFUSAL" for e in engine.workspace._events)
+
+
+@pytest.mark.parametrize("p_beyond", [0.2, 0.5])
+def test_budget_gate_needs_more_likely_than_not(tmp_path, p_beyond):
+    sys1 = VerifiedPredictingSys1({"BEYOND_100M_STEPS": p_beyond, "WITHIN_10M_STEPS": 1 - p_beyond})
+    engine, executes, events = _session(tmp_path, sys1)
+    assert not engine.refused and executes
+    assert not any(e["kind"] == "BUDGET_REFUSAL" for e in events)
+
+
+def test_budget_gate_does_not_apply_to_standard_tasks(tmp_path):
+    sys1 = PredictingSys1("BEYOND_100M_STEPS", 0.97)
+    engine, executes, _ = _session(tmp_path, sys1)
+    assert not engine.refused and executes
+
+
+def test_activation_route_sees_the_execution_environment(tmp_path):
+    class Recording(PredictingSys1):
+        def call(self, request):
+            if "route" in request.questions:
+                self.state = request.state
+                self.criteria = request.questions["route"].criteria
+            return super().call(request)
+
+    sys1 = Recording("WITHIN_10M_STEPS")
+    _session(tmp_path, sys1)
+    assert "standard library only" in sys1.state["execution_environment"]
+    assert "execution_environment does not provide" in sys1.criteria["BLOCKED_BY_HIGHER_PRIORITY"]

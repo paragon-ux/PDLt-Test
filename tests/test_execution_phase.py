@@ -62,7 +62,8 @@ def _run(tmp_path, execute_replies: list[dict], *, problem_class: str = "STANDAR
         if req.operation == "DRAFT_PLAN":
             return json.dumps({"neutral_plan_body": PLAN})
         if req.operation == "EXECUTE":
-            return json.dumps(replies.pop(0))
+            reply = replies.pop(0)
+            return reply if isinstance(reply, str) else json.dumps(reply)
         raise AssertionError(f"unexpected operation {req.operation}")
 
     engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path,
@@ -254,3 +255,22 @@ def test_citation_bookkeeping_is_recorded_not_blocking(tmp_path):
     findings = next(e for e in events if e["kind"] == "RESULT_IR_CITATION_FINDINGS")["payload"]["findings"]
     assert any("not a verbatim substring" in f for f in findings)
     assert any("R2 is not reconciled" in f for f in findings)
+
+
+def test_wire_retry_keeps_the_repair_findings(tmp_path):
+    """Run 143434 01-01: the repair reply was malformed JSON and the automatic wire
+    retry dropped the verification findings, so the model lost the task context."""
+    bad = {"kind": "RESULT", "body": "The answer is 9.", "result_ir": _ir()}  # witness missing
+    good = {"kind": "RESULT", "body": "```python\nprint('WITNESS: {\"answer\": 9}')\n```", "result_ir": _ir()}
+    engine, _, executes, _ = _run(tmp_path, [bad, '{"kind": "RESULT", "body": "unterminated', good],
+                                  problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 3
+    assert "host-side verification findings" in executes[2].prompt
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+
+
+def test_raw_newlines_inside_json_strings_are_accepted():
+    from pdl_taskmaster.runtime.operation_bridge import OperationBridge
+
+    outcome = OperationBridge(ROOT).parse_execution('{"kind": "RESULT", "body": "line one\nline two"}')
+    assert outcome.body == "line one\nline two"

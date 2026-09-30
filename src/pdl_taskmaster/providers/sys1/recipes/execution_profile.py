@@ -32,6 +32,9 @@ PREDICTION_TIERS = {
     "BEYOND_100M_STEPS": "HEAVY_COMPUTE",
 }
 BUDGET_QUANTILE = 0.85
+# Policy gate: a task needing a certified result, with no registered verifier, is
+# refused when System 1 judges it more likely than not to exceed the largest budget.
+BEYOND_BUDGET_REFUSAL_PROBABILITY = 0.5
 FALLBACK_PREDICTION = "WITHIN_10M_STEPS"  # no usable evidence: the standard budget
 
 

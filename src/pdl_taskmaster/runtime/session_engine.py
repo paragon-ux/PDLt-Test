@@ -183,6 +183,7 @@ class SessionEngine:
         from pdl_taskmaster.verification.sandbox import DEFAULT_BUDGET
 
         self._host_execution_tools = available_execution_tools
+        self._profile_distribution: dict[str, float] = {}
         self._execution_budget = DEFAULT_BUDGET
         self.available_execution_tools = (
             available_execution_tools if available_execution_tools is not None
@@ -374,6 +375,10 @@ class SessionEngine:
                     f"(reason: {first_error}). Emit exactly one JSON object that conforms to the "
                     "declared output_schema for this operation, with no prose or code fences around it."
                 )
+            if operator_correction:
+                # A wire retry must not drop the caller's correction (e.g. verification
+                # findings for a repair): the worker is stateless.
+                correction = operator_correction + "\n\n" + correction
             retry_request = self.bridge.request(
                 operation,
                 values,
@@ -411,7 +416,8 @@ class SessionEngine:
 
         recipe = ActivationRouteRecipe()
         try:
-            body, duration_ms = client.call(recipe.build_request({"request": text}))
+            environment = {"execution_environment": self.sandbox.decision_state()["execution_environment"]}
+            body, duration_ms = client.call(recipe.build_request({"request": text, "env": environment}))
             result = recipe.parse_response(body, duration_ms=duration_ms)
         except Exception:
             return None
@@ -608,6 +614,36 @@ class SessionEngine:
             )
         return outcome
 
+    def _budget_refusal(self) -> str | None:
+        """Policy gate (TARGET_ARCHITECTURE §5): a task that needs a certified result
+        is refused when no domain verifier is registered for it and System 1 judges
+        it more likely than not to need more steps than the largest budget. Neither
+        a sandbox reproduction nor a checker could then certify it here."""
+        from pdl_taskmaster.providers.sys1.recipes.execution_profile import BEYOND_BUDGET_REFUSAL_PROBABILITY
+        from pdl_taskmaster.verification.output_verifier import OutputVerifier
+        from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS
+
+        if not self._requires_verified_execution:
+            return None
+        beyond = float(self._profile_distribution.get("BEYOND_100M_STEPS", 0.0))
+        if beyond <= BEYOND_BUDGET_REFUSAL_PROBABILITY:
+            return None
+        if OutputVerifier().get_checker(self._problem_domain).name != "fallback":
+            return None
+        largest = max(budget.step_limit for budget in EXECUTION_BUDGETS.values())
+        assert self.workspace is not None
+        self.workspace.append_event(
+            "BUDGET_REFUSAL",
+            {"p_beyond_largest_budget": round(beyond, 4), "largest_step_budget": largest},
+        )
+        return (
+            "This request asks for a result that must be certified, and it is more likely than not to need more "
+            f"than {largest:,} computation steps, the largest step budget of this environment. No verifier is "
+            "available to certify such a result by other means, so an exact answer could not be produced or "
+            "checked here and the request was not attempted. A smaller instance, or an explicitly approximate "
+            "answer, fits within the environment."
+        )
+
     def _route_execution_profile(self, request: str) -> None:
         """System 1 routes the task to a resource tier (TARGET_ARCHITECTURE §5).
 
@@ -618,6 +654,7 @@ class SessionEngine:
         from pdl_taskmaster.verification.sandbox import DEFAULT_BUDGET, EXECUTION_BUDGETS
 
         prediction, tier, passed, distribution = None, "STANDARD", False, {}
+        self._profile_distribution = {}
         if self.sys1_client is not None and self.sys1_client.is_configured:
             recipe = ExecutionProfileRecipe()
             try:
@@ -629,6 +666,7 @@ class SessionEngine:
                 routed = recipe.map_to_wire(result)
                 prediction, tier, passed = routed["prediction"], routed["tier"], result.passed_gating
                 distribution = {k: round(v, 4) for k, v in result.probabilities.items()}
+                self._profile_distribution = dict(result.probabilities)
             except Exception:
                 pass
         self._execution_budget = EXECUTION_BUDGETS.get(tier, DEFAULT_BUDGET)
@@ -684,6 +722,9 @@ class SessionEngine:
                     "domain": self._problem_domain.value if self._problem_domain else None,
                 },
             )
+        budget_refusal = self._budget_refusal()
+        if budget_refusal is not None:
+            return self._refuse(budget_refusal, traces, "budget")
         # Protocol v2: raw content is read by BOOTSTRAP_ANALYSIS only; the
         # compile op receives the sanitized compiled analysis.
         compiled = self._semantic_read(substantive_request, traces)

@@ -35,7 +35,8 @@ def boundary_refusal(state: dict[str, Any]) -> str:
         "This request is outside what this system can answer in its configured environment, so it "
         "was not attempted. The environment boundaries are: policy scope "
         f"'{state.get('policy_scope')}'; network access {network_text}; knowledge cutoff "
-        f"{state.get('knowledge_cutoff')}, so events after that date cannot be known."
+        f"{state.get('knowledge_cutoff')}, so events after that date cannot be known; execution environment: "
+        f"{state.get('execution_environment') or 'Python standard library only'}"
     )
 
 
@@ -56,6 +57,9 @@ class ActivationRouteRecipe(Sys1Recipe):
         sandbox_network = _env_value(env, "sandbox_network", "PDLT_SANDBOX_NETWORK", "false")
         policy_scope = _env_value(env, "policy_scope", "PDLT_POLICY_SCOPE", "technical")
         knowledge_cutoff = _env_value(env, "knowledge_cutoff", "PDLT_KNOWLEDGE_CUTOFF", "2024-06")
+        execution_environment = env.get("execution_environment") or (
+            "Python interpreter with the standard library only; third-party packages are not installed."
+        )
 
         instruction = as_decision_instruction(
             "Determine the correct routing for this user message: does it request substantive technical work "
@@ -68,8 +72,10 @@ class ActivationRouteRecipe(Sys1Recipe):
             "BYPASS": "The message is a pure greeting, farewell, or meta-interaction requiring no substantive work.",
             "BLOCKED_BY_HIGHER_PRIORITY": (
                 "The message must be refused immediately because, given the environment state, it falls outside "
-                "the stated policy_scope, requires network access while sandbox_network is disabled, or depends on "
-                "events occurring after the stated knowledge_cutoff, which cannot be known without live search."
+                "the stated policy_scope, requires network access while sandbox_network is disabled, depends on "
+                "events occurring after the stated knowledge_cutoff, which cannot be known without live search, or "
+                "depends on a software package, library, SDK or service that the stated execution_environment does "
+                "not provide, whose existence and behaviour therefore cannot be known or verified here."
             ),
         }
         question = Sys1Question(
@@ -81,6 +87,7 @@ class ActivationRouteRecipe(Sys1Recipe):
             "sandbox_network": sandbox_network,
             "policy_scope": policy_scope,
             "knowledge_cutoff": knowledge_cutoff,
+            "execution_environment": execution_environment,
         }
         return Sys1Request(
             state={"request": request_text, **self.environment_state},

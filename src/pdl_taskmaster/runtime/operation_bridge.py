@@ -226,21 +226,24 @@ class OperationBridge:
         stripped = model_text.strip().lstrip("\ufeff")
         last_error: json.JSONDecodeError | None = None
         value: Any = None
+        # strict=False accepts literal control characters (a raw newline) inside
+        # strings: the decoded value is identical to the escaped form, so this is
+        # transport tolerance, not content repair.
         try:
-            value = json.loads(stripped)
+            value = json.loads(stripped, strict=False)
         except json.JSONDecodeError as exc:
             last_error = exc
         if value is None:
             unfenced = re.sub(r"```(?:json)?", "", stripped).strip()
             try:
-                value = json.loads(unfenced)
+                value = json.loads(unfenced, strict=False)
             except json.JSONDecodeError as exc:
                 last_error = exc
         if value is None:
             # Balanced-brace scan: locate the first parseable JSON object
             # embedded in surrounding prose. raw_decode consumes exactly one
             # balanced value starting at each candidate brace.
-            decoder = json.JSONDecoder()
+            decoder = json.JSONDecoder(strict=False)
             for idx, char in enumerate(stripped):
                 if char != "{":
                     continue
