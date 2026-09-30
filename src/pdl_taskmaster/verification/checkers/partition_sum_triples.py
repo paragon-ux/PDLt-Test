@@ -1,4 +1,4 @@
-"""Deterministic Verifier for Sum Triples / Schur Triples Partition Problems (P2).
+"""Deterministic Verifier for Sum-Triples Partition Witnesses (P2, typed-domain only).
 
 Validates that:
 1. Every triple [a, b, c] satisfies the sum property (x + y == z).

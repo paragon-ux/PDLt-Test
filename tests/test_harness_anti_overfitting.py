@@ -110,10 +110,11 @@ def test_plan_soundness_accepts_pure_deduction_plan():
         "COMPUTE the number of sisters that each brother has\n"
         "EMIT the result in terms of M"
     )
-    # For standard execution tasks, plan must be 100% valid
-    result = validate_plan_soundness(analytical_plan, requires_verified_execution=False)
-    assert result.valid
-    assert len(result.violations) == 0
+    # The lint is task-neutral: identical verdict for every task class (GUARD-03/04)
+    for flag in (False, True):
+        result = validate_plan_soundness(analytical_plan, requires_verified_execution=flag)
+        assert result.valid, (flag, result.violations)
+        assert len(result.violations) == 0
 
 
 def test_guard_no_mrv_or_algorithmic_coaching_in_harness():
@@ -159,32 +160,43 @@ def test_guard_no_benchmark_probe_interceptions():
     )
 
 
+def _manifest_stems() -> list[str]:
+    manifest = ROOT / "prompts" / "CATALOGUE_MANIFEST.jsonl"
+    stems = []
+    for line in manifest.read_text(encoding="utf-8-sig").splitlines():
+        if line.strip():
+            stems.append(Path(json.loads(line)["file"]).stem.lower())
+    return stems
+
+
 def test_benchmark_contamination_scan():
-    """GUARD-01/02/04: Source code must have ZERO benchmark prompt IDs or probe tokens."""
+    """GUARD-01/02/04/05: harness plane has ZERO benchmark IDs, prompt stems, or problem vocabulary."""
     src_dir = ROOT / "src" / "pdl_taskmaster"
     prompt_id_pattern = re.compile(r"\b(0[1-9]|1[0-5])-(0[1-7])\b")
-    prohibited_tokens = [
-        "frostbite",
-        "frostbitedb",
-        "schur_triples",
-        "exact_cover_dlx",
-        "alice has m sisters",
+    word_tokens = [
+        r"frostbite", r"schur", r"\bdlx\b", r"dancing\s+link", r"algorithm\s+x", r"backtrack",
+        r"\bmrv\b", r"nobel", r"hamiltonian", r"palindrome", r"wheel\s+graph", r"alice\s+has",
+        r"catalogue_manifest", r"prompts/", r"solutions/",
     ]
+    stem_tokens = _manifest_stems()
+    assert len(stem_tokens) == 105
 
     violations: list[str] = []
-    for py_file in src_dir.rglob("*.py"):
-        content = py_file.read_text(encoding="utf-8")
+    files = list(src_dir.rglob("*.py")) + list(src_dir.rglob("*.txt"))
+    assert files
+    for path in files:
+        content = path.read_text(encoding="utf-8")
+        rel = path.relative_to(ROOT)
         prompt_match = prompt_id_pattern.search(content)
         if prompt_match:
-            violations.append(
-                f"{py_file.relative_to(ROOT)}: Contains benchmark prompt ID '{prompt_match.group(0)}'"
-            )
-        lower_content = content.lower()
-        for token in prohibited_tokens:
-            if token in lower_content:
-                violations.append(
-                    f"{py_file.relative_to(ROOT)}: Contains benchmark probe token '{token}'"
-                )
+            violations.append(f"{rel}: contains benchmark prompt ID '{prompt_match.group(0)}'")
+        lower = content.lower()
+        for pat in word_tokens:
+            if re.search(pat, lower):
+                violations.append(f"{rel}: contains benchmark/algorithm vocabulary /{pat}/")
+        for stem in stem_tokens:
+            if stem in lower:
+                violations.append(f"{rel}: contains benchmark prompt stem '{stem}'")
 
     assert not violations, (
         "GUARD VIOLATION: Benchmark contamination found in production source:\n"
@@ -192,3 +204,37 @@ def test_benchmark_contamination_scan():
     )
 
 
+def test_carried_sources_never_receive_feedback():
+    """GUARD-01: CARRIED_APPROACH_SOURCES is always exactly the user-originated `carried` list."""
+    text = (ROOT / "src" / "pdl_taskmaster" / "runtime" / "session_engine.py").read_text(encoding="utf-8")
+    body = text.split("def _draft_plan(")[1].split("\n    def ")[0]
+    values = re.findall(r'"CARRIED_APPROACH_SOURCES":\s*([^,\n]+),', body)
+    assert values, "expected CARRIED_APPROACH_SOURCES bindings in _draft_plan"
+    assert all(v.strip() == "carried" for v in values), values
+    assert "carried_feedback" not in text
+    assert "Operational approach requirement" not in text
+
+
+def test_worker_guidance_does_not_mandate_code_or_algorithms():
+    """GUARD-04: worker guidance never mandates a solver script or names a method."""
+    text = (ROOT / "src" / "pdl_taskmaster" / "providers" / "api_worker.py").read_text(encoding="utf-8")
+    assert "MUST contain the complete, executable Python" not in text
+    assert "specify the algorithm, data structures" not in text
+    for banned in ("solver script", "backtracking", "dynamic programming"):
+        assert banned not in text.lower(), banned
+
+
+def test_verifier_never_infers_domain_from_text():
+    """GUARD-02: problem text is never inspected for domain vocabulary."""
+    from pdl_taskmaster.verification.output_verifier import OutputVerifier
+
+    verifier = OutputVerifier()
+    for text in ("Partition the numbers into triples", "find an exact cover", "subset sum target"):
+        assert verifier.detect_domain(text) is None
+
+
+def test_problem_class_has_no_keyword_fast_path():
+    """GUARD-02: ProblemClass is System 1 only."""
+    from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
+
+    assert ProblemClassRecipe.classify_text_deterministic("determine whether a valid partition exists") is False
