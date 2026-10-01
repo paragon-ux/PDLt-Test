@@ -70,6 +70,13 @@ from pdl_taskmaster.runtime.text_blocks import fenced_blocks, split_published_ir
 
 from pdl_taskmaster.verification.error_registry import Finding, finding_codes  # noqa: E402
 
+def _is_wire_failure(exc: BaseException) -> bool:
+    """A reply that is not a valid output object: one the host failed to parse
+    (WireError) or one the provider's own schema check rejected (a ProviderError
+    marked wire_equivalent). Both are model-output failures, never harness errors."""
+    return isinstance(exc, WireError) or bool(getattr(exc, "wire_equivalent", False))
+
+
 class _FailedExecution:
     """Stand-in outcome for an EXECUTE response that never parsed (cut off at the
     output cap, or malformed past its wire retry): a RESULT with nothing in it."""
@@ -465,12 +472,12 @@ class SessionEngine:
             higher_priority_constraints=self.higher_priority_constraints,
             operator_correction=operator_correction,
         )
-        model_text = self._invoke(request, traces)
-        if parser is None:
-            return model_text
         try:
-            return parser(model_text)
-        except WireError as first_error:
+            model_text = self._invoke(request, traces)
+            return model_text if parser is None else parser(model_text)
+        except Exception as first_error:
+            if parser is None or not _is_wire_failure(first_error):
+                raise
             feedback = getattr(first_error, "operator_feedback", None)
             if feedback:
                 correction = (
@@ -494,11 +501,12 @@ class SessionEngine:
                 higher_priority_constraints=self.higher_priority_constraints,
                 operator_correction=correction,
             )
-            retry_text = self._invoke(retry_request, traces)
             try:
-                return parser(retry_text)
-            except WireError:
-                raise first_error from None
+                return parser(self._invoke(retry_request, traces))
+            except Exception as retry_error:
+                if _is_wire_failure(retry_error):
+                    raise first_error from None
+                raise
 
     def _refuse(self, text: str | None, traces: list[CallTrace], phase: str) -> EngineResponse:
         """Close on a boundary refusal (ADR-0019 amendment): the refusal is a
@@ -1328,7 +1336,9 @@ class SessionEngine:
         values["HOST_PROTOCOL_STATE"] = "EXECUTION_DRAFT"
         try:
             draft = self._call("DRAFT_EXECUTE", values, traces, parser=self.bridge.parse_execution_draft)
-        except WireError as exc:
+        except Exception as exc:
+            if not _is_wire_failure(exc):
+                raise
             self.workspace.append_event("EXECUTION_BRIEF_SKIPPED", {"reason": str(exc)})
             return None
         if draft.kind != "RESULT" or not draft.brief_body.strip():
@@ -1358,7 +1368,7 @@ class SessionEngine:
                                                              operator_correction=correction))
         except Exception as exc:
             limit = getattr(exc, "output_limit", None)
-            if limit is None and not isinstance(exc, WireError):
+            if limit is None and not _is_wire_failure(exc):
                 raise
             assert self.workspace is not None
             if limit is not None:

@@ -340,9 +340,9 @@ def test_provider_schema_is_one_object_without_defaults(operation) -> None:
     schema = ApiWorker._sanitize_schema_for_grammar(raw)
     assert schema.get("type") == "object"
     assert not {"anyOf", "oneOf", "discriminator", "enum", "not"} & set(schema)
-    assert '"default"' not in _json.dumps(schema)  # no value advertised to the model
-    if "kind" in schema["properties"]:
-        assert "kind" in schema["required"]
+    text = _json.dumps(schema)
+    assert '"default"' not in text  # no value advertised to the model
+    assert '"discriminator"' not in text  # Cerebras rejects it nested too (probe 20261001-142720)
 
 
 def test_flattened_schema_still_validates_exactly_host_side() -> None:
@@ -398,8 +398,9 @@ def test_property_names_are_never_stripped_as_keywords() -> None:
     from pdl_taskmaster.runtime.wire_payloads import get_operation_pydantic_schema
 
     schema = ApiWorker._sanitize_schema_for_grammar(get_operation_pydantic_schema("EXECUTE"))
-    assert "description" in schema["properties"]  # REQUEST_INPUT.description
-    defect = schema["properties"]["result_ir"]["anyOf"][0]["properties"]["open_defects"]["items"]
+    asked, result = schema["properties"]["outcome"]["anyOf"]
+    assert "description" in asked["properties"]  # REQUEST_INPUT.description
+    defect = result["properties"]["result_ir"]["anyOf"][0]["properties"]["open_defects"]["items"]
     assert "description" in defect["properties"]  # RESULT_STANDARD RS-01 reads it
 
 
@@ -449,3 +450,87 @@ def test_provider_error_records_each_providers_own_message() -> None:
     assert [a["provider"] for a in record["attempts"]] == ["Cerebras", "Groq"]
     assert "additionalProperties" in record["attempts"][0]["message"]
     assert "observed, section" in record["attempts"][1]["message"]
+
+
+def test_top_level_union_is_wrapped_with_each_variant_kept_separate() -> None:
+    """Probe 20261001-142720: merging DRAFT_PROMPT's variants into one object showed a
+    PROMPT reply the blocked variant's blocking_basis, the model filled it, and Groq
+    rejected the generation. The union is now nested under "outcome", unmerged."""
+    from pdl_taskmaster.providers.api_worker import UNION_WRAPPER, ApiWorker
+    from pdl_taskmaster.runtime.wire_payloads import get_operation_pydantic_schema
+
+    schema = ApiWorker._sanitize_schema_for_grammar(get_operation_pydantic_schema("DRAFT_PROMPT"))
+    assert schema["required"] == [UNION_WRAPPER]
+    variants = schema["properties"][UNION_WRAPPER]["anyOf"]
+    assert len(variants) == 2
+    prompt = next(v for v in variants if "prompt_body" in v["properties"])
+    assert "blocking_basis" not in prompt["properties"]
+    assert _strict_violations(schema) == []
+
+
+def test_wrapped_reply_is_unwrapped_before_the_host_reads_it() -> None:
+    from pdl_taskmaster.providers.api_worker import _unwrap_union_reply
+
+    inner = {"kind": "PROMPT", "prompt_body": "ADD 2 and 3", "approach_handoff": None, "task_entities": None}
+    assert json.loads(_unwrap_union_reply(json.dumps({"outcome": inner}))) == inner
+    assert _unwrap_union_reply('{"kind": "PROMPT"}') == '{"kind": "PROMPT"}'
+    assert _unwrap_union_reply("not json") == "not json"
+    assert BRIDGE.parse_prompt_draft(_unwrap_union_reply(json.dumps({"outcome": inner}))).prompt_body == "ADD 2 and 3"
+
+
+def test_provider_schema_rejection_is_a_malformed_output_not_retried(monkeypatch) -> None:
+    """The exact Groq body from probe 20261001-142720: a generation that failed the
+    provider's schema check. It was retried blind 5 times (five $0 rows in the
+    OpenRouter log); it is now one call, reported as OUTPUT_MALFORMED."""
+    import io
+    import urllib.request
+
+    from pdl_taskmaster.providers.api_worker import ApiWorker, ProviderError
+    from pdl_taskmaster.runtime.session_engine import _is_wire_failure
+
+    body = json.loads((ROOT / "tests" / "fixtures" / "openrouter_groq_schema_mismatch.json").read_text(encoding="utf-8"))
+    calls = []
+
+    class _Resp(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def fake_urlopen(req, timeout=None):
+        calls.append(req)
+        return _Resp(json.dumps(body).encode("utf-8"))
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT)
+    req = urllib.request.Request("http://stub/responses", data=b"{}", method="POST")
+    with pytest.raises(ProviderError) as info:
+        worker._send_json_with_retries(req)
+    assert len(calls) == 1
+    assert info.value.category == "OUTPUT_MALFORMED"
+    assert _is_wire_failure(info.value)
+
+
+def test_worker_unwraps_the_reply_to_a_wrapped_schema(monkeypatch) -> None:
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+
+    class _Req:
+        operation = "DRAFT_PROMPT"
+        prompt = "Draft Prompt Pseudocode for: add 2 and 3."
+        manifest: dict = {}
+        projection = None
+
+    sent = {}
+    inner = {"kind": "PROMPT", "prompt_body": "ADD 2 and 3", "approach_handoff": None, "task_entities": None}
+
+    def fake_send(self, req, deadline=None):
+        sent.update(json.loads(req.data))
+        return {"status": "completed", "output": [{"type": "message", "content": [
+            {"type": "output_text", "text": json.dumps({"outcome": inner})}]}]}
+
+    monkeypatch.setattr(ApiWorker, "_send_json_with_retries", fake_send)
+    monkeypatch.setattr(ApiWorker, "_resolve_api_key", lambda self: "k")
+    result = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT).call(_Req())
+    assert list(sent["text"]["format"]["schema"]["properties"]) == ["outcome"]
+    assert json.loads(result.text) == inner

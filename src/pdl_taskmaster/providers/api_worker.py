@@ -47,30 +47,35 @@ DEFAULT_SAFETY_SETTINGS: list[dict[str, str]] = [
 ]
 
 
-def _single_top_level_object(schema: Any, discriminator: str | None = None) -> Any:
-    """Strict grammar providers (Groq, Cerebras) accept only one object at the top
-    of a response schema: no anyOf / oneOf / discriminator there. A top-level union
-    is sent as one object whose properties are the union of the variants', with
-    each discriminator const merged into one enum and only the properties every
-    variant requires marked required. The host still validates the reply against
-    the exact union (wire_payloads), so nothing is loosened host-side."""
+UNION_WRAPPER = "outcome"
+
+
+def _wrap_top_level_union(schema: Any) -> Any:
+    """Strict providers accept only one object at the top of a response schema
+    (Groq: no anyOf/oneOf there; Cerebras: no discriminator anywhere), but accept
+    a union nested inside one (Groq served EXECUTE's nested witness union). A
+    top-level union is therefore sent as {"outcome": <the union>}, keeping every
+    variant separate: merging them (the previous form) let a PROMPT reply see the
+    blocked variant's blocking_basis, and the model filled it (probe 20261001-142720).
+    The worker unwraps "outcome" before the host reads the reply."""
     if not isinstance(schema, dict):
         return schema
     variants = schema.get("anyOf") or schema.get("oneOf")
-    if not isinstance(variants, list) or not all(isinstance(v, dict) and v.get("properties") for v in variants):
-        return {k: v for k, v in schema.items() if k != "discriminator"}
-    properties: dict[str, Any] = {}
-    for variant in variants:
-        for name, spec in variant["properties"].items():
-            if name not in properties:
-                properties[name] = dict(spec)
-            elif isinstance(spec, dict) and "enum" in spec and "enum" in properties[name]:
-                merged = list(properties[name]["enum"])
-                merged += [value for value in spec["enum"] if value not in merged]
-                properties[name]["enum"] = merged
-    required = [name for name in properties
-                if name == discriminator or all(name in (variant.get("required") or []) for variant in variants)]
-    return {"type": "object", "properties": properties, "required": required, "additionalProperties": False}
+    if not isinstance(variants, list):
+        return schema
+    return {"type": "object", "properties": {UNION_WRAPPER: {"anyOf": variants}},
+            "required": [UNION_WRAPPER], "additionalProperties": False}
+
+
+def _unwrap_union_reply(text: str) -> str:
+    """The reply to a wrapped union schema, without the wrapper (see above)."""
+    try:
+        value = json.loads(text)
+    except ValueError:
+        return text
+    if isinstance(value, dict) and set(value) == {UNION_WRAPPER} and isinstance(value[UNION_WRAPPER], dict):
+        return json.dumps(value[UNION_WRAPPER], ensure_ascii=False)
+    return text
 
 
 _UNREPRESENTABLE = object()
@@ -138,9 +143,13 @@ class ProviderError(TransportError):
     error (OpenRouter lists the providers it tried in metadata.previous_errors)."""
 
     def __init__(self, category: str, message: str, *, status: int | None = None,
-                 attempts: list[dict[str, str]] | None = None, operation: str | None = None):
+                 attempts: list[dict[str, str]] | None = None, operation: str | None = None,
+                 wire_equivalent: bool = False):
         super().__init__(message)
         self.category = category
+        # True when the failure is the model's output not matching the schema: the
+        # engine treats it like a reply that did not parse (WireError).
+        self.wire_equivalent = wire_equivalent
         self.status = status
         self.attempts = attempts or []
         self.operation = operation
@@ -431,6 +440,7 @@ class ApiWorker:
                     # kind advertised REQUEST_INPUT; witnesses advertised polarity/basis).
                     # The host still applies defaults when it validates the reply.
                     "default",
+                    "discriminator",  # Cerebras rejects it on any object, nested or not
                 ):
                     continue
                 if isinstance(v, dict):
@@ -456,8 +466,7 @@ class ApiWorker:
                     res["additionalProperties"] = False
             return res
 
-        discriminator = (schema.get("discriminator") or {}).get("propertyName")
-        return _strict_schema(_single_top_level_object(_clean_node(schema), discriminator))
+        return _strict_schema(_wrap_top_level_union(_clean_node(schema)))
 
     def _send_json_with_retries(self, req: urllib.request.Request, deadline: float | None = None) -> dict[str, Any]:
         """POST with exponential-backoff retries; returns the parsed response.
@@ -481,6 +490,14 @@ class ApiWorker:
                 try:
                     parsed = json.loads(raw)
                     err = parsed.get("error") if isinstance(parsed, dict) else None
+                    if err:
+                        message = str(err.get("message") if isinstance(err, dict) else err)
+                        if "does not match the expected schema" in message.lower() or "failed_generation" in message:
+                            # The model's generation failed the provider's schema check: a
+                            # model-output failure. Retrying blind repeated it 5 times at
+                            # Groq (probe 20261001-142720); the engine decides instead.
+                            raise ProviderError("OUTPUT_MALFORMED", f"generation did not match the schema: {message[:800]}",
+                                                wire_equivalent=True)
                     if err and attempt < 4:
                         err_code = str(err.get("code") if isinstance(err, dict) else err).lower()
                         err_msg = str(err.get("message") if isinstance(err, dict) else "").lower()
@@ -766,6 +783,7 @@ class ApiWorker:
         if self.safety_settings:
             body["safety_settings"] = self.safety_settings
 
+        union_wrapped = False
         if schema_enforced:
             manifest = getattr(request, "manifest", None) or {}
             output_kind = manifest.get("output_kind", "json_object")
@@ -785,11 +803,13 @@ class ApiWorker:
                         except Exception:
                             schema = None
             if schema and isinstance(schema, dict):
+                sent_schema = self._sanitize_schema_for_grammar(schema)
+                union_wrapped = list((sent_schema.get("properties") or {})) == [UNION_WRAPPER]
                 body["text"] = {
                     "format": {
                         "type": "json_schema",
                         "name": output_kind,
-                        "schema": self._sanitize_schema_for_grammar(schema),
+                        "schema": sent_schema,
                     }
                 }
 
@@ -839,6 +859,8 @@ class ApiWorker:
                     break
             if not text:
                 raise ProviderError("PROVIDER_RESPONSE_UNREADABLE", "no output text after empty-output retries")
+        if union_wrapped:
+            text = _unwrap_union_reply(text)
 
         usage_raw = data.get("usage") or {}
         usage: dict[str, Any] = {}
