@@ -123,6 +123,19 @@ def run_with_deadline(cmd, stdin_text, timeout, stdout_path, stderr_path, *, cwd
             return -1, True
 
 
+def harness_error_record(stderr: str) -> dict | None:
+    """The structured record the harness writes when a model call fails
+    ("[harness-error] {json}" on stderr): category, operation, HTTP status, and
+    each provider's own error message."""
+    for line in reversed((stderr or "").splitlines()):
+        if line.startswith("[harness-error] "):
+            try:
+                return json.loads(line[len("[harness-error] "):])
+            except ValueError:
+                return {"category": "HARNESS_EXCEPTION", "message": line[:2000]}
+    return None
+
+
 def build_harness_command(prompt_file, session_id, transcript_path, session_dir, model, reasoning_effort,
                           reasoning_ops=(), run_settings=None):
     """The exact harness command line for one prompt."""
@@ -255,6 +268,7 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
         "multi_turn_script": entry.get("multi_turn_script"),
         "model_calls": call_accounting(result_dir),
         "repeat": repeat_index,
+        "harness_error": harness_error_record(stderr),
     }
 
     (result_dir / "result.json").write_text(
@@ -697,10 +711,19 @@ def main():
 
     gt = scoreboard["ground_truth"]
     print(f"Stage only: {scoreboard['stage_passed']}/{scoreboard['total_prompts']} reached the expected stage")
-    harness_errors = [r["id"] for r in results if r.get("verdict") == "HARNESS_ERROR"]
+    harness_errors = [r for r in results if r.get("verdict") == "HARNESS_ERROR"]
     if harness_errors:
-        print(f"HARNESS ERRORS: {len(harness_errors)} (a model call failed; not a model outcome; see stderr.txt): "
-              f"{', '.join(harness_errors)}")
+        print(f"HARNESS ERRORS: {len(harness_errors)} (a model call failed; not a model outcome)")
+        groups: dict = {}
+        for r in harness_errors:
+            record = r.get("harness_error") or {}
+            attempts = " | ".join(f"{a.get('provider')}: {a.get('message', '')[:160]}"
+                                  for a in record.get("attempts") or []) or record.get("message", "")[:240]
+            key = (record.get("category", "UNKNOWN"), record.get("operation"), record.get("status"), attempts)
+            groups.setdefault(key, []).append(r["id"])
+        for (category, operation, status, attempts), ids in groups.items():
+            print(f"    {category} at {operation} (HTTP {status}) - {', '.join(ids)}")
+            print(f"        {attempts}")
     mc = scoreboard["model_calls"]
     print(f"Model calls: {mc['total']} total, {mc['execute']} EXECUTE, {mc['repairs']} verification repairs")
     print(f"EXECUTE tokens: {mc['execute_output_tokens']} output, {mc['execute_reasoning_tokens']} reported as reasoning "

@@ -73,12 +73,116 @@ def _single_top_level_object(schema: Any, discriminator: str | None = None) -> A
     return {"type": "object", "properties": properties, "required": required, "additionalProperties": False}
 
 
-class OutputLimitError(TransportError):
-    """The response reached the output-token cap before it finished: a failed
-    attempt to penalise, not a transport fault to retry."""
+_UNREPRESENTABLE = object()
+_UNSUPPORTED_KEYWORDS = ("minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "pattern", "format",
+                         "default", "multipleOf")
+
+
+def _strict_schema(node: Any) -> Any:
+    """Strict structured-output form (Groq strict mode, Cerebras): every object
+    declares additionalProperties false and lists all its properties as required;
+    a property that was optional becomes nullable instead. A free-form object (a
+    dict with no declared properties) cannot be expressed, so it is left out of
+    the provider schema: an optional property or union branch holding one is
+    dropped. The host validates the reply against the exact pydantic model, where
+    a null for a defaulted field means "not given" (wire_payloads)."""
+    result = _strictify(node)
+    return {"type": "object", "properties": {}, "required": [], "additionalProperties": False} \
+        if result is _UNREPRESENTABLE else result
+
+
+def _strictify(node: Any) -> Any:
+    if not isinstance(node, dict):
+        return node
+    node = {k: v for k, v in node.items() if k not in _UNSUPPORTED_KEYWORDS}
+    if "anyOf" in node:
+        branches = [b for b in (_strictify(b) for b in node["anyOf"]) if b is not _UNREPRESENTABLE]
+        if not branches:
+            return _UNREPRESENTABLE
+        rest = {k: v for k, v in node.items() if k != "anyOf"}
+        return {**rest, "anyOf": branches} if len(branches) > 1 else {**rest, **branches[0]}
+    if node.get("type") == "array" and "items" in node:
+        items = _strictify(node["items"])
+        return _UNREPRESENTABLE if items is _UNREPRESENTABLE else {**node, "items": items}
+    if node.get("type") == "object" or "properties" in node:
+        properties = node.get("properties")
+        if not properties:
+            return _UNREPRESENTABLE
+        required = set(node.get("required") or [])
+        strict_properties: dict[str, Any] = {}
+        for name, spec in properties.items():
+            converted = _strictify(spec)
+            if converted is _UNREPRESENTABLE:
+                if name in required:
+                    return _UNREPRESENTABLE
+                continue
+            if name not in required and not _is_nullable(converted):
+                converted = {"anyOf": [converted, {"type": "null"}]}
+            strict_properties[name] = converted
+        return {**node, "type": "object", "properties": strict_properties,
+                "required": list(strict_properties), "additionalProperties": False}
+    return node
+
+
+def _is_nullable(spec: Any) -> bool:
+    if not isinstance(spec, dict):
+        return False
+    if spec.get("type") == "null" or (isinstance(spec.get("type"), list) and "null" in spec["type"]):
+        return True
+    return any(isinstance(b, dict) and b.get("type") == "null" for b in spec.get("anyOf") or [])
+
+
+class ProviderError(TransportError):
+    """A model call the provider did not complete, with what the host needs to
+    report it precisely: category, HTTP status, operation, and each provider's own
+    error (OpenRouter lists the providers it tried in metadata.previous_errors)."""
+
+    def __init__(self, category: str, message: str, *, status: int | None = None,
+                 attempts: list[dict[str, str]] | None = None, operation: str | None = None):
+        super().__init__(message)
+        self.category = category
+        self.status = status
+        self.attempts = attempts or []
+        self.operation = operation
+
+    @classmethod
+    def from_http(cls, status: int, body: str) -> "ProviderError":
+        attempts: list[dict[str, str]] = []
+        try:
+            error = json.loads(body).get("error") or {}
+        except (ValueError, AttributeError):
+            error = {}
+        metadata = error.get("metadata") or {} if isinstance(error, dict) else {}
+
+        def provider_message(raw: Any) -> str:
+            try:
+                parsed = json.loads(raw) if isinstance(raw, str) else raw
+            except ValueError:
+                return str(raw)[:600]
+            if isinstance(parsed, dict):
+                inner = parsed.get("error", parsed)
+                return str(inner.get("message", inner) if isinstance(inner, dict) else inner)[:600]
+            return str(parsed)[:600]
+
+        for previous in metadata.get("previous_errors") or []:
+            attempts.append({"provider": str(previous.get("provider_name")), "message": provider_message(previous.get("raw"))})
+        if metadata.get("provider_name"):
+            attempts.append({"provider": str(metadata["provider_name"]), "message": provider_message(metadata.get("raw"))})
+        category = "PROVIDER_REJECTED_REQUEST" if 400 <= status < 500 and status != 429 else "PROVIDER_UNAVAILABLE"
+        summary = "; ".join(f"{a['provider']}: {a['message']}" for a in attempts) or body[:600]
+        return cls(category, f"HTTP {status}: {summary}", status=status, attempts=attempts)
+
+    def as_record(self) -> dict[str, Any]:
+        return {"category": self.category, "operation": self.operation, "status": self.status,
+                "attempts": self.attempts, "message": str(self)[:2000]}
+
+
+class OutputLimitError(ProviderError):
+    """The response reached the output-token cap before it finished: in EXECUTE a
+    failed attempt to penalise; at any other operation a reported harness error."""
 
     def __init__(self, limit: int | None):
-        super().__init__(f"response reached the {limit} output-token limit before it finished")
+        super().__init__("OUTPUT_LIMIT_REACHED", f"response reached the {limit} output-token limit before it finished")
         self.output_limit = limit
 
 
@@ -306,6 +410,12 @@ class ApiWorker:
                         return _clean_node(inlined)
             res: dict[str, Any] = {}
             for k, v in node.items():
+                if k == "properties" and isinstance(v, dict):
+                    # Property NAMES are data, not schema keywords: a field called
+                    # "description" or "title" must survive (open_defects[].description,
+                    # REQUEST_INPUT.description were stripped before).
+                    res[k] = {name: _clean_node(spec) for name, spec in v.items()}
+                    continue
                 if k in (
                     "$defs",
                     "definitions",
@@ -347,7 +457,7 @@ class ApiWorker:
             return res
 
         discriminator = (schema.get("discriminator") or {}).get("propertyName")
-        return _single_top_level_object(_clean_node(schema), discriminator)
+        return _strict_schema(_single_top_level_object(_clean_node(schema), discriminator))
 
     def _send_json_with_retries(self, req: urllib.request.Request, deadline: float | None = None) -> dict[str, Any]:
         """POST with exponential-backoff retries; returns the parsed response.
@@ -364,7 +474,7 @@ class ApiWorker:
         for attempt in range(5):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                raise TransportError(f"api worker call exceeded its {self.max_call_seconds:.0f}s deadline")
+                raise ProviderError("PROVIDER_UNAVAILABLE", f"call exceeded its {self.max_call_seconds:.0f}s deadline")
             try:
                 with urllib.request.urlopen(req, timeout=min(self.timeout, remaining)) as resp:
                     raw = resp.read().decode("utf-8", errors="replace")
@@ -409,8 +519,8 @@ class ApiWorker:
                             pass
                     _sleep_within(delay, deadline)
                     continue
-                detail = exc.read().decode("utf-8", errors="replace")[:2000]
-                raise TransportError(f"api worker HTTP {exc.code}: {detail}") from exc
+                detail = exc.read().decode("utf-8", errors="replace")[:4000]
+                raise ProviderError.from_http(exc.code, detail) from exc
             except urllib.error.URLError as exc:
                 if attempt < 4:
                     delay = 0.5 * (2 ** attempt)
@@ -423,7 +533,7 @@ class ApiWorker:
                             pass
                     _sleep_within(delay, deadline)
                     continue
-                raise TransportError(f"api worker transport error: {exc.reason}") from exc
+                raise ProviderError("PROVIDER_UNAVAILABLE", f"transport error: {exc.reason}") from exc
             except (
                 TimeoutError,
                 socket.timeout,
@@ -437,7 +547,7 @@ class ApiWorker:
                     # again: retry a read timeout once, then give up.
                     read_timeouts += 1
                     if read_timeouts > 1:
-                        raise TransportError(f"api worker read timed out twice ({exc})") from exc
+                        raise ProviderError("PROVIDER_UNAVAILABLE", f"read timed out twice ({exc})") from exc
                 if attempt < 4 and deadline - time.monotonic() > 0:
                     delay = 0.5 * (2 ** attempt)
                     if self.on_progress is not None:
@@ -449,15 +559,22 @@ class ApiWorker:
                             pass
                     _sleep_within(delay, deadline)
                     continue
-                raise TransportError(f"api worker connection failed after retries: {exc}") from exc
+                raise ProviderError("PROVIDER_UNAVAILABLE", f"connection failed after retries: {exc}") from exc
         if raw is None:
-            raise TransportError("api worker failed after retries")
+            raise ProviderError("PROVIDER_UNAVAILABLE", "failed after retries")
         try:
             return json.loads(raw)
         except json.JSONDecodeError as exc:
-            raise TransportError(f"api worker returned non-JSON response: {raw[:500]}") from exc
+            raise ProviderError("PROVIDER_RESPONSE_UNREADABLE", f"non-JSON response: {raw[:500]}") from exc
 
     def call(self, request: Any) -> WorkerResult:
+        try:
+            return self._call(request)
+        except ProviderError as exc:
+            exc.operation = exc.operation or getattr(request, "operation", None)
+            raise
+
+    def _call(self, request: Any) -> WorkerResult:
         operation_name = getattr(request, "operation", None)
 
         # ADR-0017 / ADR-0020: Wire System 1 (Jev / ModernBERT) for fast classification, boundary enforcement, and review
@@ -699,14 +816,14 @@ class ApiWorker:
                 pass
 
         if data.get("error"):
-            raise TransportError(f"api worker reported an error: {data['error']}")
+            raise ProviderError("PROVIDER_REJECTED_REQUEST", f"provider reported an error: {data['error']}")
         status = data.get("status")
         if status not in (None, "completed"):
             details = data.get("incomplete_details") or {}
             reason = details.get("reason") if isinstance(details, dict) else details
             if status == "incomplete" and reason in ("max_output_tokens", "max_tokens", "length"):
                 raise OutputLimitError(self.max_output_tokens)
-            raise TransportError(f"api worker response status={status}: {details}")
+            raise ProviderError("PROVIDER_RESPONSE_UNREADABLE", f"response status={status}: {details}")
 
         text = self._extract_output_text(data)
         if not text:
@@ -721,7 +838,7 @@ class ApiWorker:
                 if text:
                     break
             if not text:
-                raise TransportError("api worker returned no output_text content after empty-output retries")
+                raise ProviderError("PROVIDER_RESPONSE_UNREADABLE", "no output text after empty-output retries")
 
         usage_raw = data.get("usage") or {}
         usage: dict[str, Any] = {}

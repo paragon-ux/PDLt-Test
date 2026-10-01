@@ -90,6 +90,7 @@ class ObservedSession:
             response = self.engine.handle_user_message(user_message)
         except Exception as exc:
             exception = {"type": type(exc).__name__, "message": str(exc)}
+            original_exception = exc
         wall_ms = (time.perf_counter() - started) * 1000.0
         after = controller_snapshot(self.engine)
         events_after = read_events(self.engine.workspace)
@@ -159,7 +160,9 @@ class ObservedSession:
             self.sink.record(record)
         self.turn_index += 1
         if exception is not None:
-            raise RuntimeError(f"{exception['type']}: {exception['message']}")
+            # Re-raise the original: its type and attributes (provider, HTTP status,
+            # operation) are what the host reports; a RuntimeError copy lost them.
+            raise original_exception
         return response
 
     @classmethod

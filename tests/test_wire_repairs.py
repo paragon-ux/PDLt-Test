@@ -349,3 +349,103 @@ def test_flattened_schema_still_validates_exactly_host_side() -> None:
     """Flattening is for the provider only: the host keeps the exact union."""
     with pytest.raises(WireError):
         BRIDGE.parse_prompt_body('{"prompt_body": "X", "approach_handoff": "NONE"}')
+
+
+def _strict_violations(node, path="$"):
+    """Strict structured-output rules (Groq strict mode, Cerebras)."""
+    out = []
+    if isinstance(node, dict):
+        if node.get("type") == "object" or "properties" in node:
+            props = node.get("properties")
+            if not props:
+                out.append(f"{path}: free-form object")
+            else:
+                if node.get("additionalProperties") is not False:
+                    out.append(f"{path}: additionalProperties is not false")
+                missing = [k for k in props if k not in (node.get("required") or [])]
+                if missing:
+                    out.append(f"{path}: not required {missing}")
+        for keyword in ("minimum", "maximum", "exclusiveMinimum", "pattern", "format", "default"):
+            if keyword in node:
+                out.append(f"{path}: {keyword}")
+        for key, value in node.items():
+            children = value if isinstance(value, list) else [value]
+            for i, child in enumerate(children):
+                if key != "properties":
+                    out += _strict_violations(child, f"{path}/{key}/{i}")
+            if key == "properties" and isinstance(value, dict):
+                for name, spec in value.items():
+                    out += _strict_violations(spec, f"{path}/properties/{name}")
+    return out
+
+
+@pytest.mark.parametrize("operation", ["DRAFT_PROMPT", "REVISE_PROMPT", "DRAFT_PLAN", "REVISE_PLAN", "EXECUTE",
+                                       "DRAFT_EXECUTE", "INTERPRET_PROMPT_REVIEW", "INTERPRET_PLAN_REVIEW",
+                                       "INTERPRET_EXECUTION_INPUT", "ANSWER_PROTOCOL_DISCUSSION"])
+def test_provider_schema_meets_strict_structured_output_rules(operation) -> None:
+    """Runs 135851/135951: Groq ("required ... must include every key in properties:
+    observed, section") and Cerebras ("additionalProperties ... set to false")
+    rejected every EXECUTE request at result_ir."""
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+    from pdl_taskmaster.runtime.wire_payloads import get_operation_pydantic_schema
+
+    schema = ApiWorker._sanitize_schema_for_grammar(get_operation_pydantic_schema(operation))
+    assert _strict_violations(schema) == []
+
+
+def test_property_names_are_never_stripped_as_keywords() -> None:
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+    from pdl_taskmaster.runtime.wire_payloads import get_operation_pydantic_schema
+
+    schema = ApiWorker._sanitize_schema_for_grammar(get_operation_pydantic_schema("EXECUTE"))
+    assert "description" in schema["properties"]  # REQUEST_INPUT.description
+    defect = schema["properties"]["result_ir"]["anyOf"][0]["properties"]["open_defects"]["items"]
+    assert "description" in defect["properties"]  # RESULT_STANDARD RS-01 reads it
+
+
+def test_strict_shaped_replies_parse_host_side() -> None:
+    """A strict provider sends every flattened property, null where it does not apply."""
+    import json as _json
+
+    nulls_ir = {"files": [], "reconciliation": [], "open_defects": [{"id": None, "description": "not finished",
+                                                                       "evidence": None}], "witness": None}
+    result = BRIDGE.parse_execution(_json.dumps({"kind": "RESULT", "body": "print(1)", "expected_type": None,
+                                                 "description": None, "result_ir": nulls_ir}))
+    assert result.kind == "RESULT" and result.result_ir["open_defects"][0]["description"] == "not finished"
+    proof = {"polarity": "negative", "evidence": {"path": "execution://witness", "section": None, "observed": None},
+             "basis": "proof", "search_exhausted": None, "nodes_explored": None, "method": None,
+             "argument": "parity", "domain": None, "provisional": None}
+    witnessed = BRIDGE.parse_execution(_json.dumps({"kind": "RESULT", "body": "x", "expected_type": None,
+                                                    "description": None,
+                                                    "result_ir": {"files": [], "reconciliation": [],
+                                                                  "open_defects": [], "witness": proof}}))
+    assert witnessed.result_ir["witness"]["argument"] == "parity"
+    asked = BRIDGE.parse_execution(_json.dumps({"kind": "REQUEST_INPUT", "body": "Which file?",
+                                                "expected_type": "path", "description": None, "result_ir": None}))
+    assert asked.kind == "REQUEST_INPUT"
+    draft = BRIDGE.parse_prompt_draft(_json.dumps({"kind": "PROMPT", "prompt_body": "COMPUTE the sum",
+                                                   "approach_handoff": None, "task_entities": None,
+                                                   "blocking_basis": None, "response": None}))
+    assert draft.prompt_body == "COMPUTE the sum"
+    review = BRIDGE.parse_prompt_review(_json.dumps({"kind": "REVIEW_FACTS", "task_change_dimensions": [],
+                                                     "approach_change_dimensions": [], "progression_requested": True,
+                                                     "confidence": None}))
+    assert review
+
+
+def test_null_for_a_required_field_still_fails() -> None:
+    with pytest.raises(WireError):
+        BRIDGE.parse_execution('{"kind": "RESULT", "body": null}')
+
+
+def test_provider_error_records_each_providers_own_message() -> None:
+    """Run 135951 01-01: the exact OpenRouter 400 body (Groq after Cerebras)."""
+    from pdl_taskmaster.providers.api_worker import ProviderError
+
+    body = (ROOT / "tests" / "fixtures" / "openrouter_400_strict_schema.json").read_text(encoding="utf-8")
+    error = ProviderError.from_http(400, body)
+    record = error.as_record()
+    assert record["category"] == "PROVIDER_REJECTED_REQUEST" and record["status"] == 400
+    assert [a["provider"] for a in record["attempts"]] == ["Cerebras", "Groq"]
+    assert "additionalProperties" in record["attempts"][0]["message"]
+    assert "observed, section" in record["attempts"][1]["message"]

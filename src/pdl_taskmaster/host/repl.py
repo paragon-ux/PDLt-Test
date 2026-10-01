@@ -372,6 +372,21 @@ def _resolve_render_compact(args) -> bool:
 # Headless exit code for a run that ended on a harness/provider error (not a model outcome).
 EXIT_HARNESS_ERROR = 4
 
+
+def _harness_error_record(exc: BaseException) -> dict:
+    """What failed, precisely: a ProviderError carries category, operation, HTTP
+    status and each provider's own message; a reply that did not parse is
+    OUTPUT_MALFORMED; anything else is reported with its type."""
+    if hasattr(exc, "as_record"):
+        return exc.as_record()
+    from pdl_taskmaster.runtime.wire_payloads import WireError
+
+    if isinstance(exc, WireError):
+        return {"category": "OUTPUT_MALFORMED", "operation": None, "status": None, "attempts": [],
+                "message": f"{getattr(exc, 'reason', '')}: {exc}"[:2000]}
+    return {"category": "HARNESS_EXCEPTION", "operation": None, "status": None, "attempts": [],
+            "message": f"{type(exc).__name__}: {exc}"[:2000]}
+
 PASTE_START = "\x1b[200~"
 PASTE_END = "\x1b[201~"
 
@@ -996,6 +1011,7 @@ def main() -> int:
     _write_transcript("WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION")
     _enable_bracketed_paste()
     harness_error: str | None = None  # headless: the call failure that ended the run
+    harness_record: dict = {}
     initial_prompt = None
     if getattr(args, "prompt", None):
         initial_prompt = args.prompt.strip()
@@ -1310,6 +1326,7 @@ def main() -> int:
                     # lines on would start a new request from "/confirm" (run 132344:
                     # a provider schema error became a "successful" refusal, exit 0).
                     harness_error = message
+                    harness_record = _harness_error_record(exc)
                     break
                 continue
             if turn.text:
@@ -1356,8 +1373,9 @@ def main() -> int:
     # In non-interactive mode, if execution terminates while sitting at an unconfirmed
     # review gate or non-terminal stage, exit with code 2 rather than falsely signalling success.
     if not _is_interactive(args) and harness_error is not None:
-        print(f"[headless halt] Harness error: {harness_error[:500]}. Exiting (code {EXIT_HARNESS_ERROR}).",
-              file=sys.stderr, flush=True)
+        print("[harness-error] " + json.dumps(harness_record, ensure_ascii=False), file=sys.stderr, flush=True)
+        print(f"[headless halt] Harness error ({harness_record['category']} at {harness_record.get('operation')}): "
+              f"{harness_error[:500]}. Exiting (code {EXIT_HARNESS_ERROR}).", file=sys.stderr, flush=True)
         return EXIT_HARNESS_ERROR
     if not _is_interactive(args):
         status = runtime.host.status()

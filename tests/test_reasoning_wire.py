@@ -137,7 +137,7 @@ def test_provider_error_ends_a_headless_run_as_a_harness_error(tmp_path):
         def do_POST(self):  # noqa: N802
             self.rfile.read(int(self.headers["Content-Length"]))
             seen.append(1)
-            data = json.dumps({"error": {"message": "invalid JSON schema for response_format", "code": 400}}).encode()
+            data = (ROOT / "tests" / "fixtures" / "openrouter_400_strict_schema.json").read_text(encoding="utf-8").encode()
             self.send_response(400)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(data)))
@@ -162,3 +162,7 @@ def test_provider_error_ends_a_headless_run_as_a_harness_error(tmp_path):
     assert code == run_catalogue.EXIT_HARNESS_ERROR, (tmp_path / "err.txt").read_text()[-1500:]
     assert "No operative task" not in (tmp_path / "out.txt").read_text()
     assert len(seen) == 1  # the run stopped at the failed call
+    record = run_catalogue.harness_error_record((tmp_path / "err.txt").read_text(encoding="utf-8"))
+    assert record["category"] == "PROVIDER_REJECTED_REQUEST" and record["status"] == 400
+    assert record["operation"] == "BOOTSTRAP_ANALYSIS"  # the stage that failed is named
+    assert [a["provider"] for a in record["attempts"]] == ["Cerebras", "Groq"]

@@ -13,6 +13,26 @@ from pydantic import (
 )
 
 
+class WireModel(BaseModel):
+    """Base for every wire payload. Strict structured-output providers send every
+    property of a (flattened) schema, using null for the ones that do not apply
+    (api_worker._strict_schema). For a field with a default, or a key this model
+    does not declare, null therefore means "not given"; a null for a required
+    field still fails validation. Free-form values (e.g. witness data) are never
+    touched: only this model's own keys are considered."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _null_means_not_given(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        fields = cls.model_fields
+        return {
+            key: value for key, value in data.items()
+            if value is not None or (key in fields and fields[key].is_required())
+        }
+
+
 class WireError(RuntimeError):
     """Raised when a model response violates wire syntax or schema contract.
 
@@ -42,7 +62,7 @@ class ActivationRoute(str, Enum):
     BLOCKED_BY_HIGHER_PRIORITY = "BLOCKED_BY_HIGHER_PRIORITY"
 
 
-class ActivationDecisionPayload(BaseModel):
+class ActivationDecisionPayload(WireModel):
     model_config = ConfigDict(extra="forbid")
     route: ActivationRoute
     response: Optional[str] = None
@@ -59,7 +79,7 @@ class ActivationDecisionPayload(BaseModel):
         return self
 
 
-class BootstrapAnalysisData(BaseModel):
+class BootstrapAnalysisData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["ANALYSIS"] = "ANALYSIS"
     task_summary: str
@@ -74,7 +94,7 @@ class BootstrapAnalysisData(BaseModel):
         return self
 
 
-class BootstrapBlockedData(BaseModel):
+class BootstrapBlockedData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["BLOCKED_BY_HIGHER_PRIORITY"] = "BLOCKED_BY_HIGHER_PRIORITY"
     response: str
@@ -106,7 +126,7 @@ def validate_plan_pdl_conformance(body: str) -> str:
     return body
 
 
-class PromptDraftData(BaseModel):
+class PromptDraftData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["PROMPT"] = "PROMPT"
     prompt_body: str
@@ -119,7 +139,7 @@ class PromptDraftData(BaseModel):
         return self
 
 
-class PromptDraftBlockedData(BaseModel):
+class PromptDraftBlockedData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["TASK_BLOCKED_BY_HIGHER_PRIORITY"] = "TASK_BLOCKED_BY_HIGHER_PRIORITY"
     blocking_basis: Literal["PROVIDER_PLATFORM_SAFETY_PRIVACY_PERMISSION_OR_TOOL"]
@@ -138,7 +158,7 @@ PromptDraftPayload = Annotated[
 ]
 
 
-class PromptBodyPayload(BaseModel):
+class PromptBodyPayload(WireModel):
     model_config = ConfigDict(extra="forbid")
     prompt_body: str
 
@@ -148,7 +168,7 @@ class PromptBodyPayload(BaseModel):
         return self
 
 
-class NeutralPlanBodyPayload(BaseModel):
+class NeutralPlanBodyPayload(WireModel):
     model_config = ConfigDict(extra="forbid")
     neutral_plan_body: str
 
@@ -158,7 +178,7 @@ class NeutralPlanBodyPayload(BaseModel):
         return self
 
 
-class ProtocolDiscussionPayload(BaseModel):
+class ProtocolDiscussionPayload(WireModel):
     model_config = ConfigDict(extra="forbid")
     body: str
 
@@ -190,7 +210,7 @@ class ApproachChangeDimension(str, Enum):
 SYSTEM1_CONFIDENCE_FLOOR: float = 0.85
 
 
-class ReviewFactsData(BaseModel):
+class ReviewFactsData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["REVIEW_FACTS"] = "REVIEW_FACTS"
     task_change_dimensions: list[TaskChangeDimension]
@@ -207,7 +227,7 @@ class ReviewFactsData(BaseModel):
         return self
 
 
-class ReviewSpecialData(BaseModel):
+class ReviewSpecialData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal[
         "NEW_TASK",
@@ -225,14 +245,14 @@ ArtifactReviewPayload = Annotated[
 ]
 
 
-class ExecutionInputReviseData(BaseModel):
+class ExecutionInputReviseData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["REVISE_TASK"] = "REVISE_TASK"
     also_changes_approach: bool
     confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
 
 
-class ExecutionInputSpecialData(BaseModel):
+class ExecutionInputSpecialData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["SUPPLY_EXECUTION_INPUT", "NEW_TASK", "CANCEL", "UNRESOLVED"]
     confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
@@ -244,7 +264,7 @@ ExecutionInputPayload = Annotated[
 ]
 
 
-class ExecutionDraftBlockedData(BaseModel):
+class ExecutionDraftBlockedData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["BLOCKED_BY_HIGHER_PRIORITY"] = "BLOCKED_BY_HIGHER_PRIORITY"
     brief_body: str
@@ -256,7 +276,7 @@ class ExecutionDraftBlockedData(BaseModel):
         return self
 
 
-class ExecutionDraftResultData(BaseModel):
+class ExecutionDraftResultData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["RESULT"] = "RESULT"
     brief_body: str = Field(description=(
@@ -279,14 +299,14 @@ ExecutionDraftPayload = Annotated[
 ]
 
 
-class Evidence(BaseModel):
+class Evidence(WireModel):
     model_config = ConfigDict(extra="allow")
     path: str
     section: Optional[str] = None
     observed: Optional[str] = None
 
 
-class PositiveWitness(BaseModel):
+class PositiveWitness(WireModel):
     model_config = ConfigDict(extra="forbid")
     polarity: Literal["positive"] = "positive"
     evidence: Evidence = Field(default_factory=lambda: Evidence(path="execution://witness"))
@@ -295,7 +315,7 @@ class PositiveWitness(BaseModel):
     provisional: Optional[bool] = None  # set by the host when no sandbox run reproduced the witness
 
 
-class NegativeWitness(BaseModel):
+class NegativeWitness(WireModel):
     """A claim that no solution exists, on one of two first-class bases (GUARD-03):
     an exhausted search (with its explored-state count) or a proof (with its argument)."""
 
@@ -337,28 +357,28 @@ WitnessPayload = Annotated[
 ]
 
 
-class FileItem(BaseModel):
+class FileItem(WireModel):
     model_config = ConfigDict(extra="allow")
     filename: str
     satisfies: list[str] = Field(default_factory=list)
     evidence: Evidence
 
 
-class ReconciliationItem(BaseModel):
+class ReconciliationItem(WireModel):
     model_config = ConfigDict(extra="allow")
     requirement: str
     status: Literal["satisfied", "partial", "open"]
     evidence: Evidence
 
 
-class DefectItem(BaseModel):
+class DefectItem(WireModel):
     model_config = ConfigDict(extra="allow")
     id: Optional[str] = None
     description: str
     evidence: Optional[Evidence] = None
 
 
-class ResultIRData(BaseModel):
+class ResultIRData(WireModel):
     model_config = ConfigDict(extra="allow")
     files: list[FileItem] = Field(default_factory=list)
     reconciliation: list[ReconciliationItem] = Field(default_factory=list)
@@ -366,12 +386,12 @@ class ResultIRData(BaseModel):
     witness: Optional[WitnessPayload] = None
 
 
-class ResultIRRepairPayload(BaseModel):
+class ResultIRRepairPayload(WireModel):
     model_config = ConfigDict(extra="forbid")
     result_ir: ResultIRData
 
 
-class ExecutionRequestInputData(BaseModel):
+class ExecutionRequestInputData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["REQUEST_INPUT"] = "REQUEST_INPUT"
     body: str
@@ -390,7 +410,7 @@ class ExecutionRequestInputData(BaseModel):
         return self
 
 
-class ExecutionResultData(BaseModel):
+class ExecutionResultData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["RESULT", "BLOCKED_BY_HIGHER_PRIORITY"]
     body: str
