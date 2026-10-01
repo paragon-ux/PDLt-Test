@@ -49,6 +49,7 @@ class PDLtHost:
         include_bodies: bool = False,
         render_compact: bool = False,
         higher_priority_constraints: str | None = None,
+        sandbox_mode: str | None = None,
     ):
         self.candidate_repo = Path(candidate_repo).resolve()
         self.worker = worker
@@ -60,6 +61,7 @@ class PDLtHost:
         self.include_bodies = include_bodies
         self.render_compact = render_compact
         self.higher_priority_constraints = higher_priority_constraints or DEFAULT_HIGHER_PRIORITY_CONSTRAINTS
+        self.sandbox_mode = sandbox_mode  # None: $PDLT_SANDBOX, else auto (native confinement)
         self.engine: Any = None
         self.observed: ObservedSession | None = None
         self.sink: JsonlSink | None = None
@@ -85,6 +87,7 @@ class PDLtHost:
                     available_execution_tools=None,
                     render_compact=self.render_compact,
                     sys1_client=getattr(self.worker, "sys1_client", None),
+                    sandbox_mode=self.sandbox_mode,
                 )
             except Exception as exc:
                 # Graceful degradation: a session with no committed protocol
@@ -101,6 +104,7 @@ class PDLtHost:
                 workspace_root=self.workspace_root,
                 render_compact=self.render_compact,
                 sys1_client=getattr(self.worker, "sys1_client", None),
+                sandbox_mode=self.sandbox_mode,
             )
         self.engine = engine
         engine.max_repairs = getattr(self.worker, "max_repairs", None)

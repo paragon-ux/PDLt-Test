@@ -57,6 +57,14 @@ _SPECS = (
         "Correct the cause shown in standard error; the program must exit with status 0.",
     ),
     ErrorSpec(
+        "SANDBOX_UNAVAILABLE",
+        "Python block {block} was not run: the host cannot confine programs in this session ({reason}).",
+        "Programs run only inside the host's OS-native confinement; when it cannot be applied, no program is run "
+        "and no witness can be produced in this session.",
+        "No program can run in this session. Return the deliverable without relying on a program run, and mark "
+        "any requirement that needs one open with the defect recorded.",
+    ),
+    ErrorSpec(
         "RESULT_IR_MISSING",
         "The deliverable carries no Result IR JSON object.",
         "A deliverable that must be verified carries a Result IR (TRD-0003 RS-01).",

@@ -18,10 +18,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-try:  # POSIX only; imported here, never inside a forked child (import locks)
-    import resource
-except ImportError:
-    resource = None  # type: ignore[assignment]
+from pdl_taskmaster.verification.confinement.backends import (
+    LaunchError,
+    RunLimits,
+    SandboxUnavailable,
+    resolve_mode,
+    select_backend,
+    sweep_owner,
+)
+from pdl_taskmaster.verification.confinement.policy import build_policy
 
 
 # Windows Win32 Job Object Constants and Structures
@@ -525,6 +530,7 @@ class _SandboxSession:
             "backend": backend_name,
         }
         self.backend: Any = None
+        self.policy: Any = None
         self._runs = 0
         self.closed = False
         self.write_owner()
@@ -564,17 +570,20 @@ def _session_label(label: str | None) -> str:
 
 
 class ExecutionSandbox:
-    """OS-native deterministic execution sandbox (P1).
+    """OS-native deterministic execution sandbox (P1), one per session (ADR-0021).
 
-    Conformant to ADR-0013:
     - Zero-dependency local process isolation (Windows Job Objects on Windows,
       setrlimit on POSIX).
-    - Ephemeral scratchpad filesystem containment; standard library only (``-I -S``);
-      UTF-8, unbuffered standard streams (``-X utf8 -u``) on every OS.
+    - Session-scoped OS-native confinement (Landlock, Seatbelt, AppContainer, or an
+      opt-in container): each program may read and write only its own fresh run
+      directory, read the interpreter and what the OS loader needs, and start no
+      process and open no network connection. When the backend cannot be applied,
+      nothing runs (``sandbox_unavailable``); ``audit-only`` is the explicit opt-out.
+    - Standard library only (``-I -S``) from the base interpreter; UTF-8, unbuffered
+      standard streams (``-X utf8 -u``) on every OS.
     - Deterministic wall-clock timeout and memory ceilings.
     - Withheld environment: only an allowlist of variables is passed (no secrets).
-    - Outbound network and process creation denied by an audit hook (defense in depth,
-      not a VM boundary).
+    - An in-process audit hook enforces the same policy as defense in depth.
     """
 
     DEFAULT_TIMEOUT_SECONDS: float = 5.0
@@ -597,35 +606,76 @@ class ExecutionSandbox:
         self.memory_limit_bytes = int(memory_limit_bytes)
         self.allow_network = allow_network
         self.allow_processes = allow_processes
-        self.mode = mode
+        self.mode = resolve_mode(mode)
         self.label = _session_label(label)
-        self.backend_name = "audit-only"
+        self.backend_name = select_backend(self.mode).name
+        self.unavailable_reason: str | None = None
+        self._probed = False
         self._session: _SandboxSession | None = None
+        self._session_facts: dict[str, Any] = {}
         self._finalizer: Any = None
 
     # -- session lifecycle -------------------------------------------------------
 
+    @property
+    def confined(self) -> bool:
+        """Whether programs run under an OS-native backend (not the audit-only opt-out)."""
+        return self.backend_name != "audit-only"
+
     def probe(self) -> bool:
         """Whether the chosen backend can run programs on this machine. Cheap: no
-        session is built."""
-        return True
+        session is built. A backend that failed to prepare stays unavailable."""
+        if not self._probed:
+            self._probed = True
+            if self.unavailable_reason is None:
+                self.unavailable_reason = select_backend(self.mode).probe()
+        return self.unavailable_reason is None
 
     @property
     def session_info(self) -> dict[str, Any] | None:
-        """Facts about the built session (backend, root), or None before the first run."""
-        if self._session is None:
-            return None
-        return {"backend": self.backend_name, "root": str(self._session.root)}
+        """Facts about the session (backend, mode, root, backend facts), or about why
+        no session can be built; None before the first run."""
+        if self._session is not None:
+            return {"backend": self.backend_name, "mode": self.mode, "available": True,
+                    "root": str(self._session.root), **self._session_facts}
+        if self._probed and self.unavailable_reason is not None:
+            return {"backend": self.backend_name, "mode": self.mode, "available": False,
+                    "reason": self.unavailable_reason}
+        return None
 
     def _ensure_session(self) -> _SandboxSession:
-        """Build the session on the first run: its root, its owner record, and a sweep
-        of roots left by hosts that were killed before ``close()`` ran (``atexit`` is
-        not used: it does not run for a killed process either)."""
+        """Build the session on the first run: its root, its owner record, the
+        backend's native state, and a sweep of roots left by hosts that were killed
+        before ``close()`` ran (``atexit`` is not used: it does not run for a killed
+        process either). Raises SandboxUnavailable when confinement cannot apply."""
         if self._session is not None and not self._session.closed:
             return self._session
-        sweep_stale_roots()
-        session = _SandboxSession(self.label, self.backend_name)
+        if not self.probe():
+            raise SandboxUnavailable(self.unavailable_reason or "unavailable")
+        sweep_stale_roots(cleanup=sweep_owner)
+        backend = select_backend(self.mode)
+        try:
+            session = _SandboxSession(self.label, backend.name)
+        except OSError as exc:
+            self.unavailable_reason = f"cannot create the sandbox session root: {exc}"
+            raise SandboxUnavailable(self.unavailable_reason) from exc
+        try:
+            policy = build_policy(
+                session.root, session.work, network=self.allow_network, processes=self.allow_processes,
+            )
+            facts = backend.prepare(policy, session)
+        except Exception as exc:
+            backend.close()
+            session.close()
+            self.unavailable_reason = exc.reason if isinstance(exc, SandboxUnavailable) else (
+                f"{backend.name} setup failed: {exc}"
+            )
+            raise SandboxUnavailable(self.unavailable_reason) from exc
+        session.backend = backend
+        session.policy = policy
+        session.write_owner(**backend.owner_record())
         self._session = session
+        self._session_facts = dict(facts)
         # Released when the sandbox is garbage-collected without close(); not at
         # interpreter exit (the sweep covers hosts that never get there).
         self._finalizer = weakref.finalize(self, session.close)
@@ -651,6 +701,14 @@ class ExecutionSandbox:
         """The sandbox as System 1 routing state: what the environment provides and
         what one step is, from the same source the sandbox enforces."""
         version = ".".join(str(part) for part in sys.version_info[:2])
+        if not self.probe():
+            return {
+                "execution_environment": (
+                    "No program execution is available in this session: the host cannot confine programs on this "
+                    f"machine ({self.unavailable_reason}), so it runs none; network access is disabled."
+                ),
+                "step_definition": "No program is run in this session, so no steps are counted.",
+            }
         return {
             "execution_environment": (
                 f"Python {version} interpreter with the standard library only; third-party packages are not "
@@ -671,6 +729,17 @@ class ExecutionSandbox:
         the session sandbox under the task's budget, never task guidance.
         """
         version = ".".join(str(part) for part in sys.version_info[:2])
+        if not self.probe():
+            return [
+                {
+                    "name": "python",
+                    "description": (
+                        f"Unavailable in this session: the host cannot confine programs on this machine "
+                        f"({self.unavailable_reason}), so it runs no program from the deliverable. Python {version} "
+                        "source in the deliverable is not executed and produces no output."
+                    ),
+                }
+            ]
         timeout = budget.timeout_seconds if budget else self.timeout_seconds
         megabytes = (budget.memory_limit_bytes if budget else self.memory_limit_bytes) // (1024 * 1024)
         steps = (
@@ -741,7 +810,17 @@ class ExecutionSandbox:
         effective_timeout = timeout if timeout is not None else self.timeout_seconds
         effective_memory = memory_limit if memory_limit is not None else self.memory_limit_bytes
 
-        session = self._ensure_session()
+        try:
+            session = self._ensure_session()
+        except SandboxUnavailable as exc:
+            # Fail closed: no confinement, no run.
+            return SandboxResult(
+                stdout="",
+                stderr=f"Code execution is unavailable: {exc.reason}",
+                exit_code=-1,
+                duration_ms=0.0,
+                error=f"sandbox_unavailable:{exc.reason}",
+            )
         run_dir = session.new_run_dir()
         try:
             entry_file = run_dir / "_entry.py"
@@ -770,11 +849,12 @@ class ExecutionSandbox:
             run_tmp = str(run_dir / "tmp")
             run_env = {"TMPDIR": run_tmp, "TEMP": run_tmp, "TMP": run_tmp, **(env or {})}
             result = self._execute_process(
-                [sys.executable, *_INTERPRETER_FLAGS, str(entry_file)],
+                [str(session.policy.interpreter), *_INTERPRETER_FLAGS, entry_file.name],
                 cwd=run_dir,
                 timeout=effective_timeout,
                 memory_limit_bytes=effective_memory,
                 env=run_env,
+                backend=session.backend,
             )
         finally:
             # A just-killed Windows process can still hold a file (WinError 32): what
@@ -801,6 +881,7 @@ class ExecutionSandbox:
         cwd: Path,
         timeout: float,
         memory_limit_bytes: int,
+        backend: Any,
         env: dict[str, str] | None = None,
     ) -> SandboxResult:
         base_env = {k: os.environ[k] for k in _ENV_ALLOWLIST if k in os.environ}
@@ -811,29 +892,15 @@ class ExecutionSandbox:
 
         h_job = None
         k32 = None
-        creationflags = 0
         if _IS_WINDOWS:
             k32 = kernel32()
             h_job = self._create_windows_job(memory_limit_bytes)
-            if h_job:
-                # Start suspended and resume only once the process is in the job, so
-                # no instruction of it runs outside the memory limit and kill-on-close.
-                creationflags = CREATE_SUSPENDED
-
-        preexec = None
-        if not _IS_WINDOWS:
-            # CPU-time backstop: the wall-clock timeout is enforced by this host, so a
-            # program orphaned by a killed host would otherwise run on unbounded (its
-            # own session is outside the host's process group). The kernel stops it.
-            cpu_seconds = int(math.ceil(timeout * 2)) + 1
-
-            def _preexec_posix():
-                for limit, value in ((resource.RLIMIT_AS, memory_limit_bytes), (resource.RLIMIT_CPU, cpu_seconds)):
-                    try:
-                        resource.setrlimit(limit, (value, value + (1 if limit == resource.RLIMIT_CPU else 0)))
-                    except (ValueError, OSError):
-                        pass
-            preexec = _preexec_posix
+        limits = RunLimits(
+            timeout=timeout,
+            memory_limit_bytes=memory_limit_bytes,
+            cpu_seconds=int(math.ceil(timeout * 2)) + 1,
+            job=h_job,
+        )
 
         start_time = time.perf_counter()
         proc = None
@@ -843,35 +910,16 @@ class ExecutionSandbox:
         exit_code = -1
 
         try:
-            proc = subprocess.Popen(
-                cmd,
-                cwd=cwd,
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env=base_env,
-                preexec_fn=preexec,
-                start_new_session=not _IS_WINDOWS,
-                creationflags=creationflags,
-            )
-
-            if _IS_WINDOWS and h_job and k32:
-                failure = None
-                if not k32.AssignProcessToJobObject(h_job, int(proc._handle)):
-                    failure = f"job_assign_failed_{ctypes.get_last_error()}"
-                elif not resume_process(proc):
-                    failure = "process_resume_failed"
-                if failure:
-                    # The process never ran outside the job: it is still suspended.
-                    proc.kill()
-                    proc.communicate()
-                    return SandboxResult(
-                        stdout="",
-                        stderr=f"Failed to start the process in its Job Object ({failure})",
-                        exit_code=-1,
-                        duration_ms=(time.perf_counter() - start_time) * 1000.0,
-                        error=failure,
-                    )
+            try:
+                proc = backend.launch(cmd, cwd=cwd, env=base_env, limits=limits)
+            except LaunchError as exc:
+                return SandboxResult(
+                    stdout="",
+                    stderr=f"Failed to start the process in its containment ({exc.failure})",
+                    exit_code=-1,
+                    duration_ms=(time.perf_counter() - start_time) * 1000.0,
+                    error=exc.failure,
+                )
 
             raw_out, raw_err = proc.communicate(timeout=timeout)
             stdout_text = _decode_stream(raw_out)
@@ -881,7 +929,7 @@ class ExecutionSandbox:
         except subprocess.TimeoutExpired:
             timed_out = True
             if proc is not None:
-                self._kill_tree(proc, h_job, k32)
+                self._kill_tree(proc, h_job, k32, backend)
                 # Collect what the program printed before the kill. Bounded, so a
                 # descendant that escaped the kill and still holds a pipe cannot hang
                 # the host.
@@ -895,7 +943,7 @@ class ExecutionSandbox:
 
         except Exception as exc:
             if proc is not None:
-                self._kill_tree(proc, h_job, k32)
+                self._kill_tree(proc, h_job, k32, backend)
                 try:
                     proc.communicate(timeout=_KILL_GRACE_SECONDS)
                 except Exception:
@@ -912,7 +960,7 @@ class ExecutionSandbox:
             # Ctrl-C or SystemExit in the host: the program runs in its own session
             # (or job), so it would be orphaned and keep running. Kill it first.
             if proc is not None:
-                self._kill_tree(proc, h_job, k32)
+                self._kill_tree(proc, h_job, k32, backend)
             raise
 
         finally:
@@ -945,9 +993,10 @@ class ExecutionSandbox:
         )
 
     @staticmethod
-    def _kill_tree(proc: subprocess.Popen, h_job: Any, k32: Any) -> None:
+    def _kill_tree(proc: Any, h_job: Any, k32: Any, backend: Any = None) -> None:
         """Kill the program and every process it started: the job on Windows, the
-        process group (its own session) on POSIX. Never raises."""
+        process group (its own session) on POSIX, and whatever the backend runs
+        beyond it. Never raises."""
         try:
             if _IS_WINDOWS and h_job and k32:
                 k32.TerminateJobObject(h_job, 124)
@@ -959,6 +1008,8 @@ class ExecutionSandbox:
             proc.kill()
         except OSError:
             pass
+        if backend is not None:
+            backend.terminate()
 
 
 def _decode_stream(raw: bytes | None) -> str:

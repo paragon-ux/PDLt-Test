@@ -261,9 +261,11 @@ def open_session(
         run_id=args.run_id,
         observation_dir=observation_dir,
         render_compact=bool(getattr(args, "render_compact", False)),
+        sandbox_mode=getattr(args, "sandbox", None),
     ).start()
     if getattr(host, "restore_notice", None):
         print(f"[warn] {host.restore_notice}", flush=True)
+    _announce_sandbox(host)
     if host.status().get("workspace_path"):
         wp = host.status()["workspace_path"]
         relpath = None
@@ -295,6 +297,26 @@ def open_session(
         observation_dir=observation_dir,
         exit_on_close=bool(getattr(args, "exit_on_close", False)),
     )
+
+
+def _announce_sandbox(host: PDLtHost) -> None:
+    """Say at session start when programs will not run confined: the audit-only
+    opt-out, or a native backend that cannot apply here (then nothing runs)."""
+    sandbox = getattr(getattr(host, "engine", None), "sandbox", None)
+    if sandbox is None:
+        return
+    if not sandbox.confined:
+        print(
+            "WARNING: --sandbox audit-only: model-authored programs run WITHOUT OS-native confinement "
+            "(in-process audit hook and resource limits only). They can read files this user can read.",
+            flush=True,
+        )
+    elif not sandbox.probe():
+        print(
+            f"[warn] code execution unavailable: {sandbox.unavailable_reason}. Programs in deliverables will not "
+            "run; use --sandbox container, or --sandbox audit-only to run them without OS-native confinement.",
+            flush=True,
+        )
 
 
 def switch_session(
@@ -901,6 +923,14 @@ def main() -> int:
         "--allow-bypass",
         action="store_true",
         help="OPT-IN ONLY: use --dangerously-bypass-approvals-and-sandbox (codex worker only). Requires a hardened/disposable execution environment; not part of the Phase 0-5 seal.",
+    )
+    parser.add_argument(
+        "--sandbox",
+        choices=["auto", "native", "container", "audit-only"],
+        default=None,
+        help="confinement for model-authored programs (default: $PDLT_SANDBOX, else auto = native: Landlock, "
+        "Seatbelt or AppContainer); container = docker/podman; audit-only = no OS-native confinement (opt-out). "
+        "When the chosen confinement cannot apply, programs do not run",
     )
     parser.add_argument(
         "--dev",

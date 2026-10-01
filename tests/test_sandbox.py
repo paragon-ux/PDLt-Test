@@ -75,6 +75,18 @@ def test_sandbox_low_overhead():
     assert "2" in result.stdout.strip()
     # Python startup + Windows Job Object assignment should complete promptly
     assert result.duration_ms < 2500.0
+    # Native confinement is built once per session; per run it adds at most 50 ms
+    # (median) over the audit-only opt-out on the same host.
+    native = ExecutionSandbox(mode="native")
+    if native.probe():
+        import statistics
+
+        medians = {}
+        for mode, box in (("native", native), ("audit-only", ExecutionSandbox(mode="audit-only"))):
+            with box:
+                box.run_code("pass")  # session setup, not per-run overhead
+                medians[mode] = statistics.median(box.run_code("x = 1 + 1").duration_ms for _ in range(9))
+        assert medians["native"] - medians["audit-only"] <= 50.0, medians
 
 
 def test_sandbox_env_has_no_secrets(monkeypatch):

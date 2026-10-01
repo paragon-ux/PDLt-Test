@@ -245,3 +245,417 @@ def test_policy_hooks_do_not_count_as_program_steps():
         result = sandbox.run_code("import json, decimal, fractions\nopen('x', 'w').close()", step_limit=1_000)
     assert result.success, result.stderr
     assert result.steps_used < 200
+
+
+# -- backend selection and fail-closed ---------------------------------------------
+
+from pdl_taskmaster.verification.confinement import backends as cb  # noqa: E402
+from pdl_taskmaster.verification.confinement import policy as cp  # noqa: E402
+
+
+def test_mode_comes_from_the_argument_then_the_environment(monkeypatch):
+    monkeypatch.delenv("PDLT_SANDBOX", raising=False)
+    assert cb.resolve_mode(None) == "auto"
+    monkeypatch.setenv("PDLT_SANDBOX", "Audit-Only")
+    assert cb.resolve_mode(None) == "audit-only"
+    assert cb.resolve_mode("native") == "native"
+    assert ExecutionSandbox().backend_name == "audit-only"
+
+
+def test_an_unknown_mode_fails_closed():
+    with ExecutionSandbox(mode="bogus") as sandbox:
+        assert not sandbox.probe()
+        result = sandbox.run_code("print('ran')")
+        assert result.error.startswith("sandbox_unavailable:") and "unknown sandbox mode" in result.error
+        assert result.stdout == "" and not result.success
+        assert sandbox.session_info == {"backend": "bogus", "mode": "bogus", "available": False,
+                                        "reason": sandbox.unavailable_reason}
+
+
+def test_a_backend_that_cannot_apply_runs_nothing(monkeypatch, tmp_path):
+    marker = tmp_path / "ran.txt"
+    monkeypatch.setattr(cb, "_native_backend", lambda: cb.UnavailableBackend("native", "forced for the test"))
+    with ExecutionSandbox(mode="native") as sandbox:
+        result = sandbox.run_code(f"open({str(marker)!r}, 'w').write('x')")
+        assert result.error == "sandbox_unavailable:forced for the test"
+        assert sandbox._session is None  # no session root was created
+    assert not marker.exists()
+
+
+def test_a_backend_whose_setup_fails_runs_nothing(monkeypatch):
+    class Failing(cb.Backend):
+        name = "failing"
+
+        def prepare(self, policy, session):
+            raise RuntimeError("setup exploded")
+
+    monkeypatch.setattr(cb, "_native_backend", Failing)
+    before = set(sb.sandbox_base_dir().iterdir())
+    with ExecutionSandbox(mode="native", label="failing") as sandbox:
+        result = sandbox.run_code("print('ran')")
+        assert result.error == "sandbox_unavailable:failing setup failed: setup exploded"
+        assert not sandbox.probe()  # stays unavailable for the session
+        assert not [p for p in set(sb.sandbox_base_dir().iterdir()) - before if p.name.startswith("failing-")]
+
+
+def test_unavailable_execution_is_described_truthfully():
+    sandbox = ExecutionSandbox(mode="bogus")
+    tools = sandbox.describe(sb.DEFAULT_BUDGET)
+    assert tools[0]["description"].startswith("Unavailable in this session")
+    assert "not executed" in tools[0]["description"]
+    assert sandbox.decision_state()["execution_environment"].startswith("No program execution is available")
+
+
+def test_engine_reports_sandbox_unavailable_and_runs_no_later_block(tmp_path):
+    from pdl_taskmaster.runtime.session_engine import SessionEngine
+    from pdl_taskmaster.verification.error_registry import finding_codes
+
+    engine = SessionEngine(ROOT, lambda r: "", workspace_root=tmp_path, sys1_client=None, sandbox_mode="bogus")
+    engine.workspace = engine._new_workspace()
+    assert engine.available_execution_tools[0]["description"].startswith("Unavailable in this session")
+    witness, failures = engine._run_deliverable_code("```python\nprint(1)\n```\n```python\nprint(2)\n```")
+    assert witness is None and finding_codes(failures) == ["SANDBOX_UNAVAILABLE"]
+    assert "unknown sandbox mode" in failures[0]
+    events = list(engine.workspace._events)
+    session = next(e for e in events if e["kind"] == "SANDBOX_SESSION")["payload"]
+    assert session["available"] is False and session["backend"] == "bogus"
+    assert [e["payload"]["block"] for e in events if e["kind"] == "SANDBOX_RUN"] == [1]
+    engine.close()
+
+
+def test_sandbox_unavailable_is_not_repaired(tmp_path):
+    from test_execution_phase import _run_raising
+
+    witness = {"kind": "RESULT", "result_ir": {},
+               "body": "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'x': 1}}))"}
+    engine, response, executes, events = _run_raising(
+        tmp_path, [witness] * 3, sandbox=ExecutionSandbox(mode="bogus"),
+    )
+    assert len(executes) == 1  # the environment does not change between attempts
+    failed = next(e for e in events if e["kind"] == "VERIFICATION_FAILED")["payload"]
+    assert "SANDBOX_UNAVAILABLE" in failed["codes"]
+    assert "Unavailable in this session" in executes[0].prompt
+
+
+def test_audit_only_runs_with_a_loud_warning(capsys, tmp_path):
+    from pdl_taskmaster.host.app import PDLtHost
+    from pdl_taskmaster.host.repl import _announce_sandbox
+
+    host = PDLtHost(ROOT, worker=object(), workspace_root=tmp_path, sandbox_mode="audit-only").start()
+    _announce_sandbox(host)
+    assert "WARNING: --sandbox audit-only" in capsys.readouterr().out
+    assert host.engine.sandbox.run_code("print('ran')").stdout == "ran\n"
+    assert host.engine.sandbox.session_info["backend"] == "audit-only"
+    host.close()
+
+
+def test_unavailable_native_backend_is_announced(capsys, tmp_path):
+    from pdl_taskmaster.host.app import PDLtHost
+    from pdl_taskmaster.host.repl import _announce_sandbox
+
+    host = PDLtHost(ROOT, worker=object(), workspace_root=tmp_path, sandbox_mode="bogus").start()
+    _announce_sandbox(host)
+    out = capsys.readouterr().out
+    assert out.startswith("[warn] code execution unavailable: unknown sandbox mode")
+    assert "--sandbox container" in out and "--sandbox audit-only" in out
+    host.close()
+
+
+def test_runner_passes_the_sandbox_mode_to_the_harness(tmp_path):
+    import run_catalogue
+
+    cmd = run_catalogue.build_harness_command(tmp_path / "p.txt", "s", tmp_path / "t", tmp_path / "d", "m", "low",
+                                              (), {"sandbox": "audit-only"})
+    assert cmd[cmd.index("--sandbox") + 1] == "audit-only"
+    assert "--sandbox" not in run_catalogue.build_harness_command(tmp_path / "p.txt", "s", tmp_path / "t",
+                                                                   tmp_path / "d", "m", "low")
+
+
+def test_policy_reads_only_the_base_install_and_system_libraries(tmp_path):
+    (tmp_path / "work").mkdir()
+    policy = cp.build_policy(tmp_path, tmp_path / "work")
+    home = Path.home().resolve()
+    assert policy.write_roots == ((tmp_path / "work").resolve(),)
+    assert policy.interpreter == cp.base_interpreter() and policy.interpreter.is_absolute()
+    for root in policy.read_roots:
+        assert not ROOT.is_relative_to(root), root  # never the repository
+        assert not home.is_relative_to(root), root  # never the home directory
+        assert not str(root).startswith("/proc"), root
+    assert not policy.network and not policy.processes
+
+
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="ELF executables")
+def test_policy_grants_execute_on_the_interpreter_and_its_loader_only():
+    loader = cp.elf_interpreter(cp.base_interpreter())
+    assert loader is not None and loader.exists() and "ld" in loader.name
+    policy = cp.build_policy(Path("/tmp"), Path("/tmp"))
+    assert policy.exec_paths == (cp.base_interpreter(), loader)
+
+
+# -- escape suite: every backend available on this host ------------------------------
+#
+# Each case runs under the full configuration (audit hook on) and, for native
+# backends, with the audit hook switched off: the OS-native layer must hold on its
+# own. Backends this host cannot run are skipped with the reason (the Windows and
+# macOS legs run in CI, .github/workflows/sandbox.yml).
+
+import secrets  # noqa: E402
+import socket  # noqa: E402
+import tempfile  # noqa: E402
+import threading  # noqa: E402
+
+_IS_WINDOWS = sys.platform == "win32"
+_MODES = ["native", "container", "audit-only"]
+
+
+def _require(mode: str) -> None:
+    sandbox = ExecutionSandbox(mode=mode)
+    if not sandbox.probe():
+        pytest.skip(f"{mode} backend unavailable on this host: {sandbox.unavailable_reason}")
+
+
+@pytest.fixture(params=_MODES)
+def mode(request):
+    _require(request.param)
+    return request.param
+
+
+@pytest.fixture(params=[(m, hooks) for m in _MODES for hooks in (True, False) if hooks or m != "audit-only"],
+                ids=lambda p: f"{p[0]}-{'hooks' if p[1] else 'native-only'}")
+def configuration(request):
+    _require(request.param[0])
+    return request.param
+
+
+def _open(configuration, **kwargs) -> ExecutionSandbox:
+    mode, hooks = configuration
+    sandbox = ExecutionSandbox(mode=mode, label="escape", **kwargs)
+    if not hooks:
+        sandbox._policy_hooks = False  # the test-only switch: native layer alone
+    return sandbox
+
+
+def test_escape_writing_outside_the_run_directory_is_denied(configuration, tmp_path):
+    token = secrets.token_hex(4)
+    workspace = tmp_path / "session" / "workspaces" / "W-0001"
+    workspace.mkdir(parents=True)
+    targets = [
+        Path.home() / f"pdlt-escape-{token}.txt",
+        ROOT / f"pdlt-escape-{token}.txt",
+        workspace / f"pdlt-escape-{token}.txt",
+        Path(tempfile.gettempdir()) / f"pdlt-escape-{token}.txt",
+        sb.sandbox_base_dir() / f"pdlt-escape-{token}.txt",
+    ]
+    try:
+        with _open(configuration) as sandbox:
+            for target in targets:
+                result = sandbox.run_code(f"open({str(target)!r}, 'w').write('escaped')")
+                assert _denied(result), (target, result.stderr)
+                assert not target.exists(), target
+    finally:
+        for target in targets:
+            target.unlink(missing_ok=True)
+
+
+def test_escape_reading_a_secret_outside_is_denied(configuration, secret):
+    with _open(configuration) as sandbox:
+        for code in (f"print(open({str(secret)!r}).read())",
+                     f"import os\nprint(os.read(os.open({str(secret)!r}, os.O_RDONLY), 100))",
+                     f"import os\nprint(os.listdir({str(secret.parent)!r}))"):
+            result = sandbox.run_code(code)
+            assert _denied(result), (code, result.stderr)
+            assert "top-secret-value" not in result.stdout and "secret.txt" not in result.stdout
+
+
+def test_escape_following_a_link_that_points_outside_is_denied(configuration, secret):
+    code = f"import os\nos.symlink({str(secret)!r}, 'link')\nprint(open('link').read())"
+    with _open(configuration) as sandbox:
+        result = sandbox.run_code(code)
+    assert _denied(result), result.stderr
+    assert "top-secret-value" not in result.stdout
+
+
+def test_escape_native_code_cannot_read_the_secret_without_the_audit_hook(mode, secret):
+    """With the audit hook off, ctypes loads: only the native layer stands."""
+    if mode == "audit-only":
+        pytest.skip("audit-only has no native layer")
+    if _IS_WINDOWS:
+        opener = "ctypes.cdll.msvcrt._open"
+    else:
+        opener = "ctypes.CDLL(None).open"
+    code = (
+        "import ctypes, os\n"
+        f"fd = {opener}({str(secret).encode()!r}, 0)\n"
+        "print('fd', fd)\n"
+        "print(os.read(fd, 100) if fd >= 0 else 'denied')\n"
+    )
+    with _open((mode, False)) as sandbox:
+        result = sandbox.run_code(code)
+    assert result.success, result.stderr  # ctypes itself loaded: the hook was off
+    assert "denied" in result.stdout and "top-secret-value" not in result.stdout
+
+
+def test_escape_connecting_to_a_localhost_listener_is_denied(configuration):
+    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(1)
+    listener.settimeout(5)
+    accepted: list = []
+
+    def accept():
+        try:
+            accepted.append(listener.accept())
+        except OSError:
+            pass
+
+    thread = threading.Thread(target=accept, daemon=True)
+    thread.start()
+    port = listener.getsockname()[1]
+    try:
+        with _open(configuration) as sandbox:
+            result = sandbox.run_code(
+                f"import socket\nsocket.create_connection(('127.0.0.1', {port}), timeout=3)\nprint('connected')"
+            )
+    finally:
+        listener.close()
+        thread.join(6)
+    assert not result.success and "connected" not in result.stdout, result.stderr
+    assert not accepted
+
+
+def test_escape_starting_a_shell_is_denied(configuration):
+    mode, hooks = configuration
+    shell = os.environ.get("COMSPEC", r"C:\Windows\System32\cmd.exe") if _IS_WINDOWS else "/bin/sh"
+    argv = [shell, "/c", "echo escaped"] if _IS_WINDOWS else [shell, "-c", "echo escaped"]
+    if hooks or _IS_WINDOWS:
+        code = f"import subprocess\nprint(subprocess.run({argv!r}, capture_output=True, text=True).stdout)"
+    else:
+        code = f"import os\nos.execv({shell!r}, {argv!r})"
+    with _open(configuration) as sandbox:
+        result = sandbox.run_code(code)
+    assert not result.success, result.stdout
+    assert "escaped" not in result.stdout
+
+
+def test_escape_a_run_never_sees_an_earlier_run(configuration):
+    with _open(configuration) as sandbox:
+        first = sandbox.run_code(
+            "open('mine.txt', 'w').write('x')\n"
+            "try:\n    open('../left.txt', 'w').write('x')\nexcept PermissionError:\n    pass\n"
+        )
+        assert first.success, first.stderr
+        second = sandbox.run_code(
+            "import os\n"
+            "try:\n    print(sorted(os.listdir('..')))\nexcept PermissionError:\n    print('parent denied')\n"
+            "print(sorted(os.listdir('.')))"
+        )
+    assert second.success, second.stderr
+    assert "mine.txt" not in second.stdout and "left.txt" not in second.stdout
+
+
+def test_escape_modifying_a_harness_owned_deliverable_is_denied(configuration, tmp_path):
+    current = tmp_path / "session" / "workspaces" / "W-0001" / "turns" / "0001" / "current.md"
+    current.parent.mkdir(parents=True)
+    current.write_text("harness-owned", encoding="utf-8")
+    with _open(configuration) as sandbox:
+        for code in (f"open({str(current)!r}, 'a').write('planted')",
+                     f"import os\nos.replace('program.py', {str(current)!r})",
+                     f"import os\nos.remove({str(current)!r})"):
+            result = sandbox.run_code(code)
+            assert _denied(result), (code, result.stderr)
+    assert current.read_text(encoding="utf-8") == "harness-owned"
+
+
+# -- positive cases: programs still work under every backend -------------------------
+
+
+def test_backend_runs_standard_library_programs(mode):
+    code = (
+        "import json, decimal, fractions, itertools, sqlite3\n"
+        "db = sqlite3.connect(':memory:')\n"
+        "db.execute('create table t (x)'); db.executemany('insert into t values (?)', [(1,), (2,)])\n"
+        "total = db.execute('select sum(x) from t').fetchone()[0]\n"
+        "print(json.dumps({'sum': total, 'd': str(decimal.Decimal('1.10') + decimal.Decimal('2.20')),\n"
+        "                  'f': str(fractions.Fraction(1, 3) * 3), 'p': len(list(itertools.permutations(range(4))))}))"
+    )
+    with ExecutionSandbox(mode=mode) as sandbox:
+        result = sandbox.run_code(code)
+    assert result.success, result.stderr
+    assert json.loads(result.stdout) == {"sum": 3, "d": "3.30", "f": "1", "p": 24}
+
+
+def test_backend_allows_reading_and_writing_the_run_directory(mode):
+    code = (
+        "import os, tempfile\n"
+        "with open('data.txt', 'w', encoding='utf-8') as f:\n    f.write('hello')\n"
+        "os.makedirs('a/b'); os.replace('data.txt', 'a/b/data.txt')\n"
+        "print(open('a/b/data.txt', encoding='utf-8').read())\n"
+        "with tempfile.NamedTemporaryFile('w', delete=False) as f:\n    f.write('t')\n"
+        "print(os.path.commonpath([f.name, os.getcwd()]) == os.getcwd())"
+    )
+    with ExecutionSandbox(mode=mode) as sandbox:
+        result = sandbox.run_code(code)
+    assert result.success, result.stderr
+    assert result.stdout.split() == ["hello", "True"]
+
+
+@pytest.mark.parametrize("step_limit", [None, 100_000])
+def test_backend_keeps_utf8_output_and_future_imports(mode, step_limit):
+    text = "café ✓ 漢字"
+    code = f'"""Doc."""\nfrom __future__ import annotations\ndef f(x: Undefined) -> None: ...\nprint({text!r})'
+    with ExecutionSandbox(mode=mode) as sandbox:
+        result = sandbox.run_code(code, step_limit=step_limit)
+    assert result.success, result.stderr
+    assert result.stdout == text + "\n"
+
+
+def test_backend_enforces_the_step_budget(mode):
+    with ExecutionSandbox(mode=mode) as sandbox:
+        result = sandbox.run_code("while True: pass", step_limit=10_000, timeout=20)
+    assert result.step_budget_exceeded and result.steps_used == 10_001
+
+
+def test_backend_times_out_and_keeps_partial_output(mode):
+    with ExecutionSandbox(mode=mode, timeout_seconds=1.5) as sandbox:
+        result = sandbox.run_code("import time\nprint('partial result')\ntime.sleep(30)")
+        after = sandbox.run_code("print('next run')")
+    assert result.timed_out and "partial result" in result.stdout
+    assert after.stdout == "next run\n"  # the session survives a killed program
+
+
+def test_backend_detects_memory_exhaustion(mode):
+    if sys.platform == "darwin" and mode != "container":
+        pytest.skip("macOS does not enforce RLIMIT_AS (ADR-0021)")
+    with ExecutionSandbox(mode=mode, memory_limit_bytes=64 * 1024 * 1024) as sandbox:
+        result = sandbox.run_code("x = bytearray(512 * 1024 * 1024)\nprint(len(x))")
+    assert result.oom_killed and not result.success
+
+
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="Landlock is Linux-only")
+def test_landlock_ruleset_descriptor_never_reaches_the_program():
+    """preexec_fn (which restricts the child) runs before close_fds, and the ruleset
+    fd is O_CLOEXEC: the program holds no descriptor beyond its standard streams."""
+    _require("native")
+    code = (
+        "import os\nopen_fds = []\n"
+        "for fd in range(3, 256):\n"
+        "    try:\n        os.fstat(fd)\n        open_fds.append(fd)\n    except OSError:\n        pass\n"
+        "print(open_fds)"
+    )
+    with ExecutionSandbox(mode="native") as sandbox:
+        result = sandbox.run_code(code)
+        assert sandbox.session_info["backend"] == "landlock" and sandbox.session_info["abi"] >= 1
+    assert result.success, result.stderr
+    assert result.stdout.strip() == "[]"
+
+
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="Landlock is Linux-only")
+def test_landlock_close_releases_the_ruleset_descriptor():
+    _require("native")
+    sandbox = ExecutionSandbox(mode="native")
+    assert sandbox.run_code("print(1)").success
+    fd = sandbox._session.backend.ruleset_fd
+    os.fstat(fd)
+    sandbox.close()
+    with pytest.raises(OSError):
+        os.fstat(fd)

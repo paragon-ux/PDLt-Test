@@ -279,6 +279,7 @@ class SessionEngine:
         workspace_root: str | Path | None = None,
         render_compact: bool = False,
         sys1_client: Any = None,
+        sandbox_mode: str | None = None,
     ):
         self.repo_root = Path(repo_root)
         self.model_call = model_call
@@ -286,7 +287,7 @@ class SessionEngine:
         self.bridge = OperationBridge(self.repo_root, render_compact=render_compact)
         # Axiom 3: one session-scoped sandbox, constructed at boot and reused by every run.
         # It builds its session lazily, on the first program run; close() releases it.
-        self.sandbox = ExecutionSandbox(timeout_seconds=15.0, label="engine")
+        self.sandbox = ExecutionSandbox(timeout_seconds=15.0, mode=sandbox_mode, label="engine")
         self._sandbox_session_logged: Any = None  # the workspace that has its SANDBOX_SESSION event
         # The solver is told the truth about where its code runs (EXEC-01): the
         # sandbox under the task's routed budget, unless the host declares its own.
@@ -343,6 +344,7 @@ class SessionEngine:
         available_execution_tools: Any = None,
         render_compact: bool = False,
         sys1_client: Any = None,
+        sandbox_mode: str | None = None,
     ) -> "SessionEngine":
         workspace_path = Path(workspace_path)
         engine = cls(
@@ -353,6 +355,7 @@ class SessionEngine:
             workspace_root=workspace_path.parent,
             render_compact=render_compact,
             sys1_client=sys1_client,
+            sandbox_mode=sandbox_mode,
         )
         workspace = MemoryWorkspaceRun.open(repo_root, workspace_path)
         # Pointer may sit on a turn whose controller never committed (e.g. a
@@ -1250,7 +1253,10 @@ class SessionEngine:
         # attempt that ran no program at all does not use them up. With
         # --max-repairs 0 nothing is retried: the first failure closes the run.
         attempt_findings = [list(errors)]  # per attempt, for the published failure record
+        # A session whose sandbox cannot run programs stays that way: a repair cannot help.
         while outcome.kind == "RESULT" and errors and not stop_on_failure and (
+            "SANDBOX_UNAVAILABLE" not in finding_codes(errors)
+        ) and (
             repairs_used < repairs_allowed or (not ran_program and unmeasured_repairs < UNMEASURED_REPAIRS)
         ):
             counted = ran_program or unmeasured_repairs >= UNMEASURED_REPAIRS
@@ -1419,6 +1425,11 @@ class SessionEngine:
                     "duration_ms": round(run.duration_ms, 1),
                 },
             )
+            if (run.error or "").startswith("sandbox_unavailable:"):
+                # Fail closed: nothing ran, and no later block can run either.
+                failures.append(Finding("SANDBOX_UNAVAILABLE", block=index,
+                                        reason=run.error.split(":", 1)[1]))
+                break
             if not run.success:
                 budget = self._execution_budget
                 if run.step_budget_exceeded:

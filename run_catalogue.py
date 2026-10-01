@@ -311,6 +311,8 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
             setting_args += [flag, str(settings[key])]
     if settings.get("draft_execute"):
         setting_args.append("--draft-execute")
+    if settings.get("sandbox"):
+        setting_args += ["--sandbox", settings["sandbox"]]
     cmd = [
         sys.executable, "-m", "pdl_taskmaster.host.cli",
         "--non-interactive",
@@ -796,6 +798,9 @@ def main():
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
     parser.add_argument("--draft-execute", action="store_true",
                         help="run DRAFT_EXECUTE before EXECUTE (A/B option)")
+    parser.add_argument("--sandbox", choices=["auto", "native", "container", "audit-only"], default=None,
+                        help="confinement for model-authored programs, in the harness and the graders (default: "
+                             "$PDLT_SANDBOX, else auto = native); audit-only opts out of OS-native confinement")
     parser.add_argument("--harness-memory-mb", type=int, default=HARNESS_MEMORY_MB, metavar="MB",
                         help=f"memory cap for one prompt's harness process tree (default: {HARNESS_MEMORY_MB})")
     parser.add_argument("--repeat", type=int, default=1, metavar="N",
@@ -817,7 +822,10 @@ def main():
         parser.error("--repeat must be at least 1")
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
-                    "providers": args.providers, "draft_execute": args.draft_execute}
+                    "providers": args.providers, "draft_execute": args.draft_execute, "sandbox": args.sandbox}
+    if args.sandbox:
+        # The graders run deliverable code in this process: the same confinement.
+        os.environ["PDLT_SANDBOX"] = args.sandbox
 
     if not entries:
         print("No prompts match the filter. Exiting.")
@@ -860,6 +868,7 @@ def main():
         "repeat": args.repeat,
         "timeout_per_prompt": args.timeout,
         "harness_memory_mb": args.harness_memory_mb,
+        "sandbox": args.sandbox or os.environ.get("PDLT_SANDBOX") or "auto",
         "pdlt_test_root": str(PDLT_TEST_ROOT),
         "rules": {
             "retries_allowed": 0,
