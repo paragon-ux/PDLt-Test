@@ -209,13 +209,28 @@ def read_prompt(root: Path, prompt_id: str) -> str | None:
 # --------------------------------------------------------------------------- HTTP
 
 class _Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    allow_reuse_address = True
+    # On Windows SO_REUSEADDR lets a second socket bind a port that is already in
+    # use, so two viewers would share 8090 instead of moving to the next port.
+    allow_reuse_address = os.name != "nt"
     daemon_threads = True
 
     def handle_error(self, request, client_address):
         if sys.exc_info()[0] in (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
             return
         super().handle_error(request, client_address)
+
+
+# Host names a request to this localhost-only server may carry. Anything else is
+# a page on another site reaching it through DNS rebinding.
+_LOCAL_HOSTS = {"127.0.0.1", "localhost"}
+
+
+def _local_host(header: str | None) -> bool:
+    if not header:
+        return True  # non-browser clients may omit it; a rebinding browser cannot
+    host = header.strip().lower()
+    host = host[1:].split("]", 1)[0] if host.startswith("[") else host.rsplit(":", 1)[0]
+    return host in _LOCAL_HOSTS
 
 
 def make_handler(root: Path):
@@ -236,6 +251,8 @@ def make_handler(root: Path):
 
         def do_GET(self):
             try:
+                if not _local_host(self.headers.get("Host")):
+                    return self._send(403, b"forbidden", "text/plain")
                 url = urlparse(self.path)
                 q = {k: v[0] for k, v in parse_qs(url.query).items()}
                 if url.path in {"/", "/index.html"}:

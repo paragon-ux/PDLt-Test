@@ -120,6 +120,26 @@ def test_http_endpoints_and_path_safety(tmp_path):
         server.server_close()
 
 
+def test_requests_for_another_host_are_refused(tmp_path):
+    """DNS rebinding: a page on another site that resolves its own name to 127.0.0.1
+    must not read sessions and transcripts through the viewer."""
+    root = _make_root(tmp_path)
+    _, server, port = start_server(root, port=0)
+    try:
+        base = f"http://127.0.0.1:{port}"
+        request = urllib.request.Request(base + "/api/status", headers={"Host": f"attacker.example:{port}"})
+        with pytest.raises(urllib.error.HTTPError) as exc:
+            urllib.request.urlopen(request)
+        assert exc.value.code == 403
+        for host in (f"localhost:{port}", f"127.0.0.1:{port}", "LOCALHOST"):
+            request = urllib.request.Request(base + "/api/runs", headers={"Host": host})
+            with urllib.request.urlopen(request) as resp:
+                assert resp.status == 200
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
 def test_viewer_does_not_import_the_harness():
     text = (Path(__file__).resolve().parents[1] / "viewer" / "server.py").read_text(encoding="utf-8")
     assert "pdl_taskmaster" not in text
