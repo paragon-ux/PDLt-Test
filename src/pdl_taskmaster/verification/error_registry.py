@@ -100,6 +100,20 @@ _SPECS = (
         "`WITNESS: <json>` line; the host runs it.",
     ),
     ErrorSpec(
+        "OUTPUT_LIMIT_REACHED",
+        "The response reached the {limit:,}-token output limit before it finished.",
+        "Each response is limited to {limit:,} output tokens, reasoning included; a response cut off at the "
+        "limit is a failed attempt.",
+        "Return a complete response within {limit:,} tokens: a deliverable that states the result without "
+        "repetition or filler.",
+    ),
+    ErrorSpec(
+        "OUTPUT_MALFORMED",
+        "The response was not a valid output object: {reason}",
+        "The output must be one JSON object matching the declared schema.",
+        "Return exactly one JSON object matching the declared schema, with no text around it.",
+    ),
+    ErrorSpec(
         "PAYLOAD_TOKEN_REPEATED",
         "The deliverable repeats {count} payload token(s) from the untrusted input verbatim.",
         "A deliverable carries no unredacted payload token from untrusted input (EXEC-04, SEM-06).",

@@ -259,7 +259,11 @@ class ExecutionDraftBlockedData(BaseModel):
 class ExecutionDraftResultData(BaseModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["RESULT"] = "RESULT"
-    brief_body: str
+    brief_body: str = Field(description=(
+        "The execution brief, in plain text: how the deliverable will satisfy the confirmed prompt and plan "
+        "within the execution environment in AVAILABLE_EXECUTION_TOOLS, including, for any program, its "
+        "estimated step count against the step budget."
+    ))
     execution_entities: list[Union[dict[str, Any], str]] = Field(default_factory=list)
 
     @model_validator(mode="after")

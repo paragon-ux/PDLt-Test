@@ -71,6 +71,15 @@ _PYTHON_BLOCK = re.compile(r"```(?:python|py)[ \t]*\n(.*?)```", re.S)
 
 from pdl_taskmaster.verification.error_registry import Finding, finding_codes  # noqa: E402
 
+class _FailedExecution:
+    """Stand-in outcome for an EXECUTE response that never parsed (cut off at the
+    output cap, or malformed past its wire retry): a RESULT with nothing in it."""
+
+    kind = "RESULT"
+    body = ""
+    result_ir = None
+
+
 # Repairs per execution that do not count against the tier: after an attempt that
 # ran no program, the sandbox measured nothing, so the tier's repairs stay intact.
 UNMEASURED_REPAIRS = 1
@@ -298,6 +307,10 @@ class SessionEngine:
         # None for first turns and legacy single-turn workspaces.
         self._previous_deliverable: str | None = None
         self._previous_turn: dict[str, Any] | None = None
+        # Run settings set by the host from CLI flags: None = the routed tier's repairs;
+        # 0 = stop at the first failed EXECUTE (no repair, no retry of any kind).
+        self.max_repairs: int | None = None
+        self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
         self._active_task_entities: tuple[str, ...] = ()
         # AUTH-04: the user's original request is source data for execution; the
         # confirmed prompt governs task semantics where the two differ.
@@ -1206,23 +1219,29 @@ class SessionEngine:
 
         self._route_plan_profile(prompt_body, plan_body)
         execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools
-        outcome = self._call("EXECUTE", execute_context, traces, parser=self.bridge.parse_execution)
-        final_body = outcome.body
-        errors: list[str] = []
-        repairs_allowed = self._execution_budget.repairs
+        if self.draft_execute:
+            brief = self._draft_execution_brief(execute_context, traces)
+            if brief:
+                # The model's own draft (GUARD-01: no harness feedback), drafted once.
+                execute_context["REQUIRED_TASK_INPUTS"] = (
+                    (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context["REQUIRED_TASK_INPUTS"] else "")
+                    + "EXECUTION BRIEF (your own draft for this task, written before this call):\n" + brief
+                )
+        stop_on_failure = self.max_repairs == 0
+        repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
         repairs_used = 0
         unmeasured_repairs = 0  # repairs after an attempt that ran no program (at most one)
-        ran_program = False
-        if outcome.kind == "RESULT":
-            errors, final_body = self._verify_result(outcome, prompt_body, plan_body, requirements, result_ir_mode)
-            ran_program = getattr(self, "_last_programs_run", 0) > 0
-        # Bounded repair: at most the routed tier's number of re-executions, each
-        # carrying only the latest factual host findings through the
-        # operator-correction channel (never as approach sources). The tier's
-        # repairs are for attempts the sandbox measured: one repair after an attempt
-        # that ran no program at all does not use them up.
+        outcome, errors, final_body, ran_program = self._execute_attempt(
+            execute_context, traces, prompt_body, plan_body, requirements, result_ir_mode,
+        )
+        # Bounded repair: at most the routed tier's number of re-executions (or the
+        # user's --max-repairs), each carrying only the latest factual host findings
+        # through the operator-correction channel (never as approach sources). The
+        # tier's repairs are for attempts the sandbox measured: one repair after an
+        # attempt that ran no program at all does not use them up. With
+        # --max-repairs 0 nothing is retried: the first failure closes the run.
         attempt_findings = [list(errors)]  # per attempt, for the published failure record
-        while outcome.kind == "RESULT" and errors and (
+        while outcome.kind == "RESULT" and errors and not stop_on_failure and (
             repairs_used < repairs_allowed or (not ran_program and unmeasured_repairs < UNMEASURED_REPAIRS)
         ):
             counted = ran_program or unmeasured_repairs >= UNMEASURED_REPAIRS
@@ -1235,24 +1254,13 @@ class SessionEngine:
                 {"errors": errors, "codes": finding_codes(errors), "repair": repairs_used + unmeasured_repairs,
                  "counted": counted, "repairs_allowed": repairs_allowed},
             )
-            outcome = self._call(
-                "EXECUTE",
-                execute_context,
-                traces,
-                parser=self.bridge.parse_execution,
-                operator_correction=(
+            outcome, errors, final_body, ran_program = self._execute_attempt(
+                execute_context, traces, prompt_body, plan_body, requirements, result_ir_mode,
+                correction=(
                     "OPERATOR CORRECTION (host-side verification findings): the previous "
                     "deliverable failed these checks:\n" + "\n".join(f"- {e}" for e in errors)
                 ),
             )
-            final_body = outcome.body
-            errors = []
-            ran_program = False
-            if outcome.kind == "RESULT":
-                errors, final_body = self._verify_result(
-                    outcome, prompt_body, plan_body, requirements, result_ir_mode
-                )
-                ran_program = getattr(self, "_last_programs_run", 0) > 0
             attempt_findings.append(list(errors))
         self.workspace.append_event(
             "EXECUTION_ATTEMPTS",
@@ -1308,6 +1316,63 @@ class SessionEngine:
             },
         )
         return EngineResponse(final_body, traces, closed=True)
+
+    def _draft_execution_brief(self, execute_context: dict[str, Any], traces: list[CallTrace]) -> str | None:
+        """DRAFT_EXECUTE (A/B option): the model drafts how its deliverable will meet
+        the confirmed prompt and plan within the stated environment. A draft that
+        fails to parse is skipped, never retried into EXECUTE."""
+        assert self.workspace is not None
+        values = {key: execute_context.get(key) for key in (
+            "CONFIRMED_PROMPT_BODY", "CONFIRMED_PLAN_BODY", "REQUIRED_TASK_INPUTS",
+            "AVAILABLE_EXECUTION_TOOLS", "SUPPLIED_EXECUTION_INPUT_SOURCE",
+        )}
+        values["HOST_PROTOCOL_STATE"] = "EXECUTION_DRAFT"
+        try:
+            draft = self._call("DRAFT_EXECUTE", values, traces, parser=self.bridge.parse_execution_draft)
+        except WireError as exc:
+            self.workspace.append_event("EXECUTION_BRIEF_SKIPPED", {"reason": str(exc)})
+            return None
+        if draft.kind != "RESULT" or not draft.brief_body.strip():
+            self.workspace.append_event("EXECUTION_BRIEF_SKIPPED", {"reason": draft.kind})
+            return None
+        self.workspace.append_event("EXECUTION_BRIEF_DRAFTED", {"chars": len(draft.brief_body)})
+        return draft.brief_body.strip()
+
+    def _execute_attempt(
+        self,
+        execute_context: dict[str, Any],
+        traces: list[CallTrace],
+        prompt_body: str,
+        plan_body: str,
+        requirements: list[str],
+        result_ir_mode: bool,
+        *,
+        correction: str | None = None,
+    ) -> tuple[Any, list[str], str, bool]:
+        """One EXECUTE call plus Phase 5 verification: (outcome, findings, body to
+        publish, ran_program). Exactly one model call: a response cut off at the
+        output-token cap or one that does not parse is a counted failed attempt
+        with a registry finding, never a hidden retry (each attempt cost up to two
+        calls before, so a repair could cost four)."""
+        try:
+            outcome = self.bridge.parse_execution(self._call("EXECUTE", execute_context, traces,
+                                                             operator_correction=correction))
+        except Exception as exc:
+            limit = getattr(exc, "output_limit", None)
+            if limit is None and not isinstance(exc, WireError):
+                raise
+            assert self.workspace is not None
+            if limit is not None:
+                self.workspace.append_event("OUTPUT_LIMIT_REACHED", {"limit": limit})
+                finding = Finding("OUTPUT_LIMIT_REACHED", limit=limit)
+            else:
+                self.workspace.append_event("EXECUTE_WIRE_FAILURE", {"reason": str(exc)})
+                finding = Finding("OUTPUT_MALFORMED", reason=str(exc))
+            return _FailedExecution(), [finding], "", True
+        if outcome.kind != "RESULT":
+            return outcome, [], outcome.body, False
+        errors, final_body = self._verify_result(outcome, prompt_body, plan_body, requirements, result_ir_mode)
+        return outcome, errors, final_body, getattr(self, "_last_programs_run", 0) > 0
 
     def _run_deliverable_code(self, body: str) -> tuple[dict[str, Any] | None, list[str]]:
         """Run every declared Python block in the session sandbox.

@@ -278,3 +278,45 @@ def test_api_attempt_timeout_never_exceeds_the_remaining_deadline(monkeypatch) -
     worker._send_json_with_retries(urllib.request.Request("http://example.invalid", data=b"{}"),
                                    deadline=module.time.monotonic() + 30)
     assert seen and seen[0] <= 30
+
+
+def test_worker_sends_the_output_cap_and_reports_truncation(monkeypatch) -> None:
+    """The Responses API reads max_output_tokens; max_tokens was ignored (high EXECUTE
+    returned 22K-35K tokens against max_tokens=4096)."""
+    import json as _json
+    import urllib.request
+
+    from pdl_taskmaster.providers import api_worker as module
+    from pdl_taskmaster.providers.api_worker import ApiWorker, OutputLimitError
+
+    sent = {}
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self):
+            return _json.dumps({"status": "incomplete", "incomplete_details": {"reason": "max_output_tokens"},
+                                "output": []}).encode()
+
+    def capture(req, timeout=None):
+        sent.update(_json.loads(req.data))
+        return Response()
+
+    monkeypatch.setattr(module.urllib.request, "urlopen", capture)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "stub")
+    worker = ApiWorker(model="m", repo_root=ROOT, max_output_tokens=8000)
+
+    class Request:
+        operation = "EXECUTE"
+        prompt = "SYSTEM\n\nUSER"
+        manifest = {}
+        projection = None
+
+    with pytest.raises(OutputLimitError) as caught:
+        worker.call(Request())
+    assert sent.get("max_output_tokens") == 8000 and "max_tokens" not in sent
+    assert caught.value.output_limit == 8000

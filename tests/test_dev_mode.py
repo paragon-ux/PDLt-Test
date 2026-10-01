@@ -119,7 +119,7 @@ def test_dev_mutations_timeout_and_tokens(dev_env, capsys):
     assert worker.timeout == 45.5
 
     _handle_dev_command("/dev set max_tokens 2048", False, runtime, worker, base)
-    assert worker.max_tokens == 2048
+    assert worker.max_output_tokens == 2048  # the cap the Responses API reads
 
 
 def test_dev_get(dev_env, capsys):

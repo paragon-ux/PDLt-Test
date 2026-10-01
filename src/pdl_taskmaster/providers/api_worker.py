@@ -47,6 +47,15 @@ DEFAULT_SAFETY_SETTINGS: list[dict[str, str]] = [
 ]
 
 
+class OutputLimitError(TransportError):
+    """The response reached the output-token cap before it finished: a failed
+    attempt to penalise, not a transport fault to retry."""
+
+    def __init__(self, limit: int | None):
+        super().__init__(f"response reached the {limit} output-token limit before it finished")
+        self.output_limit = limit
+
+
 def _sleep_within(delay: float, deadline: float) -> None:
     """Back off, but never past the call's deadline."""
     time.sleep(max(0.0, min(delay, deadline - time.monotonic())))
@@ -79,7 +88,10 @@ class ApiWorker:
         api_key_env: str = "OPENROUTER_API_KEY",
         api_key_command: list[str] | None = None,
         timeout: float = 600.0,
-        max_call_seconds: float = 1200.0,
+        max_call_seconds: float = 300.0,
+        max_output_tokens: int | None = 16384,
+        max_repairs: int | None = None,
+        draft_execute: bool = False,
         capture_tokens: bool = True,
         reasoning_effort: str | None = None,
         reasoning_by_operation: dict[str, str] | None = None,
@@ -97,6 +109,12 @@ class ApiWorker:
         self.api_key_env = api_key_env
         self.timeout = timeout  # per socket operation (connect, each read)
         self.max_call_seconds = max_call_seconds  # wall-clock for one call, retries included
+        # Output cap per response, reasoning included. The Responses API reads
+        # max_output_tokens; the max_tokens field sent before was ignored (high
+        # EXECUTE calls returned 22K-35K tokens against max_tokens=4096).
+        self.max_output_tokens = int(max_output_tokens) if max_output_tokens else None
+        self.max_repairs = max_repairs  # run setting read by the host (0 = stop at the first failure)
+        self.draft_execute = draft_execute  # run setting read by the host (A/B option)
         self.capture_tokens = capture_tokens
         # An explicit effort applies to every operation (per-operation flags still
         # win); the per-model mapping is the default only when none is given.
@@ -528,7 +546,6 @@ class ApiWorker:
         body: dict[str, Any] = {
             "model": self._model_for(getattr(request, "operation", None)),
             "input": input_text,
-            "max_tokens": self.max_tokens,
         }
         # ADR-0009 finding: schema enforcement on the semantic-read boundary
         # (BOOTSTRAP_ANALYSIS) degrades interpretation quality — a lazy
@@ -578,6 +595,8 @@ class ApiWorker:
             body["instructions"] = instructions + extra_guidance
         elif extra_guidance:
             body["instructions"] = extra_guidance.strip()
+        if self.max_output_tokens:
+            body["max_output_tokens"] = self.max_output_tokens
         effort = self._reasoning_for(getattr(request, "operation", None))
         if effort == "none":
             body["reasoning"] = {"enabled": False}
@@ -645,7 +664,11 @@ class ApiWorker:
             raise TransportError(f"api worker reported an error: {data['error']}")
         status = data.get("status")
         if status not in (None, "completed"):
-            raise TransportError(f"api worker response status={status}: {data.get('incomplete_details')}")
+            details = data.get("incomplete_details") or {}
+            reason = details.get("reason") if isinstance(details, dict) else details
+            if status == "incomplete" and reason in ("max_output_tokens", "max_tokens", "length"):
+                raise OutputLimitError(self.max_output_tokens)
+            raise TransportError(f"api worker response status={status}: {details}")
 
         text = self._extract_output_text(data)
         if not text:

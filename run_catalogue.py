@@ -48,7 +48,6 @@ else:
 PROMPTS_DIR = PDLT_TEST_ROOT / "prompts"
 MANIFEST_PATH = PROMPTS_DIR / "CATALOGUE_MANIFEST.jsonl"
 TIMEOUT_PER_PROMPT = 600  # heavy-tier tasks may make 3 execute attempts (2 repairs)
-TIMEOUT_PER_PROMPT_REASONING = 1500  # medium/high effort: each EXECUTE call can take minutes
 EXIT_SUCCESS = 0
 EXIT_CANCELLED = 1
 EXIT_UNCONFIRMED = 2
@@ -124,9 +123,17 @@ def run_with_deadline(cmd, stdin_text, timeout, stdout_path, stderr_path, *, cwd
 
 
 def build_harness_command(prompt_file, session_id, transcript_path, session_dir, model, reasoning_effort,
-                          reasoning_ops=()):
+                          reasoning_ops=(), run_settings=None):
     """The exact harness command line for one prompt."""
     reasoning_args = [arg for op in reasoning_ops for arg in ("--api-reasoning-operation", op)]
+    settings = run_settings or {}
+    setting_args = []
+    for flag, key in (("--max-output-tokens", "max_output_tokens"), ("--max-repairs", "max_repairs"),
+                      ("--api-providers", "providers")):
+        if settings.get(key) is not None:
+            setting_args += [flag, str(settings[key])]
+    if settings.get("draft_execute"):
+        setting_args.append("--draft-execute")
     cmd = [
         sys.executable, "-m", "pdl_taskmaster.host.cli",
         "--non-interactive",
@@ -140,13 +147,15 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
         "--model", model,
         "--api-reasoning-effort", reasoning_effort,
         *reasoning_args,
+        *setting_args,
         "--api-structured-output",
         "--prompt-file", str(prompt_file),
     ]
     return cmd
 
 
-def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_index=None, reasoning_ops=()):
+def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_index=None, reasoning_ops=(),
+                      run_settings=None):
     prompt_id = entry["id"]
     prompt_file = PROMPTS_DIR / entry["file"]
     safe_name = f"{prompt_id}_{prompt_file.stem}" + (f"_r{repeat_index}" if repeat_index else "")
@@ -160,7 +169,7 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
 
     repl_input = "/confirm\n" * 5
     cmd = build_harness_command(prompt_file, session_id, transcript_path, session_dir, model, reasoning_effort,
-                                reasoning_ops)
+                                reasoning_ops, run_settings)
 
     start_time = time.monotonic()
     start_ts = datetime.now(timezone.utc).isoformat()
@@ -572,20 +581,26 @@ def main():
     parser.add_argument("--dry-run", action="store_true",
                         help="List prompts that would be run without executing")
     parser.add_argument("--timeout", type=int, default=None,
-                        help=f"Per-prompt timeout in seconds (default: {TIMEOUT_PER_PROMPT} at low effort, "
-                             f"{TIMEOUT_PER_PROMPT_REASONING} at medium/high)")
+                        help=f"Per-prompt timeout in seconds (default: {TIMEOUT_PER_PROMPT} at every effort level)")
     parser.add_argument("--reasoning-op", action="append", default=[], metavar="OP=EFFORT",
                         help="per-operation effort overriding --reasoning (repeatable), e.g. EXECUTE=high")
+    parser.add_argument("--max-output-tokens", type=int, default=None, metavar="N",
+                        help="output-token cap per model call, reasoning included (harness default: 16384)")
+    parser.add_argument("--max-repairs", type=int, default=None, metavar="N",
+                        help="EXECUTE repairs after a failed verification; 0 stops at the first failure (no retries)")
+    parser.add_argument("--providers", default=None, metavar="A,B,C",
+                        help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
+    parser.add_argument("--draft-execute", action="store_true",
+                        help="run DRAFT_EXECUTE before EXECUTE (A/B option)")
     parser.add_argument("--repeat", type=int, default=1, metavar="N",
                         help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
     parser.add_argument("--regrade", metavar="RUN_DIR", default=None,
                         help="re-grade a finished run with the current graders and rewrite its scoreboard")
     args = parser.parse_args()
     if args.timeout is None:
-        # Run 215232: high-effort EXECUTE calls took 116-266 s each, so a repair
-        # pushed 3 of 10 runs past 600 s before they could finish.
-        heavy = args.reasoning != "low" or any(not op.lower().endswith(("=low", "=none")) for op in args.reasoning_op)
-        args.timeout = TIMEOUT_PER_PROMPT_REASONING if heavy else TIMEOUT_PER_PROMPT
+        # One deadline for every effort level: slow configurations are penalised,
+        # not given more time. Per-call cost is bounded by --max-output-tokens.
+        args.timeout = TIMEOUT_PER_PROMPT
     if args.regrade:
         sys.exit(regrade_run(Path(args.regrade)))
 
@@ -595,6 +610,8 @@ def main():
     if args.repeat < 1:
         parser.error("--repeat must be at least 1")
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
+    run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
+                    "providers": args.providers, "draft_execute": args.draft_execute}
 
     if not entries:
         print("No prompts match the filter. Exiting.")
@@ -606,6 +623,9 @@ def main():
     print(f"Reasoning:  {args.reasoning}" + (f" (per operation: {', '.join(args.reasoning_op)})" if args.reasoning_op else ""))
     print(f"Prompts:    {len(entries)}" + (f" x {args.repeat} repeats = {len(runs)} runs" if args.repeat > 1 else ""))
     print(f"Timeout:    {args.timeout}s per prompt")
+    shown = {k: v for k, v in run_settings.items() if v not in (None, False)}
+    if shown:
+        print(f"Settings:   {', '.join(f'{k}={v}' for k, v in shown.items())}")
     print()
 
     if args.dry_run:
@@ -627,6 +647,7 @@ def main():
         "model": args.model,
         "reasoning_effort": args.reasoning,
         "reasoning_by_operation": args.reasoning_op,
+        "run_settings": run_settings,
         "category_filter": args.category,
         "prompt_id_filter": args.prompt_id,
         "total_prompts": len(runs),
@@ -653,7 +674,7 @@ def main():
         label = prompt_id + (f" r{repeat_index}" if repeat_index else "")
         print(f"[{i:3d}/{len(runs)}] {label:9s} {entry['category']:30s} ", end="", flush=True)
         result = run_single_prompt(entry, run_dir, args.model, args.reasoning, args.timeout, repeat_index,
-                                   args.reasoning_op)
+                                   args.reasoning_op, run_settings)
         results.append(result)
         icon = "PASS" if is_prompt_pass(result) else "FAIL"
         print(f"{icon} {result['verdict']:20s} gt={gt_grade(result):7s} ({result['elapsed_seconds']:.1f}s)")

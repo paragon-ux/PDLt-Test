@@ -315,15 +315,16 @@ def test_declared_incomplete_needs_only_a_defect_description(tmp_path):
     assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
 
 
-def test_wire_retry_keeps_the_repair_findings(tmp_path):
+def test_malformed_repair_reply_is_a_counted_attempt_whose_findings_reach_the_next(tmp_path):
     """Run 143434 01-01: the repair reply was malformed JSON and the automatic wire
-    retry dropped the verification findings, so the model lost the task context."""
+    retry dropped the verification findings. EXECUTE no longer retries hidden: the
+    malformed reply is a counted attempt and the next one carries its finding."""
     bad = {"kind": "RESULT", "body": "The answer is 9.", "result_ir": _ir()}  # witness missing
     good = {"kind": "RESULT", "body": "```python\nprint('WITNESS: {\"answer\": 9}')\n```", "result_ir": _ir()}
     engine, _, executes, _ = _run(tmp_path, [bad, '{"kind": "RESULT", "body": "unterminated', good],
                                   problem_class="VERIFIED_EXECUTION")
     assert len(executes) == 3
-    assert "host-side verification findings" in executes[2].prompt
+    assert "host-side verification findings" in executes[2].prompt and "[OUTPUT_MALFORMED]" in executes[2].prompt
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
 
 
@@ -426,3 +427,101 @@ def test_invalid_witness_printed_by_a_program_is_reported_as_such(tmp_path):
     correction = executes[1].prompt
     assert "[WITNESS_INVALID] The witness does not check: the WITNESS line printed by the program" in correction
     assert "no program that ran successfully" not in correction
+
+
+class _Truncated(Exception):
+    """What the API worker raises when a response hits the output-token cap."""
+
+    output_limit = 16384
+
+
+def _run_raising(tmp_path, execute_results, **engine_settings):
+    """Like _run, but an EXECUTE reply may be an exception to raise."""
+    calls: list = []
+    replies = list(execute_results)
+
+    def model_call(req):
+        calls.append(req)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({"kind": "ANALYSIS", "task_summary": "The user states a task to solve.",
+                               "approach_notes": "", "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
+        if req.operation == "DRAFT_PLAN":
+            return json.dumps({"neutral_plan_body": PLAN})
+        reply = replies.pop(0)
+        if isinstance(reply, BaseException):
+            raise reply
+        return reply if isinstance(reply, str) else json.dumps(reply)
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=ClassifyingSys1("VERIFIED_EXECUTION"))
+    for key, value in engine_settings.items():
+        setattr(engine, key, value)
+    for message in ("$confirm-with-pseudocode Solve the stated task.", "/confirm", "/confirm"):
+        response = engine.handle_user_message(message)
+    return engine, response, [c for c in calls if c.operation == "EXECUTE"], list(engine.workspace._events)
+
+
+def test_output_cut_off_at_the_cap_is_a_counted_failed_attempt(tmp_path):
+    good = {"kind": "RESULT", "body": "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'x': 1}}))",
+            "result_ir": {}}
+    engine, _, executes, events = _run_raising(tmp_path, [_Truncated(), good])
+    assert len(executes) == 2 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert "[OUTPUT_LIMIT_REACHED]" in executes[1].prompt
+    repair = next(e for e in events if e["kind"] == "VERIFICATION_REPAIR")["payload"]
+    assert repair["counted"] is True  # a truncation is penalised, never a free retry
+
+
+def test_max_repairs_zero_stops_at_the_first_failure_without_any_retry(tmp_path):
+    malformed = "this is not json"
+    engine, response, executes, events = _run_raising(tmp_path, [malformed, malformed, malformed], max_repairs=0)
+    assert len(executes) == 1  # no verification repair, no uncounted repair, no wire retry
+    assert engine.controller.state.stage == Stage.CLOSED_CANCELLED
+    assert "OUTPUT_MALFORMED" in response.text
+    attempts = next(e for e in events if e["kind"] == "EXECUTION_ATTEMPTS")["payload"]
+    assert attempts["attempts"] == 1 and attempts["repairs_allowed"] == 0
+
+
+def test_max_repairs_overrides_the_tier(tmp_path):
+    stopped = {"kind": "RESULT", "body": "import sys\nsys.exit(1)", "result_ir": {}}
+    engine, _, executes, _ = _run_raising(tmp_path, [stopped] * 4, max_repairs=2)
+    assert len(executes) == 3
+
+
+def test_draft_execute_runs_once_and_feeds_its_brief_to_execute(tmp_path):
+    calls: list = []
+    good = {"kind": "RESULT", "body": "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'x': 1}}))",
+            "result_ir": {}}
+    stopped = {"kind": "RESULT", "body": "import sys\nsys.exit(1)", "result_ir": {}}
+    replies = [stopped, good]
+
+    def model_call(req):
+        calls.append(req)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({"kind": "ANALYSIS", "task_summary": "The user states a task to solve.",
+                               "approach_notes": "", "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
+        if req.operation == "DRAFT_PLAN":
+            return json.dumps({"neutral_plan_body": PLAN})
+        if req.operation == "DRAFT_EXECUTE":
+            return json.dumps({"kind": "RESULT", "brief_body": "Enumerate 12 candidates; about 200 steps.",
+                               "execution_entities": []})
+        return json.dumps(replies.pop(0))
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=ClassifyingSys1("VERIFIED_EXECUTION"))
+    engine.draft_execute = True
+    for message in ("$confirm-with-pseudocode Solve the stated task with the values 3, 4, 5.", "/confirm", "/confirm"):
+        engine.handle_user_message(message)
+    drafts = [c for c in calls if c.operation == "DRAFT_EXECUTE"]
+    executes = [c for c in calls if c.operation == "EXECUTE"]
+    assert len(drafts) == 1 and len(executes) == 2  # drafted once, not per repair
+    assert "3, 4, 5" in drafts[0].prompt and "steps" in drafts[0].prompt  # sees the data and the budget
+    for execute in executes:
+        assert "EXECUTION BRIEF (your own draft" in execute.prompt and "about 200 steps" in execute.prompt
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+
+
+def test_without_the_flag_there_is_no_draft_execute_call(tmp_path):
+    engine, _, executes, events = _run(tmp_path, [{"kind": "RESULT", "body": "42"}])
+    assert not any(e["kind"].startswith("EXECUTION_BRIEF") for e in events)

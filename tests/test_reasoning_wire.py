@@ -26,7 +26,10 @@ _REPLIES = {
 }
 
 
-def _stub_server(seen: list[tuple[str, object]]):
+_REPLIES_OVERRIDE: dict = {}
+
+
+def _stub_server(seen: list[tuple[str, object]], bodies: list | None = None):
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self):  # noqa: N802
             body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
@@ -34,9 +37,15 @@ def _stub_server(seen: list[tuple[str, object]]):
             match = re.search(r'\\"operation\\":\s*\\"([A-Z_]+)\\"|"operation":\s*"([A-Z_]+)"', text)
             operation = next((g for g in (match.groups() if match else ()) if g), "UNKNOWN")
             seen.append((operation, body.get("reasoning")))
-            reply = _REPLIES.get(operation, {"kind": "RESULT", "body": "ok"})
+            if bodies is not None:
+                bodies.append(body)
+            if operation == "DRAFT_EXECUTE":
+                reply = {"kind": "RESULT", "brief_body": "Add the two numbers.", "execution_entities": []}
+            else:
+                reply = _REPLIES_OVERRIDE.get(operation, _REPLIES.get(operation, {"kind": "RESULT", "body": "ok"}))
+            text_reply = reply if isinstance(reply, str) else json.dumps(reply)
             payload = {"status": "completed", "model": body.get("model"),
-                       "output": [{"type": "message", "content": [{"type": "output_text", "text": json.dumps(reply)}]}],
+                       "output": [{"type": "message", "content": [{"type": "output_text", "text": text_reply}]}],
                        "usage": {"input_tokens": 1, "output_tokens": 1, "total_tokens": 2}}
             data = json.dumps(payload).encode()
             self.send_response(200)
@@ -79,3 +88,39 @@ def test_runner_command_sends_the_requested_effort_per_operation(tmp_path, effor
     assert "EXECUTE" in sent, (seen, (tmp_path / "out.txt").read_text()[-2000:], (tmp_path / "err.txt").read_text()[-2000:])
     for operation, effort_sent in expected.items():
         assert sent.get(operation) == effort_sent, (operation, seen)
+
+
+def _run_stub(tmp_path, settings, replies=None):
+    import run_catalogue
+
+    seen: list[tuple[str, object]] = []
+    bodies: list[dict] = []
+    if replies:
+        _REPLIES_OVERRIDE.update(replies)
+    server = _stub_server(seen, bodies)
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text("What is 2 + 3?", encoding="utf-8")
+    cmd = run_catalogue.build_harness_command(prompt, "stub-session", tmp_path / "t.txt", tmp_path / "s",
+                                              "openai/gpt-oss-120b", "low", (), settings)
+    cmd += ["--api-base-url", f"http://127.0.0.1:{server.server_address[1]}"]
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("SYS1", "OPENROUTER"))}
+    env.update(OPENROUTER_API_KEY="stub", PYTHONPATH=str(ROOT / "src"))
+    run_catalogue.run_with_deadline(cmd, "/confirm\n" * 5, 120, tmp_path / "out.txt", tmp_path / "err.txt",
+                                    cwd=str(ROOT), env=env)
+    server.shutdown()
+    _REPLIES_OVERRIDE.clear()
+    return [op for op, _ in seen], bodies
+
+
+def test_runner_settings_reach_the_wire(tmp_path):
+    ops, bodies = _run_stub(tmp_path, {"max_output_tokens": 8000, "providers": "Cerebras,Groq,SambaNova",
+                                       "draft_execute": True})
+    assert ops.count("DRAFT_EXECUTE") == 1 and "EXECUTE" in ops
+    for body in bodies:
+        assert body.get("max_output_tokens") == 8000 and "max_tokens" not in body
+        assert body.get("provider") == {"order": ["Cerebras", "Groq", "SambaNova"], "allow_fallbacks": False}
+
+
+def test_runner_max_repairs_zero_makes_one_execute_call(tmp_path):
+    ops, _ = _run_stub(tmp_path, {"max_repairs": 0}, replies={"EXECUTE": "not json at all"})
+    assert ops.count("EXECUTE") == 1

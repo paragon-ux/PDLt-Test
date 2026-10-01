@@ -307,6 +307,20 @@ def _worker_profile(worker: Any) -> str:
     return str(profile) if profile else "api"
 
 
+def _api_run_settings(args) -> dict:
+    """Cost and latency settings for the API worker, from CLI flags."""
+    settings: dict = {
+        "max_output_tokens": getattr(args, "max_output_tokens", 16384),
+        "max_call_seconds": getattr(args, "api_call_deadline", 300.0),
+        "max_repairs": getattr(args, "max_repairs", None),
+        "draft_execute": bool(getattr(args, "draft_execute", False)),
+    }
+    providers = [p.strip() for p in (getattr(args, "api_providers", None) or "").split(",") if p.strip()]
+    if providers:
+        settings["provider_pinning"] = {"order": providers, "allow_fallbacks": False}
+    return settings
+
+
 def _parse_reasoning_operations(pairs: list[str] | None) -> dict[str, str | int]:
     """Parse repeatable --api-reasoning-operation OP=EFFORT flags into a dict."""
     mapping: dict[str, str | int] = {}
@@ -659,8 +673,8 @@ def _handle_dev_command(
                 print(f"[dev] cannot set timeout: {exc}", flush=True)
         elif k == "max_tokens":
             try:
-                worker.max_tokens = int(v)
-                print(f"[dev] worker max_tokens set to: {worker.max_tokens}", flush=True)
+                worker.max_output_tokens = int(v)
+                print(f"[dev] worker output-token cap set to: {worker.max_output_tokens}", flush=True)
             except (AttributeError, ValueError) as exc:
                 print(f"[dev] cannot set max_tokens: {exc}", flush=True)
         else:
@@ -679,7 +693,7 @@ def _handle_dev_command(
             elif k == "timeout":
                 print(getattr(worker, "timeout", None), flush=True)
             elif k == "max_tokens":
-                print(getattr(worker, "max_tokens", None), flush=True)
+                print(getattr(worker, "max_output_tokens", None), flush=True)
             else:
                 print(f"[dev] unknown key '{arg}'", flush=True)
         else:
@@ -691,7 +705,7 @@ def _handle_dev_command(
                 "reasoning_effort": getattr(worker, "reasoning_effort", None),
                 "reasoning_by_operation": getattr(worker, "reasoning_by_operation", None),
                 "timeout": getattr(worker, "timeout", None),
-                "max_tokens": getattr(worker, "max_tokens", None),
+                "max_tokens": getattr(worker, "max_output_tokens", None),
             }
             print(json.dumps(dev_config, indent=2), flush=True)
         return True, dev_mode
@@ -719,12 +733,39 @@ def main() -> int:
     parser.add_argument("--run-id", default="repl")
     parser.add_argument("--observation-dir", type=Path, default=None)
     parser.add_argument(
+        "--max-output-tokens",
+        "--api-max-output-tokens",
         "--max-tokens",
         "--api-max-tokens",
-        dest="max_tokens",
+        dest="max_output_tokens",
         type=int,
-        default=4096,
-        help="maximum output tokens per API worker call (default: 4096; prevents 128k token credit reservation lockout)",
+        default=16384,
+        help="output-token cap per API call, reasoning included (default: 16384); a response cut off at the cap "
+        "is a failed attempt",
+    )
+    parser.add_argument(
+        "--api-call-deadline",
+        type=float,
+        default=300.0,
+        help="wall-clock seconds one API call may take, retries included (default: 300)",
+    )
+    parser.add_argument(
+        "--max-repairs",
+        type=int,
+        default=None,
+        help="EXECUTE repairs after a failed verification (default: the routed tier's); 0 stops at the first "
+        "failure with no retry of any kind",
+    )
+    parser.add_argument(
+        "--draft-execute",
+        action="store_true",
+        help="draft an execution brief (DRAFT_EXECUTE) before EXECUTE; one extra call per execution (A/B option)",
+    )
+    parser.add_argument(
+        "--api-providers",
+        default=None,
+        help="comma-separated provider order for the API worker (e.g. Cerebras,Groq,SambaNova); only these "
+        "providers are used",
     )
     parser.add_argument(
         "--worker",
@@ -917,7 +958,7 @@ def main() -> int:
             model_by_operation=_parse_model_operations(args.api_model_operation),
             reorder_keys_for_cache=bool(getattr(args, "cache_order_render", False)),
             structured_output=bool(getattr(args, "api_structured_output", True)),
-            max_tokens=getattr(args, "max_tokens", 4096),
+            **_api_run_settings(args),
             on_progress=lambda line: print(f"[api] {line}", flush=True) if line.strip() else None,
         )
     else:
@@ -1176,6 +1217,7 @@ def main() -> int:
                             reasoning_by_operation=_parse_reasoning_operations(args.api_reasoning_operation),
                             model_by_operation=_parse_model_operations(args.api_model_operation),
                             structured_output=bool(getattr(args, "api_structured_output", True)),
+                            **_api_run_settings(args),
                             on_progress=lambda line: print(f"[api] {line}", flush=True) if line.strip() else None,
                         )
                     else:
