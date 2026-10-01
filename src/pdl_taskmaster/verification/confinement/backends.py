@@ -70,6 +70,7 @@ class Backend:
 
     name = "base"
     native = True  # False only for the audit-only opt-out
+    job_active_process_limit = 0  # Windows: >0 caps the processes the run's Job Object admits
 
     def probe(self) -> str | None:
         """None when this backend can run on this machine, else the reason."""
@@ -190,6 +191,10 @@ def _native_backend() -> Backend:
         from pdl_taskmaster.verification.confinement.seatbelt import SeatbeltBackend
 
         return SeatbeltBackend()
+    if sys.platform == "win32":
+        from pdl_taskmaster.verification.confinement.appcontainer import AppContainerBackend
+
+        return AppContainerBackend()
     return UnavailableBackend("native", f"no native confinement backend for platform {sys.platform}")
 
 
@@ -213,4 +218,6 @@ def sweep_owner(root: Path, owner: dict[str, Any]) -> None:
 
 
 def _sweepable_backends() -> list[type[Backend]]:
-    return []
+    from pdl_taskmaster.verification.confinement.appcontainer import AppContainerBackend
+
+    return [AppContainerBackend]

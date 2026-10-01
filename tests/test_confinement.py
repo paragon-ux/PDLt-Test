@@ -471,7 +471,8 @@ def test_escape_following_a_link_that_points_outside_is_denied(configuration, se
     code = f"import os\nos.symlink({str(secret)!r}, 'link')\nprint(open('link').read())"
     with _open(configuration) as sandbox:
         result = sandbox.run_code(code)
-    assert _denied(result), result.stderr
+    # Denied at the link (audit hook; or WinError 1314 in an AppContainer) or at the read.
+    assert not result.success and ("PermissionError" in result.stderr or "1314" in result.stderr), result.stderr
     assert "top-secret-value" not in result.stdout
 
 
@@ -717,3 +718,86 @@ def test_seatbelt_is_the_native_backend_on_macos():
     assert result.success, result.stderr
     assert info["backend"] == "seatbelt" and info["os"].startswith("macOS")
     assert result.stdout.startswith("/private/")  # realpath'd: /var/folders is /private/var/folders
+
+
+# -- AppContainer (Windows): layouts, attributes and lifecycle logic, verified here; --
+# -- the backend itself runs in the Windows CI leg ----------------------------------
+
+import ctypes  # noqa: E402
+
+from pdl_taskmaster.verification.confinement import appcontainer, winproc  # noqa: E402
+
+_X64 = ctypes.sizeof(ctypes.c_void_p) == 8
+
+
+@pytest.mark.skipif(not _X64, reason="x64 layouts")
+def test_win32_structures_have_their_x64_sizes():
+    assert ctypes.sizeof(winproc.STARTUPINFOW) == 104
+    assert ctypes.sizeof(winproc.STARTUPINFOEXW) == 112
+    assert ctypes.sizeof(winproc.PROCESS_INFORMATION) == 24
+    assert ctypes.sizeof(winproc.SECURITY_ATTRIBUTES) == 24
+    assert ctypes.sizeof(winproc.SECURITY_CAPABILITIES) == 24
+    assert ctypes.sizeof(appcontainer.TRUSTEE_W) == 32
+    assert ctypes.sizeof(appcontainer.EXPLICIT_ACCESS_W) == 48
+    assert winproc.STARTUPINFOW.hStdInput.offset == 80
+    assert winproc.STARTUPINFOEXW.lpAttributeList.offset == 104
+    assert winproc.SECURITY_CAPABILITIES.CapabilityCount.offset == 16
+    assert appcontainer.EXPLICIT_ACCESS_W.Trustee.offset == 16
+    assert appcontainer.TRUSTEE_W.ptstrName.offset == 24
+
+
+def test_proc_thread_attributes_match_winbase():
+    assert winproc.PROC_THREAD_ATTRIBUTE_HANDLE_LIST == 0x00020002
+    assert winproc.PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES == 0x00020009
+    assert winproc.PROC_THREAD_ATTRIBUTE_JOB_LIST == 0x0002000D
+    assert winproc.PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY == 0x0002000E
+
+
+def test_environment_block_is_sorted_and_double_terminated():
+    block = winproc.environment_block({"TMP": "C:\\t", "Path": "C:\\w", "SYSTEMROOT": "C:\\Windows"})
+    assert block == "Path=C:\\w\0SYSTEMROOT=C:\\Windows\0TMP=C:\\t\0\0"
+    with pytest.raises(ValueError):
+        winproc.environment_block({"A=B": "x"})
+
+
+def test_appcontainer_profile_name_is_bounded_and_clean():
+    assert appcontainer.profile_name("engine-ab_c1") == "PDLt.Sandbox.engine-ab-c1"
+    assert len(appcontainer.profile_name("x" * 100)) == 64
+
+
+def test_appcontainer_sweep_trusts_only_the_profile_the_root_derives(tmp_path):
+    root = tmp_path / "engine-abc_123"
+    assert appcontainer.profile_to_sweep(root, {"profile": "PDLt.Sandbox.engine-abc-123"}) == \
+        "PDLt.Sandbox.engine-abc-123"
+    assert appcontainer.profile_to_sweep(root, {"profile": "Microsoft.WindowsCalculator"}) is None
+    assert appcontainer.profile_to_sweep(root, {}) is None
+
+
+def test_appcontainer_runs_one_process_per_job_and_records_its_grant_marker():
+    assert appcontainer.AppContainerBackend.job_active_process_limit == 1
+    marker = appcontainer.grant_marker(Path("C:/Users/me/AppData/Local/Programs/Python/Python312"))
+    assert marker.parent == Path.home() / ".pdlt" and marker.name.startswith("appcontainer-read-grant-")
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="checks the off-platform probe")
+def test_appcontainer_is_unavailable_off_windows():
+    assert "Windows-only" in appcontainer.AppContainerBackend().probe()
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="AppContainer is Windows-only (runs in CI)")
+def test_appcontainer_is_the_native_backend_and_close_deletes_its_profile():
+    sandbox = ExecutionSandbox(mode="native")
+    result = sandbox.run_code("print('confined')")
+    assert result.success, result.stderr
+    info = sandbox.session_info
+    assert info["backend"] == "appcontainer" and info["profile"].startswith("PDLt.Sandbox.")
+    assert info["sid"].startswith("S-1-15-2-")
+    owner = json.loads((Path(info["root"]) / sb.OWNER_FILENAME).read_text(encoding="utf-8"))
+    assert owner["profile"] == info["profile"]
+    sandbox.close()
+    sid = ctypes.c_void_p()
+    # Deleted: creating it again succeeds (not HRESULT_FROM_WIN32(ERROR_ALREADY_EXISTS)).
+    assert appcontainer.userenv().CreateAppContainerProfile(info["profile"], "t", "t", None, 0,
+                                                            ctypes.byref(sid)) == 0
+    appcontainer.delete_profile(info["profile"])
+    appcontainer.advapi32().FreeSid(sid)

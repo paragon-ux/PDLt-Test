@@ -34,6 +34,7 @@ JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000
 JOB_OBJECT_LIMIT_JOB_MEMORY = 0x00000200
 JOB_OBJECT_LIMIT_PROCESS_MEMORY = 0x00000100
 JOB_OBJECT_LIMIT_PRIORITY_CLASS = 0x00000020
+JOB_OBJECT_LIMIT_ACTIVE_PROCESS = 0x00000008
 NORMAL_PRIORITY_CLASS = 0x00000020
 BELOW_NORMAL_PRIORITY_CLASS = 0x00004000
 IDLE_PRIORITY_CLASS = 0x00000040
@@ -764,8 +765,9 @@ class ExecutionSandbox:
             }
         ]
 
-    def _create_windows_job(self, memory_limit_bytes: int) -> int | None:
-        """Create and configure a Windows Job Object with memory and process lifecycle limits."""
+    def _create_windows_job(self, memory_limit_bytes: int, active_process_limit: int = 0) -> int | None:
+        """Create and configure a Windows Job Object with memory and process lifecycle limits
+        (and, when ``active_process_limit`` is set, a cap on the processes it admits)."""
         if not _IS_WINDOWS:
             return None
         k32 = kernel32()
@@ -781,6 +783,9 @@ class ExecutionSandbox:
             | JOB_OBJECT_LIMIT_PRIORITY_CLASS
         )
         info.BasicLimitInformation.PriorityClass = BELOW_NORMAL_PRIORITY_CLASS
+        if active_process_limit:
+            info.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_ACTIVE_PROCESS
+            info.BasicLimitInformation.ActiveProcessLimit = active_process_limit
         info.JobMemoryLimit = memory_limit_bytes
         info.ProcessMemoryLimit = memory_limit_bytes
 
@@ -894,7 +899,7 @@ class ExecutionSandbox:
         k32 = None
         if _IS_WINDOWS:
             k32 = kernel32()
-            h_job = self._create_windows_job(memory_limit_bytes)
+            h_job = self._create_windows_job(memory_limit_bytes, backend.job_active_process_limit)
         limits = RunLimits(
             timeout=timeout,
             memory_limit_bytes=memory_limit_bytes,
