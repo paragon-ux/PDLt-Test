@@ -204,5 +204,6 @@ Result IR:
     u_formatted = format_friendly_deliverable(unverified_raw)
     assert "[!] UNVERIFIED DELIVERABLE" in u_formatted
     assert "Reason: required elements missing" in u_formatted
-    assert "Negative witness (search not exhausted, 1 states via greedy; not verified)" in u_formatted
+    # RS-01: an IR written into the model's own text is shown as text, never parsed.
+    assert "I explored some nodes" in u_formatted and "Result IR:" in u_formatted
 

@@ -47,10 +47,9 @@ def _parse_sandbox_witness(stdout_text: str) -> dict[str, Any] | None:
     if not text:
         return None
     for line in reversed(text.splitlines()):
-        m = re.match(r"^\s*WITNESS:\s*(.+?)\s*$", line)
-        if not m:
+        blob = witness_payload(line)
+        if not blob:
             continue
-        blob = m.group(1)
         for loader in (json.loads, ast.literal_eval):
             try:
                 d = loader(blob)
@@ -66,7 +65,7 @@ def _parse_sandbox_witness(stdout_text: str) -> dict[str, Any] | None:
     return _wrap_witness(d) if isinstance(d, dict) else None
 
 
-_PYTHON_BLOCK = re.compile(r"```(?:python|py)[ \t]*\n(.*?)```", re.S)
+from pdl_taskmaster.runtime.text_blocks import fenced_blocks, split_published_ir, witness_payload, words  # noqa: E402
 
 
 from pdl_taskmaster.verification.error_registry import Finding, finding_codes  # noqa: E402
@@ -100,7 +99,7 @@ def _previous_turn_reference(previous: dict[str, Any] | None) -> str | None:
 
 def _normalized_lines(body: str) -> list[str]:
     """Non-empty lines, lowercased, with punctuation and whitespace runs collapsed."""
-    lines = (" ".join(re.sub(r"[^\w\s]", " ", line.lower()).split()) for line in (body or "").splitlines())
+    lines = (" ".join(words(line)) for line in (body or "").splitlines())
     return [line for line in lines if line]
 
 
@@ -118,7 +117,7 @@ def _python_blocks(body: str) -> list[str]:
         module = ast.parse(text)
     except SyntaxError as error:
         module = None
-        fenced = [block for block in _PYTHON_BLOCK.findall(text) if block.strip()]
+        fenced = [block for block in fenced_blocks(text, ("python", "py")) if block.strip()]
         if not fenced and _is_program_prefix(text, error.lineno):
             # A program with a syntax error is still a program: run it, so the
             # sandbox reports the error and its line instead of "no program".
@@ -132,7 +131,7 @@ def _python_blocks(body: str) -> list[str]:
         for node in module.body
     ):
         return [text]
-    return [block for block in _PYTHON_BLOCK.findall(text) if block.strip()]
+    return [block for block in fenced_blocks(text, ("python", "py")) if block.strip()]
 
 
 def _stderr_summary(stderr: str | None) -> str:

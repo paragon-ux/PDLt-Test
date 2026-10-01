@@ -172,7 +172,9 @@ class OperationBridge:
         except json.JSONDecodeError as exc:
             last_error = exc
         if value is None:
-            unfenced = re.sub(r"```(?:json)?", "", stripped).strip()
+            from pdl_taskmaster.runtime.text_blocks import unfence_json
+
+            unfenced = unfence_json(stripped)
             try:
                 value = json.loads(unfenced, strict=False)
             except json.JSONDecodeError as exc:

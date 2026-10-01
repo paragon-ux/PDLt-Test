@@ -236,15 +236,10 @@ class WorkspaceRun:
         status = closed[-1].get("status")
         output = self.path / "turns" / turn_id / "stages" / "50_execution" / "output"
         if status == "CLOSED_SUCCESS":
+            from pdl_taskmaster.runtime.text_blocks import split_published_ir
+
             body = self._read(output / "current.md").rstrip("\n") if (output / "current.md").is_file() else ""
-            fence = body.rfind("\n```json\n")
-            if fence != -1 and body.endswith("```"):
-                try:
-                    json.loads(body[fence + len("\n```json\n"):-3])
-                    body = body[:fence].rstrip()
-                except ValueError:
-                    pass
-            result = body or None
+            result = split_published_ir(body)[0].strip() or None
         else:
             meta = output / "current.json"
             codes = json.loads(self._read(meta)).get("codes") if meta.is_file() else None

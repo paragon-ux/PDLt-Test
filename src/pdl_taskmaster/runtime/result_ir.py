@@ -99,42 +99,11 @@ def load_standard_instructions(repo_root: str | Path | None = None) -> str:
 
 
 def extract_result_ir(body: str) -> dict | None:
-    """Extract the Result IR from an execution body: the LAST fenced ```json
-    block, or — as models sometimes emit it unfenced — a trailing raw JSON
-    object containing 'files', 'reconciliation', or 'witness'."""
-    body = body or ""
-    blocks = re.findall(r"```(?:json)?\s*\n(.*?)```", body, re.S)
-    for candidate in reversed(blocks):
-        try:
-            obj = json.loads(candidate.strip())
-        except json.JSONDecodeError:
-            continue
-        if isinstance(obj, dict) and any(k in obj for k in ("files", "reconciliation", "witness")):
-            return obj
+    """The Result IR the host appended to a published deliverable (RS-01: the
+    model's IR travels in the structured field; this reads only host output)."""
+    from pdl_taskmaster.runtime.text_blocks import split_published_ir
 
-    # Search for trailing JSON object
-    for marker in ('{"files"', '{\n  "files"', '{"witness"', '{\n  "witness"', '{"reconciliation"', '{\n  "reconciliation"'):
-        idx = body.rfind(marker)
-        if idx >= 0:
-            try:
-                obj, _ = json.JSONDecoder().raw_decode(body[idx:])
-                if isinstance(obj, dict):
-                    return obj
-            except json.JSONDecodeError:
-                pass
-
-    # Generic search for last balanced '{' that decodes to a Result IR dict
-    r_idx = body.rfind("{")
-    while r_idx >= 0:
-        try:
-            obj, _ = json.JSONDecoder().raw_decode(body[r_idx:])
-            if isinstance(obj, dict) and any(k in obj for k in ("files", "reconciliation", "witness")):
-                return obj
-        except json.JSONDecodeError:
-            pass
-        r_idx = body.rfind("{", 0, r_idx)
-
-    return None
+    return split_published_ir(body or "")[1]
 
 
 def _resolve_evidence(
@@ -180,8 +149,9 @@ def _resolve_evidence(
             content_norm = " ".join(content.lower().split())
             obs_norm = " ".join(obs_s.lower().split())
             if obs_norm not in content_norm:
-                import re
-                obs_words = [w for w in re.findall(r"\w+", obs_norm) if len(w) > 3]
+                from pdl_taskmaster.runtime.text_blocks import words
+
+                obs_words = [w for w in words(obs_norm) if len(w) > 3]
                 if obs_words and not any(w in content_norm for w in obs_words):
                     errors.append(
                         f"{where}: cited observation is not a verbatim substring of the artifact: {obs_s[:80]!r}"
@@ -343,29 +313,23 @@ def format_friendly_deliverable(text: str) -> str:
     candidate_body = text
 
     if is_unverified:
-        m = re.match(
-            r"^UNVERIFIED ANSWER:.*?(?:Reason:\s*(.*?))\s*\n\nCandidate deliverable:\s*\n(.*)$",
-            text,
-            re.S,
-        )
-        if m:
-            reason = m.group(1).strip()
-            candidate_body = m.group(2).strip()
+        reason_at = text.find("Reason:")
+        candidate_at = text.find("\n\nCandidate deliverable:")
+        if reason_at != -1 and candidate_at > reason_at:
+            reason = text[reason_at + len("Reason:"):candidate_at].strip()
+            candidate_body = text[candidate_at + len("\n\nCandidate deliverable:"):].strip()
 
-    # Extract IR if present
-    ir = extract_result_ir(candidate_body)
-    if not ir:
+    from pdl_taskmaster.runtime.text_blocks import split_published_ir
+
+    clean_body, ir = split_published_ir(candidate_body)
+    if not ir and not is_unverified:
         return text
-
-    # Strip Result IR json block from candidate body
-    clean_body = candidate_body
-    clean_body = re.sub(r"```json\s*\{.*?\"files\".*?\}\s*```", "", clean_body, flags=re.S).strip()
-    clean_body = re.sub(
-        r"(?:Result IR:|\n|^)\s*\{\s*\"(?:files|witness)\".*\}\s*$",
-        "",
-        clean_body,
-        flags=re.S,
-    ).strip()
+    clean_body = clean_body.strip()
+    if not ir:
+        header = ["[!] UNVERIFIED DELIVERABLE (Substantive verification incomplete)"]
+        if reason:
+            header.append(f"    Reason: {reason}")
+        return "\n".join(header + ["", "Candidate Output:", clean_body])
 
     lines = []
     if is_unverified:
