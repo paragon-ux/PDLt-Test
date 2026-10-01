@@ -292,7 +292,27 @@ def test_citation_bookkeeping_is_recorded_not_blocking(tmp_path):
     assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
     findings = next(e for e in events if e["kind"] == "RESULT_IR_CITATION_FINDINGS")["payload"]["findings"]
     assert any("not a verbatim substring" in f for f in findings)
-    assert any("R2 is not reconciled" in f for f in findings)
+
+
+def test_execute_is_not_asked_for_per_line_bookkeeping(tmp_path):
+    """Runs 2026-09-30..10-01: low-effort EXECUTE degenerated (runaway whitespace,
+    copied "..." placeholders) inside the Result IR bookkeeping it was asked for."""
+    program = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'answer': 9}}))"
+    good = {"kind": "RESULT", "body": program, "result_ir": {}}
+    engine, _, executes, _ = _run(tmp_path, [good], problem_class="VERIFIED_EXECUTION")
+    prompt = executes[0].prompt
+    for primed in ("R<n>", "D<n>", "<verbatim", '\\"...\\"', "fenced ```json", "reconcile EVERY", "CONFIRMED REQUIREMENTS"):
+        assert primed not in prompt, primed
+    assert "json.dumps" in prompt
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS  # an empty result_ir with a printed witness passes
+
+
+def test_declared_incomplete_needs_only_a_defect_description(tmp_path):
+    body = "import sys\nprint('searched 10 states')"
+    reply = {"kind": "RESULT", "body": body,
+             "result_ir": {"open_defects": [{"description": "The search did not finish within the step budget."}]}}
+    engine, _, executes, _ = _run(tmp_path, [reply], problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
 
 
 def test_wire_retry_keeps_the_repair_findings(tmp_path):

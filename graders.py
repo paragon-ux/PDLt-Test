@@ -349,15 +349,14 @@ _INFEASIBLE = (
 
 
 def _declares_incomplete(corpus: str) -> bool:
-    """The deliverable's own Result IR marks a requirement open and records a defect."""
+    """The deliverable's published Result IR records what was not obtained and claims
+    no witness (RESULT_STANDARD RS-01)."""
     for block in re.findall(r"```json\s*(\{.*?\})\s*```", corpus, re.S):
         try:
             ir = json.loads(block)
         except ValueError:
             continue
-        if isinstance(ir, dict) and ir.get("open_defects") and any(
-            isinstance(r, dict) and r.get("status") == "open" for r in ir.get("reconciliation") or []
-        ):
+        if isinstance(ir, dict) and ir.get("open_defects") and not ir.get("witness"):
             return True
     return False
 

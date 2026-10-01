@@ -349,9 +349,9 @@ class ReconciliationItem(BaseModel):
 
 class DefectItem(BaseModel):
     model_config = ConfigDict(extra="allow")
-    id: str
+    id: Optional[str] = None
     description: str
-    evidence: Evidence
+    evidence: Optional[Evidence] = None
 
 
 class ResultIRData(BaseModel):

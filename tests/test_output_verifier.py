@@ -84,10 +84,10 @@ def test_render_instructions_with_verified_execution():
         ["DEFINE the problem."],
         requires_verified_execution=True,
     )
-    assert "WITNESS REQUIREMENT" in instructions
-    assert "execution://witness" in instructions
-    assert "positive" in instructions
-    assert "negative" in instructions
+    assert "WITNESS:" in instructions and "json.dumps" in instructions
+    assert "positive" in instructions and "negative" in instructions
+    assert "open_defects" in instructions
+    assert "DEFINE the problem." not in instructions  # RS-02: requirements are not rendered
 
 
 def test_requirement_wording_is_never_scanned_for_vocabulary(tmp_path):

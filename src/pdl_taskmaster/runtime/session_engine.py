@@ -189,11 +189,8 @@ def _is_program_prefix(text: str, error_line: int | None) -> bool:
 
 def _attach_result_ir(body: str, ir_dict: dict[str, Any]) -> str:
     """Publish the host-validated Result IR (which carries the authoritative witness)
-    in place of the IR block the model emitted, or append it when none was fenced."""
+    after the deliverable. The deliverable text is never rewritten."""
     ir_json_str = json.dumps(ir_dict, indent=2, ensure_ascii=False)
-    fence_pattern = re.compile(r"```(?:json)?\s*\{.*?\"(?:files|witness|reconciliation)\".*?\}\s*```", re.S)
-    if fence_pattern.search(body):
-        return fence_pattern.sub(lambda _m: f"```json\n{ir_json_str}\n```", body, count=1)
     return body.rstrip() + f"\n\n```json\n{ir_json_str}\n```"
 
 
@@ -1175,10 +1172,7 @@ class SessionEngine:
         prompt_body = self.workspace.read_artifact("prompt")[1]
         plan_body = self.workspace.read_artifact("plan")[1]
 
-        from pdl_taskmaster.runtime.result_ir import (
-            derive_requirements,
-            render_instructions,
-        )
+        from pdl_taskmaster.runtime.result_ir import render_instructions
 
         # Source data (AUTH-04): user-supplied execution input, else the original
         # request, passed through the same quarantine sanitizer as every compile input.
@@ -1187,7 +1181,7 @@ class SessionEngine:
 
         verified = self._requires_verified_execution
         result_ir_mode = verified or os.environ.get("PDLT_RESULT_IR") == "1"
-        requirements = derive_requirements(prompt_body) if result_ir_mode else []
+        requirements: list[str] = []  # RESULT_STANDARD RS-02: not derived or rendered
         task_inputs: list[str] = []
         if self._previous_deliverable:
             task_inputs.append(self._previous_deliverable)
@@ -1394,7 +1388,7 @@ class SessionEngine:
         """
         from dataclasses import replace
 
-        from pdl_taskmaster.runtime.result_ir import extract_result_ir, validate_result_ir
+        from pdl_taskmaster.runtime.result_ir import validate_result_ir
         from pdl_taskmaster.verification.output_verifier import OutputVerifier
 
         assert self.workspace is not None
@@ -1408,9 +1402,10 @@ class SessionEngine:
             return payload_findings, body
 
         errors: list[str] = list(payload_findings)
-        ir = outcome.result_ir if isinstance(getattr(outcome, "result_ir", None), dict) else extract_result_ir(body)
-        if ir is None:
-            return errors + [Finding("RESULT_IR_MISSING")], body
+        # RS-01: the Result IR travels only in the structured field; the deliverable
+        # text is never scanned for it. An absent IR claims nothing: a witness the
+        # program printed still counts.
+        ir = dict(outcome.result_ir) if isinstance(getattr(outcome, "result_ir", None), dict) else {}
         citations: list[str] = []
         ir_errors, _ = validate_result_ir(
             ir, self.workspace.path, requirements, execution_body=body, citations=citations
@@ -1431,14 +1426,8 @@ class SessionEngine:
                 "domain": self._problem_domain,
             }
             model_witness = ir.get("witness")
-            declared_incomplete = (
-                model_witness is None
-                and sandbox_witness is None
-                and bool(ir.get("open_defects"))
-                and any(
-                    isinstance(item, dict) and item.get("status") == "open"
-                    for item in ir.get("reconciliation") or []
-                )
+            declared_incomplete = (  # RS-01: no witness, and what was not obtained is recorded
+                model_witness is None and sandbox_witness is None and bool(ir.get("open_defects"))
             )
             if declared_incomplete:
                 # A witness certifies a claimed result. A deliverable that declares

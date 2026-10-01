@@ -43,72 +43,58 @@ def derive_requirements(prompt_body: str) -> list[str]:
     return reqs or ["COMPLETE confirmed task"]
 
 
+_WITNESS_INSTRUCTIONS = """WITNESS: this task requires verified execution. A claimed result is certified by a Python program in the deliverable that prints exactly one line to standard output: the text "WITNESS: " followed by a JSON object. Build the object as a Python dict in the program and print it with json.dumps; do not write the JSON by hand inside a string. The object's fields:
+- A result was found: "polarity" is "positive" and "data" is an object holding the result under descriptive keys.
+- The result is shown not to exist by a search the program ran: "polarity" is "negative", "basis" is "search", "search_exhausted" is true, "nodes_explored" is the number of states the program explored, and "method" names the search.
+- The result is shown not to exist by an argument rather than a computation: "polarity" is "negative", "basis" is "proof", and "argument" states the argument.
+If the result was not obtained, print no witness and describe what was not obtained in "open_defects".
+The host runs the program; the witness it prints replaces any witness written into "result_ir". A witness the host did not reproduce is reported as provisional."""
+
+
 def render_instructions(
-    requirements: list[str],
+    requirements: list[str] | None = None,
     repo_root: str | Path | None = None,
     evidence_paths: list[str] | None = None,
     requires_verified_execution: bool = False,
 ) -> str:
-    numbered = "\n".join(f"R{i}: {r}" for i, r in enumerate(requirements, 1))
-    effective_paths = list(evidence_paths or ["execution://body"])
-    if requires_verified_execution and "execution://witness" not in effective_paths:
-        effective_paths.append("execution://witness")
-    paths = "\n".join(f"- {p}" for p in effective_paths)
-    base = (
-        "CONFIRMED REQUIREMENTS (mechanically derived; reconcile EVERY ID):\n"
-        + (numbered or "R1: COMPLETE confirmed task")
-        + "\n\n"
-        + load_standard_instructions(repo_root).replace(
-            "{evidence_paths}", paths or "- execution://body"
-        )
-    )
+    """The Result IR channel shown to EXECUTE (RESULT_STANDARD RS-01). It names only
+    the fields the host reads, in prose: no placeholder template to copy, no
+    per-line requirement bookkeeping. ``requirements`` and ``evidence_paths`` are
+    accepted for compatibility and not rendered (RS-02, RS-09)."""
+    base = load_standard_instructions(repo_root)
     if requires_verified_execution:
-        base += (
-            "\n\nWITNESS REQUIREMENT (ADR-0013 / ADR-0015): Because this task requires verified execution, your Result IR MUST include a 'witness' field certifying any result it claims:\n"
-            "- If a solution exists: {\"polarity\": \"positive\", \"evidence\": {\"path\": \"execution://witness\"}, \"data\": {<the concrete result, keyed by name>}}\n"
-            "- If no solution exists: {\"polarity\": \"negative\", \"evidence\": {\"path\": \"execution://witness\"}, \"basis\": \"proof\", \"argument\": \"<the impossibility argument>\"} or, for an exhausted search, {\"polarity\": \"negative\", \"basis\": \"search\", \"search_exhausted\": true, \"nodes_explored\": <states explored>, \"method\": \"<method>\"} printed as a WITNESS line by the program that ran the search\n"
-            "- If the result could not be obtained: emit no witness; mark each unmet requirement \"open\" in 'reconciliation' and record the reason in 'open_defects'.\n\n"
-            "WITNESS CERTIFICATION: When the deliverable includes code, the host sandbox executes it. Print exactly one line `WITNESS: <json>` to stdout; the host-reproduced witness replaces any witness asserted in the Result IR. A witness the host could not reproduce is reported as provisional."
-        )
+        base += "\n\n" + _WITNESS_INSTRUCTIONS
     return base
 
 
-_CANONICAL_RESULT_IR_INSTRUCTIONS = """The response MUST end with a fenced ```json block containing the Result IR object, exactly this shape:
-{"files": [{"filename": "<name>.py", "satisfies": ["R<n>"], "evidence": {"path": "<workspace-relative path>", "section": "<verbatim section marker, optional>"}}], "reconciliation": [{"requirement": "R<n>", "status": "satisfied|partial|open", "evidence": {"path": "...", "section": "...", "observed": "<verbatim quote from cited artifact if status is partial/open, or omit for satisfied>"}}], "open_defects": [{"id": "D<n>", "description": "<defect>", "evidence": {"path": "...", "observed": "<verbatim quote>"}}]}
-Files note: 'files' must be an array (use [] if no files in workspace were created or modified).
-Evidence rules: the path "execution://body" refers to THIS response's own deliverable text (use it for code and claims that exist only in this response); the path "execution://witness" refers to witness payload; any other path MUST be one of the AVAILABLE EVIDENCE PATHS listed below; every "observed" string MUST be copied verbatim from the cited artifact; every requirement ID MUST appear in "reconciliation" exactly once; do not invent paths, sections, quotes, or requirement IDs; the host mechanically validates every citation and rejects fabrication.
-AVAILABLE EVIDENCE PATHS: {evidence_paths}"""
+_CANONICAL_RESULT_IR_INSTRUCTIONS = """RESULT IR: put the Result IR in the output's "result_ir" field, not in the deliverable text. The host reads two of its fields:
+- "witness": present only when the deliverable claims a result (see WITNESS below).
+- "open_defects": present only when a requested result was not obtained; a list of objects, each with a "description" of what was not obtained and why.
+Leave "files" and "reconciliation" as empty lists."""
+
+_BLOCK_START = "<!-- RESULT-IR:INSTRUCTIONS"
+_BLOCK_END = "<!-- /RESULT-IR:INSTRUCTIONS -->"
 
 
 def load_standard_instructions(repo_root: str | Path | None = None) -> str:
-    """Load Result IR instructions safely without fragile disk dependency (ADR-0009 / ADR-0015).
-
-    Returns the canonical compiled Result IR instructions, falling back to the immutable
-    constant if contracts/standards/RESULT_STANDARD.md is not present on disk in candidate repo.
-    """
+    """The instruction block of RESULT_STANDARD.md (falls back to the canonical
+    copy when the standard is not on disk). Plain marker search, no pattern."""
     candidates = []
     if repo_root:
         candidates.append(Path(repo_root) / "contracts" / "standards" / "RESULT_STANDARD.md")
     try:
-        pkg_root = Path(__file__).resolve().parents[3]
-        candidates.append(pkg_root / "contracts" / "standards" / "RESULT_STANDARD.md")
+        candidates.append(Path(__file__).resolve().parents[3] / "contracts" / "standards" / "RESULT_STANDARD.md")
     except Exception:
         pass
-
     for candidate in candidates:
-        if candidate.is_file():
-            try:
-                text = candidate.read_text(encoding="utf-8")
-                m = re.search(
-                    r"<!-- RESULT-IR:INSTRUCTIONS.*?-->\s*\n(.*?)\n?<!-- /RESULT-IR:INSTRUCTIONS -->",
-                    text,
-                    re.S,
-                )
-                if m:
-                    return m.group(1).strip()
-            except Exception:
-                continue
-
+        if not candidate.is_file():
+            continue
+        text = candidate.read_text(encoding="utf-8")
+        start, end = text.find(_BLOCK_START), text.find(_BLOCK_END)
+        if start != -1 and end > start:
+            body_start = text.find("-->", start)
+            if body_start != -1 and body_start < end:
+                return text[body_start + 3:end].strip()
     return _CANONICAL_RESULT_IR_INSTRUCTIONS
 
 
