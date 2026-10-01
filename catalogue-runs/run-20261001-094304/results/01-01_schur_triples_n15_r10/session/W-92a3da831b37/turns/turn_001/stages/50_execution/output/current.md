@@ -1,0 +1,165 @@
+import itertools, sys, json
+L = [71, 97, 54, 56, 44, 158, 45, 58, 82, 135, 113, 117, 86, 40, 12, 185, 63, 50, 111, 72, 90, 109, 61, 13, 92, 60, 91, 35, 114, 94, 105, 26, 15, 51, 102, 118, 76, 32, 108, 23, 22, 134, 83, 43, 64]
+Lset = set(L)
+# generate all valid triples (a,b,c) with a<b and a+b=c
+triples = []
+for a, b in itertools.combinations(L, 2):
+    c = a + b
+    if c in Lset and c != a and c != b:
+        triples.append((a, b, c))
+# mapping from number to triples containing it
+num_to_triples = {x: [] for x in L}
+for t in triples:
+    for x in t:
+        num_to_triples[x].append(t)
+solution = []
+used = set()
+
+def backtrack():
+    if len(used) == len(L):
+        return True
+    # choose unused number with fewest candidate triples
+    candidates = [x for x in L if x not in used]
+    pivot = min(candidates, key=lambda x: len([t for t in num_to_triples[x] if all(y not in used for y in t)]))
+    for t in num_to_triples[pivot]:
+        if all(y not in used for y in t):
+            solution.append(t)
+            used.update(t)
+            if backtrack():
+                return True
+            # backtrack
+            solution.pop()
+            used.difference_update(t)
+    return False
+found = backtrack()
+if found:
+    result = {"partition": solution}
+    print("WITNESS: "+json.dumps({"polarity":"positive","evidence":{"path":"execution://witness"},"data":result}))
+else:
+    print("WITNESS: "+json.dumps({"polarity":"negative","evidence":{"path":"execution://witness"},"basis":"search","search_exhausted":true,"nodes_explored":null,"method":"backtrack"}))
+
+```json
+{
+  "files": [
+    {
+      "filename": "partition_finder.py",
+      "satisfies": [
+        "R1",
+        "R2"
+      ],
+      "evidence": {
+        "path": "execution://body",
+        "section": "",
+        "observed": "import itertools, sys, json\nL = [71, 97, 54, 56, 44, 158, 45, 58, 82, 135, 113, 117, 86, 40, 12, 185, 63, 50, 111, 72, 90, 109, 61, 13, 92, 60, 91, 35, 114, 94, 105, 26, 15, 51, 102, 118, 76, 32, 108, 23, 22, 134, 83, 43, 64]\nLset = set(L)\n# generate all valid triples (a,b,c) with a<b and a+b=c\ntriples = []\nfor a, b in itertools.combinations(L, 2):\n    c = a + b\n    if c in Lset and c != a and c != b:\n        triples.append((a, b, c))\n# mapping from number to triples containing it\nnum_to_triples = {x: [] for x in L}\nfor t in triples:\n    for x in t:\n        num_to_triples[x].append(t)\nsolution = []\nused = set()\n\ndef backtrack():\n    if len(used) == len(L):\n        return True\n    # choose unused number with fewest candidate triples\n    candidates = [x for x in L if x not in used]\n    pivot = min(candidates, key=lambda x: len([t for t in num_to_triples[x] if all(y not in used for y in t)]))\n    for t in num_to_triples[pivot]:\n        if all(y not in used for y in t):\n            solution.append(t)\n            used.update(t)\n            if backtrack():\n                return True\n            # backtrack\n            solution.pop()\n            used.difference_update(t)\n    return False\nfound = backtrack()\nif found:\n    result = {\"partition\": solution}\n    print(\"WITNESS: \"+json.dumps({\"polarity\":\"positive\",\"evidence\":{\"path\":\"execution://witness\"},\"data\":result}))\nelse:\n    print(\"WITNESS: \"+json.dumps({\"polarity\":\"negative\",\"evidence\":{\"path\":\"execution://witness\"},\"basis\":\"search\",\"search_exhausted\":true,\"nodes_explored\":null,\"method\":\"backtrack\"}))"
+      }
+    }
+  ],
+  "reconciliation": [
+    {
+      "requirement": "R1",
+      "status": "satisfied",
+      "evidence": {
+        "path": "execution://body",
+        "section": "",
+        "observed": "found = backtrack()"
+      }
+    },
+    {
+      "requirement": "R2",
+      "status": "satisfied",
+      "evidence": {
+        "path": "execution://body",
+        "section": "",
+        "observed": "print(\"WITNESS: \"+json.dumps({\"polarity\":\"positive\",\"evidence\":{\"path\":\"execution://witness\"},\"data\":result}))"
+      }
+    }
+  ],
+  "open_defects": [],
+  "witness": {
+    "polarity": "positive",
+    "evidence": {
+      "path": "execution://witness"
+    },
+    "data": {
+      "partition": [
+        [
+          71,
+          26,
+          97
+        ],
+        [
+          50,
+          61,
+          111
+        ],
+        [
+          92,
+          22,
+          114
+        ],
+        [
+          45,
+          113,
+          158
+        ],
+        [
+          44,
+          91,
+          135
+        ],
+        [
+          13,
+          43,
+          56
+        ],
+        [
+          76,
+          32,
+          108
+        ],
+        [
+          12,
+          60,
+          72
+        ],
+        [
+          90,
+          15,
+          105
+        ],
+        [
+          82,
+          35,
+          117
+        ],
+        [
+          58,
+          51,
+          109
+        ],
+        [
+          63,
+          23,
+          86
+        ],
+        [
+          102,
+          83,
+          185
+        ],
+        [
+          54,
+          64,
+          118
+        ],
+        [
+          40,
+          94,
+          134
+        ]
+      ]
+    },
+    "provisional": false
+  }
+}
+```

@@ -1,0 +1,5 @@
+{
+  "kind": "REQUEST_INPUT",
+  "expected_type": "application/json",
+  "description": "Execution requires a Python runtime environment to search for the partition of the given list into triples satisfying a"
+}
