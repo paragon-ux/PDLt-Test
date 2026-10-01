@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -75,10 +76,16 @@ class CodexWorker:
         self.codex_cli_version = self._detect_version()
 
     @staticmethod
+    def _executable() -> str:
+        """The codex CLI as the OS can start it. On Windows an npm install provides
+        ``codex.cmd``, which CreateProcess does not find from a bare ``codex``."""
+        return shutil.which("codex") or "codex"
+
+    @staticmethod
     def _detect_version() -> str:
         try:
             proc = subprocess.run(
-                ["codex", "--version"],
+                [CodexWorker._executable(), "--version"],
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
@@ -150,7 +157,7 @@ class CodexWorker:
         try:
             Path(self.workdir).mkdir(parents=True, exist_ok=True)
             cmd = [
-                "codex",
+                self._executable(),
                 "exec",
                 "-o",
                 output_path,
@@ -170,12 +177,16 @@ class CodexWorker:
                     cmd += ["-c", override]
                 if self.json_mode:
                     cmd.append("--json")
-            cmd.append(prompt)
+            # The prompt goes over stdin ("-"), never on the command line: it can
+            # exceed the Windows (32K) and Linux (128K per argument) limits, and
+            # through codex.cmd cmd.exe would interpret its metacharacters.
+            cmd.append("-")
             popen_kwargs: dict[str, Any] = {}
             if sys.platform != "win32":
                 popen_kwargs["start_new_session"] = True
             proc = subprocess.Popen(
                 cmd,
+                stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -201,8 +212,17 @@ class CodexWorker:
                         except Exception:
                             pass
 
+            def _feed() -> None:
+                assert proc.stdin is not None
+                try:
+                    proc.stdin.write(prompt)
+                    proc.stdin.close()
+                except OSError:  # codex exited before reading its input
+                    pass
+
             thread = threading.Thread(target=_stream, daemon=True)
             thread.start()
+            threading.Thread(target=_feed, daemon=True).start()
             try:
                 proc.wait(timeout=self.timeout)
             except subprocess.TimeoutExpired as exc:

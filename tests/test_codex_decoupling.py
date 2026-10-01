@@ -131,3 +131,48 @@ def test_codex_commands_guarded_on_non_codex_worker(capsys) -> None:
     # Check that worker_profile != 'codex' triggers the guard
     assert getattr(worker, "worker_profile", None) != "codex"
 
+
+
+_FAKE_CODEX = '''
+import json, sys
+args = sys.argv[1:]
+if args == ["--version"]:
+    print("codex-fake 0.0")
+    sys.exit(0)
+prompt = sys.stdin.read()
+out = args[args.index("-o") + 1]
+with open(out, "w", encoding="utf-8") as handle:
+    json.dump({"argv": args, "stdin": prompt}, handle)
+'''
+
+
+def test_codex_worker_finds_the_cli_and_sends_the_prompt_over_stdin(monkeypatch, tmp_path: Path) -> None:
+    """The prompt never goes on the command line: it can exceed the OS argument
+    limits, and through Windows' codex.cmd cmd.exe would interpret it."""
+    import json
+    import os
+    import sys
+    from types import SimpleNamespace
+
+    from pdl_taskmaster.providers.codex_worker import CodexWorker
+
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    (bindir / "fake_codex.py").write_text(_FAKE_CODEX, encoding="utf-8")
+    if sys.platform == "win32":
+        (bindir / "codex.cmd").write_text(f'@"{sys.executable}" "%~dp0fake_codex.py" %*\r\n', encoding="utf-8")
+    else:
+        launcher = bindir / "codex"
+        launcher.write_text(f"#!/bin/sh\nexec '{sys.executable}' '{bindir / 'fake_codex.py'}' \"$@\"\n",
+                            encoding="utf-8")
+        launcher.chmod(0o755)
+    monkeypatch.setenv("PATH", str(bindir) + os.pathsep + os.environ.get("PATH", ""))
+
+    worker = CodexWorker(workdir=tmp_path, capture_tokens=False, timeout=60)
+    assert worker.codex_cli_version == "codex-fake 0.0"
+    prompt = 'Say "hi" & exit | more\n' + "x" * 200_000  # over Linux's 128 KiB per-argument limit
+    result = worker.call(SimpleNamespace(prompt=prompt))
+    seen = json.loads(result.text)
+    assert seen["argv"][-1] == "-"
+    assert not any("Say" in arg for arg in seen["argv"])
+    assert seen["stdin"].startswith(prompt)
