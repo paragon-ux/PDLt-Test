@@ -3,7 +3,6 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
-runs/
 mlruns/
 mlflow.db
 *.log

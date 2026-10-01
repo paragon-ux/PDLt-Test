@@ -1,0 +1,219 @@
+{
+  "turn_id": "turn_002",
+  "status": "CLOSED_SUCCESS",
+  "deliverable_sha256": "7a4c76b7b0ce2171e727e3bb9c82bae06a648b7729050db898361e2222578869",
+  "events": [
+    {
+      "at_utc": "2026-10-01T16:29:12.802411+00:00",
+      "kind": "TURN_CHAINED",
+      "payload": {
+        "turn_id": "turn_002",
+        "previous_deliverable": true
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:12.802411+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:13.038563+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 0.92
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:13.527595+00:00",
+      "kind": "EXECUTION_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_100K_STEPS",
+        "distribution": {
+          "WITHIN_10M_STEPS": 0.02,
+          "WITHIN_100K_STEPS": 0.97,
+          "BEYOND_100M_STEPS": 0.01,
+          "WITHIN_100M_STEPS": 0.0
+        },
+        "tier": "MINIMAL",
+        "passed_gating": true,
+        "step_limit": 100000,
+        "timeout_seconds": 30.0,
+        "memory_mb": 256
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:13.527595+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": false,
+        "domain": null
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:13.542109+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:14.374969+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:14.390583+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:16.037867+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:16.053521+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-4c3e06b296",
+        "turn_id": "turn_002"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:16.069135+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-4c3e06b296-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:20.464131+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-4c3e06b296-P1"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:20.479771+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:21.873284+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:21.888929+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-4c3e06b296-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:21.888929+00:00",
+      "kind": "PLAN_PROMPT_ECHO",
+      "payload": {
+        "plan_id": "I-4c3e06b296-R1",
+        "identical": false,
+        "copied_line_ratio": 0.167
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:25.358688+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-4c3e06b296-R1"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:25.626236+00:00",
+      "kind": "PLAN_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "distribution": {
+          "WITHIN_100K_STEPS": 0.08,
+          "BEYOND_100M_STEPS": 0.25,
+          "WITHIN_100M_STEPS": 0.21,
+          "WITHIN_10M_STEPS": 0.46
+        },
+        "passed_gating": false,
+        "request_tier": "MINIMAL",
+        "plan_tier": null,
+        "tier": "MINIMAL",
+        "budget_raised": false,
+        "step_limit": 100000
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:25.642270+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:29.795284+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:29.795284+00:00",
+      "kind": "EXECUTION_ATTEMPTS",
+      "payload": {
+        "attempts": 1,
+        "repairs_used": 0,
+        "unmeasured_repairs": 0,
+        "repairs_allowed": 1,
+        "tier": "MINIMAL"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T16:29:29.795284+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_002",
+        "status": "CLOSED_SUCCESS"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-10-01T16:29:29.795284+00:00"
+}

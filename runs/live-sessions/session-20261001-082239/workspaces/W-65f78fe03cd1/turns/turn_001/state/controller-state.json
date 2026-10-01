@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-bffb3abff2",
+  "stage": "CLOSED_CANCELLED",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-bffb3abff2-P1",
+    "body": "READ the list L of 45 distinct positive integers\nDETERMINE whether L can be partitioned into 15 disjoint triples (a_i, b_i, c_i) such that a_i + b_i = c_i for each triple i in {1,...,15}\nIF a valid partition exists THEN\nCONSTRUCT and RETURN one complete example of such a partition\nEND",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-bffb3abff2-R1",
+    "body": "READ the list L of 45 distinct positive integers\nDETERMINE whether L can be partitioned into 15 disjoint triples (a_i, b_i, c_i) such that a_i + b_i = c_i for each i\nIF a valid partition exists THEN\n    CONSTRUCT one complete example of such a partition\n    RETURN the constructed partition\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": "I-bffb3abff2-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}
