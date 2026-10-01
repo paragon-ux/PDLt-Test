@@ -79,7 +79,8 @@ def main() -> int:
                 line = f"OK      {(result.text or '')[:80]!r}"
             except ProviderError as exc:
                 failures += 1
-                record.update(verdict="ERROR", error=exc.as_record())
+                record.update(verdict="ERROR", error=exc.as_record(),
+                              response_body=getattr(exc, "response_body", None))
                 line = f"ERROR   {exc.category} {exc.status}: {str(exc)[:200]}"
             except Exception as exc:  # anything else is reported, never hidden
                 failures += 1
@@ -87,7 +88,7 @@ def main() -> int:
                 line = f"ERROR   {type(exc).__name__}: {str(exc)[:200]}"
             record["seconds"] = round(time.perf_counter() - started, 2)
             record["request_body"] = worker.sent
-            record["response_body"] = worker.received
+            record.setdefault("response_body", worker.received)
             (out_dir / f"{provider}-{operation}.json").write_text(json.dumps(record, indent=2, ensure_ascii=False),
                                                                  encoding="utf-8")
             print(f"{provider:12s} {operation:20s} {record['seconds']:6.1f}s  {line}", flush=True)

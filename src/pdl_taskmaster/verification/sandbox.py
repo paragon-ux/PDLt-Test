@@ -54,8 +54,8 @@ if _IS_WINDOWS:
             ("IoInfo", IO_COUNTERS),
             ("ProcessMemoryLimit", ctypes.c_size_t),
             ("JobMemoryLimit", ctypes.c_size_t),
-            ("PeakProcessMemoryLimit", ctypes.c_size_t),
-            ("PeakJobMemoryLimit", ctypes.c_size_t),
+            ("PeakProcessMemoryUsed", ctypes.c_size_t),
+            ("PeakJobMemoryUsed", ctypes.c_size_t),
         ]
 
 

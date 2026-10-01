@@ -80,7 +80,7 @@ def test_runner_command_sends_the_requested_effort_per_operation(tmp_path, effor
     cmd += ["--api-base-url", f"http://127.0.0.1:{server.server_address[1]}"]
     env = {k: v for k, v in os.environ.items() if not k.startswith(("SYS1", "OPENROUTER"))}
     env.update(OPENROUTER_API_KEY="stub", PYTHONPATH=str(ROOT / "src"))
-    code, timed_out = run_catalogue.run_with_deadline(cmd, "/confirm\n" * 5, 120, tmp_path / "out.txt",
+    code, timed_out, _ = run_catalogue.run_with_deadline(cmd, "/confirm\n" * 5, 120, tmp_path / "out.txt",
                                                       tmp_path / "err.txt", cwd=str(ROOT), env=env)
     server.shutdown()
     assert not timed_out, (tmp_path / "err.txt").read_text()
@@ -156,7 +156,7 @@ def test_provider_error_ends_a_headless_run_as_a_harness_error(tmp_path):
     cmd += ["--api-base-url", f"http://127.0.0.1:{server.server_address[1]}"]
     env = {k: v for k, v in os.environ.items() if not k.startswith(("SYS1", "OPENROUTER"))}
     env.update(OPENROUTER_API_KEY="stub", PYTHONPATH=str(ROOT / "src"))
-    code, _ = run_catalogue.run_with_deadline(cmd, "/confirm\n" * 5, 120, tmp_path / "out.txt", tmp_path / "err.txt",
+    code, _, _ = run_catalogue.run_with_deadline(cmd, "/confirm\n" * 5, 120, tmp_path / "out.txt", tmp_path / "err.txt",
                                               cwd=str(ROOT), env=env)
     server.shutdown()
     assert code == run_catalogue.EXIT_HARNESS_ERROR, (tmp_path / "err.txt").read_text()[-1500:]

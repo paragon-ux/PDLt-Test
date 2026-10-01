@@ -45,6 +45,10 @@ else:
     PDLT_TEST_ROOT = _script_dir
     RUNS_DIR = _script_dir / "catalogue-runs"
 
+# The runner reads the harness's own sandbox definitions (graders, containment):
+# the same source tree the harness runs from, never another installed copy.
+sys.path.insert(0, str(PDLT_TEST_ROOT / "src"))
+
 PROMPTS_DIR = PDLT_TEST_ROOT / "prompts"
 MANIFEST_PATH = PROMPTS_DIR / "CATALOGUE_MANIFEST.jsonl"
 TIMEOUT_PER_PROMPT = 600  # heavy-tier tasks may make 3 execute attempts (2 repairs)
@@ -82,45 +86,172 @@ def load_manifest(category_filter=None):
     return entries
 
 
-def _kill_tree(proc: subprocess.Popen) -> None:
-    """Kill the harness and everything it started (sandbox programs, workers)."""
-    if os.name == "nt":
-        subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True)
-    else:
-        import signal
+HARNESS_MEMORY_MB = 4096  # one harness process tree (harness + its sandboxed programs)
 
+
+class _Containment:
+    """Bounds one harness process tree so no prompt can exhaust the machine (run
+    20261001-154533 froze the evaluator's PC at 100% CPU / 80% memory) and measures
+    it, so a leak shows up as a number in result.json instead of a frozen console.
+
+    Windows: a Job Object with a job memory cap, below-normal priority, and
+    kill-on-close, so every process the harness started dies with it (even if the
+    runner itself is killed). POSIX: an address-space cap, a lowered priority and a
+    new session, killed as a group. Peak memory comes from the job accounting
+    (Windows) or the child's rusage (POSIX)."""
+
+    def __init__(self, memory_mb: int):
+        self.limit_bytes = memory_mb * 1024 * 1024
+        self.job = None
+        self.peak_bytes: int | None = None
+
+    def popen_kwargs(self) -> dict:
+        if os.name == "nt":
+            return {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | 0x00004000}  # BELOW_NORMAL
+        limit = self.limit_bytes
+
+        def _limit():
+            import resource
+
+            resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+            os.nice(5)
+
+        return {"start_new_session": True, "preexec_fn": _limit}
+
+    def attach(self, proc: subprocess.Popen) -> None:
+        if os.name != "nt":
+            return
+        import ctypes
+
+        from pdl_taskmaster.verification import sandbox as sb
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        job = kernel32.CreateJobObjectW(None, None)
+        if not job:
+            return
+        info = sb.JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
+        info.BasicLimitInformation.LimitFlags = (sb.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | sb.JOB_OBJECT_LIMIT_JOB_MEMORY
+                                                 | sb.JOB_OBJECT_LIMIT_PRIORITY_CLASS)
+        info.BasicLimitInformation.PriorityClass = sb.BELOW_NORMAL_PRIORITY_CLASS
+        info.JobMemoryLimit = self.limit_bytes
+        if (kernel32.SetInformationJobObject(job, sb.JobObjectExtendedLimitInformation, ctypes.byref(info),
+                                             ctypes.sizeof(info))
+                and kernel32.AssignProcessToJobObject(job, int(proc._handle))):
+            self.job = job
+        else:
+            kernel32.CloseHandle(job)
+
+    def wait(self, proc: subprocess.Popen, timeout: float) -> int:
+        """Wait for the harness to exit (subprocess.TimeoutExpired past the timeout)."""
+        if os.name == "nt":
+            return proc.wait(timeout=timeout)
+        deadline = time.monotonic() + timeout
+        while True:
+            pid, status, usage = os.wait4(proc.pid, os.WNOHANG)
+            if pid:
+                self.peak_bytes = usage.ru_maxrss * 1024  # KiB on Linux
+                proc.returncode = os.waitstatus_to_exitcode(status)
+                return proc.returncode
+            if time.monotonic() >= deadline:
+                raise subprocess.TimeoutExpired(proc.args, timeout)
+            time.sleep(0.05)
+
+    def kill(self, proc: subprocess.Popen) -> None:
+        """Kill the harness and everything it started (sandbox programs, workers)."""
+        if os.name == "nt":
+            if self.job is None:
+                subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True)
+        else:
+            import signal
+
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError):
+                pass
+        self.close()
         try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except (ProcessLookupError, PermissionError):
+            proc.kill()
+        except OSError:
             pass
-    try:
-        proc.kill()
-    except OSError:
-        pass
+
+    def close(self) -> None:
+        """Read the job's peak memory, then close it: kill-on-close ends any process
+        the harness left behind."""
+        if self.job is None:
+            return
+        import ctypes
+
+        from pdl_taskmaster.verification import sandbox as sb
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        info = sb.JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
+        if kernel32.QueryInformationJobObject(self.job, sb.JobObjectExtendedLimitInformation, ctypes.byref(info),
+                                              ctypes.sizeof(info), None):
+            self.peak_bytes = int(info.PeakJobMemoryUsed)
+        kernel32.CloseHandle(self.job)
+        self.job = None
+
+    @property
+    def peak_mb(self) -> float | None:
+        return None if self.peak_bytes is None else round(self.peak_bytes / (1024 * 1024), 1)
+
+    @property
+    def limit_reached(self) -> bool:
+        return self.peak_bytes is not None and self.peak_bytes >= 0.95 * self.limit_bytes
 
 
-def run_with_deadline(cmd, stdin_text, timeout, stdout_path, stderr_path, *, cwd=None, env=None):
-    """Run one prompt with a hard deadline. Output goes straight to files, so no
-    pipe can keep the runner waiting after a kill (subprocess.run with
-    capture_output can block on Windows when a grandchild still holds the pipes),
-    and progress is on disk while the run is live. On timeout the whole process
-    tree is killed. Returns (exit_code, timed_out)."""
-    group = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt"
-             else {"start_new_session": True})
+def run_with_deadline(cmd, stdin_text, timeout, stdout_path, stderr_path, *, cwd=None, env=None,
+                      memory_mb=HARNESS_MEMORY_MB):
+    """Run one prompt with a hard deadline, contained (see _Containment). Output
+    goes straight to files, so no pipe can keep the runner waiting after a kill
+    (subprocess.run with capture_output can block on Windows when a grandchild
+    still holds the pipes), and progress is on disk while the run is live. On
+    timeout the whole process tree is killed. Returns (exit_code, timed_out,
+    containment)."""
+    containment = _Containment(memory_mb)
     with open(stdout_path, "w", encoding="utf-8", errors="replace") as out, \
             open(stderr_path, "w", encoding="utf-8", errors="replace") as err:
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=out, stderr=err, text=True,
-                                encoding="utf-8", errors="replace", cwd=cwd, env=env, **group)
+                                encoding="utf-8", errors="replace", cwd=cwd, env=env,
+                                **containment.popen_kwargs())
+        containment.attach(proc)
         try:
-            proc.communicate(input=stdin_text, timeout=timeout)
-            return proc.returncode, False
+            try:
+                proc.stdin.write(stdin_text)
+                proc.stdin.close()
+            except OSError:  # the harness exited before reading its input
+                pass
+            exit_code = containment.wait(proc, timeout)
+            containment.close()
+            return exit_code, False, containment
         except subprocess.TimeoutExpired:
-            _kill_tree(proc)
+            containment.kill(proc)
             try:
                 proc.wait(timeout=10)
-            except subprocess.TimeoutExpired:
+            except (subprocess.TimeoutExpired, ChildProcessError):
                 pass
-            return -1, True
+            return -1, True, containment
+
+
+HANG_DUMP_HEADER = "Timeout ("  # faulthandler's dump from the harness exit watchdog (host/cli.py)
+
+
+def harness_hung(stderr: str) -> bool:
+    return any(line.startswith(HANG_DUMP_HEADER) and line.rstrip().endswith(")!")
+               for line in (stderr or "").splitlines())
+
+
+def harness_fault(containment: _Containment, stderr: str) -> str | None:
+    """A fault of the harness process itself, reported as such and never as a model
+    outcome, whatever the exit code says: its tree used the whole memory allowance
+    (the job's peak, or a MemoryError raised in the harness: a sandboxed program's
+    own MemoryError is captured by the harness and never reaches this stderr), or
+    it hung after the session ended (the exit watchdog's stack dump)."""
+    if containment.limit_reached or any(line.startswith("MemoryError") for line in (stderr or "").splitlines()):
+        return "HARNESS_MEMORY_LIMIT"
+    if harness_hung(stderr):
+        return "HARNESS_HANG"
+    return None
 
 
 def harness_error_record(stderr: str) -> dict | None:
@@ -169,7 +300,7 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
 
 
 def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_index=None, reasoning_ops=(),
-                      run_settings=None):
+                      run_settings=None, memory_mb=HARNESS_MEMORY_MB):
     prompt_id = entry["id"]
     prompt_file = PROMPTS_DIR / entry["file"]
     safe_name = f"{prompt_id}_{prompt_file.stem}" + (f"_r{repeat_index}" if repeat_index else "")
@@ -189,7 +320,7 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
     start_ts = datetime.now(timezone.utc).isoformat()
 
     stdout_path, stderr_path = result_dir / "stdout.txt", result_dir / "stderr.txt"
-    exit_code, timed_out = run_with_deadline(
+    exit_code, timed_out, containment = run_with_deadline(
         cmd,
         repl_input,
         timeout,
@@ -197,6 +328,7 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
         stderr_path,
         cwd=str(PDLT_TEST_ROOT),
         env={**os.environ, "PYTHONPATH": str(PDLT_TEST_ROOT / "src"), "PYTHONIOENCODING": "utf-8"},
+        memory_mb=memory_mb,
     )
     stdout = stdout_path.read_text(encoding="utf-8", errors="replace")
     stderr = stderr_path.read_text(encoding="utf-8", errors="replace")
@@ -210,7 +342,10 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
         if not text:
             path.unlink(missing_ok=True)
 
-    if timed_out:
+    fault = harness_fault(containment, stderr)
+    if fault:
+        verdict = fault
+    elif timed_out:
         verdict = "TIMEOUT"
     elif exit_code == EXIT_SUCCESS:
         verdict = "CLOSED_SUCCESS"
@@ -255,6 +390,7 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
         "exit_code": exit_code,
         "timed_out": timed_out,
         "elapsed_seconds": round(elapsed, 2),
+        "harness_peak_memory_mb": containment.peak_mb,
         "start_time": start_ts,
         "session_id": session_id,
         "transcript_file": str(transcript_path.relative_to(run_dir)),
@@ -609,6 +745,8 @@ def main():
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
     parser.add_argument("--draft-execute", action="store_true",
                         help="run DRAFT_EXECUTE before EXECUTE (A/B option)")
+    parser.add_argument("--harness-memory-mb", type=int, default=HARNESS_MEMORY_MB, metavar="MB",
+                        help=f"memory cap for one prompt's harness process tree (default: {HARNESS_MEMORY_MB})")
     parser.add_argument("--repeat", type=int, default=1, metavar="N",
                         help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
     parser.add_argument("--regrade", metavar="RUN_DIR", default=None,
@@ -670,6 +808,7 @@ def main():
         "total_prompts": len(runs),
         "repeat": args.repeat,
         "timeout_per_prompt": args.timeout,
+        "harness_memory_mb": args.harness_memory_mb,
         "pdlt_test_root": str(PDLT_TEST_ROOT),
         "rules": {
             "retries_allowed": 0,
@@ -691,10 +830,12 @@ def main():
         label = prompt_id + (f" r{repeat_index}" if repeat_index else "")
         print(f"[{i:3d}/{len(runs)}] {label:9s} {entry['category']:30s} ", end="", flush=True)
         result = run_single_prompt(entry, run_dir, args.model, args.reasoning, args.timeout, repeat_index,
-                                   args.reasoning_op, run_settings)
+                                   args.reasoning_op, run_settings, memory_mb=args.harness_memory_mb)
         results.append(result)
         icon = "PASS" if is_prompt_pass(result) else "FAIL"
-        print(f"{icon} {result['verdict']:20s} gt={gt_grade(result):7s} ({result['elapsed_seconds']:.1f}s)")
+        peak = result.get("harness_peak_memory_mb")
+        memory = f", {peak:.0f} MB" if peak is not None else ""
+        print(f"{icon} {result['verdict']:20s} gt={gt_grade(result):7s} ({result['elapsed_seconds']:.1f}s{memory})")
 
         if args.fail_fast and not is_prompt_pass(result):
             print(f"\n[FAIL-FAST] Stopping execution immediately after failure on {prompt_id} ({result['verdict']}).")
@@ -711,6 +852,14 @@ def main():
 
     gt = scoreboard["ground_truth"]
     print(f"Stage only: {scoreboard['stage_passed']}/{scoreboard['total_prompts']} reached the expected stage")
+    for fault, meaning in (("HARNESS_MEMORY_LIMIT", f"the harness used its whole {args.harness_memory_mb} MB allowance"),
+                           ("HARNESS_HANG", "the harness did not exit after the session ended; stacks in stderr.txt")):
+        ids = [r["id"] for r in results if r.get("verdict") == fault]
+        if ids:
+            print(f"{fault}: {len(ids)} ({meaning}; not a model outcome) - {', '.join(ids)}")
+    peaks = [r["harness_peak_memory_mb"] for r in results if r.get("harness_peak_memory_mb") is not None]
+    if peaks:
+        print(f"Harness peak memory: max {max(peaks):.0f} MB, median {sorted(peaks)[len(peaks) // 2]:.0f} MB")
     harness_errors = [r for r in results if r.get("verdict") == "HARNESS_ERROR"]
     if harness_errors:
         print(f"HARNESS ERRORS: {len(harness_errors)} (a model call failed; not a model outcome)")

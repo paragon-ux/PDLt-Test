@@ -7,6 +7,7 @@ prompt would tell the model how it is being graded.
 from __future__ import annotations
 
 import json
+import time
 import re
 from pathlib import Path
 
@@ -88,7 +89,7 @@ def test_hung_prompt_is_killed_with_its_whole_process_tree(tmp_path):
         "time.sleep(120)\n"
     )
     started = time.monotonic()
-    code, timed_out = run_catalogue.run_with_deadline(
+    code, timed_out, _ = run_catalogue.run_with_deadline(
         [sys.executable, "-c", child], "", 3, tmp_path / "out.txt", tmp_path / "err.txt"
     )
     assert timed_out and code == -1
@@ -114,8 +115,86 @@ def test_prompt_within_its_deadline_returns_its_exit_code(tmp_path):
     sys.path.insert(0, str(ROOT))
     import run_catalogue
 
-    code, timed_out = run_catalogue.run_with_deadline(
+    code, timed_out, _ = run_catalogue.run_with_deadline(
         [sys.executable, "-c", "import sys; print(sys.stdin.read().strip()); sys.exit(3)"], "hello", 30,
         tmp_path / "out.txt", tmp_path / "err.txt",
     )
     assert (code, timed_out) == (3, False) and (tmp_path / "out.txt").read_text().strip() == "hello"
+
+
+def test_harness_peak_memory_is_measured(tmp_path):
+    import sys
+
+    sys.path.insert(0, str(ROOT))
+    import run_catalogue
+
+    code, timed_out, containment = run_catalogue.run_with_deadline(
+        [sys.executable, "-c", "x = bytearray(80 * 1024 * 1024); x[::4096] = b'1' * len(x[::4096])"], "", 30,
+        tmp_path / "out.txt", tmp_path / "err.txt",
+    )
+    assert (code, timed_out) == (0, False)
+    assert containment.peak_mb is not None and containment.peak_mb >= 80
+    assert not containment.limit_reached
+
+
+def test_harness_over_its_memory_cap_is_a_harness_fault_not_a_model_outcome(tmp_path):
+    """Run 20261001-154533 froze the evaluator's machine at 80% memory; one prompt's
+    harness tree is now capped, and exceeding the cap is reported as such."""
+    import sys
+
+    sys.path.insert(0, str(ROOT))
+    import run_catalogue
+
+    started = time.monotonic()
+    code, timed_out, containment = run_catalogue.run_with_deadline(
+        [sys.executable, "-c", "x = [bytearray(64 * 1024 * 1024) for _ in range(64)]"], "", 60,
+        tmp_path / "out.txt", tmp_path / "err.txt", memory_mb=512,
+    )
+    stderr = (tmp_path / "err.txt").read_text()
+    assert code != 0 and not timed_out and time.monotonic() - started < 30
+    assert run_catalogue.harness_fault(containment, stderr) == "HARNESS_MEMORY_LIMIT"
+
+
+def test_harness_that_hangs_after_its_session_dumps_stacks_and_exits(tmp_path):
+    """The exit watchdog (host/cli.py): a process that does not exit after the
+    session ended dumps every thread's stack and exits; the runner reports
+    HARNESS_HANG instead of waiting out the prompt deadline."""
+    import sys
+
+    sys.path.insert(0, str(ROOT))
+    import run_catalogue
+
+    child = (
+        "import sys, threading\n"
+        f"sys.path.insert(0, {str(ROOT / 'src')!r})\n"
+        "from pdl_taskmaster.host.cli import _arm_exit_watchdog\n"
+        "threading.Thread(target=threading.Event().wait).start()  # never ends: shutdown hangs\n"
+        "_arm_exit_watchdog(1)\n"
+    )
+    started = time.monotonic()
+    code, timed_out, containment = run_catalogue.run_with_deadline(
+        [sys.executable, "-c", child], "", 60, tmp_path / "out.txt", tmp_path / "err.txt",
+    )
+    stderr = (tmp_path / "err.txt").read_text()
+    assert not timed_out and time.monotonic() - started < 15
+    assert run_catalogue.harness_fault(containment, stderr) == "HARNESS_HANG"
+    assert "threading.py" in stderr  # the dump names where it hung
+
+
+def test_clean_exit_after_the_watchdog_is_armed_leaves_no_trace(tmp_path):
+    import sys
+
+    sys.path.insert(0, str(ROOT))
+    import run_catalogue
+
+    child = (
+        "import sys\n"
+        f"sys.path.insert(0, {str(ROOT / 'src')!r})\n"
+        "from pdl_taskmaster.host.cli import _arm_exit_watchdog\n"
+        "_arm_exit_watchdog(5)\n"
+    )
+    code, timed_out, containment = run_catalogue.run_with_deadline(
+        [sys.executable, "-c", child], "", 60, tmp_path / "out.txt", tmp_path / "err.txt",
+    )
+    assert (code, timed_out) == (0, False) and (tmp_path / "err.txt").read_text() == ""
+    assert run_catalogue.harness_fault(containment, "") is None

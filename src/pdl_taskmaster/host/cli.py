@@ -95,12 +95,30 @@ def _main_impl(argv: list[str] | None = None) -> int:
     return repl_main()
 
 
+# A headless session that has finished but whose process does not exit within this
+# many seconds is hung (run 20261001-154533 stalled after a transcript had closed).
+EXIT_WATCHDOG_SECONDS = 20
+
+
+def _arm_exit_watchdog(seconds: float = EXIT_WATCHDOG_SECONDS) -> None:
+    """After the session has ended, dump every thread's stack to stderr and exit if
+    interpreter shutdown does not finish in ``seconds``. The dump names where the
+    process hung (faulthandler's dump opens with "Timeout (h:mm:ss)!"); the runner
+    reports it as HARNESS_HANG, never as a model outcome."""
+    import faulthandler
+
+    faulthandler.dump_traceback_later(seconds, exit=True, file=sys.stderr)
+
+
 def main(argv: list[str] | None = None) -> int:
     try:
-        return _main_impl(argv)
+        code = _main_impl(argv)
     except KeyboardInterrupt:
         print("\n[session terminated by user]", file=sys.stderr, flush=True)
         return 130
+    if "--non-interactive" in (sys.argv[1:] if argv is None else argv):
+        _arm_exit_watchdog()
+    return code
 
 
 if __name__ == "__main__":

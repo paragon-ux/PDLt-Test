@@ -496,8 +496,11 @@ class ApiWorker:
                             # The model's generation failed the provider's schema check: a
                             # model-output failure. Retrying blind repeated it 5 times at
                             # Groq (probe 20261001-142720); the engine decides instead.
-                            raise ProviderError("OUTPUT_MALFORMED", f"generation did not match the schema: {message[:800]}",
-                                                wire_equivalent=True)
+                            mismatch = ProviderError("OUTPUT_MALFORMED",
+                                                     f"generation did not match the schema: {message[:800]}",
+                                                     wire_equivalent=True)
+                            mismatch.response_body = parsed  # for the provider probe's raw record
+                            raise mismatch
                     if err and attempt < 4:
                         err_code = str(err.get("code") if isinstance(err, dict) else err).lower()
                         err_msg = str(err.get("message") if isinstance(err, dict) else "").lower()
