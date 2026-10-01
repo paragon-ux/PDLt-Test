@@ -69,24 +69,42 @@ def test_guard02_activation_route_no_hardcoded_refusal_literals():
     )
 
 
-def test_guard05_contract_manifest_sha256_synchronized():
-    """GUARD-05: CONTRACT_MANIFEST.json must have 0 SHA-256 hash divergences."""
-    manifest_file = ROOT / "contracts" / "CONTRACT_MANIFEST.json"
-    assert manifest_file.is_file()
+_TEXT_SUFFIXES = {".md", ".json", ".txt", ".py", ".yaml", ".yml"}
+# Both manifest copies: the repository's and the one bundled in the package (the
+# NormativeStore fallback). Each lists paths relative to its own base directory.
+_MANIFEST_BASES = (ROOT, ROOT / "src" / "pdl_taskmaster")
 
-    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+
+def _normalized_bytes(path: Path) -> bytes:
+    """File bytes with CRLF folded to LF for text files, so a Windows checkout
+    (core.autocrlf) hashes like the LF original."""
+    raw = path.read_bytes()
+    return raw.replace(b"\r\n", b"\n") if path.suffix in _TEXT_SUFFIXES else raw
+
+
+def _manifest_divergences(base: Path) -> list[str]:
+    manifest = json.loads((base / "contracts" / "CONTRACT_MANIFEST.json").read_text(encoding="utf-8"))
     mismatches = []
     for entry in manifest.get("files", []):
-        file_path = ROOT / entry["path"]
+        file_path = base / entry["path"]
         assert file_path.is_file(), f"Manifest references missing file: {entry['path']}"
-        raw_bytes = file_path.read_bytes()
-        if file_path.suffix in {".md", ".json", ".txt", ".py", ".yaml", ".yml"}:
-            raw_bytes = raw_bytes.replace(b"\r\n", b"\n")
-        actual_sha = hashlib.sha256(raw_bytes).hexdigest()
+        actual_sha = hashlib.sha256(_normalized_bytes(file_path)).hexdigest()
         if entry["sha256"] != actual_sha:
             mismatches.append(f"{entry['path']}: expected {entry['sha256'][:10]} got {actual_sha[:10]}")
+    return mismatches
 
+
+@pytest.mark.parametrize("base", _MANIFEST_BASES, ids=["repository", "bundled"])
+def test_guard05_contract_manifest_sha256_synchronized(base):
+    """GUARD-05: CONTRACT_MANIFEST.json must have 0 SHA-256 hash divergences."""
+    assert (base / "contracts" / "CONTRACT_MANIFEST.json").is_file()
+    mismatches = _manifest_divergences(base)
     assert not mismatches, f"CONTRACT_MANIFEST.json hash divergences found:\n" + "\n".join(mismatches)
+
+
+def test_guard05_bundled_contract_manifest_matches_the_repository_copy():
+    repository, bundled = (base / "contracts" / "CONTRACT_MANIFEST.json" for base in _MANIFEST_BASES)
+    assert _normalized_bytes(repository) == _normalized_bytes(bundled)
 
 
 def test_plan_soundness_accepts_pure_deduction_plan():
