@@ -1,14 +1,20 @@
 from __future__ import annotations
 
 import ctypes
+import json
 import math
 import os
+import secrets
+import shutil
 import signal
+import socket
 import subprocess
 import sys
 import tempfile
 import time
+import weakref
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -90,6 +96,10 @@ if _IS_WINDOWS:
             k.TerminateJobObject.restype = wintypes.BOOL
             k.CloseHandle.argtypes = (wintypes.HANDLE,)
             k.CloseHandle.restype = wintypes.BOOL
+            k.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+            k.OpenProcess.restype = wintypes.HANDLE
+            k.GetExitCodeProcess.argtypes = (wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD))
+            k.GetExitCodeProcess.restype = wintypes.BOOL
             _KERNEL32 = k
         return _KERNEL32
 
@@ -245,6 +255,173 @@ class SandboxResult:
         )
 
 
+# Session roots live under the system temporary directory, outside every tree the
+# referee reads (sessions, workspaces, results): a program can never plant a file
+# where a deliverable or evidence is looked for.
+SANDBOX_ROOT_DIRNAME = "pdlt-sandboxes"
+OWNER_FILENAME = "owner.json"
+# A root without a readable owner record is left alone this long (it may be one
+# another process is creating right now).
+_ORPHAN_GRACE_SECONDS = 24 * 3600
+_STILL_ACTIVE = 259
+_PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+
+
+def sandbox_base_dir() -> Path:
+    return Path(tempfile.gettempdir()) / SANDBOX_ROOT_DIRNAME
+
+
+def _pid_alive(pid: int) -> bool:
+    """Whether a process with this id exists. Unknown counts as alive (never sweep
+    what might still be in use)."""
+    if pid <= 0:
+        return False
+    if _IS_WINDOWS:
+        k32 = kernel32()
+        handle = k32.OpenProcess(_PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if not handle:
+            return ctypes.get_last_error() != 87  # ERROR_INVALID_PARAMETER: no such process
+        try:
+            code = wintypes.DWORD()
+            if not k32.GetExitCodeProcess(handle, ctypes.byref(code)):
+                return True
+            return code.value == _STILL_ACTIVE
+        finally:
+            k32.CloseHandle(handle)
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return True  # exists, owned by someone else
+    return True
+
+
+def _private_base_dir() -> Path:
+    """The per-user sandbox base directory: created private, and refused when it is a
+    link or another user's directory (a shared /tmp)."""
+    base = sandbox_base_dir()
+    base.mkdir(mode=0o700, exist_ok=True)
+    if not _IS_WINDOWS:
+        info = os.lstat(base)
+        if os.path.islink(base) or info.st_uid != os.geteuid():
+            raise OSError(f"{base} is not a directory owned by this user")
+        if info.st_mode & 0o077:
+            os.chmod(base, 0o700)
+    return base
+
+
+def _remove_tree(path: Path) -> None:
+    shutil.rmtree(path, ignore_errors=True)
+
+
+def _clear_directory(path: Path) -> None:
+    """Delete everything inside ``path``, never following links. Never raises."""
+    try:
+        entries = list(os.scandir(path))
+    except OSError:
+        return
+    for entry in entries:
+        try:
+            if entry.is_dir(follow_symlinks=False):
+                shutil.rmtree(entry.path, ignore_errors=True)
+            else:
+                os.unlink(entry.path)
+        except OSError:
+            pass
+
+
+def sweep_stale_roots(base: Path | None = None, *, cleanup: Any = None) -> list[Path]:
+    """Remove session roots whose owner process is gone (a host killed before
+    ``close()`` ran). ``cleanup(root, owner)`` releases what the owner record names beyond
+    the directory. Returns the roots removed. Never raises."""
+    base = base if base is not None else sandbox_base_dir()
+    removed: list[Path] = []
+    try:
+        candidates = [Path(entry.path) for entry in os.scandir(base) if entry.is_dir(follow_symlinks=False)]
+    except OSError:
+        return removed
+    now = time.time()
+    for root in candidates:
+        try:
+            owner = json.loads((root / OWNER_FILENAME).read_text(encoding="utf-8"))
+            pid = int(owner["pid"])
+        except (OSError, ValueError, KeyError, TypeError):
+            try:
+                if now - root.stat().st_mtime < _ORPHAN_GRACE_SECONDS:
+                    continue
+            except OSError:
+                continue
+            owner, pid = {}, 0
+        if pid == os.getpid() or (pid and owner.get("host") not in (None, socket.gethostname())):
+            continue
+        if pid and _pid_alive(pid):
+            continue
+        if cleanup is not None and owner:
+            try:
+                cleanup(root, owner)
+            except Exception:
+                pass
+        _remove_tree(root)
+        removed.append(root)
+    return removed
+
+
+class _SandboxSession:
+    """One sandbox session on disk: ``<base>/<sid>/`` with ``owner.json`` and
+    ``work/``, where each run gets a fresh directory that is deleted afterwards.
+    Holds no reference to the ExecutionSandbox, so it can be its finalizer."""
+
+    def __init__(self, label: str, backend_name: str) -> None:
+        base = _private_base_dir()
+        self.root = Path(tempfile.mkdtemp(prefix=f"{label}-", dir=base)).resolve()
+        self.sid = self.root.name
+        self.work = self.root / "work"
+        self.work.mkdir(mode=0o700)
+        self.owner: dict[str, Any] = {
+            "pid": os.getpid(),
+            "host": socket.gethostname(),
+            "created": datetime.now(timezone.utc).isoformat(),
+            "backend": backend_name,
+        }
+        self.backend: Any = None
+        self._runs = 0
+        self.closed = False
+        self.write_owner()
+
+    def write_owner(self, **extra: Any) -> None:
+        self.owner.update(extra)
+        (self.root / OWNER_FILENAME).write_text(json.dumps(self.owner, indent=2) + "\n", encoding="utf-8")
+
+    def new_run_dir(self) -> Path:
+        self._runs += 1
+        run_dir = self.work / f"run-{self._runs:04d}-{secrets.token_hex(3)}"
+        run_dir.mkdir(mode=0o700)
+        (run_dir / "tmp").mkdir(mode=0o700)
+        return run_dir
+
+    def clear_work(self) -> None:
+        """After a run: nothing it wrote survives into the next run."""
+        _clear_directory(self.work)
+
+    def close(self) -> None:
+        if self.closed:
+            return
+        self.closed = True
+        backend, self.backend = self.backend, None
+        if backend is not None:
+            try:
+                backend.close()
+            except Exception:
+                pass
+        _remove_tree(self.root)
+
+
+def _session_label(label: str | None) -> str:
+    cleaned = "".join(c if c.isalnum() else "-" for c in (label or "session").lower()).strip("-")
+    return (cleaned or "session")[:16]
+
+
 
 class ExecutionSandbox:
     """OS-native deterministic execution sandbox (P1).
@@ -269,10 +446,61 @@ class ExecutionSandbox:
         timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
         memory_limit_bytes: int = DEFAULT_MEMORY_LIMIT_BYTES,
         allow_network: bool = False,
+        mode: str | None = None,
+        label: str | None = None,
     ) -> None:
         self.timeout_seconds = float(timeout_seconds)
         self.memory_limit_bytes = int(memory_limit_bytes)
         self.allow_network = allow_network
+        self.mode = mode
+        self.label = _session_label(label)
+        self.backend_name = "audit-only"
+        self._session: _SandboxSession | None = None
+        self._finalizer: Any = None
+
+    # -- session lifecycle -------------------------------------------------------
+
+    def probe(self) -> bool:
+        """Whether the chosen backend can run programs on this machine. Cheap: no
+        session is built."""
+        return True
+
+    @property
+    def session_info(self) -> dict[str, Any] | None:
+        """Facts about the built session (backend, root), or None before the first run."""
+        if self._session is None:
+            return None
+        return {"backend": self.backend_name, "root": str(self._session.root)}
+
+    def _ensure_session(self) -> _SandboxSession:
+        """Build the session on the first run: its root, its owner record, and a sweep
+        of roots left by hosts that were killed before ``close()`` ran (``atexit`` is
+        not used: it does not run for a killed process either)."""
+        if self._session is not None and not self._session.closed:
+            return self._session
+        sweep_stale_roots()
+        session = _SandboxSession(self.label, self.backend_name)
+        self._session = session
+        # Released when the sandbox is garbage-collected without close(); not at
+        # interpreter exit (the sweep covers hosts that never get there).
+        self._finalizer = weakref.finalize(self, session.close)
+        self._finalizer.atexit = False
+        return session
+
+    def close(self) -> None:
+        """Release the session: its root directory and every backend resource."""
+        session, self._session = self._session, None
+        if session is not None:
+            session.close()
+        if self._finalizer is not None:
+            self._finalizer.detach()
+            self._finalizer = None
+
+    def __enter__(self) -> "ExecutionSandbox":
+        return self
+
+    def __exit__(self, *exc_info: Any) -> None:
+        self.close()
 
     def decision_state(self) -> dict[str, str]:
         """The sandbox as System 1 routing state: what the environment provides and
@@ -368,11 +596,10 @@ class ExecutionSandbox:
         effective_timeout = timeout if timeout is not None else self.timeout_seconds
         effective_memory = memory_limit if memory_limit is not None else self.memory_limit_bytes
 
-        # ignore_cleanup_errors: on Windows a just-killed process can still hold a
-        # file in the scratchpad (WinError 32); that must not fail the run.
-        with tempfile.TemporaryDirectory(prefix="pdl_sandbox_", ignore_cleanup_errors=True) as scratchpad:
-            scratchpad_path = Path(scratchpad).resolve()
-            entry_file = scratchpad_path / "_entry.py"
+        session = self._ensure_session()
+        run_dir = session.new_run_dir()
+        try:
+            entry_file = run_dir / "_entry.py"
 
             content_parts: list[str] = []
             if not self.allow_network:
@@ -384,7 +611,7 @@ class ExecutionSandbox:
                 ))
             # The program runs from its own file, so tracebacks and syntax errors cite
             # the program's own line numbers, not lines shifted by the preludes.
-            program_file = scratchpad_path / PROGRAM_FILENAME
+            program_file = run_dir / PROGRAM_FILENAME
             program_file.write_text(code, encoding="utf-8")
             content_parts.append(
                 f"exec(compile(open({PROGRAM_FILENAME!r}, encoding='utf-8').read(), {PROGRAM_FILENAME!r}, 'exec'), "
@@ -392,56 +619,33 @@ class ExecutionSandbox:
             )
             entry_file.write_text("\n".join(content_parts), encoding="utf-8")
 
+            # Temporary files land in the run's own directory (deleted with it).
+            run_tmp = str(run_dir / "tmp")
+            run_env = {"TMPDIR": run_tmp, "TEMP": run_tmp, "TMP": run_tmp, **(env or {})}
             result = self._execute_process(
                 [sys.executable, *_INTERPRETER_FLAGS, str(entry_file)],
-                cwd=scratchpad_path,
+                cwd=run_dir,
                 timeout=effective_timeout,
                 memory_limit_bytes=effective_memory,
-                env=env,
+                env=run_env,
             )
-            from dataclasses import replace
+        finally:
+            # A just-killed Windows process can still hold a file (WinError 32): what
+            # cannot be deleted now is deleted after the next run or at close().
+            session.clear_work()
+        from dataclasses import replace
 
-            if step_limit is not None:
-                steps_used, kept = None, []
-                for line in (result.stderr or "").splitlines(keepends=True):
-                    if line.startswith(_STEPS_USED_MARKER + ": "):
-                        steps_used = int(line.split(": ", 1)[1])
-                    else:
-                        kept.append(line)
-                result = replace(result, stderr="".join(kept), steps_used=steps_used)
-            if result.exit_code == STEP_BUDGET_EXIT_CODE and _STEP_BUDGET_MARKER in result.stderr:
-                result = replace(result, step_budget_exceeded=True, steps_used=int(step_limit) + 1)
-            return result
-
-    def run_script(
-        self,
-        script_path: str | Path,
-        args: list[str] | None = None,
-        *,
-        timeout: float | None = None,
-        memory_limit: int | None = None,
-        env: dict[str, str] | None = None,
-    ) -> SandboxResult:
-        """Execute an existing script within the sandboxed environment."""
-        effective_timeout = timeout if timeout is not None else self.timeout_seconds
-        effective_memory = memory_limit if memory_limit is not None else self.memory_limit_bytes
-        resolved_script = Path(script_path).resolve()
-
-        # ignore_cleanup_errors: on Windows a just-killed process can still hold a
-        # file in the scratchpad (WinError 32); that must not fail the run.
-        with tempfile.TemporaryDirectory(prefix="pdl_sandbox_", ignore_cleanup_errors=True) as scratchpad:
-            scratchpad_path = Path(scratchpad).resolve()
-            cmd = [sys.executable, *_INTERPRETER_FLAGS, str(resolved_script)]
-            if args:
-                cmd.extend(args)
-
-            return self._execute_process(
-                cmd,
-                cwd=scratchpad_path,
-                timeout=effective_timeout,
-                memory_limit_bytes=effective_memory,
-                env=env,
-            )
+        if step_limit is not None:
+            steps_used, kept = None, []
+            for line in (result.stderr or "").splitlines(keepends=True):
+                if line.startswith(_STEPS_USED_MARKER + ": "):
+                    steps_used = int(line.split(": ", 1)[1])
+                else:
+                    kept.append(line)
+            result = replace(result, stderr="".join(kept), steps_used=steps_used)
+        if result.exit_code == STEP_BUDGET_EXIT_CODE and _STEP_BUDGET_MARKER in result.stderr:
+            result = replace(result, step_budget_exceeded=True, steps_used=int(step_limit) + 1)
+        return result
 
     def _execute_process(
         self,
@@ -556,6 +760,13 @@ class ExecutionSandbox:
                 duration_ms=(time.perf_counter() - start_time) * 1000.0,
                 error=f"execution_exception: {exc}",
             )
+
+        except BaseException:
+            # Ctrl-C or SystemExit in the host: the program runs in its own session
+            # (or job), so it would be orphaned and keep running. Kill it first.
+            if proc is not None:
+                self._kill_tree(proc, h_job, k32)
+            raise
 
         finally:
             if _IS_WINDOWS and h_job and k32:

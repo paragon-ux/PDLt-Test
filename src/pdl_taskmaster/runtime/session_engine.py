@@ -285,7 +285,9 @@ class SessionEngine:
         self.higher_priority_constraints = higher_priority_constraints
         self.bridge = OperationBridge(self.repo_root, render_compact=render_compact)
         # Axiom 3: one session-scoped sandbox, constructed at boot and reused by every run.
-        self.sandbox = ExecutionSandbox(timeout_seconds=15.0)
+        # It builds its session lazily, on the first program run; close() releases it.
+        self.sandbox = ExecutionSandbox(timeout_seconds=15.0, label="engine")
+        self._sandbox_session_logged: Any = None  # the workspace that has its SANDBOX_SESSION event
         # The solver is told the truth about where its code runs (EXEC-01): the
         # sandbox under the task's routed budget, unless the host declares its own.
         from pdl_taskmaster.verification.sandbox import DEFAULT_BUDGET
@@ -1402,10 +1404,12 @@ class SessionEngine:
                 memory_limit=self._execution_budget.memory_limit_bytes,
                 step_limit=self._execution_budget.step_limit,
             )
+            self._log_sandbox_session()
             self.workspace.append_event(
                 "SANDBOX_RUN",
                 {
                     "block": index,
+                    "backend": self.sandbox.backend_name,
                     "tier": self._execution_budget.tier,
                     "exit_code": run.exit_code,
                     "step_budget_exceeded": run.step_budget_exceeded,
@@ -1435,6 +1439,20 @@ class SessionEngine:
                 tail = " / ".join((run.stdout or "").strip().splitlines()[-3:])[:300]
                 self._last_program_outputs.append(f"python block {index} exited 0" + (f" and printed: {tail}" if tail else " and printed nothing"))
         return witness, failures
+
+    def _log_sandbox_session(self) -> None:
+        """One SANDBOX_SESSION event per workspace: the backend that confines the
+        programs and the session root they run under (outside every workspace)."""
+        info = self.sandbox.session_info
+        if info is None or self._sandbox_session_logged is self.workspace:
+            return
+        assert self.workspace is not None
+        self.workspace.append_event("SANDBOX_SESSION", dict(info))
+        self._sandbox_session_logged = self.workspace
+
+    def close(self) -> None:
+        """Release session-scoped resources (the sandbox session). Idempotent."""
+        self.sandbox.close()
 
     def _payload_token_findings(self, body: str) -> list[str]:
         """EXEC-04: a deliverable carries no payload token from the untrusted source.

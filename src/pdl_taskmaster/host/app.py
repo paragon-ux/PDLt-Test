@@ -165,5 +165,10 @@ class PDLtHost:
         }
 
     def close(self) -> None:
-        if self.sink is not None:
-            self.sink.close()
+        try:
+            close_engine = getattr(self.engine, "close", None)
+            if close_engine is not None:
+                close_engine()
+        finally:
+            if self.sink is not None:
+                self.sink.close()

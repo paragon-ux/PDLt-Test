@@ -97,7 +97,8 @@ def build_corpus(result_dir: Path, *, run_code: bool = True) -> str | None:
             from pdl_taskmaster.verification.sandbox import ExecutionSandbox
 
             seconds, steps = _run_budget(result_dir)
-            out = ExecutionSandbox(timeout_seconds=seconds).run_code(blocks[-1], step_limit=steps)
+            with ExecutionSandbox(timeout_seconds=seconds, label="grader") as sandbox:
+                out = sandbox.run_code(blocks[-1], step_limit=steps)
             text += f"\n\n[GRADER: deliverable code exit {out.exit_code}]"
             if out.stdout:
                 text += "\n[GRADER: deliverable code stdout]\n" + out.stdout
