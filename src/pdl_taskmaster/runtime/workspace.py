@@ -213,6 +213,29 @@ class WorkspaceRun:
             return None
         return body.read_text(encoding="utf-8").rstrip("\n")
 
+    def previous_turn_context(self) -> str | None:
+        """What a new turn carries from the most recent closed turn.
+
+        A successful turn carries its confirmed deliverable (previous_deliverable).
+        A cancelled turn carries its confirmed Prompt and the host's published
+        failure record (the unverified candidate and the findings), labelled as
+        unverified, so a follow-up such as "retry more efficiently" still has its
+        task. Drafts, rejected plans and review dialogue stay unreachable."""
+        closed = self.closed_turns()
+        if not closed or closed[-1].get("status") != "CLOSED_CANCELLED":
+            return self.previous_deliverable()
+        stages = self.path / "turns" / str(closed[-1].get("turn_id")) / "stages"
+        parts: list[str] = []
+        prompt_meta, prompt_body = stages / "10_prompt" / "output" / "current.json", stages / "10_prompt" / "output" / "current.md"
+        if prompt_meta.is_file() and prompt_body.is_file() and json.loads(self._read(prompt_meta)).get("confirmed"):
+            parts.append("Confirmed task of the previous turn:\n" + self._read(prompt_body).rstrip("\n"))
+        outcome = stages / "50_execution" / "output" / "current.md"
+        if outcome.is_file():
+            parts.append("Its unverified outcome and the host's findings:\n" + self._read(outcome).rstrip("\n"))
+        if not parts:
+            return self.previous_deliverable()
+        return "The previous turn was cancelled; nothing in it was verified.\n\n" + "\n\n".join(parts)
+
     @classmethod
     def open(cls, repo_root: str | Path, path: str | Path) -> "WorkspaceRun":
         return cls(Path(repo_root), Path(path))

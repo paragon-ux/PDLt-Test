@@ -164,3 +164,44 @@ def test_engine_chaining_compiles_previous_deliverable(tmp_path: Path, monkeypat
         assert "PREVIOUS_DELIVERABLE" in captured[0]
     finally:
         host.close()
+
+
+def test_follow_up_after_a_cancelled_turn_carries_its_task(tmp_path: Path) -> None:
+    """Session 20261001-082239: after a cancelled turn, "retry with a more efficient
+    solution" became the prompt "RETRY the operation" with no task at all."""
+    import json as _json
+
+    from pdl_taskmaster.runtime.session_engine import SessionEngine
+
+    calls = []
+    executes = iter([{"kind": "RESULT", "body": "import sys\nsys.exit(1)"}] * 4 + [{"kind": "RESULT", "body": "5"}] * 4)
+
+    class Verified:
+        is_configured, model = True, "fake"
+
+        def call(self, request):
+            name = next(iter(request.questions))
+            choice = {"route": "APPLY_PROTOCOL", "problem_class": "VERIFIED_EXECUTION"}.get(name, "WITHIN_10M_STEPS")
+            return {"answers": {name: {"choice": choice, "confidence": 0.97, "probabilities": {choice: 0.97}}}}, 1.0
+
+    def model_call(req):
+        calls.append(req)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return _json.dumps({"kind": "ANALYSIS", "task_summary": "The user asks for a computed result.",
+                                "approach_notes": "", "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return _json.dumps({"kind": "PROMPT", "prompt_body": "PARTITION the list into triples", "approach_handoff": "NONE"})
+        if req.operation == "DRAFT_PLAN":
+            return _json.dumps({"neutral_plan_body": "SEARCH for the triples\nRETURN them"})
+        return _json.dumps(next(executes))
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=Verified())
+    for message in ("$confirm-with-pseudocode partition the list", "/confirm", "/confirm"):
+        engine.handle_user_message(message)
+    assert engine.controller.state.stage.value == "CLOSED_CANCELLED"
+    first_turn_calls = len(calls)
+    engine.handle_user_message("$confirm-with-pseudocode retry with a more efficient solution")  # as the host sends it
+    bootstrap = next(c for c in calls[first_turn_calls:] if c.operation == "BOOTSTRAP_ANALYSIS")
+    assert "PARTITION the list into triples" in bootstrap.prompt
+    assert "nothing in it was verified" in bootstrap.prompt
+    assert any(e["kind"] == "TURN_CHAINED" and e["payload"]["previous_deliverable"] for e in engine.workspace._events)

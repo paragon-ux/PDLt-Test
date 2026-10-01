@@ -123,21 +123,10 @@ def run_with_deadline(cmd, stdin_text, timeout, stdout_path, stderr_path, *, cwd
             return -1, True
 
 
-def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_index=None, reasoning_ops=()):
-    prompt_id = entry["id"]
-    prompt_file = PROMPTS_DIR / entry["file"]
-    safe_name = f"{prompt_id}_{prompt_file.stem}" + (f"_r{repeat_index}" if repeat_index else "")
-    result_dir = run_dir / "results" / safe_name
-    result_dir.mkdir(parents=True, exist_ok=True)
-
-    session_id = f"catalogue-{prompt_id}-{int(time.time())}" + (f"-r{repeat_index}" if repeat_index else "")
-    transcript_path = result_dir / "transcript.txt"
-    session_dir = result_dir / "session"
-    session_dir.mkdir(exist_ok=True)
-
-    repl_input = "/confirm\n" * 5
+def build_harness_command(prompt_file, session_id, transcript_path, session_dir, model, reasoning_effort,
+                          reasoning_ops=()):
+    """The exact harness command line for one prompt."""
     reasoning_args = [arg for op in reasoning_ops for arg in ("--api-reasoning-operation", op)]
-
     cmd = [
         sys.executable, "-m", "pdl_taskmaster.host.cli",
         "--non-interactive",
@@ -154,6 +143,24 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
         "--api-structured-output",
         "--prompt-file", str(prompt_file),
     ]
+    return cmd
+
+
+def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_index=None, reasoning_ops=()):
+    prompt_id = entry["id"]
+    prompt_file = PROMPTS_DIR / entry["file"]
+    safe_name = f"{prompt_id}_{prompt_file.stem}" + (f"_r{repeat_index}" if repeat_index else "")
+    result_dir = run_dir / "results" / safe_name
+    result_dir.mkdir(parents=True, exist_ok=True)
+
+    session_id = f"catalogue-{prompt_id}-{int(time.time())}" + (f"-r{repeat_index}" if repeat_index else "")
+    transcript_path = result_dir / "transcript.txt"
+    session_dir = result_dir / "session"
+    session_dir.mkdir(exist_ok=True)
+
+    repl_input = "/confirm\n" * 5
+    cmd = build_harness_command(prompt_file, session_id, transcript_path, session_dir, model, reasoning_effort,
+                                reasoning_ops)
 
     start_time = time.monotonic()
     start_ts = datetime.now(timezone.utc).isoformat()

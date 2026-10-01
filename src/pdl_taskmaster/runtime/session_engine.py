@@ -382,7 +382,7 @@ class SessionEngine:
         # prior deliverable in REQUIRED_TASK_INPUTS. The active turn's status
         # is ACTIVE at restore time, so previous_deliverable() correctly
         # returns the last CLOSED_SUCCESS turn before it.
-        engine._previous_deliverable = workspace.previous_deliverable()
+        engine._previous_deliverable = workspace.previous_turn_context()
         workspace.append_event("SESSION_RESTORED", {"instance_id": state.instance_id})
         return engine
 
@@ -950,7 +950,7 @@ class SessionEngine:
                     if self.controller.state.stage == Stage.CLOSED_SUCCESS
                     else "CLOSED_CANCELLED"
                 )
-            chained_deliverable = prior.previous_deliverable()
+            chained_deliverable = prior.previous_turn_context()
             prior.start_turn(prior.next_turn_id())
             self.workspace = prior
             self._previous_deliverable = chained_deliverable
