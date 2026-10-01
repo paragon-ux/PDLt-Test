@@ -26,6 +26,7 @@ Outputs:
 import argparse
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -33,6 +34,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import graders
+
+try:  # POSIX only; imported here, never inside a forked child (import locks)
+    import resource
+except ImportError:
+    resource = None
 
 _script_dir = Path(__file__).resolve().parent
 if (_script_dir / "prompts").is_dir():
@@ -96,9 +102,11 @@ class _Containment:
 
     Windows: a Job Object with a job memory cap, below-normal priority, and
     kill-on-close, so every process the harness started dies with it (even if the
-    runner itself is killed). POSIX: an address-space cap, a lowered priority and a
-    new session, killed as a group. Peak memory comes from the job accounting
-    (Windows) or the child's rusage (POSIX)."""
+    runner itself is killed). The harness starts suspended and is resumed only once
+    it is in the job, so nothing it starts escapes. POSIX: an address-space cap, a
+    lowered priority and a new session, killed as a group (sandboxed programs run in
+    sessions of their own and are bounded by their own CPU-time limit). Peak memory
+    comes from the job accounting (Windows) or the child's rusage (POSIX)."""
 
     def __init__(self, memory_mb: int):
         self.limit_bytes = memory_mb * 1024 * 1024
@@ -107,39 +115,54 @@ class _Containment:
 
     def popen_kwargs(self) -> dict:
         if os.name == "nt":
-            return {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | 0x00004000}  # BELOW_NORMAL
+            from pdl_taskmaster.verification import sandbox as sb
+
+            flags = subprocess.CREATE_NEW_PROCESS_GROUP | sb.BELOW_NORMAL_PRIORITY_CLASS
+            self.job = self._create_job()
+            if self.job is not None:
+                flags |= sb.CREATE_SUSPENDED  # resumed by attach() once inside the job
+            return {"creationflags": flags}
         limit = self.limit_bytes
 
         def _limit():
-            import resource
-
-            resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+            try:
+                resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+            except (ValueError, OSError):  # e.g. a lower hard limit already set by the shell
+                pass
             os.nice(5)
 
         return {"start_new_session": True, "preexec_fn": _limit}
 
-    def attach(self, proc: subprocess.Popen) -> None:
-        if os.name != "nt":
-            return
+    def _create_job(self):
         import ctypes
 
         from pdl_taskmaster.verification import sandbox as sb
 
-        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32 = sb.kernel32()
         job = kernel32.CreateJobObjectW(None, None)
         if not job:
-            return
+            return None
         info = sb.JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
         info.BasicLimitInformation.LimitFlags = (sb.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | sb.JOB_OBJECT_LIMIT_JOB_MEMORY
                                                  | sb.JOB_OBJECT_LIMIT_PRIORITY_CLASS)
         info.BasicLimitInformation.PriorityClass = sb.BELOW_NORMAL_PRIORITY_CLASS
         info.JobMemoryLimit = self.limit_bytes
-        if (kernel32.SetInformationJobObject(job, sb.JobObjectExtendedLimitInformation, ctypes.byref(info),
-                                             ctypes.sizeof(info))
-                and kernel32.AssignProcessToJobObject(job, int(proc._handle))):
-            self.job = job
-        else:
+        if not kernel32.SetInformationJobObject(job, sb.JobObjectExtendedLimitInformation, ctypes.byref(info),
+                                                ctypes.sizeof(info)):
             kernel32.CloseHandle(job)
+            return None
+        return job
+
+    def attach(self, proc: subprocess.Popen) -> None:
+        """Windows: put the suspended harness into the job, then resume it. A harness
+        that cannot be contained or resumed is killed before it runs."""
+        if os.name != "nt" or self.job is None:
+            return
+        from pdl_taskmaster.verification import sandbox as sb
+
+        if not (sb.kernel32().AssignProcessToJobObject(self.job, int(proc._handle)) and sb.resume_process(proc)):
+            proc.kill()
+            self.close()
 
     def wait(self, proc: subprocess.Popen, timeout: float) -> int:
         """Wait for the harness to exit (subprocess.TimeoutExpired past the timeout)."""
@@ -149,7 +172,8 @@ class _Containment:
         while True:
             pid, status, usage = os.wait4(proc.pid, os.WNOHANG)
             if pid:
-                self.peak_bytes = usage.ru_maxrss * 1024  # KiB on Linux
+                # ru_maxrss is in KiB on Linux and in bytes on macOS.
+                self.peak_bytes = usage.ru_maxrss * (1 if sys.platform == "darwin" else 1024)
                 proc.returncode = os.waitstatus_to_exitcode(status)
                 return proc.returncode
             if time.monotonic() >= deadline:
@@ -160,10 +184,11 @@ class _Containment:
         """Kill the harness and everything it started (sandbox programs, workers)."""
         if os.name == "nt":
             if self.job is None:
-                subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True)
+                try:
+                    subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True, timeout=30)
+                except (OSError, subprocess.TimeoutExpired):
+                    pass
         else:
-            import signal
-
             try:
                 os.killpg(proc.pid, signal.SIGKILL)
             except (ProcessLookupError, PermissionError):
@@ -183,7 +208,7 @@ class _Containment:
 
         from pdl_taskmaster.verification import sandbox as sb
 
-        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32 = sb.kernel32()
         info = sb.JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
         if kernel32.QueryInformationJobObject(self.job, sb.JobObjectExtendedLimitInformation, ctypes.byref(info),
                                               ctypes.sizeof(info), None):
@@ -211,9 +236,13 @@ def run_with_deadline(cmd, stdin_text, timeout, stdout_path, stderr_path, *, cwd
     containment = _Containment(memory_mb)
     with open(stdout_path, "w", encoding="utf-8", errors="replace") as out, \
             open(stderr_path, "w", encoding="utf-8", errors="replace") as err:
-        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=out, stderr=err, text=True,
-                                encoding="utf-8", errors="replace", cwd=cwd, env=env,
-                                **containment.popen_kwargs())
+        try:
+            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=out, stderr=err, text=True,
+                                    encoding="utf-8", errors="replace", cwd=cwd, env=env,
+                                    **containment.popen_kwargs())
+        except BaseException:
+            containment.close()
+            raise
         containment.attach(proc)
         try:
             try:
@@ -334,13 +363,19 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
     stderr = stderr_path.read_text(encoding="utf-8", errors="replace")
     if timed_out:
         stderr += f"\n[RUNNER] TIMEOUT after {timeout}s (process tree killed)"
-        stderr_path.write_text(stderr, encoding="utf-8")
+        try:
+            stderr_path.write_text(stderr, encoding="utf-8")
+        except OSError:  # Windows: a killed process can hold the file a moment longer
+            pass
 
     elapsed = time.monotonic() - start_time
 
     for path, text in ((stdout_path, stdout), (stderr_path, stderr)):
         if not text:
-            path.unlink(missing_ok=True)
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:  # Windows: still open in a process that is being torn down
+                pass
 
     fault = harness_fault(containment, stderr)
     if fault:
@@ -714,7 +749,20 @@ def regrade_run(run_dir: Path) -> int:
     return 1 if scoreboard["false_positives"] else 0
 
 
+def _utf8_console() -> None:
+    """Provider messages and grader reasons can hold any character; a Windows console
+    or redirected output would otherwise use the ANSI code page and raise
+    UnicodeEncodeError mid-run."""
+    if sys.platform == "win32":
+        for stream in (sys.stdout, sys.stderr):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (AttributeError, ValueError):
+                pass
+
+
 def main():
+    _utf8_console()
     parser = argparse.ArgumentParser(
         description="PDLt Prompt Catalogue Test Runner - no retries, no shortcuts"
     )

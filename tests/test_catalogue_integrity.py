@@ -198,3 +198,72 @@ def test_clean_exit_after_the_watchdog_is_armed_leaves_no_trace(tmp_path):
     )
     assert (code, timed_out) == (0, False) and (tmp_path / "err.txt").read_text() == ""
     assert run_catalogue.harness_fault(containment, "") is None
+
+
+def test_output_printed_before_a_timeout_is_kept_and_decoded(tmp_path):
+    """On timeout the runner keeps what the harness printed, decoded as UTF-8 with
+    replacement (no bytes/str confusion, no crash on an undecodable byte)."""
+    import sys
+
+    sys.path.insert(0, str(ROOT))
+    import run_catalogue
+
+    child = (
+        "import sys, time\n"
+        "sys.stdout.buffer.write('caf\\u00e9 \\u2713 '.encode('utf-8') + b'\\xff\\n')\n"
+        "sys.stdout.flush()\n"
+        "time.sleep(120)\n"
+    )
+    code, timed_out, _ = run_catalogue.run_with_deadline(
+        [sys.executable, "-c", child], "", 2, tmp_path / "out.txt", tmp_path / "err.txt"
+    )
+    assert timed_out and code == -1
+    out = (tmp_path / "out.txt").read_text(encoding="utf-8", errors="replace")
+    assert "café ✓ �" in out
+
+
+def test_harness_starts_when_the_address_space_cap_cannot_be_set(tmp_path, monkeypatch):
+    """A shell that already set a lower hard limit (ulimit -v) or a platform that
+    refuses RLIMIT_AS must not stop every prompt from starting."""
+    import sys
+
+    import pytest
+
+    if sys.platform == "win32":
+        pytest.skip("POSIX resource limits")
+    sys.path.insert(0, str(ROOT))
+    import run_catalogue
+
+    def refuse(*args):
+        raise ValueError("not allowed to raise maximum limit")
+
+    monkeypatch.setattr(run_catalogue.resource, "setrlimit", refuse)  # inherited by the forked child
+    code, timed_out, _ = run_catalogue.run_with_deadline(
+        [sys.executable, "-c", "print('ran')"], "", 30, tmp_path / "out.txt", tmp_path / "err.txt"
+    )
+    assert (code, timed_out) == (0, False)
+    assert (tmp_path / "out.txt").read_text(encoding="utf-8").strip() == "ran"
+
+
+def test_peak_memory_units_follow_the_platform(monkeypatch):
+    """ru_maxrss is KiB on Linux and bytes on macOS; reading macOS bytes as KiB
+    reported every macOS run as HARNESS_MEMORY_LIMIT."""
+    import sys
+    from types import SimpleNamespace
+
+    import pytest
+
+    if sys.platform == "win32":
+        pytest.skip("POSIX rusage")
+    sys.path.insert(0, str(ROOT))
+    import run_catalogue
+
+    proc = SimpleNamespace(pid=1234, args=["x"], returncode=None)
+    for platform, maxrss in (("linux", 100 * 1024), ("darwin", 100 * 1024 * 1024)):
+        monkeypatch.setattr(run_catalogue.os, "wait4",
+                            lambda pid, opts, m=maxrss: (pid, 0, SimpleNamespace(ru_maxrss=m)))
+        monkeypatch.setattr(sys, "platform", platform)
+        containment = run_catalogue._Containment(4096)
+        assert containment.wait(proc, 1) == 0
+        monkeypatch.undo()
+        assert containment.peak_mb == 100.0 and not containment.limit_reached
