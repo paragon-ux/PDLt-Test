@@ -205,6 +205,12 @@ def test_python_program_detection_is_grammatical():
     assert _python_blocks("Therefore no algorithm satisfies all three constraints.") == []
     assert _python_blocks("42") == [] and _python_blocks('"""only a docstring"""') == []
     assert _python_blocks("Answer:\n```python\nprint(2)\n```") == ["print(2)\n"]
+    # A program with a syntax error is still a program (run 202009 01-01); prose
+    # and a lone assignment followed by sentences are not.
+    broken = "import json\nL = [1, 2]\nfor x in L:\n    print(x)\nprint(f\"{ {\\\"a\\\": 1} }\")\n"
+    assert _python_blocks(broken) == [broken]
+    assert _python_blocks("n = 15\nThe answer is that no partition exists.") == []
+    assert _python_blocks("After exhaustive search, no partition exists.\nTherefore none.") == []
     # CPython raises MemoryError, not SyntaxError, on long runs of bare words.
     assert _python_blocks("word " * 3000 + "\n\n```python\nprint(3)\n```") == ["print(3)\n"]
 
@@ -375,3 +381,12 @@ def test_ordinary_words_matching_token_shapes_are_not_payload(tmp_path):
     engine, _, executes, _ = _run(tmp_path, [{"kind": "RESULT", "body": "The ACTIVATED state follows IDLE."}],
                                   request="Model a state machine with IDLE and ACTIVE states.")
     assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
+
+
+def test_program_failures_cite_the_programs_own_lines(tmp_path):
+    """Tracebacks and syntax errors name program.py and its own line numbers, not
+    lines shifted by the sandbox preludes."""
+    body = "import sys\nvalues = [1, 2]\nfor v in values:\n    print(v)\nprint(f\"{ {\\\"a\\\": 1} }\")\n"
+    bad = {"kind": "RESULT", "body": body, "result_ir": _ir()}
+    engine, _, executes, _ = _run(tmp_path, [bad, bad], problem_class="VERIFIED_EXECUTION")
+    assert 'File "program.py", line 5 / SyntaxError' in executes[1].prompt

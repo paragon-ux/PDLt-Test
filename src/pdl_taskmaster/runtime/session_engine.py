@@ -90,7 +90,14 @@ def _python_blocks(body: str) -> list[str]:
     text = body or ""
     try:
         module = ast.parse(text)
-    except (SyntaxError, ValueError, MemoryError, RecursionError):
+    except SyntaxError as error:
+        module = None
+        fenced = [block for block in _PYTHON_BLOCK.findall(text) if block.strip()]
+        if not fenced and _is_program_prefix(text, error.lineno):
+            # A program with a syntax error is still a program: run it, so the
+            # sandbox reports the error and its line instead of "no program".
+            return [text]
+    except (ValueError, MemoryError, RecursionError):
         # CPython's parser raises MemoryError, not SyntaxError, on long runs of
         # bare words (prose); either way the body is not a program.
         module = None
@@ -100,6 +107,41 @@ def _python_blocks(body: str) -> list[str]:
     ):
         return [text]
     return [block for block in _PYTHON_BLOCK.findall(text) if block.strip()]
+
+
+def _stderr_summary(stderr: str | None) -> str:
+    """The program's own failure location and message from standard error."""
+    from pdl_taskmaster.verification.sandbox import PROGRAM_FILENAME
+
+    lines = [line for line in (stderr or "").strip().splitlines() if line.strip()]
+    if not lines:
+        return ""
+    location = next((line.strip() for line in reversed(lines) if f'File "{PROGRAM_FILENAME}"' in line), "")
+    tail = lines[-3:] if "Error" not in lines[-1] else [lines[-1]]
+    parts = ([location] if location else []) + [line.strip() for line in tail]
+    return " Standard error: " + " / ".join(parts)
+
+
+def _is_program_prefix(text: str, error_line: int | None) -> bool:
+    """The source before a syntax error parses as Python and has program structure:
+    an import, definition, loop or other block statement, or at least three
+    statements. Prose fails on its first line; a lone assignment followed by
+    sentences ("n = 15" then prose) does not qualify."""
+    import ast
+
+    if not error_line or error_line <= 1:
+        return False
+    lines = text.splitlines()
+    for end in range(error_line - 1, 0, -1):  # back off to the last complete statement
+        try:
+            prefix = ast.parse("\n".join(lines[:end]))
+        except (SyntaxError, ValueError, MemoryError, RecursionError):
+            continue
+        statements = [node for node in prefix.body if not isinstance(node, ast.Expr)]
+        structural = (ast.Import, ast.ImportFrom, ast.FunctionDef, ast.ClassDef, ast.For, ast.While,
+                      ast.If, ast.With, ast.Try)
+        return len(statements) >= 3 or any(isinstance(node, structural) for node in statements)
+    return False
 
 
 def _attach_result_ir(body: str, ir_dict: dict[str, Any]) -> str:
@@ -1244,8 +1286,7 @@ class SessionEngine:
                     failures.append(Finding("MEMORY_EXCEEDED", block=index,
                                             memory_mb=budget.memory_limit_bytes // (1024 * 1024)))
                 else:
-                    tail = (run.stderr or "").strip().splitlines()[-3:]
-                    stderr = f" Standard error ends: {' / '.join(tail)}" if tail else ""
+                    stderr = _stderr_summary(run.stderr)
                     failures.append(Finding("PROGRAM_FAILED", block=index, exit_code=run.exit_code, stderr=stderr))
                 continue
             candidate = _parse_sandbox_witness(run.stdout)

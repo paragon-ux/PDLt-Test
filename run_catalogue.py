@@ -233,7 +233,39 @@ def call_accounting(result_dir: Path) -> dict:
                 elif event.get("kind") == "EXECUTION_ATTEMPTS":
                     attempts = event.get("payload")
     return {"total": sum(by_operation.values()), "by_operation": by_operation, "repairs": repairs,
-            "execution_attempts": attempts, "plan_echo": echo}
+            "execution_attempts": attempts, "plan_echo": echo,
+            "reasoning_tokens": reasoning_tokens(result_dir)}
+
+
+def _first(value, key):
+    if isinstance(value, dict):
+        if key in value:
+            return value[key]
+        value = list(value.values())
+    if isinstance(value, list):
+        for item in value:
+            found = _first(item, key)
+            if found is not None:
+                return found
+    return None
+
+
+def reasoning_tokens(result_dir: Path) -> dict:
+    """Reasoning tokens the provider reported, summed per operation: the effort a
+    run actually got, whatever the requested label."""
+    totals: dict[str, int] = {}
+    for path in Path(result_dir).rglob("observations/*.jsonl"):
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            if '"reasoning_tokens"' not in line:
+                continue
+            try:
+                record = json.loads(line)
+            except ValueError:
+                continue
+            operation, tokens = _first(record, "operation"), _first(record, "reasoning_tokens")
+            if isinstance(operation, str) and isinstance(tokens, (int, float)):
+                totals[operation] = totals.get(operation, 0) + int(tokens)
+    return totals
 
 
 def stage_pass(r):
@@ -306,6 +338,7 @@ def generate_scoreboard(results, run_dir, run_meta):
         "execute": sum((c.get("by_operation") or {}).get("EXECUTE", 0) for c in calls),
         "repairs": sum(c.get("repairs", 0) for c in calls),
     }
+    model_calls["execute_reasoning_tokens"] = sum((c.get("reasoning_tokens") or {}).get("EXECUTE", 0) for c in calls)
     echoes = [c.get("plan_echo") for c in calls if c.get("plan_echo")]
     plan_echo = {
         "plans": len(echoes),
@@ -365,6 +398,7 @@ def generate_scoreboard(results, run_dir, run_meta):
         f"| **Pass Rate** | **{scoreboard['pass_rate_pct']}%** |",
         f"| Model calls (total / EXECUTE / repairs) | {scoreboard['model_calls']['total']} / "
         f"{scoreboard['model_calls']['execute']} / {scoreboard['model_calls']['repairs']} |",
+        f"| Reasoning tokens spent in EXECUTE (all prompts) | {scoreboard['model_calls']['execute_reasoning_tokens']} |",
         f"| Plans identical to prompt / >=80% copied (of plans) | {len(scoreboard['plan_echo']['identical'])} / "
         f"{scoreboard['plan_echo']['copied_80pct']} (of {scoreboard['plan_echo']['plans']}) |",
         "",
@@ -557,6 +591,7 @@ def main():
     print(f"Stage only: {scoreboard['stage_passed']}/{scoreboard['total_prompts']} reached the expected stage")
     mc = scoreboard["model_calls"]
     print(f"Model calls: {mc['total']} total, {mc['execute']} EXECUTE, {mc['repairs']} verification repairs")
+    print(f"Reasoning tokens spent in EXECUTE: {mc['execute_reasoning_tokens']}")
     pe = scoreboard["plan_echo"]
     print(f"Plan echo: {len(pe['identical'])} identical to prompt, {pe['copied_80pct']} >=80% copied (of {pe['plans']} plans)")
     print(f"Ground truth: PASS={gt['PASS']} FAIL={gt['FAIL']} MANUAL={gt['MANUAL']} "

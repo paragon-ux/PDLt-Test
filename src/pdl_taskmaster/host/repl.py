@@ -770,8 +770,9 @@ def main() -> int:
     )
     parser.add_argument(
         "--api-reasoning-effort",
-        default="low",
-        help="optional reasoning effort ('low'/'medium'/'high') for --worker api (default: low)",
+        default=None,
+        help="reasoning effort ('none'/'low'/'medium'/'high') for every operation of --worker api; "
+        "default: the model's per-operation mapping",
     )
     parser.add_argument(
         "--api-reasoning-operation",

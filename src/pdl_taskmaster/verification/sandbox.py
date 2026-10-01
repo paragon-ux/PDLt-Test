@@ -83,6 +83,7 @@ _sys.addaudithook(_sandbox_audit)
 STEP_BUDGET_EXIT_CODE = 125
 _STEP_BUDGET_MARKER = "PDLT_STEP_BUDGET_EXCEEDED"
 _STEPS_USED_MARKER = "PDLT_STEPS_USED"
+PROGRAM_FILENAME = "program.py"
 
 # Deterministic complexity budget: one step is one executed bytecode instruction
 # of the script's own code (including code it runs through exec and functions it
@@ -317,7 +318,14 @@ class ExecutionSandbox:
                     limit=int(step_limit), marker=_STEP_BUDGET_MARKER, exit_code=STEP_BUDGET_EXIT_CODE,
                     steps_marker=_STEPS_USED_MARKER,
                 ))
-            content_parts.append(code)
+            # The program runs from its own file, so tracebacks and syntax errors cite
+            # the program's own line numbers, not lines shifted by the preludes.
+            program_file = scratchpad_path / PROGRAM_FILENAME
+            program_file.write_text(code, encoding="utf-8")
+            content_parts.append(
+                f"exec(compile(open({PROGRAM_FILENAME!r}, encoding='utf-8').read(), {PROGRAM_FILENAME!r}, 'exec'), "
+                f"{{'__name__': '__main__', '__file__': {PROGRAM_FILENAME!r}}})"
+            )
             entry_file.write_text("\n".join(content_parts), encoding="utf-8")
 
             result = self._execute_process(

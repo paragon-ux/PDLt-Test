@@ -152,3 +152,15 @@ def test_silence_deferral_and_fast_paths_in_session_engine(tmp_path: Path):
     resp5 = engine.handle_user_message("/stop")
     assert resp5.closed is True
     assert engine.controller.state.stage == Stage.CLOSED_CANCELLED
+
+
+def test_explicit_reasoning_effort_reaches_every_operation():
+    """Runs 2026-09-30: with the gpt-oss mapping pinning EXECUTE to 'low',
+    '--reasoning high' changed only operations outside the mapping."""
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT, reasoning_effort="high")
+    assert {worker._reasoning_for(op) for op in ("BOOTSTRAP_ANALYSIS", "DRAFT_PLAN", "EXECUTE")} == {"high"}
+    pinned = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT, reasoning_effort="high",
+                       reasoning_by_operation={"EXECUTE": "low"})
+    assert pinned._reasoning_for("EXECUTE") == "low" and pinned._reasoning_for("DRAFT_PLAN") == "high"
+    default = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT)
+    assert default._reasoning_for("EXECUTE") == "low"  # the model mapping, when no effort is given
