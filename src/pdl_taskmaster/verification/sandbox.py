@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ctypes
+import math
 import os
 import signal
 import subprocess
@@ -10,6 +11,11 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
+
+try:  # POSIX only; imported here, never inside a forked child (import locks)
+    import resource
+except ImportError:
+    resource = None  # type: ignore[assignment]
 
 
 # Windows Win32 Job Object Constants and Structures
@@ -21,10 +27,13 @@ NORMAL_PRIORITY_CLASS = 0x00000020
 BELOW_NORMAL_PRIORITY_CLASS = 0x00004000
 IDLE_PRIORITY_CLASS = 0x00000040
 JobObjectExtendedLimitInformation = 9
+CREATE_SUSPENDED = 0x00000004
 
 _IS_WINDOWS = sys.platform == "win32" or os.name == "nt"
 
 if _IS_WINDOWS:
+    from ctypes import wintypes
+
     class IO_COUNTERS(ctypes.Structure):
         _fields_ = [
             ("ReadOperationCount", ctypes.c_uint64),
@@ -58,10 +67,55 @@ if _IS_WINDOWS:
             ("PeakJobMemoryUsed", ctypes.c_size_t),
         ]
 
+    _KERNEL32 = None
+    _NTDLL = None
+
+    def kernel32():
+        """kernel32 with explicit prototypes. Without them ctypes passes and returns
+        C ints, which truncates HANDLE values on 64-bit Windows."""
+        global _KERNEL32
+        if _KERNEL32 is None:
+            k = ctypes.WinDLL("kernel32", use_last_error=True)
+            k.CreateJobObjectW.argtypes = (ctypes.c_void_p, wintypes.LPCWSTR)
+            k.CreateJobObjectW.restype = wintypes.HANDLE
+            k.SetInformationJobObject.argtypes = (wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD)
+            k.SetInformationJobObject.restype = wintypes.BOOL
+            k.QueryInformationJobObject.argtypes = (
+                wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD),
+            )
+            k.QueryInformationJobObject.restype = wintypes.BOOL
+            k.AssignProcessToJobObject.argtypes = (wintypes.HANDLE, wintypes.HANDLE)
+            k.AssignProcessToJobObject.restype = wintypes.BOOL
+            k.TerminateJobObject.argtypes = (wintypes.HANDLE, wintypes.UINT)
+            k.TerminateJobObject.restype = wintypes.BOOL
+            k.CloseHandle.argtypes = (wintypes.HANDLE,)
+            k.CloseHandle.restype = wintypes.BOOL
+            _KERNEL32 = k
+        return _KERNEL32
+
+    def resume_process(proc: subprocess.Popen) -> bool:
+        """Resume a process started with CREATE_SUSPENDED. Popen closes the primary
+        thread's handle, so the whole process is resumed (ntdll NtResumeProcess)."""
+        global _NTDLL
+        if _NTDLL is None:
+            _NTDLL = ctypes.WinDLL("ntdll")
+            _NTDLL.NtResumeProcess.argtypes = (wintypes.HANDLE,)
+            _NTDLL.NtResumeProcess.restype = ctypes.c_long  # NTSTATUS
+        return _NTDLL.NtResumeProcess(int(proc._handle)) == 0
+
 
 # Environment variables model-authored code may see. Everything else, including
-# API keys and tokens, is withheld (GUARD-04 containment).
-_ENV_ALLOWLIST = ("PATH", "SYSTEMROOT", "TEMP", "TMP")
+# API keys and tokens, is withheld (GUARD-04 containment). The Windows entries are
+# what the interpreter and the standard library need there (DLL and crypto loading,
+# temporary files, executable lookup); variable names are case-insensitive there.
+_ENV_ALLOWLIST = ("PATH", "TEMP", "TMP", "TMPDIR", "SYSTEMROOT", "WINDIR", "SYSTEMDRIVE", "COMSPEC", "PATHEXT")
+
+# Windows exit statuses for an allocation failure (GetExitCodeProcess: unsigned).
+_WINDOWS_OOM_EXIT_CODES = (
+    0xC0000017,  # STATUS_NO_MEMORY
+    0xC000012D,  # STATUS_COMMITMENT_LIMIT
+    0xC0000007,  # STATUS_PAGEFILE_QUOTA
+)
 
 # Defense in depth, not a VM boundary: an in-process audit hook denies outbound
 # network and process creation. It cannot be removed once installed.
@@ -70,8 +124,8 @@ _NETWORK_BLOCK_PRELUDE = """
 import sys as _sys
 _DENIED_EVENTS = frozenset({
     "socket.connect", "socket.bind", "socket.getaddrinfo", "socket.gethostbyname",
-    "socket.sendto", "subprocess.Popen", "os.system", "os.exec", "os.posix_spawn",
-    "os.spawn", "os.fork", "os.forkpty",
+    "socket.sendto", "socket.sendmsg", "subprocess.Popen", "os.system", "os.exec", "os.posix_spawn",
+    "os.spawn", "os.fork", "os.forkpty", "os.startfile",
 })
 def _sandbox_audit(event, args):
     if event in _DENIED_EVENTS:
@@ -84,6 +138,13 @@ STEP_BUDGET_EXIT_CODE = 125
 _STEP_BUDGET_MARKER = "PDLT_STEP_BUDGET_EXCEEDED"
 _STEPS_USED_MARKER = "PDLT_STEPS_USED"
 PROGRAM_FILENAME = "program.py"
+
+# -I implies -E, so PYTHONIOENCODING / PYTHONUNBUFFERED in the environment are
+# ignored: UTF-8 standard streams (not the Windows ANSI code page) and unbuffered
+# output (kept when a timeout kills the program) are set on the command line.
+_INTERPRETER_FLAGS = ("-I", "-S", "-X", "utf8", "-u")
+# Seconds the host waits for the pipes to close after killing a timed-out program.
+_KILL_GRACE_SECONDS = 5.0
 
 # Deterministic complexity budget: one step is one executed bytecode instruction
 # of the script's own code (including code it runs through exec and functions it
@@ -191,7 +252,8 @@ class ExecutionSandbox:
     Conformant to ADR-0013:
     - Zero-dependency local process isolation (Windows Job Objects on Windows,
       setrlimit on POSIX).
-    - Ephemeral scratchpad filesystem containment; standard library only (``-I -S``).
+    - Ephemeral scratchpad filesystem containment; standard library only (``-I -S``);
+      UTF-8, unbuffered standard streams (``-X utf8 -u``) on every OS.
     - Deterministic wall-clock timeout and memory ceilings.
     - Withheld environment: only an allowlist of variables is passed (no secrets).
     - Outbound network and process creation denied by an audit hook (defense in depth,
@@ -264,8 +326,8 @@ class ExecutionSandbox:
         """Create and configure a Windows Job Object with memory and process lifecycle limits."""
         if not _IS_WINDOWS:
             return None
-        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        h_job = kernel32.CreateJobObjectW(None, None)
+        k32 = kernel32()
+        h_job = k32.CreateJobObjectW(None, None)
         if not h_job:
             return None
 
@@ -280,14 +342,14 @@ class ExecutionSandbox:
         info.JobMemoryLimit = memory_limit_bytes
         info.ProcessMemoryLimit = memory_limit_bytes
 
-        success = kernel32.SetInformationJobObject(
+        success = k32.SetInformationJobObject(
             h_job,
             JobObjectExtendedLimitInformation,
             ctypes.byref(info),
             ctypes.sizeof(info),
         )
         if not success:
-            kernel32.CloseHandle(h_job)
+            k32.CloseHandle(h_job)
             return None
         return h_job
 
@@ -306,7 +368,9 @@ class ExecutionSandbox:
         effective_timeout = timeout if timeout is not None else self.timeout_seconds
         effective_memory = memory_limit if memory_limit is not None else self.memory_limit_bytes
 
-        with tempfile.TemporaryDirectory(prefix="pdl_sandbox_") as scratchpad:
+        # ignore_cleanup_errors: on Windows a just-killed process can still hold a
+        # file in the scratchpad (WinError 32); that must not fail the run.
+        with tempfile.TemporaryDirectory(prefix="pdl_sandbox_", ignore_cleanup_errors=True) as scratchpad:
             scratchpad_path = Path(scratchpad).resolve()
             entry_file = scratchpad_path / "_entry.py"
 
@@ -329,7 +393,7 @@ class ExecutionSandbox:
             entry_file.write_text("\n".join(content_parts), encoding="utf-8")
 
             result = self._execute_process(
-                [sys.executable, "-I", "-S", "-X", "utf8", str(entry_file)],
+                [sys.executable, *_INTERPRETER_FLAGS, str(entry_file)],
                 cwd=scratchpad_path,
                 timeout=effective_timeout,
                 memory_limit_bytes=effective_memory,
@@ -363,9 +427,11 @@ class ExecutionSandbox:
         effective_memory = memory_limit if memory_limit is not None else self.memory_limit_bytes
         resolved_script = Path(script_path).resolve()
 
-        with tempfile.TemporaryDirectory(prefix="pdl_sandbox_") as scratchpad:
+        # ignore_cleanup_errors: on Windows a just-killed process can still hold a
+        # file in the scratchpad (WinError 32); that must not fail the run.
+        with tempfile.TemporaryDirectory(prefix="pdl_sandbox_", ignore_cleanup_errors=True) as scratchpad:
             scratchpad_path = Path(scratchpad).resolve()
-            cmd = [sys.executable, "-I", "-S", "-X", "utf8", str(resolved_script)]
+            cmd = [sys.executable, *_INTERPRETER_FLAGS, str(resolved_script)]
             if args:
                 cmd.extend(args)
 
@@ -387,28 +453,35 @@ class ExecutionSandbox:
         env: dict[str, str] | None = None,
     ) -> SandboxResult:
         base_env = {k: os.environ[k] for k in _ENV_ALLOWLIST if k in os.environ}
-        base_env["PYTHONIOENCODING"] = "utf-8"
-        base_env["PYTHONUNBUFFERED"] = "1"
         if _IS_WINDOWS:
             base_env.setdefault("SYSTEMROOT", "C:\\Windows")
         if env:
             base_env.update(env)
 
         h_job = None
-        kernel32 = None
+        k32 = None
+        creationflags = 0
         if _IS_WINDOWS:
-            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            k32 = kernel32()
             h_job = self._create_windows_job(memory_limit_bytes)
+            if h_job:
+                # Start suspended and resume only once the process is in the job, so
+                # no instruction of it runs outside the memory limit and kill-on-close.
+                creationflags = CREATE_SUSPENDED
 
         preexec = None
         if not _IS_WINDOWS:
+            # CPU-time backstop: the wall-clock timeout is enforced by this host, so a
+            # program orphaned by a killed host would otherwise run on unbounded (its
+            # own session is outside the host's process group). The kernel stops it.
+            cpu_seconds = int(math.ceil(timeout * 2)) + 1
+
             def _preexec_posix():
-                import resource
-                os.setsid()
-                try:
-                    resource.setrlimit(resource.RLIMIT_AS, (memory_limit_bytes, memory_limit_bytes))
-                except (ValueError, OSError):
-                    pass
+                for limit, value in ((resource.RLIMIT_AS, memory_limit_bytes), (resource.RLIMIT_CPU, cpu_seconds)):
+                    try:
+                        resource.setrlimit(limit, (value, value + (1 if limit == resource.RLIMIT_CPU else 0)))
+                    except (ValueError, OSError):
+                        pass
             preexec = _preexec_posix
 
         start_time = time.perf_counter()
@@ -427,50 +500,53 @@ class ExecutionSandbox:
                 stderr=subprocess.PIPE,
                 env=base_env,
                 preexec_fn=preexec,
+                start_new_session=not _IS_WINDOWS,
+                creationflags=creationflags,
             )
 
-            if _IS_WINDOWS and h_job and kernel32:
-                # Assign process to Job Object immediately
-                assign_ok = kernel32.AssignProcessToJobObject(h_job, proc._handle)
-                if not assign_ok and proc.poll() is None:
-                    # Process is still running but could not be assigned
-                    err_code = ctypes.get_last_error()
-                    kernel32.TerminateJobObject(h_job, 1)
+            if _IS_WINDOWS and h_job and k32:
+                failure = None
+                if not k32.AssignProcessToJobObject(h_job, int(proc._handle)):
+                    failure = f"job_assign_failed_{ctypes.get_last_error()}"
+                elif not resume_process(proc):
+                    failure = "process_resume_failed"
+                if failure:
+                    # The process never ran outside the job: it is still suspended.
                     proc.kill()
+                    proc.communicate()
                     return SandboxResult(
                         stdout="",
-                        stderr=f"Failed to assign process to JobObject (err={err_code})",
+                        stderr=f"Failed to start the process in its Job Object ({failure})",
                         exit_code=-1,
                         duration_ms=(time.perf_counter() - start_time) * 1000.0,
-                        error=f"job_assign_failed_{err_code}",
+                        error=failure,
                     )
 
             raw_out, raw_err = proc.communicate(timeout=timeout)
-            stdout_text = raw_out.decode("utf-8", errors="replace")
-            stderr_text = raw_err.decode("utf-8", errors="replace")
+            stdout_text = _decode_stream(raw_out)
+            stderr_text = _decode_stream(raw_err)
             exit_code = proc.returncode
 
         except subprocess.TimeoutExpired:
             timed_out = True
-            if _IS_WINDOWS and h_job and kernel32:
-                kernel32.TerminateJobObject(h_job, 124)
             if proc is not None:
+                self._kill_tree(proc, h_job, k32)
+                # Collect what the program printed before the kill. Bounded, so a
+                # descendant that escaped the kill and still holds a pipe cannot hang
+                # the host.
                 try:
-                    if not _IS_WINDOWS:
-                        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-                    else:
-                        proc.kill()
-                    raw_out, raw_err = proc.communicate()
-                    stdout_text = raw_out.decode("utf-8", errors="replace")
-                    stderr_text = raw_err.decode("utf-8", errors="replace")
+                    raw_out, raw_err = proc.communicate(timeout=_KILL_GRACE_SECONDS)
+                    stdout_text = _decode_stream(raw_out)
+                    stderr_text = _decode_stream(raw_err)
                 except Exception:
                     pass
             exit_code = 124
 
         except Exception as exc:
             if proc is not None:
+                self._kill_tree(proc, h_job, k32)
                 try:
-                    proc.kill()
+                    proc.communicate(timeout=_KILL_GRACE_SECONDS)
                 except Exception:
                     pass
             return SandboxResult(
@@ -482,17 +558,20 @@ class ExecutionSandbox:
             )
 
         finally:
-            if _IS_WINDOWS and h_job and kernel32:
-                kernel32.CloseHandle(h_job)
+            if _IS_WINDOWS and h_job and k32:
+                k32.CloseHandle(h_job)
 
         duration_ms = (time.perf_counter() - start_time) * 1000.0
+
+        if not _IS_WINDOWS and exit_code in (-signal.SIGXCPU, 128 + signal.SIGXCPU):
+            timed_out = True  # the CPU-time backstop stopped it before the wall clock did
 
         # Memory limit exhaustion detection
         oom_killed = False
         lower_err = stderr_text.lower()
         if "memoryerror" in lower_err or "out of memory" in lower_err or "cannot allocate memory" in lower_err:
             oom_killed = True
-        elif exit_code in (-1073741545, 3221225751, -1073741801, 3221225495):  # Win32 STATUS_NO_MEMORY / STATUS_PAGEFILE_QUOTA
+        elif _IS_WINDOWS and exit_code in _WINDOWS_OOM_EXIT_CODES:
             oom_killed = True
         elif not _IS_WINDOWS and exit_code in (-9, 137, -11, 139) and not timed_out:
             # POSIX RLIMIT_AS SIGKILL (-9 / 137) or SIGSEGV (-11 / 139 on mmap/brk failure)
@@ -506,3 +585,26 @@ class ExecutionSandbox:
             timed_out=timed_out,
             oom_killed=oom_killed,
         )
+
+    @staticmethod
+    def _kill_tree(proc: subprocess.Popen, h_job: Any, k32: Any) -> None:
+        """Kill the program and every process it started: the job on Windows, the
+        process group (its own session) on POSIX. Never raises."""
+        try:
+            if _IS_WINDOWS and h_job and k32:
+                k32.TerminateJobObject(h_job, 124)
+            elif not _IS_WINDOWS:
+                os.killpg(proc.pid, signal.SIGKILL)
+        except OSError:
+            pass  # already gone
+        try:
+            proc.kill()
+        except OSError:
+            pass
+
+
+def _decode_stream(raw: bytes | None) -> str:
+    text = (raw or b"").decode("utf-8", errors="replace")
+    # Python on Windows writes "\n" to its standard streams as "\r\n"; undo exactly
+    # that, so a program's output is the same text on every OS.
+    return text.replace("\r\n", "\n") if _IS_WINDOWS else text

@@ -204,10 +204,10 @@ Session Start (SessionEngine.__init__)
 
 | Control | Mechanism |
 |---|---|
-| **Secret isolation** | The environment is rebuilt from an allowlist: `PATH`, `SYSTEMROOT`, `TEMP`, `TMP`, `PYTHONIOENCODING`, `PYTHONUNBUFFERED`. API keys never reach model-authored code. |
-| **Network & process denial** | A `sys.addaudithook` prelude raises `PermissionError` on `socket.connect`, `socket.bind`, `socket.getaddrinfo`, `subprocess.Popen`, `os.system`, `os.exec*`, `os.spawn*` and `os.posix_spawn`. It is skipped only when `allow_network=True`. |
-| **Resource limits** | Windows Job Objects (memory, kill-on-close) and POSIX `setrlimit(RLIMIT_AS)` with process-group kill on timeout. The step budget, memory limit and wall-clock safety limit are the task's routed budget (§5, `ExecutionProfileRecipe`). |
-| **Interpreter isolation** | `python -I -s`, run in an ephemeral scratchpad cwd. |
+| **Secret isolation** | The environment is rebuilt from an allowlist: `PATH`, `TEMP`, `TMP`, `TMPDIR`, and on Windows `SYSTEMROOT`, `WINDIR`, `SYSTEMDRIVE`, `COMSPEC`, `PATHEXT`. API keys never reach model-authored code. |
+| **Network & process denial** | A `sys.addaudithook` prelude raises `PermissionError` on `socket.connect`, `socket.bind`, `socket.getaddrinfo`, `socket.gethostbyname`, `socket.sendto`, `socket.sendmsg`, `subprocess.Popen`, `os.system`, `os.exec*`, `os.spawn*`, `os.posix_spawn`, `os.fork*` and `os.startfile`. It is skipped only when `allow_network=True`. |
+| **Resource limits** | Windows: a Job Object (memory, kill-on-close); the program starts suspended and runs only once it is inside the job. POSIX: `setrlimit(RLIMIT_AS)` and an `RLIMIT_CPU` backstop of twice the wall-clock limit (it stops a program whose host was killed), a session of its own, and a process-group kill on timeout. macOS does not enforce `RLIMIT_AS`, so there the memory limit is not enforced. The step budget, memory limit and wall-clock safety limit are the task's routed budget (§5, `ExecutionProfileRecipe`). |
+| **Interpreter isolation** | `python -I -S -X utf8 -u` (`-I` ignores `PYTHON*` variables, so UTF-8 and unbuffered streams are set on the command line), run in an ephemeral scratchpad cwd. |
 
 **Honest boundary statement:** these controls are defense in depth, not a VM or container boundary. Audit hooks run in-process, and hostile native code can defeat them. Stronger isolation (microVM, per ADR-0011) remains roadmap.
 
