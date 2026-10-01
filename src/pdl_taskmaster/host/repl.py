@@ -85,6 +85,10 @@ def _new_session_name() -> str:
 
 
 _SESSION_NAME_RE = re.compile(r"[A-Za-z0-9._-]+")
+# Device names Windows reserves in every directory, with or without an extension.
+_WINDOWS_RESERVED_NAMES = frozenset(
+    {"CON", "PRN", "AUX", "NUL"} | {f"{dev}{n}" for dev in ("COM", "LPT") for n in range(1, 10)}
+)
 
 
 def sanitize_session_name(name: str) -> str:
@@ -110,6 +114,10 @@ def sanitize_session_name(name: str) -> str:
         raise ValueError("session name contains control characters")
     if not _SESSION_NAME_RE.fullmatch(value):
         raise ValueError("session name may only contain letters, digits, '.', '_', '-'")
+    if value.endswith("."):
+        raise ValueError("session name must not end with '.' (Windows drops it from directory names)")
+    if value.split(".", 1)[0].upper() in _WINDOWS_RESERVED_NAMES:
+        raise ValueError("session name is a reserved Windows device name")
     return value
 
 
@@ -1277,8 +1285,14 @@ def main() -> int:
                         sessions = [p for p in session_base.iterdir() if p.is_dir()]
                         removed = 0
                         for path in sessions:
+                            if path.resolve() == runtime.session_dir.resolve():
+                                continue  # the active session: its transcript is open
                             if path.stat().st_mtime < cutoff:
-                                shutil.rmtree(path)
+                                try:
+                                    shutil.rmtree(path)
+                                except OSError as exc:  # e.g. a file held open on Windows
+                                    print(f"could not remove {path.name}: {exc}", flush=True)
+                                    continue
                                 removed += 1
                         print(f"pruned {removed} session(s) older than {days} day(s)", flush=True)
                     elif parts:

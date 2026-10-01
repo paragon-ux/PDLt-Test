@@ -10,10 +10,10 @@ from pdl_taskmaster import __protocol_version__, __version__
 from pdl_taskmaster.runtime.normative_store import NormativeStore
 
 if sys.platform == "win32":
-    if hasattr(sys.stdout, "reconfigure"):
+    # stdin too: a prompt piped in UTF-8 would otherwise be read in the ANSI code page.
+    for _stream in (sys.stdin, sys.stdout, sys.stderr):
         try:
-            sys.stdout.reconfigure(encoding="utf-8")
-            sys.stderr.reconfigure(encoding="utf-8")
+            _stream.reconfigure(encoding="utf-8")
         except Exception:
             pass
 

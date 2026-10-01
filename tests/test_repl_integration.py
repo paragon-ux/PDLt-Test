@@ -230,3 +230,32 @@ def test_headless_stops_reading_at_waiting_input(monkeypatch, tmp_path: Path) ->
     repl, runtime = _headless_runtime(monkeypatch, tmp_path, lambda line: turn, "WAITING_INPUT")
     assert repl.main() == 3
     assert runtime.handled == ["solve it"]
+
+
+def test_sessions_prune_keeps_the_active_session(tmp_path: Path) -> None:
+    """The active session's transcript is open: deleting it fails on Windows (and
+    crashed the REPL) and silently removed the live session elsewhere."""
+    old = tmp_path / "sessions" / "old-session"
+    old.mkdir(parents=True)
+    os.utime(old, (1_000_000_000, 1_000_000_000))
+    proc = _run_repl(tmp_path, ["/sessions prune 0", "/quit"], "active-session")
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 0, out[-3000:]
+    assert "pruned 1 session(s)" in out
+    assert not old.exists()
+    assert (tmp_path / "sessions" / "active-session").is_dir()
+
+
+@pytest.mark.parametrize("name", ["CON", "nul", "com1.log", "Lpt9", "session."])
+def test_session_names_reserved_on_windows_are_rejected(name: str) -> None:
+    from pdl_taskmaster.host.repl import sanitize_session_name
+
+    with pytest.raises(ValueError):
+        sanitize_session_name(name)
+
+
+def test_ordinary_session_names_are_accepted() -> None:
+    from pdl_taskmaster.host.repl import sanitize_session_name
+
+    for name in ("session-20261001-120000", "console", "com10", "my.session"):
+        assert sanitize_session_name(name) == name
