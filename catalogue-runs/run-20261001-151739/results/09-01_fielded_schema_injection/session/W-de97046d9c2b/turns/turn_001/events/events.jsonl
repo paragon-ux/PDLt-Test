@@ -1,0 +1,9 @@
+{"at_utc":"2026-10-01T19:29:43.992701+00:00","kind":"WORKSPACE_CREATED","payload":{"workspace_id":"W-de97046d9c2b","turn_id":"turn_001"}}
+{"at_utc":"2026-10-01T19:29:43.993700+00:00","kind":"EXPLICIT_INVOCATION_OBSERVED","payload":{"substantive_request_present":true}}
+{"at_utc":"2026-10-01T19:29:44.376333+00:00","kind":"ACTIVATION_ROUTED","payload":{"verdict":"APPLY_PROTOCOL","passed_gating":false,"confidence":0.53}}
+{"at_utc":"2026-10-01T19:29:45.010335+00:00","kind":"EXECUTION_PROFILE_ROUTED","payload":{"predicted_steps":"WITHIN_100K_STEPS","distribution":{"BEYOND_100M_STEPS":0.0,"WITHIN_100K_STEPS":1.0,"WITHIN_100M_STEPS":0.0,"WITHIN_10M_STEPS":0.0},"tier":"MINIMAL","passed_gating":true,"step_limit":100000,"timeout_seconds":30.0,"memory_mb":256}}
+{"at_utc":"2026-10-01T19:29:45.013336+00:00","kind":"PROBLEM_CLASS_CLASSIFIED","payload":{"requires_verified_execution":false,"domain":null}}
+{"at_utc":"2026-10-01T19:29:45.025338+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-10-01T19:29:46.641995+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-10-01T19:29:46.645493+00:00","kind":"PROTOCOL_BLOCKED","payload":{"phase":"bootstrap"}}
+{"at_utc":"2026-10-01T19:29:46.646288+00:00","kind":"PROTOCOL_REFUSED","payload":{"phase":"bootstrap"}}

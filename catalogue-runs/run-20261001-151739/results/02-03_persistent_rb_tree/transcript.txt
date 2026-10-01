@@ -1,0 +1,209 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Implement a persistent (functional) red-black tree in Python using path copying. The tree must support:
+- insert(tree, key) -> new_tree: Returns a new tree with the key inserted (original unchanged)
+- lookup(tree, key) -> bool: Check membership
+- to_sorted_list(tree) -> list: In-order traversal
+
+The key constraint is immutability: after insert(t1, k) -> t2, t1 must still be valid and unchanged. Include tests that verify persistence (modify t2, check t1 still works), red-black invariants (root is black, no red-red parent-child, equal black-height on all paths), and BST ordering.
+ASSISTANT> Prompt Pseudocode
+
+IMPLEMENT a persistent red-black tree in Python using path copying.
+PROVIDE functional operation insert(tree, key) -> new_tree that returns a new tree with the key inserted while the original remains unchanged.
+PROVIDE functional operation lookup(tree, key) -> bool that checks membership.
+PROVIDE functional operation to_sorted_list(tree) -> list that produces an in-order traversal.
+ENFORCE immutability: after insert(t1, k) -> t2, t1 must remain unchanged.
+INCLUDE tests verifying persistence (modifying t2 does not affect t1).
+INCLUDE tests verifying red-black invariants: root is black; no red-red parent-child; equal black-height on all paths.
+INCLUDE tests verifying binary search tree ordering.
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+DEFINE immutable node structure for persistent red‑black tree.
+DEFINE functional INSERT operation that returns a new tree via path copying while preserving immutability.
+DEFINE functional LOOKUP operation that checks membership without modifying the tree.
+DEFINE functional TO_SORTED_LIST operation that produces an in‑order traversal list.
+COMPOSE unit TESTS verifying persistence: after INSERT, confirm original tree remains unchanged.
+COMPOSE unit TESTS verifying red‑black invariants: root is black; no red parent has a red child; black‑height is equal on all root‑to‑leaf paths.
+COMPOSE unit TESTS verifying binary search tree ordering using TO_SORTED_LIST.
+RUN all TESTS and REPORT outcomes.
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> # Persistent Red-Black Tree implementation using path copying
+# Immutable nodes are represented by dataclasses; every modification creates new nodes.
+
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Optional, List
+
+# Color constants
+RED = True
+BLACK = False
+
+@dataclass(frozen=True)
+class Node:
+    key: int
+    color: bool  # RED or BLACK
+    left: Optional[Node] = None
+    right: Optional[Node] = None
+
+    def is_red(self) -> bool:
+        return self.color == RED
+
+# Helper functions for tree manipulation
+def rotate_left(h: Node) -> Node:
+    assert h.right is not None and h.right.is_red()
+    x = h.right
+    return Node(
+        key=x.key,
+        color=h.color,
+        left=Node(key=h.key, color=RED, left=h.left, right=x.left),
+        right=x.right,
+    )
+
+def rotate_right(h: Node) -> Node:
+    assert h.left is not None and h.left.is_red()
+    x = h.left
+    return Node(
+        key=x.key,
+        color=h.color,
+        left=x.left,
+        right=Node(key=h.key, color=RED, left=x.right, right=h.right),
+    )
+
+def flip_colors(h: Node) -> Node:
+    assert h.left is not None and h.right is not None
+    return Node(
+        key=h.key,
+        color=RED,
+        left=Node(key=h.left.key, color=BLACK, left=h.left.left, right=h.left.right),
+        right=Node(key=h.right.key, color=BLACK, left=h.right.left, right=h.right.right),
+    )
+
+def move_red_left(h: Node) -> Node:
+    h = flip_colors(h)
+    if h.right and h.right.left and h.right.left.is_red():
+        h = Node(
+            key=h.key,
+            color=h.color,
+            left=h.left,
+            right=rotate_right(h.right),
+        )
+        h = rotate_left(h)
+        h = flip_colors(h)
+    return h
+
+def move_red_right(h: Node) -> Node:
+    h = flip_colors(h)
+    if h.left and h.left.left and h.left.left.is_red():
+        h = rotate_right(h)
+        h = flip_colors(h)
+    return h
+
+def balance(h: Node) -> Node:
+    if h.right and h.right.is_red():
+        h = rotate_left(h)
+    if h.left and h.left.is_red() and h.left.left and h.left.left.is_red():
+        h = rotate_right(h)
+    if h.left and h.left.is_red() and h.right and h.right.is_red():
+        h = flip_colors(h)
+    return h
+
+# Public API
+def insert(tree: Optional[Node], key: int) -> Node:
+    """Return a new tree with *key* inserted (persistent)."""
+    def _insert(h: Optional[Node]) -> Node:
+        if h is None:
+            return Node(key=key, color=RED)
+        if key < h.key:
+            new_left = _insert(h.left)
+            h = Node(key=h.key, color=h.color, left=new_left, right=h.right)
+        elif key > h.key:
+            new_right = _insert(h.right)
+            h = Node(key=h.key, color=h.color, left=h.left, right=new_right)
+        else:
+            # key already present; no change
+            return h
+        # fix-up any right-leaning links
+        if h.right and h.right.is_red() and not (h.left and h.left.is_red()):
+            h = rotate_left(h)
+        if h.left and h.left.is_red() and h.left.left and h.left.left.is_red():
+            h = rotate_right(h)
+        if h.left and h.left.is_red() and h.right and h.right.is_red():
+            h = flip_colors(h)
+        return h
+    new_root = _insert(tree)
+    # Ensure root is black
+    if new_root.is_red():
+        new_root = Node(key=new_root.key, color=BLACK, left=new_root.left, right=new_root.right)
+    return new_root
+
+def lookup(tree: Optional[Node], key: int) -> bool:
+    """Return True if *key* is in *tree*; otherwise False."""
+    h = tree
+    while h is not None:
+        if key < h.key:
+            h = h.left
+        elif key > h.key:
+            h = h.right
+        else:
+            return True
+    return False
+
+def to_sorted_list(tree: Optional[Node]) -> List[int]:
+    """Return the keys of *tree* in in‑order (sorted) sequence."""
+    result: List[int] = []
+    def inorder(node: Optional[Node]):
+        if node is None:
+            return
+        inorder(node.left)
+        result.append(node.key)
+        inorder(node.right)
+    inorder(tree)
+    return result
+
+# --- Tests ---
+if __name__ == "__main__":
+    # Helper to check red‑black invariants
+    def check_invariants(root: Optional[Node]):
+        assert root is None or root.color == BLACK, "Root must be black"
+        def dfs(node: Optional[Node]):
+            if node is None:
+                return 1  # black-height of leaf
+            # No red parent with red child
+            if node.is_red():
+                assert not (node.left and node.left.is_red()), "Red parent with red left child"
+                assert not (node.right and node.right.is_red()), "Red parent with red right child"
+            left_black = dfs(node.left)
+            right_black = dfs(node.right)
+            assert left_black == right_black, "Black heights differ"
+            return left_black + (0 if node.is_red() else 1)
+        dfs(root)
+    # Persistence test
+    t0 = None
+    t1 = insert(t0, 10)
+    t2 = insert(t1, 5)
+    t3 = insert(t2, 15)
+    # t1 should still contain only 10
+    assert to_sorted_list(t1) == [10]
+    # t2 should contain 5 and 10
+    assert to_sorted_list(t2) == [5, 10]
+    # t3 should contain 5,10,15
+    assert to_sorted_list(t3) == [5, 10, 15]
+    # Ensure original trees unchanged after further inserts
+    t4 = insert(t3, 12)
+    assert to_sorted_list(t3) == [5, 10, 15]
+    assert to_sorted_list(t4) == [5, 10, 12, 15]
+    # Lookup tests
+    for key in [5,10,12,15]:
+        assert lookup(t4, key) is True
+    assert lookup(t4, 99) is False
+    # Invariant checks
+    for tree in [t1, t2, t3, t4]:
+        check_invariants(tree)
+    print("All tests passed.")
+PROTOCOL_CLOSED
+=== PDLt session ended ===

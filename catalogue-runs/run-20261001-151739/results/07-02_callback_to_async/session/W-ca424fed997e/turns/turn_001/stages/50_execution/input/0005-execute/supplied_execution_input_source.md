@@ -1,0 +1,31 @@
+Convert the following callback-hell Node.js-style code to clean async/await Python. Preserve the exact same logical flow and error handling.
+
+`python
+def fetch_user(user_id, on_success, on_error):
+    import random
+    if random.random() > 0.1:
+        on_success({'id': user_id, 'name': f'User_{user_id}', 'org_id': user_id * 10})
+    else:
+        on_error(Exception('Network error'))
+
+def fetch_org(org_id, on_success, on_error):
+    import random
+    if random.random() > 0.1:
+        on_success({'id': org_id, 'name': f'Org_{org_id}', 'plan': 'enterprise'})
+    else:
+        on_error(Exception('Org not found'))
+
+def fetch_permissions(org_id, user_id, on_success, on_error):
+    on_success(['read', 'write', 'admin'])
+
+def get_user_context(user_id, final_callback):
+    def on_user(user):
+        def on_org(org):
+            def on_perms(perms):
+                final_callback(None, {'user': user, 'org': org, 'permissions': perms})
+            fetch_permissions(user['org_id'], user_id, on_perms, lambda e: final_callback(e, None))
+        fetch_org(user['org_id'], on_org, lambda e: final_callback(e, None))
+    fetch_user(user_id, on_user, lambda e: final_callback(e, None))
+`
+
+The async version should use async def, await, and proper try/except. Include tests for both the success path and error propagation.

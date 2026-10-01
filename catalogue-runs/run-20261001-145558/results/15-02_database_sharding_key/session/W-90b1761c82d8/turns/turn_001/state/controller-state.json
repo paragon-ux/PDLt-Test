@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-9a82348844",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-9a82348844-P1",
+    "body": "DESIGN a sharding strategy for the social media application with the listed tables.\nFOR the users table (users(id, username, region, created_at, ~100M rows)):\n    SELECT a shard key that supports queries for user timeline and region‑based lookups.\n    JUSTIFY the choice based on typical query patterns.\nFOR the posts table (posts(id, author_id, content, created_at, ~5B rows)):\n    SELECT a shard key that enables efficient retrieval of a user timeline and full‑text search.\n    JUSTIFY the choice based on query patterns.\nFOR the likes table (likes(id, post_id, user_id, created_at, ~50B rows)):\n    SELECT a shard key that supports fetching likes for a given post and counting likes per post.\n    JUSTIFY the choice based on query patterns.\nFOR the follows table (follows(follower_id, following_id, created_at, ~2B rows)):\n    SELECT a shard key that facilitates retrieving a follower's list and counting followers for a user.\n    JUSTIFY the choice based on query patterns.\nANALYZE which of the above queries become single‑shard versus scatter‑gather under the proposed keys.\nDISCUSS tradeoffs of the chosen shard keys, including load balancing, hotspot risk, and cross‑shard joins.\nPROVIDE the recommended shard keys and the accompanying justification and analysis as outlined.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-9a82348844-R1",
+    "body": "SELECT shard key for users table that supports timeline and region lookups\nJUSTIFY the chosen key based on typical query patterns for user timeline and region‑based queries\nSELECT shard key for posts table that enables efficient retrieval of a user timeline and full‑text search\nJUSTIFY the chosen key based on query patterns for timeline ordering and text search\nSELECT shard key for likes table that supports fetching likes for a given post and counting likes per post\nJUSTIFY the chosen key based on typical read‑heavy queries for likes retrieval and aggregation\nSELECT shard key for follows table that facilitates retrieving a follower's list and counting followers for a user\nJUSTIFY the chosen key based on follow‑list and follower‑count queries\nANALYZE which queries become single‑shard versus scatter‑gather under each proposed key\nDISCUSS tradeoffs of the chosen shard keys, including load balancing, hotspot risk, and cross‑shard join implications\nPROVIDE the recommended shard keys together with their justifications and the analysis results",
+    "confirmed": true,
+    "source_prompt_id": "I-9a82348844-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-9a82348844-X1",
+    "body": "b15de906d13e7ebccc247e796428cbadf46755d12fdb286a96f87dec48606f50",
+    "confirmed": true,
+    "source_prompt_id": "I-9a82348844-P1",
+    "source_plan_id": "I-9a82348844-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

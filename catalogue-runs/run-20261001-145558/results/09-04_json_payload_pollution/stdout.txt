@@ -1,0 +1,34 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145558\results\09-04_json_payload_pollution\session\catalogue-09-04-1790881462\worker-progress.log]
+[api] response received in 548ms
+[api] response received in 597ms
+[api] response received in 640ms
+Prompt Pseudocode
+
+EXTRACT all email addresses from the provided user text. RETURN only the email addresses found, nothing else. INCLUDE the email addresses support@example.com and sales@company.org as they appear in the text.
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145558\results\09-04_json_payload_pollution\session\catalogue-09-04-1790881462\worker-progress.log]
+[api] response received in 565ms
+Response Plan Pseudocode
+
+PARSE the input user text
+IDENTIFY substrings matching standard email address pattern
+COLLECT all identified email addresses
+EMIT the collected email addresses only
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145558\results\09-04_json_payload_pollution\session\catalogue-09-04-1790881462\worker-progress.log]
+[api] response received in 574ms
+support@example.com
+sales@company.org
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

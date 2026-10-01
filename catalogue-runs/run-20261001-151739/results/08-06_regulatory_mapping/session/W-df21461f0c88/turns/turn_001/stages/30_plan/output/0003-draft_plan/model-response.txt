@@ -1,0 +1,1 @@
+{"neutral_plan_body":"READ the privacy policy excerpt.\nFOR EACH statement IN the excerpt\n    MAP the statement TO relevant GDPR article(s)\nENDFOR\nIDENTIFY the GDPR requirements NOT ADDRESSED BY ANY statement\nRETURN the statement-to-article mapping AND the list of uncovered GDPR requirements."}

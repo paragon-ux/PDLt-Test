@@ -1,0 +1,24 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Design and implement a database schema migration to split the users table and support multiple addresses per user. Create forward migration SQL that adds an addresses table with columns (id INT PK, user_id INT FK->users, street TEXT, city TEXT, state TEXT, zip TEXT, is_primary BOOL) and modifies orders table to add shipping_address_id INT FK->addresses. Produce rollback migration SQL to revert these changes. Provide a backfill script that creates a default address for each existing user using placeholder data. Generate a validation query that confirms no orders reference missing addresses after migration.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "users",
+    "id",
+    "name",
+    "email",
+    "created_at",
+    "orders",
+    "user_id",
+    "total",
+    "status",
+    "addresses",
+    "street",
+    "city",
+    "state",
+    "zip",
+    "is_primary",
+    "shipping_address_id"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-033e97442c",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-033e97442c-P1",
+    "body": "READ the undirected graph G with nodes 0-11 and the supplied edge list\nDETERMINE whether G contains a Hamiltonian path that visits every node exactly once\nIF a Hamiltonian path exists THEN OUTPUT the complete sequence of node labels in order\nUSE a backtracking search with pruning to explore candidate paths\nVERIFY that the path includes all 12 nodes and that each consecutive pair of nodes corresponds to a valid edge from the list",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-033e97442c-R1",
+    "body": "READ the undirected graph G with nodes 0-11 and the supplied edge list\nINITIALIZE a backtracking search to construct a candidate path\nFOR each node as a potential start node DO\n    RECURSIVELY EXTEND the current path by adding an adjacent unvisited node\n    PRUNE the search branch if no adjacent unvisited nodes remain while the path is incomplete\n    CONTINUE until the path includes all 12 nodes\nENDFOR\nIF a Hamiltonian path is found THEN\n    VERIFY that every consecutive pair of nodes in the path corresponds to a valid edge from the list\n    OUTPUT the complete sequence of node labels in order\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": "I-033e97442c-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-033e97442c-X1",
+    "body": "8dfea7fa4fcf9c2dfc8746c2c0708bc52a0cfb704b607f2e3e439f86bab6d222",
+    "confirmed": true,
+    "source_prompt_id": "I-033e97442c-P1",
+    "source_plan_id": "I-033e97442c-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

@@ -1,0 +1,59 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Given the following loop that computes the sum of an array:
+
+`python
+def array_sum(arr):
+    total = 0
+    i = 0
+    while i < len(arr):
+        total = total + arr[i]
+        i = i + 1
+    return total
+`
+
+State the loop invariant that holds at the beginning of each iteration. Prove that: (1) the invariant holds before the first iteration (initialization), (2) if the invariant holds before an iteration, it holds after (maintenance), and (3) when the loop terminates, the invariant implies the correct result (termination). Write a version of the function with assert statements that mechanically check the invariant at each iteration.
+ASSISTANT> Prompt Pseudocode
+
+STATE the loop invariant that holds at the beginning of each iteration of the function array_sum(arr).
+PROVE that the invariant holds before the first iteration (initialization).
+PROVE that if the invariant holds before an iteration, it holds after the iteration (maintenance).
+PROVE that when the loop terminates, the invariant implies the correct result (termination).
+WRITE a version of the function array_sum that includes ASSERT statements to mechanically check the invariant at each iteration.
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+DEFINE the loop invariant that holds at the beginning of each iteration of the array_sum function
+ESTABLISH a proof that the invariant holds before the first iteration (initialization)
+DEDUCE a proof that if the invariant holds before an iteration, it holds after the iteration (maintenance)
+DERIVE a proof that when the loop terminates, the invariant implies the correct result (termination)
+CONSTRUCT a version of the array_sum function that includes ASSERT statements to mechanically check the invariant at each iteration
+OUTPUT the completed function definition with the inserted ASSERT statements
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> def array_sum(arr):
+    """
+    Compute the sum of the elements in `arr`.
+    Loop invariant: At the start of each iteration (including the first),
+    `total` equals the sum of the elements of `arr` up to index `i-1`.
+    That is, total == sum(arr[0:i])
+    """
+    total = 0
+    i = 0
+    # Invariant holds before the first iteration
+    assert total == sum(arr[:i]), "Initialization invariant violated"
+    while i < len(arr):
+        # Maintenance: before body, invariant holds
+        assert total == sum(arr[:i]), "Invariant before iteration violated"
+        total = total + arr[i]
+        i = i + 1
+        # After body, invariant holds for next iteration
+        assert total == sum(arr[:i]), "Invariant after iteration violated"
+    # Upon termination, i == len(arr), so total == sum(arr)
+    assert total == sum(arr), "Termination invariant violated"
+    return total
+PROTOCOL_CLOSED
+=== PDLt session ended ===

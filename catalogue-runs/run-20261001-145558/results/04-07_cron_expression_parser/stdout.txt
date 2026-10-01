@@ -1,0 +1,163 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145558\results\04-07_cron_expression_parser\session\catalogue-04-07-1790881217\worker-progress.log]
+[api] response received in 560ms
+[api] response received in 1137ms
+Prompt Pseudocode
+
+READ the request to implement a cron expression parser and evaluator in Python
+DEFINE a function matches(cron_expr, datetime) that returns a boolean indicating if the datetime matches the cron expression
+DEFINE a function next_fire(cron_expr, after_datetime) that returns the next datetime after after_datetime that matches the cron expression
+SUPPORT parsing of standard 5-field cron expressions (minute, hour, day-of-month, month, day-of-week) including specific values, ranges, steps, lists, and wildcards
+ENSURE the parser correctly interprets fields according to cron syntax rules
+INCLUDE tests verifying that "*/15 * * * *" fires at quarter-hour intervals
+INCLUDE tests verifying that "0 9 * * 1-5" fires at 09:00 on weekdays (Monday through Friday)
+INCLUDE tests verifying that "0 0 1 1 *" fires at midnight on January 1st
+OUTPUT the Python code for the parser, the two functions, and the test suite
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145558\results\04-07_cron_expression_parser\session\catalogue-04-07-1790881217\worker-progress.log]
+[api] response received in 755ms
+Response Plan Pseudocode
+
+READ the request to implement a cron expression parser and evaluator in Python
+DEFINE a parser for standard 5‑field cron expressions handling values, ranges, steps, lists, and wildcards
+IMPLEMENT function matches(cron_expr, datetime) that returns a boolean indicating if the datetime matches the parsed cron expression
+IMPLEMENT function next_fire(cron_expr, after_datetime) that computes the next datetime after after_datetime that matches the cron expression using the parser and matching logic
+WRITE a test suite that includes:
+    VERIFY that "*/15 * * * *" fires at quarter‑hour intervals
+    VERIFY that "0 9 * * 1-5" fires at 09:00 on weekdays (Monday through Friday)
+    VERIFY that "0 0 1 1 *" fires at midnight on January 1st
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145558\results\04-07_cron_expression_parser\session\catalogue-04-07-1790881217\worker-progress.log]
+[api] response received in 1226ms
+import datetime
+import re
+from typing import List, Set
+
+# Helper functions to parse cron fields
+def _parse_field(field: str, min_val: int, max_val: int) -> Set[int]:
+    """Parse a single cron field into a set of allowed integer values.
+    Supports '*', '*/step', 'a-b', 'a-b/step', and comma‑separated lists.
+    """
+    result: Set[int] = set()
+    if field == '*':
+        return set(range(min_val, max_val + 1))
+    for part in field.split(','):
+        # step syntax
+        if '/' in part:
+            base, step_s = part.split('/')
+            step = int(step_s)
+        else:
+            base, step = part, 1
+        # range or single value
+        if base == '*':
+            start, end = min_val, max_val
+        elif '-' in base:
+            start_s, end_s = base.split('-')
+            start, end = int(start_s), int(end_s)
+        else:
+            start = end = int(base)
+        # clamp to allowed range
+        start = max(start, min_val)
+        end = min(end, max_val)
+        result.update(range(start, end + 1, step))
+    return result
+
+# Cron expression parser
+class CronExpression:
+    def __init__(self, expr: str):
+        fields = expr.strip().split()
+        if len(fields) != 5:
+            raise ValueError('Cron expression must have exactly 5 fields')
+        minute, hour, dom, month, dow = fields
+        self.minutes = _parse_field(minute, 0, 59)
+        self.hours = _parse_field(hour, 0, 23)
+        self.dom = _parse_field(dom, 1, 31)
+        self.months = _parse_field(month, 1, 12)
+        self.dow = _parse_field(dow, 0, 6)  # 0=Sunday
+
+    def matches(self, dt: datetime.datetime) -> bool:
+        return (
+            dt.minute in self.minutes and
+            dt.hour in self.hours and
+            dt.day in self.dom and
+            dt.month in self.months and
+            dt.weekday() % 7 in self.dow
+        )
+
+    def next(self, after: datetime.datetime) -> datetime.datetime:
+        # Start searching from the next minute
+        nxt = after.replace(second=0, microsecond=0) + datetime.timedelta(minutes=1)
+        while True:
+            if (nxt.month in self.months and
+                nxt.day in self.dom and
+                nxt.weekday() % 7 in self.dow and
+                nxt.hour in self.hours and
+                nxt.minute in self.minutes):
+                return nxt
+            nxt += datetime.timedelta(minutes=1)
+
+# Public API
+def matches(cron_expr: str, dt: datetime.datetime) -> bool:
+    """Return True if *dt* matches the cron expression *cron_expr*.
+    """
+    return CronExpression(cron_expr).matches(dt)
+
+def next_fire(cron_expr: str, after_dt: datetime.datetime) -> datetime.datetime:
+    """Return the next datetime after *after_dt* that matches *cron_expr*.
+    """
+    return CronExpression(cron_expr).next(after_dt)
+
+# Test suite
+if __name__ == "__main__":
+    import unittest
+
+    class TestCron(unittest.TestCase):
+        def test_quarter_hour(self):
+            expr = "*/15 * * * *"
+            base = datetime.datetime(2023, 1, 1, 0, 0)
+            for i in range(0, 60, 15):
+                dt = base.replace(minute=i)
+                self.assertTrue(matches(expr, dt))
+            # ensure a non‑matching minute fails
+            self.assertFalse(matches(expr, base.replace(minute=7)))
+            # next_fire
+            nxt = next_fire(expr, base.replace(minute=7))
+            self.assertEqual(nxt.minute, 15)
+            self.assertEqual(nxt.hour, 0)
+            nxt = next_fire(expr, base.replace(minute=45))
+            self.assertEqual(nxt.minute, 0)
+            self.assertEqual(nxt.hour, 1)
+
+        def test_weekday_9am(self):
+            expr = "0 9 * * 1-5"
+            # Monday 2023‑01‑02 09:00 should match
+            dt = datetime.datetime(2023, 1, 2, 9, 0)
+            self.assertTrue(matches(expr, dt))
+            # Sunday should not match
+            self.assertFalse(matches(expr, datetime.datetime(2023, 1, 1, 9, 0)))
+            # next_fire after a Sunday 08:00 should be Monday 09:00
+            nxt = next_fire(expr, datetime.datetime(2023, 1, 1, 8, 0))
+            self.assertEqual(nxt, datetime.datetime(2023, 1, 2, 9, 0))
+
+        def test_jan_first_midnight(self):
+            expr = "0 0 1 1 *"
+            dt = datetime.datetime(2024, 1, 1, 0, 0)
+            self.assertTrue(matches(expr, dt))
+            # 2024‑01‑02 00:00 should not match
+            self.assertFalse(matches(expr, datetime.datetime(2024, 1, 2, 0, 0)))
+            nxt = next_fire(expr, datetime.datetime(2023, 12, 31, 23, 59))
+            self.assertEqual(nxt, datetime.datetime(2024, 1, 1, 0, 0))
+
+    unittest.main()
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

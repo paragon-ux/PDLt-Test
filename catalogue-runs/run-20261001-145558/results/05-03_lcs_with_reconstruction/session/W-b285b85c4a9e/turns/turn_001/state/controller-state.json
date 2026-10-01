@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-80006c2e3f",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-80006c2e3f-P1",
+    "body": "IMPLEMENT the longest common subsequence (LCS) algorithm in Python using dynamic programming.\nINPUT the two strings s1 and s2.\nOUTPUT the length of the LCS and the actual subsequence.\nRECONSTRUCT the subsequence by backtracking through the DP table.\nTEST the implementation with the example s1 = \"AGGTAB\" and s2 = \"GXTXAYB\" expecting LCS \"GTAB\" (length 4).\nADD additional tests for identical strings, one empty string, and no common characters.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-80006c2e3f-R1",
+    "body": "VALIDATE that two input strings s1 and s2 are provided\nINITIALIZE a two-dimensional DP table of size (len(s1)+1) by (len(s2)+1) with zeros\nFOR each character index i from 1 to len(s1)\n    FOR each character index j from 1 to len(s2)\n        IF s1[i-1] equals s2[j-1]\n            SET DP[i][j] to DP[i-1][j-1] plus one\n        ELSE\n            SET DP[i][j] to the maximum of DP[i-1][j] and DP[i][j-1]\nENDFOR\nENDFOR\nBACKTRACK from DP[len(s1)][len(s2)] to reconstruct the LCS subsequence\nOUTPUT the length of the LCS and the reconstructed subsequence\nEXECUTE test case s1 = \"AGGTAB\", s2 = \"GXTXAYB\" expecting length 4 and subsequence \"GTAB\"\nEXECUTE additional test cases for identical strings, one empty string, and no common characters",
+    "confirmed": true,
+    "source_prompt_id": "I-80006c2e3f-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-80006c2e3f-X1",
+    "body": "5bd6d29f7b2f984a555d25670382c516d7686622ddeb7236300c7e7e20b60d5a",
+    "confirmed": true,
+    "source_prompt_id": "I-80006c2e3f-P1",
+    "source_plan_id": "I-80006c2e3f-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

@@ -1,0 +1,50 @@
+def insert_and_merge(intervals, new_interval):
+    """Insert new_interval into sorted non‑overlapping intervals and merge overlaps.
+    Args:
+        intervals (List[List[int]]): Sorted list of non‑overlapping intervals.
+        new_interval (List[int]): Interval to insert.
+    Returns:
+        List[List[int]]: Sorted merged intervals.
+    """
+    result = []
+    i = 0
+    n = len(intervals)
+    # Add intervals before new_interval
+    while i < n and intervals[i][1] < new_interval[0]:
+        result.append(intervals[i])
+        i += 1
+    # Merge overlapping intervals
+    while i < n and intervals[i][0] <= new_interval[1]:
+        new_interval[0] = min(new_interval[0], intervals[i][0])
+        new_interval[1] = max(new_interval[1], intervals[i][1])
+        i += 1
+    result.append(new_interval)
+    # Append the rest
+    while i < n:
+        result.append(intervals[i])
+        i += 1
+    return result
+
+# Tests
+if __name__ == "__main__":
+    tests = [
+        # Insertion at the beginning
+        ([], [5, 7], [[5, 7]]),
+        ([[10, 12]], [5, 7], [[5, 7], [10, 12]]),
+        # Insertion at the end
+        ([[1, 3], [5, 7]], [8, 10], [[1, 3], [5, 7], [8, 10]]),
+        # Insertion in the middle without overlap
+        ([[1, 3], [7, 9]], [4, 5], [[1, 3], [4, 5], [7, 9]]),
+        # New interval merges all existing intervals
+        ([[1, 3], [5, 7], [9, 11]], [0, 12], [[0, 12]]),
+        # New interval overlaps none
+        ([[1, 2], [4, 5]], [6, 8], [[1, 2], [4, 5], [6, 8]]),
+        # Example from description
+        ([[1,3], [6,9], [12,15], [18,20]], [5,13], [[1,3], [5,15], [18,20]]),
+        # Empty initial list
+        ([], [2, 4], [[2, 4]]),
+    ]
+    for idx, (intervals, new_int, expected) in enumerate(tests, 1):
+        output = insert_and_merge(intervals, new_int)
+        assert output == expected, f"Test {idx} failed: got {output}, expected {expected}"
+    print("All tests passed.")

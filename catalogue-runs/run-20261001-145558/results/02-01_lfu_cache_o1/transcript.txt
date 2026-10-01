@@ -1,0 +1,173 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Implement a Least Frequently Used (LFU) cache in Python with the following requirements:
+1. Both get(key) and put(key, value) must operate in O(1) average time complexity.
+2. When capacity is exceeded, evict the least frequently used key. If multiple keys share the minimum frequency, evict the least recently used among them.
+3. Accessing a key via get() or updating via put() increments its frequency.
+4. Include a self-contained test suite verifying capacity limits, frequency updates, and LRU tie-breaking.
+ASSISTANT> Prompt Pseudocode
+
+READ the request to implement an LFU cache in Python
+CREATE a Python LFU cache supporting get(key) and put(key, value) in O(1) average time
+ENSURE that when capacity is exceeded, the least frequently used key is evicted, using LRU tie-breaking
+INCREMENT the frequency count on each get(key) or put(key, value) operation
+INCLUDE a self‑contained test suite that verifies capacity limits, frequency updates, and LRU tie-breaking
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+DESIGN frequency-to-key linked lists and key-to-node map structures
+INITIALIZE cache with capacity, frequency map, and recency order trackers
+IMPLEMENT get(key) operation:
+    IF key exists THEN
+        RETURN value and UPDATE its frequency count and position in frequency list
+    ELSE
+        RETURN indication of miss
+IMPLEMENT put(key, value) operation:
+    IF key exists THEN
+        UPDATE value and treat as accessed (update frequency)
+    ELSE
+        IF cache at capacity THEN
+            EVICT least frequently used key using LRU tie-breaking from lowest frequency list
+        INSERT new key with frequency count 1 into appropriate structures
+    ENDIF
+ENSURE frequency counts are incremented on each get or put access
+MAINTAIN LRU ordering within each frequency level for tie-breaking
+DEVELOP self‑contained test suite:
+    CREATE tests for capacity limit enforcement and proper eviction
+    CREATE tests for frequency count updates after accesses
+    CREATE tests for LRU tie‑breaking when frequencies match
+    RUN test suite to validate correctness
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> class LFUCache:
+    class Node:
+        __slots__ = ('key', 'value', 'freq', 'prev', 'next')
+        def __init__(self, key, value, freq=1):
+            self.key = key
+            self.value = value
+            self.freq = freq
+            self.prev = None
+            self.next = None
+
+    class DLinkedList:
+        __slots__ = ('head', 'tail', 'size')
+        def __init__(self):
+            self.head = LFUCache.Node(None, None)  # dummy head
+            self.tail = LFUCache.Node(None, None)  # dummy tail
+            self.head.next = self.tail
+            self.tail.prev = self.head
+            self.size = 0
+        def append(self, node):
+            node.prev = self.tail.prev
+            node.next = self.tail
+            self.tail.prev.next = node
+            self.tail.prev = node
+            self.size += 1
+        def pop(self, node=None):
+            if self.size == 0:
+                return None
+            if node is None:
+                node = self.head.next
+            node.prev.next = node.next
+            node.next.prev = node.prev
+            self.size -= 1
+            return node
+        def is_empty(self):
+            return self.size == 0
+
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        self.size = 0
+        self.min_freq = 0
+        self.key_node = {}               # key -> Node
+        self.freq_list = {}              # freq -> DLinkedList
+
+    def _update(self, node):
+        freq = node.freq
+        self.freq_list[freq].pop(node)
+        if self.freq_list[freq].is_empty():
+            del self.freq_list[freq]
+            if self.min_freq == freq:
+                self.min_freq += 1
+        node.freq += 1
+        self.freq_list.setdefault(node.freq, LFUCache.DLinkedList()).append(node)
+
+    def get(self, key):
+        if key not in self.key_node:
+            return -1
+        node = self.key_node[key]
+        self._update(node)
+        return node.value
+
+    def put(self, key, value):
+        if self.capacity == 0:
+            return
+        if key in self.key_node:
+            node = self.key_node[key]
+            node.value = value
+            self._update(node)
+            return
+        if self.size == self.capacity:
+            # evict LRU node from min_freq list
+            lru_node = self.freq_list[self.min_freq].pop()
+            del self.key_node[lru_node.key]
+            self.size -= 1
+        new_node = LFUCache.Node(key, value)
+        self.key_node[key] = new_node
+        self.freq_list.setdefault(1, LFUCache.DLinkedList()).append(new_node)
+        self.min_freq = 1
+        self.size += 1
+
+# Test suite
+import unittest
+
+class TestLFUCache(unittest.TestCase):
+    def test_capacity_and_eviction(self):
+        cache = LFUCache(2)
+        cache.put(1, 1)
+        cache.put(2, 2)
+        self.assertEqual(cache.get(1), 1)  # freq of key 1 becomes 2
+        cache.put(3, 3)  # evicts key 2 (freq 1)
+        self.assertEqual(cache.get(2), -1)
+        self.assertEqual(cache.get(3), 3)
+        self.assertEqual(cache.get(1), 1)
+        cache.put(4, 4)  # evicts key 3 (freq 1)
+        self.assertEqual(cache.get(3), -1)
+        self.assertEqual(cache.get(4), 4)
+
+    def test_frequency_updates(self):
+        cache = LFUCache(3)
+        cache.put(1, 1)
+        cache.put(2, 2)
+        cache.put(3, 3)
+        cache.get(1)
+        cache.get(1)
+        cache.get(2)
+        cache.put(4, 4)  # evicts key 3 (freq 1)
+        self.assertEqual(cache.get(3), -1)
+        self.assertEqual(cache.get(1), 1)
+        self.assertEqual(cache.get(2), 2)
+        self.assertEqual(cache.get(4), 4)
+
+    def test_lru_tie_breaking(self):
+        cache = LFUCache(2)
+        cache.put(1, 1)
+        cache.put(2, 2)
+        cache.get(1)  # freq 1->2
+        cache.put(3, 3)  # evicts key 2 (freq 1)
+        self.assertEqual(cache.get(2), -1)
+        self.assertEqual(cache.get(1), 1)
+        self.assertEqual(cache.get(3), 3)
+        # now both have freq 2, access order: 1 then 3
+        cache.put(4, 4)  # evicts key 1 (LRU among freq 2)
+        self.assertEqual(cache.get(1), -1)
+        self.assertEqual(cache.get(3), 3)
+        self.assertEqual(cache.get(4), 4)
+
+if __name__ == '__main__':
+    unittest.main()
+PROTOCOL_CLOSED
+=== PDLt session ended ===

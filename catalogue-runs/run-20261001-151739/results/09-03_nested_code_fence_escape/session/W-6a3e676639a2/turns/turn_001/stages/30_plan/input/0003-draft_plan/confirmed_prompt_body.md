@@ -1,0 +1,2 @@
+CREATE a function that takes a string of code as input and returns the code wrapped in markdown backticks, correctly handling cases where the input contains backticks (`), backslashes (\\), or triple backticks (```), so that the output formatting is not broken.
+INCLUDE unit tests that verify correct handling of inputs containing a single backtick (`), a backslash (\\), and raw triple backticks (```).

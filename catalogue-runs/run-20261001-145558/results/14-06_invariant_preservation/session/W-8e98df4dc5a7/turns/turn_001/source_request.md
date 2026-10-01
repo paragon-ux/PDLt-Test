@@ -1,0 +1,11 @@
+Given the following state machine for a traffic light controller:
+
+States: RED, GREEN, YELLOW
+Transitions:
+  RED -> GREEN (after 60 seconds)
+  GREEN -> YELLOW (after 45 seconds)
+  YELLOW -> RED (after 5 seconds)
+
+Invariant: "At most one direction has a non-RED light at any time" (assuming two crossing directions each with their own state machine, where direction B starts in RED and only transitions to GREEN when direction A enters RED).
+
+Prove that this invariant is preserved by all transitions. Use induction on the number of transitions taken. Identify any assumptions required for the proof to hold.

@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Implement a B+ tree in Python with configurable order (default 4). Store all values in leaf nodes only; internal nodes hold routing keys. Leaf nodes must be linked in a doubly-linked list for efficient range scans. Provide insert(key, value), search(key), and range_scan(lo, hi) operations. Include page-level serialization to bytes and deserialization preserving structure. Create a test suite verifying insertion splits, range scan correctness, and serialize/deserialize round‑trip fidelity.
+APPROACH/RISK NOTES:

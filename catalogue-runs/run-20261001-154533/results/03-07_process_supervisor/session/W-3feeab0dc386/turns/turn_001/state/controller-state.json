@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-4b8135db5e",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-4b8135db5e-P1",
+    "body": "DEFINE function register(name, cmd)\n    ADD a process entry identified by name with command line cmd to the registry\n\nDEFINE function start_all()\n    FOR each registered process\n        LAUNCH the process\n\nDEFINE function stop_all()\n    FOR each running child process\n        SEND SIGTERM\n        WAIT up to five seconds\n        IF process still alive\n            SEND SIGKILL\n\nMONITOR all child processes CONTINUOUSLY\nIF a child process exits with non-zero status\n    RESTART the process USING exponential backoff intervals: 1 second, then 2 seconds, then 4 seconds, doubling each attempt up to a maximum of 30 seconds\n\nTRACK restart count per process OVER a rolling 60-second window\nIF a process restarts five times within the 60-second window\n    MARK the process as FAILED\n    CEASE further restarts\n\nINCLUDE a test script THAT deliberately crashes three times before succeeding TO VERIFY correct restart behavior with exponential backoff",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-4b8135db5e-R1",
+    "body": "PARSE the CONFIRMED_PROMPT_BODY to extract functional specifications\nDEFINE a registry data structure for process entries with fields name and command\nIMPLEMENT the register function to ADD a process entry to the registry\nIMPLEMENT the start_all function to ITERATE over registered processes and LAUNCH each command\nIMPLEMENT the stop_all function to ITERATE over running child processes, SEND SIGTERM, WAIT up to five seconds, IF process still alive THEN SEND SIGKILL\nESTABLISH a MONITOR loop that CONTINUOUSLY watches child processes\nIF a child process exits with non-zero status THEN SCHEDULE a restart using exponential backoff intervals: 1 second, then 2 seconds, then 4 seconds, doubling each attempt up to a maximum of 30 seconds\nTRACK restart count per process over a rolling 60‑second window\nIF a process restarts five times within the 60‑second window THEN MARK the process as FAILED and CEASE further restarts\nCREATE a test script that deliberately crashes three times before succeeding\nUTILIZE the test script to VERIFY correct restart behavior with exponential backoff",
+    "confirmed": true,
+    "source_prompt_id": "I-4b8135db5e-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-4b8135db5e-X1",
+    "body": "0333fa3550a609a1d3cbd6ce4f8e118b0dd038c18e106ed0789323dd44f80107",
+    "confirmed": true,
+    "source_prompt_id": "I-4b8135db5e-P1",
+    "source_plan_id": "I-4b8135db5e-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

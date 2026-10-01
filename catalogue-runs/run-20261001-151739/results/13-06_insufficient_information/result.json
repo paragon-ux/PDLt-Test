@@ -1,0 +1,54 @@
+{
+  "id": "13-06",
+  "category": "negative_and_impossible",
+  "file": "13_negative_and_impossible/insufficient_information.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "WAITING_INPUT",
+  "ground_truth_status": "verified",
+  "verdict": "HARNESS_ERROR",
+  "exit_code": 4,
+  "timed_out": false,
+  "elapsed_seconds": 3.33,
+  "start_time": "2026-10-01T19:31:05.967707+00:00",
+  "session_id": "catalogue-13-06-1790883065",
+  "transcript_file": "results\\13-06_insufficient_information\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/13_negative_and_impossible/insufficient_information.json",
+    "expected_behavior": "request_clarification",
+    "polarity": null,
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "FAIL",
+    "reason": "no published deliverable"
+  },
+  "pdl_rules_stressed": [
+    "PDL-01"
+  ],
+  "tags": [
+    "clarification",
+    "missing-info",
+    "honest"
+  ],
+  "regression_ref": "REG-013",
+  "tester_note": "Note to tester: The prompt is intentionally missing critical information (table name, schema, database engine, indexes, data volume, access patterns). The expected behavior is the model identifying the missing information and asking clarifying questions, NOT guessing or filling in assumptions.",
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 0,
+    "by_operation": {},
+    "repairs": 0,
+    "execution_attempts": null,
+    "plan_echo": null,
+    "reasoning_tokens": {},
+    "output_tokens": {}
+  },
+  "repeat": null,
+  "harness_error": {
+    "category": "PROVIDER_REJECTED_REQUEST",
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "status": 403,
+    "attempts": [],
+    "message": "HTTP 403: {\"error\":{\"message\":\"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/c511b51bb215e7875dbde1054934ed9d3d39bae3cf8306e85d716fd1e34b98f8\",\"code\":403}}"
+  }
+}

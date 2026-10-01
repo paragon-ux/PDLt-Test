@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-8f5f12afee",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-8f5f12afee-P1",
+    "body": "DESIGN a REST API for a simple bookmarks service using only Python standard library modules (http.server, json, urllib).\nDEFINE endpoints for CRUD operations on bookmarks with fields url, title, tags, created_at.\nIMPLEMENT search by tag functionality.\nGENERATE an OpenAPI 3.0 specification (YAML or JSON) describing the endpoints, request/response schemas, status codes, and example values.\nPROVIDE a self-contained test that starts the server, performs all CRUD operations, and verifies the responses.\nINCLUDE the operative task entities verbatim: CRUD, bookmarks, url, title, tags, created_at, search by tag, Python standard library, http.server, json, urllib, OpenAPI 3.0, YAML, JSON, self-contained test, server.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-8f5f12afee-R1",
+    "body": "DESIGN the REST API structure for a bookmarks service using Python standard library modules\nDEFINE endpoints for CREATE, READ, UPDATE, DELETE operations on bookmarks with fields url, title, tags, created_at\nSPECIFY search-by-tag endpoint that filters bookmarks by tag parameter\nWRITE OpenAPI 3.0 specification (YAML or JSON) describing each endpoint, request and response schemas, status codes, and example values\nIMPLEMENT server code using http.server, json, and urllib to handle the defined endpoints and operations\nDEVELOP a self-contained test script that starts the server, performs CREATE, READ, UPDATE, DELETE, and search-by-tag requests, and verifies the responses\nPACKAGE the API code, OpenAPI specification, and test script as the final deliverable",
+    "confirmed": true,
+    "source_prompt_id": "I-8f5f12afee-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-8f5f12afee-X1",
+    "body": "ac923141c6bb44f270798c243c68bea231cb6a0f200b0be7d884a39bc952b896",
+    "confirmed": true,
+    "source_prompt_id": "I-8f5f12afee-P1",
+    "source_plan_id": "I-8f5f12afee-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

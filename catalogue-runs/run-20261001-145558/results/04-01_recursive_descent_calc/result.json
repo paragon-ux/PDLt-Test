@@ -1,0 +1,67 @@
+{
+  "id": "04-01",
+  "category": "parsers_and_compilers",
+  "file": "04_parsers_and_compilers/recursive_descent_calc.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 7.61,
+  "start_time": "2026-10-01T18:59:19.301989+00:00",
+  "session_id": "catalogue-04-01-1790881159",
+  "transcript_file": "results\\04-01_recursive_descent_calc\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-07"
+  ],
+  "tags": [
+    "parser",
+    "recursive-descent",
+    "precedence"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 4,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "unmeasured_repairs": 0,
+      "repairs_allowed": 0,
+      "tier": "STANDARD"
+    },
+    "plan_echo": {
+      "plan_id": "I-eeb91e8b19-R1",
+      "identical": false,
+      "copied_line_ratio": 0.0
+    },
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 98,
+      "DRAFT_PLAN": 16,
+      "EXECUTE": 42
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 359,
+      "DRAFT_PLAN": 219,
+      "EXECUTE": 1325
+    }
+  },
+  "repeat": null,
+  "harness_error": null
+}

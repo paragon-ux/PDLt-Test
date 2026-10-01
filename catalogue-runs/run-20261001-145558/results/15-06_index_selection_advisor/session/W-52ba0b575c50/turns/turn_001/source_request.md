@@ -1,0 +1,13 @@
+Given the following query workload on a PostgreSQL database, recommend an optimal index set:
+
+Table: events (id BIGINT PK, user_id INT, event_type TEXT, payload JSONB, created_at TIMESTAMP, processed BOOLEAN)
+Row count: 50 million
+
+Query workload (with frequency):
+Q1 (40%): SELECT * FROM events WHERE user_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT 50
+Q2 (30%): SELECT * FROM events WHERE event_type = ? AND processed = false ORDER BY created_at ASC LIMIT 100
+Q3 (15%): SELECT user_id, COUNT(*) FROM events WHERE created_at BETWEEN ? AND ? GROUP BY user_id HAVING COUNT(*) > 10
+Q4 (10%): SELECT * FROM events WHERE payload @> '{"key": "value"}'
+Q5 (5%):  SELECT * FROM events WHERE id = ?
+
+For each recommended index: specify the exact CREATE INDEX statement (including partial indexes and expression indexes where appropriate), explain which queries it serves, and estimate the space overhead.

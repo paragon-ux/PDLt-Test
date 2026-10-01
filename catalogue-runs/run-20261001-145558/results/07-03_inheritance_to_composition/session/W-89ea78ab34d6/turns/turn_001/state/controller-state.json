@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-5e6128462c",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-5e6128462c-P1",
+    "body": "REFactor the provided Python code that defines a deep inheritance hierarchy of animal classes to use composition instead of multiple inheritance.\nINTRODUCE explicit interfaces using Protocol classes or abstract base classes.\nCREATE composable components so that a Duck can be built from Flying and Swimming capabilities without requiring a FlyingSwimmingAnimal base class.\nPRESERVE the original behavior (fly, swim, dive).\nWRITE tests that demonstrate behavioral parity with the original implementation.\nENSURE the following entities appear verbatim in the prompt: Animal, FlyingAnimal, SwimmingAnimal, FlyingSwimmingAnimal, DivingBird, Duck, fly, swim, dive, composition, Protocol.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-5e6128462c-R1",
+    "body": "ANALYZE the existing Python code defining Animal, FlyingAnimal, SwimmingAnimal, FlyingSwimmingAnimal, DivingBird, and Duck with their fly, swim, and dive methods\nIDENTIFY the multiple inheritance relationships to be eliminated\nDEFINE Protocol interfaces for FlyingCapability, SwimmingCapability, and DivingCapability using typing.Protocol or abc.ABC\nIMPLEMENT composable component classes FlyingComponent, SwimmingComponent, and DivingComponent that provide fly, swim, and dive behavior respectively\nREFACTOR each existing class to accept the appropriate component(s) via composition and delegate behavior to those components\nREBUILD Duck by composing FlyingComponent and SwimmingComponent without inheriting from FlyingSwimmingAnimal\nENSURE DivingBird composes DivingComponent (and other needed components) preserving its dive behavior\nUPDATE any remaining class hierarchies to rely on composition and Protocols rather than multiple inheritance\nWRITE unit tests that instantiate the original class hierarchy and the new composition-based hierarchy, invoke fly, swim, and dive where applicable, and assert behavioral parity",
+    "confirmed": true,
+    "source_prompt_id": "I-5e6128462c-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-5e6128462c-X1",
+    "body": "5fa9202ec4dbc6052047dad482424649db5b65d046b0984946a58755f532abd3",
+    "confirmed": true,
+    "source_prompt_id": "I-5e6128462c-P1",
+    "source_plan_id": "I-5e6128462c-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

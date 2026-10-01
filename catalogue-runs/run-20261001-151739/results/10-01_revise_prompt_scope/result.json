@@ -1,0 +1,50 @@
+{
+  "id": "10-01",
+  "category": "multi_turn_and_revision",
+  "file": "10_multi_turn_and_revision/revise_prompt_scope.txt",
+  "difficulty": "easy",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "HARNESS_ERROR",
+  "exit_code": 4,
+  "timed_out": false,
+  "elapsed_seconds": 2.41,
+  "start_time": "2026-10-01T19:30:08.829461+00:00",
+  "session_id": "catalogue-10-01-1790883008",
+  "transcript_file": "results\\10-01_revise_prompt_scope\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-01",
+    "PDL-08"
+  ],
+  "tags": [
+    "revision",
+    "scope",
+    "prompt-review"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": "(This prompt is designed for multi-turn testing. After the model drafts the Prompt Pseudocode, the tester should use /revise to narrow scope: \"Only find primes up to 100, and also return the count of twin primes found.\")",
+  "model_calls": {
+    "total": 0,
+    "by_operation": {},
+    "repairs": 0,
+    "execution_attempts": null,
+    "plan_echo": null,
+    "reasoning_tokens": {},
+    "output_tokens": {}
+  },
+  "repeat": null,
+  "harness_error": {
+    "category": "PROVIDER_REJECTED_REQUEST",
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "status": 403,
+    "attempts": [],
+    "message": "HTTP 403: {\"error\":{\"message\":\"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/c511b51bb215e7875dbde1054934ed9d3d39bae3cf8306e85d716fd1e34b98f8\",\"code\":403}}"
+  }
+}

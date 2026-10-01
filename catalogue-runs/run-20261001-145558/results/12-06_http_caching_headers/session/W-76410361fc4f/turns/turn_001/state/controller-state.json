@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-9d7660543e",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-9d7660543e-P1",
+    "body": "READ the request for cache-control header strategy for a CDN-backed REST API covering five resource types: static assets, user profile data, real-time data, public catalog data, and authenticated responses.\nFOR each resource type SPECIFY the exact Cache-Control, Vary, ETag, and Surrogate-Control header values.\nEXPLAIN the rationale for each directive.\nIMPLEMENT a Python middleware function that selects and sets the appropriate headers based on the response type.\nINCLUDE the operative task entities: Cache-Control, Vary, ETag, Surrogate-Control, Python middleware function, static assets, user profile data, real-time data, public catalog data, authenticated responses.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-9d7660543e-R1",
+    "body": "READ the task description\nIDENTIFY resource types: static assets, user profile data, real-time data, public catalog data, authenticated responses\nDEFINE header specifications for each resource type (Cache-Control, Vary, ETag, Surrogate-Control)\nCOMPOSE a Python middleware skeleton that inspects the response type\nSELECT appropriate header set based on response category\nSET the headers on the outgoing response\nRETURN the response to the client",
+    "confirmed": true,
+    "source_prompt_id": "I-9d7660543e-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-9d7660543e-X1",
+    "body": "a04254bdc64b0dd0f030f9ca8aa7d8f0ca58c7cb73d4f2671a675e41c6906fdc",
+    "confirmed": true,
+    "source_prompt_id": "I-9d7660543e-P1",
+    "source_plan_id": "I-9d7660543e-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

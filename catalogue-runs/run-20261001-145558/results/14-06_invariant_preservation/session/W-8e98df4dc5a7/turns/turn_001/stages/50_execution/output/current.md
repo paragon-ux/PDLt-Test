@@ -1,0 +1,47 @@
+**Proof of Invariant Preservation for Two‑Direction Traffic Light Controller**
+
+*Invariant*: At any time, at most one direction has a non‑RED light (i.e., GREEN or YELLOW). The system consists of two crossing directions, A and B, each following the same cyclic state machine:
+
+- RED → GREEN after 60 s
+- GREEN → YELLOW after 45 s
+- YELLOW → RED after 5 s
+
+Direction B is permitted to transition to GREEN only when direction A is in RED (mutual exclusion). Both directions start in RED.
+
+---
+### Base Case
+No transitions have occurred. Both directions are in RED. Consequently, there are zero non‑RED lights, satisfying the invariant.
+
+---
+### Inductive Step
+Assume the invariant holds after *k* transitions of the combined system (i.e., at that moment at most one direction is non‑RED). We must show that after the *(k + 1)*‑th transition the invariant still holds.
+
+We consider every possible transition that can occur at step *k + 1*.
+
+1. **RED → GREEN (60 s)**
+   - *Which direction can perform this?*
+     - If direction A is RED, it may transition to GREEN. Because of the rule, direction B can transition to GREEN **only** when A is RED. Since A is about to become GREEN, B must remain RED during this transition. After the transition, A is GREEN and B is RED ⇒ exactly one non‑RED light → invariant holds.
+     - If direction B is RED, it may transition to GREEN **only** when A is RED. By the induction hypothesis, at most one direction is non‑RED. If A were non‑RED (GREEN or YELLOW), B would be prohibited from moving to GREEN. Hence the only admissible case is A is RED. After the transition, B becomes GREEN while A stays RED ⇒ invariant holds.
+
+2. **GREEN → YELLOW (45 s)**
+   - Only a direction that is currently GREEN can make this transition.
+   - Suppose direction A is GREEN. By the invariant, B must be RED (otherwise two non‑RED lights would already exist). A transitions to YELLOW; B remains RED. After the transition A is YELLOW, B is RED ⇒ exactly one non‑RED light → invariant holds.
+   - The same reasoning applies symmetrically if direction B is the one that is GREEN.
+
+3. **YELLOW → RED (5 s)**
+   - Only a direction that is currently YELLOW can make this transition.
+   - Suppose direction A is YELLOW. By the invariant, B must be RED. A transitions to RED; B stays RED. Both directions are now RED ⇒ zero non‑RED lights → invariant holds.
+   - Symmetrically for direction B.
+
+In all possible transitions, the system respects the rule that B may turn GREEN only when A is RED, and the inductive hypothesis guarantees that before the transition there is at most one non‑RED light. Each transition either keeps the non‑RED light count at one (when a RED becomes GREEN) or reduces it to zero (when YELLOW becomes RED). Thus the invariant is preserved.
+
+---
+### Assumptions Required
+- **Timing synchronisation**: The prescribed delays (60 s, 45 s, 5 s) are exact and deterministic, so transitions occur only as defined.
+- **Exclusive control of the shared intersection**: The rule *“B may transition to GREEN only when A is RED”* is globally enforced; no external agent can override it.
+- **Atomicity of transitions**: Each state change is atomic; no intermediate states are observable.
+- **Initial condition**: Both directions start in RED.
+
+Given these assumptions, the invariant holds for the base case and is maintained through every inductive step; therefore it holds for all numbers of transitions.
+
+*QED*

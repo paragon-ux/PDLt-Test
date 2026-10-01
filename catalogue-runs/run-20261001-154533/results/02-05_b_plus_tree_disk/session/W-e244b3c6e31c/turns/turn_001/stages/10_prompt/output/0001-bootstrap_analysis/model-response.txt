@@ -1,0 +1,14 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Implement a B+ tree data structure in Python. The tree must have a configurable order (maximum number of children per node) with a default order of 4. All stored values must reside in leaf nodes, while internal nodes contain only routing keys. Leaf nodes must be linked via a doubly-linked list to enable efficient range scans. The implementation must provide the following operations: insert(key, value), search(key), and range_scan(lo, hi). It must also support page-level serialization, allowing the entire tree to be serialized to bytes and later deserialized back to reconstruct the exact structure. A test suite must be provided that verifies correct behavior of node splits on insertion, correctness of range scans, and round‑trip fidelity of serialization and deserialization.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "insert(key, value)",
+    "search(key)",
+    "range_scan(lo, hi)",
+    "serialize",
+    "deserialize",
+    "4"
+  ]
+}

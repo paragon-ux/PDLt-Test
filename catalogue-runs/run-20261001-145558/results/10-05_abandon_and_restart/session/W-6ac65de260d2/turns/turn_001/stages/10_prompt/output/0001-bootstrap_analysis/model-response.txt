@@ -1,0 +1,11 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Implement a Caesar cipher encoder and decoder.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "Caesar cipher",
+    "encoder",
+    "decoder"
+  ]
+}

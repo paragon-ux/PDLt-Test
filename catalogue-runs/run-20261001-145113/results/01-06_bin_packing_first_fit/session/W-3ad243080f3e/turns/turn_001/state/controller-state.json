@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-918aa0eccc",
+  "stage": "CLOSED_CANCELLED",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-918aa0eccc-P1",
+    "body": "READ the bin capacity C = 10\nREAD the items list Items = [5, 5, 5, 3, 3, 3, 7, 7]\nAPPLY the First Fit algorithm to Items with capacity C in the given arrival order, and REPORT the resulting packing\nDETERMINE an optimal packing of Items with capacity C that minimizes the number of bins, and REPORT the optimal packing\nCALCULATE the gap between the First Fit packing and the optimal packing, and REPORT the gap\nEXPLAIN why the arrival order causes the First Fit algorithm to use more bins, and REPORT the explanation\nINCLUDE a self-test that verifies both packings use all items exactly once and respect the capacity constraint, and REPORT the self-test results",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-918aa0eccc-R1",
+    "body": "READ bin capacity C = 10\nREAD items list Items = [5,5,5,3,3,3,7,7]\nAPPLY First Fit algorithm to Items with capacity C in arrival order and STORE packing as FF_PACKING\nDETERMINE optimal packing of Items with capacity C that minimizes number of bins and STORE as OPTIMAL_PACKING\nCALCULATE gap between FF_PACKING and OPTIMAL_PACKING and STORE as GAP\nEXPLAIN why the arrival order causes First Fit to use more bins and STORE as EXPLANATION\nSELF-TEST that both packings use each item exactly once and each bin respects capacity C, and STORE results as SELF_TEST_RESULTS\nREPORT FF_PACKING, OPTIMAL_PACKING, GAP, EXPLANATION, SELF_TEST_RESULTS",
+    "confirmed": true,
+    "source_prompt_id": "I-918aa0eccc-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

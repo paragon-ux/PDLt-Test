@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-6cc73e320b",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-6cc73e320b-P1",
+    "body": "DEFINE a fixed‑block memory pool allocator in Python with a buffer containing N blocks each of size B bytes.\nPROVIDE a function allocate() that returns an int offset of a free block.\nRAISE a PoolExhausted exception when the pool is exhausted.\nPROVIDE a function free(offset) that returns the block at the given offset to the pool.\nENSURE that after initialization, allocate() and free() do not invoke any dynamic allocation calls such as malloc, new, or list.append.\nMANAGE a free‑list embedded within the buffer itself.\nINCLUDE tests that verify allocation of all N blocks.\nVERIFY that a PoolExhausted exception is raised on the (N+1)st allocation.\nVERIFY that freed blocks can be re‑allocated correctly.\nVERIFY that double‑free attempts are detected.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-6cc73e320b-R1",
+    "body": "DEFINE a FixedBlockPool class with constructor(N, B)\n  INITIALIZE a bytearray buffer of size N * B\n  EMBED a free‑list within the buffer using the first B bytes of each block to store the next free offset\n  SET the free‑list head to offset 0\nDEFINE a PoolExhausted exception subclass of Exception\nDEFINE a DoubleFreeError exception subclass of Exception\nDEFINE allocate() method\n  IF free‑list head is None THEN RAISE PoolExhausted\n  ELSE RETRIEVE current head offset\n  UPDATE free‑list head to the next offset stored in the block at the current offset\n  RETURN the retrieved offset\nDEFINE free(offset) method\n  IF offset is out of range OR not aligned to B THEN RAISE ValueError\n  IF offset already appears in the free‑list THEN RAISE DoubleFreeError\n  STORE current free‑list head in the block at offset\n  UPDATE free‑list head to offset\nPROVIDE tests\n  ALLOCATE all N blocks and VERIFY each returned offset is unique and lies within the buffer range\n  ATTEMPT a (N+1)st allocation and VERIFY that PoolExhausted is raised\n  FREE a selected subset of allocated offsets and VERIFY those offsets can be re‑allocated\n  FREE an already freed offset and VERIFY that DoubleFreeError is raised\nENSURE allocate() and free() perform no dynamic memory allocation after initialization (no calls to list.append, malloc, new, etc.)\nRETURN the class definition, exception definitions, and the test suite",
+    "confirmed": true,
+    "source_prompt_id": "I-6cc73e320b-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-6cc73e320b-X1",
+    "body": "23cdd5c0c69bd2dd660ff777b0659c7d2418987eed6350c2ed0ed12e0369ea60",
+    "confirmed": true,
+    "source_prompt_id": "I-6cc73e320b-P1",
+    "source_plan_id": "I-6cc73e320b-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

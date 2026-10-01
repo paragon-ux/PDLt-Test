@@ -1,0 +1,60 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Given the following plain-language privacy policy excerpt, map each statement to the specific GDPR articles it relates to. Identify any GDPR requirements that are NOT covered by this policy.
+
+"We collect your name, email, and browsing history to improve our services. We share data with our advertising partners. You can email us to request deletion of your data. We store data on servers in the United States. Children under 13 should not use our service."
+ASSISTANT> Prompt Pseudocode
+
+READ the privacy policy excerpt.
+FOR EACH statement IN the excerpt:
+  MAP the statement TO relevant GDPR article(s).
+END_FOR
+IDENTIFY GDPR requirements THAT ARE NOT ADDRESSED BY ANY statement.
+RETURN the statement-to-article mapping AND the list of uncovered GDPR requirements.
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+READ the privacy policy excerpt.
+FOR EACH statement IN the excerpt
+    MAP the statement TO relevant GDPR article(s)
+ENDFOR
+IDENTIFY the GDPR requirements NOT ADDRESSED BY ANY statement
+RETURN the statement-to-article mapping AND the list of uncovered GDPR requirements.
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> Statement-to-GDPR article mapping:
+1. "We collect your name, email, and browsing history to improve our services." → Articles 6(1)(a) (lawfulness of processing – consent), 5(1)(a) (principles – lawfulness, fairness and transparency), 15 (right of access – data subjects should be informed about collection).
+2. "We share data with our advertising partners." → Article 28 (processor), Article 6(1)(f) (legitimate interests), Article 5(1)(c) (integrity and confidentiality).
+3. "You can email us to request deletion of your data." → Article 17 (right to erasure), Article 12 (transparent information, modalities and procedures for exercising rights).
+4. "We store data on servers in the United States." → Article 44‑49 (international data transfers), Article 5(1)(f) (security of processing).
+5. "Children under 13 should not use our service." → Article 8 (conditions applicable to child's consent), Article 6(1)(a) (lawfulness of processing – consent).
+
+GDPR requirements not addressed by any statement:
+- Article 20: Right to restriction of processing.
+- Article 21: Right to object.
+- Article 25: Data protection by design and by default.
+- Article 30: Records of processing activities.
+- Article 32: Security of processing (specific technical and organisational measures).
+- Article 33‑34: Data breach notification obligations.
+- Article 35: Data protection impact assessment.
+- Article 46: Transfers subject to appropriate safeguards.
+- Article 58: Powers of supervisory authorities.
+- Article 59: Right to compensation and liability.
+- Article 61‑69: Cooperation and consistency mechanisms with supervisory authorities.
+- Article 78‑79: Remedies, legal claims and representation.
+- Article 83‑84: General conditions for imposing administrative fines.
+- Article 88‑89: Specific processing for national identifiers and statistics.
+- Article 90‑93: Data transfers to third countries and international organisations.
+- Article 14: Information to be provided where personal data have not been obtained from the data subject.
+- Article 24: Responsibility of the controller.
+- Article 31: Cooperation with supervisory authority.
+- Article 37‑42: Data protection officer obligations.
+- Article 48: International cooperation.
+- Article 65‑73: Various procedural safeguards for data subjects and authorities.
+
+These uncovered requirements indicate areas where the privacy policy excerpt lacks coverage.
+PROTOCOL_CLOSED
+=== PDLt session ended ===

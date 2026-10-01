@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Perform amortized analysis of dynamic array resizing using the accounting method. The dynamic array starts with capacity 1 and doubles its capacity when a push exceeds capacity, copying all existing elements. Each push without resize costs 1. A resize copies all n elements (cost n) plus the push itself (cost 1). The analysis must: 1) assign an amortized cost to each push operation, 2) prove the amortized cost is O(1) per push, 3) show the bank balance never goes negative, and 4) compute the exact amortized cost per operation.
+APPROACH/RISK NOTES:

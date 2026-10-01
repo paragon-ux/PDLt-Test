@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-c9685a12dc",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-c9685a12dc-P1",
+    "body": "REFRACT the Python function process_order(order) to replace string‑based status checks with an enum‑based state machine.\nENSURE that all possible order statuses and payment statuses are represented as enums and handled exhaustively, without silent fallthroughs.\nINCLUDE a test that reproduces the original bug where the 'returned' status was not handled, and SHOW that the new implementation correctly detects or handles this case.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-c9685a12dc-R1",
+    "body": "DEFINE OrderStatus enum with all order status members\nDEFINE PaymentStatus enum with all payment status members\nREFRACT process_order to accept enum-typed order and payment status\nIMPLEMENT exhaustive IF/ELIF/ELSE matching for OrderStatus covering every enum member\nIMPLEMENT exhaustive IF/ELIF/ELSE matching for PaymentStatus where used\nINCLUDE explicit handling for RETURNED status to avoid silent fallthrough\nADD a unit test that creates an order with status RETURNED and calls process_order\nASSERT that the test confirms the RETURNED case is detected or handled correctly\nRUN the test suite to verify all branches are exercised",
+    "confirmed": true,
+    "source_prompt_id": "I-c9685a12dc-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-c9685a12dc-X1",
+    "body": "f72a4d7dacb7841fa2aae52e7d4a3245e0da469624208db686343687e9482d0d",
+    "confirmed": true,
+    "source_prompt_id": "I-c9685a12dc-P1",
+    "source_plan_id": "I-c9685a12dc-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

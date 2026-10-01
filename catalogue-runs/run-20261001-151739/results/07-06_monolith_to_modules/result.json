@@ -1,0 +1,56 @@
+{
+  "id": "07-06",
+  "category": "refactoring_and_design",
+  "file": "07_refactoring_and_design/monolith_to_modules.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "HARNESS_ERROR",
+  "exit_code": 4,
+  "timed_out": false,
+  "elapsed_seconds": 7.06,
+  "start_time": "2026-10-01T19:28:17.368534+00:00",
+  "session_id": "catalogue-07-06-1790882897",
+  "transcript_file": "results\\07-06_monolith_to_modules\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-06",
+    "PDL-08"
+  ],
+  "tags": [
+    "monolith",
+    "modules",
+    "package"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 1,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1
+    },
+    "repairs": 0,
+    "execution_attempts": null,
+    "plan_echo": null,
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 2112
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 2371
+    }
+  },
+  "repeat": null,
+  "harness_error": {
+    "category": "PROVIDER_REJECTED_REQUEST",
+    "operation": "DRAFT_PROMPT",
+    "status": 402,
+    "attempts": [],
+    "message": "HTTP 402: {\"error\":{\"message\":\"This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.\",\"code\":402,\"metadata\":{\"reason\":\"in_flight_budget_exhausted\",\"limit_source\":\"openrouter_in_flight_budget\",\"remedy_hint\":\"Retry after your in-flight requests settle (see the Retry-After header). Adding credits at https://openrouter.ai/settings/credits raises your in-flight budget, up to a capped ceiling.\",\"headers\":{\"Retry-After\":\"120\"},\"provider_name\":null}},\"user_id\":\"user_3HslSxGVoRIwhmKkHTq7vgrc6G5\"}"
+  }
+}

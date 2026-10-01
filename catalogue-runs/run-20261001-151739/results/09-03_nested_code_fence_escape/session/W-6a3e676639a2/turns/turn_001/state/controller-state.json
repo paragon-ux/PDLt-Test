@@ -1,0 +1,22 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-b2c97b2e19",
+  "stage": "PLAN_REQUIRED",
+  "prompt_highwater": 1,
+  "plan_highwater": 0,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-b2c97b2e19-P1",
+    "body": "CREATE a function that takes a string of code as input and returns the code wrapped in markdown backticks, correctly handling cases where the input contains backticks (`), backslashes (\\\\), or triple backticks (```), so that the output formatting is not broken.\nINCLUDE unit tests that verify correct handling of inputs containing a single backtick (`), a backslash (\\\\), and raw triple backticks (```).",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": null,
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

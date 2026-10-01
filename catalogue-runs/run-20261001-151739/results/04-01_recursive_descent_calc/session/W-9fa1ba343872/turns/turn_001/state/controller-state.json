@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-186f72fc86",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-186f72fc86-P1",
+    "body": "IMPLEMENT a Python recursive descent parser that acts as a calculator.\nSUPPORT the operators +, -, *, /, unary minus, and parentheses.\nHANDLE integer and float literals.\nRESPECT precedence: unary minus highest, then * and /, then + and -.\nAPPLY left-associative evaluation for binary operators.\nRETURN a numeric result (not an AST).\nRAISE a clear error message for malformed expressions such as unmatched parentheses or missing operand.\nPROVIDE tests that verify:\n- Verify that 3 + 4 * 2 evaluates to 11.\n- Verify that -(3 + 4) * 2 evaluates to -14.\n- Verify that 10 / 3 yields approximately 3.333...\nINCLUDE at least three error cases (e.g., unmatched parentheses, missing operand, division by zero).",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-186f72fc86-R1",
+    "body": "DEFINE the lexical token types: numbers, operators (+, -, *, /), parentheses, end-of-input.\nIMPLEMENT a lexer that scans the input string and produces a token stream.\nDEFINE the grammar hierarchy:\n    parse_expression   handles addition and subtraction.\n    parse_term         handles multiplication and division.\n    parse_factor       handles unary minus and primary expressions.\n    parse_primary      handles numeric literals and parenthesized subexpressions.\nIMPLEMENT parse_expression using left-associative evaluation of parse_term combined with +/- operators.\nIMPLEMENT parse_term using left-associative evaluation of parse_factor combined with */ operators.\nIMPLEMENT parse_factor to detect unary minus and delegate to parse_primary.\nIMPLEMENT parse_primary to:\n    IF next token is a number THEN convert to numeric value.\n    ELSE IF next token is '(' THEN parse nested expression and expect matching ')'.\n    ELSE raise a syntax error for unexpected token.\nENSURE that each parser function returns the computed numeric value directly.\nHANDLE division by zero by raising a clear runtime error with an explanatory message.\nHANDLE malformed expressions (unmatched parentheses, missing operands) by raising syntax errors with clear messages.\nDEVELOP a test suite that:\n    VERIFY that \"3 + 4 * 2\" evaluates to 11.\n    VERIFY that \"-(3 + 4) * 2\" evaluates to -14.\n    VERIFY that \"10 / 3\" evaluates to a value within tolerance of 3.333... .\n    VERIFY that an expression with unmatched parentheses raises a syntax error.\n    VERIFY that an expression with a missing operand raises a syntax error.\n    VERIFY that an expression dividing by zero raises a runtime error.\nEXECUTE the test suite and ensure all tests pass.",
+    "confirmed": true,
+    "source_prompt_id": "I-186f72fc86-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-186f72fc86-X1",
+    "body": "8f7a8df7822f4e448ccb48241ed0a0b687163f1e80a711ec1383e383eb1c9b52",
+    "confirmed": true,
+    "source_prompt_id": "I-186f72fc86-P1",
+    "source_plan_id": "I-186f72fc86-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

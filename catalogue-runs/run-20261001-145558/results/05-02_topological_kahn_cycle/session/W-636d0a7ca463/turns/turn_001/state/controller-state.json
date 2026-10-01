@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-a6f79d4659",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-a6f79d4659-P1",
+    "body": "READ directed graph as adjacency list\nAPPLY Kahn's algorithm for topological sorting\nIF cycle detected THEN REPORT the actual cycle sequence of nodes\nELSE RETURN a valid topological ordering\nTEST with a valid DAG of 8 nodes ensuring ordering respects all edges\nTEST with a graph containing a cycle verifying reported cycle is valid",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-a6f79d4659-R1",
+    "body": "READ directed graph as adjacency list\nAPPLY Kahn's algorithm for topological sorting\nIF a cycle is detected THEN REPORT the actual cycle sequence of nodes\nELSE RETURN a valid topological ordering\nTEST the procedure with a valid DAG of eight nodes ensuring ordering respects all edges\nTEST the procedure with a graph containing a cycle verifying the reported cycle is valid",
+    "confirmed": true,
+    "source_prompt_id": "I-a6f79d4659-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-a6f79d4659-X1",
+    "body": "50808cf58e741b52831e4a69fecd30ed84aa19ff0516dbdcb62250ed0f1576c0",
+    "confirmed": true,
+    "source_prompt_id": "I-a6f79d4659-P1",
+    "source_plan_id": "I-a6f79d4659-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

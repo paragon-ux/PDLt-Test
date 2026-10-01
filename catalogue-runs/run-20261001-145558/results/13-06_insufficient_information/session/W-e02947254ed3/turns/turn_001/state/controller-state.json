@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-a2cb4b7460",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-a2cb4b7460-P1",
+    "body": "OPTIMIZE the database query for maximum performance: SELECT * FROM ???",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-a2cb4b7460-R1",
+    "body": "ANALYZE the current SELECT * FROM ??? query\nIDENTIFY target tables and columns accessed\nEXAMINE database schema and existing indexes\nDETERMINE appropriate indexing strategy for accessed columns\nREWRITE query to select only needed columns if possible\nAPPLY query hints or optimizer directives as allowed\nEVALUATE execution plan using EXPLAIN\nMEASURE query performance metrics\nITERATE index and rewrite adjustments until performance targets met",
+    "confirmed": true,
+    "source_prompt_id": "I-a2cb4b7460-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-a2cb4b7460-X1",
+    "body": "943b62ac8459ae755441274224a0bdd9f0f7cfe654c12ffd5b8d10c1fe8797d7",
+    "confirmed": true,
+    "source_prompt_id": "I-a2cb4b7460-P1",
+    "source_plan_id": "I-a2cb4b7460-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

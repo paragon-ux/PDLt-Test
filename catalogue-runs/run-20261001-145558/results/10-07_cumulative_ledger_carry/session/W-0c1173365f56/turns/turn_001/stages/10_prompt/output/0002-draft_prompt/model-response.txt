@@ -1,0 +1,1 @@
+{"kind": "PROMPT", "prompt_body": "READ the request to implement FizzBuzz for numbers 1 to 100.\nFOR each integer i FROM 1 TO 100 DO\nIF i MOD 15 EQUALS 0 THEN OUTPUT \"FizzBuzz\"\nELSE IF i MOD 3 EQUALS 0 THEN OUTPUT \"Fizz\"\nELSE IF i MOD 5 EQUALS 0 THEN OUTPUT \"Buzz\"\nELSE OUTPUT i\nENDIF\nENDFOR", "approach_handoff": "NONE", "task_entities": ["FizzBuzz", "1", "100"]}

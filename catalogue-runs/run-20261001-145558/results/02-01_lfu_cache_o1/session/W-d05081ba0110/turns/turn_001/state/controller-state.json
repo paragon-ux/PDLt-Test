@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-a9baa6307e",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-a9baa6307e-P1",
+    "body": "READ the request to implement an LFU cache in Python\nCREATE a Python LFU cache supporting get(key) and put(key, value) in O(1) average time\nENSURE that when capacity is exceeded, the least frequently used key is evicted, using LRU tie-breaking\nINCREMENT the frequency count on each get(key) or put(key, value) operation\nINCLUDE a self‑contained test suite that verifies capacity limits, frequency updates, and LRU tie-breaking",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-a9baa6307e-R1",
+    "body": "DESIGN frequency-to-key linked lists and key-to-node map structures\nINITIALIZE cache with capacity, frequency map, and recency order trackers\nIMPLEMENT get(key) operation:\n    IF key exists THEN\n        RETURN value and UPDATE its frequency count and position in frequency list\n    ELSE\n        RETURN indication of miss\nIMPLEMENT put(key, value) operation:\n    IF key exists THEN\n        UPDATE value and treat as accessed (update frequency)\n    ELSE\n        IF cache at capacity THEN\n            EVICT least frequently used key using LRU tie-breaking from lowest frequency list\n        INSERT new key with frequency count 1 into appropriate structures\n    ENDIF\nENSURE frequency counts are incremented on each get or put access\nMAINTAIN LRU ordering within each frequency level for tie-breaking\nDEVELOP self‑contained test suite:\n    CREATE tests for capacity limit enforcement and proper eviction\n    CREATE tests for frequency count updates after accesses\n    CREATE tests for LRU tie‑breaking when frequencies match\n    RUN test suite to validate correctness",
+    "confirmed": true,
+    "source_prompt_id": "I-a9baa6307e-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-a9baa6307e-X1",
+    "body": "e903fe4d3289eda03b3e81501921971c641a3732c8f3f9513959050bd5097dc3",
+    "confirmed": true,
+    "source_prompt_id": "I-a9baa6307e-P1",
+    "source_plan_id": "I-a9baa6307e-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

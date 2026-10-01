@@ -1,0 +1,23 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Reorganize the provided single-file Python script that imports csv, sys, json, statistics and defines functions read_csv, validate_row, transform, summarize, and write_report into a multi-module package named mypackage. Create the modules mypackage/__init__.py, mypackage/io.py, mypackage/validation.py, mypackage/transform.py, and mypackage/report.py, placing the appropriate functions in each module (read_csv and write_report in io.py, validate_row in validation.py, transform in transform.py, summarize in report.py) and ensure clear import statements among them. Additionally, generate unit tests for each module.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "mypackage",
+    "mypackage/__init__.py",
+    "mypackage/io.py",
+    "mypackage/validation.py",
+    "mypackage/transform.py",
+    "mypackage/report.py",
+    "read_csv",
+    "validate_row",
+    "transform",
+    "summarize",
+    "write_report",
+    "csv",
+    "sys",
+    "json",
+    "statistics"
+  ]
+}

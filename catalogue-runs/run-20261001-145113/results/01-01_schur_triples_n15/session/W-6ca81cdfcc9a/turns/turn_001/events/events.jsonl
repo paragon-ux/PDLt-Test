@@ -1,0 +1,28 @@
+{"at_utc":"2026-10-01T18:51:13.961310+00:00","kind":"WORKSPACE_CREATED","payload":{"workspace_id":"W-6ca81cdfcc9a","turn_id":"turn_001"}}
+{"at_utc":"2026-10-01T18:51:13.963312+00:00","kind":"EXPLICIT_INVOCATION_OBSERVED","payload":{"substantive_request_present":true}}
+{"at_utc":"2026-10-01T18:51:14.303759+00:00","kind":"ACTIVATION_ROUTED","payload":{"verdict":"APPLY_PROTOCOL","passed_gating":true,"confidence":0.99}}
+{"at_utc":"2026-10-01T18:51:14.919387+00:00","kind":"EXECUTION_PROFILE_ROUTED","payload":{"predicted_steps":"WITHIN_10M_STEPS","distribution":{"BEYOND_100M_STEPS":0.16,"WITHIN_100K_STEPS":0.31,"WITHIN_100M_STEPS":0.15,"WITHIN_10M_STEPS":0.38},"tier":"STANDARD","passed_gating":false,"step_limit":10000000,"timeout_seconds":30.0,"memory_mb":256}}
+{"at_utc":"2026-10-01T18:51:14.922393+00:00","kind":"PROBLEM_CLASS_CLASSIFIED","payload":{"requires_verified_execution":true,"domain":"general"}}
+{"at_utc":"2026-10-01T18:51:14.934391+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-10-01T18:51:16.970688+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-10-01T18:51:16.973890+00:00","kind":"TASK_ENTITY_DROPPED_UNSAFE","payload":{"count":1}}
+{"at_utc":"2026-10-01T18:51:16.982649+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}
+{"at_utc":"2026-10-01T18:51:19.327994+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}
+{"at_utc":"2026-10-01T18:51:19.330025+00:00","kind":"TASK_ENTITY_COVERAGE_RETRY","payload":{"missing":1}}
+{"at_utc":"2026-10-01T18:51:19.340263+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0003-draft_prompt"}}
+{"at_utc":"2026-10-01T18:51:22.048870+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0003-draft_prompt"}}
+{"at_utc":"2026-10-01T18:51:22.067872+00:00","kind":"PROTOCOL_BOUND","payload":{"instance_id":"I-13b381c551","turn_id":"turn_001"}}
+{"at_utc":"2026-10-01T18:51:22.077872+00:00","kind":"ARTIFACT_PUBLISHED","payload":{"kind":"prompt","artifact_id":"I-13b381c551-P1","confirmed":false}}
+{"at_utc":"2026-10-01T18:51:22.227870+00:00","kind":"ARTIFACT_CONFIRMED","payload":{"kind":"prompt","artifact_id":"I-13b381c551-P1"}}
+{"at_utc":"2026-10-01T18:51:22.240873+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PLAN","stage":"30_plan","invocation_id":"0004-draft_plan"}}
+{"at_utc":"2026-10-01T18:51:23.213553+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PLAN","stage":"30_plan","invocation_id":"0004-draft_plan"}}
+{"at_utc":"2026-10-01T18:51:23.223556+00:00","kind":"ARTIFACT_PUBLISHED","payload":{"kind":"plan","artifact_id":"I-13b381c551-R1","confirmed":false}}
+{"at_utc":"2026-10-01T18:51:23.225555+00:00","kind":"PLAN_PROMPT_ECHO","payload":{"plan_id":"I-13b381c551-R1","identical":false,"copied_line_ratio":0.25}}
+{"at_utc":"2026-10-01T18:51:23.354553+00:00","kind":"ARTIFACT_CONFIRMED","payload":{"kind":"plan","artifact_id":"I-13b381c551-R1"}}
+{"at_utc":"2026-10-01T18:51:23.777557+00:00","kind":"PLAN_PROFILE_ROUTED","payload":{"predicted_steps":"WITHIN_10M_STEPS","distribution":{"BEYOND_100M_STEPS":0.19,"WITHIN_100M_STEPS":0.16,"WITHIN_100K_STEPS":0.18,"WITHIN_10M_STEPS":0.47},"passed_gating":false,"request_tier":"STANDARD","plan_tier":null,"tier":"STANDARD","budget_raised":false,"step_limit":10000000}}
+{"at_utc":"2026-10-01T18:51:23.795558+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"EXECUTE","stage":"50_execution","invocation_id":"0005-execute"}}
+{"at_utc":"2026-10-01T18:51:29.992319+00:00","kind":"OUTPUT_LIMIT_REACHED","payload":{"limit":16384}}
+{"at_utc":"2026-10-01T18:51:29.993317+00:00","kind":"EXECUTION_ATTEMPTS","payload":{"attempts":1,"repairs_used":0,"unmeasured_repairs":0,"repairs_allowed":0,"tier":"STANDARD"}}
+{"at_utc":"2026-10-01T18:51:29.994320+00:00","kind":"VERIFICATION_FAILED","payload":{"errors":["[OUTPUT_LIMIT_REACHED] The response reached the 16,384-token output limit before it finished. Rule: Each response is limited to 16,384 output tokens, reasoning included; a response cut off at the limit is a failed attempt. Next attempt: Return a complete response within 16,384 tokens: a deliverable that states the result without repetition or filler."],"codes":["OUTPUT_LIMIT_REACHED"]}}
+{"at_utc":"2026-10-01T18:51:29.998320+00:00","kind":"TURN_STATUS","payload":{"turn_id":"turn_001","status":"CLOSED_CANCELLED"}}
+{"at_utc":"2026-10-01T18:51:30.004325+00:00","kind":"EXECUTION_OUTCOME_PUBLISHED","payload":{"kind":"VERIFICATION_FAILED","errors":["[OUTPUT_LIMIT_REACHED] The response reached the 16,384-token output limit before it finished. Rule: Each response is limited to 16,384 output tokens, reasoning included; a response cut off at the limit is a failed attempt. Next attempt: Return a complete response within 16,384 tokens: a deliverable that states the result without repetition or filler."],"codes":["OUTPUT_LIMIT_REACHED"]}}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-39704471f5",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-39704471f5-P1",
+    "body": "READ the provided API specification\nIDENTIFY each contradiction concerning response codes, duplicate email handling, authentication requirements, and user ID formats\nENUMERATE the contradictions\nPROPOSE a consistent resolution for each identified conflict",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-39704471f5-R1",
+    "body": "READ the provided API specification\nEXTRACT sections on response codes, duplicate email handling, authentication requirements, and user ID formats\nCOMPARE extracted definitions to identify contradictions\nENUMERATE each identified contradiction\nFOR each contradiction PROPOSE a consistent resolution\nCOMPILE the list of contradictions and resolutions into a report",
+    "confirmed": true,
+    "source_prompt_id": "I-39704471f5-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-39704471f5-X1",
+    "body": "c1a3dc0b6d63ae6f38106a296157136200065d4bbeb2df1e12d47501aa3d5537",
+    "confirmed": true,
+    "source_prompt_id": "I-39704471f5-P1",
+    "source_plan_id": "I-39704471f5-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

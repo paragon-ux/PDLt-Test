@@ -1,0 +1,123 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145350\results\01-07_hamiltonian_path_sparse\session\catalogue-01-07-1790880880\worker-progress.log]
+[api] response received in 10183ms
+[api] response received in 4160ms
+Prompt Pseudocode
+
+DETERMINE whether the undirected graph with 12 nodes (0-11) and the specified edge list contains a Hamiltonian path.
+IF a Hamiltonian path exists, OUTPUT the complete path.
+USE a backtracking search with pruning.
+VERIFY that the path visits all 12 nodes and each consecutive pair in the path is a valid edge.
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145350\results\01-07_hamiltonian_path_sparse\session\catalogue-01-07-1790880880\worker-progress.log]
+[api] response received in 2964ms
+Response Plan Pseudocode
+
+PARSE the edge list into an adjacency structure
+INITIALIZE an empty path container
+DEFINE BACKTRACK(current_node, visited_set, current_path)
+    IF length of current_path equals 12 THEN
+        EMIT the discovered Hamiltonian path
+        TERMINATE the search
+    ENDIF
+    FOR each neighbor of current_node
+        IF neighbor not in visited_set THEN
+            ADD neighbor to visited_set and to current_path
+            CALL BACKTRACK(neighbor, visited_set, current_path)
+            REMOVE neighbor from visited_set and from current_path
+        ENDIF
+    ENDFOR
+ENDDEFINE
+FOR each start_node from 0 to 11
+    CALL BACKTRACK(start_node, {start_node}, [start_node])
+ENDFOR
+VERIFY that the emitted path includes all 12 nodes and that every consecutive node pair corresponds to a valid edge
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145350\results\01-07_hamiltonian_path_sparse\session\catalogue-01-07-1790880880\worker-progress.log]
+[api] response received in 551ms
+import json
+from collections import defaultdict
+
+def find_hamiltonian_path(edges, n):
+    adj = defaultdict(list)
+    for u, v in edges:
+        adj[u].append(v)
+        adj[v].append(u)
+    visited = [False]*n
+    path = []
+    nodes_explored = 0
+    def backtrack(node):
+        nonlocal nodes_explored
+        visited[node] = True
+        path.append(node)
+        nodes_explored += 1
+        if len(path) == n:
+            return True
+        for nb in adj[node]:
+            if not visited[nb]:
+                if backtrack(nb):
+                    return True
+        visited[node] = False
+        path.pop()
+        return False
+    for start in range(n):
+        if backtrack(start):
+            return path, nodes_explored
+    return None, nodes_explored
+
+edges = [(0,1), (1,2), (2,3), (3,4), (4,5), (5,6), (6,7), (7,8), (8,9), (9,10), (10,11), (0,3), (2,7), (4,9), (6,11), (1,8)]
+path, explored = find_hamiltonian_path(edges, 12)
+if path:
+    witness = {
+        "polarity": "positive",
+        "data": {"hamiltonian_path": path}
+    }
+else:
+    witness = {
+        "polarity": "negative",
+        "basis": "search",
+        "search_exhausted": True,
+        "nodes_explored": explored,
+        "method": "backtracking"
+    }
+print("WITNESS: " + json.dumps(witness))
+
+```json
+{
+  "files": [],
+  "reconciliation": [],
+  "open_defects": [],
+  "witness": {
+    "polarity": "positive",
+    "data": {
+      "hamiltonian_path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    "provisional": false
+  }
+}
+```
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

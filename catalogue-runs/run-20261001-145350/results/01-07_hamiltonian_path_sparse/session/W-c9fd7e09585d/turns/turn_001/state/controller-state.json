@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-f0f5611ae2",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-f0f5611ae2-P1",
+    "body": "DETERMINE whether the undirected graph with 12 nodes (0-11) and the specified edge list contains a Hamiltonian path.\nIF a Hamiltonian path exists, OUTPUT the complete path.\nUSE a backtracking search with pruning.\nVERIFY that the path visits all 12 nodes and each consecutive pair in the path is a valid edge.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-f0f5611ae2-R1",
+    "body": "PARSE the edge list into an adjacency structure\nINITIALIZE an empty path container\nDEFINE BACKTRACK(current_node, visited_set, current_path)\n    IF length of current_path equals 12 THEN\n        EMIT the discovered Hamiltonian path\n        TERMINATE the search\n    ENDIF\n    FOR each neighbor of current_node\n        IF neighbor not in visited_set THEN\n            ADD neighbor to visited_set and to current_path\n            CALL BACKTRACK(neighbor, visited_set, current_path)\n            REMOVE neighbor from visited_set and from current_path\n        ENDIF\n    ENDFOR\nENDDEFINE\nFOR each start_node from 0 to 11\n    CALL BACKTRACK(start_node, {start_node}, [start_node])\nENDFOR\nVERIFY that the emitted path includes all 12 nodes and that every consecutive node pair corresponds to a valid edge",
+    "confirmed": true,
+    "source_prompt_id": "I-f0f5611ae2-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-f0f5611ae2-X1",
+    "body": "984dfe84db1a70db8221b81a4ca42fc5976f806b713192f288160e5f61533034",
+    "confirmed": true,
+    "source_prompt_id": "I-f0f5611ae2-P1",
+    "source_plan_id": "I-f0f5611ae2-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

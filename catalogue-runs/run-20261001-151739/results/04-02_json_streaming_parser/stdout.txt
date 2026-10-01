@@ -1,0 +1,9 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-151739\results\04-02_json_streaming_parser\session\catalogue-04-02-1790882555\worker-progress.log]
+[api] response received in 2092ms
+[api] response received in 6458ms
+[error] OutputLimitError: response reached the 16384 output-token limit before it finished

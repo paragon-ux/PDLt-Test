@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-20842f3d91",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-20842f3d91-P1",
+    "body": "IMPLEMENT Kahn's algorithm for topological sorting in Python with cycle detection.\nINPUT a directed graph provided as an adjacency list.\nOUTPUT a valid topological ordering, OR an error that reports the nodes forming a cycle, INCLUDING the actual cycle sequence when detected.\nPROVIDE tests:\n    TEST a valid DAG with 8 nodes to verify the ordering respects all edges.\n    TEST a graph containing a cycle to verify the reported cycle is valid.\nKahn's algorithm\ntopological sorting\nPython\ncycle detection\ndirected graph\nadjacency list\nvalid DAG\n8 nodes",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-20842f3d91-R1",
+    "body": "RECEIVE the directed graph as an adjacency list.\nVALIDATE that the input conforms to the adjacency‑list format.\nCOMPUTE indegree for each node.\nINITIALIZE a collection (queue) of nodes whose indegree is zero.\nWHILE the collection is not empty:\n    REMOVE a node from the collection.\n    APPEND the node to the topological ordering.\n    FOR each neighbor reachable from the removed node:\n        DECREMENT the neighbor's indegree.\n        IF the neighbor's indegree becomes zero THEN ADD the neighbor to the collection.\nIF the topological ordering includes all nodes THEN RETURN the ordering.\nELSE IDENTIFY the remaining nodes that form cycles.\n    DETECT a cycle among the remaining nodes and EXTRACT the cycle sequence.\n    RETURN an error containing the detected cycle nodes in order.\nGENERATE a test case representing a valid DAG with eight nodes and diverse edges.\nEXECUTE the algorithm on the DAG test case and VERIFY that the output ordering respects every edge.\nGENERATE a test case representing a graph that contains a cycle.\nEXECUTE the algorithm on the cycle test case and VERIFY that the error output includes a valid cycle sequence.\nPACKAGE the Python implementation, the cycle‑detection extension, and the two test cases as the final deliverable.",
+    "confirmed": true,
+    "source_prompt_id": "I-20842f3d91-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-20842f3d91-X1",
+    "body": "ca624e5f925071ac0b4bcf5e34007621090de90677ea19a5b14abd1e8aebb4b6",
+    "confirmed": true,
+    "source_prompt_id": "I-20842f3d91-P1",
+    "source_plan_id": "I-20842f3d91-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

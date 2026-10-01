@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-e7c19f7918",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-e7c19f7918-P1",
+    "body": "EXECUTE the First Fit algorithm on the provided item sequence with bin capacity C = 10 and PRODUCE the resulting bin packing.\nDETERMINE the optimal packing that uses the fewest possible bins for the same items and capacity.\nCOMPUTE the gap between the number of bins used by the First Fit result and the optimal result.\nEXPLAIN why the arrival order of items leads to a higher bin count in the First Fit outcome.\nINCLUDE a SELF‑TEST that VERIFIES both the First Fit packing and the optimal packing USE every item exactly once and RESPECT the capacity constraint of C = 10.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-e7c19f7918-R1",
+    "body": "APPLY the First Fit algorithm to the provided item sequence with bin capacity 10 and RECORD the resulting bin packing\nDETERMINE the optimal bin packing that uses the fewest possible bins for the same items and capacity and RECORD that packing\nCALCULATE the gap as the difference between the number of bins used by the First Fit result and the optimal result\nEXPLAIN why the arrival order of items leads to a higher bin count in the First Fit outcome\nSELF‑TEST: VERIFY that the First Fit packing uses every item exactly once and respects the capacity constraint of 10\nSELF‑TEST: VERIFY that the optimal packing uses every item exactly once and respects the capacity constraint of 10\nSELF‑TEST: VERIFY that the computed gap equals the difference between the two bin counts",
+    "confirmed": true,
+    "source_prompt_id": "I-e7c19f7918-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-e7c19f7918-X1",
+    "body": "03e7a64d1444a5a7f14568d2e403960b0973769e11dbf19f135415efb5796455",
+    "confirmed": true,
+    "source_prompt_id": "I-e7c19f7918-P1",
+    "source_plan_id": "I-e7c19f7918-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

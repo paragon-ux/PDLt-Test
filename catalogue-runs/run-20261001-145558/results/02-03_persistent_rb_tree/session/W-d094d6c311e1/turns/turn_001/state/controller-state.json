@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-63fd0e9b2d",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-63fd0e9b2d-P1",
+    "body": "READ the specifications for a persistent functional red-black tree in Python using path copying\nDEFINE a red-black tree node structure with fields: key, color, left, right\nENSURE that insert(tree, key) returns a new tree instance with the key inserted while the original tree remains unchanged\nENSURE that lookup(tree, key) returns a boolean indicating membership of the key in the tree\nENSURE that to_sorted_list(tree) returns a list of keys obtained via an in-order traversal of the tree\nENFORCE red-black invariants: root node is black, no red node has a red child, and every path from the root to a leaf has the same number of black nodes\nWRITE unit tests that verify persistence (modifying the tree returned by insert does not affect the original tree), correctness of lookup, correctness of the sorted list output, and adherence to all red-black invariants",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-63fd0e9b2d-R1",
+    "body": "READ the specifications for a persistent functional red-black tree in Python using path copying\nDEFINE a node class with fields: key, color, left, right\nIMPLEMENT insert(tree, key) to create a new tree instance with the key inserted while preserving the original tree\nIMPLEMENT lookup(tree, key) to return a boolean indicating membership of the key\nIMPLEMENT to_sorted_list(tree) to perform an in‑order traversal and return a list of keys\nENFORCE red‑black invariants after each insertion: root is black, no red node has a red child, and all root‑to‑leaf paths contain the same number of black nodes\nWRITE unit tests that verify persistence (modifying the tree returned by insert does not affect the original tree), correctness of lookup, correctness of the sorted list output, and adherence to all red‑black invariants",
+    "confirmed": true,
+    "source_prompt_id": "I-63fd0e9b2d-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-63fd0e9b2d-X1",
+    "body": "cec55832d15170d7d24fb5284cf06aa2088a3474d58baa39555b8fa9372b21d1",
+    "confirmed": true,
+    "source_prompt_id": "I-63fd0e9b2d-P1",
+    "source_plan_id": "I-63fd0e9b2d-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-233fede9a9",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-233fede9a9-P1",
+    "body": "IMPLEMENT a persistent red-black tree in Python using path copying.\nPROVIDE functional operation insert(tree, key) -> new_tree that returns a new tree with the key inserted while the original remains unchanged.\nPROVIDE functional operation lookup(tree, key) -> bool that checks membership.\nPROVIDE functional operation to_sorted_list(tree) -> list that produces an in-order traversal.\nENFORCE immutability: after insert(t1, k) -> t2, t1 must remain unchanged.\nINCLUDE tests verifying persistence (modifying t2 does not affect t1).\nINCLUDE tests verifying red-black invariants: root is black; no red-red parent-child; equal black-height on all paths.\nINCLUDE tests verifying binary search tree ordering.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-233fede9a9-R1",
+    "body": "DEFINE immutable node structure for persistent red‑black tree.\nDEFINE functional INSERT operation that returns a new tree via path copying while preserving immutability.\nDEFINE functional LOOKUP operation that checks membership without modifying the tree.\nDEFINE functional TO_SORTED_LIST operation that produces an in‑order traversal list.\nCOMPOSE unit TESTS verifying persistence: after INSERT, confirm original tree remains unchanged.\nCOMPOSE unit TESTS verifying red‑black invariants: root is black; no red parent has a red child; black‑height is equal on all root‑to‑leaf paths.\nCOMPOSE unit TESTS verifying binary search tree ordering using TO_SORTED_LIST.\nRUN all TESTS and REPORT outcomes.",
+    "confirmed": true,
+    "source_prompt_id": "I-233fede9a9-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-233fede9a9-X1",
+    "body": "fadf1603ae5e0a910aa045b98c341e58473c299acb3e9d7038dd2603e4554490",
+    "confirmed": true,
+    "source_prompt_id": "I-233fede9a9-P1",
+    "source_plan_id": "I-233fede9a9-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

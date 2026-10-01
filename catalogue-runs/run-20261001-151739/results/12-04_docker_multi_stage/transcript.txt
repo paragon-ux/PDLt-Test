@@ -1,0 +1,20 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Convert the following bloated Dockerfile into an optimized multi-stage build that minimizes the final image size.
+
+`dockerfile
+FROM python:3.11
+WORKDIR /app
+RUN apt-get update && apt-get install -y gcc libpq-dev curl wget vim net-tools
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+RUN python -m pytest tests/
+RUN python setup.py build
+EXPOSE 8000
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0"]
+`
+
+The optimized version should: use multi-stage builds, separate build and runtime dependencies, use a slim or distroless base for the final stage, not include test files or build tools in the final image, and leverage layer caching effectively. Explain each optimization and estimate the size reduction.
+ERROR> ProviderError: HTTP 403: {"error":{"message":"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/c511b51bb215e7875dbde1054934ed9d3d39bae3cf8306e85d716fd1e34b98f8","code":403}}
+=== PDLt session ended ===

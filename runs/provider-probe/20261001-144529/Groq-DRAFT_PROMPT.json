@@ -1,0 +1,154 @@
+{
+  "provider": "Groq",
+  "operation": "DRAFT_PROMPT",
+  "verdict": "ERROR",
+  "error": {
+    "category": "OUTPUT_MALFORMED",
+    "operation": "DRAFT_PROMPT",
+    "status": null,
+    "attempts": [],
+    "message": "generation did not match the schema: Upstream error from Groq: Generated JSON does not match the expected schema. Please adjust your prompt. See 'failed_generation' for more details. Error: jsonschema: '/outcome/kind' does not validate with /properties/outcome/anyOf/0/properties/kind/anyOf/0/type: expected null, but got string"
+  },
+  "seconds": 0.62,
+  "request_body": {
+    "model": "openai/gpt-oss-120b",
+    "input": "You are a stateless operation worker.\n\nDraft Prompt Pseudocode for: add 2 and 3.\n\nReturn only a JSON object. Do not include markdown fences, commentary, or extra text.",
+    "instructions": "NORMATIVE GUIDELINES FOR PROMPT PSEUDOCODE (PDL-01 to PDL-08, PROMPT-01 to PROMPT-05):\n1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n   Example format:\n   READ the monthly sales records from the supplied CSV data\n   GROUP the records by region\n   RETURN the total sales for each region\n2. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n3. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n4. Purpose-Complete Target: Prompt Pseudocode defines the substantive requirements to be solved upon execution (PROMPT-01). DO NOT insert internal meta-rules, drafting instructions, or negative execution prohibitions (PROMPT-02, PDL-08).",
+    "max_output_tokens": 4096,
+    "reasoning": {
+      "effort": "low"
+    },
+    "provider": {
+      "order": [
+        "Groq"
+      ],
+      "allow_fallbacks": false
+    },
+    "safety_settings": [
+      {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_NONE"
+      }
+    ],
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "json_object",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "outcome": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "PROMPT"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "prompt_body": {
+                      "type": "string"
+                    },
+                    "approach_handoff": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "NONE",
+                            "CARRY_SOURCE_TO_PLAN"
+                          ],
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "task_entities": {
+                      "anyOf": [
+                        {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "prompt_body",
+                    "approach_handoff",
+                    "task_entities"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "TASK_BLOCKED_BY_HIGHER_PRIORITY"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "blocking_basis": {
+                      "type": "string",
+                      "enum": [
+                        "PROVIDER_PLATFORM_SAFETY_PRIVACY_PERMISSION_OR_TOOL"
+                      ]
+                    },
+                    "response": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "blocking_basis",
+                    "response"
+                  ],
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "required": [
+            "outcome"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  },
+  "response_body": null
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-12c0bb63a4",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-12c0bb63a4-P1",
+    "body": "IMPLEMENT an LFU cache in Python\nENSURE get(key) and put(key, value) operate in O(1) average time\nWHEN capacity is exceeded, EVICT the least frequently used key\nIF multiple keys share the minimum frequency, EVICT the least recently used among them\nINCREMENT frequency on each get(key) or put(key, value) access\nINCLUDE a self-contained test suite verifying capacity limits, frequency updates, and LRU tie-breaking",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-12c0bb63a4-R1",
+    "body": "DEFINE a Python class representing the LFU cache with constructor parameters for capacity.\nDEFINE internal data structures: a key-to-node map, a frequency-to-ordered-nodes map, and a minimum-frequency tracker.\nIMPLEMENT the get(key) method to retrieve the value, update its frequency, and reposition the entry in O(1) time.\nIMPLEMENT the put(key, value) method to insert or update entries, handle capacity overflow by evicting the least frequently used key, using LRU tie-breaking when frequencies match, all in O(1) time.\nENSURE frequency counters are incremented on each get or put access.\nINCLUDE a self-contained test suite that:\n    CREATE instances of the LFU cache with various capacities.\n    VERIFY that get and put operations behave as specified.\n    VALIDATE that capacity limits trigger correct eviction of the least frequently used entries.\n    CONFIRM that frequency updates occur correctly after accesses.\n    CONFIRM that when multiple keys share the minimum frequency, the least recently used among them is evicted.\nEXECUTE the test suite and report pass/fail results.",
+    "confirmed": true,
+    "source_prompt_id": "I-12c0bb63a4-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-12c0bb63a4-X1",
+    "body": "3a4ff2ad6127e82e2782b402d3bf5bd97c2cf814ed55caa97305ebf99a99cad6",
+    "confirmed": true,
+    "source_prompt_id": "I-12c0bb63a4-P1",
+    "source_plan_id": "I-12c0bb63a4-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

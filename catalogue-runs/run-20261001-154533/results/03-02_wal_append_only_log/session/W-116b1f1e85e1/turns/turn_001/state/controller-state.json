@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-7022e417bb",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-7022e417bb-P1",
+    "body": "IMPLEMENT a write-ahead log (WAL) system in Python with the following operations:\n    The function named append takes a record of type bytes and returns an int sequence number. Each stored entry must be prefixed with a 4-byte length, a 4-byte CRC32 checksum, and an 8-byte sequence number.\n    The function named recover reads the log file and returns a list[bytes] of all records that are valid according to the length, checksum, and sequence number, stopping at the first corrupted or truncated record.\n    The function named sync forces an fsync to persist data to disk.\nDESIGN a test that writes 100 records to the log, closes the log, truncates the file in the middle of a record to simulate a crash, reopens the log, and verifies that recover returns exactly the intact records with correct checksums.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-7022e417bb-R1",
+    "body": "DEFINE the binary log file format as a sequence of records each consisting of:\n    4-byte length, 4-byte CRC32 checksum, 8-byte sequence number, and the payload bytes\nINITIALIZE a monotonically increasing sequence counter starting at zero\nIMPLEMENT the append operation:\n    OPEN the log file for binary appending\n    INCREMENT the sequence counter and assign the new value as the record's sequence number\n    CALCULATE the CRC32 of the payload\n    ENCODE the length, checksum, and sequence number in the required binary layout\n    WRITE the encoded header followed by the payload to the file\n    RETURN the assigned sequence number\nIMPLEMENT the sync operation:\n    FLUSH any buffered writes to the underlying file descriptor\n    INVOKE fsync to force the data to be persisted on disk\nIMPLEMENT the recover operation:\n    OPEN the log file for binary reading\n    WHILE not at end of file:\n        READ the 4-byte length field\n        IF insufficient bytes are available THEN STOP iteration\n        READ the 4-byte checksum and the 8-byte sequence number\n        READ the payload of the indicated length\n        IF insufficient bytes are available THEN STOP iteration\n        COMPUTE the CRC32 of the payload\n        IF the computed checksum does not match the stored checksum THEN STOP iteration\n        APPEND the payload to the collection of recovered records\n    RETURN the collection of recovered records\nDESIGN a test to validate the WAL implementation:\n    GENERATE 100 distinct byte records\n    FOR each record in the generated set:\n        CALL the append operation to write the record to the log\n    CLOSE the log file\n    SELECT a byte offset that falls inside the middle of a stored record\n    TRUNCATE the log file at the selected offset to simulate a crash scenario\n    REOPEN the log file\n    CALL the recover operation to retrieve the list of intact records\n    DETERMINE the expected subset of records that should remain valid prior to the truncation point\n    ASSERT that the recovered list matches the expected subset exactly\n    CLEANUP any temporary files created for the test",
+    "confirmed": true,
+    "source_prompt_id": "I-7022e417bb-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-7022e417bb-X1",
+    "body": "0b43909a7e7f866ee279404a2c615e88ab7d45830e82f5835401b2126cd9e0cc",
+    "confirmed": true,
+    "source_prompt_id": "I-7022e417bb-P1",
+    "source_plan_id": "I-7022e417bb-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

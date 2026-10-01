@@ -1,0 +1,23 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Split the provided single-file Python script that handles CSV processing, validation, transformation, and reporting into a proper multi-module Python package named 'mypackage' with clear imports. Create the following modules: mypackage/__init__.py, mypackage/io.py, mypackage/validation.py, mypackage/transform.py, mypackage/report.py. Include tests for each module.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "mypackage/__init__.py",
+    "mypackage/io.py",
+    "mypackage/validation.py",
+    "mypackage/transform.py",
+    "mypackage/report.py",
+    "read_csv",
+    "validate_row",
+    "transform",
+    "summarize",
+    "write_report",
+    "csv",
+    "sys",
+    "json",
+    "statistics",
+    "datetime"
+  ]
+}

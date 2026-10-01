@@ -1,0 +1,94 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145558\results\09-03_nested_code_fence_escape\session\catalogue-09-03-1790881455\worker-progress.log]
+[api] response received in 658ms
+[api] response received in 433ms
+Prompt Pseudocode
+
+WRITE a function that formats code blocks.
+ENSURE the function correctly handles edge cases where the input contains literal backticks (`), backslashes (\\), and raw triple backticks inside strings.
+ENSURE nested backtick sequences do not break formatting.
+INCLUDE tests that cover inputs containing these characters.
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145558\results\09-03_nested_code_fence_escape\session\catalogue-09-03-1790881455\worker-progress.log]
+[api] response received in 615ms
+Response Plan Pseudocode
+
+DEFINE a function format_code_block that accepts a string INPUT
+ESCAPE any backslashes in INPUT by replacing \\ with \\\\
+ESCAPE any literal backticks in INPUT by prefixing each backtick with a backslash
+DETECT sequences of triple backticks within INPUT and replace them with escaped versions to prevent termination of outer code fences
+WRAP the escaped INPUT with a surrounding code fence using triple backticks
+RETURN the wrapped string as OUTPUT
+CREATE a test suite for format_code_block
+INCLUDE a test case where INPUT contains single backticks
+INCLUDE a test case where INPUT contains backslashes
+INCLUDE a test case where INPUT contains raw triple backticks
+INCLUDE a test case with nested backtick sequences
+ASSERT that each test case returns a correctly formatted code block without breaking the outer fence
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145558\results\09-03_nested_code_fence_escape\session\catalogue-09-03-1790881455\worker-progress.log]
+[api] response received in 810ms
+def format_code_block(code: str) -> str:
+    """Return a markdown code block with the given code string escaped.
+
+    The function:
+    1. Escapes backslashes ("\\") by doubling them.
+    2. Escapes any backticks ("`") by prefixing them with a backslash.
+    3. Detects raw triple backticks inside the string and escapes them so they do not close the outer fence.
+    4. Wraps the escaped string in a markdown fenced code block using triple backticks.
+    """
+    # Step 1: escape backslashes
+    escaped = code.replace('\\', '\\\\')
+    # Step 2: escape backticks
+    escaped = escaped.replace('`', '\`')
+    # Step 3: escape any occurrence of three consecutive escaped backticks ("\`\`\`")
+    # This would otherwise form a closing fence when the outer fence is unescaped.
+    escaped = escaped.replace('\`\`\`', '\`\\`\`')
+    # Wrap in triple backticks
+    return f"```\n{escaped}\n```"
+
+# Test suite
+if __name__ == "__main__":
+    import unittest
+
+    class TestFormatCodeBlock(unittest.TestCase):
+        def test_single_backticks(self):
+            inp = "print('Hello `world`')"
+            out = format_code_block(inp)
+            self.assertTrue(out.startswith('```'))
+            self.assertIn("\`", out)
+            self.assertNotIn('```\n', out[4:])  # inner triple backticks should not appear
+
+        def test_backslashes(self):
+            inp = r"path = 'C:\\Users\\test'"
+            out = format_code_block(inp)
+            self.assertIn('\\\\', out)  # each backslash doubled twice
+            self.assertTrue(out.endswith('```'))
+
+        def test_raw_triple_backticks(self):
+            inp = "some text ``` inside code"
+            out = format_code_block(inp)
+            # The raw triple backticks should be escaped and not terminate the block
+            self.assertNotIn('```\nsome text ``` inside code\n```', out)
+            self.assertIn('\`\`\`', out)  # escaped version appears
+
+        def test_nested_backticks(self):
+            inp = "def f():\n    return '`nested`'"
+            out = format_code_block(inp)
+            self.assertIn('\`nested\`', out)
+            self.assertTrue(out.startswith('```'))
+            self.assertTrue(out.endswith('```'))
+
+    unittest.main(argv=['first-arg-is-ignored'], exit=False)
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

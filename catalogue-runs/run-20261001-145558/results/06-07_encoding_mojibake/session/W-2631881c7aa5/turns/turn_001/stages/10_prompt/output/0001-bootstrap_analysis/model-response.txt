@@ -1,0 +1,16 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Diagnose which characters become corrupted due to mismatched encodings, explain why the corruption occurs, and provide corrected save_to_file and load_from_file functions that use a consistent encoding. Include a test that writes and reads back text containing characters from at least three Unicode blocks (Latin, CJK, and emoji) and verifies that the original and recovered strings match.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "save_to_file",
+    "load_from_file",
+    "latin-1",
+    "utf-8",
+    "data.txt",
+    "Café résumé naïve Üntermensch",
+    "汉字",
+    "😀"
+  ]
+}

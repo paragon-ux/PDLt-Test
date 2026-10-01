@@ -1,0 +1,212 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Implement a cron expression parser and evaluator in Python:
+1. Parse standard 5-field cron expressions: minute hour day-of-month month day-of-week.
+2. Support: specific values (5), ranges (1-5), steps (*/15, 1-30/5), lists (1,3,5), and wildcard (*).
+3. matches(cron_expr, datetime) -> bool: Check if a datetime matches the expression.
+4. next_fire(cron_expr, after_datetime) -> datetime: Find the next datetime that matches.
+5. Include tests: "*/15 * * * *" fires at :00, :15, :30, :45; "0 9 * * 1-5" fires at 9am on weekdays; "0 0 1 1 *" fires at midnight on January 1st.
+ASSISTANT> Prompt Pseudocode
+
+IMPLEMENT a cron expression parser and evaluator in Python that parses standard 5-field cron expressions (minute, hour, day-of-month, month, day-of-week) and supports specific values, ranges, steps, lists, and wildcard.
+DEFINE the function matches(cron_expr, datetime) -> bool that checks if a datetime matches the expression.
+DEFINE the function next_fire(cron_expr, after_datetime) -> datetime that finds the next datetime that matches the expression.
+INCLUDE tests for the expression "*/15 * * * *" verifying it fires at minutes :00, :15, :30, and :45 each hour.
+INCLUDE tests for the expression "0 9 * * 1-5" verifying it fires at 9:00 AM on weekdays (Monday through Friday).
+INCLUDE tests for the expression "0 0 1 1 *" verifying it fires at midnight on January 1st.
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+PARSE the cron expression into the five fields (minute, hour, day-of-month, month, day-of-week)
+NORMALIZE each field token into a set of allowed integer values according to cron syntax (wildcard, list, range, step)
+VALIDATE that all normalized values respect the legal ranges for each field
+DEFINE function matches(cron_expr, datetime) -> bool
+    PARSE and NORMALIZE the cron expression
+    EXTRACT minute, hour, day-of-month, month, day-of-week from the datetime argument
+    COMPARE each datetime component to its corresponding normalized set
+    RETURN true if all components match, otherwise false
+DEFINE function next_fire(cron_expr, after_datetime) -> datetime
+    SET candidate to after_datetime plus one minute
+    REPEAT
+        IF matches(cron_expr, candidate) THEN
+            RETURN candidate
+        INCREMENT candidate by one minute
+    END REPEAT
+DEVELOP unit test suite for the parser and evaluator
+    FOR expression "*/15 * * * *"
+        CREATE test cases at minutes :00, :15, :30, :45 of several hours and ASSERT matches returns true
+        CREATE test cases at minutes not divisible by 15 and ASSERT matches returns false
+    FOR expression "0 9 * * 1-5"
+        CREATE test cases at 9:00 on Monday through Friday and ASSERT matches returns true
+        CREATE test cases on Saturday, Sunday, or at other times and ASSERT matches returns false
+    FOR expression "0 0 1 1 *"
+        CREATE test cases at midnight on January 1st of multiple years and ASSERT matches returns true
+        CREATE test cases at other dates and times and ASSERT matches returns false
+PACKAGE the implementation and test suite as a Python module
+PROVIDE documentation that describes usage of matches and next_fire functions with example calls
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> import datetime
+from typing import Set, List
+
+CRON_FIELD_RANGES = {
+    "minute": (0, 59),
+    "hour": (0, 23),
+    "day_of_month": (1, 31),
+    "month": (1, 12),
+    "day_of_week": (0, 6),  # 0=Sunday per cron convention
+}
+
+def _parse_field(field: str, name: str) -> Set[int]:
+    """Parse a single cron field into a set of allowed integer values.
+
+    Supports:
+        *   – wildcard (all values)
+        */N – step values across the whole range
+        A-B – inclusive range
+        A-B/N – range with step
+        A,N,M – comma‑separated list of values or ranges
+    """
+    min_val, max_val = CRON_FIELD_RANGES[name]
+    result: Set[int] = set()
+    if field == "*":
+        return set(range(min_val, max_val + 1))
+    for part in field.split(","):
+        if "/" in part:
+            range_part, step_part = part.split("/", 1)
+            step = int(step_part)
+            if range_part == "*":
+                start, end = min_val, max_val
+            elif "-" in range_part:
+                start_s, end_s = range_part.split("-", 1)
+                start, end = int(start_s), int(end_s)
+            else:
+                start = int(range_part)
+                end = max_val
+            for v in range(start, end + 1, step):
+                if min_val <= v <= max_val:
+                    result.add(v)
+        elif "-" in part:
+            start_s, end_s = part.split("-", 1)
+            start, end = int(start_s), int(end_s)
+            for v in range(start, end + 1):
+                if min_val <= v <= max_val:
+                    result.add(v)
+        else:
+            v = int(part)
+            if min_val <= v <= max_val:
+                result.add(v)
+    return result
+
+def _parse_cron(cron_expr: str) -> List[Set[int]]:
+    """Parse a full 5‑field cron expression into a list of allowed values.
+    Order: minute, hour, day‑of‑month, month, day‑of‑week.
+    """
+    fields = cron_expr.strip().split()
+    if len(fields) != 5:
+        raise ValueError("Cron expression must have exactly 5 fields")
+    names = ["minute", "hour", "day_of_month", "month", "day_of_week"]
+    return [_parse_field(f, n) for f, n in zip(fields, names)]
+
+def matches(cron_expr: str, dt: datetime.datetime) -> bool:
+    """Return True if *dt* matches the given cron expression.
+    ``dt`` is assumed to be timezone‑aware or naive – the function only inspects
+    its calendar fields.
+    """
+    minute_set, hour_set, dom_set, month_set, dow_set = _parse_cron(cron_expr)
+    # Cron's day‑of‑week uses 0=Sunday; Python's isoweekday uses 1=Monday.
+    dow = (dt.weekday() + 1) % 7  # Convert Monday=0..Sunday=6 to Sunday=0..Saturday=6
+    return (
+        dt.minute in minute_set and
+        dt.hour in hour_set and
+        dt.day in dom_set and
+        dt.month in month_set and
+        dow in dow_set
+    )
+
+def next_fire(cron_expr: str, after_dt: datetime.datetime) -> datetime.datetime:
+    """Find the next datetime **after_dt** (exclusive) that matches *cron_expr*.
+    The search increments minute‑by‑minute – sufficient for typical cron granularity.
+    """
+    candidate = after_dt + datetime.timedelta(minutes=1)
+    while True:
+        if matches(cron_expr, candidate):
+            return candidate
+        candidate += datetime.timedelta(minutes=1)
+
+# ---------- Unit Tests ----------
+import unittest
+
+class TestCronParser(unittest.TestCase):
+    def test_quarter_hour(self):
+        expr = "*/15 * * * *"
+        # Positive matches
+        for hour in range(0, 24):
+            for minute in (0, 15, 30, 45):
+                dt = datetime.datetime(2023, 5, 17, hour, minute)
+                self.assertTrue(matches(expr, dt), f"{dt} should match")
+        # Negative matches
+        for minute in range(60):
+            if minute % 15 != 0:
+                dt = datetime.datetime(2023, 5, 17, 12, minute)
+                self.assertFalse(matches(expr, dt), f"{dt} should not match")
+
+    def test_weekday_9am(self):
+        expr = "0 9 * * 1-5"
+        # Monday=0 .. Friday=4 => cron dow 1-5 corresponds to weekday 0‑4
+        for dow in range(0, 5):  # Monday to Friday
+            dt = datetime.datetime(2023, 5, 15 + dow, 9, 0)
+            self.assertTrue(matches(expr, dt), f"{dt} should match")
+        # Saturday and Sunday
+        for dow in (5, 6):
+            dt = datetime.datetime(2023, 5, 20 + (dow-5), 9, 0)
+            self.assertFalse(matches(expr, dt), f"{dt} should not match")
+        # Wrong hour on a weekday
+        dt = datetime.datetime(2023, 5, 15, 10, 0)
+        self.assertFalse(matches(expr, dt))
+
+    def test_jan_first_midnight(self):
+        expr = "0 0 1 1 *"
+        for year in (2021, 2022, 2023):
+            dt = datetime.datetime(year, 1, 1, 0, 0)
+            self.assertTrue(matches(expr, dt), f"{dt} should match")
+        # Same day but different time
+        dt = datetime.datetime(2023, 1, 1, 0, 1)
+        self.assertFalse(matches(expr, dt))
+        # Different month
+        dt = datetime.datetime(2023, 2, 1, 0, 0)
+        self.assertFalse(matches(expr, dt))
+
+    def test_next_fire_quarter_hour(self):
+        expr = "*/15 * * * *"
+        start = datetime.datetime(2023, 5, 17, 12, 7)
+        nxt = next_fire(expr, start)
+        self.assertEqual(nxt, datetime.datetime(2023, 5, 17, 12, 15))
+        # Wrap to next hour
+        start = datetime.datetime(2023, 5, 17, 12, 59)
+        nxt = next_fire(expr, start)
+        self.assertEqual(nxt, datetime.datetime(2023, 5, 17, 13, 0))
+
+    def test_next_fire_weekday(self):
+        expr = "0 9 * * 1-5"
+        start = datetime.datetime(2023, 5, 19, 8, 0)  # Friday before 9am
+        nxt = next_fire(expr, start)
+        self.assertEqual(nxt, datetime.datetime(2023, 5, 19, 9, 0))
+        # After Friday 9am should go to Monday
+        start = datetime.datetime(2023, 5, 19, 9, 1)
+        nxt = next_fire(expr, start)
+        self.assertEqual(nxt, datetime.datetime(2023, 5, 22, 9, 0))
+
+    def test_next_fire_jan_first(self):
+        expr = "0 0 1 1 *"
+        start = datetime.datetime(2022, 12, 31, 23, 59)
+        nxt = next_fire(expr, start)
+        self.assertEqual(nxt, datetime.datetime(2023, 1, 1, 0, 0))
+
+if __name__ == "__main__":
+    unittest.main()
+PROTOCOL_CLOSED
+=== PDLt session ended ===

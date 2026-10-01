@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-cdc6f58110",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-cdc6f58110-P1",
+    "body": "IMPLEMENT a Markdown-to-HTML converter in Python that processes the following Markdown subset: headers (# through ######), bold (**text** and __text__), italic (*text* and _text_), inline code (`code`), links ([text](url)), unordered lists (lines starting with - or *), code blocks (lines indented by 4 spaces or fenced with ```), and paragraphs (consecutive non‑blank lines wrapped in <p> tags).\n\nDO NOT use any external libraries.\n\nINCLUDE tests covering at least 10 distinct Markdown inputs that demonstrate all features, nested formatting (e.g., bold inside italic), and edge cases such as empty headers and links with special characters.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-cdc6f58110-R1",
+    "body": "DEFINE the converter architecture\nPARSE the raw markdown input into block‑level elements\nIDENTIFY block type for each line or group of lines\n  IF line starts with 1‑6 \"#\" characters THEN classify as header block\n  ELSE IF line matches a fenced code delimiter or four‑space indentation THEN classify as code block\n  ELSE IF line starts with \"-\" OR \"*\" THEN classify as unordered list block\n  ELSE IF line is non‑blank THEN classify as paragraph block\nTOKENIZE block content for inline elements\n  RECOGNIZE bold delimiters \"**\" and \"__\"\n  RECOGNIZE italic delimiters \"*\" and \"_\"\n  RECOGNIZE inline code delimiters \"`\"\n  RECOGNIZE link patterns \"[text](url)\"\nAPPLY transformation rules to map tokens to HTML tags\n  MAP header levels to <h1>‑<h6>\n  MAP bold to <strong>\n  MAP italic to <em>\n  MAP inline code to <code>\n  MAP links to <a href=\\\"url\\\">text</a>\n  WRAP paragraphs in <p>\n  CONVERT unordered list items to <ul> with <li>\n  PRESERVE code block formatting inside <pre><code>\nHANDLE nested inline formatting by processing tokens from outermost to innermost\nHANDLE edge cases\n  TREAT empty header lines as empty header tags\n  ESCAPE special characters in URLs\n  PRESERVE whitespace inside inline code spans\nCOMPOSE the final HTML output by concatenating transformed blocks in original order\nIMPLEMENT a test suite covering at least ten markdown inputs\n  CREATE markdown samples for each required feature and edge case\n  FOR each sample CALL the converter and COMPARE the result with the expected HTML\nVALIDATE that only the Python standard library is used",
+    "confirmed": true,
+    "source_prompt_id": "I-cdc6f58110-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-cdc6f58110-X1",
+    "body": "b14f5f023d42dd6755d7f031f36a0e1f0971ac0154e98d4a131c6df7afacd076",
+    "confirmed": true,
+    "source_prompt_id": "I-cdc6f58110-P1",
+    "source_plan_id": "I-cdc6f58110-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

@@ -1,0 +1,19 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Implement a counting Bloom filter in Python with the following requirements:
+1. Support add(item), remove(item), and might_contain(item).
+2. Use k independent hash functions (murmur-style) with a configurable false positive rate target.
+3. Automatically calculate optimal filter size m and number of hash functions k given expected element count n and desired false positive rate p.
+4. Include a test that inserts 10000 items, verifies zero false negatives, measures the actual false positive rate over 10000 non-member queries, and confirms it is within 2x of the theoretical bound.
+APPROACH/RISK NOTES:
+
+OPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):
+- add(item)
+- remove(item)
+- might_contain(item)
+- 10000 items
+- 10000 non-member queries
+- 2x
+- m
+- k
+- n
+- p

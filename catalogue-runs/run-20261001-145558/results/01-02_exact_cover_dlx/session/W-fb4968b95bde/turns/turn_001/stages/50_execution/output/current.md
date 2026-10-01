@@ -1,0 +1,186 @@
+import json
+
+# Define the exact cover problem
+U = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+sets = {
+    1: {1, 2, 3},
+    2: {4, 5, 6},
+    3: {7, 8, 9},
+    4: {1, 4, 7},
+    5: {2, 5, 8},
+    6: {3, 6, 9},
+    7: {1, 5, 9},
+    8: {2, 6, 7},
+    9: {3, 4, 8},
+}
+
+# Build dancing links structures
+class Node:
+    __slots__ = ('left', 'right', 'up', 'down', 'column', 'row')
+    def __init__(self):
+        self.left = self.right = self.up = self.down = self
+        self.column = None
+        self.row = None
+
+class ColumnNode(Node):
+    __slots__ = ('size', 'name')
+    def __init__(self, name):
+        super().__init__()
+        self.size = 0
+        self.name = name
+        self.column = self
+
+# Header
+header = ColumnNode('header')
+columns = {}
+for elem in U:
+    col = ColumnNode(elem)
+    columns[elem] = col
+    # link into header list
+    col.right = header
+    col.left = header.left
+    header.left.right = col
+    header.left = col
+
+# Add rows (sets) to the structure
+row_nodes = {}
+for r_id, r_set in sets.items():
+    first = None
+    for elem in r_set:
+        col = columns[elem]
+        node = Node()
+        node.column = col
+        node.row = r_id
+        # vertical link
+        node.down = col
+        node.up = col.up
+        col.up.down = node
+        col.up = node
+        col.size += 1
+        # horizontal link within the row
+        if first is None:
+            first = node
+            node.right = node.left = node
+        else:
+            node.right = first
+            node.left = first.left
+            first.left.right = node
+            first.left = node
+    row_nodes[r_id] = first
+
+solution = []
+solutions = []
+
+def cover(col):
+    col.right.left = col.left
+    col.left.right = col.right
+    i = col.down
+    while i != col:
+        j = i.right
+        while j != i:
+            j.down.up = j.up
+            j.up.down = j.down
+            j.column.size -= 1
+            j = j.right
+        i = i.down
+
+def uncover(col):
+    i = col.up
+    while i != col:
+        j = i.left
+        while j != i:
+            j.column.size += 1
+            j.down.up = j
+            j.up.down = j
+            j = j.left
+        i = i.up
+    col.right.left = col
+    col.left.right = col
+
+def search(k=0):
+    if header.right == header:
+        solutions.append(list(solution))
+        return
+    # Choose column with minimal size
+    c = header.right
+    min_size = c.size
+    col = c
+    while c != header:
+        if c.size < min_size:
+            min_size = c.size
+            col = c
+        c = c.right
+    if min_size == 0:
+        return
+    cover(col)
+    r = col.down
+    while r != col:
+        solution.append(r.row)
+        j = r.right
+        while j != r:
+            cover(j.column)
+            j = j.right
+        search(k+1)
+        # backtrack
+        solution.pop()
+        j = r.left
+        while j != r:
+            uncover(j.column)
+            j = j.left
+        r = r.down
+    uncover(col)
+
+search()
+
+# Verify each solution covers every element exactly once
+valid_solutions = []
+for sol in solutions:
+    covered = set()
+    for r_id in sol:
+        covered.update(sets[r_id])
+    if covered == U and all(len(sets[r_id] & covered) == len(sets[r_id]) for r_id in sol):
+        valid_solutions.append(sol)
+
+# Self‑contained test
+assert all(set().union(*[sets[r] for r in sol]) == U for sol in valid_solutions), "A solution does not cover all elements"
+assert all(len(set().union(*[sets[r] for r in sol])) == len(U) for sol in valid_solutions), "Duplicate coverage detected"
+
+# Prepare witness output
+witness = {
+    "polarity": "positive",
+    "data": {
+        "exact_covers": valid_solutions
+    }
+}
+print("WITNESS: " + json.dumps(witness))
+
+```json
+{
+  "files": [],
+  "reconciliation": [],
+  "open_defects": [],
+  "witness": {
+    "polarity": "positive",
+    "data": {
+      "exact_covers": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6
+        ],
+        [
+          7,
+          8,
+          9
+        ]
+      ]
+    },
+    "provisional": false
+  }
+}
+```

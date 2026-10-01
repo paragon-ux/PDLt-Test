@@ -1,0 +1,9 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Convert the provided Dockerfile into an optimized multi-stage build that minimizes final image size. Use separate build and runtime stages, select a slim or distroless base for the final stage, exclude test files and build tools from the final image, and apply layer caching best practices. Explain each optimization and provide an estimate of the size reduction achieved.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "dockerfile"
+  ]
+}

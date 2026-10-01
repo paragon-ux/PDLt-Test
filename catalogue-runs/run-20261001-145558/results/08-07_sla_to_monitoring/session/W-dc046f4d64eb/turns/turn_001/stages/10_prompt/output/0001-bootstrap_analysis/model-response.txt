@@ -1,0 +1,7 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Extract concrete monitoring rules from the provided SLA document. For each SLA commitment, identify the metric to monitor, the alerting threshold, the measurement window, and produce a sample alerting rule in Prometheus-style syntax.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": []
+}

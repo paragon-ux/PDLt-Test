@@ -1,0 +1,19 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Convert the provided Node.js‑style callback code into clean async/await Python. Preserve the same logical flow and error handling, using async def and await, with proper try/except blocks. Include unit tests that verify the success path (user, org, permissions fetched correctly) and that errors propagate correctly through the async functions.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "fetch_user",
+    "fetch_org",
+    "fetch_permissions",
+    "get_user_context",
+    "async def",
+    "await",
+    "try",
+    "except",
+    "final_callback",
+    "test_success_path",
+    "test_error_propagation"
+  ]
+}

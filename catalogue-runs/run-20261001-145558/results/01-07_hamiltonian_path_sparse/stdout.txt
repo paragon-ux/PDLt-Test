@@ -1,0 +1,94 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145558\results\01-07_hamiltonian_path_sparse\session\catalogue-01-07-1790881026\worker-progress.log]
+[api] response received in 639ms
+[api] response received in 546ms
+Prompt Pseudocode
+
+READ the undirected graph G with nodes 0-11 and the supplied edge list
+DETERMINE whether G contains a Hamiltonian path that visits every node exactly once
+IF a Hamiltonian path exists THEN OUTPUT the complete sequence of node labels in order
+USE a backtracking search with pruning to explore candidate paths
+VERIFY that the path includes all 12 nodes and that each consecutive pair of nodes corresponds to a valid edge from the list
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145558\results\01-07_hamiltonian_path_sparse\session\catalogue-01-07-1790881026\worker-progress.log]
+[api] response received in 1083ms
+Response Plan Pseudocode
+
+READ the undirected graph G with nodes 0-11 and the supplied edge list
+INITIALIZE a backtracking search to construct a candidate path
+FOR each node as a potential start node DO
+    RECURSIVELY EXTEND the current path by adding an adjacent unvisited node
+    PRUNE the search branch if no adjacent unvisited nodes remain while the path is incomplete
+    CONTINUE until the path includes all 12 nodes
+ENDFOR
+IF a Hamiltonian path is found THEN
+    VERIFY that every consecutive pair of nodes in the path corresponds to a valid edge from the list
+    OUTPUT the complete sequence of node labels in order
+ENDIF
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-145558\results\01-07_hamiltonian_path_sparse\session\catalogue-01-07-1790881026\worker-progress.log]
+[api] response received in 824ms
+import json
+
+graph_edges = {(0,1),(1,2),(2,3),(3,4),(4,5),(5,6),(6,7),(7,8),(8,9),(9,10),(10,11),
+               (0,3),(2,7),(4,9),(6,11),(1,8)}
+# make undirected
+edges = set()
+for u,v in graph_edges:
+    edges.add((u,v))
+    edges.add((v,u))
+
+path = [0,1,2,3,4,5,6,7,8,9,10,11]
+# verification
+assert len(path) == 12, "Path does not include all nodes"
+assert len(set(path)) == 12, "Path contains duplicate nodes"
+for a,b in zip(path, path[1:]):
+    assert (a,b) in edges, f"Edge ({a},{b}) not in graph"
+
+witness = {
+    "polarity": "positive",
+    "data": {
+        "hamiltonian_path": path
+    }
+}
+print("WITNESS: " + json.dumps(witness))
+
+```json
+{
+  "files": [],
+  "reconciliation": [],
+  "open_defects": [],
+  "witness": {
+    "polarity": "positive",
+    "data": {
+      "hamiltonian_path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    "provisional": false
+  }
+}
+```
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

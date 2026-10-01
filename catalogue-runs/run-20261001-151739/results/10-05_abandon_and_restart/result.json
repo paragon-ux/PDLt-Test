@@ -1,0 +1,49 @@
+{
+  "id": "10-05",
+  "category": "multi_turn_and_revision",
+  "file": "10_multi_turn_and_revision/abandon_and_restart.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "HARNESS_ERROR",
+  "exit_code": 4,
+  "timed_out": false,
+  "elapsed_seconds": 2.09,
+  "start_time": "2026-10-01T19:30:17.338685+00:00",
+  "session_id": "catalogue-10-05-1790883017",
+  "transcript_file": "results\\10-05_abandon_and_restart\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-01"
+  ],
+  "tags": [
+    "stop",
+    "restart",
+    "clean-state"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": "(Multi-turn test: After the prompt review stage, the tester should /stop, then submit an entirely new prompt: \"Implement a ROT13 encoder.\" Verify the session starts completely clean with no state bleed from the abandoned Caesar cipher task.)",
+  "model_calls": {
+    "total": 0,
+    "by_operation": {},
+    "repairs": 0,
+    "execution_attempts": null,
+    "plan_echo": null,
+    "reasoning_tokens": {},
+    "output_tokens": {}
+  },
+  "repeat": null,
+  "harness_error": {
+    "category": "PROVIDER_REJECTED_REQUEST",
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "status": 403,
+    "attempts": [],
+    "message": "HTTP 403: {\"error\":{\"message\":\"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/c511b51bb215e7875dbde1054934ed9d3d39bae3cf8306e85d716fd1e34b98f8\",\"code\":403}}"
+  }
+}

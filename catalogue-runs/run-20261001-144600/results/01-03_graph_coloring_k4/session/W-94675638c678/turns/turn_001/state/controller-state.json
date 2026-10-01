@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-a708b06954",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-a708b06954-P1",
+    "body": "PROVIDE a valid 4‑coloring for wheel graph W_11 using colors from {1,2,3,4}\nENSURE that adjacent nodes receive different colors\nLIST the assigned color for each node, including hub node 0 and peripheral nodes 1 through 11\nDEMONSTRATE that a 3‑coloring is insufficient by showing that the odd peripheral cycle (nodes 1‑11) together with the hub node 0 forces a fourth color",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-a708b06954-R1",
+    "body": "COMPUTE a valid 4‑coloring for wheel graph W_11 using the color set {1,2,3,4}\nLIST the assigned color for each vertex, including hub node 0 and peripheral nodes 1 through 11\nARGUE that the peripheral cycle (nodes 1‑11) is of odd length, requiring at least three distinct colors\nSHOW that the hub node 0 is adjacent to every peripheral node, forcing a fourth color distinct from the three used on the cycle\nCONCLUDE that a 3‑coloring cannot satisfy both the odd peripheral cycle and the hub adjacency constraints",
+    "confirmed": true,
+    "source_prompt_id": "I-a708b06954-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-a708b06954-X1",
+    "body": "c9a7cd12c3e4924373f7a423fb99f1f0ff533911be209020595af8b4e2a251e9",
+    "confirmed": true,
+    "source_prompt_id": "I-a708b06954-P1",
+    "source_plan_id": "I-a708b06954-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

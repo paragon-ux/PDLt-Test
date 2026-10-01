@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-1f84cffb8c",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-1f84cffb8c-P1",
+    "body": "FIND all subsets of the set S = {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21} that sum exactly to the target T = 40.\nEMIT each subset.\nVERIFY that each emitted subset sums to T = 40.\nREPORT the total number of solutions.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-1f84cffb8c-R1",
+    "body": "DEFINE S as {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21}\nDEFINE T as 40\nINITIALIZE solution_count to 0\nCALL BACKTRACK with empty subset and full S\nIN BACKTRACK(current_subset, remaining_elements):\n    CALCULATE subset_sum as sum of elements in current_subset\n    IF subset_sum equals T THEN\n        EMIT current_subset\n        INCREMENT solution_count\n    ELSE IF subset_sum greater than T THEN\n        RETURN\n    END IF\n    FOR each element e IN remaining_elements DO\n        CALL BACKTRACK with current_subset + e and elements after e\n    ENDFOR\nEND BACKTRACK\nAFTER BACKTRACK completes:\n    REPORT solution_count",
+    "confirmed": true,
+    "source_prompt_id": "I-1f84cffb8c-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-1f84cffb8c-X1",
+    "body": "dac114ef319a8d7ec590716edd9bdab4305de3a80d9f1a66e1c82c0a6550d470",
+    "confirmed": true,
+    "source_prompt_id": "I-1f84cffb8c-P1",
+    "source_plan_id": "I-1f84cffb8c-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

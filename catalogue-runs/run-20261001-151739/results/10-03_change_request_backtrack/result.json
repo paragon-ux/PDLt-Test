@@ -1,0 +1,50 @@
+{
+  "id": "10-03",
+  "category": "multi_turn_and_revision",
+  "file": "10_multi_turn_and_revision/change_request_backtrack.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "HARNESS_ERROR",
+  "exit_code": 4,
+  "timed_out": false,
+  "elapsed_seconds": 1.95,
+  "start_time": "2026-10-01T19:30:12.770496+00:00",
+  "session_id": "catalogue-10-03-1790883012",
+  "transcript_file": "results\\10-03_change_request_backtrack\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-01",
+    "PDL-08"
+  ],
+  "tags": [
+    "backtrack",
+    "change-request",
+    "state-machine"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": "(Multi-turn test: After confirming the prompt and seeing the plan, the tester should use \"change request\" to go back to prompt review and change the requirement to: \"Actually, build a CLI tool that wraps the JSONPlaceholder API instead of a library.\")",
+  "model_calls": {
+    "total": 0,
+    "by_operation": {},
+    "repairs": 0,
+    "execution_attempts": null,
+    "plan_echo": null,
+    "reasoning_tokens": {},
+    "output_tokens": {}
+  },
+  "repeat": null,
+  "harness_error": {
+    "category": "PROVIDER_REJECTED_REQUEST",
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "status": 403,
+    "attempts": [],
+    "message": "HTTP 403: {\"error\":{\"message\":\"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/c511b51bb215e7875dbde1054934ed9d3d39bae3cf8306e85d716fd1e34b98f8\",\"code\":403}}"
+  }
+}

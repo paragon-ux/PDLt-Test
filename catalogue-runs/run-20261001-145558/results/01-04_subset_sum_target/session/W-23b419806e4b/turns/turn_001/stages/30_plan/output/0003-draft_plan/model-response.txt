@@ -1,0 +1,1 @@
+{"neutral_plan_body":"READ the set S\nREAD the target value T\nINITIALIZE a counter for solutions to zero\nEXECUTE a backtracking search to explore all subsets of S\nFOR each generated subset\n    IF the subset sum equals T\n        EMIT the subset\n        INCREMENT the solution counter\n    ENDIF\nENDFOR\nREPORT the total number of solutions"}

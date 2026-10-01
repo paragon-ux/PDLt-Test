@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-e520f3f280",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-e520f3f280-P1",
+    "body": "REFactor the provided Python module to eliminate global mutable state and environment variable dependencies.\nUSE dependency injection to supply the database connection, cache object, and DB host/port.\nMAINTAIN the existing public API functions: get_connection, query, get_stats, reset.\nENSURE request counting and caching continue to operate correctly with injected components.\nALLOW tests to inject a mock database connection and verify query behavior without actual environment variables.\nEXPOSE injection points for alternative DB host/port and cache objects.\nPRESERVE the functional requirements and behavior of the original module.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-e520f3f280-R1",
+    "body": "REFactor the module to remove global mutable state\nEXTRACT the database connection, cache object, and host/port values as parameters to functions\nINTRODUCE a configuration holder or class that stores the injected components\nMODIFY get_connection to accept a connection parameter or retrieve it from the injected configuration\nUPDATE query to receive the database connection and cache via injection and use them for request counting and caching\nALTER get_stats to operate with the injected cache and connection without relying on environment variables\nADD a reset function that clears or reinitializes the injected state as needed\nENSURE the public API functions retain their original signatures by providing wrapper functions that internally call the injected implementations\nDOCUMENT the injection points for alternative DB host/port and cache objects\nDESIGN tests to supply mock connection and cache instances through the injection mechanism and verify query behavior",
+    "confirmed": true,
+    "source_prompt_id": "I-e520f3f280-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-e520f3f280-X1",
+    "body": "4143801ad80df5f9f2d6564978ae4ae095ff859f14347dfa56bfe3835e947763",
+    "confirmed": true,
+    "source_prompt_id": "I-e520f3f280-P1",
+    "source_plan_id": "I-e520f3f280-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

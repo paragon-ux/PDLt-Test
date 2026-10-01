@@ -1,0 +1,18 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Implement a Python module that parses standard 5-field cron expressions (minute, hour, day-of-month, month, day-of-week) and evaluates them. The parser must support specific values (e.g., 5), ranges (e.g., 1-5), step values (e.g., */15, 1-30/5), lists (e.g., 1,3,5), and wildcards (*). Provide a function matches(cron_expr, datetime) -> bool that returns True if a given datetime matches the expression. Provide a function next_fire(cron_expr, after_datetime) -> datetime that returns the next datetime after after_datetime that matches the expression. Include tests verifying that the expression "*/15 * * * *" fires at minute 0, 15, 30, 45 of each hour; "0 9 * * 1-5" fires at 9:00 on weekdays; and "0 0 1 1 *" fires at midnight on January 1st.
+APPROACH/RISK NOTES:
+
+OPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):
+- matches
+- next_fire
+- cron_expr
+- datetime
+- after_datetime
+- */15 * * * *
+- 0 9 * * 1-5
+- 0 0 1 1 *
+- minute
+- hour
+- day-of-month
+- month
+- day-of-week

@@ -1,0 +1,7 @@
+READ the SLA commitments: 99.9% uptime measured monthly, excluding planned maintenance, with planned maintenance windows limited to max 4 hours/month; response time for read operations ≤ 200ms at the 95th percentile; response time for write operations ≤ 500ms at the 95th percentile; error rate ≤ 0.1% of total requests; customers must be notified 48 hours before planned maintenance.
+FOR each SLA commitment DO:
+  DEFINE the metric to monitor.
+  SPECIFY the alerting threshold as per the SLA.
+  SPECIFY the measurement window appropriate for the metric.
+  PROVIDE a sample Prometheus‑style alert rule that fires when the threshold is breached.
+INCLUDE the following entities exactly as listed: "99.9% uptime", "200ms", "95th percentile", "500ms", "0.1%", "max 4 hours/month", "48 hours", "read operations", "write operations"

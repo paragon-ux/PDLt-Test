@@ -1,0 +1,289 @@
+{
+  "turn_id": "turn_001",
+  "status": "CLOSED_SUCCESS",
+  "deliverable_sha256": "5154d98490883223b11edc3e02e1d71a0723949b546db9555ba04d512dd97a8a",
+  "events": [
+    {
+      "at_utc": "2026-10-01T19:08:13.735966+00:00",
+      "kind": "WORKSPACE_CREATED",
+      "payload": {
+        "workspace_id": "W-8e98df4dc5a7",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:13.735966+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:14.079584+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 0.99
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:14.642168+00:00",
+      "kind": "EXECUTION_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_100K_STEPS",
+        "distribution": {
+          "WITHIN_100K_STEPS": 0.99,
+          "WITHIN_10M_STEPS": 0.01,
+          "BEYOND_100M_STEPS": 0.0,
+          "WITHIN_100M_STEPS": 0.0
+        },
+        "tier": "MINIMAL",
+        "passed_gating": true,
+        "step_limit": 100000,
+        "timeout_seconds": 30.0,
+        "memory_mb": 256
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:14.645214+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": false,
+        "domain": null
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:14.657176+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:15.393019+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:15.405023+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:16.120699+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:16.123697+00:00",
+      "kind": "PROMPT_LINT_RETRY",
+      "payload": {
+        "violations": [
+          "Line begins with invented field label 'BASE CASE:' (PDL-05); state each operation directly."
+        ]
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:16.134700+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0003-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:16.785693+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0003-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:16.788697+00:00",
+      "kind": "PROMPT_LINT_UNRESOLVED",
+      "payload": {}
+    },
+    {
+      "at_utc": "2026-10-01T19:08:16.805695+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-535850dc4d",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:16.815696+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-535850dc4d-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:17.059700+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-535850dc4d-P1"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:17.095700+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0004-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:17.768601+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0004-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:17.769599+00:00",
+      "kind": "PLAN_LINT_RETRY",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "violations": [
+          "Line begins with invented field label 'BASE CASE:' (PDL-05); state each operation directly."
+        ]
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:17.779600+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0005-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:18.569783+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0005-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:18.571789+00:00",
+      "kind": "PLAN_LINT_UNRESOLVED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "violations": [
+          "Line begins with invented field label 'BASE CASE:' (PDL-05); state each operation directly."
+        ]
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:18.578795+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-535850dc4d-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:18.582788+00:00",
+      "kind": "PLAN_PROMPT_ECHO",
+      "payload": {
+        "plan_id": "I-535850dc4d-R1",
+        "identical": false,
+        "copied_line_ratio": 0.0
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:18.773787+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-535850dc4d-R1"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:19.532787+00:00",
+      "kind": "PLAN_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_100K_STEPS",
+        "distribution": {
+          "WITHIN_10M_STEPS": 0.03,
+          "BEYOND_100M_STEPS": 0.02,
+          "WITHIN_100K_STEPS": 0.94,
+          "WITHIN_100M_STEPS": 0.01
+        },
+        "passed_gating": true,
+        "request_tier": "MINIMAL",
+        "plan_tier": "MINIMAL",
+        "tier": "MINIMAL",
+        "budget_raised": false,
+        "step_limit": 100000
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:19.551786+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0006-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:20.997518+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0006-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:21.003524+00:00",
+      "kind": "EXECUTION_ATTEMPTS",
+      "payload": {
+        "attempts": 1,
+        "repairs_used": 0,
+        "unmeasured_repairs": 0,
+        "repairs_allowed": 0,
+        "tier": "MINIMAL"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:08:21.007518+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_001",
+        "status": "CLOSED_SUCCESS"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-10-01T19:08:21.009518+00:00"
+}

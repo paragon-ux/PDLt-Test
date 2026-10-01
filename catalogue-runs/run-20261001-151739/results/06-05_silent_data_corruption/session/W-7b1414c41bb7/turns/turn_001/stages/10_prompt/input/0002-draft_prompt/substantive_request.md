@@ -1,0 +1,10 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Diagnose the struct packing alignment/padding issue in the provided Python code that defines pack_record and unpack_record using struct.pack('I?d') and struct.unpack('I?d'), explain why the packed size may exceed the expected 13 bytes because the default native format adds padding after the boolean to align the double, describe why reading back the values can produce incorrect results due to mismatched offsets, and fix the code by using an explicit standard-size format (e.g., '=I?d' or '<I?d') or by inserting an explicit padding byte (e.g., 'I?xd') to control alignment, updating both functions accordingly.
+APPROACH/RISK NOTES:
+
+OPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):
+- struct.pack
+- struct.unpack
+- pack_record
+- unpack_record
+- I?d

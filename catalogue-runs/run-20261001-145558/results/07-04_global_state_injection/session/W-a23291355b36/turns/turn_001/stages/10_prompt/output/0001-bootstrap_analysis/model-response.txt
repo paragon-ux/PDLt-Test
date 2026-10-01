@@ -1,0 +1,16 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Refactor the provided Python module that currently relies on global mutable state and environment variables so that it uses dependency injection. The refactoring must make the module testable in isolation, allowing tests to inject a mock database connection and verify the behavior of the query function without requiring actual environment variables or modifying global state. Preserve all functional requirements: maintain the existing API behavior (get_connection, query, get_stats, reset), ensure request counting and caching work correctly, and expose a way to supply alternative DB host/port and cache objects through injection.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "get_connection",
+    "query",
+    "get_stats",
+    "reset",
+    "DB_HOST",
+    "DB_PORT",
+    "_cache",
+    "_request_count"
+  ]
+}

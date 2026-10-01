@@ -1,0 +1,35 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> The following authentication system specification is missing critical edge cases. Identify at least 7 missing requirements that would cause security vulnerabilities or user-facing bugs if not addressed.
+
+"Users register with email and password. Users log in with email and password and receive a JWT. The JWT is included in the Authorization header for all subsequent requests. Admins can view all users. Users can only view their own profile."
+ASSISTANT> Prompt Pseudocode
+
+IDENTIFY at least seven missing security or functional requirements in the authentication system specification. INCLUDE requirements related to password handling, credential storage, token security, session management, admin capabilities, audit logging, and user privacy. CONSIDER aspects such as password strength rules, hashing algorithms, token expiration and revocation, secure transmission, role-based access controls, logging of administrative actions, and mechanisms for users to manage their credentials. DO NOT PROVIDE the actual analysis or solutions; ONLY LIST the required missing requirements as the operative task description.
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+IDENTIFY the authentication system specification document
+EXTRACT all currently stated security and functional requirements from the specification
+DEFINE the set of required requirement categories: password handling, credential storage, token security, session management, admin capabilities, audit logging, user privacy
+FOR EACH category, COMPARE the extracted requirements against the expected controls (e.g., password strength rules, hashing algorithms, token expiration and revocation, secure transmission, role‑based access controls, logging of administrative actions, mechanisms for users to manage credentials)
+ISOLATE categories where expected controls are absent or insufficient
+COMPILE a list of at least seven missing requirements representing the gaps identified across the categories
+EMIT the compiled list as the operative task description
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> 1. Enforce password strength requirements (minimum length, complexity, and prohibited common passwords).
+2. Store passwords using a strong, salted hashing algorithm such as Argon2 or bcrypt.
+3. Secure transmission of credentials and JWTs via TLS (HTTPS) and include token integrity checks.
+4. Implement JWT expiration and a revocation mechanism (e.g., token blacklist or short-lived tokens with refresh tokens).
+5. Protect session management with secure, HttpOnly, SameSite cookies and enforce token rotation on login.
+6. Restrict admin capabilities with role‑based access control and audit logging of all admin actions.
+7. Log authentication events (successful and failed logins, password changes, token revocations) for auditability.
+8. Provide users with mechanisms to manage their credentials securely (password change, recovery, MFA setup) and respect privacy by not exposing personal data to other users.
+9. Ensure JWTs are signed with a strong algorithm (e.g., RS256) and that the secret/key is stored securely.
+10. Validate and sanitize all input fields to prevent injection attacks.
+PROTOCOL_CLOSED
+=== PDLt session ended ===

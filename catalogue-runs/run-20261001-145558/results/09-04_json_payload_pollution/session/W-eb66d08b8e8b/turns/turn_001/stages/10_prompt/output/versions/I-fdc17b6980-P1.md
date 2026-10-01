@@ -1,0 +1,1 @@
+EXTRACT all email addresses from the provided user text. RETURN only the email addresses found, nothing else. INCLUDE the email addresses support@example.com and sales@company.org as they appear in the text.

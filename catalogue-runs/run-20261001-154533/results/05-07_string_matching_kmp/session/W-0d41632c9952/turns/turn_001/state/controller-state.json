@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-d25ef20d28",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-d25ef20d28-P1",
+    "body": "IMPLEMENT the KMP string matching algorithm in Python.\nBUILD the failure function (partial match table) for the pattern \"ABABCABAB\".\nTRACE the step-by-step construction of the failure function for the pattern \"ABABCABAB\".\nUSE the failure function to SEARCH for the pattern \"ABABCABAB\" in the text \"ABABDAABABCABABABABCABAB\".\nOUTPUT all starting indices where the pattern occurs.\nVERIFY that the identified match positions are correct for the given text and pattern.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-d25ef20d28-R1",
+    "body": "IMPLEMENT KMP algorithm in Python\nBUILD failure function for pattern \"ABABCABAB\"\nTRACE step‑by‑step construction of the failure function for pattern \"ABABCABAB\"\nUSE the failure function to SEARCH for pattern \"ABABCABAB\" in text \"ABABDAABABCABABABABCABAB\"\nOUTPUT all starting indices where the pattern occurs\nVERIFY that the identified match positions are correct for the given text and pattern",
+    "confirmed": true,
+    "source_prompt_id": "I-d25ef20d28-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-d25ef20d28-X1",
+    "body": "2918aaec10ec050963743f2e66d735af830e736ef3afc833243836f0bddb9cfc",
+    "confirmed": true,
+    "source_prompt_id": "I-d25ef20d28-P1",
+    "source_plan_id": "I-d25ef20d28-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

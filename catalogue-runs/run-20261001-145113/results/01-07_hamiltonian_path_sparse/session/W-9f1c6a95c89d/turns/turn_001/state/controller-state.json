@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-c00a68694b",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-c00a68694b-P1",
+    "body": "READ the undirected graph G with 12 nodes labeled 0-11 and edge list [(0,1), (1,2), (2,3), (3,4), (4,5), (5,6), (6,7), (7,8), (8,9), (9,10), (10,11), (0,3), (2,7), (4,9), (6,11), (1,8)]\nDETERMINE whether G contains a Hamiltonian path (a path that visits every node exactly once)\nIF a Hamiltonian path exists THEN\n  OUTPUT the complete Hamiltonian path\n  INCLUDE verification that the path visits all 12 nodes and that every consecutive pair in the path is a valid edge\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-c00a68694b-R1",
+    "body": "READ the undirected graph G with 12 nodes labeled 0-11 and edge list [(0,1), (1,2), (2,3), (3,4), (4,5), (5,6), (6,7), (7,8), (8,9), (9,10), (10,11), (0,3), (2,7), (4,9), (6,11), (1,8)]\nINITIALIZE an empty collection PATHS_FOUND\nDEFINE BACKTRACK(current_path, visited_set):\n    IF LENGTH(current_path) == 12 THEN\n        ADD current_path TO PATHS_FOUND\n        RETURN\n    ENDIF\n    FOR EACH neighbor OF the last node IN current_path:\n        IF neighbor NOT IN visited_set AND edge (last node, neighbor) EXISTS IN the edge list THEN\n            APPEND neighbor TO current_path\n            ADD neighbor TO visited_set\n            BACKTRACK(current_path, visited_set)\n            REMOVE neighbor FROM current_path\n            REMOVE neighbor FROM visited_set\n        ENDIF\n    ENDFOR\nFOR EACH start_node IN [0-11]:\n    SET current_path TO [start_node]\n    SET visited_set TO {start_node}\n    BACKTRACK(current_path, visited_set)\nENDFOR\nIF PATHS_FOUND IS NOT EMPTY THEN\n    SELECT a Hamiltonian path FROM PATHS_FOUND\n    VERIFY that the selected path visits all 12 nodes\n    VERIFY that each consecutive pair in the path corresponds to an edge in the edge list\n    OUTPUT the verified Hamiltonian path\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": "I-c00a68694b-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-c00a68694b-X1",
+    "body": "8766caadb58fcd29c6fa4255a918f299e99cb77b06a82dda646c2e16434fe1f4",
+    "confirmed": true,
+    "source_prompt_id": "I-c00a68694b-P1",
+    "source_plan_id": "I-c00a68694b-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-39eb8a9d0e",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-39eb8a9d0e-P1",
+    "body": "READ the weighted grid definition and movement costs\nDEFINE the start and goal coordinates for the pathfinding task\nIMPLEMENT the A* algorithm using 4-directional movement (up, down, left, right)\nUSE the Manhattan distance as the heuristic function\nSET the cost of moving into a cell equal to the cell's non‑negative movement cost\nTREAT cells with a value of -1 as impassable obstacles\nRETURN the shortest path as an ordered list of (row, col) coordinates\nRETURN the total accumulated cost of the path\nTEST the implementation on a 10 × 10 grid containing walls and varying terrain costs\nVERIFY optimality by comparing the resulting path and cost against the result of Dijkstra's algorithm on the same grid",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-39eb8a9d0e-R1",
+    "body": "READ the weighted grid definition and movement costs\nDEFINE start and goal coordinates for the pathfinding task\nINITIALIZE open set with the start node and CLOSED set as empty\nCALCULATE Manhattan distance heuristic for each node\nWHILE open set is not empty\n    SELECT node with lowest f‑score (g‑score + heuristic) from open set\n    IF selected node is the goal\n        RECONSTRUCT path by tracing predecessor links\n        BREAK loop\n    MOVE selected node from open set to CLOSED set\n    FOR each 4‑directional neighbor (up, down, left, right) of the selected node\n        IF neighbor cell value is -1 (impassable) OR neighbor is in CLOSED set\n            CONTINUE to next neighbor\n        COMPUTE tentative g‑score as current node g‑score plus neighbor cell movement cost\n        IF neighbor not in open set OR tentative g‑score is lower than previously recorded g‑score\n            RECORD predecessor of neighbor as current node\n            UPDATE neighbor g‑score to tentative g‑score\n            UPDATE neighbor f‑score as g‑score plus Manhattan heuristic\n            IF neighbor not in open set\n                ADD neighbor to open set\nENDWHILE\nOUTPUT the ordered list of (row, col) coordinates representing the shortest path\nOUTPUT the total accumulated cost of the path\nTEST the implementation on a 10 × 10 grid containing walls and varying terrain costs\nCOMPARE the resulting path and cost against the result of Dijkstra's algorithm on the same grid to verify optimality",
+    "confirmed": true,
+    "source_prompt_id": "I-39eb8a9d0e-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-39eb8a9d0e-X1",
+    "body": "edfc520d5461c833fb6fefd69eea7a98c5163fef58e49df0eff2d68695ea8ce8",
+    "confirmed": true,
+    "source_prompt_id": "I-39eb8a9d0e-P1",
+    "source_plan_id": "I-39eb8a9d0e-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

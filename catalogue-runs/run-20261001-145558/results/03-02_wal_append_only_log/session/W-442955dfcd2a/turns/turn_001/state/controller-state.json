@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-515299d029",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-515299d029-P1",
+    "body": "IMPLEMENT a write-ahead log (WAL) in Python with crash recovery.\nDEFINE operation append(record: bytes) -> int that appends a record prefixed with a 4-byte length, 4-byte CRC32 checksum, and 8-byte sequence number.\nDEFINE operation recover() -> list[bytes] that reads the log file and returns all valid records, stopping at the first corrupted or truncated record.\nDEFINE operation sync() that forces an fsync to disk.\nCREATE a test that writes 100 records, closes the log, truncates the file mid-record to simulate a crash, reopens the log, and verifies that recover() returns exactly the intact records with correct checksums.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-515299d029-R1",
+    "body": "INITIALIZE a write-ahead log (WAL) object with a target file path\nDEFINE operation append(record: bytes) -> int that writes a 4-byte length, 4-byte CRC32, and 8-byte sequence number followed by the record\nDEFINE operation sync() that forces an fsync on the underlying file descriptor\nDEFINE operation recover() -> list[bytes] that reads sequentially, validates length, CRC32, and sequence order, and stops at the first corruption or truncation\nCREATE a test scenario that:\n    GENERATES 100 distinct records\n    CALLS append for each record\n    CLOSES the WAL\n    TRUNCATES the log file at an arbitrary offset within the last record to simulate a crash\n    REOPENS the WAL\n    CALLS recover and captures the returned records\n    VERIFIES that the recovered records equal the 100 intact records and that all checksums are valid",
+    "confirmed": true,
+    "source_prompt_id": "I-515299d029-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-515299d029-X1",
+    "body": "2e257528860cf7b15f1ab5f1bfb06d7307e468e53de5c5dbe4e1e00cb6f72842",
+    "confirmed": true,
+    "source_prompt_id": "I-515299d029-P1",
+    "source_plan_id": "I-515299d029-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

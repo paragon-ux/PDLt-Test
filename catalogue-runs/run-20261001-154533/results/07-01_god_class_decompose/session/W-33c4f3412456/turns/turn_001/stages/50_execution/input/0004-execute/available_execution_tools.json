@@ -1,0 +1,6 @@
+[
+  {
+    "name": "python",
+    "description": "Python 3.11 with the standard library only; third-party packages are not installed. The host runs the deliverable as a script when the whole deliverable is Python source; otherwise it runs every ```python fenced block as a separate script, in an empty temporary directory. Each script may execute at most 10,000,000 steps, where one step is one executed Python bytecode instruction of the script's own code, including every loop or comprehension iteration, code run through exec, and functions the script passes to library calls. Code inside the standard library and built-in functions is not counted in steps. A script that exceeds the step budget is stopped. Everything, including uncounted work, is bounded by a 30-second wall-clock limit. Memory is limited to 256 MB. Standard input is empty. Standard output, standard error and the exit status are captured by the host."
+  }
+]

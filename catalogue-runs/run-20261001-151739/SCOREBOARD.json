@@ -1,0 +1,509 @@
+{
+  "run_id": "run-20261001-151739",
+  "timestamp": "2026-10-01T19:17:39.749158+00:00",
+  "model": "openai/gpt-oss-120b",
+  "reasoning_effort": "high",
+  "total_prompts": 105,
+  "passed": 50,
+  "failed": 55,
+  "stage_passed": 50,
+  "manual_spot_check": [],
+  "pass_rate_pct": 47.6,
+  "total_elapsed_seconds": 843.5,
+  "model_calls": {
+    "total": 218,
+    "execute": 51,
+    "repairs": 0,
+    "execute_reasoning_tokens": 3794,
+    "execute_output_tokens": 59237
+  },
+  "plan_echo": {
+    "plans": 51,
+    "identical": [
+      "04-04"
+    ],
+    "copied_80pct": 1
+  },
+  "repeat_pass_rates": {},
+  "ground_truth": {
+    "PASS": 5,
+    "FAIL": 16,
+    "MANUAL": 0,
+    "ERROR": 0
+  },
+  "false_positives": [],
+  "by_verdict": {
+    "CLOSED_CANCELLED": 3,
+    "CLOSED_SUCCESS": 50,
+    "HARNESS_ERROR": 52
+  },
+  "by_category": {
+    "combinatorial_search": {
+      "total": 7,
+      "pass": 4,
+      "fail": 3
+    },
+    "data_structures": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "systems_programming": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "parsers_and_compilers": {
+      "total": 7,
+      "pass": 6,
+      "fail": 1
+    },
+    "algorithm_design": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "debugging_and_repair": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "refactoring_and_design": {
+      "total": 7,
+      "pass": 5,
+      "fail": 2
+    },
+    "specification_extraction": {
+      "total": 7,
+      "pass": 5,
+      "fail": 2
+    },
+    "adversarial_and_injection": {
+      "total": 7,
+      "pass": 2,
+      "fail": 5
+    },
+    "multi_turn_and_revision": {
+      "total": 7,
+      "pass": 0,
+      "fail": 7
+    },
+    "cross_domain_composition": {
+      "total": 7,
+      "pass": 0,
+      "fail": 7
+    },
+    "domain_knowledge": {
+      "total": 7,
+      "pass": 0,
+      "fail": 7
+    },
+    "negative_and_impossible": {
+      "total": 7,
+      "pass": 0,
+      "fail": 7
+    },
+    "formal_verification": {
+      "total": 7,
+      "pass": 0,
+      "fail": 7
+    },
+    "performance_and_scale": {
+      "total": 7,
+      "pass": 0,
+      "fail": 7
+    }
+  },
+  "by_difficulty": {
+    "hard": {
+      "total": 43,
+      "pass": 21
+    },
+    "medium": {
+      "total": 44,
+      "pass": 24
+    },
+    "easy": {
+      "total": 7,
+      "pass": 3
+    },
+    "adversarial": {
+      "total": 11,
+      "pass": 2
+    }
+  },
+  "regressions_hit": [
+    {
+      "id": "01-01",
+      "regression_ref": "REG-003",
+      "verdict": "CLOSED_CANCELLED"
+    },
+    {
+      "id": "01-02",
+      "regression_ref": "REG-011",
+      "verdict": "CLOSED_CANCELLED"
+    },
+    {
+      "id": "09-04",
+      "regression_ref": "REG-001",
+      "verdict": "HARNESS_ERROR"
+    },
+    {
+      "id": "10-07",
+      "regression_ref": "REG-003",
+      "verdict": "HARNESS_ERROR"
+    },
+    {
+      "id": "13-01",
+      "regression_ref": "REG-003",
+      "verdict": "HARNESS_ERROR"
+    },
+    {
+      "id": "13-03",
+      "regression_ref": "REG-003",
+      "verdict": "HARNESS_ERROR"
+    },
+    {
+      "id": "13-05",
+      "regression_ref": "REG-014",
+      "verdict": "HARNESS_ERROR"
+    },
+    {
+      "id": "13-06",
+      "regression_ref": "REG-013",
+      "verdict": "HARNESS_ERROR"
+    }
+  ],
+  "failures": [
+    {
+      "id": "01-01",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 14.25
+    },
+    {
+      "id": "01-02",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 9.75
+    },
+    {
+      "id": "01-06",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 12.66
+    },
+    {
+      "id": "04-02",
+      "category": "parsers_and_compilers",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 11.72
+    },
+    {
+      "id": "07-06",
+      "category": "refactoring_and_design",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 7.06
+    },
+    {
+      "id": "07-07",
+      "category": "refactoring_and_design",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 5.89
+    },
+    {
+      "id": "08-01",
+      "category": "specification_extraction",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 5.16
+    },
+    {
+      "id": "08-02",
+      "category": "specification_extraction",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 4.95
+    },
+    {
+      "id": "09-03",
+      "category": "adversarial_and_injection",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 10.66
+    },
+    {
+      "id": "09-04",
+      "category": "adversarial_and_injection",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.34
+    },
+    {
+      "id": "09-05",
+      "category": "adversarial_and_injection",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.88
+    },
+    {
+      "id": "09-06",
+      "category": "adversarial_and_injection",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.5
+    },
+    {
+      "id": "09-07",
+      "category": "adversarial_and_injection",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.62
+    },
+    {
+      "id": "10-01",
+      "category": "multi_turn_and_revision",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.41
+    },
+    {
+      "id": "10-02",
+      "category": "multi_turn_and_revision",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.44
+    },
+    {
+      "id": "10-03",
+      "category": "multi_turn_and_revision",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.95
+    },
+    {
+      "id": "10-04",
+      "category": "multi_turn_and_revision",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.42
+    },
+    {
+      "id": "10-05",
+      "category": "multi_turn_and_revision",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.09
+    },
+    {
+      "id": "10-06",
+      "category": "multi_turn_and_revision",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.47
+    },
+    {
+      "id": "10-07",
+      "category": "multi_turn_and_revision",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.62
+    },
+    {
+      "id": "11-01",
+      "category": "cross_domain_composition",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.95
+    },
+    {
+      "id": "11-02",
+      "category": "cross_domain_composition",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.86
+    },
+    {
+      "id": "11-03",
+      "category": "cross_domain_composition",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.59
+    },
+    {
+      "id": "11-04",
+      "category": "cross_domain_composition",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.58
+    },
+    {
+      "id": "11-05",
+      "category": "cross_domain_composition",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.09
+    },
+    {
+      "id": "11-06",
+      "category": "cross_domain_composition",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.27
+    },
+    {
+      "id": "11-07",
+      "category": "cross_domain_composition",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.83
+    },
+    {
+      "id": "12-01",
+      "category": "domain_knowledge",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.88
+    },
+    {
+      "id": "12-02",
+      "category": "domain_knowledge",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.86
+    },
+    {
+      "id": "12-03",
+      "category": "domain_knowledge",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.95
+    },
+    {
+      "id": "12-04",
+      "category": "domain_knowledge",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.62
+    },
+    {
+      "id": "12-05",
+      "category": "domain_knowledge",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.39
+    },
+    {
+      "id": "12-06",
+      "category": "domain_knowledge",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 3.78
+    },
+    {
+      "id": "12-07",
+      "category": "domain_knowledge",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.73
+    },
+    {
+      "id": "13-01",
+      "category": "negative_and_impossible",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.34
+    },
+    {
+      "id": "13-02",
+      "category": "negative_and_impossible",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.98
+    },
+    {
+      "id": "13-03",
+      "category": "negative_and_impossible",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.12
+    },
+    {
+      "id": "13-04",
+      "category": "negative_and_impossible",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.8
+    },
+    {
+      "id": "13-05",
+      "category": "negative_and_impossible",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.17
+    },
+    {
+      "id": "13-06",
+      "category": "negative_and_impossible",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 3.33
+    },
+    {
+      "id": "13-07",
+      "category": "negative_and_impossible",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 3.69
+    },
+    {
+      "id": "14-01",
+      "category": "formal_verification",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.78
+    },
+    {
+      "id": "14-02",
+      "category": "formal_verification",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.72
+    },
+    {
+      "id": "14-03",
+      "category": "formal_verification",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.86
+    },
+    {
+      "id": "14-04",
+      "category": "formal_verification",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.97
+    },
+    {
+      "id": "14-05",
+      "category": "formal_verification",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 3.06
+    },
+    {
+      "id": "14-06",
+      "category": "formal_verification",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 6.14
+    },
+    {
+      "id": "14-07",
+      "category": "formal_verification",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.03
+    },
+    {
+      "id": "15-01",
+      "category": "performance_and_scale",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 4.16
+    },
+    {
+      "id": "15-02",
+      "category": "performance_and_scale",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.12
+    },
+    {
+      "id": "15-03",
+      "category": "performance_and_scale",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 3.03
+    },
+    {
+      "id": "15-04",
+      "category": "performance_and_scale",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.73
+    },
+    {
+      "id": "15-05",
+      "category": "performance_and_scale",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 3.61
+    },
+    {
+      "id": "15-06",
+      "category": "performance_and_scale",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 1.52
+    },
+    {
+      "id": "15-07",
+      "category": "performance_and_scale",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 2.47
+    }
+  ]
+}

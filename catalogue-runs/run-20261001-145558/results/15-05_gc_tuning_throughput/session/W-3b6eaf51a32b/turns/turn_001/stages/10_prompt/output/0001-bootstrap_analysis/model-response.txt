@@ -1,0 +1,11 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Diagnose the Python GC log showing periodic latency spikes by explaining why generation 2 collections are getting slower, what the growing object count in generation 2 indicates, three specific code patterns that commonly cause this behavior, and provide tuning recommendations involving gc.set_threshold, gc.freeze, or gc.disable for specific operations.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "gc.set_threshold",
+    "gc.freeze",
+    "gc.disable"
+  ]
+}

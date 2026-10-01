@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-2342fb9d42",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-2342fb9d42-P1",
+    "body": "NOTE ENTITIES: Python, asyncio, acquire(n=1), acquire(), asyncio.Event, asyncio.Condition\nIMPLEMENT an asynchronous token bucket rate limiter USING Python and asyncio\nCONFIGURE a maximum token capacity (burst capacity) and a refill rate expressed in tokens per second\nPROVIDE an async method acquire(n=1) THAT waits until n tokens are available WITHOUT busy-waiting USING asyncio.Event OR asyncio.Condition, THEN consumes the tokens\nENSURE that multiple concurrent coroutines calling acquire() are served in FIFO order\nINCLUDE a test THAT launches ten concurrent coroutines each requesting one token with a rate limit of five tokens per second\nVERIFY that the total elapsed time is approximately two seconds with tolerance plus or minus 0.3 seconds",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-2342fb9d42-R1",
+    "body": "GATHER the functional requirements from the prompt\nDESIGN a token bucket abstraction supporting a maximum burst capacity and a refill rate expressed in tokens per second\nCONFIGURE the token bucket with the specified capacity and refill rate\nSCHEDULE a periodic asynchronous refill task that increments the token count up to capacity at the defined rate\nIMPLEMENT an async ACQUIRE method that:\n    WAIT until the requested number of tokens are available using an asyncio.Event or asyncio.Condition without busy‑waiting\n    ENSURE FIFO order for pending ACQUIRE calls\n    CONSUME the tokens once available\nSETUP a test harness that:\n    CREATE a token bucket instance with a burst capacity and a refill rate of five tokens per second\n    LAUNCH ten concurrent coroutines each invoking ACQUIRE(1)\n    RECORD the start time\n    AWAIT completion of all coroutines\n    RECORD the end time\n    CALCULATE the elapsed duration\nVERIFY that the elapsed duration is approximately two seconds with a tolerance of ±0.3 seconds\nREPORT the verification outcome",
+    "confirmed": true,
+    "source_prompt_id": "I-2342fb9d42-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-2342fb9d42-X1",
+    "body": "08d82176ca3a6b13085c8c2b106a99ce4140aaf53c7af1f0a93feae10794a0c9",
+    "confirmed": true,
+    "source_prompt_id": "I-2342fb9d42-P1",
+    "source_plan_id": "I-2342fb9d42-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

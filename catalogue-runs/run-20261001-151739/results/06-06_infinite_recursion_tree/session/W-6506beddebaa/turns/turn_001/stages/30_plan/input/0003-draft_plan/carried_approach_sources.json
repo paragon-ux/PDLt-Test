@@ -1,0 +1,3 @@
+[
+  "APPROACH CONSTRAINT (TASK-02 operative requirement; incorporate per PLAN-08):\nDiagnose why the provided Python function serialize(Node) raises a RecursionError on deep trees, then create an iterative Python implementation of tree serialization that can handle trees of depth 100,000+ and demonstrate it on a chain of 50,000 Node instances.\nImplement the serialization iteratively using an explicit stack to avoid recursion depth limitations.\nOPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):\n- Node\n- serialize\n- depth 100,000+"
+]

@@ -1,0 +1,12 @@
+DESIGN a Node structure containing key, value, and forward pointers for up to MAX_LEVEL levels.
+DESIGN a SkipList class with a head node initialized with MAX_LEVEL forward pointers.
+IMPLEMENT a random_level function that starts at level 1 and flips a coin (probability 0.5) to possibly increase the level, capping at MAX_LEVEL.
+IMPLEMENT INSERT(key, value) to locate update positions, generate a random level, adjust forward pointers, and insert or update the node.
+IMPLEMENT SEARCH(key) to traverse levels from top to bottom and return the associated value or None.
+IMPLEMENT DELETE(key) to locate the node, adjust forward pointers, and remove the node if present.
+IMPLEMENT RANGE_QUERY(lo, hi) to locate the first node >= lo and iterate forward at level 0 collecting all key‑value pairs where key <= hi.
+WRITE a test suite that:
+    VALIDATES ordering invariants by inserting a shuffled sequence of keys and confirming that iterating over the skip list yields keys in sorted order.
+    MEASURES the distribution of node levels over 1000 insertions and asserts that the observed frequencies roughly match the theoretical 0.5 probability per level.
+    TESTS RANGE_QUERY by inserting known key‑value pairs, performing queries with various lo and hi bounds, and verifying the returned subsets match expectations.
+RUN the test suite to ensure all invariants and functional requirements are satisfied.

@@ -1,0 +1,11 @@
+Implement a Markdown-to-HTML converter in Python that handles the following subset:
+1. Headers: # through ######
+2. Bold: **text** and __text__
+3. Italic: *text* and _text_
+4. Inline code: code
+5. Links: [text](url)
+6. Unordered lists: lines starting with - or *
+7. Code blocks: lines indented by 4 spaces or fenced with `
+8. Paragraphs: consecutive non-blank lines wrapped in <p> tags.
+
+Do NOT use any external libraries. Include tests with at least 10 different Markdown inputs covering all features, nested formatting (bold inside italic), and edge cases (empty headers, links with special chars).

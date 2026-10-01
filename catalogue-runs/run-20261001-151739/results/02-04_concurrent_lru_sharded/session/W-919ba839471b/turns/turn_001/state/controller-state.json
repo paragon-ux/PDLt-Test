@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-fd86d45935",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-fd86d45935-P1",
+    "body": "IMPLEMENT a thread-safe sharded LRU cache in Python.\nDIVIDE the cache into N shards, default 16.\nROUTE keys to shards using hash(key) % N.\nENSURE each shard has its own lock and capacity.\nMAINTAIN LRU eviction order independently within each shard.\nAVOID acquiring a global lock in get() and put() operations.\nPROVIDE a multi-threaded stress test with 8 threads performing concurrent reads and writes to verify data integrity and correct eviction behavior.\nRESPECT the per-shard capacity.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-fd86d45935-R1",
+    "body": "DETERMINE shard count (default 16) and per-shard capacity\nDEFINE Shard abstraction\n    CREATE a lock for the shard\n    INITIALIZE an LRU container with the defined capacity\nIMPLEMENT get operation\n    CALCULATE shard index as hash(key) modulo shard count\n    ACQUIRE lock of the target shard\n    LOOKUP key in the shard's LRU container\n    IF key found\n        MOVE entry to most-recently-used position\n        RETURN associated value\n    ELSE\n        RETURN miss indicator\n    RELEASE shard lock\nIMPLEMENT put operation\n    CALCULATE shard index as hash(key) modulo shard count\n    ACQUIRE lock of the target shard\n    INSERT or UPDATE entry in the shard's LRU container\n    MOVE entry to most-recently-used position\n    IF shard size exceeds capacity\n        EVICT least-recently-used entry\n    RELEASE shard lock\nCOMPOSE Sharded LRU cache\n    INSTANTIATE array of shards\n    EXPOSE get and put methods delegating to respective shard operations\nAVOID acquiring any global lock across shards\nDESIGN multi-threaded stress test\n    INSTANTIATE cache with default parameters\n    CREATE eight worker threads\n    ASSIGN each thread a random mix of get and put operations\n    START all threads concurrently\n    WAIT for all threads to finish\n    VALIDATE that each shard respects its capacity\n    VALIDATE that eviction within each shard follows LRU order\n    RECORD any data integrity violations\nREPORT test outcomes",
+    "confirmed": true,
+    "source_prompt_id": "I-fd86d45935-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-fd86d45935-X1",
+    "body": "871bca409b3de34e18b388c413b02ed60c8f772934bde18c78da4b37453d6646",
+    "confirmed": true,
+    "source_prompt_id": "I-fd86d45935-P1",
+    "source_plan_id": "I-fd86d45935-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

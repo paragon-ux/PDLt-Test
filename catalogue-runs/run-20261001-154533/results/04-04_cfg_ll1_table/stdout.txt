@@ -1,0 +1,82 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-154533\results\04-04_cfg_ll1_table\session\catalogue-04-04-1790884253\worker-progress.log]
+[api] response received in 1883ms
+[api] response received in 2492ms
+Prompt Pseudocode
+
+COMPUTE the FIRST sets for each non-terminal: E, E', T, T', F.
+COMPUTE the FOLLOW sets for each non-terminal: E, E', T, T', F.
+BUILD the LL(1) parse table for the provided grammar, presenting it as a formatted matrix.
+PARSE the input string "id + id * id" using the constructed parse table, showing a step‑by‑step parse trace that includes the parser stack contents and the remaining input at each step.
+LIST the operative task entities: E, E', T, T', F, id, +, *, (, ), id + id * id
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-154533\results\04-04_cfg_ll1_table\session\catalogue-04-04-1790884253\worker-progress.log]
+[api] response received in 1585ms
+Response Plan Pseudocode
+
+COMPUTE the FIRST sets for each non-terminal: E, E', T, T', F
+COMPUTE the FOLLOW sets for each non-terminal: E, E', T, T', F
+BUILD the LL(1) parse table for the grammar
+PARSE the input string "id + id * id" using the constructed parse table, RECORDING the parser stack contents and remaining input at each step
+LIST the operative task entities: E, E', T, T', F, id, +, *, (, ), id + id * id
+EMIT the FIRST sets, FOLLOW sets, parse table, parse trace, and entity list as the final output
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-154533\results\04-04_cfg_ll1_table\session\catalogue-04-04-1790884253\worker-progress.log]
+[api] response received in 1412ms
+FIRST sets:
+E  : {id, (}
+E' : {+, ε}
+T  : {id, (}
+T' : {*, ε}
+F  : {id, (}
+
+FOLLOW sets:
+E  : {$, )}
+E' : {$, )}
+T  : {+, $, )}
+T' : {+, $, )}
+F  : {*, +, $, )}
+
+LL(1) Parse Table (rows: non‑terminals, columns: terminals id, +, *, (, ), $):
+
+          id      +       *       (       )       $
+E   → T E'  T E'               T E'              
+E'  → ε                ε      + T E'  ε       ε
+T   → F T'  F T'               F T'              
+T'  → ε                ε      * F T'  ε       ε
+F   → id    id               ( E )
+
+Parse trace for input "id + id * id":
+
+Step  Stack                Input       Action
+0   [E,$]                id+id*id$   Expand E→T E'
+1   [T',E',$]           id+id*id$   Expand T→F T'
+2   [F,T',E',$]         id+id*id$   Expand F→id
+3   [id,T',E',$]        id+id*id$   Match id, pop
+4   [T',E',$]           +id*id$    Expand T'→ε (since +∈FOLLOW(T'))
+5   [E',$]              +id*id$    Expand E'→+ T E'
+6   [+ ,T,E',$]         +id*id$    Match +
+7   [T,E',$]            id*id$    Expand T→F T'
+8   [F,T',E',$]         id*id$    Expand F→id
+9   [id,T',E',$]        id*id$    Match id
+10  [T',E',$]           *id$      Expand T'→* F T'
+11  [*,F,T',E',$]       *id$      Match *
+12  [F,T',E',$]         id$       Expand F→id
+13  [id,T',E',$]        id$       Match id
+14  [T',E',$]           $         Expand T'→ε (since $∈FOLLOW(T'))
+15  [E',$]              $         Expand E'→ε (since $∈FOLLOW(E'))
+16  [$]                 $         Match $ and accept.
+
+Operative task entities: E, E', T, T', F, id, +, *, (, ), id + id * id
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

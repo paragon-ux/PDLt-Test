@@ -1,0 +1,288 @@
+{
+  "turn_id": "turn_001",
+  "status": "CLOSED_SUCCESS",
+  "deliverable_sha256": "e2cf1b83a8b07fbda4b30c8ad547a0b48761599f59e0754d791f911fd0123a8e",
+  "events": [
+    {
+      "at_utc": "2026-10-01T19:18:04.860937+00:00",
+      "kind": "WORKSPACE_CREATED",
+      "payload": {
+        "workspace_id": "W-7f2d545f3fa3",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:04.861937+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:05.336935+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 0.99
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:06.176121+00:00",
+      "kind": "EXECUTION_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_100K_STEPS",
+        "distribution": {
+          "WITHIN_10M_STEPS": 0.01,
+          "WITHIN_100M_STEPS": 0.0,
+          "WITHIN_100K_STEPS": 0.99,
+          "BEYOND_100M_STEPS": 0.0
+        },
+        "tier": "MINIMAL",
+        "passed_gating": true,
+        "step_limit": 100000,
+        "timeout_seconds": 30.0,
+        "memory_mb": 256
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:06.179099+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": true,
+        "domain": "general"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:06.191126+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:08.546894+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:08.549902+00:00",
+      "kind": "TASK_ENTITY_DROPPED_UNSAFE",
+      "payload": {
+        "count": 6
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:08.561892+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:10.583006+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:10.602004+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-41efc9cc61",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:10.614001+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-41efc9cc61-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:10.657089+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-41efc9cc61-P1"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:10.672093+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:11.929047+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:11.937048+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-41efc9cc61-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:11.940054+00:00",
+      "kind": "PLAN_PROMPT_ECHO",
+      "payload": {
+        "plan_id": "I-41efc9cc61-R1",
+        "identical": false,
+        "copied_line_ratio": 0.0
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:11.980057+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-41efc9cc61-R1"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:12.270543+00:00",
+      "kind": "PLAN_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_100K_STEPS",
+        "distribution": {
+          "BEYOND_100M_STEPS": 0.0,
+          "WITHIN_100K_STEPS": 0.99,
+          "WITHIN_100M_STEPS": 0.0,
+          "WITHIN_10M_STEPS": 0.01
+        },
+        "passed_gating": true,
+        "request_tier": "MINIMAL",
+        "plan_tier": "MINIMAL",
+        "tier": "MINIMAL",
+        "budget_raised": false,
+        "step_limit": 100000
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:12.289559+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:13.128415+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:13.875190+00:00",
+      "kind": "SANDBOX_RUN",
+      "payload": {
+        "block": 1,
+        "tier": "MINIMAL",
+        "exit_code": 0,
+        "step_budget_exceeded": false,
+        "steps_used": 131,
+        "timed_out": false,
+        "oom_killed": false,
+        "duration_ms": 731.6
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:13.877190+00:00",
+      "kind": "VERIFICATION_PASSED",
+      "payload": {
+        "provisional": false,
+        "sandbox_reproduced": true,
+        "domain_checked": false,
+        "details": {
+          "polarity": "positive",
+          "data_keys": [
+            "coloring",
+            "proof"
+          ]
+        }
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:13.878192+00:00",
+      "kind": "RESULT_IR_VALIDATED",
+      "payload": {
+        "ir": {
+          "files": [],
+          "reconciliation": [],
+          "open_defects": [],
+          "witness": {
+            "polarity": "positive",
+            "data": {
+              "coloring": {
+                "0": 1,
+                "1": 2,
+                "2": 3,
+                "3": 2,
+                "4": 3,
+                "5": 2,
+                "6": 3,
+                "7": 2,
+                "8": 3,
+                "9": 2,
+                "10": 3,
+                "11": 4
+              },
+              "proof": "The peripheral nodes 1‑11 form an odd cycle of length 11. An odd cycle requires at least 3 colors because a 2‑coloring would alternate colors, forcing the first and last vertices to share a color, which contradicts adjacency. Thus the peripheral cycle needs 3 distinct colors. The hub node 0 is adjacent to every peripheral node, so its color must differ from each of the three colors used on the cycle. Consequently a fourth color is required, proving that a 3‑coloring of W_11 is impossible."
+            },
+            "provisional": false
+          }
+        }
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:13.879192+00:00",
+      "kind": "EXECUTION_ATTEMPTS",
+      "payload": {
+        "attempts": 1,
+        "repairs_used": 0,
+        "unmeasured_repairs": 0,
+        "repairs_allowed": 0,
+        "tier": "MINIMAL"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T19:18:13.883192+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_001",
+        "status": "CLOSED_SUCCESS"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-10-01T19:18:13.884188+00:00"
+}

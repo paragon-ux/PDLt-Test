@@ -1,0 +1,1 @@
+Summarize the key findings from the 2027 Nobel Prize ceremonies. Who won the prizes for Physics, Chemistry, and Literature?

@@ -1,0 +1,11 @@
+{
+  "kind": "VERIFICATION_FAILED",
+  "errors": [
+    "[PROGRAM_FAILED] Python block 1 exited with status 1. Standard error: File \"program.py\", line 58, in search / ValueError: min() arg is an empty sequence Rule: A program that exits with a non-zero status or an uncaught exception is a failed run. Next attempt: Correct the cause shown in standard error; the program must exit with status 0.",
+    "[WITNESS_NOT_PRINTED] No witness was established: Missing witness in Result IR for task requiring verified execution. Host observation: the deliverable contains no program that ran successfully. Rule: A result that must be certified is certified by a line of the form `WITNESS: <json>` printed by a program the host runs. Next attempt: Include in the deliverable a Python program that prints its result as a `WITNESS: <json>` line; the host runs it. If the result cannot be obtained, emit no witness and mark the requirement open with the defect recorded."
+  ],
+  "codes": [
+    "PROGRAM_FAILED",
+    "WITNESS_NOT_PRINTED"
+  ]
+}

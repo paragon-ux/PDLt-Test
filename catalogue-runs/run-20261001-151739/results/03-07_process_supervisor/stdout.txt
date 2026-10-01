@@ -1,0 +1,203 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-151739\results\03-07_process_supervisor\session\catalogue-03-07-1790882525\worker-progress.log]
+[api] response received in 2043ms
+[api] response received in 2016ms
+[api] response received in 3326ms
+Prompt Pseudocode
+
+DEFINE a Python process supervisor.
+REGISTER child processes using register(name, cmd).
+LAUNCH all registered processes with start_all().
+MONITOR each child process.
+IF a child process exits with a non‑zero status THEN
+    RESTART the child using exponential backoff intervals: 1 second, 2 seconds, 4 seconds, doubling each time up to a maximum of 30 seconds.
+    IF the child crashes five times within a 60‑second window THEN
+        MARK the process as failed and CEASE further restarts.
+    ENDIF
+ENDIF
+PROVIDE a stop_all() operation that sends SIGTERM to all children, and IF a child does not exit within 5 seconds THEN send SIGKILL.
+INCLUDE a test where a child script crashes three times before succeeding, verifying that the supervisor correctly restarts the process with the specified exponential backoff behavior.
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-151739\results\03-07_process_supervisor\session\catalogue-03-07-1790882525\worker-progress.log]
+[api] response received in 2191ms
+Response Plan Pseudocode
+
+DEFINE a ProcessSupervisor component
+REGISTER child processes via a register(name, cmd) operation
+LAUNCH all registered child processes with start_all()
+MONITOR each child process for termination status
+IF a child process exits with a non‑zero status THEN
+    RESTART the child using exponential backoff intervals: 1 second, 2 seconds, 4 seconds, doubling each time up to a maximum of 30 seconds
+    TRACK restart attempts and timestamps
+    IF the child crashes five times within a 60‑second window THEN
+        MARK the child as failed
+        CEASE further restarts for that child
+    ENDIF
+ENDIF
+PROVIDE a stop_all() operation that sends SIGTERM to all children
+WAIT up to 5 seconds for each child to exit
+IF a child has not exited after 5 seconds THEN
+    SEND SIGKILL to the child
+ENDIF
+DEVELOP a test case where a child script crashes three times before succeeding
+EXECUTE the supervisor with the test child script
+VERIFY that the supervisor restarts the child with the specified exponential backoff behavior
+VERIFY that the child is not marked as failed because the crash count does not exceed the threshold
+VERIFY that stop_all correctly terminates children using SIGTERM and SIGKILL as needed
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-151739\results\03-07_process_supervisor\session\catalogue-03-07-1790882525\worker-progress.log]
+[api] response received in 1788ms
+import subprocess
+import threading
+import time
+import signal
+import os
+from collections import deque
+
+class ProcessSupervisor:
+    def __init__(self):
+        self._registry = {}
+        self._processes = {}
+        self._restart_info = {}
+        self._lock = threading.Lock()
+        self._stop_event = threading.Event()
+
+    def register(self, name: str, cmd: list[str]):
+        with self._lock:
+            if name in self._registry:
+                raise ValueError(f"Process '{name}' already registered")
+            self._registry[name] = cmd
+            self._restart_info[name] = {
+                "attempts": deque(),  # timestamps of recent crashes
+                "backoff": 1,
+                "failed": False,
+            }
+
+    def start_all(self):
+        with self._lock:
+            for name, cmd in self._registry.items():
+                self._launch(name, cmd)
+        # start monitor thread
+        threading.Thread(target=self._monitor_loop, daemon=True).start()
+
+    def _launch(self, name: str, cmd: list[str]):
+        if self._restart_info[name]["failed"]:
+            return
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            preexec_fn=os.setsid,
+        )
+        with self._lock:
+            self._processes[name] = proc
+        threading.Thread(target=self._waiter, args=(name, proc), daemon=True).start()
+
+    def _waiter(self, name: str, proc: subprocess.Popen):
+        returncode = proc.wait()
+        # capture output (optional)
+        stdout, stderr = proc.communicate()
+        # Notify monitor via a queue or shared state – here we simply rely on _monitor_loop reading returncode.
+        # Store exit info
+        with self._lock:
+            self._processes.pop(name, None)
+            self._restart_info[name]["last_returncode"] = returncode
+            self._restart_info[name]["last_exit_time"] = time.time()
+
+    def _monitor_loop(self):
+        while not self._stop_event.is_set():
+            time.sleep(0.5)
+            with self._lock:
+                for name in list(self._processes.keys()):
+                    # already handled by _waiter; check if process vanished without being removed
+                    pass
+                # handle crashed processes
+                for name, info in self._restart_info.items():
+                    if info.get("failed"):
+                        continue
+                    if "last_returncode" in info and info["last_returncode"] != 0:
+                        now = time.time()
+                        # record crash timestamp
+                        info["attempts"].append(now)
+                        # prune old attempts (outside 60‑second window)
+                        while info["attempts"] and now - info["attempts"][0] > 60:
+                            info["attempts"].popleft()
+                        if len(info["attempts"]) >= 5:
+                            info["failed"] = True
+                            continue
+                        # exponential backoff
+                        backoff = info["backoff"]
+                        time.sleep(backoff)
+                        info["backoff"] = min(backoff * 2, 30)
+                        # relaunch
+                        self._launch(name, self._registry[name])
+                # reset per‑iteration markers
+                for info in self._restart_info.values():
+                    info.pop("last_returncode", None)
+                    info.pop("last_exit_time", None)
+
+    def stop_all(self):
+        self._stop_event.set()
+        with self._lock:
+            procs = list(self._processes.items())
+        for name, proc in procs:
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                deadline = time.time() + 5
+                while proc.poll() is None and time.time() < deadline:
+                    time.sleep(0.1)
+                if proc.poll() is None:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            except Exception:
+                pass
+        with self._lock:
+            self._processes.clear()
+
+# --- Test harness ---
+if __name__ == "__main__":
+    import textwrap, sys, pathlib
+    # create a temporary child script that crashes three times then exits cleanly
+    script_path = pathlib.Path("crasher.py")
+    script_path.write_text(textwrap.dedent('''
+        import sys, time
+        state_file = "crash_state.txt"
+        try:
+            with open(state_file, "r") as f:
+                count = int(f.read())
+        except FileNotFoundError:
+            count = 0
+        if count < 3:
+            count += 1
+            with open(state_file, "w") as f:
+                f.write(str(count))
+            print(f"Crash #{count}")
+            sys.exit(1)
+        else:
+            print("Succeeded after crashes")
+            sys.exit(0)
+    '''))
+    sup = ProcessSupervisor()
+    sup.register("crasher", [sys.executable, str(script_path)])
+    sup.start_all()
+    # let it run for a while
+    time.sleep(20)
+    sup.stop_all()
+    # cleanup
+    script_path.unlink(missing_ok=True)
+    try:
+        pathlib.Path("crash_state.txt").unlink(missing_ok=True)
+    except Exception:
+        pass
+    print("Test completed")
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

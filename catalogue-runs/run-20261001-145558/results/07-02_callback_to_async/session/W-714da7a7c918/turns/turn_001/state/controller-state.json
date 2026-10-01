@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-f5191c08b7",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-f5191c08b7-P1",
+    "body": "READ the provided Node.js‑style callback code\nCONVERT the code into clean async/await Python using async def and await\nPRESERVE the same logical flow and error handling\nUSE try and except blocks to handle errors as in the original code\nINCLUDE unit tests that verify the success path where user, org, and permissions are fetched correctly\nINCLUDE unit tests that verify errors propagate correctly through the async functions",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-f5191c08b7-R1",
+    "body": "READ the provided Node.js‑style callback code\nANALYZE its logical flow and error handling\nTRANSLATE the callback functions into async def Python functions using await\nMAP error propagation to try/except blocks preserving original semantics\nWRITE the converted async/await Python module\nDEVELOP unit tests for the success path verifying correct fetching of user, org, and permissions\nDEVELOP unit tests for error propagation verifying exceptions are raised through async calls\nEXECUTE the unit tests to validate correctness",
+    "confirmed": true,
+    "source_prompt_id": "I-f5191c08b7-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-f5191c08b7-X1",
+    "body": "e60f1e0689831a08c62f245d81709c74b7ab3465d08d933ef68fb6055725273f",
+    "confirmed": true,
+    "source_prompt_id": "I-f5191c08b7-P1",
+    "source_plan_id": "I-f5191c08b7-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

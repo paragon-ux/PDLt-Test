@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-e2d61f3281",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-e2d61f3281-P1",
+    "body": "DETERMINE if the undirected graph G with 12 nodes labeled 0 through 11 and the provided edge list contains a Hamiltonian path.\nIF a Hamiltonian path exists THEN\n    OUTPUT the complete path.\n    VERIFY that the path includes all 12 nodes.\n    VERIFY that each consecutive pair of nodes in the path corresponds to an edge in G.\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-e2d61f3281-R1",
+    "body": "DEFINE BACKTRACK:\n    INITIALIZE an empty path candidate\n    SELECT a start node from G\n    PERFORM a backtracking search with pruning to explore node orderings\n    IF a Hamiltonian path is found THEN\n        OUTPUT the complete path\n        VERIFY that the path includes all 12 nodes\n        VERIFY that each consecutive pair of nodes in the path corresponds to an edge in G\n    ELSE\n        OUTPUT that no Hamiltonian path exists",
+    "confirmed": true,
+    "source_prompt_id": "I-e2d61f3281-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-e2d61f3281-X1",
+    "body": "2639a345e66d063ae6ecc9a021b38019a0e05ab84d441067203c9097253dd16b",
+    "confirmed": true,
+    "source_prompt_id": "I-e2d61f3281-P1",
+    "source_plan_id": "I-e2d61f3281-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

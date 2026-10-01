@@ -1,0 +1,15 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Diagnose the stack overflow caused by deep recursion in the provided recursive `serialize` function for the `Node` class. Convert this recursive serialization into an iterative algorithm that can handle trees of depth at least 100,000. Implement the iterative solution in Python and verify it by constructing a linear chain of 50,000 `Node` objects (depth-50000) and serializing it.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "Node",
+    "serialize",
+    "val",
+    "children",
+    "null",
+    "50000",
+    "100,000+"
+  ]
+}

@@ -1,0 +1,42 @@
+Two‑Phase Commit Protocol State Machines
+
+**Coordinator States**
+- **START** – initial state before any action.
+- **PREPARE** – after sending a prepare request to all participants.
+- **COMMIT** – after receiving all YES votes and sending commit messages.
+- **ABORT** – after receiving any NO vote (or timeout) and sending abort messages.
+- **DONE** – final state after the transaction is finalized.
+
+**Coordinator Transitions**
+1. **START → PREPARE**: Send `PREPARE` request to every participant.
+2. **PREPARE → COMMIT**: If every participant replies with vote `YES`, send `COMMIT` request to all participants.
+3. **PREPARE → ABORT**: If any participant replies with vote `NO`, send `ABORT` request to all participants.
+4. **COMMIT → DONE**: After sending commit, optionally wait for acknowledgments and then finalize.
+5. **ABORT → DONE**: After sending abort, optionally wait for acknowledgments and then finalize.
+
+**Participant States**
+- **IDLE** – waiting for a prepare request.
+- **PREPARED** – received `PREPARE`, decision made, vote sent.
+- **COMMITTED** – received `COMMIT` and completed the transaction.
+- **ABORTED** – received `ABORT` and rolled back.
+
+**Participant Transitions**
+1. **IDLE → PREPARED**: On receiving `PREPARE`, decide to vote `YES` (commit) or `NO` (abort) and send the vote to the coordinator.
+2. **PREPARED → COMMITTED**: On receiving `COMMIT`, apply the transaction and move to `COMMITTED`.
+3. **PREPARED → ABORTED**: On receiving `ABORT`, roll back and move to `ABORTED`.
+
+**Deadlock‑Free Analysis (no message loss, eventual responses)**
+- The coordinator proceeds from **START** to **PREPARE** and then waits for votes. Because all participants eventually respond, the coordinator will either receive all `YES` votes or at least one `NO` vote. In either case it deterministically moves to **COMMIT** or **ABORT**, respectively, and then to **DONE**.
+- Participants, after sending their vote, wait for the final decision. Since the coordinator subsequently sends either `COMMIT` or `ABORT`, each participant receives the expected decision and moves to **COMMITTED** or **ABORTED**, thereafter reaching **DONE** via the coordinator's finalization.
+- No state can remain indefinitely waiting for a message that will never arrive; all waits are bounded by the eventual‑response assumption. Therefore the protocol is deadlock‑free under these assumptions.
+
+**Potential Deadlock with Message Loss**
+- Suppose a participant does not receive the final `COMMIT` or `ABORT` message (e.g., network loss). The participant stays in **PREPARED**, waiting indefinitely for the decision.
+- Simultaneously, the coordinator may have already transitioned to **DONE** after sending the final decision to the other participants. If the coordinator also waits for acknowledgments from all participants before finishing, it may block waiting for the missing acknowledgment, creating a deadlock where both sides wait for each other.
+
+**Mitigation – Timeout‑Based Presumed Abort**
+1. **Coordinator Timeout**: If the coordinator does not receive votes from all participants within a configurable timeout, it aborts the transaction and sends an `ABORT` to all participants that have responded.
+2. **Participant Timeout**: If a participant remains in **PREPARED** without receiving a final decision within a timeout, it locally aborts the transaction and transitions to **ABORTED**.
+3. Both sides treat timeout‑driven aborts as final decisions, ensuring progress and preventing indefinite waiting.
+
+With these timeouts, any loss of messages results in a safe abort rather than a deadlock, preserving the protocol’s liveness property.

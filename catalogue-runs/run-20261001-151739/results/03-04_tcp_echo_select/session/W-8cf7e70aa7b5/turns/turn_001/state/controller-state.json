@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-4a963649c6",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-4a963649c6-P1",
+    "body": "IMPLEMENT a TCP echo server in Python that LISTENS on a configurable port.\nACCEPT multiple concurrent clients up to a maximum of 64 connections.\nECHO back each line received from each client, preserving newlines.\nHANDLE client disconnections gracefully by REMOVING the client socket from the select set and CLOSING it.\nREJECT any connection attempts exceeding 64 simultaneous connections with an appropriate message.\nINCLUDE a test that SPAWNS the server, CONNECTS three clients concurrently, SEND distinct messages from each client, VERIFY that each client receives the correct echoed messages, then DISCONNECT the clients and VERIFY cleanup.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-4a963649c6-R1",
+    "body": "CONFIGURE the listening port (or use default).\nINITIALIZE a TCP listening socket.\nUSE only the SELECT module for I/O multiplexing, avoiding asyncio and threading.\nSET socket options as needed.\nBIND the socket to the configured port.\nLISTEN for incoming connections.\nINITIALIZE an empty collection of client sockets and a connection counter.\nENTER the main event loop using SELECT to monitor the listening socket and all client sockets for readability.\nIF the listening socket is readable THEN\n    IF connection counter < 64 THEN\n        ACCEPT the new client connection.\n        ADD the client socket to the SELECT monitoring set.\n        INCREMENT the connection counter.\n    ELSE\n        SEND a rejection message to the connecting client.\n        CLOSE the connecting socket.\n    ENDIF\nENDIF\nFOR each client socket reported as readable by SELECT DO\n    READ a line (including newline) from the client.\n    IF the read data is empty (client closed) THEN\n        REMOVE the client socket from the SELECT monitoring set.\n        CLOSE the client socket.\n        DECREMENT the connection counter.\n    ELSE\n        ECHO the received line back to the same client, preserving the newline.\n    ENDIF\nENDFOR\nCONTINUE the event loop until external termination.\nDEVELOP a test harness that:\n    SPAWNS the echo server on a configurable port.\n    CONNECT three client sockets concurrently to the server.\n    SEND distinct messages from each client.\n    COLLECT the responses from each client.\n    VERIFY that each client receives the exact echoed messages it sent.\n    DISCONNECT the three clients.\n    VERIFY that the server has removed the client sockets and cleaned up resources.",
+    "confirmed": true,
+    "source_prompt_id": "I-4a963649c6-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-4a963649c6-X1",
+    "body": "fe0c5aefc019d1b1e2e8e74c3d473a66d657886fcec4a5de951f5813ddb2ed64",
+    "confirmed": true,
+    "source_prompt_id": "I-4a963649c6-P1",
+    "source_plan_id": "I-4a963649c6-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

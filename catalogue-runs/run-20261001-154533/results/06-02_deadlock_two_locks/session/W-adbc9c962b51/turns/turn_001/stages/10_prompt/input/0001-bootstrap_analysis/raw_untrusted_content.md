@@ -1,0 +1,31 @@
+The following program deadlocks intermittently. Diagnose the deadlock, explain the lock ordering violation, and provide a corrected version.
+
+```python
+import threading
+
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+results = []
+
+def transfer_ab(amount):
+    with lock_a:
+        with lock_b:
+            results.append(('ab', amount))
+
+def transfer_ba(amount):
+    with lock_b:
+        with lock_a:
+            results.append(('ba', amount))
+
+threads = []
+for i in range(100):
+    threads.append(threading.Thread(target=transfer_ab, args=(i,)))
+    threads.append(threading.Thread(target=transfer_ba, args=(i,)))
+
+for t in threads:
+    t.start()
+for t in threads:
+    t.join(timeout=5)
+```
+
+Include a test that demonstrates the deadlock risk in the original code and verifies the fix runs without hanging.

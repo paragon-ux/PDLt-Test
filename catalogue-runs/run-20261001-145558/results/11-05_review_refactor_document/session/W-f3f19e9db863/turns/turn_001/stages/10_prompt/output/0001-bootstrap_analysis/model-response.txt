@@ -1,0 +1,11 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Review the provided Python code containing three functions: merge_sorted_lists, binary_search_recursive, and flatten. For each function, identify existing bugs, apply necessary fixes, correct the docstrings (including fixing the incorrect time complexity claim), and create unit tests that demonstrate the original bug behavior and verify the corrected behavior.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "merge_sorted_lists",
+    "binary_search_recursive",
+    "flatten"
+  ]
+}

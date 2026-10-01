@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-c27c5ab16a",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-c27c5ab16a-P1",
+    "body": "READ request to implement a thread-safe sharded LRU cache in Python.\nSET default number of shards to 16.\nDIVIDE the cache into N shards, each with its own lock and capacity.\nROUTE keys to shards using hash(key) % N.\nMAINTAIN LRU eviction order independently within each shard.\nENSURE get() and put() operations acquire only the lock of the target shard, never a global lock.\nINCLUDE a multi-threaded stress test with 8 threads performing concurrent reads and writes.\nVERIFY that no data corruption occurs and that eviction behavior is correct.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-c27c5ab16a-R1",
+    "body": "DESIGN the cache structure with N shards and per‑shard lock\nSET default shard count to 16\nIMPLEMENT each shard as an LRU container with its own capacity limit\nDEFINE a hash function to map keys to shard index via hash(key) % N\nWRITE get(key) to locate target shard, acquire its lock, retrieve value, update LRU order, and release lock\nWRITE put(key, value) to locate target shard, acquire its lock, insert or update entry, enforce per‑shard capacity by evicting least‑recently‑used items, and release lock\nCOMPOSE a Cache class that delegates get and put to appropriate shards\nDEVELOP a multi‑threaded stress test that creates 8 threads each performing a mix of get and put operations on shared Cache instance\nINSTRUMENT the test to record any data corruption or inconsistent state\nRUN the stress test and VERIFY that no corruption occurs and that eviction behavior matches expected LRU policy",
+    "confirmed": true,
+    "source_prompt_id": "I-c27c5ab16a-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-c27c5ab16a-X1",
+    "body": "d67e657efb0148af57346f778cf53b2e6aacbae7fffff43c06451616a9a25959",
+    "confirmed": true,
+    "source_prompt_id": "I-c27c5ab16a-P1",
+    "source_plan_id": "I-c27c5ab16a-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

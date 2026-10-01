@@ -1,0 +1,67 @@
+{
+  "id": "02-06",
+  "category": "data_structures",
+  "file": "02_data_structures/disjoint_set_rollback.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 7.55,
+  "start_time": "2026-10-01T18:57:57.811295+00:00",
+  "session_id": "catalogue-02-06-1790881077",
+  "transcript_file": "results\\02-06_disjoint_set_rollback\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-01",
+    "PDL-06"
+  ],
+  "tags": [
+    "union-find",
+    "rollback",
+    "snapshot"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 5,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 2,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "unmeasured_repairs": 0,
+      "repairs_allowed": 0,
+      "tier": "MINIMAL"
+    },
+    "plan_echo": {
+      "plan_id": "I-a283e9d2c2-R1",
+      "identical": false,
+      "copied_line_ratio": 0.0
+    },
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 71,
+      "DRAFT_PLAN": 34,
+      "EXECUTE": 52
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 261,
+      "DRAFT_PLAN": 215,
+      "EXECUTE": 1513
+    }
+  },
+  "repeat": null,
+  "harness_error": null
+}

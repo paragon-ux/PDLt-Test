@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+import re
+
+def escape_html(text):
+    return (text.replace('&','&amp;').replace('<','&lt;').replace('>','&gt;'))
+
+def replace_inline(md):
+    # code
+    md = re.sub(r'(`+)(.+?)\1', lambda m: f'<code>{escape_html(m.group(2))}</code>', md)
+    # bold (** or __)
+    md = re.sub(r'(\*\*|__)(.+?)\1', lambda m: f'<strong>{m.group(2)}</strong>', md)
+    # italic (* or _)
+    md = re.sub(r'(\*|_)(.+?)\1', lambda m: f'<em>{m.group(2)}</em>', md)
+    # links
+    md = re.sub(r'\[(.+?)\]\((.+?)\)', lambda m: f'<a href="{m.group(2)}">{m.group(1)}</a>', md)
+    return md
+
+def parse_markdown(md_text):
+    lines = md_text.split('\n')
+    html = []
+    i = 0
+    in_code_block = False
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith('    ') or line.startswith('```'):
+            if not in_code_block:
+                in_code_block = True
+                html.append('<pre><code>')
+                if line.startswith('```'):
+                    i += 1
+                    continue
+                else:
+                    html.append(escape_html(line[4:]))
+            else:
+                if line.startswith('```'):
+                    in_code_block = False
+                    html.append('</code></pre>')
+                else:
+                    html.append(escape_html(line[4:]))
+            i += 1
+            continue
+        if in_code_block:
+            html.append(escape_html(line))
+            i += 1
+            continue
+        stripped = line.strip()
+        if not stripped:
+            i += 1
+            continue
+        # header
+        header_match = re.match(r'^(#{1,6})\s*(.*)$', stripped)
+        if header_match:
+            level = len(header_match.group(1))
+            content = replace_inline(header_match.group(2).strip())
+            html.append(f'<h{level}>{content}</h{level}>')
+            i += 1
+            continue
+        # unordered list
+        if re.match(r'^[-*]\s+', stripped):
+            html.append('<ul>')
+            while i < len(lines) and re.match(r'^[-*]\s+', lines[i].strip()):
+                item = re.sub(r'^[-*]\s+', '', lines[i].strip())
+                html.append(f'<li>{replace_inline(item)}</li>')
+                i += 1
+            html.append('</ul>')
+            continue
+        # paragraph
+        para_lines = []
+        while i < len(lines) and lines[i].strip():
+            para_lines.append(lines[i].strip())
+            i += 1
+        para_text = ' '.join(para_lines)
+        html.append(f'<p>{replace_inline(para_text)}</p>')
+    return '\n'.join(html)
+
+if __name__ == '__main__':
+    # simple demo
+    sample = """# Header 1\n\nThis is a **bold** and *italic* text with `code` and a [link](http://example.com).\n\n- Item 1\n- Item 2\n\n    def foo():\n        return 'bar'\n"""
+    print(parse_markdown(sample))
+
+# Tests\nimport unittest\n\nclass TestMarkdownConverter(unittest.TestCase):
+    def test_headers(self):
+        md = "## Header2"
+        html = parse_markdown(md)
+        self.assertEqual(html.strip(), '<h2>Header2</h2>')
+    def test_bold_italic_nested(self):
+        md = "**bold and *italic inside***"
+        html = parse_markdown(md)
+        self.assertEqual(html.strip(), '<p><strong>bold and <em>italic inside</em></strong></p>')
+    def test_inline_code(self):
+        md = "Here is `code` snippet."
+        html = parse_markdown(md)
+        self.assertEqual(html.strip(), '<p>Here is <code>code</code> snippet.</p>')
+    def test_links_special(self):
+        md = "Check [this link](https://example.com/?q=hello&lang=en)."
+        html = parse_markdown(md)
+        self.assertEqual(html.strip(), '<p>Check <a href="https://example.com/?q=hello&lang=en">this link</a>.</p>')
+    def test_unordered_list(self):
+        md = "- One\n- Two"
+        html = parse_markdown(md)
+        self.assertEqual(html.strip(), '<ul>\n<li>One</li>\n<li>Two</li>\n</ul>')
+    def test_code_block_fenced(self):
+        md = "```\nline1\nline2\n```"
+        html = parse_markdown(md)
+        self.assertEqual(html.strip(), '<pre><code>\nline1\nline2\n</code></pre>')
+    def test_code_block_indent(self):
+        md = "    indented line"
+        html = parse_markdown(md)
+        self.assertEqual(html.strip(), '<pre><code>indented line</code></pre>')
+    def test_paragraphs(self):
+        md = "First line.\nSecond line."
+        html = parse_markdown(md)
+        self.assertEqual(html.strip(), '<p>First line. Second line.</p>')
+    def test_empty_header(self):
+        md = "### \nContent"
+        html = parse_markdown(md)
+        self.assertIn('<h3></h3>', html)
+    def test_complex(self):
+        md = "# Header\n\nParagraph with **bold**, *italic*, `code`, and [link](http://x.com).\n\n- List **item**\n- *Another* item\n\n```\ncode block\n```"
+        html = parse_markdown(md)
+        self.assertIn('<h1>Header</h1>', html)
+        self.assertIn('<li><strong>item</strong></li>', html)
+        self.assertIn('<pre><code>\ncode block\n</code></pre>', html)
+\nif __name__ == '__main__':
+    unittest.main(argv=['first-arg-is-ignored'], exit=False)

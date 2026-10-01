@@ -1,0 +1,17 @@
+The following binary search function has a subtle bug that causes it to miss certain elements or loop infinitely on certain inputs. Identify the bug, explain why it occurs, fix it, and include a test suite that demonstrates the bug with the original code and confirms the fix.
+
+```python
+def binary_search(arr, target):
+    lo, hi = 0, len(arr)
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            lo = mid
+        else:
+            hi = mid
+    return -1
+```
+
+Test with: arr = [1, 3, 5, 7, 9, 11, 13], targets = [1, 7, 13, 4, 0, 14].

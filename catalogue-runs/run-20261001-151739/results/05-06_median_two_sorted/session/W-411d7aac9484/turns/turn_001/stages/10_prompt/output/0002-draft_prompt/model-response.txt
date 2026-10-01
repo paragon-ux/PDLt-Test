@@ -1,0 +1,1 @@
+{"kind": "PROMPT", "prompt_body": "FIND the median of the sorted integer arrays nums1 and nums2 using a binary search partition method that runs in O(log(min(m, n))) time.\nRETURN the median as a floating-point value.\nVALIDATE the result using the provided test cases.", "approach_handoff": "NONE", "task_entities": ["nums1", "nums2", "O(log(min(m, n)))"]}

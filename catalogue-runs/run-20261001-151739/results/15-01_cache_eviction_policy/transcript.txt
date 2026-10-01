@@ -1,0 +1,10 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Given a cache serving the following workload trace, compare LRU, LFU, and ARC eviction policies:
+
+Access sequence (item IDs): [1,2,3,4,5,1,2,6,7,8,1,2,3,9,10,1,2,3,4,5,6,7,1,2,8,9,10,1,2,3]
+Cache capacity: 5
+
+For each policy: simulate the access sequence, count cache hits and misses, compute the hit rate, and show the cache state after each access. Explain which policy wins on this workload and why.
+ERROR> ProviderError: HTTP 403: {"error":{"message":"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/c511b51bb215e7875dbde1054934ed9d3d39bae3cf8306e85d716fd1e34b98f8","code":403}}
+=== PDLt session ended ===

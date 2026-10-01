@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-7a01e041be",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-7a01e041be-P1",
+    "body": "REFRACTOR the provided Python inheritance hierarchy (class Animal, FlyingAnimal, SwimmingAnimal, FlyingSwimmingAnimal, DivingBird) to a composition-based design using explicit interfaces (Protocol classes or abstract base classes).\nELIMINATE multiple inheritance.\nENSURE that a Duck can be composed from Flying and Swimming behaviors without requiring a FlyingSwimmingAnimal base class.\nPROVIDE unit tests that demonstrate behavioral parity with the original implementation.\nINCLUDE the following entities verbatim: Animal, FlyingAnimal, SwimmingAnimal, FlyingSwimmingAnimal, DivingBird, Duck, Protocol.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-7a01e041be-R1",
+    "body": "PARSE the supplied Python inheritance hierarchy definitions.\nEXTRACT the behavior methods associated with flying and swimming.\nDEFINE Protocol interfaces for flying behavior and for swimming behavior.\nREFRACTOR the Animal class to serve as a simple base class without behavior implementations.\nIMPLEMENT concrete behavior components that provide flying capabilities and swimming capabilities.\nREFRACTOR DivingBird to compose the appropriate behavior components instead of inheriting from FlyingAnimal or SwimmingAnimal.\nREFRACTOR Duck to compose both flying and swimming behavior components without requiring a FlyingSwimmingAnimal base class.\nELIMINATE multiple inheritance from all class definitions.\nINCLUDE verbatim the entities Animal, FlyingAnimal, SwimmingAnimal, FlyingSwimmingAnimal, DivingBird, Duck, Protocol in the refactored code.\nWRITE unit tests that instantiate both the original hierarchy classes and the refactored composition-based classes, invoke their behavior methods, and assert equivalent outcomes.\nEXECUTE the unit tests to verify behavioral parity between the original and refactored implementations.\nPACKAGE the refactored code and unit tests as the final deliverable.",
+    "confirmed": true,
+    "source_prompt_id": "I-7a01e041be-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-7a01e041be-X1",
+    "body": "51f88f4f119a199191a44ae57a0e288f1d1b7690e4000875f43791847aa32393",
+    "confirmed": true,
+    "source_prompt_id": "I-7a01e041be-P1",
+    "source_plan_id": "I-7a01e041be-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-4c909e6206",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-4c909e6206-P1",
+    "body": "FIND all subsets of the set S = {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21} that sum exactly to the target value T = 40.\nFOR each solution, EMIT the subset.\nVERIFY that each emitted subset sums to 40.\nREPORT the total number of solutions.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-4c909e6206-R1",
+    "body": "INITIATE an empty collection SOLUTIONS and a COUNTER set to 0\nDEFINE BACKTRACK(subset, sum, start_index) AS a routine that EXPLORES the full search tree of subsets of S\n  IF sum = 40 THEN\n    EMIT subset\n    VERIFY sum = 40\n    INCREMENT COUNTER\n  ELSE IF sum > 40 OR start_index >= size of S THEN\n    RETURN\n  ELSE\n    FOR i FROM start_index TO size of S - 1 DO\n      ADD S[i] TO subset\n      CALL BACKTRACK(subset, sum + S[i], i + 1)\n      REMOVE S[i] FROM subset\nCALL BACKTRACK with empty subset, sum 0, start_index 0\nREPORT COUNTER as the total number of solutions",
+    "confirmed": true,
+    "source_prompt_id": "I-4c909e6206-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-4c909e6206-X1",
+    "body": "884cd5bbc72c3acf7de956cb0d8cbd1cd5ba2b5ac10cb78f2d594f61ffd5204c",
+    "confirmed": true,
+    "source_prompt_id": "I-4c909e6206-P1",
+    "source_plan_id": "I-4c909e6206-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

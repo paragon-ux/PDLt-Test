@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-aa14ddc46b",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-aa14ddc46b-P1",
+    "body": "REFactor the monolithic Python class that manages users, sessions, and email queuing into at least three separate cohesive classes, each with a single responsibility (e.g., UserRepository, SessionManager, EmailDispatcher). PRESERVE all existing behavior, including user creation, login/logout, session cleanup, email queuing and sending, user activation/deactivation, and listing active users. PROVIDE unit tests that demonstrate the refactored implementation retains the original functionality. COVER tests for user creation, login, logout, session expiration, email dispatch, deactivation, and active-user listing.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-aa14ddc46b-R1",
+    "body": "REFactor the monolithic Python class into separate cohesive classes\nCREATE a UserRepository class handling user creation, activation/deactivation, and retrieval of active users\nCREATE a SessionManager class handling login, logout, session tracking, and cleanup of expired sessions\nCREATE an EmailDispatcher class handling email queuing and sending\nENSURE each class encapsulates a single responsibility and exposes clear public methods\nINTEGRATE the new classes so that existing workflows (user creation, login, logout, session expiration, email dispatch, deactivation, active‑user listing) invoke them appropriately\nWRITE unit tests for UserRepository covering user creation, activation, deactivation, and listing active users\nWRITE unit tests for SessionManager covering login, logout, and session expiration handling\nWRITE unit tests for EmailDispatcher covering email queuing and sending\nRUN all unit tests to verify behavior matches the original implementation",
+    "confirmed": true,
+    "source_prompt_id": "I-aa14ddc46b-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-aa14ddc46b-X1",
+    "body": "97b0a901fcddc751986e6856b71ea9f96c79ec2c18283325ecb15b657539101e",
+    "confirmed": true,
+    "source_prompt_id": "I-aa14ddc46b-P1",
+    "source_plan_id": "I-aa14ddc46b-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

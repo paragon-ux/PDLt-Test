@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-c54cf112d4",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-c54cf112d4-P1",
+    "body": "VERBATIM ENTITIES: fetch_user, fetch_org, fetch_permissions, get_user_context, user_id, org_id, on_success, on_error, final_callback, User_, Org_, Network error, Org not found, enterprise, read, write, admin, permissions, async, await, tests\nCONVERT the provided callback-hell Node.js-style code to clean async/await Python, preserving the exact same logical flow and error handling.\nUSE async def and await to define asynchronous functions.\nIMPLEMENT try/except blocks to translate on_error callbacks into raised exceptions.\nMAP each original function (fetch_user, fetch_org, fetch_permissions, get_user_context) to an equivalent Python async function that returns the same data structures.\nENSURE fetch_user returns a dictionary with keys id, name, org_id where name follows the pattern User_<user_id>. ON ERROR, raise an exception with message \"Network error\".\nENSURE fetch_org returns a dictionary with keys id, name, plan where name follows the pattern Org_<org_id> and plan is \"enterprise\". ON ERROR, raise an exception with message \"Org not found\".\nENSURE fetch_permissions returns a list containing the strings read, write, admin.\nIMPLEMENT get_user_context to orchestrate the async calls and produce a final result dictionary containing keys user, org, permissions.\nINCLUDE tests that verify the success path and error propagation for each async function, confirming that the final result contains the expected user, org, and permissions data.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-c54cf112d4-R1",
+    "body": "PARSE the supplied Node.js callback-hell code to extract the logical flow and error handling.\nIDENTIFY the functions fetch_user, fetch_org, fetch_permissions, get_user_context.\nDEFINE async Python equivalents for each identified function using async def and await.\nIMPLEMENT fetch_user as an async function that:\n    RETURN a dictionary with keys id, name, org_id, where name follows the pattern User_<user_id>.\n    USE a try/except block to catch network errors and raise an exception with message \"Network error\".\nIMPLEMENT fetch_org as an async function that:\n    RETURN a dictionary with keys id, name, plan, where name follows the pattern Org_<org_id> and plan is \"enterprise\".\n    USE a try/except block to catch errors and raise an exception with message \"Org not found\".\nIMPLEMENT fetch_permissions as an async function that:\n    RETURN a list containing the strings read, write, admin.\nDEFINE get_user_context as an async function that:\n    AWAIT fetch_user.\n    AWAIT fetch_org.\n    AWAIT fetch_permissions.\n    COMPOSE a result dictionary with keys user, org, permissions.\n    ALLOW any raised exceptions to propagate naturally.\nCREATE asynchronous unit tests that:\n    VERIFY the success path returns the expected user, org, and permissions data.\n    VERIFY that a network error raised by fetch_user propagates as an exception.\n    VERIFY that an org not found error raised by fetch_org propagates as an exception.\n    VERIFY that an error raised by fetch_permissions propagates as an exception.\nEXECUTE the defined tests using an appropriate asynchronous test runner.",
+    "confirmed": true,
+    "source_prompt_id": "I-c54cf112d4-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-c54cf112d4-X1",
+    "body": "98f91243b70335fa43dcc0e0f978093ad76c16f69f1261950adbe1022f8dd296",
+    "confirmed": true,
+    "source_prompt_id": "I-c54cf112d4-P1",
+    "source_plan_id": "I-c54cf112d4-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

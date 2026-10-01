@@ -1,0 +1,19 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Diagnose the intermittent deadlock in the provided Python program caused by inconsistent lock ordering between transfer_ab (acquires lock_a then lock_b) and transfer_ba (acquires lock_b then lock_a). Explain the lock ordering violation, and supply a corrected version where both functions acquire the locks in a consistent global order to prevent deadlock. Include a test that demonstrates the deadlock risk in the original code and verifies that the fixed code runs without hanging.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "transfer_ab",
+    "transfer_ba",
+    "lock_a",
+    "lock_b",
+    "results",
+    "threading",
+    "Thread",
+    "join",
+    "timeout",
+    "deadlock",
+    "lock ordering"
+  ]
+}

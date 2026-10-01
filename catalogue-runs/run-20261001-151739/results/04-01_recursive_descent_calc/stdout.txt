@@ -1,0 +1,230 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-151739\results\04-01_recursive_descent_calc\session\catalogue-04-01-1790882541\worker-progress.log]
+[api] response received in 2601ms
+[api] response received in 4929ms
+Prompt Pseudocode
+
+IMPLEMENT a Python recursive descent parser that acts as a calculator.
+SUPPORT the operators +, -, *, /, unary minus, and parentheses.
+HANDLE integer and float literals.
+RESPECT precedence: unary minus highest, then * and /, then + and -.
+APPLY left-associative evaluation for binary operators.
+RETURN a numeric result (not an AST).
+RAISE a clear error message for malformed expressions such as unmatched parentheses or missing operand.
+PROVIDE tests that verify:
+- Verify that 3 + 4 * 2 evaluates to 11.
+- Verify that -(3 + 4) * 2 evaluates to -14.
+- Verify that 10 / 3 yields approximately 3.333...
+INCLUDE at least three error cases (e.g., unmatched parentheses, missing operand, division by zero).
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-151739\results\04-01_recursive_descent_calc\session\catalogue-04-01-1790882541\worker-progress.log]
+[api] response received in 1683ms
+Response Plan Pseudocode
+
+DEFINE the lexical token types: numbers, operators (+, -, *, /), parentheses, end-of-input.
+IMPLEMENT a lexer that scans the input string and produces a token stream.
+DEFINE the grammar hierarchy:
+    parse_expression   handles addition and subtraction.
+    parse_term         handles multiplication and division.
+    parse_factor       handles unary minus and primary expressions.
+    parse_primary      handles numeric literals and parenthesized subexpressions.
+IMPLEMENT parse_expression using left-associative evaluation of parse_term combined with +/- operators.
+IMPLEMENT parse_term using left-associative evaluation of parse_factor combined with */ operators.
+IMPLEMENT parse_factor to detect unary minus and delegate to parse_primary.
+IMPLEMENT parse_primary to:
+    IF next token is a number THEN convert to numeric value.
+    ELSE IF next token is '(' THEN parse nested expression and expect matching ')'.
+    ELSE raise a syntax error for unexpected token.
+ENSURE that each parser function returns the computed numeric value directly.
+HANDLE division by zero by raising a clear runtime error with an explanatory message.
+HANDLE malformed expressions (unmatched parentheses, missing operands) by raising syntax errors with clear messages.
+DEVELOP a test suite that:
+    VERIFY that "3 + 4 * 2" evaluates to 11.
+    VERIFY that "-(3 + 4) * 2" evaluates to -14.
+    VERIFY that "10 / 3" evaluates to a value within tolerance of 3.333... .
+    VERIFY that an expression with unmatched parentheses raises a syntax error.
+    VERIFY that an expression with a missing operand raises a syntax error.
+    VERIFY that an expression dividing by zero raises a runtime error.
+EXECUTE the test suite and ensure all tests pass.
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-151739\results\04-01_recursive_descent_calc\session\catalogue-04-01-1790882541\worker-progress.log]
+[api] response received in 1262ms
+import re
+
+class CalculatorError(Exception):
+    pass
+
+class Token:
+    NUMBER = 'NUMBER'
+    PLUS = 'PLUS'
+    MINUS = 'MINUS'
+    MUL = 'MUL'
+    DIV = 'DIV'
+    LPAREN = 'LPAREN'
+    RPAREN = 'RPAREN'
+    EOF = 'EOF'
+
+    def __init__(self, type_, value=None):
+        self.type = type_
+        self.value = value
+
+    def __repr__(self):
+        return f'Token({self.type}, {self.value})'
+
+class Lexer:
+    token_specification = [
+        ('NUMBER',  r'\d+(?:\.\d*)?|\.\d+'),
+        ('PLUS',    r'\+'),
+        ('MINUS',   r'-'),
+        ('MUL',     r'\*'),
+        ('DIV',     r'/'),
+        ('LPAREN',  r'\('),
+        ('RPAREN',  r'\)'),
+        ('SKIP',    r'[ \t]+'),
+        ('MISMATCH',r'.'),
+    ]
+    tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
+    get_token = re.compile(tok_regex).match
+
+    def __init__(self, text):
+        self.text = text
+        self.pos = 0
+        self.current_match = None
+        self.next_token = self._advance()
+
+    def _advance(self):
+        while self.pos < len(self.text):
+            self.current_match = self.get_token(self.text, self.pos)
+            if not self.current_match:
+                raise CalculatorError(f'Unexpected character at position {self.pos}')
+            typ = self.current_match.lastgroup
+            val = self.current_match.group(typ)
+            self.pos = self.current_match.end()
+            if typ == 'NUMBER':
+                return Token(Token.NUMBER, float(val))
+            elif typ == 'PLUS':
+                return Token(Token.PLUS)
+            elif typ == 'MINUS':
+                return Token(Token.MINUS)
+            elif typ == 'MUL':
+                return Token(Token.MUL)
+            elif typ == 'DIV':
+                return Token(Token.DIV)
+            elif typ == 'LPAREN':
+                return Token(Token.LPAREN)
+            elif typ == 'RPAREN':
+                return Token(Token.RPAREN)
+            elif typ == 'SKIP':
+                continue
+            else:
+                raise CalculatorError(f'Invalid token {val}')
+        return Token(Token.EOF)
+
+    def peek(self):
+        return self.next_token
+
+    def consume(self, token_type=None):
+        current = self.next_token
+        if token_type and current.type != token_type:
+            raise CalculatorError(f'Expected token {token_type} but got {current.type}')
+        self.next_token = self._advance()
+        return current
+
+class Parser:
+    def __init__(self, lexer):
+        self.lexer = lexer
+
+    def parse(self):
+        value = self.parse_expression()
+        if self.lexer.peek().type != Token.EOF:
+            raise CalculatorError('Unexpected token after end of expression')
+        return value
+
+    def parse_expression(self):
+        value = self.parse_term()
+        while self.lexer.peek().type in (Token.PLUS, Token.MINUS):
+            op = self.lexer.consume().type
+            right = self.parse_term()
+            if op == Token.PLUS:
+                value += right
+            else:
+                value -= right
+        return value
+
+    def parse_term(self):
+        value = self.parse_factor()
+        while self.lexer.peek().type in (Token.MUL, Token.DIV):
+            op = self.lexer.consume().type
+            right = self.parse_factor()
+            if op == Token.MUL:
+                value *= right
+            else:
+                if right == 0:
+                    raise CalculatorError('Division by zero')
+                value /= right
+        return value
+
+    def parse_factor(self):
+        if self.lexer.peek().type == Token.MINUS:
+            self.lexer.consume(Token.MINUS)
+            return -self.parse_factor()
+        return self.parse_primary()
+
+    def parse_primary(self):
+        token = self.lexer.peek()
+        if token.type == Token.NUMBER:
+            self.lexer.consume(Token.NUMBER)
+            return token.value
+        if token.type == Token.LPAREN:
+            self.lexer.consume(Token.LPAREN)
+            value = self.parse_expression()
+            if self.lexer.peek().type != Token.RPAREN:
+                raise CalculatorError('Unmatched parentheses')
+            self.lexer.consume(Token.RPAREN)
+            return value
+        raise CalculatorError(f'Unexpected token {token.type}')
+
+def evaluate(expression: str) -> float:
+    lexer = Lexer(expression)
+    parser = Parser(lexer)
+    return parser.parse()
+
+# Test suite
+if __name__ == '__main__':
+    import math
+    tests = [
+        ("3 + 4 * 2", 11),
+        ("-(3 + 4) * 2", -14),
+        ("10 / 3", 10/3),
+    ]
+    for expr, expected in tests:
+        result = evaluate(expr)
+        if isinstance(expected, float):
+            assert math.isclose(result, expected, rel_tol=1e-9), f'Failed: {expr} -> {result}, expected approx {expected}'
+        else:
+            assert result == expected, f'Failed: {expr} -> {result}, expected {expected}'
+    # Error cases
+    error_cases = [
+        "(1 + 2",          # unmatched parentheses
+        "1 + * 2",         # missing operand
+        "1 / 0",           # division by zero
+    ]
+    for expr in error_cases:
+        try:
+            evaluate(expr)
+            assert False, f'Expression {expr} should have raised an error'
+        except CalculatorError:
+            pass
+    print('All tests passed')
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

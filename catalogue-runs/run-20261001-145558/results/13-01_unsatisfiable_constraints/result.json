@@ -1,0 +1,72 @@
+{
+  "id": "13-01",
+  "category": "negative_and_impossible",
+  "file": "13_negative_and_impossible/unsatisfiable_constraints.txt",
+  "difficulty": "hard",
+  "expected_routing": "VERIFIED_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "verified",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 5.98,
+  "start_time": "2026-10-01T19:07:13.652849+00:00",
+  "session_id": "catalogue-13-01-1790881633",
+  "transcript_file": "results\\13-01_unsatisfiable_constraints\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/13_negative_and_impossible/unsatisfiable_constraints.json",
+    "expected_behavior": "Report UNSATISFIABLE with proof",
+    "polarity": "negative",
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "FAIL",
+    "reason": "does not report unsatisfiability"
+  },
+  "pdl_rules_stressed": [
+    "PDL-01",
+    "PDL-08"
+  ],
+  "tags": [
+    "negative-witness",
+    "unsatisfiable",
+    "CSP"
+  ],
+  "regression_ref": "REG-003",
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 4,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "unmeasured_repairs": 0,
+      "repairs_allowed": 0,
+      "tier": "MINIMAL"
+    },
+    "plan_echo": {
+      "plan_id": "I-58b85a8612-R1",
+      "identical": false,
+      "copied_line_ratio": 0.0
+    },
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 147,
+      "DRAFT_PLAN": 67,
+      "EXECUTE": 441
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 339,
+      "DRAFT_PLAN": 202,
+      "EXECUTE": 669
+    }
+  },
+  "repeat": null,
+  "harness_error": null
+}

@@ -1,0 +1,31 @@
+The following observer pattern implementation leaks memory because observers are never unsubscribed. Identify the leak, explain why it prevents garbage collection, and fix it.
+
+```python
+class EventEmitter:
+    def __init__(self):
+        self._listeners = {}
+    
+    def on(self, event, callback):
+        self._listeners.setdefault(event, []).append(callback)
+    
+    def emit(self, event, *args):
+        for cb in self._listeners.get(event, []):
+            cb(*args)
+
+class DataProcessor:
+    def __init__(self, emitter):
+        self.emitter = emitter
+        self.results = []
+        self.emitter.on('data', self.handle_data)
+    
+    def handle_data(self, value):
+        self.results.append(value * 2)
+
+def process_batch(emitter, batch):
+    processor = DataProcessor(emitter)
+    for item in batch:
+        emitter.emit('data', item)
+    return processor.results
+```
+
+The function process_batch is called thousands of times. Each call creates a new DataProcessor that is never cleaned up. Fix the lifecycle and include a test proving the leak exists before the fix and is resolved after.

@@ -1,0 +1,49 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Write a Python function that validates email addresses using regex.
+ASSISTANT> Prompt Pseudocode
+
+READ the request to write a Python function that validates email addresses using regex.
+DEFINE a function named validate_email that accepts a string argument.
+APPLY a regular expression pattern that matches standard email address formats.
+RETURN True if the input string matches the pattern, otherwise return False.
+ENSURE the function handles typical cases including alphanumeric characters, periods, hyphens, and underscores before the @ symbol, and a valid domain after it.
+SPECIFY that the regular expression must be compiled with the appropriate flags for case insensitivity.
+DOCUMENT the function with a brief description of its purpose and usage example.
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+READ the request to write a Python function that validates email addresses using regex
+DEFINE a function named validate_email that accepts a string argument
+COMPILE a regular expression pattern that matches standard email address formats, including alphanumeric characters, periods, hyphens, and underscores before the @ symbol and a valid domain after it, using case‑insensitive flags
+APPLY the compiled pattern to the input string
+RETURN True if the pattern matches, otherwise return False
+DOCUMENT the function with a brief description of its purpose and a usage example
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> import re
+
+def validate_email(email: str) -> bool:
+    """Validate an email address using a regular expression.
+
+    This function checks that the email consists of alphanumeric characters,
+    periods, hyphens, and underscores before the ``@`` symbol, followed by a
+    valid domain name. The regex is compiled with the ``re.IGNORECASE`` flag
+    to allow case‑insensitive matching.
+
+    Example:
+        >>> validate_email('user.name@example-domain.com')
+        True
+        >>> validate_email('invalid-email@')
+        False
+    """
+    pattern = re.compile(
+        r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$",
+        re.IGNORECASE,
+    )
+    return bool(pattern.fullmatch(email))
+PROTOCOL_CLOSED
+=== PDLt session ended ===

@@ -1,0 +1,18 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Implement a Least Frequently Used (LFU) cache in Python with the following requirements:
+1. Both get(key) and put(key, value) must operate in O(1) average time complexity.
+2. When capacity is exceeded, evict the least frequently used key. If multiple keys share the minimum frequency, evict the least recently used among them.
+3. Accessing a key via get() or updating via put() increments its frequency.
+4. Include a self-contained test suite verifying capacity limits, frequency updates, and LRU tie-breaking.
+APPROACH/RISK NOTES:
+
+OPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):
+- LFU
+- Python
+- get(key)
+- put(key, value)
+- O(1)
+- capacity
+- least frequently used
+- least recently used
+- frequency

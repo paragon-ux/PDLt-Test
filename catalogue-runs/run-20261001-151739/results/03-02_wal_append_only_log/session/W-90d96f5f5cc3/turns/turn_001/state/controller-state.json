@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-4903307981",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-4903307981-P1",
+    "body": "ENTITIES: append(record: bytes) -> int, recover() -> list[bytes], sync(), 4-byte length, 4-byte CRC32 checksum, 8-byte sequence number, 100 records, write-ahead log (WAL), Python\n\nIMPLEMENT a write-ahead log (WAL) in Python with crash recovery.\n\nDEFINE FUNCTION append(record: bytes) -> int THAT\n  PREPEND each record with a 4-byte length, a 4-byte CRC32 checksum, and an 8-byte sequence number.\n  APPEND the formatted record to the log file.\n  RETURN the assigned sequence number.\n\nDEFINE FUNCTION recover() -> list[bytes] THAT\n  READ the log file sequentially.\n  FOR each record:\n    READ the 4-byte length, the 4-byte CRC32 checksum, and the 8-byte sequence number.\n    READ the record data of the specified length.\n    VALIDATE the CRC32 checksum.\n    IF checksum is valid THEN ADD the record data to the output list.\n    ELSE STOP processing at the first corrupted or truncated record.\n  RETURN the list of recovered records.\n\nDEFINE FUNCTION sync() THAT\n  PERFORM an fsync to ensure the log file is persisted to disk.\n\nTEST the implementation BY\n  OPENING a new WAL.\n  WRITING 100 records using append().\n  CLOSING the WAL.\n  TRUNCATING the log file mid-record to simulate a crash.\n  REOPENING the WAL.\n  CALLING recover().\n  VERIFY that recover() returns exactly the intact records with correct checksums.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-4903307981-R1",
+    "body": "DESIGN the WAL file format with per-record header consisting of a 4‑byte length field, a 4‑byte CRC32 checksum field, and an 8‑byte sequence number field, followed by the record payload.\nIMPLEMENT a function append(record: bytes) -> int that\n    CALCULATE the CRC32 checksum of the record payload.\n    ENCODE the length, checksum, and sequence number as binary fields.\n    CONCATENATE the header and payload.\n    OPEN the log file in append binary mode.\n    WRITE the concatenated record to the file.\n    FLUSH the write buffer.\n    RETURN the assigned sequence number.\nIMPLEMENT a function sync() that\n    OPEN the log file descriptor if not already open.\n    CALL os.fsync on the descriptor to persist data to disk.\nIMPLEMENT a function recover() -> list[bytes] that\n    OPEN the log file in read binary mode.\n    INITIALIZE an empty list for recovered records.\n    WHILE not at end of file\n        READ the 4‑byte length field.\n        READ the 4‑byte checksum field.\n        READ the 8‑byte sequence number field.\n        READ the record payload of the specified length.\n        VALIDATE that the checksum matches the payload.\n        IF the validation succeeds\n            APPEND the payload to the recovered list.\n        ELSE\n            BREAK processing at the first corrupted or truncated record.\n    RETURN the list of recovered records.\nDEVISE a test suite that\n    CREATE a new WAL file.\n    INVOKE append() 100 times with distinct record data.\n    CLOSE the WAL file.\n    TRUNCATE the file in the middle of a record to simulate a crash.\n    REOPEN the WAL file.\n    CALL recover().\n    VERIFY that the returned list contains exactly the intact records with correct checksums.\nPACKAGE the implementation and test suite into a Python module.",
+    "confirmed": true,
+    "source_prompt_id": "I-4903307981-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-4903307981-X1",
+    "body": "7a81a048400cbb6efc8365d69adb4df9ff428c9ae0c5cfcaba7e0cf95f6e9344",
+    "confirmed": true,
+    "source_prompt_id": "I-4903307981-P1",
+    "source_plan_id": "I-4903307981-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

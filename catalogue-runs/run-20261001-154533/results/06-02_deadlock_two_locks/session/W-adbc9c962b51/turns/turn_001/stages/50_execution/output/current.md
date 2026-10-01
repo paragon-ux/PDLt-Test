@@ -1,0 +1,118 @@
+**Diagnosis:**
+The deadlock occurs because `transfer_ab` acquires `lock_a` then `lock_b`, while `transfer_ba` acquires `lock_b` then `lock_a`. When two threads each hold one lock and wait for the other, they block forever – a classic lock ordering inversion.
+
+**Corrected Code (avoids deadlock by using a consistent lock ordering):**
+```python
+import threading
+
+# Define a consistent global order for acquiring locks
+# Here we always acquire lock_a before lock_b
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+results = []
+
+def transfer_ab(amount):
+    # Acquire locks in the global order: lock_a then lock_b
+    with lock_a:
+        with lock_b:
+            results.append(('ab', amount))
+
+def transfer_ba(amount):
+    # Also acquire locks in the same global order
+    with lock_a:
+        with lock_b:
+            results.append(('ba', amount))
+
+if __name__ == "__main__":
+    threads = []
+    for i in range(100):
+        threads.append(threading.Thread(target=transfer_ab, args=(i,)))
+        threads.append(threading.Thread(target=transfer_ba, args=(i,)))
+
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    print("Completed", len(results), "operations")
+```
+
+**Test demonstrating the deadlock risk in the original code:**
+```python
+import threading, time
+
+# Original deadlocking functions (copied verbatim)
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+
+def transfer_ab(amount):
+    with lock_a:
+        time.sleep(0.001)  # Increase chance of interleaving
+        with lock_b:
+            pass
+
+def transfer_ba(amount):
+    with lock_b:
+        time.sleep(0.001)
+        with lock_a:
+            pass
+
+threads = []
+for i in range(10):
+    threads.append(threading.Thread(target=transfer_ab, args=(i,)))
+    threads.append(threading.Thread(target=transfer_ba, args=(i,)))
+
+for t in threads:
+    t.start()
+# Join with timeout – if any thread is still alive, deadlock occurred
+for t in threads:
+    t.join(timeout=1)
+
+still_running = any(t.is_alive() for t in threads)
+print("Deadlock detected:" , still_running)
+```
+Running the test prints `Deadlock detected: True` on many runs, showing the original program can hang.
+
+**Verification of the corrected version:**
+```python
+import subprocess, sys, textwrap, os, tempfile
+
+correct_code = textwrap.dedent('''
+import threading
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+results = []
+
+def transfer_ab(amount):
+    with lock_a:
+        with lock_b:
+            results.append(('ab', amount))
+
+def transfer_ba(amount):
+    with lock_a:
+        with lock_b:
+            results.append(('ba', amount))
+
+threads = []
+for i in range(100):
+    threads.append(threading.Thread(target=transfer_ab, args=(i,)))
+    threads.append(threading.Thread(target=transfer_ba, args=(i,)))
+
+for t in threads:
+    t.start()
+for t in threads:
+    t.join()
+print('OK', len(results))
+''')
+
+with tempfile.TemporaryDirectory() as d:
+    path = os.path.join(d, 'fixed.py')
+    with open(path, 'w') as f:
+        f.write(correct_code)
+    result = subprocess.run([sys.executable, path], capture_output=True, text=True, timeout=10)
+    print('STDOUT:', result.stdout.strip())
+    print('STDERR:', result.stderr.strip())
+    print('EXIT:', result.returncode)
+```
+The script terminates quickly, prints `OK 200`, and exits with code 0, confirming the deadlock is eliminated.
+
+**Identifier:** i

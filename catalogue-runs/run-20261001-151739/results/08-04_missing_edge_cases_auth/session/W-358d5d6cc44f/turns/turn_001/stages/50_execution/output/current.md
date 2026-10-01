@@ -1,0 +1,7 @@
+- Require email verification during registration to prevent account creation with unowned or malicious email addresses.
+- Enforce strong password policies (minimum length, complexity, blacklist) to mitigate weak credential attacks.
+- Implement rate limiting and account lockout after repeated failed login attempts to defend against brute‑force attacks.
+- Use secure HttpOnly and SameSite cookie flags for JWT storage when optional cookie usage is allowed, preventing XSS token theft.
+- Validate JWT signatures, expiration, and audience claims on every request to reject tampered or expired tokens.
+- Restrict admin endpoint access with role‑based access control checks and audit logging to prevent privilege escalation.
+- Ensure users can only access their own profile by verifying the JWT subject against the requested user ID, preventing insecure direct object references (IDOR).

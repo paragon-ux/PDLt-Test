@@ -1,0 +1,24 @@
+DEFINE function LCS(s1, s2)
+  INITIALIZE DP table of dimensions (len(s1)+1) x (len(s2)+1)
+  FOR i FROM 1 TO len(s1)
+    FOR j FROM 1 TO len(s2)
+      IF s1[i-1] == s2[j-1] THEN
+        SET DP[i][j] = DP[i-1][j-1] + 1
+      ELSE
+        SET DP[i][j] = MAX(DP[i-1][j], DP[i][j-1])
+      ENDIF
+    ENDFOR
+  ENDFOR
+  BACKTRACK from DP[len(s1)][len(s2)] to RECONSTRUCT LCS string
+  RETURN DP[len(s1)][len(s2)] AS length AND reconstructed LCS string
+DEFINE test suite
+  INCLUDE test case 1 using user-provided inputs and expected output
+  INCLUDE test case 2 using user-provided inputs and expected output
+  INCLUDE test case 3 using user-provided inputs and expected output
+  INCLUDE test case 4 using user-provided inputs and expected output
+FOR each test case IN test suite
+  CALL LCS with test inputs
+  COMPARE returned length and subsequence WITH expected values
+  RECORD pass/fail
+ENDFOR
+REPORT aggregated test results

@@ -1,0 +1,67 @@
+{
+  "id": "04-06",
+  "category": "parsers_and_compilers",
+  "file": "04_parsers_and_compilers/bytecode_stack_vm.txt",
+  "difficulty": "hard",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 10.8,
+  "start_time": "2026-10-01T19:23:29.038654+00:00",
+  "session_id": "catalogue-04-06-1790882609",
+  "transcript_file": "results\\04-06_bytecode_stack_vm\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-07"
+  ],
+  "tags": [
+    "bytecode",
+    "VM",
+    "compiler"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 4,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "unmeasured_repairs": 0,
+      "repairs_allowed": 0,
+      "tier": "STANDARD"
+    },
+    "plan_echo": {
+      "plan_id": "I-d7b177860f-R1",
+      "identical": false,
+      "copied_line_ratio": 0.0
+    },
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 2650,
+      "DRAFT_PLAN": 1996,
+      "EXECUTE": 61
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 2884,
+      "DRAFT_PLAN": 2383,
+      "EXECUTE": 2025
+    }
+  },
+  "repeat": null,
+  "harness_error": null
+}

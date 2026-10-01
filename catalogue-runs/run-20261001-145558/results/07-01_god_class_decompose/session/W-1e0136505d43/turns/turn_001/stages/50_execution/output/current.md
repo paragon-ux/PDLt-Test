@@ -1,0 +1,248 @@
+# refactored.py
+import json, os, hashlib, uuid, time
+
+class UserRepository:
+    """Handles user persistence, creation, activation/deactivation, and queries."""
+    def __init__(self, db_path: str):
+        self.db_path = db_path
+        self.users = {}
+        self._load_users()
+
+    def _load_users(self):
+        if os.path.exists(self.db_path):
+            with open(self.db_path, "r") as f:
+                self.users = json.load(f)
+        else:
+            self.users = {}
+
+    def _save_users(self):
+        with open(self.db_path, "w") as f:
+            json.dump(self.users, f)
+
+    def create_user(self, username: str, email: str, password: str):
+        if username in self.users:
+            raise ValueError("User exists")
+        if not email or "@" not in email:
+            raise ValueError("Invalid email")
+        if len(password) < 8:
+            raise ValueError("Password too short")
+        salt = username[:4]
+        hashed = hashlib.sha256((salt + password).encode()).hexdigest()
+        self.users[username] = {
+            "email": email,
+            "password": hashed,
+            "salt": salt,
+            "active": True,
+        }
+        self._save_users()
+        return username
+
+    def activate_user(self, username: str):
+        if username in self.users:
+            self.users[username]["active"] = True
+            self._save_users()
+
+    def deactivate_user(self, username: str):
+        if username in self.users:
+            self.users[username]["active"] = False
+            self._save_users()
+
+    def get_user(self, username: str):
+        return self.users.get(username)
+
+    def list_active_users(self):
+        return [u for u, d in self.users.items() if d.get("active")]
+
+class SessionManager:
+    """Manages login sessions and cleanup of expired sessions."""
+    def __init__(self, user_repo: UserRepository):
+        self.user_repo = user_repo
+        self.sessions = {}
+
+    def login(self, username: str, password: str):
+        user = self.user_repo.get_user(username)
+        if not user:
+            return None
+        hashed = hashlib.sha256((user["salt"] + password).encode()).hexdigest()
+        if hashed != user["password"]:
+            return None
+        session_id = str(uuid.uuid4())
+        self.sessions[session_id] = {"user": username, "created": time.time()}
+        return session_id
+
+    def logout(self, session_id: str):
+        self.sessions.pop(session_id, None)
+
+    def get_user_by_session(self, session_id: str):
+        sess = self.sessions.get(session_id)
+        if not sess:
+            return None
+        return self.user_repo.get_user(sess["user"])
+
+    def cleanup_sessions(self, max_age: int = 3600):
+        now = time.time()
+        expired = [sid for sid, s in self.sessions.items() if now - s["created"] > max_age]
+        for sid in expired:
+            del self.sessions[sid]
+
+class EmailDispatcher:
+    """Queues and sends emails."""
+    def __init__(self):
+        self.email_queue = []
+
+    def queue_email(self, kind: str, to: str, body: str):
+        self.email_queue.append((kind, to, body))
+
+    def send_emails(self):
+        for kind, to, body in self.email_queue:
+            print(f"Sending {kind} to {to}: {body}")
+        self.email_queue.clear()
+
+# Integration layer (optional convenience wrapper)
+class UserService:
+    def __init__(self, db_path: str):
+        self.repo = UserRepository(db_path)
+        self.sessions = SessionManager(self.repo)
+        self.email = EmailDispatcher()
+
+    # User actions
+    def create_user(self, username, email, password):
+        self.repo.create_user(username, email, password)
+        self.email.queue_email("welcome", email, f"Welcome {username}!")
+
+    def deactivate_user(self, username):
+        user = self.repo.get_user(username)
+        if user:
+            self.repo.deactivate_user(username)
+            self.email.queue_email("deactivation", user["email"], f"Account {username} deactivated")
+
+    def list_active_users(self):
+        return self.repo.list_active_users()
+
+    # Session actions
+    def login(self, username, password):
+        return self.sessions.login(username, password)
+
+    def logout(self, session_id):
+        self.sessions.logout(session_id)
+
+    def get_user(self, session_id):
+        return self.sessions.get_user_by_session(session_id)
+
+    def cleanup_sessions(self, max_age=3600):
+        self.sessions.cleanup_sessions(max_age)
+
+    # Email actions
+    def send_emails(self):
+        self.email.send_emails()
+
+# Unit tests
+import unittest
+import tempfile
+import shutil
+
+class TestUserRepository(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.db_path = os.path.join(self.dir, "users.json")
+        self.repo = UserRepository(self.db_path)
+
+    def tearDown(self):
+        shutil.rmtree(self.dir)
+
+    def test_create_and_activate(self):
+        self.repo.create_user("alice", "alice@example.com", "password123")
+        self.assertIn("alice", self.repo.users)
+        self.repo.deactivate_user("alice")
+        self.assertFalse(self.repo.users["alice"]["active"])
+        self.repo.activate_user("alice")
+        self.assertTrue(self.repo.users["alice"]["active"])
+
+    def test_list_active(self):
+        self.repo.create_user("bob", "bob@example.com", "password123")
+        self.repo.create_user("carol", "carol@example.com", "password123")
+        self.repo.deactivate_user("bob")
+        active = self.repo.list_active_users()
+        self.assertEqual(active, ["carol"])
+
+class TestSessionManager(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.db_path = os.path.join(self.dir, "users.json")
+        self.repo = UserRepository(self.db_path)
+        self.repo.create_user("dave", "dave@example.com", "password123")
+        self.sess = SessionManager(self.repo)
+
+    def tearDown(self):
+        shutil.rmtree(self.dir)
+
+    def test_login_logout(self):
+        sid = self.sess.login("dave", "password123")
+        self.assertIsNotNone(sid)
+        user = self.sess.get_user_by_session(sid)
+        self.assertEqual(user["email"], "dave@example.com")
+        self.sess.logout(sid)
+        self.assertIsNone(self.sess.get_user_by_session(sid))
+
+    def test_session_expiration(self):
+        sid = self.sess.login("dave", "password123")
+        # Manipulate creation time to simulate old session
+        self.sess.sessions[sid]["created"] -= 4000
+        self.sess.cleanup_sessions(max_age=3600)
+        self.assertNotIn(sid, self.sess.sessions)
+
+class TestEmailDispatcher(unittest.TestCase):
+    def test_queue_and_send(self):
+        email = EmailDispatcher()
+        email.queue_email("test", "test@example.com", "Hello")
+        self.assertEqual(len(email.email_queue), 1)
+        # Capture stdout
+        import io, sys
+        captured = io.StringIO()
+        sys_stdout = sys.stdout
+        sys.stdout = captured
+        try:
+            email.send_emails()
+        finally:
+            sys.stdout = sys_stdout
+        output = captured.getvalue().strip()
+        self.assertIn("Sending test to test@example.com: Hello", output)
+        self.assertEqual(len(email.email_queue), 0)
+
+class TestUserServiceIntegration(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.db_path = os.path.join(self.dir, "users.json")
+        self.service = UserService(self.db_path)
+
+    def tearDown(self):
+        shutil.rmtree(self.dir)
+
+    def test_full_workflow(self):
+        # Create user and send welcome email
+        self.service.create_user("eve", "eve@example.com", "password123")
+        self.assertIn("eve", self.service.repo.users)
+        # Capture email output
+        import io, sys
+        captured = io.StringIO()
+        sys_stdout = sys.stdout
+        sys.stdout = captured
+        try:
+            self.service.send_emails()
+        finally:
+            sys.stdout = sys_stdout
+        self.assertIn("Sending welcome to eve@example.com: Welcome eve!", captured.getvalue())
+        # Login
+        sid = self.service.login("eve", "password123")
+        self.assertIsNotNone(sid)
+        # Deactivate
+        self.service.deactivate_user("eve")
+        self.assertFalse(self.service.repo.users["eve"]["active"])
+        # List active users should be empty
+        self.assertEqual(self.service.list_active_users(), [])
+        # Cleanup session
+        self.service.cleanup_sessions()
+        self.assertIn(sid, self.service.sessions.sessions)  # still present unless expired
+
+if __name__ == "__main__":
+    unittest.main()

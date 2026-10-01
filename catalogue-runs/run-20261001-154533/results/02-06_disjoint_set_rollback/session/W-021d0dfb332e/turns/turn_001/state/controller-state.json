@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-3fd4308295",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-3fd4308295-P1",
+    "body": "IMPLEMENT a union-find data structure in Python with rollback support.\nUSE union-by-rank.\nDO NOT use path compression.\nPROVIDE the following operations:\n- make_set(x)\n- find(x)\n- union(x, y)\n- save()\n- restore()\nDESCRIBE save() as capturing the current state.\nDESCRIBE restore() as reverting to the last saved state, undoing all unions performed since the save.\nINCLUDE tests that verify:\n- basic union-find correctness,\n- rollback restoring previous component structure,\n- nested save/restore sequences.\nLIST the following task entities verbatim: union-find, disjoint set, Python, union-by-rank, no path compression, make_set(x), find(x), union(x, y), save(), restore().",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-3fd4308295-R1",
+    "body": "DEFINE a Python class to implement union-find with rollback support\nINITIALIZE data structures for parent pointers, rank values, and a history stack\nIMPLEMENT make_set(x) to create a singleton set with rank zero\nIMPLEMENT find(x) to return the representative of x without path compression\nIMPLEMENT union(x, y) to merge the sets containing x and y using union-by-rank, recording the operation for possible rollback\nIMPLEMENT save() to capture a snapshot of the current parent and rank structures and push it onto the history stack\nIMPLEMENT restore() to pop the most recent snapshot from the history stack and revert the parent and rank structures to that state\nDEVISE a test suite that verifies basic union-find correctness for make_set, find, and union operations\nDEVISE a test suite that verifies rollback behavior by performing unions, invoking save, performing additional unions, invoking restore, and checking that the structure matches the saved state\nDEVISE a test suite that verifies nested save/restore sequences with multiple saves and restores interleaved with unions\nLIST the following task entities verbatim: union-find, disjoint set, Python, union-by-rank, no path compression, make_set(x), find(x), union(x, y), save(), restore().",
+    "confirmed": true,
+    "source_prompt_id": "I-3fd4308295-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-3fd4308295-X1",
+    "body": "e388d930566eb27e00dcbdf722cbe63954650f777d02253f872cee5ac75d7eda",
+    "confirmed": true,
+    "source_prompt_id": "I-3fd4308295-P1",
+    "source_plan_id": "I-3fd4308295-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-20dde6f62e",
+  "stage": "CLOSED_CANCELLED",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-20dde6f62e-P1",
+    "body": "FIND all exact covers of the universe U = {1, 2, 3, 4, 5, 6, 7, 8, 9} using the sets S1 = {1, 2, 3}, S2 = {4, 5, 6}, S3 = {7, 8, 9}, S4 = {1, 4, 7}, S5 = {2, 5, 8}, S6 = {3, 6, 9}, S7 = {1, 5, 9}, S8 = {2, 6, 7}, S9 = {3, 4, 8}.\nDEFINE an exact cover as a subcollection of these sets such that each element of U appears in exactly one selected set.\nINCLUDE a self‑contained test that verifies each solution covers U exactly once.\n- U = {1, 2, 3, 4, 5, 6, 7, 8, 9}\n- S1 = {1, 2, 3}\n- S2 = {4, 5, 6}\n- S3 = {7, 8, 9}\n- S4 = {1, 4, 7}\n- S5 = {2, 5, 8}\n- S6 = {3, 6, 9}\n- S7 = {1, 5, 9}\n- S8 = {2, 6, 7}\n- S9 = {3, 4, 8}",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-20dde6f62e-R1",
+    "body": "DEFINE the universe U and sets S1 through S9 as collections of integers.\nCONSTRUCT the exact‑cover binary matrix representing membership of each element of U in each set.\nIMPLEMENT dancing‑links data structures to enable efficient removal and restoration of rows and columns.\nIMPLEMENT Algorithm X using the dancing‑links structure to enumerate all exact covers.\nEXECUTE the Algorithm X search to COLLECT each subcollection of sets that constitutes an exact cover.\nGENERATE a self‑contained test that verifies for each collected solution that every element of U appears in exactly one selected set.\nAPPLY the verification test to each solution to CONFIRM correctness.\nEMIT the list of exact‑cover solutions together with the verification results.",
+    "confirmed": true,
+    "source_prompt_id": "I-20dde6f62e-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}
