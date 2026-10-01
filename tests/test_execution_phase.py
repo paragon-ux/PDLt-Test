@@ -147,10 +147,12 @@ def test_proof_is_a_first_class_negative_deliverable(tmp_path):
     assert len(executes) == 1
 
 
-def test_contract_failure_gets_exactly_one_repair_then_closes(tmp_path):
+def test_contract_failure_gets_bounded_repairs_then_closes(tmp_path):
+    """No program runs, so the first repair is uncounted; the tier's one repair
+    follows, then the run closes."""
     bad = {"kind": "RESULT", "body": "The answer is 9.", "result_ir": _ir()}  # witness missing
-    engine, response, executes, events = _run(tmp_path, [bad, bad], problem_class="VERIFIED_EXECUTION")
-    assert len(executes) == 2
+    engine, response, executes, events = _run(tmp_path, [bad, bad, bad], problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 3
     assert "OPERATOR CORRECTION (host-side verification findings)" in executes[1].prompt
     assert "OPERATOR CORRECTION" not in executes[0].prompt
     assert engine.controller.state.stage == Stage.CLOSED_CANCELLED
@@ -243,8 +245,8 @@ def test_declared_incomplete_without_any_attempt_is_not_accepted(tmp_path):
     """Run 165728 01-01: 'After exhaustive search, no partition exists' with one
     requirement left open, no program and no witness."""
     reply = {"kind": "RESULT", "body": "After exhaustive search, no partition exists.", "result_ir": _incomplete_ir()}
-    engine, _, executes, events = _run(tmp_path, [reply, reply], problem_class="VERIFIED_EXECUTION")
-    assert len(executes) == 2 and engine.controller.state.stage == Stage.CLOSED_CANCELLED
+    engine, _, executes, events = _run(tmp_path, [reply] * 3, problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 3 and engine.controller.state.stage == Stage.CLOSED_CANCELLED
     assert "this attempt runs no program" in executes[1].prompt
 
 
@@ -254,8 +256,8 @@ def test_failure_record_lists_every_attempt(tmp_path):
     search = {"kind": "RESULT", "body": "import sys\nsys.exit(125)", "result_ir": _ir()}
     hedge = {"kind": "RESULT", "body": "The search did not finish within the step budget.",
              "result_ir": _incomplete_ir()}
-    engine, response, executes, _ = _run(tmp_path, [search, hedge], problem_class="VERIFIED_EXECUTION")
-    assert len(executes) == 2 and engine.controller.state.stage == Stage.CLOSED_CANCELLED
+    engine, response, executes, _ = _run(tmp_path, [search, hedge, hedge], problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 3 and engine.controller.state.stage == Stage.CLOSED_CANCELLED
     assert "Attempt 1: PROGRAM_FAILED" in response.text
     assert "Attempt 2: INCOMPLETE_WITHOUT_ATTEMPT" in response.text
 
@@ -264,8 +266,8 @@ def test_open_requirement_without_a_defect_still_needs_a_witness(tmp_path):
     ir = _incomplete_ir()
     ir["open_defects"] = []
     reply = {"kind": "RESULT", "body": "Partial.", "result_ir": ir}
-    engine, _, executes, _ = _run(tmp_path, [reply, reply], problem_class="VERIFIED_EXECUTION")
-    assert len(executes) == 2
+    engine, _, executes, _ = _run(tmp_path, [reply] * 3, problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 3
     assert engine.controller.state.stage == Stage.CLOSED_CANCELLED
 
 
@@ -346,8 +348,8 @@ _SEARCH_CLAIM = {"polarity": "negative", "evidence": {"path": "execution://witne
 ])
 def test_search_claims_no_program_produced_are_rejected(tmp_path, witness):
     reply = {"kind": "RESULT", "body": "After exhaustive search, no partition exists.", "result_ir": _ir(witness)}
-    engine, _, executes, events = _run(tmp_path, [reply, reply], problem_class="VERIFIED_EXECUTION")
-    assert len(executes) == 2 and engine.controller.state.stage == Stage.CLOSED_CANCELLED
+    engine, _, executes, events = _run(tmp_path, [reply] * 3, problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 3 and engine.controller.state.stage == Stage.CLOSED_CANCELLED
     errors = next(e for e in events if e["kind"] == "VERIFICATION_FAILED")["payload"]["errors"]
     assert any("no program run by the host printed it" in e for e in errors)
 

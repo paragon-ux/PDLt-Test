@@ -71,6 +71,10 @@ _PYTHON_BLOCK = re.compile(r"```(?:python|py)[ \t]*\n(.*?)```", re.S)
 
 from pdl_taskmaster.verification.error_registry import Finding, finding_codes  # noqa: E402
 
+# Repairs per execution that do not count against the tier: after an attempt that
+# ran no program, the sandbox measured nothing, so the tier's repairs stay intact.
+UNMEASURED_REPAIRS = 1
+
 
 def _normalized_lines(body: str) -> list[str]:
     """Non-empty lines, lowercased, with punctuation and whitespace runs collapsed."""
@@ -1162,18 +1166,29 @@ class SessionEngine:
         errors: list[str] = []
         repairs_allowed = self._execution_budget.repairs
         repairs_used = 0
+        unmeasured_repairs = 0  # repairs after an attempt that ran no program (at most one)
+        ran_program = False
         if outcome.kind == "RESULT":
             errors, final_body = self._verify_result(outcome, prompt_body, plan_body, requirements, result_ir_mode)
+            ran_program = getattr(self, "_last_programs_run", 0) > 0
         # Bounded repair: at most the routed tier's number of re-executions, each
         # carrying only the latest factual host findings through the
-        # operator-correction channel (never as approach sources).
+        # operator-correction channel (never as approach sources). The tier's
+        # repairs are for attempts the sandbox measured: one repair after an attempt
+        # that ran no program at all does not use them up.
         attempt_findings = [list(errors)]  # per attempt, for the published failure record
-        while outcome.kind == "RESULT" and errors and repairs_used < repairs_allowed:
-            repairs_used += 1
+        while outcome.kind == "RESULT" and errors and (
+            repairs_used < repairs_allowed or (not ran_program and unmeasured_repairs < UNMEASURED_REPAIRS)
+        ):
+            counted = ran_program or unmeasured_repairs >= UNMEASURED_REPAIRS
+            if counted:
+                repairs_used += 1
+            else:
+                unmeasured_repairs += 1
             self.workspace.append_event(
                 "VERIFICATION_REPAIR",
-                {"errors": errors, "codes": finding_codes(errors), "repair": repairs_used,
-                 "repairs_allowed": repairs_allowed},
+                {"errors": errors, "codes": finding_codes(errors), "repair": repairs_used + unmeasured_repairs,
+                 "counted": counted, "repairs_allowed": repairs_allowed},
             )
             outcome = self._call(
                 "EXECUTE",
@@ -1187,14 +1202,17 @@ class SessionEngine:
             )
             final_body = outcome.body
             errors = []
+            ran_program = False
             if outcome.kind == "RESULT":
                 errors, final_body = self._verify_result(
                     outcome, prompt_body, plan_body, requirements, result_ir_mode
                 )
+                ran_program = getattr(self, "_last_programs_run", 0) > 0
             attempt_findings.append(list(errors))
         self.workspace.append_event(
             "EXECUTION_ATTEMPTS",
-            {"attempts": 1 + repairs_used, "repairs_used": repairs_used, "repairs_allowed": repairs_allowed,
+            {"attempts": 1 + repairs_used + unmeasured_repairs, "repairs_used": repairs_used,
+             "unmeasured_repairs": unmeasured_repairs, "repairs_allowed": repairs_allowed,
              "tier": self._execution_budget.tier},
         )
 

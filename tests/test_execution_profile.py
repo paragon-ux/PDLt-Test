@@ -344,16 +344,37 @@ def test_heavy_tier_allows_two_repairs_each_with_the_latest_findings(tmp_path, m
     assert "The next attempt has the same budget of 50,000 steps" in executes[2].prompt
     assert "STEP_BUDGET_EXCEEDED" not in executes[1].prompt  # each repair: the latest findings
     attempts = next(e for e in events if e["kind"] == "EXECUTION_ATTEMPTS")["payload"]
-    assert attempts == {"attempts": 3, "repairs_used": 2, "repairs_allowed": 2, "tier": "HEAVY_COMPUTE"}
+    # attempt 1 ran no program: its repair is uncounted; attempt 2 ran: counted
+    assert attempts == {"attempts": 3, "repairs_used": 1, "unmeasured_repairs": 1, "repairs_allowed": 2,
+                        "tier": "HEAVY_COMPUTE"}
 
 
 def test_standard_and_minimal_tiers_allow_one_repair(tmp_path):
     for prediction in ("WITHIN_100K_STEPS", "WITHIN_10M_STEPS"):
         engine, executes, events = _verified_session(tmp_path / prediction, prediction,
-                                                     [_NO_WITNESS, _NO_WITNESS, _GOOD])
+                                                     [_STOPPED, _STOPPED, _GOOD])
         assert len(executes) == 2 and engine.controller.state.stage.value == "CLOSED_CANCELLED"
         attempts = next(e for e in events if e["kind"] == "EXECUTION_ATTEMPTS")["payload"]
         assert attempts["repairs_used"] == attempts["repairs_allowed"] == 1
+        assert attempts["unmeasured_repairs"] == 0
+
+
+def test_attempt_without_a_program_does_not_use_up_the_tier_repair(tmp_path):
+    """Runs 2026-09-30 01-01: 4 of 9 runs spent their only repair on an attempt with
+    no runnable program, then the measured attempt had no repair left."""
+    engine, executes, events = _verified_session(tmp_path, "WITHIN_10M_STEPS", [_NO_WITNESS, _STOPPED, _GOOD])
+    assert len(executes) == 3 and engine.controller.state.stage.value == "CLOSED_SUCCESS"
+    repairs = [e["payload"] for e in events if e["kind"] == "VERIFICATION_REPAIR"]
+    assert [r["counted"] for r in repairs] == [False, True]
+    attempts = next(e for e in events if e["kind"] == "EXECUTION_ATTEMPTS")["payload"]
+    assert attempts["repairs_used"] == 1 and attempts["unmeasured_repairs"] == 1
+
+
+def test_uncounted_repairs_are_capped_at_one(tmp_path):
+    engine, executes, events = _verified_session(tmp_path, "WITHIN_10M_STEPS", [_NO_WITNESS] * 4)
+    assert len(executes) == 3 and engine.controller.state.stage.value == "CLOSED_CANCELLED"
+    attempts = next(e for e in events if e["kind"] == "EXECUTION_ATTEMPTS")["payload"]
+    assert attempts["repairs_used"] == 1 and attempts["unmeasured_repairs"] == 1
 
 
 def test_repair_budgets_are_per_tier_and_fixed():
