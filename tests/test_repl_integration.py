@@ -83,6 +83,7 @@ def test_repl_command_loop_full_deterministic_session(tmp_path: Path) -> None:
     assert out.count("CLOSED_SUCCESS") >= 3
     assert "No such file" not in out
     assert "Traceback" not in out
+    assert "[error]" not in out  # REPL commands never reach the engine; replay misses never hide
     # First session completed -> durable session pointer exists.
     assert (tmp_path / "sessions" / "repltest" / "session.json").is_file()
 

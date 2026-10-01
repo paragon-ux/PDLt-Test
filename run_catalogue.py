@@ -52,6 +52,7 @@ EXIT_SUCCESS = 0
 EXIT_CANCELLED = 1
 EXIT_UNCONFIRMED = 2
 EXIT_WAITING_INPUT = 3
+EXIT_HARNESS_ERROR = 4  # a model call failed (provider/transport); not a model outcome
 
 
 def load_manifest(category_filter=None):
@@ -202,6 +203,8 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
         verdict = "CLOSED_SUCCESS"
     elif exit_code == EXIT_CANCELLED:
         verdict = "CLOSED_CANCELLED"
+    elif exit_code == EXIT_HARNESS_ERROR:
+        verdict = "HARNESS_ERROR"
     elif exit_code == EXIT_WAITING_INPUT:
         verdict = "WAITING_INPUT"
     elif exit_code == EXIT_UNCONFIRMED:
@@ -623,7 +626,7 @@ def main():
     print(f"Reasoning:  {args.reasoning}" + (f" (per operation: {', '.join(args.reasoning_op)})" if args.reasoning_op else ""))
     print(f"Prompts:    {len(entries)}" + (f" x {args.repeat} repeats = {len(runs)} runs" if args.repeat > 1 else ""))
     print(f"Timeout:    {args.timeout}s per prompt")
-    shown = {k: v for k, v in run_settings.items() if v not in (None, False)}
+    shown = {k: v for k, v in run_settings.items() if v is not None and v is not False}
     if shown:
         print(f"Settings:   {', '.join(f'{k}={v}' for k, v in shown.items())}")
     print()
@@ -694,6 +697,10 @@ def main():
 
     gt = scoreboard["ground_truth"]
     print(f"Stage only: {scoreboard['stage_passed']}/{scoreboard['total_prompts']} reached the expected stage")
+    harness_errors = [r["id"] for r in results if r.get("verdict") == "HARNESS_ERROR"]
+    if harness_errors:
+        print(f"HARNESS ERRORS: {len(harness_errors)} (a model call failed; not a model outcome; see stderr.txt): "
+              f"{', '.join(harness_errors)}")
     mc = scoreboard["model_calls"]
     print(f"Model calls: {mc['total']} total, {mc['execute']} EXECUTE, {mc['repairs']} verification repairs")
     print(f"EXECUTE tokens: {mc['execute_output_tokens']} output, {mc['execute_reasoning_tokens']} reported as reasoning "

@@ -320,3 +320,32 @@ def test_worker_sends_the_output_cap_and_reports_truncation(monkeypatch) -> None
         worker.call(Request())
     assert sent.get("max_output_tokens") == 8000 and "max_tokens" not in sent
     assert caught.value.output_limit == 8000
+
+
+@pytest.mark.parametrize("operation", ["DRAFT_PROMPT", "REVISE_PROMPT", "DRAFT_PLAN", "REVISE_PLAN", "EXECUTE",
+                                       "DRAFT_EXECUTE", "INTERPRET_PROMPT_REVIEW", "INTERPRET_PLAN_REVIEW",
+                                       "INTERPRET_EXECUTION_INPUT", "ANSWER_PROTOCOL_DISCUSSION"])
+def test_provider_schema_is_one_object_without_defaults(operation) -> None:
+    """Run 132344: Groq and Cerebras reject a top-level anyOf/oneOf/discriminator
+    ("schema must have type 'object'"), so every schema call silently fell back to a
+    slower provider, or failed outright with fallbacks off."""
+    import json as _json
+
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+    from pdl_taskmaster.runtime.wire_payloads import get_operation_pydantic_schema
+
+    raw = get_operation_pydantic_schema(operation)
+    if not isinstance(raw, dict):
+        pytest.skip("no pydantic schema for this operation")
+    schema = ApiWorker._sanitize_schema_for_grammar(raw)
+    assert schema.get("type") == "object"
+    assert not {"anyOf", "oneOf", "discriminator", "enum", "not"} & set(schema)
+    assert '"default"' not in _json.dumps(schema)  # no value advertised to the model
+    if "kind" in schema["properties"]:
+        assert "kind" in schema["required"]
+
+
+def test_flattened_schema_still_validates_exactly_host_side() -> None:
+    """Flattening is for the provider only: the host keeps the exact union."""
+    with pytest.raises(WireError):
+        BRIDGE.parse_prompt_body('{"prompt_body": "X", "approach_handoff": "NONE"}')

@@ -369,6 +369,9 @@ def _resolve_render_compact(args) -> bool:
     return args.worker == "api"
 
 
+# Headless exit code for a run that ended on a harness/provider error (not a model outcome).
+EXIT_HARNESS_ERROR = 4
+
 PASTE_START = "\x1b[200~"
 PASTE_END = "\x1b[201~"
 
@@ -992,6 +995,7 @@ def main() -> int:
         )
     _write_transcript("WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION")
     _enable_bracketed_paste()
+    harness_error: str | None = None  # headless: the call failure that ended the run
     initial_prompt = None
     if getattr(args, "prompt", None):
         initial_prompt = args.prompt.strip()
@@ -1281,6 +1285,11 @@ def main() -> int:
                 else:
                     print(f"unknown command: {cmd}", flush=True)
                     continue
+                if cmd not in {"/confirm", "/revise", "/stop"}:
+                    # REPL commands are never requests: before this guard /worker,
+                    # /sessions and others fell through and reached the engine as a
+                    # follow-up ("Follow-up from the user ...: /worker recorded").
+                    continue
             print("[working...]", flush=True)
             print(f"[worker progress -> {runtime.session_dir / 'worker-progress.log'}]", flush=True)
             try:
@@ -1296,6 +1305,12 @@ def main() -> int:
                 message = f"{type(exc).__name__}: {exc}"
                 print(f"[error] {message}", flush=True)
                 _write_transcript("ERROR> " + message)
+                if not _is_interactive(args):
+                    # Headless: a failed call ends the run. Feeding the remaining piped
+                    # lines on would start a new request from "/confirm" (run 132344:
+                    # a provider schema error became a "successful" refusal, exit 0).
+                    harness_error = message
+                    break
                 continue
             if turn.text:
                 if dev_mode:
@@ -1340,6 +1355,10 @@ def main() -> int:
     # Headless fail-closed invariant (ADR-0012):
     # In non-interactive mode, if execution terminates while sitting at an unconfirmed
     # review gate or non-terminal stage, exit with code 2 rather than falsely signalling success.
+    if not _is_interactive(args) and harness_error is not None:
+        print(f"[headless halt] Harness error: {harness_error[:500]}. Exiting (code {EXIT_HARNESS_ERROR}).",
+              file=sys.stderr, flush=True)
+        return EXIT_HARNESS_ERROR
     if not _is_interactive(args):
         status = runtime.host.status()
         ctrl = status.get("controller_state")

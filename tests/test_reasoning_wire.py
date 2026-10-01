@@ -124,3 +124,41 @@ def test_runner_settings_reach_the_wire(tmp_path):
 def test_runner_max_repairs_zero_makes_one_execute_call(tmp_path):
     ops, _ = _run_stub(tmp_path, {"max_repairs": 0}, replies={"EXECUTE": "not json at all"})
     assert ops.count("EXECUTE") == 1
+
+
+def test_provider_error_ends_a_headless_run_as_a_harness_error(tmp_path):
+    """Run 132344: a provider 400 was printed, then the next piped "/confirm" was read
+    as a new request and closed as a refusal with exit 0 (scored CLOSED_SUCCESS)."""
+    import run_catalogue
+
+    seen: list = []
+
+    class Rejecting(BaseHTTPRequestHandler):
+        def do_POST(self):  # noqa: N802
+            self.rfile.read(int(self.headers["Content-Length"]))
+            seen.append(1)
+            data = json.dumps({"error": {"message": "invalid JSON schema for response_format", "code": 400}}).encode()
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), Rejecting)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text("What is 2 + 3?", encoding="utf-8")
+    cmd = run_catalogue.build_harness_command(prompt, "stub-session", tmp_path / "t.txt", tmp_path / "s",
+                                              "openai/gpt-oss-120b", "low", (), {})
+    cmd += ["--api-base-url", f"http://127.0.0.1:{server.server_address[1]}"]
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("SYS1", "OPENROUTER"))}
+    env.update(OPENROUTER_API_KEY="stub", PYTHONPATH=str(ROOT / "src"))
+    code, _ = run_catalogue.run_with_deadline(cmd, "/confirm\n" * 5, 120, tmp_path / "out.txt", tmp_path / "err.txt",
+                                              cwd=str(ROOT), env=env)
+    server.shutdown()
+    assert code == run_catalogue.EXIT_HARNESS_ERROR, (tmp_path / "err.txt").read_text()[-1500:]
+    assert "No operative task" not in (tmp_path / "out.txt").read_text()
+    assert len(seen) == 1  # the run stopped at the failed call

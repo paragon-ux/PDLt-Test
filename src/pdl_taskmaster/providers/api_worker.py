@@ -47,6 +47,32 @@ DEFAULT_SAFETY_SETTINGS: list[dict[str, str]] = [
 ]
 
 
+def _single_top_level_object(schema: Any, discriminator: str | None = None) -> Any:
+    """Strict grammar providers (Groq, Cerebras) accept only one object at the top
+    of a response schema: no anyOf / oneOf / discriminator there. A top-level union
+    is sent as one object whose properties are the union of the variants', with
+    each discriminator const merged into one enum and only the properties every
+    variant requires marked required. The host still validates the reply against
+    the exact union (wire_payloads), so nothing is loosened host-side."""
+    if not isinstance(schema, dict):
+        return schema
+    variants = schema.get("anyOf") or schema.get("oneOf")
+    if not isinstance(variants, list) or not all(isinstance(v, dict) and v.get("properties") for v in variants):
+        return {k: v for k, v in schema.items() if k != "discriminator"}
+    properties: dict[str, Any] = {}
+    for variant in variants:
+        for name, spec in variant["properties"].items():
+            if name not in properties:
+                properties[name] = dict(spec)
+            elif isinstance(spec, dict) and "enum" in spec and "enum" in properties[name]:
+                merged = list(properties[name]["enum"])
+                merged += [value for value in spec["enum"] if value not in merged]
+                properties[name]["enum"] = merged
+    required = [name for name in properties
+                if name == discriminator or all(name in (variant.get("required") or []) for variant in variants)]
+    return {"type": "object", "properties": properties, "required": required, "additionalProperties": False}
+
+
 class OutputLimitError(TransportError):
     """The response reached the output-token cap before it finished: a failed
     attempt to penalise, not a transport fault to retry."""
@@ -291,6 +317,10 @@ class ApiWorker:
                     "minItems",
                     "maxItems",
                     "uniqueItems",
+                    # A default shown to the model steers it toward that value (EXECUTE's
+                    # kind advertised REQUEST_INPUT; witnesses advertised polarity/basis).
+                    # The host still applies defaults when it validates the reply.
+                    "default",
                 ):
                     continue
                 if isinstance(v, dict):
@@ -316,7 +346,8 @@ class ApiWorker:
                     res["additionalProperties"] = False
             return res
 
-        return _clean_node(schema)
+        discriminator = (schema.get("discriminator") or {}).get("propertyName")
+        return _single_top_level_object(_clean_node(schema), discriminator)
 
     def _send_json_with_retries(self, req: urllib.request.Request, deadline: float | None = None) -> dict[str, Any]:
         """POST with exponential-backoff retries; returns the parsed response.
@@ -580,6 +611,13 @@ class ApiWorker:
                 "3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n"
                 "4. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04), and NEVER insert placeholder steps or meta-prohibitions like 'insert placeholders without performing computation' (PLAN-10).\n"
                 "5. Plan the steps that produce the deliverable itself. Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue."
+            )
+        elif operation_name == "DRAFT_EXECUTE":
+            extra_guidance = (
+                "\n\nDRAFT_EXECUTE: write an execution brief in plain text (brief_body): how the deliverable will "
+                "satisfy the confirmed prompt and plan within the execution environment in AVAILABLE_EXECUTION_TOOLS, "
+                "including, for any program, its estimated step count against the step budget. The brief is passed "
+                "to the EXECUTE call that follows; do not write the deliverable here."
             )
         elif operation_name == "EXECUTE":
             extra_guidance = (
