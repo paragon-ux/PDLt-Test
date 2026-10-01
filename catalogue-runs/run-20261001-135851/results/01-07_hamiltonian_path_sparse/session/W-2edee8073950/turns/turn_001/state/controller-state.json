@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-9fddb74915",
+  "stage": "EXECUTION_READY",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-9fddb74915-P1",
+    "body": "DETERMINE whether the given undirected graph with 12 nodes (0-11) and the specified edge list contains a Hamiltonian path.\nIF such a path exists, OUTPUT the complete sequence of node identifiers constituting the path.\nEMPLOY a backtracking search with pruning to find the path.\nVERIFY that the path visits all 12 nodes.\nVERIFY that each consecutive pair in the path corresponds to a valid edge from the provided list.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-9fddb74915-R1",
+    "body": "PARSE the list of nodes and edges defining the undirected graph\nINITIALIZE a backtracking search routine to build a Hamiltonian path\nFOR each node as a potential start node DO\n    CALL the backtracking routine with the start node and an empty visited set\n    RECURSIVELY extend the current path by choosing an adjacent unvisited node\n    PRUNE the search branch if no adjacent unvisited nodes remain before covering all nodes\n    IF the path length reaches 12 THEN\n        VERIFY that every consecutive pair in the path corresponds to an edge in the graph\n        EMIT the complete sequence of node identifiers as the Hamiltonian path\n        TERMINATE further search\n    ENDIF\nENDFOR",
+    "confirmed": true,
+    "source_prompt_id": "I-9fddb74915-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

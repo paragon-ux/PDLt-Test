@@ -1,0 +1,277 @@
+{
+  "operation": "EXECUTE",
+  "output_kind": "EXECUTION_OUTCOME",
+  "output_schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "ExecutionOutcome",
+    "oneOf": [
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "body",
+          "result_ir"
+        ],
+        "description": "Deliverable completing the confirmed task (e.g. source code, implementation, written response, or analysis artifact). When the confirmed task requests writing, creating, or implementing code or functions, emit the complete deliverable implementation in body.",
+        "properties": {
+          "kind": {
+            "const": "RESULT"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The complete deliverable content (e.g. full source code, written answer, or output artifact)."
+          },
+          "result_ir": {
+            "type": "object",
+            "description": "Result Pseudocode decomposition IR (TRD-0003): reconciled against the confirmed prompt requirements, with evidence citations. Presence is wire-enforced; citation content is validated host-side.",
+            "additionalProperties": false,
+            "required": [
+              "files",
+              "reconciliation",
+              "open_defects"
+            ],
+            "properties": {
+              "files": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "filename",
+                    "satisfies",
+                    "evidence"
+                  ],
+                  "properties": {
+                    "filename": {
+                      "type": "string"
+                    },
+                    "satisfies": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "evidence": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "path"
+                      ],
+                      "properties": {
+                        "path": {
+                          "type": "string"
+                        },
+                        "section": {
+                          "type": "string"
+                        },
+                        "observed": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "reconciliation": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "requirement",
+                    "status",
+                    "evidence"
+                  ],
+                  "properties": {
+                    "requirement": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "satisfied",
+                        "partial",
+                        "open"
+                      ]
+                    },
+                    "evidence": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "path"
+                      ],
+                      "properties": {
+                        "path": {
+                          "type": "string"
+                        },
+                        "section": {
+                          "type": "string"
+                        },
+                        "observed": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "open_defects": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "description",
+                    "evidence"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "evidence": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "path"
+                      ],
+                      "properties": {
+                        "path": {
+                          "type": "string"
+                        },
+                        "observed": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "body",
+          "expected_type",
+          "description"
+        ],
+        "description": "Request missing input ONLY when an external tool execution or runtime environment is blocked without live runtime variables. When the task is to write, implement, create, or define code, functions, classes, scripts, or documents, the deliverable is the source text itself: DO NOT request mocks, callers, or argument implementations (e.g. callback functions, test harnesses, or parameter values). Emit the complete source code implementation directly in RESULT.",
+        "properties": {
+          "kind": {
+            "const": "REQUEST_INPUT"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expected_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "body"
+        ],
+        "properties": {
+          "kind": {
+            "const": "BLOCKED_BY_HIGHER_PRIORITY"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    ]
+  },
+  "operation_inputs": {
+    "OPERATION_ID": "EXECUTE",
+    "CONFIRMED_PROMPT_BODY": "READ the 7x7 Latin square grid with cells marked as 0\nSOLVE the puzzle using constraint propagation and backtracking to fill all zero cells\nOUTPUT the completed 7x7 Latin square\nVERIFY that each row contains the numbers 1 through 7 exactly once\nVERIFY that each column contains the numbers 1 through 7 exactly once",
+    "CONFIRMED_PLAN_BODY": "PARSE the 7x7 Latin square grid with zeros\nAPPLY constraint propagation to reduce possible values for each zero cell\nIF any zero cells remain unresolved THEN PERFORM backtracking search to assign values consistent with Latin square constraints\nOUTPUT the completed 7x7 Latin square\nVERIFY that each row contains the numbers 1 through 7 exactly once\nVERIFY that each column contains the numbers 1 through 7 exactly once",
+    "REQUIRED_TASK_INPUTS": "RESULT IR: put the Result IR in the output's \"result_ir\" field, not in the deliverable text. The host reads two of its fields:\n- \"witness\": present only when the deliverable claims a result (see WITNESS below).\n- \"open_defects\": present only when a requested result was not obtained; a list of objects, each with a \"description\" of what was not obtained and why.\nLeave \"files\" and \"reconciliation\" as empty lists.\n\nWITNESS: this task requires verified execution. A claimed result is certified by a Python program in the deliverable that prints exactly one line to standard output: the text \"WITNESS: \" followed by a JSON object. Build the object as a Python dict in the program and print it with json.dumps; do not write the JSON by hand inside a string. The object's fields:\n- A result was found: \"polarity\" is \"positive\" and \"data\" is an object holding the result under descriptive keys.\n- The result is shown not to exist by a search the program ran: \"polarity\" is \"negative\", \"basis\" is \"search\", \"search_exhausted\" is true, \"nodes_explored\" is the number of states the program explored, and \"method\" names the search.\n- The result is shown not to exist by an argument rather than a computation: \"polarity\" is \"negative\", \"basis\" is \"proof\", and \"argument\" states the argument.\nIf the result was not obtained, print no witness and describe what was not obtained in \"open_defects\".\nThe host runs the program; the witness it prints replaces any witness written into \"result_ir\". A witness the host did not reproduce is reported as provisional.",
+    "SUPPLIED_EXECUTION_INPUT_SOURCE": "Complete the following partially filled 7x7 Latin square. Each row and column must contain the numbers 1-7 exactly once. Cells marked 0 are empty and must be filled.\n\nRow 1: [1, 0, 0, 0, 5, 6, 7]\nRow 2: [0, 0, 0, 0, 0, 0, 0]\nRow 3: [3, 0, 0, 0, 7, 0, 2]\nRow 4: [4, 0, 0, 7, 0, 0, 0]\nRow 5: [5, 6, 7, 1, 0, 3, 0]\nRow 6: [0, 7, 1, 2, 0, 4, 0]\nRow 7: [0, 0, 0, 0, 0, 0, 6]\n\nImplement a constraint-propagation solver with backtracking. Emit the completed square and verify that every row and column is a permutation of {1,...,7}.",
+    "APPLICABLE_STANDARD_CLAUSES": [
+      {
+        "requirement_id": "AUTH-03",
+        "clause": "**AUTH-03 — Confirmed task authority.** After confirmation, the current confirmed Prompt Pseudocode defines authoritative task semantics and the current confirmed Response Plan Pseudocode defines the approved high-level approach, subject to higher-priority safety, privacy, platform, permission, and tool constraints."
+      },
+      {
+        "requirement_id": "AUTH-04",
+        "clause": "**AUTH-04 — Source-input role.** Original conversational wording and source inputs remain provenance and task data. They MUST NOT silently override conflicting confirmed task semantics after confirmation."
+      },
+      {
+        "requirement_id": "EXEC-01",
+        "clause": "**EXEC-01 — Missing non-semantic input.** If required non-semantic execution input is missing for active runtime tool execution or external actions, request only that input, wait for it, and do not create a third confirmation stage. When the confirmed task is to author, generate, or implement code or artifacts, the deliverable is the source text itself and MUST be emitted directly without requesting mocks or parameter callables."
+      },
+      {
+        "requirement_id": "EXEC-05",
+        "clause": "**EXEC-05 — Negative constraint execution by omission.** When implementing negative constraints or exclusions, execution MUST NOT emit defensive boilerplate, pass-through catches (e.g. `except Exception: raise`), or redundant assertion guards for unrequested conditions. Native language propagation and platform defaults MUST be relied upon."
+      },
+      {
+        "requirement_id": "RS-01",
+        "clause": "**RS-01 —** The EXECUTE operation SHALL carry its Result IR in the structured `result_ir` field of its output, never in the deliverable text. The host reads two fields: `witness`, present only when the deliverable claims a result, and `open_defects`, a list of objects with a `description`, present only when a requested result was not obtained. `files` and `reconciliation` MAY be empty lists."
+      },
+      {
+        "requirement_id": "RS-02",
+        "clause": "**RS-02 —** Retired. Requirement IDs are not derived or rendered; per-line requirements included control-flow lines and asked for bookkeeping the verdict did not use."
+      },
+      {
+        "requirement_id": "RS-03",
+        "clause": "**RS-03 —** Retired with RS-02: reconciliation of every requirement is not required."
+      },
+      {
+        "requirement_id": "RS-04",
+        "clause": "**RS-04 —** Every evidence path SHALL resolve to an existing file inside the workspace boundary, OR SHALL be the reserved self-reference `execution://body` resolved by the controller to the current execution body (the just-produced deliverable, which is not yet on disk at validation time). Escaping paths are invalid."
+      },
+      {
+        "requirement_id": "RS-05",
+        "clause": "**RS-05 —** When a section marker is cited, it SHALL appear verbatim in the cited artifact; citation findings are recorded, not blocking."
+      },
+      {
+        "requirement_id": "RS-06",
+        "clause": "**RS-06 —** When an observation is cited, it SHALL be a verbatim substring of the cited artifact; citation findings are recorded, not blocking."
+      },
+      {
+        "requirement_id": "RS-07",
+        "clause": "**RS-07 —** Citations are optional; a partial or open status MAY carry an observed citation."
+      },
+      {
+        "requirement_id": "RS-08",
+        "clause": "**RS-08 —** The controller SHALL validate the Result IR mechanically (shape) before publishing; failures are factual repair findings within the routed tier's repairs; persistent failures SHALL be published as workspace events and scored as model errors."
+      },
+      {
+        "requirement_id": "RS-09",
+        "clause": "**RS-09 —** On a follow-up turn the controller SHALL pass the previous turn's request and result as labelled reference only; the previous turn's Result IR SHALL NOT be injected and its output SHALL NOT be an evidence path."
+      },
+      {
+        "requirement_id": "RS-10",
+        "clause": "**RS-10 —** This standard SHALL apply to tasks that require verified execution, and to other tasks only when the feature gate (PDLT_RESULT_IR=1) is set."
+      }
+    ],
+    "HIGHER_PRIORITY_CONSTRAINTS": "Obey applicable provider/platform safety, privacy, permission, and tool constraints.",
+    "AVAILABLE_EXECUTION_TOOLS": [
+      {
+        "name": "python",
+        "description": "Python 3.11 with the standard library only; third-party packages are not installed. The host runs the deliverable as a script when the whole deliverable is Python source; otherwise it runs every ```python fenced block as a separate script, in an empty temporary directory. Each script may execute at most 10,000,000 steps, where one step is one executed Python bytecode instruction of the script's own code, including every loop or comprehension iteration, code run through exec, and functions the script passes to library calls. Code inside the standard library and built-in functions is not counted in steps. A script that exceeds the step budget is stopped. Everything, including uncounted work, is bounded by a 30-second wall-clock limit. Memory is limited to 256 MB. Standard input is empty. Standard output, standard error and the exit status are captured by the host."
+      }
+    ]
+  }
+}

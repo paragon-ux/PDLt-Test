@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-9b7d11c8c1",
+  "stage": "EXECUTION_READY",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-9b7d11c8c1-P1",
+    "body": "READ the wheel graph W_11 with nodes 0 through 11\nASSIGN each node a color from the set {1,2,3,4}\nENSURE that adjacent nodes receive different colors\nOUTPUT a valid 4-coloring assignment for all nodes\nEXPLAIN why a 3-coloring is impossible because the outer cycle of 11 nodes is odd and the hub node connects to all outer nodes\nINCLUDE the following task entities verbatim: W_11, 0, 1, 2, 3, 4, 11, 1, 2, 3, 4",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-9b7d11c8c1-R1",
+    "body": "READ the wheel graph W_11 with nodes 0 through 11\nGENERATE a valid 4-coloring assignment for all nodes using colors {1,2,3,4} such that adjacent nodes receive different colors\nOUTPUT the 4-coloring assignment for each node\nEXPLAIN why a 3-coloring is impossible because the outer cycle of 11 nodes is odd and the hub node connects to all outer nodes\nINCLUDE the following task entities verbatim: W_11, 0, 1, 2, 3, 4, 11, 1, 2, 3, 4",
+    "confirmed": true,
+    "source_prompt_id": "I-9b7d11c8c1-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

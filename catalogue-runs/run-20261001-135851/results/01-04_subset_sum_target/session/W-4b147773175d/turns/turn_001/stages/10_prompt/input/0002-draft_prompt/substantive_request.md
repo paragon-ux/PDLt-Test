@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Find all subsets of the set S = {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21} whose elements sum exactly to the target value T = 40. Use a backtracking algorithm that explores the full search tree. For each solution, emit the subset and verify its sum. Report the total number of solutions.
+APPROACH/RISK NOTES:

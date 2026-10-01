@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-fbefa12317",
+  "stage": "EXECUTION_READY",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-fbefa12317-P1",
+    "body": "READ the undirected graph with 12 nodes (0-11) and the given edge list\nDETERMINE whether a Hamiltonian path exists in the graph\nIF a Hamiltonian path exists THEN\nOUTPUT the complete sequence of node identifiers representing the path\nVERIFY that the path visits all 12 nodes\nVERIFY that each consecutive pair in the sequence corresponds to an edge in the graph\nUSE a backtracking search with pruning to find the path",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-fbefa12317-R1",
+    "body": "READ the undirected graph edge list\nBUILD adjacency representation of the 12-node graph\nINITIATE backtracking search to construct a Hamiltonian path\nPRUNE search branches when a node cannot be visited without violating Hamiltonian constraints\nWHEN a complete path of length 12 is constructed\nOUTPUT the node sequence representing the Hamiltonian path\nVERIFY that the path includes all 12 distinct nodes\nVERIFY that each consecutive node pair in the sequence corresponds to an edge in the graph",
+    "confirmed": true,
+    "source_prompt_id": "I-fbefa12317-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

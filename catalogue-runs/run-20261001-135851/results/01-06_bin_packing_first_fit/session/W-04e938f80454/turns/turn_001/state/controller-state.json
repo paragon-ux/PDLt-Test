@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-75475ad187",
+  "stage": "EXECUTION_READY",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-75475ad187-P1",
+    "body": "READ the item sequence and bin capacity C = 10\nAPPLY First Fit algorithm to allocate items into bins\nDETERMINE the optimal bin packing that minimizes the number of bins for the same items\nCALCULATE the difference in bin count between First Fit result and optimal result\nEXPLAIN how the arrival order leads to First Fit using more bins\nINCLUDE a self-test that checks both packings use each item exactly once and that no bin exceeds capacity",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-75475ad187-R1",
+    "body": "READ the item sequence and bin capacity C = 10\nAPPLY the First Fit algorithm to allocate items into bins\nCOMPUTE an optimal bin packing that minimizes the number of bins for the same items\nCALCULATE the difference in bin count between the First Fit result and the optimal result\nEXPLAIN how the arrival order causes First Fit to use more bins than the optimal packing\nPERFORM a self‑test that verifies each item appears in exactly one bin in both packings and that no bin exceeds capacity",
+    "confirmed": true,
+    "source_prompt_id": "I-75475ad187-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

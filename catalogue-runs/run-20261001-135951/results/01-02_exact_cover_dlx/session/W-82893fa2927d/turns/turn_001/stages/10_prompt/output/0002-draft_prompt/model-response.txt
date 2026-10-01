@@ -1,0 +1,1 @@
+{"kind":"PROMPT","prompt_body":"FIND all exact covers of the universe U = {1,2,3,4,5,6,7,8,9} using the collection of sets S1 through S9.\nIMPLEMENT the search using Algorithm X with dancing links.\nINCLUDE a self‑contained test that verifies each solution covers U exactly once.","approach_handoff":"NONE","task_entities":["U","S1","S9","Algorithm X","dancing links"]}

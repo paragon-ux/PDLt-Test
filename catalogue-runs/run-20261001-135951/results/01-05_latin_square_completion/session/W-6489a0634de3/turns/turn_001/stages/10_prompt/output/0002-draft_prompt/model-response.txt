@@ -1,0 +1,1 @@
+{"kind":"PROMPT","prompt_body":"READ the 7x7 Latin square grid with cells marked as 0\nSOLVE the puzzle using constraint propagation and backtracking to fill all zero cells\nOUTPUT the completed 7x7 Latin square\nVERIFY that each row contains the numbers 1 through 7 exactly once\nVERIFY that each column contains the numbers 1 through 7 exactly once","approach_handoff":"NONE"}

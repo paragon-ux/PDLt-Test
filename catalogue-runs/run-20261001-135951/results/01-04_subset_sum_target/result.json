@@ -1,0 +1,61 @@
+{
+  "id": "01-04",
+  "category": "combinatorial_search",
+  "file": "01_combinatorial_search/subset_sum_target.txt",
+  "difficulty": "medium",
+  "expected_routing": "VERIFIED_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "verified",
+  "verdict": "HARNESS_ERROR",
+  "exit_code": 4,
+  "timed_out": false,
+  "elapsed_seconds": 4.39,
+  "start_time": "2026-10-01T18:00:06.191710+00:00",
+  "session_id": "catalogue-01-04-1790877606",
+  "transcript_file": "results\\01-04_subset_sum_target\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/01_combinatorial_search/subset_sum_target.json",
+    "expected_behavior": null,
+    "polarity": "positive",
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "FAIL",
+    "reason": "no published deliverable"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-08"
+  ],
+  "tags": [
+    "subset-sum",
+    "backtracking"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 3,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1
+    },
+    "repairs": 0,
+    "execution_attempts": null,
+    "plan_echo": {
+      "plan_id": "I-b18b5e34d4-R1",
+      "identical": false,
+      "copied_line_ratio": 0.0
+    },
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 123,
+      "DRAFT_PLAN": 48
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 309,
+      "DRAFT_PLAN": 250
+    }
+  },
+  "repeat": null
+}
