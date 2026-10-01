@@ -166,20 +166,20 @@ def test_engine_chaining_compiles_previous_deliverable(tmp_path: Path, monkeypat
         host.close()
 
 
-def test_follow_up_after_a_cancelled_turn_carries_its_task(tmp_path: Path) -> None:
-    """Session 20261001-082239: after a cancelled turn, "retry with a more efficient
-    solution" became the prompt "RETRY the operation" with no task at all."""
+def _two_turn_session(tmp_path, first_execute_replies, follow_up):
+    """Turn 1 on a verified task, then a follow-up turn; records every call."""
     import json as _json
 
     from pdl_taskmaster.runtime.session_engine import SessionEngine
 
-    calls = []
-    executes = iter([{"kind": "RESULT", "body": "import sys\nsys.exit(1)"}] * 4 + [{"kind": "RESULT", "body": "5"}] * 4)
+    calls, sys1_requests = [], []
+    executes = iter(first_execute_replies + [{"kind": "RESULT", "body": "5"}] * 4)
 
     class Verified:
         is_configured, model = True, "fake"
 
         def call(self, request):
+            sys1_requests.append(request)
             name = next(iter(request.questions))
             choice = {"route": "APPLY_PROTOCOL", "problem_class": "VERIFIED_EXECUTION"}.get(name, "WITHIN_10M_STEPS")
             return {"answers": {name: {"choice": choice, "confidence": 0.97, "probabilities": {choice: 0.97}}}}, 1.0
@@ -196,12 +196,39 @@ def test_follow_up_after_a_cancelled_turn_carries_its_task(tmp_path: Path) -> No
         return _json.dumps(next(executes))
 
     engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=Verified())
-    for message in ("$confirm-with-pseudocode partition the list", "/confirm", "/confirm"):
+    for message in ("$confirm-with-pseudocode partition the list L = {1, 2, 3}", "/confirm", "/confirm"):
         engine.handle_user_message(message)
-    assert engine.controller.state.stage.value == "CLOSED_CANCELLED"
-    first_turn_calls = len(calls)
-    engine.handle_user_message("$confirm-with-pseudocode retry with a more efficient solution")  # as the host sends it
-    bootstrap = next(c for c in calls[first_turn_calls:] if c.operation == "BOOTSTRAP_ANALYSIS")
-    assert "PARTITION the list into triples" in bootstrap.prompt
-    assert "nothing in it was verified" in bootstrap.prompt
-    assert any(e["kind"] == "TURN_CHAINED" and e["payload"]["previous_deliverable"] for e in engine.workspace._events)
+    first_status = engine.controller.state.stage.value
+    first_calls, first_sys1 = len(calls), len(sys1_requests)
+    for message in ("$confirm-with-pseudocode " + follow_up, "/confirm", "/confirm"):  # as the host sends it
+        engine.handle_user_message(message)
+    return engine, first_status, calls[first_calls:], sys1_requests[first_sys1:]
+
+
+def test_follow_up_after_a_cancelled_turn_works_from_the_previous_request(tmp_path: Path) -> None:
+    """Sessions 082239 / 122654: a follow-up after a cancelled turn had no task, was
+    routed from the follow-up text alone, and executed without the data."""
+    failing = [{"kind": "RESULT", "body": "import sys\nsys.exit(1)"}] * 3
+    engine, first, calls, sys1 = _two_turn_session(tmp_path, failing, "retry with a more efficient solution")
+    assert first == "CLOSED_CANCELLED"
+    bootstrap = next(c for c in calls if c.operation == "BOOTSTRAP_ANALYSIS")
+    assert "partition the list L = {1, 2, 3}" in bootstrap.prompt and "retry with a more efficient" in bootstrap.prompt
+    routed = [r.state.get("request", "") for r in sys1 if "problem_class" in r.questions]
+    assert routed and "partition the list L = {1, 2, 3}" in routed[0]  # routing sees the task, not only the follow-up
+    execute = next(c for c in calls if c.operation == "EXECUTE")
+    assert "L = {1, 2, 3}" in execute.prompt  # the data reaches execution
+    assert "not evidence and not a justification" in execute.prompt
+    assert "sys.exit(1)" not in execute.prompt  # the failed candidate is never carried
+    assert "UNVERIFIED ANSWER" not in execute.prompt
+
+
+def test_follow_up_after_a_successful_turn_gets_its_result_as_reference_only(tmp_path: Path) -> None:
+    witness = {"files": [], "reconciliation": [], "open_defects": [],
+               "witness": {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"answer": 6}}}
+    ok = [{"kind": "RESULT", "body": "The sum is 6.", "result_ir": witness}]
+    engine, first, calls, _ = _two_turn_session(tmp_path, ok, "now double it")
+    assert first == "CLOSED_SUCCESS"
+    execute = next(c for c in calls if c.operation == "EXECUTE")
+    assert "The sum is 6." in execute.prompt and "not evidence and not a justification" in execute.prompt
+    assert "turns/turn_001" not in execute.prompt  # the previous turn is never an evidence path
+    assert '\\"answer\\": 6' not in execute.prompt and '"answer": 6' not in execute.prompt  # its Result IR is not carried

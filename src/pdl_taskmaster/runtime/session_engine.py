@@ -76,6 +76,19 @@ from pdl_taskmaster.verification.error_registry import Finding, finding_codes  #
 UNMEASURED_REPAIRS = 1
 
 
+def _previous_turn_reference(previous: dict[str, Any] | None) -> str | None:
+    """The previous turn's result as labelled reference for a follow-up turn."""
+    if not previous or not previous.get("result"):
+        return None
+    status = "completed" if previous.get("status") == "CLOSED_SUCCESS" else "was cancelled"
+    return (
+        "PREVIOUS TURN RESULT (reference only). It shows what the previous turn produced so that the new request "
+        "can be understood. It is not evidence and not a justification: do not cite it, rely on it, or reason "
+        "from it. Derive every result from the confirmed prompt and the supplied data.\n"
+        f"The previous turn {status}. Its result:\n{previous['result']}"
+    )
+
+
 def _normalized_lines(body: str) -> list[str]:
     """Non-empty lines, lowercased, with punctuation and whitespace runs collapsed."""
     lines = (" ".join(re.sub(r"[^\w\s]", " ", line.lower()).split()) for line in (body or "").splitlines())
@@ -287,6 +300,7 @@ class SessionEngine:
         # S4: confirmed deliverable carried from the prior turn (chaining);
         # None for first turns and legacy single-turn workspaces.
         self._previous_deliverable: str | None = None
+        self._previous_turn: dict[str, Any] | None = None
         self._active_task_entities: tuple[str, ...] = ()
         # AUTH-04: the user's original request is source data for execution; the
         # confirmed prompt governs task semantics where the two differ.
@@ -382,7 +396,9 @@ class SessionEngine:
         # prior deliverable in REQUIRED_TASK_INPUTS. The active turn's status
         # is ACTIVE at restore time, so previous_deliverable() correctly
         # returns the last CLOSED_SUCCESS turn before it.
-        engine._previous_deliverable = workspace.previous_turn_context()
+        engine._previous_turn = workspace.previous_turn()
+        engine._previous_deliverable = _previous_turn_reference(engine._previous_turn)
+        engine._source_request = workspace.turn_source()
         workspace.append_event("SESSION_RESTORED", {"instance_id": state.instance_id})
         return engine
 
@@ -826,7 +842,18 @@ class SessionEngine:
         protocol_state: str,
     ) -> EngineResponse:
         assert self.workspace is not None
+        previous_request = (getattr(self, "_previous_turn", None) or {}).get("request")
+        if previous_request:
+            # A follow-up refers to the previous request: routing, drafting and the
+            # execution source all work from both, never from the follow-up alone
+            # (session 20261001-122654: "try a more efficient method" was routed as
+            # a standard task at the MINIMAL tier and executed without the data).
+            substantive_request = (
+                f"{previous_request}\n\nFollow-up from the user, referring to the request above:\n"
+                f"{substantive_request}"
+            )
         self._source_request = substantive_request
+        self.workspace.write_turn_source(substantive_request)
         from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
         from pdl_taskmaster.verification.checkers.base import ProblemDomain
         requires_verified = False
@@ -950,20 +977,24 @@ class SessionEngine:
                     if self.controller.state.stage == Stage.CLOSED_SUCCESS
                     else "CLOSED_CANCELLED"
                 )
-            chained_deliverable = prior.previous_turn_context()
+            previous = prior.previous_turn()
             prior.start_turn(prior.next_turn_id())
             self.workspace = prior
-            self._previous_deliverable = chained_deliverable
+            self._previous_turn = previous
+            self._previous_deliverable = _previous_turn_reference(previous)
             self._source_request = None
             self.workspace.append_event(
                 "TURN_CHAINED",
                 {
                     "turn_id": prior.turn_id,
-                    "previous_deliverable": chained_deliverable is not None,
+                    "previous_deliverable": self._previous_deliverable is not None,
+                    "previous_status": (previous or {}).get("status"),
+                    "previous_request": bool((previous or {}).get("request")),
                 },
             )
         else:
             self.workspace = self._new_workspace()
+            self._previous_turn = None
             self._previous_deliverable = None
             self._source_request = None
         observation = observe_invocation(user_message)
@@ -1146,9 +1177,7 @@ class SessionEngine:
 
         from pdl_taskmaster.runtime.result_ir import (
             derive_requirements,
-            load_ir_from_deliverable,
             render_instructions,
-            render_prior_ir_section,
         )
 
         # Source data (AUTH-04): user-supplied execution input, else the original
@@ -1163,19 +1192,15 @@ class SessionEngine:
         if self._previous_deliverable:
             task_inputs.append(self._previous_deliverable)
         if result_ir_mode:
+            # The previous turn is reference only: it is never an evidence path and
+            # its Result IR is never carried into this turn's instructions.
             evidence_paths = ["execution://body"] + (["execution://witness"] if verified else [])
-            closed = [t for t in self.workspace.closed_turns() if t.get("status") == "CLOSED_SUCCESS"]
-            if self._previous_deliverable and closed:
-                evidence_paths.append(f"turns/{closed[-1]['turn_id']}/stages/50_execution/output/current.md")
             channel = render_instructions(
                 requirements,
                 repo_root=self.repo_root,
                 evidence_paths=evidence_paths,
                 requires_verified_execution=verified,
             )
-            prior_ir = load_ir_from_deliverable(self._previous_deliverable)
-            if prior_ir:
-                channel += render_prior_ir_section(prior_ir)
             task_inputs.append(channel)
         execute_context = {
             "CONFIRMED_PROMPT_BODY": prompt_body,
@@ -1269,7 +1294,9 @@ class SessionEngine:
             self.controller.cancel()
             if self.workspace.turn_id is not None:
                 self.workspace.mark_turn_status("CLOSED_CANCELLED")
-            self.workspace.publish_execution_outcome("VERIFICATION_FAILED", final_body, {"errors": errors})
+            self.workspace.publish_execution_outcome(
+                "VERIFICATION_FAILED", final_body, {"errors": errors, "codes": finding_codes(errors)}
+            )
             return EngineResponse(final_body, traces, closed=True)
         result_body_hash = hashlib.sha256(final_body.encode("utf-8")).hexdigest()
         self.controller.complete_success(result_body_hash)

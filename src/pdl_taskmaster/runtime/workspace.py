@@ -213,28 +213,43 @@ class WorkspaceRun:
             return None
         return body.read_text(encoding="utf-8").rstrip("\n")
 
-    def previous_turn_context(self) -> str | None:
-        """What a new turn carries from the most recent closed turn.
+    def write_turn_source(self, text: str) -> None:
+        """The turn's effective request (for a follow-up: the previous request plus
+        the new message), kept so a later turn or a restored session can use it."""
+        self._write(self._turn_base() / "source_request.md", text.rstrip() + "\n")
 
-        A successful turn carries its confirmed deliverable (previous_deliverable).
-        A cancelled turn carries its confirmed Prompt and the host's published
-        failure record (the unverified candidate and the findings), labelled as
-        unverified, so a follow-up such as "retry more efficiently" still has its
-        task. Drafts, rejected plans and review dialogue stay unreachable."""
+    def turn_source(self, turn_id: str | None = None) -> str | None:
+        base = self.path / "turns" / turn_id if turn_id else self._turn_base()
+        path = base / "source_request.md"
+        return self._read(path).rstrip("\n") if path.is_file() else None
+
+    def previous_turn(self) -> dict[str, Any] | None:
+        """The most recent closed turn, as a follow-up needs it: its request and its
+        result. A successful turn's result is its published deliverable without the
+        attached Result IR; a cancelled turn's result is only that it was not
+        obtained, with the host's finding codes. Neither carries code, drafts,
+        candidate output or review dialogue."""
         closed = self.closed_turns()
-        if not closed or closed[-1].get("status") != "CLOSED_CANCELLED":
-            return self.previous_deliverable()
-        stages = self.path / "turns" / str(closed[-1].get("turn_id")) / "stages"
-        parts: list[str] = []
-        prompt_meta, prompt_body = stages / "10_prompt" / "output" / "current.json", stages / "10_prompt" / "output" / "current.md"
-        if prompt_meta.is_file() and prompt_body.is_file() and json.loads(self._read(prompt_meta)).get("confirmed"):
-            parts.append("Confirmed task of the previous turn:\n" + self._read(prompt_body).rstrip("\n"))
-        outcome = stages / "50_execution" / "output" / "current.md"
-        if outcome.is_file():
-            parts.append("Its unverified outcome and the host's findings:\n" + self._read(outcome).rstrip("\n"))
-        if not parts:
-            return self.previous_deliverable()
-        return "The previous turn was cancelled; nothing in it was verified.\n\n" + "\n\n".join(parts)
+        if not closed:
+            return None
+        turn_id = str(closed[-1].get("turn_id"))
+        status = closed[-1].get("status")
+        output = self.path / "turns" / turn_id / "stages" / "50_execution" / "output"
+        if status == "CLOSED_SUCCESS":
+            body = self._read(output / "current.md").rstrip("\n") if (output / "current.md").is_file() else ""
+            fence = body.rfind("\n```json\n")
+            if fence != -1 and body.endswith("```"):
+                try:
+                    json.loads(body[fence + len("\n```json\n"):-3])
+                    body = body[:fence].rstrip()
+                except ValueError:
+                    pass
+            result = body or None
+        else:
+            meta = output / "current.json"
+            codes = json.loads(self._read(meta)).get("codes") if meta.is_file() else None
+            result = "The result was not obtained" + (f" (host findings: {', '.join(codes)})." if codes else ".")
+        return {"turn_id": turn_id, "status": status, "request": self.turn_source(turn_id), "result": result}
 
     @classmethod
     def open(cls, repo_root: str | Path, path: str | Path) -> "WorkspaceRun":
