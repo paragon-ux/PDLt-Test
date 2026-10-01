@@ -127,21 +127,161 @@ _WINDOWS_OOM_EXIT_CODES = (
     0xC0000007,  # STATUS_PAGEFILE_QUOTA
 )
 
-# Defense in depth, not a VM boundary: an in-process audit hook denies outbound
-# network and process creation. It cannot be removed once installed.
-_NETWORK_BLOCK_PRELUDE = """
-# Deterministic Sandbox Isolation Prelude
-import sys as _sys
-_DENIED_EVENTS = frozenset({
+# Defense in depth, not a VM boundary: an in-process audit hook enforces the session
+# policy inside the program's own interpreter. It cannot be removed once installed,
+# but native code can step around it, so loading native code is denied too; the
+# OS-native backend is the boundary that holds on its own.
+_NETWORK_EVENTS = (
     "socket.connect", "socket.bind", "socket.getaddrinfo", "socket.gethostbyname",
-    "socket.sendto", "socket.sendmsg", "subprocess.Popen", "os.system", "os.exec", "os.posix_spawn",
-    "os.spawn", "os.fork", "os.forkpty", "os.startfile",
-})
-def _sandbox_audit(event, args):
-    if event in _DENIED_EVENTS:
-        raise PermissionError("Network access and process creation are strictly disabled inside ExecutionSandbox (" + event + ")")
-_sys.addaudithook(_sandbox_audit)
+    "socket.sendto", "socket.sendmsg",
+)
+_PROCESS_EVENTS = (
+    "subprocess.Popen", "os.system", "os.exec", "os.posix_spawn", "os.spawn", "os.fork", "os.forkpty",
+    "os.startfile", "_winapi.CreateProcess",
+)
+_SIGNAL_EVENTS = ("os.kill", "os.killpg")
+_NATIVE_CODE_MODULES = ("ctypes", "_ctypes", "cffi", "_cffi_backend")
+_NATIVE_CODE_EVENTS = ("sqlite3.enable_load_extension", "sqlite3.load_extension")
+
+# Paths: writes stay inside the run directory; reads inside the run directory or the
+# interpreter's standard library (its import path at startup). Each path is resolved
+# with realpath and compared by commonpath, never by string prefix. An integer path
+# is a descriptor that an already-checked open returned (os.open's dir_fd is not in
+# its audit event; the native backend covers that case). A symbolic link may only
+# point inside the run directory, by an absolute path or a relative one without
+# "..", so moving it within the run directory never makes it point outside.
+_POLICY_PRELUDE = r"""
+import sys as _sys, os as _os
+def _sandbox_policy(denied, native_modules, native_events):
+    path_mod = _os.path
+    def _resolve(path):
+        return path_mod.normcase(path_mod.realpath(path))
+    run_dir = _resolve(_os.getcwd())
+    devices = [_os.devnull] + (["/dev/urandom"] if _os.name == "posix" else [])
+    writable = [run_dir] + [_resolve(p) for p in devices[:1]]
+    readable = [run_dir] + [_resolve(p) for p in _sys.path if p] + [_resolve(p) for p in devices]
+    write_flags = _os.O_WRONLY | _os.O_RDWR | _os.O_APPEND | _os.O_CREAT | _os.O_TRUNC
+    try:
+        import fcntl as _fcntl
+    except ImportError:
+        _fcntl = None
+    def descriptor_path(fd):
+        if _sys.platform.startswith("linux"):
+            return _os.readlink("/proc/self/fd/%d" % fd)
+        if _fcntl is not None and hasattr(_fcntl, "F_GETPATH"):
+            return _fcntl.fcntl(fd, _fcntl.F_GETPATH, bytes(1024)).split(b"\0", 1)[0].decode()
+        raise OSError("descriptor path unavailable")
+    def within(path, roots):
+        for root in roots:
+            try:
+                if path_mod.commonpath((path, root)) == root:
+                    return True
+            except ValueError:  # another drive
+                pass
+        return False
+    def check(event, path, write, dir_fd=None):
+        if path is None or isinstance(path, int):
+            return
+        try:
+            path = _os.fsdecode(_os.fspath(path))
+            if dir_fd is not None and dir_fd >= 0 and not path_mod.isabs(path):  # -1: no dir_fd
+                path = path_mod.join(descriptor_path(dir_fd), path)
+            resolved = _resolve(path)
+        except (OSError, TypeError, ValueError):
+            resolved = None
+        if resolved is None or not within(resolved, writable if write else readable):
+            raise PermissionError(
+                "File access outside the run directory is denied inside ExecutionSandbox (" + event + ": "
+                + str(path) + ")"
+            )
+    def check_link_target(event, target, link, dir_fd):
+        target = _os.fsdecode(_os.fspath(target))
+        relative = not path_mod.isabs(target)
+        if relative and ".." in target.replace("\\", "/").split("/"):
+            raise PermissionError("Links that leave their directory are denied inside ExecutionSandbox (" + event + ")")
+        link = _os.fsdecode(_os.fspath(link))
+        base = path_mod.dirname(link)
+        if dir_fd is not None and dir_fd >= 0 and not path_mod.isabs(link):
+            base = path_mod.join(descriptor_path(dir_fd), base)
+        check(event, path_mod.join(base, target) if relative else target, True)
+    def hook(event, args):
+        if event in denied:
+            if event.startswith("socket."):
+                kind = "Network access"
+            elif event.startswith("os.kill"):
+                kind = "Signalling other processes"
+            else:
+                kind = "Process creation"
+            raise PermissionError(kind + " is strictly disabled inside ExecutionSandbox (" + event + ")")
+        if event.startswith("ctypes.") or event in native_events or (
+            event == "import" and (args[0] in native_modules or args[0].startswith("ctypes."))
+        ):
+            raise PermissionError("Loading native code is denied inside ExecutionSandbox (" + event + ")")
+        if event == "open":
+            path, mode, flags = args
+            write = bool((flags or 0) & write_flags) or any(c in (mode or "") for c in "wax+")
+            check(event, path, write)
+        elif event in ("os.listdir", "os.scandir", "os.chdir", "os.listxattr", "os.getxattr"):
+            check(event, args[0], False)
+        elif event in ("os.remove", "os.rmdir", "shutil.rmtree"):
+            check(event, args[0], True, args[1])
+        elif event in ("os.mkdir", "os.chmod", "os.utime", "os.chown"):
+            check(event, args[0], True, args[-1])
+        elif event in ("os.truncate", "os.chflags", "os.lchflags", "os.setxattr", "os.removexattr",
+                       "shutil.chown"):
+            check(event, args[0], True)
+        elif event in ("os.rename", "os.link"):
+            check(event, args[0], True, args[2])
+            check(event, args[1], True, args[3])
+        elif event == "os.symlink":
+            check(event, args[1], True, args[2])
+            check_link_target(event, args[0], args[1], args[2])
+        elif event in ("shutil.copyfile", "shutil.copymode", "shutil.copystat", "shutil.copytree"):
+            check(event, args[0], False)
+            check(event, args[1], True)
+        elif event == "shutil.move":
+            check(event, args[0], True)
+            check(event, args[1], True)
+        elif event == "shutil.make_archive":
+            check(event, args[0], True)
+            check(event, args[2] or ".", False)
+        elif event == "shutil.unpack_archive":
+            check(event, args[0], False)
+            check(event, args[1] or ".", True)
+        elif event == "sqlite3.connect":
+            database = args[0]
+            if isinstance(database, bytes):
+                database = _os.fsdecode(database)
+            if database in ("", ":memory:"):
+                return
+            check(event, database, True)
+            if isinstance(database, str) and database.startswith("file:"):  # the URI form names a path too
+                path = database[5:].split("?", 1)[0].split("#", 1)[0]
+                if path.startswith("//"):
+                    path = "/" + path[2:].partition("/")[2]
+                if path not in ("", ":memory:"):
+                    check(event, path, True)
+    return hook
+_sys.addaudithook(_sandbox_policy(frozenset(__DENIED__), frozenset(__NATIVE__), frozenset(__NATIVE_EVENTS__)))
+del _sandbox_policy
 """
+
+
+def _policy_prelude(*, allow_network: bool, allow_processes: bool) -> str:
+    """The audit-hook prelude for one session policy."""
+    denied = list(_SIGNAL_EVENTS)
+    if not allow_network:
+        denied += _NETWORK_EVENTS
+    if not allow_processes:
+        denied += _PROCESS_EVENTS
+    source = (
+        _POLICY_PRELUDE.replace("__DENIED__", repr(tuple(sorted(denied))))
+        .replace("__NATIVE_EVENTS__", repr(_NATIVE_CODE_EVENTS))
+        .replace("__NATIVE__", repr(_NATIVE_CODE_MODULES))
+    )
+    # Compiled under a "<frozen" name: the step counter skips it, and a denial's
+    # traceback names the policy instead of quoting its source.
+    return f"exec(compile({source!r}, '<frozen pdl_sandbox_policy>', 'exec'))"
 
 
 STEP_BUDGET_EXIT_CODE = 125
@@ -439,6 +579,9 @@ class ExecutionSandbox:
 
     DEFAULT_TIMEOUT_SECONDS: float = 5.0
     DEFAULT_MEMORY_LIMIT_BYTES: int = 256 * 1024 * 1024  # 256 MB
+    # Test-only switch: False omits the audit-hook prelude, so a test can show that
+    # the OS-native backend holds on its own. Production code never changes it.
+    _policy_hooks: bool = True
 
     def __init__(
         self,
@@ -446,12 +589,14 @@ class ExecutionSandbox:
         timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
         memory_limit_bytes: int = DEFAULT_MEMORY_LIMIT_BYTES,
         allow_network: bool = False,
+        allow_processes: bool = False,
         mode: str | None = None,
         label: str | None = None,
     ) -> None:
         self.timeout_seconds = float(timeout_seconds)
         self.memory_limit_bytes = int(memory_limit_bytes)
         self.allow_network = allow_network
+        self.allow_processes = allow_processes
         self.mode = mode
         self.label = _session_label(label)
         self.backend_name = "audit-only"
@@ -602,8 +747,10 @@ class ExecutionSandbox:
             entry_file = run_dir / "_entry.py"
 
             content_parts: list[str] = []
-            if not self.allow_network:
-                content_parts.append(_NETWORK_BLOCK_PRELUDE)
+            if self._policy_hooks:
+                content_parts.append(_policy_prelude(
+                    allow_network=self.allow_network, allow_processes=self.allow_processes,
+                ))
             if step_limit is not None:
                 content_parts.append(_STEP_BUDGET_PRELUDE.format(
                     limit=int(step_limit), marker=_STEP_BUDGET_MARKER, exit_code=STEP_BUDGET_EXIT_CODE,

@@ -149,3 +149,99 @@ def test_host_close_releases_the_engine_sandbox(tmp_path):
     root = Path(host.engine.sandbox.session_info["root"])
     host.close()
     assert not root.exists()
+
+
+# -- audit layer (every backend) ---------------------------------------------------
+
+
+def _denied(result) -> bool:
+    return not result.success and "PermissionError" in result.stderr
+
+
+@pytest.fixture
+def secret(tmp_path):
+    path = tmp_path / "secret.txt"
+    path.write_text("top-secret-value", encoding="utf-8")
+    return path
+
+
+@pytest.mark.parametrize("statement", [
+    "import ctypes", "import _ctypes", "import ctypes.util", "import cffi", "import _cffi_backend",
+])
+def test_audit_layer_denies_loading_native_code(statement):
+    with ExecutionSandbox() as sandbox:
+        result = sandbox.run_code(statement)
+    assert _denied(result), result.stderr
+    assert "Loading native code is denied" in result.stderr
+
+
+def test_audit_layer_confines_reads_and_writes(secret, tmp_path):
+    with ExecutionSandbox() as sandbox:
+        for code in (
+            f"open({str(secret)!r}).read()",
+            f"open({str(tmp_path / 'planted.txt')!r}, 'w').write('x')",
+            f"import os\nos.open({str(tmp_path / 'planted.txt')!r}, os.O_WRONLY | os.O_CREAT)",
+            f"import os\nos.listdir({str(tmp_path)!r})",
+            f"import os\nos.rename('program.py', {str(tmp_path / 'moved.py')!r})",
+            f"import shutil\nshutil.copy({str(secret)!r}, 'copy.txt')",
+            f"import os\nos.chdir({str(tmp_path)!r})",
+            f"import sqlite3\nsqlite3.connect({str(tmp_path / 'db.sqlite')!r})",
+            f"import sqlite3\nsqlite3.connect('file:{(tmp_path / 'db.sqlite').as_posix()}?mode=rwc', uri=True)",
+            "open('../escape.txt', 'w').write('x')",
+        ):
+            result = sandbox.run_code(code)
+            assert _denied(result), (code, result.stderr)
+    assert not (tmp_path / "planted.txt").exists() and not (tmp_path / "moved.py").exists()
+
+
+def test_audit_layer_allows_the_run_directory_and_the_standard_library():
+    code = (
+        "import os, shutil, sqlite3, json\n"
+        "assert open(os.__file__, encoding='utf-8').read(10)\n"
+        "os.makedirs('a/b')\n"
+        "fd = os.open('a', os.O_RDONLY)\n"
+        "os.mkdir('c', dir_fd=fd)\n"
+        "shutil.copy('program.py', 'a/b/copy.py')\n"
+        "os.rename('a/b/copy.py', 'a/b/renamed.py')\n"
+        "os.symlink('b', 'a/link')\n"
+        "assert os.listdir('a/link') == ['renamed.py']\n"
+        "shutil.rmtree('a')\n"
+        "sqlite3.connect('local.db').execute('create table t (x)')\n"
+        "sqlite3.connect(':memory:').execute('select 1')\n"
+        "with open(os.devnull, 'w') as sink:\n"
+        "    sink.write('x')\n"
+        "print(sorted(os.listdir('.')))"
+    )
+    with ExecutionSandbox() as sandbox:
+        result = sandbox.run_code(code)
+    assert result.success, result.stderr
+    assert result.stdout.strip() == "['_entry.py', 'local.db', 'program.py', 'tmp']"
+
+
+@pytest.mark.parametrize("target", ["/", "..", "../..", "sub/../.."])
+def test_audit_layer_denies_links_that_leave_their_directory(target):
+    with ExecutionSandbox() as sandbox:
+        result = sandbox.run_code(f"import os\nos.makedirs('sub', exist_ok=True)\nos.symlink({target!r}, 'link')")
+    assert _denied(result), result.stderr
+
+
+def test_audit_layer_denies_signals():
+    with ExecutionSandbox() as sandbox:
+        result = sandbox.run_code("import os, signal\nos.kill(os.getppid(), 0)")
+    assert _denied(result) and "Signalling other processes" in result.stderr
+
+
+def test_allowing_network_keeps_process_creation_denied():
+    """allow_network once skipped the whole prelude, process checks included."""
+    with ExecutionSandbox(allow_network=True) as sandbox:
+        result = sandbox.run_code("import os\nos.system('echo hi')")
+    assert _denied(result) and "Process creation" in result.stderr
+
+
+def test_policy_hooks_do_not_count_as_program_steps():
+    """The hook runs on every audited event (each open while importing); it is not
+    the program's complexity."""
+    with ExecutionSandbox() as sandbox:
+        result = sandbox.run_code("import json, decimal, fractions\nopen('x', 'w').close()", step_limit=1_000)
+    assert result.success, result.stderr
+    assert result.steps_used < 200
