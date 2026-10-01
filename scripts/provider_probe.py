@@ -53,6 +53,13 @@ class _Request:
 
 
 def main() -> int:
+    if sys.platform == "win32":
+        # Provider messages can hold any character; the ANSI code page cannot.
+        for stream in (sys.stdout, sys.stderr):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (AttributeError, ValueError):
+                pass
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--providers", required=True, help="comma-separated, e.g. Cerebras,Groq,SambaNova")
     parser.add_argument("--operations", default=",".join(_INPUTS), help="comma-separated operations")
