@@ -1,0 +1,65 @@
+{
+  "provider": "SambaNova",
+  "operation": "DRAFT_PLAN",
+  "verdict": "ERROR",
+  "error": {
+    "category": "PROVIDER_REJECTED_REQUEST",
+    "operation": "DRAFT_PLAN",
+    "status": 404,
+    "attempts": [],
+    "message": "HTTP 404: {\"error\":{\"message\":\"No endpoints found for openai/gpt-oss-120b. Every candidate endpoint was removed during routing: Filter by Regional Surcharge removed amazon-bedrock/eu-west-1; Filter by Parameters removed novita/fp4, digitalocean, sambanova, amazon-bedrock; Filter by Fallback removed coreweave/fp4, dekallm/bf16, deepinfra/bf16, akashml/bf16, mancer/fp8, crusoe/bf16, baseten/fp4, parasail/fp4, deepinfra/turbo, phala, together, groq, cerebras/fp16, nebius/fp4, siliconflow/fp8, mara, google-vertex/global.\",\"code\":404,\"metadata\":{\"routing_funnel\":[{\"step\":\"Initial Endpoints\",\"endpoint_count\":"
+  },
+  "seconds": 0.11,
+  "request_body": {
+    "model": "openai/gpt-oss-120b",
+    "input": "You are a stateless operation worker.\n\nCONFIRMED_PROMPT_BODY: COMPUTE the sum of 2 and 3\n\nReturn only a JSON object. Do not include markdown fences, commentary, or extra text.",
+    "instructions": "NORMATIVE GUIDELINES FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-08, PLAN-01 to PLAN-10):\n1. Express the response plan in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n   Example format:\n   PARSE the supplied CSV records\n   AGGREGATE the sales amounts for each region\n   EMIT the per-region totals\n2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n4. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04), and NEVER insert placeholder steps or meta-prohibitions like 'insert placeholders without performing computation' (PLAN-10).\n5. Plan the steps that produce the deliverable itself. Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue.",
+    "max_output_tokens": 4096,
+    "reasoning": {
+      "effort": "low"
+    },
+    "provider": {
+      "order": [
+        "SambaNova"
+      ],
+      "allow_fallbacks": false
+    },
+    "safety_settings": [
+      {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_NONE"
+      }
+    ],
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "json_object",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "neutral_plan_body": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "neutral_plan_body"
+          ],
+          "type": "object"
+        }
+      }
+    }
+  },
+  "response_body": null
+}

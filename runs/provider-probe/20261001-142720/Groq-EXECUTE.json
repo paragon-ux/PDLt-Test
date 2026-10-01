@@ -1,0 +1,938 @@
+{
+  "provider": "Groq",
+  "operation": "EXECUTE",
+  "verdict": "OK",
+  "text": "{\"kind\":\"RESULT\",\"body\":\"5\",\"expected_type\":null,\"description\":null,\"result_ir\":null}",
+  "metadata": {
+    "worker": "api",
+    "model": "openai/gpt-oss-120b",
+    "observed_model": "openai/gpt-oss-120b",
+    "mode": "live-api",
+    "reasoning_effort": "low",
+    "operation": "EXECUTE",
+    "not_a_qualified_measurement_condition": true,
+    "base_url": "https://openrouter.ai/api/v1",
+    "response_id": "gen-1790879257-kTyUw9aK0Vtn0XDAjeEw",
+    "latency_ms": 603.472,
+    "token_telemetry": "enabled",
+    "usage": {
+      "input_tokens": 1138,
+      "output_tokens": 75,
+      "total_tokens": 1213,
+      "cached_tokens": 0,
+      "reasoning_tokens": 39
+    },
+    "usage_source": "responses_api",
+    "usage_exact": true
+  },
+  "seconds": 0.62,
+  "request_body": {
+    "model": "openai/gpt-oss-120b",
+    "input": "You are a stateless operation worker.\n\nCONFIRMED_PROMPT_BODY: COMPUTE the sum of 2 and 3\nCONFIRMED_PLAN_BODY: ADD 2 and 3\nRETURN the sum\n\nReturn only a JSON object. Do not include markdown fences, commentary, or extra text.",
+    "instructions": "NORMATIVE GUIDELINES FOR EXECUTE (EXEC-01, AUTH-03, AUTH-04, GUARD-03):\n- Deliver the result the confirmed prompt asks for, following the confirmed plan. Do not substitute a description of how the result could be obtained.\n- AVAILABLE_EXECUTION_TOOLS describes the execution environment exactly. Work within it. REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (EXEC-01); an environment capability is never user input.\n- SUPPLIED_EXECUTION_INPUT_SOURCE, when present, is the user's original source text: use its data, and let the confirmed prompt govern where they differ (AUTH-04).\n- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout.",
+    "max_output_tokens": 4096,
+    "reasoning": {
+      "effort": "low"
+    },
+    "provider": {
+      "order": [
+        "Groq"
+      ],
+      "allow_fallbacks": false
+    },
+    "safety_settings": [
+      {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_NONE"
+      }
+    ],
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "json_object",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "REQUEST_INPUT",
+                "RESULT",
+                "BLOCKED_BY_HIGHER_PRIORITY"
+              ]
+            },
+            "body": {
+              "type": "string"
+            },
+            "expected_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "result_ir": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "files": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "filename": {
+                            "type": "string"
+                          },
+                          "satisfies": {
+                            "anyOf": [
+                              {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "evidence": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "path": {
+                                "type": "string"
+                              },
+                              "section": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "observed": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "path",
+                              "section",
+                              "observed"
+                            ],
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "filename",
+                          "satisfies",
+                          "evidence"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "reconciliation": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "requirement": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": [
+                              "satisfied",
+                              "partial",
+                              "open"
+                            ],
+                            "type": "string"
+                          },
+                          "evidence": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "path": {
+                                "type": "string"
+                              },
+                              "section": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "observed": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "path",
+                              "section",
+                              "observed"
+                            ],
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "requirement",
+                          "status",
+                          "evidence"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "open_defects": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "evidence": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "path": {
+                                    "type": "string"
+                                  },
+                                  "section": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "observed": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "path",
+                                  "section",
+                                  "observed"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "description",
+                          "evidence"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "witness": {
+                      "anyOf": [
+                        {
+                          "discriminator": {
+                            "mapping": {
+                              "negative": "#/$defs/NegativeWitness",
+                              "positive": "#/$defs/PositiveWitness"
+                            },
+                            "propertyName": "polarity"
+                          },
+                          "additionalProperties": false,
+                          "properties": {
+                            "polarity": {
+                              "type": "string",
+                              "enum": [
+                                "negative"
+                              ]
+                            },
+                            "evidence": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "path": {
+                                  "type": "string"
+                                },
+                                "section": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "observed": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "path",
+                                "section",
+                                "observed"
+                              ],
+                              "type": "object"
+                            },
+                            "basis": {
+                              "enum": [
+                                "search",
+                                "proof"
+                              ],
+                              "type": "string"
+                            },
+                            "search_exhausted": {
+                              "anyOf": [
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "nodes_explored": {
+                              "anyOf": [
+                                {
+                                  "type": "integer"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "method": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "argument": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "domain": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "provisional": {
+                              "anyOf": [
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "polarity",
+                            "evidence",
+                            "basis",
+                            "search_exhausted",
+                            "nodes_explored",
+                            "method",
+                            "argument",
+                            "domain",
+                            "provisional"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "files",
+                    "reconciliation",
+                    "open_defects",
+                    "witness"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "body",
+            "expected_type",
+            "description",
+            "result_ir"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  },
+  "response_body": {
+    "id": "gen-1790879257-kTyUw9aK0Vtn0XDAjeEw",
+    "object": "response",
+    "created_at": 1790879257,
+    "model": "openai/gpt-oss-120b",
+    "status": "completed",
+    "completed_at": 1790879257,
+    "output": [
+      {
+        "id": "rs_tmp_x0iap662kya",
+        "type": "reasoning",
+        "status": "completed",
+        "content": [
+          {
+            "type": "reasoning_text",
+            "text": "We need to output RESULT with body \"5\". Follow json_object schema. kind \"RESULT\". expected_type maybe \"number\"? but string. Use string. description null. result_ir null."
+          }
+        ],
+        "summary": [],
+        "format": "unknown"
+      },
+      {
+        "id": "msg_tmp_tojdgigoxj",
+        "type": "message",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"kind\":\"RESULT\",\"body\":\"5\",\"expected_type\":null,\"description\":null,\"result_ir\":null}",
+            "annotations": [],
+            "logprobs": []
+          }
+        ]
+      }
+    ],
+    "error": null,
+    "incomplete_details": null,
+    "tools": [],
+    "tool_choice": "auto",
+    "parallel_tool_calls": true,
+    "max_output_tokens": 4096,
+    "temperature": 1,
+    "top_p": 1,
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "top_logprobs": 0,
+    "max_tool_calls": null,
+    "metadata": {},
+    "background": false,
+    "previous_response_id": null,
+    "service_tier": "on_demand",
+    "truncation": "disabled",
+    "store": false,
+    "instructions": "NORMATIVE GUIDELINES FOR EXECUTE (EXEC-01, AUTH-03, AUTH-04, GUARD-03):\n- Deliver the result the confirmed prompt asks for, following the confirmed plan. Do not substitute a description of how the result could be obtained.\n- AVAILABLE_EXECUTION_TOOLS describes the execution environment exactly. Work within it. REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (EXEC-01); an environment capability is never user input.\n- SUPPLIED_EXECUTION_INPUT_SOURCE, when present, is the user's original source text: use its data, and let the confirmed prompt govern where they differ (AUTH-04).\n- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout.",
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "json_object",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "REQUEST_INPUT",
+                "RESULT",
+                "BLOCKED_BY_HIGHER_PRIORITY"
+              ]
+            },
+            "body": {
+              "type": "string"
+            },
+            "expected_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "result_ir": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "files": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "filename": {
+                            "type": "string"
+                          },
+                          "satisfies": {
+                            "anyOf": [
+                              {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "evidence": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "path": {
+                                "type": "string"
+                              },
+                              "section": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "observed": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "path",
+                              "section",
+                              "observed"
+                            ],
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "filename",
+                          "satisfies",
+                          "evidence"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "reconciliation": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "requirement": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": [
+                              "satisfied",
+                              "partial",
+                              "open"
+                            ],
+                            "type": "string"
+                          },
+                          "evidence": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "path": {
+                                "type": "string"
+                              },
+                              "section": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "observed": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "path",
+                              "section",
+                              "observed"
+                            ],
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "requirement",
+                          "status",
+                          "evidence"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "open_defects": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "evidence": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "path": {
+                                    "type": "string"
+                                  },
+                                  "section": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "observed": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "path",
+                                  "section",
+                                  "observed"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "description",
+                          "evidence"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "witness": {
+                      "anyOf": [
+                        {
+                          "discriminator": {
+                            "mapping": {
+                              "negative": "#/$defs/NegativeWitness",
+                              "positive": "#/$defs/PositiveWitness"
+                            },
+                            "propertyName": "polarity"
+                          },
+                          "additionalProperties": false,
+                          "properties": {
+                            "polarity": {
+                              "type": "string",
+                              "enum": [
+                                "negative"
+                              ]
+                            },
+                            "evidence": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "path": {
+                                  "type": "string"
+                                },
+                                "section": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "observed": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "path",
+                                "section",
+                                "observed"
+                              ],
+                              "type": "object"
+                            },
+                            "basis": {
+                              "enum": [
+                                "search",
+                                "proof"
+                              ],
+                              "type": "string"
+                            },
+                            "search_exhausted": {
+                              "anyOf": [
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "nodes_explored": {
+                              "anyOf": [
+                                {
+                                  "type": "integer"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "method": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "argument": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "domain": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "provisional": {
+                              "anyOf": [
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "polarity",
+                            "evidence",
+                            "basis",
+                            "search_exhausted",
+                            "nodes_explored",
+                            "method",
+                            "argument",
+                            "domain",
+                            "provisional"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "files",
+                    "reconciliation",
+                    "open_defects",
+                    "witness"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "body",
+            "expected_type",
+            "description",
+            "result_ir"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "reasoning": {
+      "effort": "low"
+    },
+    "safety_identifier": null,
+    "prompt_cache_key": null,
+    "prompt_cache_options": null,
+    "usage": {
+      "input_tokens": 1138,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens": 75,
+      "output_tokens_details": {
+        "reasoning_tokens": 39
+      },
+      "total_tokens": 1213,
+      "cost": 0.0002157,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0002157,
+        "upstream_inference_input_cost": 0.0001707,
+        "upstream_inference_output_cost": 4.5e-05
+      }
+    }
+  }
+}

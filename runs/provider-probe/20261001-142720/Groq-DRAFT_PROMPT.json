@@ -1,0 +1,290 @@
+{
+  "provider": "Groq",
+  "operation": "DRAFT_PROMPT",
+  "verdict": "ERROR",
+  "error": {
+    "category": "PROVIDER_REJECTED_REQUEST",
+    "operation": "DRAFT_PROMPT",
+    "status": null,
+    "attempts": [],
+    "message": "provider reported an error: {'code': 'server_error', 'message': \"Upstream error from Groq: Generated JSON does not match the expected schema. Please adjust your prompt. See 'failed_generation' for more details. Error: jsonschema: '/blocking_basis' does not validate with /properties/blocking_basis/anyOf/0/type: expected null, but got string\"}"
+  },
+  "seconds": 12.29,
+  "request_body": {
+    "model": "openai/gpt-oss-120b",
+    "input": "You are a stateless operation worker.\n\nDraft Prompt Pseudocode for: add 2 and 3.\n\nReturn only a JSON object. Do not include markdown fences, commentary, or extra text.",
+    "instructions": "NORMATIVE GUIDELINES FOR PROMPT PSEUDOCODE (PDL-01 to PDL-08, PROMPT-01 to PROMPT-05):\n1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n   Example format:\n   READ the monthly sales records from the supplied CSV data\n   GROUP the records by region\n   RETURN the total sales for each region\n2. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n3. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n4. Purpose-Complete Target: Prompt Pseudocode defines the substantive requirements to be solved upon execution (PROMPT-01). DO NOT insert internal meta-rules, drafting instructions, or negative execution prohibitions (PROMPT-02, PDL-08).",
+    "max_output_tokens": 4096,
+    "reasoning": {
+      "effort": "low"
+    },
+    "provider": {
+      "order": [
+        "Groq"
+      ],
+      "allow_fallbacks": false
+    },
+    "safety_settings": [
+      {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_NONE"
+      }
+    ],
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "json_object",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "PROMPT",
+                "TASK_BLOCKED_BY_HIGHER_PRIORITY"
+              ]
+            },
+            "prompt_body": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "approach_handoff": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "NONE",
+                    "CARRY_SOURCE_TO_PLAN"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "task_entities": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "blocking_basis": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "PROVIDER_PLATFORM_SAFETY_PRIVACY_PERMISSION_OR_TOOL"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "response": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "prompt_body",
+            "approach_handoff",
+            "task_entities",
+            "blocking_basis",
+            "response"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  },
+  "response_body": {
+    "id": "gen-1790879256-FxyrOVdNG7eBp6V5YRjR",
+    "object": "response",
+    "created_at": 1790879256,
+    "model": "openai/gpt-oss-120b",
+    "status": "failed",
+    "completed_at": 1790879256,
+    "output": [
+      {
+        "id": "rs_tmp_d9e33091635",
+        "type": "reasoning",
+        "status": "completed",
+        "content": [
+          {
+            "type": "reasoning_text",
+            "text": "We need to output JSON matching schema. kind likely \"PROMPT\". prompt_body contains pseudocode. Use uppercase verbs, each line separate. For add 2 and 3: READ numbers? maybe \"READ the numbers 2 and 3\". \"ADD the numbers\". \"RETURN the result\". Provide no extra. approach_handoff null, blocking_basis null? blocking_basis const is \"PROVIDER_PLATFORM_SAFETY_PRIVACY_PERMISSION_OR_TOOL\". Must set that. task_entities null. response null. Provide."
+          }
+        ],
+        "summary": [],
+        "format": "unknown"
+      }
+    ],
+    "error": {
+      "code": "server_error",
+      "message": "Upstream error from Groq: Generated JSON does not match the expected schema. Please adjust your prompt. See 'failed_generation' for more details. Error: jsonschema: '/blocking_basis' does not validate with /properties/blocking_basis/anyOf/0/type: expected null, but got string"
+    },
+    "incomplete_details": null,
+    "tools": [],
+    "tool_choice": "auto",
+    "parallel_tool_calls": true,
+    "max_output_tokens": 4096,
+    "temperature": 1,
+    "top_p": 1,
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "top_logprobs": 0,
+    "max_tool_calls": null,
+    "metadata": {},
+    "background": false,
+    "previous_response_id": null,
+    "service_tier": "auto",
+    "truncation": "disabled",
+    "store": false,
+    "instructions": "NORMATIVE GUIDELINES FOR PROMPT PSEUDOCODE (PDL-01 to PDL-08, PROMPT-01 to PROMPT-05):\n1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n   Example format:\n   READ the monthly sales records from the supplied CSV data\n   GROUP the records by region\n   RETURN the total sales for each region\n2. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n3. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n4. Purpose-Complete Target: Prompt Pseudocode defines the substantive requirements to be solved upon execution (PROMPT-01). DO NOT insert internal meta-rules, drafting instructions, or negative execution prohibitions (PROMPT-02, PDL-08).",
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "json_object",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "PROMPT",
+                "TASK_BLOCKED_BY_HIGHER_PRIORITY"
+              ]
+            },
+            "prompt_body": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "approach_handoff": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "NONE",
+                    "CARRY_SOURCE_TO_PLAN"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "task_entities": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "blocking_basis": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "PROVIDER_PLATFORM_SAFETY_PRIVACY_PERMISSION_OR_TOOL"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "response": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "prompt_body",
+            "approach_handoff",
+            "task_entities",
+            "blocking_basis",
+            "response"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "reasoning": {
+      "effort": "low"
+    },
+    "safety_identifier": null,
+    "prompt_cache_key": null,
+    "prompt_cache_options": null,
+    "usage": {
+      "input_tokens": 252,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens": 110,
+      "output_tokens_details": {
+        "reasoning_tokens": 110
+      },
+      "total_tokens": 362,
+      "cost": 0,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0001038,
+        "upstream_inference_input_cost": 3.78e-05,
+        "upstream_inference_output_cost": 6.6e-05
+      }
+    },
+    "error_type": "provider_unavailable"
+  }
+}
