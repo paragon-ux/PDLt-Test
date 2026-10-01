@@ -171,7 +171,7 @@ def test_verified_code_failure_is_reported_factually(tmp_path):
     bad = {"kind": "RESULT", "body": body, "result_ir": _ir()}
     engine, _, executes, _ = _run(tmp_path, [bad, bad], problem_class="VERIFIED_EXECUTION")
     correction = executes[1].prompt
-    assert "python block 1 exited with code 1 in the sandbox" in correction
+    assert "[PROGRAM_FAILED] Python block 1 exited with status 1." in correction
     assert "ModuleNotFoundError" in correction
 
 
@@ -250,8 +250,8 @@ def test_failure_record_lists_every_attempt(tmp_path):
              "result_ir": _incomplete_ir()}
     engine, response, executes, _ = _run(tmp_path, [search, hedge], problem_class="VERIFIED_EXECUTION")
     assert len(executes) == 2 and engine.controller.state.stage == Stage.CLOSED_CANCELLED
-    assert "Attempt 1: python block 1 exited with code 125" in response.text
-    assert "Attempt 2: " in response.text and "this attempt runs no program" in response.text
+    assert "Attempt 1: PROGRAM_FAILED" in response.text
+    assert "Attempt 2: INCOMPLETE_WITHOUT_ATTEMPT" in response.text
 
 
 def test_open_requirement_without_a_defect_still_needs_a_witness(tmp_path):

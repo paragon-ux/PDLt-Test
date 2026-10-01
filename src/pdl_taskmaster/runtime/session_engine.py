@@ -69,6 +69,9 @@ def _parse_sandbox_witness(stdout_text: str) -> dict[str, Any] | None:
 _PYTHON_BLOCK = re.compile(r"```(?:python|py)[ \t]*\n(.*?)```", re.S)
 
 
+from pdl_taskmaster.verification.error_registry import Finding, finding_codes  # noqa: E402
+
+
 def _normalized_lines(body: str) -> list[str]:
     """Non-empty lines, lowercased, with punctuation and whitespace runs collapsed."""
     lines = (" ".join(re.sub(r"[^\w\s]", " ", line.lower()).split()) for line in (body or "").splitlines())
@@ -1127,7 +1130,8 @@ class SessionEngine:
             repairs_used += 1
             self.workspace.append_event(
                 "VERIFICATION_REPAIR",
-                {"errors": errors, "repair": repairs_used, "repairs_allowed": repairs_allowed},
+                {"errors": errors, "codes": finding_codes(errors), "repair": repairs_used,
+                 "repairs_allowed": repairs_allowed},
             )
             outcome = self._call(
                 "EXECUTE",
@@ -1136,7 +1140,7 @@ class SessionEngine:
                 parser=self.bridge.parse_execution,
                 operator_correction=(
                     "OPERATOR CORRECTION (host-side verification findings): the previous "
-                    "deliverable failed these checks: " + " | ".join(errors)
+                    "deliverable failed these checks:\n" + "\n".join(f"- {e}" for e in errors)
                 ),
             )
             final_body = outcome.body
@@ -1166,10 +1170,10 @@ class SessionEngine:
             self.workspace.publish_execution_outcome(outcome.kind, outcome.body)
             return EngineResponse(outcome.body, traces, closed=True)
         if errors:
-            self.workspace.append_event("VERIFICATION_FAILED", {"errors": errors})
+            self.workspace.append_event("VERIFICATION_FAILED", {"errors": errors, "codes": finding_codes(errors)})
             # Every attempt is on the record: a transcript shows only the final body.
             history = "\n".join(
-                f"Attempt {n}: {'; '.join(found) if found else 'passed verification'}"
+                f"Attempt {n}: {', '.join(finding_codes(found)) if found else 'passed verification'}"
                 for n, found in enumerate(attempt_findings, 1)
             )
             final_body = (
@@ -1231,17 +1235,18 @@ class SessionEngine:
                 },
             )
             if not run.success:
-                reason = (
-                    f"exceeded the {self._execution_budget.step_limit:,}-step budget" if run.step_budget_exceeded
-                    else "timed out" if run.timed_out
-                    else "exceeded the memory limit" if run.oom_killed
-                    else f"exited with code {run.exit_code}"
-                )
-                tail = (run.stderr or "").strip().splitlines()[-3:]
-                failures.append(
-                    f"python block {index} {reason} in the sandbox"
-                    + (f" (stderr: {' / '.join(tail)})" if tail else "")
-                )
+                budget = self._execution_budget
+                if run.step_budget_exceeded:
+                    failures.append(Finding("STEP_BUDGET_EXCEEDED", block=index, step_limit=budget.step_limit))
+                elif run.timed_out:
+                    failures.append(Finding("WALL_CLOCK_EXCEEDED", block=index, timeout_seconds=budget.timeout_seconds))
+                elif run.oom_killed:
+                    failures.append(Finding("MEMORY_EXCEEDED", block=index,
+                                            memory_mb=budget.memory_limit_bytes // (1024 * 1024)))
+                else:
+                    tail = (run.stderr or "").strip().splitlines()[-3:]
+                    stderr = f" Standard error ends: {' / '.join(tail)}" if tail else ""
+                    failures.append(Finding("PROGRAM_FAILED", block=index, exit_code=run.exit_code, stderr=stderr))
                 continue
             candidate = _parse_sandbox_witness(run.stdout)
             if candidate is not None:
@@ -1261,10 +1266,7 @@ class SessionEngine:
             return []
         assert self.workspace is not None
         self.workspace.append_event("PAYLOAD_TOKENS_IN_DELIVERABLE", {"count": len(echoed)})
-        return [
-            f"the deliverable repeats {len(echoed)} payload token(s) from the untrusted input verbatim (EXEC-04); "
-            "describe them abstractly or replace them with [REDACTED_PAYLOAD]"
-        ]
+        return [Finding("PAYLOAD_TOKEN_REPEATED", count=len(echoed))]
 
     def _verify_result(
         self,
@@ -1296,12 +1298,12 @@ class SessionEngine:
         errors: list[str] = list(payload_findings)
         ir = outcome.result_ir if isinstance(getattr(outcome, "result_ir", None), dict) else extract_result_ir(body)
         if ir is None:
-            return errors + ["Result IR missing or not a JSON object (TRD-0003 RS-01)"], body
+            return errors + [Finding("RESULT_IR_MISSING")], body
         citations: list[str] = []
         ir_errors, _ = validate_result_ir(
             ir, self.workspace.path, requirements, execution_body=body, citations=citations
         )
-        errors.extend(ir_errors)
+        errors.extend(Finding("RESULT_IR_INVALID", detail=e) for e in ir_errors)
         if citations:
             # The model's bookkeeping about its deliverable (verbatim quotes, section
             # markers, one reconciliation per requirement) is recorded, not blocking:
@@ -1334,11 +1336,7 @@ class SessionEngine:
                 if not getattr(self, "_last_programs_run", 0):
                     # "Could not be obtained" must rest on an attempt: with no program
                     # run, an open requirement is an unattempted one, not an honest limit.
-                    errors.append(
-                        "Substantive verification error: the Result IR declares requirements open and carries no "
-                        "witness, but this attempt runs no program; a result can be declared not obtained only by "
-                        "an attempt that runs a program to obtain it"
-                    )
+                    errors.append(Finding("INCOMPLETE_WITHOUT_ATTEMPT"))
                 self.workspace.append_event(
                     "VERIFICATION_NOT_APPLICABLE",
                     {"reason": "declared_incomplete", "open_defects": len(ir["open_defects"]),
@@ -1363,14 +1361,7 @@ class SessionEngine:
                     # A claim of computation must come from computation: an exhausted
                     # search (even one labelled a proof) that no program run by the
                     # host produced is not evidence.
-                    verdict = replace(
-                        verdict,
-                        valid=False,
-                        diagnostic=(
-                            "the witness reports an exhausted search, but no program run by the host printed it; a "
-                            "search result must be printed as a WITNESS line by a program the host runs"
-                        ),
-                    )
+                    verdict = replace(verdict, valid=False, diagnostic="SEARCH_CLAIM_UNREPRODUCED")
                 elif verdict.valid:
                     ir["witness"]["provisional"] = True
                     verdict = replace(verdict, provisional=True)
@@ -1387,15 +1378,18 @@ class SessionEngine:
                         "details": verdict.details,
                     },
                 )
+            elif verdict.diagnostic == "SEARCH_CLAIM_UNREPRODUCED":
+                errors.append(Finding("SEARCH_CLAIM_UNREPRODUCED"))
+            elif model_witness is None:
+                outputs = getattr(self, "_last_program_outputs", [])
+                observation = (
+                    "; ".join(outputs) + "; no line of the form `WITNESS: <json>` was printed."
+                    if outputs else "the deliverable contains no program that ran successfully."
+                )
+                diagnostic = str(verdict.diagnostic).rstrip(".") + "."
+                errors.append(Finding("WITNESS_NOT_PRINTED", diagnostic=diagnostic, host_observation=observation))
             else:
-                observed = ""
-                if model_witness is None:
-                    outputs = getattr(self, "_last_program_outputs", [])
-                    observed = (
-                        " Host observation: " + "; ".join(outputs) + "; no line of the form `WITNESS: <json>` was printed."
-                        if outputs else " Host observation: the deliverable contains no program that ran successfully."
-                    )
-                errors.append(f"Substantive verification error: {verdict.diagnostic}{observed}")
+                errors.append(Finding("WITNESS_INVALID", diagnostic=verdict.diagnostic))
 
         if errors:
             return errors, body

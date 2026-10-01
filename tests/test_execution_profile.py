@@ -340,8 +340,9 @@ def test_heavy_tier_allows_two_repairs_each_with_the_latest_findings(tmp_path, m
     engine, executes, events = _verified_session(tmp_path, "WITHIN_100M_STEPS", [_NO_WITNESS, _STOPPED, _GOOD])
     assert len(executes) == 3 and engine.controller.state.stage.value == "CLOSED_SUCCESS"
     assert "no program that ran successfully" in executes[1].prompt
-    assert "exceeded the 50,000-step budget" in executes[2].prompt
-    assert "exceeded the 50,000-step budget" not in executes[1].prompt  # each repair: the latest findings
+    assert "[STEP_BUDGET_EXCEEDED] Python block 1 was stopped after 50,000 steps" in executes[2].prompt
+    assert "The next attempt has the same budget of 50,000 steps" in executes[2].prompt
+    assert "STEP_BUDGET_EXCEEDED" not in executes[1].prompt  # each repair: the latest findings
     attempts = next(e for e in events if e["kind"] == "EXECUTION_ATTEMPTS")["payload"]
     assert attempts == {"attempts": 3, "repairs_used": 2, "repairs_allowed": 2, "tier": "HEAVY_COMPUTE"}
 
