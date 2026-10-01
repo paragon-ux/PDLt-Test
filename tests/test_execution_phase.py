@@ -392,3 +392,14 @@ def test_program_failures_cite_the_programs_own_lines(tmp_path):
     bad = {"kind": "RESULT", "body": body, "result_ir": _ir()}
     engine, _, executes, _ = _run(tmp_path, [bad, bad], problem_class="VERIFIED_EXECUTION")
     assert 'File "program.py", line 5 / SyntaxError' in executes[1].prompt
+
+
+def test_invalid_witness_printed_by_a_program_is_reported_as_such(tmp_path):
+    """Run 210114 r3: the program ran and printed a WITNESS line whose data was a
+    list; the host said "no program that ran successfully"."""
+    body = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': [[1, 2, 3]]}))"
+    bad = {"kind": "RESULT", "body": body, "result_ir": _ir()}
+    engine, _, executes, events = _run(tmp_path, [bad, bad], problem_class="VERIFIED_EXECUTION")
+    correction = executes[1].prompt
+    assert "[WITNESS_INVALID] The witness does not check: the WITNESS line printed by the program" in correction
+    assert "no program that ran successfully" not in correction

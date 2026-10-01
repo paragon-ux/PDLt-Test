@@ -48,6 +48,7 @@ else:
 PROMPTS_DIR = PDLT_TEST_ROOT / "prompts"
 MANIFEST_PATH = PROMPTS_DIR / "CATALOGUE_MANIFEST.jsonl"
 TIMEOUT_PER_PROMPT = 600  # heavy-tier tasks may make 3 execute attempts (2 repairs)
+TIMEOUT_PER_PROMPT_REASONING = 1500  # medium/high effort: each EXECUTE call can take minutes
 EXIT_SUCCESS = 0
 EXIT_CANCELLED = 1
 EXIT_UNCONFIRMED = 2
@@ -235,7 +236,7 @@ def call_accounting(result_dir: Path) -> dict:
                     attempts = event.get("payload")
     return {"total": sum(by_operation.values()), "by_operation": by_operation, "repairs": repairs,
             "execution_attempts": attempts, "plan_echo": echo,
-            "reasoning_tokens": reasoning_tokens(result_dir)}
+            **token_usage(result_dir)}
 
 
 def _first(value, key):
@@ -251,10 +252,13 @@ def _first(value, key):
     return None
 
 
-def reasoning_tokens(result_dir: Path) -> dict:
-    """Reasoning tokens the provider reported, summed per operation: the effort a
-    run actually got, whatever the requested label."""
-    totals: dict[str, int] = {}
+def token_usage(result_dir: Path) -> dict:
+    """Output and reported reasoning tokens, summed per operation. Some providers
+    report no reasoning split for some operations (EXECUTE on gpt-oss: 0 reported
+    while ~30K hidden tokens are billed as output, run 215232), so output tokens
+    are the effort a run actually got, whatever the requested label."""
+    reasoning: dict[str, int] = {}
+    output: dict[str, int] = {}
     for path in Path(result_dir).rglob("observations/*.jsonl"):
         for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
             if '"reasoning_tokens"' not in line:
@@ -263,10 +267,13 @@ def reasoning_tokens(result_dir: Path) -> dict:
                 record = json.loads(line)
             except ValueError:
                 continue
-            operation, tokens = _first(record, "operation"), _first(record, "reasoning_tokens")
-            if isinstance(operation, str) and isinstance(tokens, (int, float)):
-                totals[operation] = totals.get(operation, 0) + int(tokens)
-    return totals
+            operation, usage = _first(record, "operation"), _first(record, "usage")
+            if not isinstance(operation, str) or not isinstance(usage, dict):
+                continue
+            for totals, key in ((reasoning, "reasoning_tokens"), (output, "output_tokens")):
+                if isinstance(usage.get(key), (int, float)):
+                    totals[operation] = totals.get(operation, 0) + int(usage[key])
+    return {"reasoning_tokens": reasoning, "output_tokens": output}
 
 
 def stage_pass(r):
@@ -340,6 +347,7 @@ def generate_scoreboard(results, run_dir, run_meta):
         "repairs": sum(c.get("repairs", 0) for c in calls),
     }
     model_calls["execute_reasoning_tokens"] = sum((c.get("reasoning_tokens") or {}).get("EXECUTE", 0) for c in calls)
+    model_calls["execute_output_tokens"] = sum((c.get("output_tokens") or {}).get("EXECUTE", 0) for c in calls)
     repeat_pass_rates: dict = {}
     if any(r.get("repeat") for r in results):
         for r in results:
@@ -406,7 +414,8 @@ def generate_scoreboard(results, run_dir, run_meta):
         f"| **Pass Rate** | **{scoreboard['pass_rate_pct']}%** |",
         f"| Model calls (total / EXECUTE / repairs) | {scoreboard['model_calls']['total']} / "
         f"{scoreboard['model_calls']['execute']} / {scoreboard['model_calls']['repairs']} |",
-        f"| Reasoning tokens spent in EXECUTE (all prompts) | {scoreboard['model_calls']['execute_reasoning_tokens']} |",
+        f"| EXECUTE output tokens / provider-reported reasoning (all prompts) | "
+        f"{scoreboard['model_calls']['execute_output_tokens']} / {scoreboard['model_calls']['execute_reasoning_tokens']} |",
         f"| Plans identical to prompt / >=80% copied (of plans) | {len(scoreboard['plan_echo']['identical'])} / "
         f"{scoreboard['plan_echo']['copied_80pct']} (of {scoreboard['plan_echo']['plans']}) |",
         "",
@@ -519,13 +528,18 @@ def main():
                         help="Run only a specific prompt by ID (e.g. '01-02')")
     parser.add_argument("--dry-run", action="store_true",
                         help="List prompts that would be run without executing")
-    parser.add_argument("--timeout", type=int, default=TIMEOUT_PER_PROMPT,
-                        help=f"Per-prompt timeout in seconds (default: {TIMEOUT_PER_PROMPT})")
+    parser.add_argument("--timeout", type=int, default=None,
+                        help=f"Per-prompt timeout in seconds (default: {TIMEOUT_PER_PROMPT} at low effort, "
+                             f"{TIMEOUT_PER_PROMPT_REASONING} at medium/high)")
     parser.add_argument("--repeat", type=int, default=1, metavar="N",
                         help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
     parser.add_argument("--regrade", metavar="RUN_DIR", default=None,
                         help="re-grade a finished run with the current graders and rewrite its scoreboard")
     args = parser.parse_args()
+    if args.timeout is None:
+        # Run 215232: high-effort EXECUTE calls took 116-266 s each, so a repair
+        # pushed 3 of 10 runs past 600 s before they could finish.
+        args.timeout = TIMEOUT_PER_PROMPT if args.reasoning == "low" else TIMEOUT_PER_PROMPT_REASONING
     if args.regrade:
         sys.exit(regrade_run(Path(args.regrade)))
 
@@ -613,7 +627,8 @@ def main():
     print(f"Stage only: {scoreboard['stage_passed']}/{scoreboard['total_prompts']} reached the expected stage")
     mc = scoreboard["model_calls"]
     print(f"Model calls: {mc['total']} total, {mc['execute']} EXECUTE, {mc['repairs']} verification repairs")
-    print(f"Reasoning tokens spent in EXECUTE: {mc['execute_reasoning_tokens']}")
+    print(f"EXECUTE tokens: {mc['execute_output_tokens']} output, {mc['execute_reasoning_tokens']} reported as reasoning "
+          "(hidden reasoning is billed as output when the provider reports no split)")
     pe = scoreboard["plan_echo"]
     print(f"Plan echo: {len(pe['identical'])} identical to prompt, {pe['copied_80pct']} >=80% copied (of {pe['plans']} plans)")
     print(f"Ground truth: PASS={gt['PASS']} FAIL={gt['FAIL']} MANUAL={gt['MANUAL']} "

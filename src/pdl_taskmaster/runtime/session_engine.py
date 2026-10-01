@@ -1439,6 +1439,12 @@ class SessionEngine:
                 )
             elif verdict.diagnostic == "SEARCH_CLAIM_UNREPRODUCED":
                 errors.append(Finding("SEARCH_CLAIM_UNREPRODUCED"))
+            elif sandbox_witness is not None:
+                # A program ran and printed a WITNESS line; the line itself fails the check.
+                errors.append(Finding(
+                    "WITNESS_INVALID",
+                    diagnostic=f"the WITNESS line printed by the program does not check: {verdict.diagnostic}",
+                ))
             elif model_witness is None:
                 outputs = getattr(self, "_last_program_outputs", [])
                 observation = (

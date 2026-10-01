@@ -212,3 +212,11 @@ def test_api_worker_provider_pinning_and_fallbacks() -> None:
 
 
 
+
+
+def test_wholly_double_escaped_body_is_decoded_one_level() -> None:
+    """Run 215232 r8: newlines and quotes were both escaped one level too deep;
+    restoring only the newlines left print(\\"...\\") broken."""
+    code = 'import json\nif True:\n    print("No valid partition exists.\\n")\n'
+    wire = json.dumps({"kind": "RESULT", "body": json.dumps(code)[1:-1]})
+    assert BRIDGE.parse_execution(wire).body == code

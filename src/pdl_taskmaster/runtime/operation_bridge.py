@@ -101,6 +101,15 @@ def _normalize_body_newlines(body: str) -> str:
     if "\n" in body:
         return body
     if "\\n" in body:
+        # A wholly double-escaped body is one JSON string level too deep: decode
+        # that level, so escaped quotes and backslashes are restored with the
+        # newlines (run 215232 r8: print(\"...\") survived a newline-only rewrite).
+        try:
+            decoded = json.loads(f'"{body}"', strict=False)
+        except ValueError:
+            decoded = None
+        if isinstance(decoded, str):
+            return decoded
         body = body.replace("\\r\\n", "\n").replace("\\n", "\n")
     if "\\t" in body:
         body = body.replace("\\t", "\t")
