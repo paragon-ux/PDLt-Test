@@ -290,6 +290,19 @@ def _policy_prelude(*, allow_network: bool, allow_processes: bool) -> str:
     return f"exec(compile({source!r}, '<frozen pdl_sandbox_policy>', 'exec'))"
 
 
+# Resource limits set by the program's own interpreter first thing, for a backend
+# whose launcher is not the program's parent (a container runtime's exec).
+_ENTRY_LIMITS_PRELUDE = """
+import resource as _resource
+for _limit, _value in ((_resource.RLIMIT_AS, {memory}), (_resource.RLIMIT_CPU, {cpu})):
+    try:
+        _resource.setrlimit(_limit, (_value, _value + (1 if _limit == _resource.RLIMIT_CPU else 0)))
+    except (ValueError, OSError):
+        pass
+del _resource, _limit, _value
+"""
+
+
 STEP_BUDGET_EXIT_CODE = 125
 _STEP_BUDGET_MARKER = "PDLT_STEP_BUDGET_EXCEEDED"
 _STEPS_USED_MARKER = "PDLT_STEPS_USED"
@@ -831,6 +844,10 @@ class ExecutionSandbox:
             entry_file = run_dir / "_entry.py"
 
             content_parts: list[str] = []
+            if session.backend.entry_limits:
+                content_parts.append(_ENTRY_LIMITS_PRELUDE.format(
+                    memory=int(effective_memory), cpu=int(math.ceil(effective_timeout * 2)) + 1,
+                ))
             if self._policy_hooks:
                 content_parts.append(_policy_prelude(
                     allow_network=self.allow_network, allow_processes=self.allow_processes,

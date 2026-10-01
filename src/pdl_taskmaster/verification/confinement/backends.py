@@ -71,6 +71,7 @@ class Backend:
     name = "base"
     native = True  # False only for the audit-only opt-out
     job_active_process_limit = 0  # Windows: >0 caps the processes the run's Job Object admits
+    entry_limits = False  # True: memory and CPU limits are set inside the program (no host preexec)
 
     def probe(self) -> str | None:
         """None when this backend can run on this machine, else the reason."""
@@ -206,7 +207,9 @@ def select_backend(mode: str | None = None) -> Backend:
     if resolved == "audit-only":
         return AuditOnlyBackend()
     if resolved == "container":
-        return UnavailableBackend("container", "the container backend is not available in this build")
+        from pdl_taskmaster.verification.confinement.container import ContainerBackend
+
+        return ContainerBackend()
     return UnavailableBackend(resolved, f"unknown sandbox mode {resolved!r} (expected one of {', '.join(MODES)})")
 
 
@@ -219,5 +222,6 @@ def sweep_owner(root: Path, owner: dict[str, Any]) -> None:
 
 def _sweepable_backends() -> list[type[Backend]]:
     from pdl_taskmaster.verification.confinement.appcontainer import AppContainerBackend
+    from pdl_taskmaster.verification.confinement.container import ContainerBackend
 
-    return [AppContainerBackend]
+    return [AppContainerBackend, ContainerBackend]

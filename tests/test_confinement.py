@@ -408,10 +408,23 @@ _IS_WINDOWS = sys.platform == "win32"
 _MODES = ["native", "container", "audit-only"]
 
 
+_AVAILABLE: dict[str, str | None] = {}
+
+
 def _require(mode: str) -> None:
-    sandbox = ExecutionSandbox(mode=mode)
-    if not sandbox.probe():
-        pytest.skip(f"{mode} backend unavailable on this host: {sandbox.unavailable_reason}")
+    """Skip when this host cannot run the backend, unless CI requires it
+    (PDLT_REQUIRE_BACKENDS=native,container): then the test fails instead."""
+    if mode not in _AVAILABLE:
+        with ExecutionSandbox(mode=mode) as sandbox:
+            # A real run: a container runtime can answer and still fail to start the image.
+            result = sandbox.run_code("pass") if sandbox.probe() else None
+            _AVAILABLE[mode] = sandbox.unavailable_reason if result is None or result.error else None
+    reason = _AVAILABLE[mode]
+    if reason is not None:
+        required = {m.strip() for m in os.environ.get("PDLT_REQUIRE_BACKENDS", "").split(",")}
+        if mode in required:
+            pytest.fail(f"{mode} backend required by PDLT_REQUIRE_BACKENDS but unavailable: {reason}")
+        pytest.skip(f"{mode} backend unavailable on this host: {reason}")
 
 
 @pytest.fixture(params=_MODES)
@@ -425,6 +438,14 @@ def mode(request):
 def configuration(request):
     _require(request.param[0])
     return request.param
+
+
+def _blocked(configuration, result) -> bool:
+    """Denied with PermissionError, by the audit hook or the native layer. Inside a
+    container without the hook, a host path simply does not exist there (or the
+    root is read-only): only the host-side effect, asserted by each test, counts."""
+    mode, hooks = configuration
+    return _denied(result) or (mode == "container" and not hooks)
 
 
 def _open(configuration, **kwargs) -> ExecutionSandbox:
@@ -450,7 +471,7 @@ def test_escape_writing_outside_the_run_directory_is_denied(configuration, tmp_p
         with _open(configuration) as sandbox:
             for target in targets:
                 result = sandbox.run_code(f"open({str(target)!r}, 'w').write('escaped')")
-                assert _denied(result), (target, result.stderr)
+                assert _blocked(configuration, result), (target, result.stderr)
                 assert not target.exists(), target
     finally:
         for target in targets:
@@ -463,7 +484,8 @@ def test_escape_reading_a_secret_outside_is_denied(configuration, secret):
                      f"import os\nprint(os.read(os.open({str(secret)!r}, os.O_RDONLY), 100))",
                      f"import os\nprint(os.listdir({str(secret.parent)!r}))"):
             result = sandbox.run_code(code)
-            assert _denied(result), (code, result.stderr)
+            assert _blocked(configuration, result), (code, result.stderr)
+            assert not result.success
             assert "top-secret-value" not in result.stdout and "secret.txt" not in result.stdout
 
 
@@ -472,7 +494,8 @@ def test_escape_following_a_link_that_points_outside_is_denied(configuration, se
     with _open(configuration) as sandbox:
         result = sandbox.run_code(code)
     # Denied at the link (audit hook; or WinError 1314 in an AppContainer) or at the read.
-    assert not result.success and ("PermissionError" in result.stderr or "1314" in result.stderr), result.stderr
+    assert not result.success, result.stderr
+    assert "PermissionError" in result.stderr or "1314" in result.stderr or _blocked(configuration, result)
     assert "top-secret-value" not in result.stdout
 
 
@@ -526,6 +549,9 @@ def test_escape_connecting_to_a_localhost_listener_is_denied(configuration):
 
 def test_escape_starting_a_shell_is_denied(configuration):
     mode, hooks = configuration
+    if mode == "container" and not hooks:
+        pytest.skip("the container is the boundary: a process started inside it stays in it "
+                    "(test_container_confines_what_runs_inside_it)")
     shell = os.environ.get("COMSPEC", r"C:\Windows\System32\cmd.exe") if _IS_WINDOWS else "/bin/sh"
     argv = [shell, "/c", "echo escaped"] if _IS_WINDOWS else [shell, "-c", "echo escaped"]
     if hooks or _IS_WINDOWS:
@@ -563,7 +589,7 @@ def test_escape_modifying_a_harness_owned_deliverable_is_denied(configuration, t
                      f"import os\nos.replace('program.py', {str(current)!r})",
                      f"import os\nos.remove({str(current)!r})"):
             result = sandbox.run_code(code)
-            assert _denied(result), (code, result.stderr)
+            assert _blocked(configuration, result) and not result.success, (code, result.stderr)
     assert current.read_text(encoding="utf-8") == "harness-owned"
 
 
@@ -801,3 +827,187 @@ def test_appcontainer_is_the_native_backend_and_close_deletes_its_profile():
                                                             ctypes.byref(sid)) == 0
     appcontainer.delete_profile(info["profile"])
     appcontainer.advapi32().FreeSid(sid)
+
+
+# -- container backend ---------------------------------------------------------------
+
+from pdl_taskmaster.verification.confinement import container as cc  # noqa: E402
+
+
+def test_container_confines_what_runs_inside_it():
+    """Without the audit hook a program can start a shell inside the container; the
+    shell is still confined by it: no host files, read-only root, no network."""
+    _require("container")
+    code = (
+        "import os, subprocess\n"
+        f"print(os.path.exists({str(ROOT)!r}), os.path.exists({str(Path.home())!r} + '/.ssh'))\n"
+        "print(subprocess.run(['sh', '-c', 'touch /usr/x 2>&1; cat /proc/net/dev | wc -l'],\n"
+        "                     capture_output=True, text=True).stdout)"
+    )
+    with _open(("container", False)) as sandbox:
+        result = sandbox.run_code(code)
+    assert result.success, result.stderr
+    lines = [line for line in result.stdout.splitlines() if line.strip()]
+    assert lines[0] == "False False"
+    assert "Read-only file system" in result.stdout
+    assert lines[-1].strip() == "3"  # two header lines and the loopback interface: no network
+
+
+_FAKE_RUNTIME = r'''#!{python}
+"""A stand-in container runtime: logs each call, keeps containers in a state file,
+and runs exec'd programs on the host with /work mapped to the mounted directory."""
+import json, os, subprocess, sys
+
+log, state_path = os.environ["FAKE_RUNTIME_LOG"], os.environ["FAKE_RUNTIME_STATE"]
+args = sys.argv[1:]
+with open(log, "a") as handle:
+    handle.write(json.dumps(args) + "\n")
+state = json.load(open(state_path)) if os.path.exists(state_path) else {{"containers": {{}}}}
+def save():
+    json.dump(state, open(state_path, "w"))
+if args[0] == "version":
+    print("99.0")
+elif args[0] == "run":
+    labels = dict(a.split("=", 1) for i, a in enumerate(args) if i and args[i - 1] == "--label")
+    mount = next(a for i, a in enumerate(args) if i and args[i - 1] == "-v").rsplit(":/work", 1)[0]
+    state["containers"]["fakecid0001"] = {{"labels": labels, "mount": mount}}
+    save()
+    print("fakecid0001")
+elif args[0] == "ps":
+    print("\n".join(state["containers"]))
+elif args[0] == "inspect":
+    fmt, cid = args[2], args[3]
+    info = state["containers"].get(cid, {{"labels": {{}}}})
+    if "Labels" in fmt:
+        print(info["labels"].get(fmt.split('"')[1], ""))
+    else:
+        print("sha256:fakeimage")
+elif args[0] == "image":
+    print("python@sha256:fakeimage")
+elif args[0] == "rm":
+    state["containers"].pop(args[-1], None)
+    save()
+elif args[0] == "exec":
+    rest, env, cwd = args[1:], {{"PATH": os.environ.get("PATH", "")}}, None
+    while rest[0] in ("-w", "-e"):
+        if rest[0] == "-w":
+            cwd = rest[1]
+        else:
+            key, value = rest[1].split("=", 1)
+            env[key] = value
+        rest = rest[2:]
+    mount = state["containers"][rest[0]]["mount"]
+    command = rest[1:]
+    if command[:1] == ["sh"]:
+        sys.exit(0)
+    assert command[:3] == ["timeout", "-s", "KILL"] and command[4] == "python", command
+    host = lambda v: v.replace("/work", mount, 1) if v.startswith("/work") else v
+    env = {{k: host(v) for k, v in env.items()}}
+    sys.exit(subprocess.run([sys.executable] + command[5:], cwd=host(cwd), env=env).returncode)
+'''
+
+
+@pytest.fixture
+def fake_runtime(tmp_path, monkeypatch):
+    if _IS_WINDOWS:
+        pytest.skip("the fake runtime is a POSIX script")
+    runtime = tmp_path / "bin" / "docker"
+    runtime.parent.mkdir()
+    runtime.write_text(_FAKE_RUNTIME.format(python=sys.executable), encoding="utf-8")
+    runtime.chmod(0o755)
+    log, state = tmp_path / "calls.jsonl", tmp_path / "state.json"
+    monkeypatch.setenv("PDLT_CONTAINER_RUNTIME", str(runtime))
+    monkeypatch.setenv("FAKE_RUNTIME_LOG", str(log))
+    monkeypatch.setenv("FAKE_RUNTIME_STATE", str(state))
+
+    class Fake:
+        path = str(runtime)
+
+        @staticmethod
+        def calls():
+            return [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
+
+        @staticmethod
+        def seed(containers):
+            state.write_text(json.dumps({"containers": containers}))
+    return Fake
+
+
+def test_container_lifecycle_and_commands_with_a_fake_runtime(fake_runtime):
+    sandbox = ExecutionSandbox(mode="container", label="fake")
+    assert sandbox.probe()
+    result = sandbox.run_code("import os\nprint('hi', os.getcwd().endswith(os.environ['TMPDIR'][-15:-4]))")
+    assert result.success, result.stderr
+    assert result.stdout == "hi True\n"
+    info = sandbox.session_info
+    root = Path(info["root"])
+    assert info["runtime"] == "docker" and info["container"] == "fakecid0001"
+    assert info["image"] == "python:{}.{}-slim".format(*sys.version_info[:2])
+    assert info["image_digest"] == "python@sha256:fakeimage"
+    owner = json.loads((root / sb.OWNER_FILENAME).read_text())
+    assert owner["container"] == "fakecid0001" and owner["runtime"] == fake_runtime.path
+    calls = fake_runtime.calls()
+    run = next(c for c in calls if c[0] == "run")
+    for flag in (["--network", "none"], ["--read-only"], ["--tmpfs", "/tmp"], ["--cap-drop", "ALL"],
+                 ["--security-opt", "no-new-privileges"], ["--pids-limit", "64"], ["--memory", "512m"],
+                 ["--user", f"{os.getuid()}:{os.getgid()}"], ["--label", f"pdlt.sandbox={root.name}"],
+                 ["-v", f"{root / 'work'}:/work"], ["-d", "--rm"]):
+        assert any(run[i:i + len(flag)] == flag for i in range(len(run))), flag
+    assert run[-3:] == ["python:{}.{}-slim".format(*sys.version_info[:2]), "sleep", "infinity"]
+    exec_call = next(c for c in calls if c[0] == "exec" and "timeout" in c)
+    assert exec_call[1:3][0] == "-w" and exec_call[2].startswith("/work/run-0001-")
+    assert not any(a.startswith("PATH=") for a in exec_call)  # the host PATH stays on the host
+    assert exec_call[exec_call.index("fakecid0001"):][:5] == ["fakecid0001", "timeout", "-s", "KILL", "6"]
+    assert exec_call[-7:] == ["python", "-I", "-S", "-X", "utf8", "-u", "_entry.py"]
+    sandbox.close()
+    assert fake_runtime.calls()[-1] == ["rm", "-f", "fakecid0001"]
+    assert not root.exists()
+
+
+def test_container_memory_limit_is_set_inside_the_program(fake_runtime):
+    with ExecutionSandbox(mode="container") as sandbox:
+        result = sandbox.run_code("import resource\nprint(resource.getrlimit(resource.RLIMIT_AS)[0])",
+                                  memory_limit=96 * 1024 * 1024)
+    assert result.success, result.stderr
+    assert int(result.stdout) == 96 * 1024 * 1024
+
+
+def test_container_timeout_kills_inside_the_container(fake_runtime):
+    with ExecutionSandbox(mode="container", timeout_seconds=1.0) as sandbox:
+        result = sandbox.run_code("import time\nprint('partial')\ntime.sleep(20)")
+    assert result.timed_out and "partial" in result.stdout
+    assert ["exec", "fakecid0001", "sh", "-c", "kill -9 -1 2>/dev/null; true"] in fake_runtime.calls()
+
+
+def test_container_sweep_removes_only_dead_owners_on_this_host(fake_runtime):
+    host = socket.gethostname()
+    fake_runtime.seed({
+        "stale": {"labels": {"pdlt.sandbox": "s1", "pdlt.owner": f"{host}:{_dead_pid()}"}},
+        "live": {"labels": {"pdlt.sandbox": "s2", "pdlt.owner": f"{host}:{os.getppid()}"}},
+        "foreign": {"labels": {"pdlt.sandbox": "s3", "pdlt.owner": f"elsewhere:{_dead_pid()}"}},
+    })
+    assert cc.sweep_stale_containers(fake_runtime.path) == ["stale"]
+    assert [c for c in fake_runtime.calls() if c[0] == "rm"] == [["rm", "-f", "stale"]]
+
+
+def test_container_root_sweep_removes_only_the_container_the_root_started(fake_runtime, tmp_path):
+    fake_runtime.seed({"mine": {"labels": {"pdlt.sandbox": "engine-abc"}},
+                       "other": {"labels": {"pdlt.sandbox": "engine-xyz"}}})
+    cc.ContainerBackend.sweep(tmp_path / "engine-abc", {"runtime": fake_runtime.path, "container": "mine"})
+    cc.ContainerBackend.sweep(tmp_path / "engine-abc", {"runtime": fake_runtime.path, "container": "other"})
+    cc.ContainerBackend.sweep(tmp_path / "engine-abc", {"runtime": "/bin/sh", "container": "mine"})
+    assert [c for c in fake_runtime.calls() if c[0] == "rm"] == [["rm", "-f", "mine"]]
+
+
+def test_container_exec_maps_paths_and_drops_host_only_variables(tmp_path):
+    work = tmp_path / "work"
+    argv = cc.exec_argv("docker", "cid", work=work, argv=["/usr/bin/python3", "-I", "_entry.py"],
+                        cwd=work / "run-0001-aa", env={"PATH": "/host/bin", "TMPDIR": str(work / "run-0001-aa" / "tmp"),
+                                                       "SYSTEMROOT": "C:\\Windows"}, timeout=2.5)
+    assert argv == ["docker", "exec", "-w", "/work/run-0001-aa", "-e", "TMPDIR=/work/run-0001-aa/tmp", "cid",
+                    "timeout", "-s", "KILL", "4", "python", "-I", "_entry.py"]
+
+
+def test_container_is_unavailable_without_a_runtime(monkeypatch):
+    monkeypatch.setenv("PDLT_CONTAINER_RUNTIME", "/nonexistent/docker")
+    assert "no container runtime found" in cc.ContainerBackend().probe()
