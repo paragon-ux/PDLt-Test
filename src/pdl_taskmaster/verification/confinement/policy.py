@@ -58,6 +58,16 @@ def stdlib_dirs() -> tuple[Path, ...]:
     return _dedupe(found)
 
 
+def base_install() -> tuple[Path, ...]:
+    """The base installation's prefix: framework, Windows and self-built installs keep
+    the shared libraries their extension modules load there (python3X.dll, a bundled
+    libsqlite3). Never a prefix that is the filesystem root or the home directory."""
+    prefix = Path(os.path.realpath(sys.base_prefix))
+    if prefix == Path(prefix.anchor) or prefix == Path(os.path.realpath(Path.home())):
+        return ()
+    return (prefix,)
+
+
 def elf_interpreter(executable: Path) -> Path | None:
     """The program interpreter (PT_INTERP) an ELF executable names, e.g. the dynamic
     loader. The kernel opens it for execution, so it needs the execute right too."""
@@ -109,8 +119,8 @@ def system_read_roots(platform: str = sys.platform) -> tuple[Path, ...]:
         ]
     elif platform == "darwin":
         candidates = [
-            "/usr/lib", "/System/Library", "/System/Volumes/Preboot/Cryptexes/OS", "/private/etc/localtime",
-            "/private/var/db/timezone", "/dev/null", "/dev/urandom", "/dev/random",
+            "/usr/lib", "/System/Library", "/System/Volumes/Preboot/Cryptexes/OS", "/private/var/db/dyld",
+            "/private/etc/localtime", "/private/var/db/timezone", "/dev/null", "/dev/urandom", "/dev/random",
         ]
     elif platform == "win32":
         # AppContainer processes read the system directories through the default
@@ -136,7 +146,7 @@ def build_policy(
         if bundled.exists():
             exec_paths.append(Path(os.path.realpath(bundled)))
     write_root = Path(os.path.realpath(write_root))
-    read = [write_root, *stdlib_dirs(), *system_read_roots()]
+    read = [write_root, *stdlib_dirs(), *base_install(), *system_read_roots()]
     library = shared_python_library()
     if library is not None:
         read.append(library)

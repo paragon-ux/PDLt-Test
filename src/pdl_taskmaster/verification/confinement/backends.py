@@ -186,6 +186,10 @@ def _native_backend() -> Backend:
         from pdl_taskmaster.verification.confinement.landlock import LandlockBackend
 
         return LandlockBackend()
+    if sys.platform == "darwin":
+        from pdl_taskmaster.verification.confinement.seatbelt import SeatbeltBackend
+
+        return SeatbeltBackend()
     return UnavailableBackend("native", f"no native confinement backend for platform {sys.platform}")
 
 

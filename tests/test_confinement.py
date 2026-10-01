@@ -659,3 +659,61 @@ def test_landlock_close_releases_the_ruleset_descriptor():
     sandbox.close()
     with pytest.raises(OSError):
         os.fstat(fd)
+
+
+# -- Seatbelt (macOS): profile and command, verified here; the backend runs in CI -----
+
+from pdl_taskmaster.verification.confinement import seatbelt  # noqa: E402
+
+
+def _policy(tmp_path, **kwargs):
+    (tmp_path / "work").mkdir(exist_ok=True)
+    (tmp_path / "lib").mkdir(exist_ok=True)
+    (tmp_path / "lib" / "file.so").write_bytes(b"")
+    return cp.SandboxPolicy(
+        session_root=tmp_path,
+        write_roots=(tmp_path / "work",),
+        read_roots=(tmp_path / "work", tmp_path / "lib", tmp_path / "lib" / "file.so"),
+        exec_paths=(Path(sys.executable),),
+        **kwargs,
+    )
+
+
+def test_seatbelt_profile_denies_by_default_and_takes_paths_as_parameters(tmp_path):
+    profile, params = seatbelt.build_profile(_policy(tmp_path))
+    lines = profile.splitlines()
+    assert lines[:2] == ["(version 1)", "(deny default)"]
+    assert "network" not in profile and "process-fork" not in profile
+    assert '(allow process-exec (literal (param "EXEC_0")))' in lines
+    assert '(allow file-read* (subpath (param "READ_1")))' in lines
+    assert '(allow file-read* (literal (param "READ_2")))' in lines  # a file root is a literal
+    assert '(allow file-read* file-write* (subpath (param "WRITE_0")))' in lines
+    assert params == {"EXEC_0": sys.executable, "READ_0": str(tmp_path / "work"), "READ_1": str(tmp_path / "lib"),
+                      "READ_2": str(tmp_path / "lib" / "file.so"), "WRITE_0": str(tmp_path / "work")}
+    assert str(tmp_path) not in profile  # never interpolated
+
+
+def test_seatbelt_profile_grants_network_and_fork_only_when_the_policy_does(tmp_path):
+    profile, _ = seatbelt.build_profile(_policy(tmp_path, network=True, processes=True))
+    assert "(allow network*)" in profile and "(allow process-fork)" in profile
+
+
+def test_seatbelt_command_wraps_the_interpreter_argv(tmp_path):
+    argv = seatbelt.sandbox_exec_argv("(version 1)\n", {"A_0": "/x y", "B_0": "/z"}, ["/py", "-I", "_entry.py"])
+    assert argv == ["/usr/bin/sandbox-exec", "-p", "(version 1)\n", "-D", "A_0=/x y", "-D", "B_0=/z",
+                    "/py", "-I", "_entry.py"]
+
+
+@pytest.mark.skipif(sys.platform == "darwin", reason="checks the off-platform probe")
+def test_seatbelt_is_unavailable_off_macos():
+    assert "macOS-only" in seatbelt.SeatbeltBackend().probe()
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="Seatbelt is macOS-only (runs in CI)")
+def test_seatbelt_is_the_native_backend_on_macos():
+    with ExecutionSandbox(mode="native") as sandbox:
+        result = sandbox.run_code("import os\nprint(os.getcwd())")
+        info = sandbox.session_info
+    assert result.success, result.stderr
+    assert info["backend"] == "seatbelt" and info["os"].startswith("macOS")
+    assert result.stdout.startswith("/private/")  # realpath'd: /var/folders is /private/var/folders
