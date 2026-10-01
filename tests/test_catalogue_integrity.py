@@ -67,3 +67,55 @@ def test_repeat_runs_report_a_pass_rate_per_prompt(tmp_path):
     scoreboard = run_catalogue.generate_scoreboard(results, tmp_path, meta)
     assert scoreboard["repeat_pass_rates"] == {"01-01": {"runs": 3, "passed": 2}}
     assert "| 01-01 | 2 | 3 |" in (tmp_path / "SCOREBOARD.md").read_text(encoding="utf-8")
+
+
+def test_hung_prompt_is_killed_with_its_whole_process_tree(tmp_path):
+    """EXECUTE=high runs (2026-10-01) appeared to hang: the runner must return at
+    its deadline even when a grandchild still holds the output handles."""
+    import subprocess
+    import sys
+    import time
+
+    sys.path.insert(0, str(ROOT))
+    import run_catalogue
+
+    pid_file = tmp_path / "grandchild.pid"
+    child = (
+        "import subprocess, sys, time\n"
+        f"g = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(120)'])\n"
+        f"open({str(pid_file)!r}, 'w').write(str(g.pid))\n"
+        "print('started', flush=True)\n"
+        "time.sleep(120)\n"
+    )
+    started = time.monotonic()
+    code, timed_out = run_catalogue.run_with_deadline(
+        [sys.executable, "-c", child], "", 3, tmp_path / "out.txt", tmp_path / "err.txt"
+    )
+    assert timed_out and code == -1
+    assert time.monotonic() - started < 20
+    assert "started" in (tmp_path / "out.txt").read_text()  # progress is on disk, not lost in a pipe
+    grandchild = int(pid_file.read_text())
+    time.sleep(0.5)
+    if sys.platform != "win32":
+        import os
+
+        try:
+            os.kill(grandchild, 0)
+            alive = subprocess.run(["ps", "-o", "stat=", "-p", str(grandchild)], capture_output=True,
+                                   text=True).stdout.strip()
+            assert alive.startswith("Z") or not alive  # reaped or zombie, not running
+        except ProcessLookupError:
+            pass
+
+
+def test_prompt_within_its_deadline_returns_its_exit_code(tmp_path):
+    import sys
+
+    sys.path.insert(0, str(ROOT))
+    import run_catalogue
+
+    code, timed_out = run_catalogue.run_with_deadline(
+        [sys.executable, "-c", "import sys; print(sys.stdin.read().strip()); sys.exit(3)"], "hello", 30,
+        tmp_path / "out.txt", tmp_path / "err.txt",
+    )
+    assert (code, timed_out) == (3, False) and (tmp_path / "out.txt").read_text().strip() == "hello"

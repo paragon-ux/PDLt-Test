@@ -212,6 +212,9 @@ def test_python_program_detection_is_grammatical():
     broken = "import json\nL = [1, 2]\nfor x in L:\n    print(x)\nprint(f\"{ {\\\"a\\\": 1} }\")\n"
     assert _python_blocks(broken) == [broken]
     assert _python_blocks("n = 15\nThe answer is that no partition exists.") == []
+    # An unclosed bracket is reported at its opening line (run 100221: "L = {71, ..., 64" then code).
+    unclosed = "#!/usr/bin/env python3\nL = {71, 97, 64\n\ndef find(nums):\n    return sorted(nums)\n\nprint(find(L))\n"
+    assert _python_blocks(unclosed) == [unclosed]
     assert _python_blocks("After exhaustive search, no partition exists.\nTherefore none.") == []
     # CPython raises MemoryError, not SyntaxError, on long runs of bare words.
     assert _python_blocks("word " * 3000 + "\n\n```python\nprint(3)\n```") == ["print(3)\n"]

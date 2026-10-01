@@ -220,3 +220,61 @@ def test_wholly_double_escaped_body_is_decoded_one_level() -> None:
     code = 'import json\nif True:\n    print("No valid partition exists.\\n")\n'
     wire = json.dumps({"kind": "RESULT", "body": json.dumps(code)[1:-1]})
     assert BRIDGE.parse_execution(wire).body == code
+
+
+def test_api_call_has_a_hard_deadline_and_retries_a_read_timeout_once(monkeypatch) -> None:
+    """EXECUTE=high runs (2026-10-01): the socket timeout bounded each read only, and
+    read timeouts were retried 4 times, so one call could hold ~50 minutes."""
+    import socket
+    import urllib.request
+
+    from pdl_taskmaster.providers import api_worker as module
+    from pdl_taskmaster.providers.api_worker import ApiWorker, TransportError
+
+    attempts: list[float] = []
+
+    def stalled(req, timeout=None):
+        attempts.append(timeout)
+        raise socket.timeout("timed out")
+
+    monkeypatch.setattr(module.urllib.request, "urlopen", stalled)
+    monkeypatch.setattr(module.time, "sleep", lambda s: None)
+    worker = ApiWorker(model="m", repo_root=ROOT, timeout=600.0, max_call_seconds=1200.0)
+    req = urllib.request.Request("http://example.invalid", data=b"{}")
+    with pytest.raises(TransportError, match="read timed out twice"):
+        worker._send_json_with_retries(req)
+    assert len(attempts) == 2 and all(t <= 600.0 for t in attempts)
+
+    attempts.clear()
+    with pytest.raises(TransportError, match="deadline"):
+        worker._send_json_with_retries(req, deadline=module.time.monotonic() - 1)
+    assert attempts == []
+
+
+def test_api_attempt_timeout_never_exceeds_the_remaining_deadline(monkeypatch) -> None:
+    import urllib.request
+
+    from pdl_taskmaster.providers import api_worker as module
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+
+    seen: list[float] = []
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self):
+            return b'{"status": "completed"}'
+
+    def ok(req, timeout=None):
+        seen.append(timeout)
+        return Response()
+
+    monkeypatch.setattr(module.urllib.request, "urlopen", ok)
+    worker = ApiWorker(model="m", repo_root=ROOT, timeout=600.0)
+    worker._send_json_with_retries(urllib.request.Request("http://example.invalid", data=b"{}"),
+                                   deadline=module.time.monotonic() + 30)
+    assert seen and seen[0] <= 30

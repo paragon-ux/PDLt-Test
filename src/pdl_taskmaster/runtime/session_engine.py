@@ -127,14 +127,40 @@ def _stderr_summary(stderr: str | None) -> str:
 
 
 def _is_program_prefix(text: str, error_line: int | None) -> bool:
-    """The source before a syntax error parses as Python and has program structure:
-    an import, definition, loop or other block statement, or at least three
-    statements. Prose fails on its first line; a lone assignment followed by
-    sentences ("n = 15" then prose) does not qualify."""
+    """The source around a syntax error parses as Python and has program
+    structure: an import, definition, loop or other block statement, or at least
+    three statements. The source before the error is checked first; an unclosed
+    bracket is reported at its opening line, so the source after the error line
+    is checked too. Prose fails on its first line and has no parsable remainder;
+    a lone assignment followed by sentences ("n = 15" then prose) does not
+    qualify."""
     import ast
 
-    if not error_line or error_line <= 1:
+    if not error_line:
         return False
+    structural = (ast.Import, ast.ImportFrom, ast.FunctionDef, ast.ClassDef, ast.For, ast.While,
+                  ast.If, ast.With, ast.Try)
+
+    def has_structure(source: str) -> bool | None:
+        try:
+            module = ast.parse(source)
+        except (SyntaxError, ValueError, MemoryError, RecursionError):
+            return None
+        statements = [node for node in module.body if not isinstance(node, ast.Expr)]
+        return len(statements) >= 3 or any(isinstance(node, structural) for node in statements)
+
+    lines = text.splitlines()
+    for end in range(error_line - 1, 0, -1):  # before the error: back off to a complete statement
+        verdict = has_structure("\n".join(lines[:end]))
+        if verdict is not None:
+            if verdict:
+                return True
+            break
+    for start in range(error_line, min(len(lines), error_line + 20)):  # after the error line
+        verdict = has_structure("\n".join(lines[start:]))
+        if verdict is not None:
+            return verdict
+    return False
     lines = text.splitlines()
     for end in range(error_line - 1, 0, -1):  # back off to the last complete statement
         try:

@@ -72,16 +72,17 @@ _SPECS = (
         "INCOMPLETE_WITHOUT_ATTEMPT",
         "The Result IR declares requirements open and carries no witness, but this attempt runs no program.",
         "A result can be declared not obtained only by an attempt that runs a program to obtain it.",
-        "Include a program that attempts the result. If it obtains the result, print the witness; if it does "
-        "not, keep the requirement open with the defect recorded.",
+        "Include in the deliverable a Python program that attempts the result; the host runs it. If it obtains "
+        "the result, it prints the witness; if it does not, keep the requirement open with the defect recorded.",
     ),
     ErrorSpec(
         "WITNESS_NOT_PRINTED",
         "No witness was established: {diagnostic} Host observation: {host_observation}",
         "A result that must be certified is certified by a line of the form `WITNESS: <json>` printed by a "
         "program the host runs.",
-        "Have the program print its result as a `WITNESS: <json>` line, or, if the result cannot be obtained, "
-        "emit no witness and mark the requirement open with the defect recorded.",
+        "Include in the deliverable a Python program that prints its result as a `WITNESS: <json>` line; the "
+        "host runs it. If the result cannot be obtained, emit no witness and mark the requirement open with the "
+        "defect recorded.",
     ),
     ErrorSpec(
         "WITNESS_INVALID",
@@ -95,7 +96,8 @@ _SPECS = (
         "The witness reports an exhausted search, but no program run by the host printed it.",
         "A claim of computation must come from computation: a search result is evidence only when a program "
         "the host runs prints it.",
-        "Run the search in a program that prints its outcome as a `WITNESS: <json>` line.",
+        "Include the search in the deliverable as a Python program that prints its outcome as a "
+        "`WITNESS: <json>` line; the host runs it.",
     ),
     ErrorSpec(
         "PAYLOAD_TOKEN_REPEATED",

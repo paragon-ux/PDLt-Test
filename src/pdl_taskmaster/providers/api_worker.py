@@ -47,6 +47,11 @@ DEFAULT_SAFETY_SETTINGS: list[dict[str, str]] = [
 ]
 
 
+def _sleep_within(delay: float, deadline: float) -> None:
+    """Back off, but never past the call's deadline."""
+    time.sleep(max(0.0, min(delay, deadline - time.monotonic())))
+
+
 class ApiWorker:
     """LIVE SEMANTIC WORKER backed by a direct Responses-API HTTP call.
 
@@ -74,6 +79,7 @@ class ApiWorker:
         api_key_env: str = "OPENROUTER_API_KEY",
         api_key_command: list[str] | None = None,
         timeout: float = 600.0,
+        max_call_seconds: float = 1200.0,
         capture_tokens: bool = True,
         reasoning_effort: str | None = None,
         reasoning_by_operation: dict[str, str] | None = None,
@@ -89,7 +95,8 @@ class ApiWorker:
         self.max_tokens = int(max_tokens)
         self.base_url = base_url.rstrip("/")
         self.api_key_env = api_key_env
-        self.timeout = timeout
+        self.timeout = timeout  # per socket operation (connect, each read)
+        self.max_call_seconds = max_call_seconds  # wall-clock for one call, retries included
         self.capture_tokens = capture_tokens
         # An explicit effort applies to every operation (per-operation flags still
         # win); the per-model mapping is the default only when none is given.
@@ -293,16 +300,24 @@ class ApiWorker:
 
         return _clean_node(schema)
 
-    def _send_json_with_retries(self, req: urllib.request.Request) -> dict[str, Any]:
+    def _send_json_with_retries(self, req: urllib.request.Request, deadline: float | None = None) -> dict[str, Any]:
         """POST with exponential-backoff retries; returns the parsed response.
 
         Retries transient transport conditions: 429/5xx, URLError, timeouts.
         Non-retryable HTTP errors (4xx besides 429) raise immediately.
         """
         raw = None
+        # A hard deadline for the whole call: the socket timeout alone bounds each
+        # read, so five retried read timeouts could hold one call ~50 minutes.
+        if deadline is None:
+            deadline = time.monotonic() + self.max_call_seconds
+        read_timeouts = 0
         for attempt in range(5):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TransportError(f"api worker call exceeded its {self.max_call_seconds:.0f}s deadline")
             try:
-                with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                with urllib.request.urlopen(req, timeout=min(self.timeout, remaining)) as resp:
                     raw = resp.read().decode("utf-8", errors="replace")
                 try:
                     parsed = json.loads(raw)
@@ -319,7 +334,7 @@ class ApiWorker:
                                     )
                                 except Exception:
                                     pass
-                            time.sleep(delay)
+                            _sleep_within(delay, deadline)
                             continue
                     return parsed
                 except json.JSONDecodeError:
@@ -343,7 +358,7 @@ class ApiWorker:
                             )
                         except Exception:
                             pass
-                    time.sleep(delay)
+                    _sleep_within(delay, deadline)
                     continue
                 detail = exc.read().decode("utf-8", errors="replace")[:2000]
                 raise TransportError(f"api worker HTTP {exc.code}: {detail}") from exc
@@ -357,7 +372,7 @@ class ApiWorker:
                             )
                         except Exception:
                             pass
-                    time.sleep(delay)
+                    _sleep_within(delay, deadline)
                     continue
                 raise TransportError(f"api worker transport error: {exc.reason}") from exc
             except (
@@ -368,7 +383,13 @@ class ApiWorker:
                 http.client.RemoteDisconnected,
                 http.client.HTTPException,
             ) as exc:
-                if attempt < 4:
+                if isinstance(exc, (TimeoutError, socket.timeout)):
+                    # A response that took the whole read timeout will likely take it
+                    # again: retry a read timeout once, then give up.
+                    read_timeouts += 1
+                    if read_timeouts > 1:
+                        raise TransportError(f"api worker read timed out twice ({exc})") from exc
+                if attempt < 4 and deadline - time.monotonic() > 0:
                     delay = 0.5 * (2 ** attempt)
                     if self.on_progress is not None:
                         try:
@@ -377,7 +398,7 @@ class ApiWorker:
                             )
                         except Exception:
                             pass
-                    time.sleep(delay)
+                    _sleep_within(delay, deadline)
                     continue
                 raise TransportError(f"api worker connection failed after retries: {exc}") from exc
         if raw is None:
@@ -610,7 +631,8 @@ class ApiWorker:
         )
 
         started = time.perf_counter()
-        data = self._send_json_with_retries(req)
+        call_deadline = time.monotonic() + self.max_call_seconds
+        data = self._send_json_with_retries(req, call_deadline)
         latency_ms = (time.perf_counter() - started) * 1000.0
 
         if self.on_progress is not None:
@@ -632,8 +654,8 @@ class ApiWorker:
             # aggregators). It is a transport condition, not model behavior:
             # retry with the same exponential-backoff treatment as 429/5xx.
             for retry in range(3):
-                time.sleep(0.5 * (2 ** retry))
-                data = self._send_json_with_retries(req)
+                _sleep_within(0.5 * (2 ** retry), call_deadline)
+                data = self._send_json_with_retries(req, call_deadline)
                 text = self._extract_output_text(data)
                 if text:
                     break

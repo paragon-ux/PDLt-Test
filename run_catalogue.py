@@ -82,6 +82,47 @@ def load_manifest(category_filter=None):
     return entries
 
 
+def _kill_tree(proc: subprocess.Popen) -> None:
+    """Kill the harness and everything it started (sandbox programs, workers)."""
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True)
+    else:
+        import signal
+
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+    try:
+        proc.kill()
+    except OSError:
+        pass
+
+
+def run_with_deadline(cmd, stdin_text, timeout, stdout_path, stderr_path, *, cwd=None, env=None):
+    """Run one prompt with a hard deadline. Output goes straight to files, so no
+    pipe can keep the runner waiting after a kill (subprocess.run with
+    capture_output can block on Windows when a grandchild still holds the pipes),
+    and progress is on disk while the run is live. On timeout the whole process
+    tree is killed. Returns (exit_code, timed_out)."""
+    group = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt"
+             else {"start_new_session": True})
+    with open(stdout_path, "w", encoding="utf-8", errors="replace") as out, \
+            open(stderr_path, "w", encoding="utf-8", errors="replace") as err:
+        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=out, stderr=err, text=True,
+                                encoding="utf-8", errors="replace", cwd=cwd, env=env, **group)
+        try:
+            proc.communicate(input=stdin_text, timeout=timeout)
+            return proc.returncode, False
+        except subprocess.TimeoutExpired:
+            _kill_tree(proc)
+            try:
+                proc.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                pass
+            return -1, True
+
+
 def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_index=None, reasoning_ops=()):
     prompt_id = entry["id"]
     prompt_file = PROMPTS_DIR / entry["file"]
@@ -117,34 +158,27 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
     start_time = time.monotonic()
     start_ts = datetime.now(timezone.utc).isoformat()
 
-    try:
-        proc = subprocess.run(
-            cmd,
-            input=repl_input,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=timeout,
-            cwd=str(PDLT_TEST_ROOT),
-            env={**os.environ, "PYTHONPATH": str(PDLT_TEST_ROOT / "src"), "PYTHONIOENCODING": "utf-8"},
-        )
-        exit_code = proc.returncode
-        stdout = proc.stdout
-        stderr = proc.stderr
-        timed_out = False
-    except subprocess.TimeoutExpired as e:
-        exit_code = -1
-        stdout = e.stdout or ""
-        stderr = (e.stderr or "") + f"\n[RUNNER] TIMEOUT after {timeout}s"
-        timed_out = True
+    stdout_path, stderr_path = result_dir / "stdout.txt", result_dir / "stderr.txt"
+    exit_code, timed_out = run_with_deadline(
+        cmd,
+        repl_input,
+        timeout,
+        stdout_path,
+        stderr_path,
+        cwd=str(PDLT_TEST_ROOT),
+        env={**os.environ, "PYTHONPATH": str(PDLT_TEST_ROOT / "src"), "PYTHONIOENCODING": "utf-8"},
+    )
+    stdout = stdout_path.read_text(encoding="utf-8", errors="replace")
+    stderr = stderr_path.read_text(encoding="utf-8", errors="replace")
+    if timed_out:
+        stderr += f"\n[RUNNER] TIMEOUT after {timeout}s (process tree killed)"
+        stderr_path.write_text(stderr, encoding="utf-8")
 
     elapsed = time.monotonic() - start_time
 
-    if stdout:
-        (result_dir / "stdout.txt").write_text(stdout, encoding="utf-8")
-    if stderr:
-        (result_dir / "stderr.txt").write_text(stderr, encoding="utf-8")
+    for path, text in ((stdout_path, stdout), (stderr_path, stderr)):
+        if not text:
+            path.unlink(missing_ok=True)
 
     if timed_out:
         verdict = "TIMEOUT"
