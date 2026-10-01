@@ -1,0 +1,11 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "READ the undirected graph with nodes 0-11 and the provided edge list\nSEARCH for a Hamiltonian path that visits every node exactly once using a backtracking algorithm with pruning\nVERIFY that the found path includes all 12 nodes\nVERIFY that each consecutive node pair in the path corresponds to an edge in the graph\nOUTPUT the complete sequence of node labels representing the Hamiltonian path if one exists",
+  "approach_handoff": "NONE",
+  "task_entities": [
+    "0",
+    "1",
+    "2",
+    "11"
+  ]
+}

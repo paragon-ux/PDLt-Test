@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-84de9ef503",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-84de9ef503-P1",
+    "body": "READ the undirected graph with nodes 0-11 and the provided edge list\nSEARCH for a Hamiltonian path that visits every node exactly once using a backtracking algorithm with pruning\nVERIFY that the found path includes all 12 nodes\nVERIFY that each consecutive node pair in the path corresponds to an edge in the graph\nOUTPUT the complete sequence of node labels representing the Hamiltonian path if one exists",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-84de9ef503-R1",
+    "body": "READ the undirected graph with nodes 0-11 and the given edge list\nBACKTRACK search for a Hamiltonian path that visits each node exactly once, applying pruning to discard partial paths that cannot be extended to a full Hamiltonian path\nVERIFY that the discovered path includes all 12 nodes\nVERIFY that every consecutive node pair in the path corresponds to an edge in the graph\nOUTPUT the complete sequence of node labels representing the Hamiltonian path if one exists",
+    "confirmed": true,
+    "source_prompt_id": "I-84de9ef503-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-84de9ef503-X1",
+    "body": "3f90e20b78d8ea7c11f22f099dead415b56804b7373cac0459c3adcadd1d0d49",
+    "confirmed": true,
+    "source_prompt_id": "I-84de9ef503-P1",
+    "source_plan_id": "I-84de9ef503-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

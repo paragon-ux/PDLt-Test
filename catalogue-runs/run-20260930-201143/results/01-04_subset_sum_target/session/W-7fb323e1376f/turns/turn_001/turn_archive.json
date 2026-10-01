@@ -1,0 +1,439 @@
+{
+  "turn_id": "turn_001",
+  "status": "CLOSED_SUCCESS",
+  "deliverable_sha256": "79a88ea41a5b6fb116e0af90e4672699478605de41a40815aed8df6ab0a56a54",
+  "events": [
+    {
+      "at_utc": "2026-10-01T00:12:46.322058+00:00",
+      "kind": "WORKSPACE_CREATED",
+      "payload": {
+        "workspace_id": "W-7fb323e1376f",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:46.322058+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:46.712890+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 1.0
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:47.368493+00:00",
+      "kind": "EXECUTION_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "distribution": {
+          "BEYOND_100M_STEPS": 0.0,
+          "WITHIN_10M_STEPS": 0.23,
+          "WITHIN_100K_STEPS": 0.76,
+          "WITHIN_100M_STEPS": 0.01
+        },
+        "tier": "STANDARD",
+        "passed_gating": true,
+        "step_limit": 10000000,
+        "timeout_seconds": 30.0,
+        "memory_mb": 256
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:47.368493+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": true,
+        "domain": "general"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:47.378431+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:48.328260+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:48.338352+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:50.398549+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:50.413706+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-f2af8d50d1",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:50.424299+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-f2af8d50d1-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:50.468322+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-f2af8d50d1-P1"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:50.478652+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:51.558388+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:51.568661+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-f2af8d50d1-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:51.570176+00:00",
+      "kind": "PLAN_PROMPT_ECHO",
+      "payload": {
+        "plan_id": "I-f2af8d50d1-R1",
+        "identical": false,
+        "copied_line_ratio": 0.5
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:51.628173+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-f2af8d50d1-R1"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:52.098986+00:00",
+      "kind": "PLAN_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "distribution": {
+          "WITHIN_100M_STEPS": 0.01,
+          "WITHIN_10M_STEPS": 0.2,
+          "BEYOND_100M_STEPS": 0.0,
+          "WITHIN_100K_STEPS": 0.79
+        },
+        "passed_gating": true,
+        "request_tier": "STANDARD",
+        "plan_tier": "STANDARD",
+        "tier": "STANDARD",
+        "budget_raised": false,
+        "step_limit": 10000000
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:52.114609+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:59.188219+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:59.308514+00:00",
+      "kind": "SANDBOX_RUN",
+      "payload": {
+        "block": 1,
+        "tier": "STANDARD",
+        "exit_code": 0,
+        "step_budget_exceeded": false,
+        "steps_used": 50819,
+        "timed_out": false,
+        "oom_killed": false,
+        "duration_ms": 110.5
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:59.313527+00:00",
+      "kind": "VERIFICATION_PASSED",
+      "payload": {
+        "provisional": false,
+        "sandbox_reproduced": true,
+        "domain_checked": false,
+        "details": {
+          "polarity": "positive",
+          "data_keys": [
+            "solutions",
+            "total"
+          ]
+        }
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:59.313527+00:00",
+      "kind": "RESULT_IR_VALIDATED",
+      "payload": {
+        "ir": {
+          "files": [
+            {
+              "filename": "subset_sum.py",
+              "satisfies": [
+                "R1",
+                "R2",
+                "R3",
+                "R4"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "# subset_sum.py\n# Find all subsets of S that sum to target T using backtracking."
+              }
+            }
+          ],
+          "reconciliation": [
+            {
+              "requirement": "R1",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "S = [3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21]\\nT = 40"
+              }
+            },
+            {
+              "requirement": "R2",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "def backtrack(index, current, total):\\n    if total == T:\\n        solutions.append(list(current))\\n        return"
+              }
+            },
+            {
+              "requirement": "R3",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "for sol in solutions:\\n    print(f\\\"Subset: {sol}, Sum: {sum(sol)}\\\")"
+              }
+            },
+            {
+              "requirement": "R4",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "",
+                "observed": "print(f\\\"Total number of solutions: {len(solutions)}\\\")"
+              }
+            }
+          ],
+          "open_defects": [],
+          "witness": {
+            "polarity": "positive",
+            "evidence": {
+              "path": "execution://witness"
+            },
+            "data": {
+              "solutions": [
+                [
+                  3,
+                  7,
+                  12,
+                  5,
+                  11,
+                  2
+                ],
+                [
+                  3,
+                  7,
+                  5,
+                  8,
+                  15,
+                  2
+                ],
+                [
+                  3,
+                  7,
+                  11,
+                  19
+                ],
+                [
+                  3,
+                  12,
+                  8,
+                  15,
+                  2
+                ],
+                [
+                  3,
+                  5,
+                  11,
+                  2,
+                  19
+                ],
+                [
+                  3,
+                  5,
+                  11,
+                  21
+                ],
+                [
+                  3,
+                  26,
+                  11
+                ],
+                [
+                  7,
+                  12,
+                  11,
+                  8,
+                  2
+                ],
+                [
+                  7,
+                  12,
+                  2,
+                  19
+                ],
+                [
+                  7,
+                  12,
+                  21
+                ],
+                [
+                  7,
+                  5,
+                  26,
+                  2
+                ],
+                [
+                  7,
+                  5,
+                  11,
+                  15,
+                  2
+                ],
+                [
+                  12,
+                  5,
+                  8,
+                  15
+                ],
+                [
+                  12,
+                  5,
+                  2,
+                  21
+                ],
+                [
+                  12,
+                  26,
+                  2
+                ],
+                [
+                  12,
+                  11,
+                  15,
+                  2
+                ],
+                [
+                  11,
+                  8,
+                  2,
+                  19
+                ],
+                [
+                  11,
+                  8,
+                  21
+                ],
+                [
+                  19,
+                  21
+                ]
+              ],
+              "total": 19
+            },
+            "provisional": false
+          }
+        }
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:59.313527+00:00",
+      "kind": "EXECUTION_ATTEMPTS",
+      "payload": {
+        "attempts": 1,
+        "repairs_used": 0,
+        "repairs_allowed": 1,
+        "tier": "STANDARD"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:12:59.318126+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_001",
+        "status": "CLOSED_SUCCESS"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-10-01T00:12:59.318126+00:00"
+}

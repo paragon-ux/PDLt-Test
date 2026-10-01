@@ -1,0 +1,1 @@
+{"neutral_plan_body":"READ the set S and target T\nAPPLY a backtracking search that explores the full search tree to FIND all subsets of S that sum to exactly T\nFOR each solution FOUND, EMIT the subset and VERIFY its sum\nREPORT the total number of solutions"}

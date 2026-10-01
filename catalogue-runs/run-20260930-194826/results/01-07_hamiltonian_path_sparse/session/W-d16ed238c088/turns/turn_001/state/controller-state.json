@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-8048f504e4",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-8048f504e4-P1",
+    "body": "READ the undirected graph with 12 nodes (0-11) and the provided edge list\nSEARCH for a Hamiltonian path using a backtracking algorithm with pruning\nIF a Hamiltonian path is found THEN OUTPUT the complete sequence of node labels representing the path\nVERIFY that the output sequence includes all 12 nodes and that each consecutive pair of nodes corresponds to an edge in the graph\nELSE REPORT that no Hamiltonian path exists",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-8048f504e4-R1",
+    "body": "READ the undirected graph with 12 nodes and the provided edge list\nSEARCH for a Hamiltonian path using a backtracking algorithm with pruning\nIF a Hamiltonian path is found THEN OUTPUT the complete sequence of node labels representing the path\nVERIFY that the output sequence includes all 12 nodes and that each consecutive pair of nodes corresponds to an edge in the graph\nELSE REPORT that no Hamiltonian path exists",
+    "confirmed": true,
+    "source_prompt_id": "I-8048f504e4-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-8048f504e4-X1",
+    "body": "7e5e5ae3a71092054cffa1113ff29cbd8cbe0857837dc092c8437bb0a0f39d25",
+    "confirmed": true,
+    "source_prompt_id": "I-8048f504e4-P1",
+    "source_plan_id": "I-8048f504e4-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

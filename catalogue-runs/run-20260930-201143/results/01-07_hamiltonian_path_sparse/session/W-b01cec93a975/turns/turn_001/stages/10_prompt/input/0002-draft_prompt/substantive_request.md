@@ -1,0 +1,9 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Determine whether the given undirected graph with 12 nodes (0-11) and the specified edge list contains a Hamiltonian path that visits every node exactly once. If such a path exists, output the complete sequence of node labels representing the path. Verify that the path includes all 12 nodes and that each consecutive pair of nodes in the sequence corresponds to an edge in the graph. Use a backtracking search with pruning to find the path.
+APPROACH/RISK NOTES:
+
+OPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):
+- 0
+- 1
+- 2
+- 11

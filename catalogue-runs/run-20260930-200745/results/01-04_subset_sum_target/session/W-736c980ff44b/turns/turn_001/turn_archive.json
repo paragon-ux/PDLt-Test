@@ -1,0 +1,621 @@
+{
+  "turn_id": "turn_001",
+  "status": "CLOSED_SUCCESS",
+  "deliverable_sha256": "4bfcacdd778b110739bdc57ff8c103d27bc6e1cb61936be382174d90d5f3d5eb",
+  "events": [
+    {
+      "at_utc": "2026-10-01T00:08:52.924276+00:00",
+      "kind": "WORKSPACE_CREATED",
+      "payload": {
+        "workspace_id": "W-736c980ff44b",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:08:52.924276+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:08:53.334245+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 1.0
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:08:53.874348+00:00",
+      "kind": "EXECUTION_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "distribution": {
+          "WITHIN_100K_STEPS": 0.79,
+          "BEYOND_100M_STEPS": 0.0,
+          "WITHIN_100M_STEPS": 0.01,
+          "WITHIN_10M_STEPS": 0.2
+        },
+        "tier": "STANDARD",
+        "passed_gating": true,
+        "step_limit": 10000000,
+        "timeout_seconds": 30.0,
+        "memory_mb": 256
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:08:53.878917+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": true,
+        "domain": "general"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:08:53.888988+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:08:54.968958+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:08:54.979034+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:08:57.834889+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:08:57.836869+00:00",
+      "kind": "PROMPT_LINT_RETRY",
+      "payload": {
+        "violations": [
+          "Line begins with invented field label 'OPERATIVE TASK ENTITIES:' (PDL-05); state each operation directly."
+        ]
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:08:57.846950+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0003-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:00.729310+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0003-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:00.729310+00:00",
+      "kind": "PROMPT_LINT_UNRESOLVED",
+      "payload": {}
+    },
+    {
+      "at_utc": "2026-10-01T00:09:00.741364+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-ba66977ac0",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:00.754956+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-ba66977ac0-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:00.839082+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-ba66977ac0-P1"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:00.848966+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0004-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:01.657840+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0004-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:01.662826+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-ba66977ac0-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:01.662826+00:00",
+      "kind": "PLAN_PROMPT_ECHO",
+      "payload": {
+        "plan_id": "I-ba66977ac0-R1",
+        "identical": false,
+        "copied_line_ratio": 0.667
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:01.714265+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-ba66977ac0-R1"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:01.926643+00:00",
+      "kind": "PLAN_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "distribution": {
+          "WITHIN_100M_STEPS": 0.01,
+          "WITHIN_100K_STEPS": 0.73,
+          "BEYOND_100M_STEPS": 0.0,
+          "WITHIN_10M_STEPS": 0.26
+        },
+        "passed_gating": true,
+        "request_tier": "STANDARD",
+        "plan_tier": "STANDARD",
+        "tier": "STANDARD",
+        "budget_raised": false,
+        "step_limit": 10000000
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:01.942315+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0005-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:07.712974+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0005-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:07.834371+00:00",
+      "kind": "SANDBOX_RUN",
+      "payload": {
+        "block": 1,
+        "tier": "STANDARD",
+        "exit_code": 0,
+        "step_budget_exceeded": false,
+        "steps_used": 33791,
+        "timed_out": false,
+        "oom_killed": false,
+        "duration_ms": 114.3
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:07.834371+00:00",
+      "kind": "VERIFICATION_PASSED",
+      "payload": {
+        "provisional": false,
+        "sandbox_reproduced": true,
+        "domain_checked": false,
+        "details": {
+          "polarity": "positive",
+          "data_keys": [
+            "solutions",
+            "total"
+          ]
+        }
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:07.837436+00:00",
+      "kind": "RESULT_IR_VALIDATED",
+      "payload": {
+        "ir": {
+          "files": [
+            {
+              "filename": "solution.py",
+              "satisfies": [
+                "R1",
+                "R2",
+                "R3",
+                "R4",
+                "R5",
+                "R6",
+                "R7",
+                "R8",
+                "R9",
+                "R10",
+                "R11",
+                "R12",
+                "R13",
+                "R14",
+                "R15",
+                "R16",
+                "R17",
+                "R18",
+                "R19"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            }
+          ],
+          "reconciliation": [
+            {
+              "requirement": "R1",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R2",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R3",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R4",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R5",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R6",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R7",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R8",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R9",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R10",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R11",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R12",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R13",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R14",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R15",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R16",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R17",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R18",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            },
+            {
+              "requirement": "R19",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "# solution.py",
+                "observed": "# solution.py"
+              }
+            }
+          ],
+          "open_defects": [],
+          "witness": {
+            "polarity": "positive",
+            "evidence": {
+              "path": "execution://witness"
+            },
+            "data": {
+              "solutions": [
+                [
+                  3,
+                  7,
+                  12,
+                  5,
+                  11,
+                  2
+                ],
+                [
+                  3,
+                  7,
+                  5,
+                  8,
+                  15,
+                  2
+                ],
+                [
+                  3,
+                  7,
+                  11,
+                  19
+                ],
+                [
+                  3,
+                  12,
+                  8,
+                  15,
+                  2
+                ],
+                [
+                  3,
+                  5,
+                  11,
+                  2,
+                  19
+                ],
+                [
+                  3,
+                  5,
+                  11,
+                  21
+                ],
+                [
+                  3,
+                  26,
+                  11
+                ],
+                [
+                  7,
+                  12,
+                  11,
+                  8,
+                  2
+                ],
+                [
+                  7,
+                  12,
+                  2,
+                  19
+                ],
+                [
+                  7,
+                  12,
+                  21
+                ],
+                [
+                  7,
+                  5,
+                  26,
+                  2
+                ],
+                [
+                  7,
+                  5,
+                  11,
+                  15,
+                  2
+                ],
+                [
+                  12,
+                  5,
+                  8,
+                  15
+                ],
+                [
+                  12,
+                  5,
+                  2,
+                  21
+                ],
+                [
+                  12,
+                  26,
+                  2
+                ],
+                [
+                  12,
+                  11,
+                  15,
+                  2
+                ],
+                [
+                  11,
+                  8,
+                  2,
+                  19
+                ],
+                [
+                  11,
+                  8,
+                  21
+                ],
+                [
+                  19,
+                  21
+                ]
+              ],
+              "total": 19
+            },
+            "provisional": false
+          }
+        }
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:07.838980+00:00",
+      "kind": "EXECUTION_ATTEMPTS",
+      "payload": {
+        "attempts": 1,
+        "repairs_used": 0,
+        "repairs_allowed": 1,
+        "tier": "STANDARD"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T00:09:07.838980+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_001",
+        "status": "CLOSED_SUCCESS"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-10-01T00:09:07.844680+00:00"
+}

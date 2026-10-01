@@ -1,0 +1,5 @@
+{
+  "kind": "PROMPT",
+  "prompt_body": "READ the list L of 45 distinct positive integers provided by the user\nDETERMINE whether L can be partitioned into 15 disjoint triples (a_i, b_i, c_i) such that a_i + b_i = c_i for each triple\nIF such a partition exists THEN\n    PROVIDE one complete example of a valid partition\nENDIF",
+  "approach_handoff": "NONE"
+}

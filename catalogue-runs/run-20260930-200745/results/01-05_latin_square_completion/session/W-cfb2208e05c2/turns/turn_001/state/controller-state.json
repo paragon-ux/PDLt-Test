@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-794314ca24",
+  "stage": "CLOSED_CANCELLED",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-794314ca24-P1",
+    "body": "READ the partially filled 7x7 Latin square\nAPPLY a constraint‑propagation solver with backtracking to the square\nFILL all zero cells to complete the Latin square\nOUTPUT the completed 7x7 Latin square\nVERIFY that each row and each column contains every number from 1 to 7 exactly once",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-794314ca24-R1",
+    "body": "READ the partially filled 7x7 Latin square\nAPPLY a constraint‑propagation solver with backtracking to the square\nFILL all zero cells to complete the Latin square\nVERIFY that each row and each column contains every number from 1 to 7 exactly once\nOUTPUT the completed 7x7 Latin square",
+    "confirmed": true,
+    "source_prompt_id": "I-794314ca24-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

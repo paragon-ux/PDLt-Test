@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Find a valid 4-coloring of the wheel graph W_11 (12 nodes: a central hub node 0 connected to all nodes 1-11, and nodes 1-11 forming a cycle 1-2-3-...-11-1). Assign each node a color from {1,2,3,4} such that no two adjacent nodes share the same color. Additionally, prove that 3 colors are insufficient by demonstrating that the odd cycle plus hub requires 4 colors.
+APPROACH/RISK NOTES:

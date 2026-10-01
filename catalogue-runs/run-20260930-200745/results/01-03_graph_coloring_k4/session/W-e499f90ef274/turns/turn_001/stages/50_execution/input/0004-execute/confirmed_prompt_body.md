@@ -1,0 +1,2 @@
+FIND a valid 4-coloring of the wheel graph W_11 (12 nodes: central hub node 0 connected to all nodes 1-11, and nodes 1-11 forming a cycle 1-2-3-...-11-1) USING colors from {1,2,3,4} SUCH THAT no adjacent nodes share the same color.
+PROVE that 3 colors are insufficient by demonstrating that the odd cycle of nodes 1-11 combined with the hub node 0 requires 4 colors.
