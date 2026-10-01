@@ -49,3 +49,21 @@ def test_runner_sends_only_the_prompt_file():
     assert "tester_note" not in command and "multi_turn_script" not in command
     assert '"--prompt-file", str(prompt_file)' in command
     assert 'repl_input = "/confirm\\n" * 5' in runner
+
+
+def test_repeat_runs_report_a_pass_rate_per_prompt(tmp_path):
+    import sys
+
+    sys.path.insert(0, str(ROOT))
+    import run_catalogue
+
+    def result(pid, verdict, k):
+        return {"id": pid, "category": "c", "difficulty": "d", "verdict": verdict, "expected_stage": "CLOSED_SUCCESS",
+                "elapsed_seconds": 1.0, "ground_truth_grade": {"grade": "N/A"}, "model_calls": {}, "repeat": k,
+                "regression_ref": None}
+
+    results = [result("01-01", v, k) for k, v in enumerate(["CLOSED_SUCCESS", "CLOSED_CANCELLED", "CLOSED_SUCCESS"], 1)]
+    meta = {"run_id": "r", "start_time": "t", "model": "m", "reasoning_effort": "low"}
+    scoreboard = run_catalogue.generate_scoreboard(results, tmp_path, meta)
+    assert scoreboard["repeat_pass_rates"] == {"01-01": {"runs": 3, "passed": 2}}
+    assert "| 01-01 | 2 | 3 |" in (tmp_path / "SCOREBOARD.md").read_text(encoding="utf-8")

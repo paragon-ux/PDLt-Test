@@ -81,14 +81,14 @@ def load_manifest(category_filter=None):
     return entries
 
 
-def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout):
+def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_index=None):
     prompt_id = entry["id"]
     prompt_file = PROMPTS_DIR / entry["file"]
-    safe_name = f"{prompt_id}_{prompt_file.stem}"
+    safe_name = f"{prompt_id}_{prompt_file.stem}" + (f"_r{repeat_index}" if repeat_index else "")
     result_dir = run_dir / "results" / safe_name
     result_dir.mkdir(parents=True, exist_ok=True)
 
-    session_id = f"catalogue-{prompt_id}-{int(time.time())}"
+    session_id = f"catalogue-{prompt_id}-{int(time.time())}" + (f"-r{repeat_index}" if repeat_index else "")
     transcript_path = result_dir / "transcript.txt"
     session_dir = result_dir / "session"
     session_dir.mkdir(exist_ok=True)
@@ -198,6 +198,7 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout):
         "tester_note": entry.get("tester_note"),
         "multi_turn_script": entry.get("multi_turn_script"),
         "model_calls": call_accounting(result_dir),
+        "repeat": repeat_index,
     }
 
     (result_dir / "result.json").write_text(
@@ -339,6 +340,12 @@ def generate_scoreboard(results, run_dir, run_meta):
         "repairs": sum(c.get("repairs", 0) for c in calls),
     }
     model_calls["execute_reasoning_tokens"] = sum((c.get("reasoning_tokens") or {}).get("EXECUTE", 0) for c in calls)
+    repeat_pass_rates: dict = {}
+    if any(r.get("repeat") for r in results):
+        for r in results:
+            rate = repeat_pass_rates.setdefault(r["id"], {"runs": 0, "passed": 0})
+            rate["runs"] += 1
+            rate["passed"] += int(is_prompt_pass(r))
     echoes = [c.get("plan_echo") for c in calls if c.get("plan_echo")]
     plan_echo = {
         "plans": len(echoes),
@@ -360,6 +367,7 @@ def generate_scoreboard(results, run_dir, run_meta):
         "total_elapsed_seconds": round(total_time, 1),
         "model_calls": model_calls,
         "plan_echo": plan_echo,
+        "repeat_pass_rates": repeat_pass_rates,
         "ground_truth": ground_truth,
         "false_positives": false_positives,
         "by_verdict": by_verdict,
@@ -402,6 +410,13 @@ def generate_scoreboard(results, run_dir, run_meta):
         f"| Plans identical to prompt / >=80% copied (of plans) | {len(scoreboard['plan_echo']['identical'])} / "
         f"{scoreboard['plan_echo']['copied_80pct']} (of {scoreboard['plan_echo']['plans']}) |",
         "",
+    ]
+    if scoreboard["repeat_pass_rates"]:
+        lines += ["## Pass Rate per Prompt (repeats)", "", "| Prompt | Passed | Runs |", "|--------|--------|------|"]
+        lines += [f"| {pid} | {rate['passed']} | {rate['runs']} |"
+                  for pid, rate in scoreboard["repeat_pass_rates"].items()]
+        lines.append("")
+    lines += [
         "---",
         "",
         "## By Category",
@@ -506,6 +521,8 @@ def main():
                         help="List prompts that would be run without executing")
     parser.add_argument("--timeout", type=int, default=TIMEOUT_PER_PROMPT,
                         help=f"Per-prompt timeout in seconds (default: {TIMEOUT_PER_PROMPT})")
+    parser.add_argument("--repeat", type=int, default=1, metavar="N",
+                        help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
     parser.add_argument("--regrade", metavar="RUN_DIR", default=None,
                         help="re-grade a finished run with the current graders and rewrite its scoreboard")
     args = parser.parse_args()
@@ -515,6 +532,9 @@ def main():
     entries = load_manifest(category_filter=args.category)
     if args.prompt_id:
         entries = [e for e in entries if e["id"] == args.prompt_id]
+    if args.repeat < 1:
+        parser.error("--repeat must be at least 1")
+    runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
 
     if not entries:
         print("No prompts match the filter. Exiting.")
@@ -524,7 +544,7 @@ def main():
     print(f"{'=' * 50}")
     print(f"Model:      {args.model}")
     print(f"Reasoning:  {args.reasoning}")
-    print(f"Prompts:    {len(entries)}")
+    print(f"Prompts:    {len(entries)}" + (f" x {args.repeat} repeats = {len(runs)} runs" if args.repeat > 1 else ""))
     print(f"Timeout:    {args.timeout}s per prompt")
     print()
 
@@ -548,7 +568,8 @@ def main():
         "reasoning_effort": args.reasoning,
         "category_filter": args.category,
         "prompt_id_filter": args.prompt_id,
-        "total_prompts": len(entries),
+        "total_prompts": len(runs),
+        "repeat": args.repeat,
         "timeout_per_prompt": args.timeout,
         "pdlt_test_root": str(PDLT_TEST_ROOT),
         "rules": {
@@ -566,10 +587,11 @@ def main():
     )
 
     results = []
-    for i, entry in enumerate(entries, 1):
+    for i, (entry, repeat_index) in enumerate(runs, 1):
         prompt_id = entry["id"]
-        print(f"[{i:3d}/{len(entries)}] {prompt_id:6s} {entry['category']:30s} ", end="", flush=True)
-        result = run_single_prompt(entry, run_dir, args.model, args.reasoning, args.timeout)
+        label = prompt_id + (f" r{repeat_index}" if repeat_index else "")
+        print(f"[{i:3d}/{len(runs)}] {label:9s} {entry['category']:30s} ", end="", flush=True)
+        result = run_single_prompt(entry, run_dir, args.model, args.reasoning, args.timeout, repeat_index)
         results.append(result)
         icon = "PASS" if is_prompt_pass(result) else "FAIL"
         print(f"{icon} {result['verdict']:20s} gt={gt_grade(result):7s} ({result['elapsed_seconds']:.1f}s)")
@@ -598,6 +620,10 @@ def main():
           f"false_positives={len(scoreboard['false_positives'])}")
     for fp in scoreboard["false_positives"]:
         print(f"    FALSE POSITIVE {fp['id']}: {fp['reason']}")
+    if scoreboard["repeat_pass_rates"]:
+        print("Pass rate per prompt (repeats):")
+        for pid, rate in scoreboard["repeat_pass_rates"].items():
+            print(f"    {pid}: {rate['passed']}/{rate['runs']}")
     if scoreboard["manual_spot_check"]:
         print(f"Needs human spot check (not verified): {', '.join(scoreboard['manual_spot_check'])}")
     if scoreboard["regressions_hit"]:
