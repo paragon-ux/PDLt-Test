@@ -154,15 +154,18 @@ class _Containment:
         return job
 
     def attach(self, proc: subprocess.Popen) -> None:
-        """Windows: put the suspended harness into the job, then resume it. A harness
-        that cannot be contained or resumed is killed before it runs."""
+        """Windows: put the suspended harness into the job, then resume it. If the
+        job refuses it, it runs uncontained (killed with taskkill /T on timeout)."""
         if os.name != "nt" or self.job is None:
             return
         from pdl_taskmaster.verification import sandbox as sb
 
-        if not (sb.kernel32().AssignProcessToJobObject(self.job, int(proc._handle)) and sb.resume_process(proc)):
+        if not sb.kernel32().AssignProcessToJobObject(self.job, int(proc._handle)):
+            self.close()
+        if not sb.resume_process(proc):
             proc.kill()
             self.close()
+            raise OSError("could not resume the suspended harness process")
 
     def wait(self, proc: subprocess.Popen, timeout: float) -> int:
         """Wait for the harness to exit (subprocess.TimeoutExpired past the timeout)."""
