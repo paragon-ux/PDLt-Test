@@ -1,0 +1,103 @@
+{
+  "run_id": "run-20260930-215232",
+  "timestamp": "2026-10-01T01:52:32.086647+00:00",
+  "model": "openai/gpt-oss-120b",
+  "reasoning_effort": "high",
+  "total_prompts": 10,
+  "passed": 6,
+  "failed": 4,
+  "stage_passed": 6,
+  "manual_spot_check": [],
+  "pass_rate_pct": 60.0,
+  "total_elapsed_seconds": 4393.8,
+  "model_calls": {
+    "total": 47,
+    "execute": 16,
+    "repairs": 9,
+    "execute_reasoning_tokens": 0
+  },
+  "plan_echo": {
+    "plans": 10,
+    "identical": [],
+    "copied_80pct": 0
+  },
+  "repeat_pass_rates": {
+    "01-01": {
+      "runs": 10,
+      "passed": 6
+    }
+  },
+  "ground_truth": {
+    "PASS": 6,
+    "FAIL": 4,
+    "MANUAL": 0,
+    "ERROR": 0
+  },
+  "false_positives": [],
+  "by_verdict": {
+    "CLOSED_SUCCESS": 6,
+    "CLOSED_CANCELLED": 1,
+    "TIMEOUT": 3
+  },
+  "by_category": {
+    "combinatorial_search": {
+      "total": 10,
+      "pass": 6,
+      "fail": 4
+    }
+  },
+  "by_difficulty": {
+    "hard": {
+      "total": 10,
+      "pass": 6
+    }
+  },
+  "regressions_hit": [
+    {
+      "id": "01-01",
+      "regression_ref": "REG-003",
+      "verdict": "CLOSED_CANCELLED"
+    },
+    {
+      "id": "01-01",
+      "regression_ref": "REG-003",
+      "verdict": "TIMEOUT"
+    },
+    {
+      "id": "01-01",
+      "regression_ref": "REG-003",
+      "verdict": "TIMEOUT"
+    },
+    {
+      "id": "01-01",
+      "regression_ref": "REG-003",
+      "verdict": "TIMEOUT"
+    }
+  ],
+  "failures": [
+    {
+      "id": "01-01",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 409.66
+    },
+    {
+      "id": "01-01",
+      "category": "combinatorial_search",
+      "verdict": "TIMEOUT",
+      "elapsed": 600.03
+    },
+    {
+      "id": "01-01",
+      "category": "combinatorial_search",
+      "verdict": "TIMEOUT",
+      "elapsed": 600.02
+    },
+    {
+      "id": "01-01",
+      "category": "combinatorial_search",
+      "verdict": "TIMEOUT",
+      "elapsed": 600.03
+    }
+  ]
+}

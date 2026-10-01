@@ -1,0 +1,51 @@
+UNVERIFIED ANSWER: Substantive verification was not completed after repair attempts. Reason: [WITNESS_NOT_PRINTED] No witness was established: Invalid positive witness structure: data: Input should be a valid dictionary. Host observation: the deliverable contains no program that ran successfully. Rule: A result that must be certified is certified by a line of the form `WITNESS: <json>` printed by a program the host runs. Next attempt: Have the program print its result as a `WITNESS: <json>` line, or, if the result cannot be obtained, emit no witness and mark the requirement open with the defect recorded.
+
+Attempt 1: WITNESS_NOT_PRINTED
+Attempt 2: STEP_BUDGET_EXCEEDED, WITNESS_NOT_PRINTED
+Attempt 3: WITNESS_NOT_PRINTED
+
+Candidate deliverable:
+import itertools, sys, json
+L = {71, 97, 54, 56, 44, 158, 45, 58, 82, 135, 113, 117, 86, 40, 12, 185, 63, 50, 111, 72, 90, 109, 61, 13, 92, 60, 91, 35, 114, 94, 105, 26, 15, 51, 102, 118, 76, 32, 108, 23, 22, 134, 83, 43, 64}
+# Precompute all valid triples (a,b,c) with a<b and a+b=c
+triples = []
+for a,b,c in itertools.permutations(L,3):
+    if a<b and a+b==c:
+        triples.append((a,b,c))
+# Sort for deterministic search
+triples.sort()
+# Build adjacency: for each number, which triples contain it
+adj = {x: [] for x in L}
+for t in triples:
+    for x in t:
+        adj[x].append(t)
+# Backtracking search
+used = set()
+solution = []
+
+def search():
+    if len(used)==len(L):
+        return True
+    # choose the unused number with fewest candidate triples (MRV)
+    candidates = [(len([t for t in adj[x] if all(y not in used for y in t)]), x) for x in L if x not in used]
+    _, chosen = min(candidates)
+    for t in adj[chosen]:
+        if any(y in used for y in t):
+            continue
+        # take this triple
+        solution.append(t)
+        used.update(t)
+        if search():
+            return True
+        # backtrack
+        used.difference_update(t)
+        solution.pop()
+    return False
+
+found = search()
+if found:
+    witness = {"polarity":"positive","evidence":{"path":"execution://witness"},"data":solution}
+    print("WITNESS: "+json.dumps(witness))
+else:
+    witness = {"polarity":"negative","evidence":{"path":"execution://witness"},"basis":"proof","argument":"No set of 15 disjoint triples satisfying a+b=c exists for the given list."}
+    print("WITNESS: "+json.dumps(witness))

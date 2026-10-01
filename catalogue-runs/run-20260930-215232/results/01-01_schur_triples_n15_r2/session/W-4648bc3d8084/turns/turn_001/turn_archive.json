@@ -1,0 +1,596 @@
+{
+  "turn_id": "turn_001",
+  "status": "CLOSED_SUCCESS",
+  "deliverable_sha256": "47d9c8c8b02d16f580d39000094c776be19bf238a7937053aa1c7ef2d55c9147",
+  "events": [
+    {
+      "at_utc": "2026-10-01T01:56:12.000206+00:00",
+      "kind": "WORKSPACE_CREATED",
+      "payload": {
+        "workspace_id": "W-4648bc3d8084",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:56:12.000206+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:56:12.368299+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 1.0
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:56:12.908914+00:00",
+      "kind": "EXECUTION_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "distribution": {
+          "WITHIN_10M_STEPS": 0.41,
+          "WITHIN_100K_STEPS": 0.28,
+          "WITHIN_100M_STEPS": 0.15,
+          "BEYOND_100M_STEPS": 0.16
+        },
+        "tier": "STANDARD",
+        "passed_gating": false,
+        "step_limit": 10000000,
+        "timeout_seconds": 30.0,
+        "memory_mb": 256
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:56:12.912908+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": true,
+        "domain": "general"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:56:12.925912+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:56:34.541532+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:56:34.544537+00:00",
+      "kind": "TASK_ENTITY_DROPPED_UNSAFE",
+      "payload": {
+        "count": 1
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:56:34.555536+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:11.659048+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:11.661484+00:00",
+      "kind": "TASK_ENTITY_COVERAGE_RETRY",
+      "payload": {
+        "missing": 1
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:11.669785+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0003-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:35.537557+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0003-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:35.552096+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-95bc1d7328",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:35.562862+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-95bc1d7328-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:35.647682+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-95bc1d7328-P1"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:35.660607+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0004-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:41.860692+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0004-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:41.867853+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-95bc1d7328-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:41.870853+00:00",
+      "kind": "PLAN_PROMPT_ECHO",
+      "payload": {
+        "plan_id": "I-95bc1d7328-R1",
+        "identical": false,
+        "copied_line_ratio": 0.0
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:41.917643+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-95bc1d7328-R1"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:42.174305+00:00",
+      "kind": "PLAN_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "distribution": {
+          "WITHIN_10M_STEPS": 0.6,
+          "WITHIN_100K_STEPS": 0.19,
+          "WITHIN_100M_STEPS": 0.13,
+          "BEYOND_100M_STEPS": 0.08
+        },
+        "passed_gating": false,
+        "request_tier": "STANDARD",
+        "plan_tier": null,
+        "tier": "STANDARD",
+        "budget_raised": false,
+        "step_limit": 10000000
+      }
+    },
+    {
+      "at_utc": "2026-10-01T01:57:42.190679+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0005-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T02:01:05.990353+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0005-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T02:01:06.481304+00:00",
+      "kind": "SANDBOX_RUN",
+      "payload": {
+        "block": 1,
+        "tier": "STANDARD",
+        "exit_code": 0,
+        "step_budget_exceeded": false,
+        "steps_used": 1252096,
+        "timed_out": false,
+        "oom_killed": false,
+        "duration_ms": 480.0
+      }
+    },
+    {
+      "at_utc": "2026-10-01T02:01:06.484311+00:00",
+      "kind": "VERIFICATION_PASSED",
+      "payload": {
+        "provisional": false,
+        "sandbox_reproduced": true,
+        "domain_checked": false,
+        "details": {
+          "polarity": "positive",
+          "data_keys": [
+            "partition"
+          ]
+        }
+      }
+    },
+    {
+      "at_utc": "2026-10-01T02:01:06.485308+00:00",
+      "kind": "RESULT_IR_VALIDATED",
+      "payload": {
+        "ir": {
+          "files": [
+            {
+              "filename": "partition_triples.py",
+              "satisfies": [
+                "R1",
+                "R2",
+                "R3",
+                "R4",
+                "R5",
+                "R6",
+                "R7",
+                "R8",
+                "R9",
+                "R10"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "L = [71, 97, 54, 56, 44, 158, 45, 58, 82, 135, 113, 117, 86, 40, 12, 185, 63, 50, 111, 72, 90, 109, 61, 13, 92, 60, 91, 35, 114, 94, 105, 26, 15, 51, 102, 118, 76, 32, 108, 23, 22, 134, 83, 43, 64]"
+              }
+            },
+            {
+              "filename": "partition_triples.py",
+              "satisfies": [
+                "R1"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "print(\\\"Partition found:\\\")"
+              }
+            },
+            {
+              "filename": "partition_triples.py",
+              "satisfies": [
+                "R2"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "L = [71, 97, 54, 56, 44, 158, 45, 58, 82, 135, 113, 117, 86, 40, 12, 185, 63, 50, 111, 72, 90, 109, 61, 13, 92, 60, 91, 35, 114, 94, 105, 26, 15, 51, 102, 118, 76, 32, 108, 23, 22, 134, 83, 43, 64]"
+              }
+            },
+            {
+              "filename": "partition_triples.py",
+              "satisfies": [
+                "R3"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "assert len(L) == 45"
+              }
+            },
+            {
+              "filename": "partition_triples.py",
+              "satisfies": [
+                "R4"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "L = [71, 97, 54, 56, 44, 158, 45, 58, 82, 135, 113, 117, 86, 40, 12, 185, 63, 50, 111, 72, 90, 109, 61, 13, 92, 60, 91, 35, 114, 94, 105, 26, 15, 51, 102, 118, 76, 32, 108, 23, 22, 134, 83, 43, 64]"
+              }
+            },
+            {
+              "filename": "partition_triples.py",
+              "satisfies": [
+                "R5"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "num_triples = 15"
+              }
+            },
+            {
+              "filename": "partition_triples.py",
+              "satisfies": [
+                "R6"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "for i, (a, b, c) in enumerate(solution, 1):"
+              }
+            },
+            {
+              "filename": "partition_triples.py",
+              "satisfies": [
+                "R7"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "c = a + b"
+              }
+            },
+            {
+              "filename": "partition_triples.py",
+              "satisfies": [
+                "R8"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "for i, (a, b, c) in enumerate(solution, 1):"
+              }
+            },
+            {
+              "filename": "partition_triples.py",
+              "satisfies": [
+                "R9"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "indices = range(1, num_triples+1)  # R9"
+              }
+            },
+            {
+              "filename": "partition_triples.py",
+              "satisfies": [
+                "R10"
+              ],
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "print(\\\"Partition found:\\\")"
+              }
+            }
+          ],
+          "reconciliation": [
+            {
+              "requirement": "R1",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "print(\\\"Partition found:\\\")"
+              }
+            },
+            {
+              "requirement": "R2",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "L = [71, 97, 54, 56, 44, 158, 45, 58, 82, 135, 113, 117, 86, 40, 12, 185, 63, 50, 111, 72, 90, 109, 61, 13, 92, 60, 91, 35, 114, 94, 105, 26, 15, 51, 102, 118, 76, 32, 108, 23, 22, 134, 83, 43, 64]"
+              }
+            },
+            {
+              "requirement": "R3",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "assert len(L) == 45"
+              }
+            },
+            {
+              "requirement": "R4",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "L = [71, 97, 54, 56, 44, 158, 45, 58, 82, 135, 113, 117, 86, 40, 12, 185, 63, 50, 111, 72, 90, 109, 61, 13, 92, 60, 91, 35, 114, 94, 105, 26, 15, 51, 102, 118, 76, 32, 108, 23, 22, 134, 83, 43, 64]"
+              }
+            },
+            {
+              "requirement": "R5",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "num_triples = 15"
+              }
+            },
+            {
+              "requirement": "R6",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "for i, (a, b, c) in enumerate(solution, 1):"
+              }
+            },
+            {
+              "requirement": "R7",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "c = a + b"
+              }
+            },
+            {
+              "requirement": "R8",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "for i, (a, b, c) in enumerate(solution, 1):"
+              }
+            },
+            {
+              "requirement": "R9",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "indices = range(1, num_triples+1)  # R9"
+              }
+            },
+            {
+              "requirement": "R10",
+              "status": "satisfied",
+              "evidence": {
+                "path": "execution://body",
+                "section": "code",
+                "observed": "print(\\\"Partition found:\\\")"
+              }
+            }
+          ],
+          "open_defects": [],
+          "witness": {
+            "polarity": "positive",
+            "data": {
+              "partition": [
+                [
+                  71,
+                  26,
+                  97
+                ],
+                [
+                  50,
+                  61,
+                  111
+                ],
+                [
+                  92,
+                  22,
+                  114
+                ],
+                [
+                  45,
+                  113,
+                  158
+                ],
+                [
+                  44,
+                  91,
+                  135
+                ],
+                [
+                  13,
+                  43,
+                  56
+                ],
+                [
+                  76,
+                  32,
+                  108
+                ],
+                [
+                  12,
+                  60,
+                  72
+                ],
+                [
+                  90,
+                  15,
+                  105
+                ],
+                [
+                  82,
+                  35,
+                  117
+                ],
+                [
+                  58,
+                  51,
+                  109
+                ],
+                [
+                  63,
+                  23,
+                  86
+                ],
+                [
+                  102,
+                  83,
+                  185
+                ],
+                [
+                  54,
+                  64,
+                  118
+                ],
+                [
+                  40,
+                  94,
+                  134
+                ]
+              ]
+            },
+            "provisional": false
+          }
+        }
+      }
+    },
+    {
+      "at_utc": "2026-10-01T02:01:06.487308+00:00",
+      "kind": "EXECUTION_ATTEMPTS",
+      "payload": {
+        "attempts": 1,
+        "repairs_used": 0,
+        "unmeasured_repairs": 0,
+        "repairs_allowed": 1,
+        "tier": "STANDARD"
+      }
+    },
+    {
+      "at_utc": "2026-10-01T02:01:06.491468+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_001",
+        "status": "CLOSED_SUCCESS"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-10-01T02:01:06.492471+00:00"
+}

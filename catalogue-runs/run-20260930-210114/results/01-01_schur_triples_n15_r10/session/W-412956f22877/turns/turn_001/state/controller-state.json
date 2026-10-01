@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-980e207ea7",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-980e207ea7-P1",
+    "body": "DETERMINE whether the provided list L of 45 distinct positive integers can be partitioned into 15 disjoint triples (a_i, b_i, c_i) such that a_i + b_i = c_i for each triple i in {1,...,15}. IF a valid partition exists, CONSTRUCT and RETURN one complete example of such a partition.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-980e207ea7-R1",
+    "body": "VALIDATE that the input list L contains 45 distinct positive integers\nSORT the list L in ascending order\nGENERATE all possible unordered triples (a,b,c) from L where a<b and a+b=c\nBUILD a graph representation where each integer is a node and each valid triple is a hyper‑edge connecting three nodes\nAPPLY a hyper‑graph matching algorithm to select 15 disjoint triples covering all 45 nodes\nIF a complete matching of size 15 is found THEN\n    EXTRACT the selected triples as the required partition\nELSE\n    REPORT that no valid partition exists",
+    "confirmed": true,
+    "source_prompt_id": "I-980e207ea7-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-980e207ea7-X1",
+    "body": "ff98671606ca8d5169078f36f979b6ef2a8bbfaebb17a64ac59d02683436949b",
+    "confirmed": true,
+    "source_prompt_id": "I-980e207ea7-P1",
+    "source_plan_id": "I-980e207ea7-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

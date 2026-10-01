@@ -1,0 +1,67 @@
+{
+  "id": "01-01",
+  "category": "combinatorial_search",
+  "file": "01_combinatorial_search/schur_triples_n15.txt",
+  "difficulty": "hard",
+  "expected_routing": "VERIFIED_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "verified",
+  "verdict": "CLOSED_CANCELLED",
+  "exit_code": 1,
+  "timed_out": false,
+  "elapsed_seconds": 30.92,
+  "start_time": "2026-10-01T01:06:02.694538+00:00",
+  "session_id": "catalogue-01-01-1790816762-r8",
+  "transcript_file": "results\\01-01_schur_triples_n15_r8\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/01_combinatorial_search/schur_triples_n15.json",
+    "expected_behavior": null,
+    "polarity": "positive",
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "FAIL",
+    "reason": "no exact partition into valid triples among 0 valid triples presented"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-07",
+    "PDL-08"
+  ],
+  "tags": [
+    "backtracking",
+    "witness",
+    "partition"
+  ],
+  "regression_ref": "REG-003",
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 6,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 3
+    },
+    "repairs": 2,
+    "execution_attempts": {
+      "attempts": 3,
+      "repairs_used": 1,
+      "unmeasured_repairs": 1,
+      "repairs_allowed": 1,
+      "tier": "STANDARD"
+    },
+    "plan_echo": {
+      "plan_id": "I-d5de05fb30-R1",
+      "identical": false,
+      "copied_line_ratio": 0.167
+    },
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 40,
+      "DRAFT_PLAN": 36,
+      "EXECUTE": 0
+    }
+  },
+  "repeat": 8
+}

@@ -1,0 +1,1 @@
+{"neutral_plan_body":"DETERMINE whether a partition of the 45 numbers into 15 triples satisfying a + b = c exists\nIF such a partition exists THEN\n    CONSTRUCT one valid set of 15 triples covering all numbers exactly once\n    FORMAT the triples for output, listing each triple as (a, b, c)\nELSE\n    PREPARE a statement that no such partition exists"}
