@@ -1,0 +1,6 @@
+{
+  "kind": "VERIFICATION_FAILED",
+  "errors": [
+    "[PROGRAM_FAILED] Python block 1 exited with status 1. Standard error: File \"program.py\", line 3 / SyntaxError: '[' was never closed Rule: A program that exits with a non-zero status or an uncaught exception is a failed run. Next attempt: Correct the cause shown in standard error; the program must exit with status 0."
+  ]
+}

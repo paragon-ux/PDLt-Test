@@ -1,0 +1,24 @@
+{
+  "run_id": "run-20261001-104454",
+  "start_time": "2026-10-01T14:44:54.788713+00:00",
+  "model": "openai/gpt-oss-120b",
+  "reasoning_effort": "low",
+  "reasoning_by_operation": [
+    "EXECUTE=high"
+  ],
+  "category_filter": null,
+  "prompt_id_filter": "01-01",
+  "total_prompts": 10,
+  "repeat": 10,
+  "timeout_per_prompt": 3600,
+  "pdlt_test_root": "C:\\Users\\USER\\Desktop\\Frameworks\\PDLt-Test",
+  "rules": {
+    "retries_allowed": 0,
+    "do_overs_allowed": false,
+    "non_interactive": true,
+    "exit_on_close": true,
+    "dev_mode": true,
+    "structured_output": true,
+    "gate_policy": "evaluator_confirms_via_stdin"
+  }
+}

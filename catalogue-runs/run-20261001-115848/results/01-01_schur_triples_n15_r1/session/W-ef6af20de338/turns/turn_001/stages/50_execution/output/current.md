@@ -1,0 +1,1 @@
+Python code needed to search for a partition of the given list into triples (a, b, c) with a+b=c.

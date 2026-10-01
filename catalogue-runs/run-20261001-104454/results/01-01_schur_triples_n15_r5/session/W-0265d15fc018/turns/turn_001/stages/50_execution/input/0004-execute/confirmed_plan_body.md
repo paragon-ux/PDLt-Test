@@ -1,0 +1,6 @@
+PARSE the supplied list L of 45 distinct positive integers
+GENERATE all possible ordered triples (a, b, c) from L where a + b = c
+BUILD a graph or constraint structure linking each integer to the triples in which it appears
+APPLY a combinatorial search (e.g., backtracking, exact cover algorithm) to select 15 disjoint triples that cover every integer exactly once
+IF a complete set of 15 disjoint triples is found THEN EMIT the list of triples as the example solution
+ELSE REPORT that no such partition exists
