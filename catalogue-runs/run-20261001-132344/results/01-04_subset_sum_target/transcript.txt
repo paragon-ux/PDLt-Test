@@ -1,0 +1,10 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+USER> Given the set S = {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21} and target T = 40:
+
+Find all subsets of S that sum to exactly T. Use a backtracking algorithm that explores the full search tree. For each solution found, emit the subset and verify its sum. Report the total number of solutions.
+ERROR> RuntimeError: TransportError: api worker HTTP 400: {"error":{"message":"Provider returned error","code":400,"metadata":{"raw":"{\"error\":{\"message\":\"invalid JSON schema for response_format: 'PROMPT_DRAFT_OUTCOME': Invalid schema for function 'response_format: 'PROMPT_DRAFT_OUTCOME'': schema must have type 'object' and not have 'oneOf'/'anyOf'/'enum'/'not' at the top level.\",\"type\":\"invalid_request_error\",\"param\":\"response_format\",\"schema_path\":\"$\",\"schema_kind\":\"top_level\"}}\n","provider_name":"Groq","is_byok":false,"previous_errors":[{"code":400,"message":"Provider returned error","provider_name":"Cerebras","raw":"{\"message\":\"Extra top level keys found in JSON schema: {'anyOf', 'discriminator'}.\",\"type\":\"invalid_request_error\",\"param\":\"response_format\",\"code\":\"wrong_api_format\",\"id\":\"\"}"}]}},"user_id":"user_3HslSxGVoRIwhmKkHTq7vgrc6G5"}
+USER> /confirm
+ASSISTANT> Confirmation received. No further action required.
+PROTOCOL_CLOSED
+=== PDLt session ended ===

@@ -1,0 +1,4 @@
+{
+  "kind": "BLOCKED_BY_HIGHER_PRIORITY",
+  "response": "Operation blocked due to higher priority constraints requiring confirmation protocol handling."
+}

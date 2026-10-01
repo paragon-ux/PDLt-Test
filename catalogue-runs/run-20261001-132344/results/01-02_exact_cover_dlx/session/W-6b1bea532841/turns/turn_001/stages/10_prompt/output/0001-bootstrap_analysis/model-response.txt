@@ -1,0 +1,20 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Implement a self-contained program that finds all exact covers of the universe U = {1,2,3,4,5,6,7,8,9} using Knuth's Algorithm X with dancing links. The program must define the sets S1 through S9 as given, apply the algorithm to enumerate every collection of sets that covers each element of U exactly once, and include a test that verifies each solution indeed covers U once and only once.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "Algorithm X",
+    "dancing links",
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "S5",
+    "S6",
+    "S7",
+    "S8",
+    "S9",
+    "U"
+  ]
+}

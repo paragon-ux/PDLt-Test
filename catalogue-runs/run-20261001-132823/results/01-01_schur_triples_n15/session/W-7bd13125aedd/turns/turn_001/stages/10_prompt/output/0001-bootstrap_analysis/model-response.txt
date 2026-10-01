@@ -1,0 +1,4 @@
+{
+  "kind": "BLOCKED_BY_HIGHER_PRIORITY",
+  "response": "No actionable task detected; the input is a confirmation command without operative request."
+}
