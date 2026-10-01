@@ -232,3 +232,18 @@ def test_follow_up_after_a_successful_turn_gets_its_result_as_reference_only(tmp
     assert "The sum is 6." in execute.prompt and "not evidence and not a justification" in execute.prompt
     assert "turns/turn_001" not in execute.prompt  # the previous turn is never an evidence path
     assert '\\"answer\\": 6' not in execute.prompt and '"answer": 6' not in execute.prompt  # its Result IR is not carried
+
+
+def test_state_and_archive_files_use_lf_on_every_os(tmp_path: Path) -> None:
+    """Every workspace file is written with LF; Path.write_text without newline=
+    wrote CRLF on Windows, so artifacts differed byte-for-byte by OS."""
+    from pdl_taskmaster.controller.mechanical_controller import MemoryAtomicJsonStore, ProtocolState
+    from pdl_taskmaster.runtime.workspace import MemoryWorkspaceRun
+
+    store = MemoryAtomicJsonStore(tmp_path / "state" / "controller-state.json")
+    store.save(ProtocolState.new())
+    assert b"\r\n" not in store.path.read_bytes()
+
+    ws = MemoryWorkspaceRun.create(ROOT, tmp_path / "ws", turn_id="turn_001")
+    archive = ws.flush_turn_archive()
+    assert b"\r\n" not in archive.read_bytes()

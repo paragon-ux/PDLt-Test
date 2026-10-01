@@ -112,7 +112,7 @@ def build_recorded_fixture(
             )
             return recorded["response"]
 
-        with tempfile.TemporaryDirectory(prefix="pdl-r2s-fixture-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="pdl-r2s-fixture-", ignore_cleanup_errors=True) as tmp:
             engine = SessionEngine(
                 repo,
                 model_call,

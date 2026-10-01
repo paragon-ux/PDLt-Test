@@ -630,6 +630,7 @@ class MemoryWorkspaceRun(WorkspaceRun):
             "events": list(self._events),
             "flushed_at_utc": datetime.now(timezone.utc).isoformat(),
         }
-        archive_path.write_text(json.dumps(archive_data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        archive_path.write_text(json.dumps(archive_data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+                                newline="\n")
         return archive_path
 

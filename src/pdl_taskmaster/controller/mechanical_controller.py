@@ -245,7 +245,8 @@ class MemoryAtomicJsonStore(AtomicJsonStore):
         state.validate()
         self._cached_state = state
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(json.dumps(state.to_dict(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        self.path.write_text(json.dumps(state.to_dict(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+                             newline="\n")
 
     def load(self) -> ProtocolState:
         if self._cached_state is not None:
