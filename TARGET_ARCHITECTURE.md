@@ -191,25 +191,31 @@ In prior versions (`v2.5.0`–`v2.6.0`), a new `ExecutionSandbox` was constructe
 ```
 Session Start (SessionEngine.__init__)
   │
-  ├── 1. Construct ExecutionSandbox once (timeouts, memory ceiling, network policy)
-  ├── 2. Snapshot environment policy (PDLT_SANDBOX_NETWORK, etc.)
-  └── 3. Reuse the same sandbox instance for every run in the session
+  ├── 1. Construct ExecutionSandbox once (timeouts, memory ceiling, network policy, --sandbox mode)
+  ├── 2. probe(): is the selected backend available here? (cheap; no setup)
+  ├── 3. First run_code: build the session (root, owner.json, policy, backend state); sweep stale roots
+  ├── 4. Each run: a fresh empty work/run-NNNN-* directory, deleted afterwards
+  └── 5. close() (SessionEngine.close ← PDLtHost.close): delete the root, release the backend
 ```
 
 1. **Session boot hook.** `SessionEngine` instantiates `ExecutionSandbox` in `__init__`. Every `_execute` witness-capture site uses `self.sandbox`.
-2. **Ephemeral runs.** Each run executes in a fresh temporary scratchpad under OS-native limits.
-3. **Agentic tool readiness.** A single session-owned sandbox is the insertion point for future host-gated tools such as bash, file edits and compilation.
+2. **Session root outside the referee's trees.** `<tempdir>/pdlt-sandboxes/<sid>/` holds `owner.json` and `work/`. The graders, runner and viewer search session and result trees for deliverables and evidence, so the program-writable directory never sits inside one. The root is recorded in a `SANDBOX_SESSION` workspace event.
+3. **Ephemeral runs.** Each run executes in a fresh, empty run directory under OS-native confinement and limits; nothing a run writes survives into the next.
+4. **Cleanup.** `close()` releases the session; a host killed before `close()` leaves a root whose owner pid is dead, and the next session's sweep removes it (with its AppContainer profile or container).
+5. **Agentic tool readiness.** A single session-owned sandbox is the insertion point for future host-gated tools such as bash, file edits and compilation.
 
 ### 4.1 Sandbox Containment
 
 | Control | Mechanism |
 |---|---|
 | **Secret isolation** | The environment is rebuilt from an allowlist: `PATH`, `TEMP`, `TMP`, `TMPDIR`, and on Windows `SYSTEMROOT`, `WINDIR`, `SYSTEMDRIVE`, `COMSPEC`, `PATHEXT`. API keys never reach model-authored code. |
-| **Network & process denial** | A `sys.addaudithook` prelude raises `PermissionError` on `socket.connect`, `socket.bind`, `socket.getaddrinfo`, `socket.gethostbyname`, `socket.sendto`, `socket.sendmsg`, `subprocess.Popen`, `os.system`, `os.exec*`, `os.spawn*`, `os.posix_spawn`, `os.fork*` and `os.startfile`. It is skipped only when `allow_network=True`. |
+| **OS-native confinement** (ADR-0021) | One `SandboxPolicy` per session: write only the session's `work/`; read it, the base interpreter's install and standard library, and the OS loader's files; execute only the base interpreter; no network; no new processes. Linux: Landlock (ruleset built once per session, applied in each child before `exec`; TCP denied on ABI 4+, signals and abstract sockets scoped on ABI 6+). macOS: `sandbox-exec` with a deny-by-default profile, paths passed as `-D` parameters. Windows: a per-session AppContainer with no capabilities, started inside the run's Job Object and unable to create child processes. `--sandbox container`: docker/podman, one container per session (no network, read-only root, no capabilities, process cap). |
+| **Fail closed** | When the selected backend cannot apply, nothing runs: `sandbox_unavailable:<reason>`, a registered `SANDBOX_UNAVAILABLE` finding (never repaired), truthful `describe()`/`decision_state()`, and a REPL warning. `--sandbox audit-only` (`PDLT_SANDBOX=audit-only`) is the explicit opt-out, announced loudly. |
+| **Audit hook (defense in depth)** | A `sys.addaudithook` prelude built from the policy raises `PermissionError` on native-code loading (`ctypes`, `_ctypes`, `cffi`, `_cffi_backend`, sqlite extensions), on file paths outside the run directory (writes) or the run directory and standard library (reads), on `os.kill`/`os.killpg`, and, as separate flags, on network (`socket.connect`, `socket.bind`, `socket.getaddrinfo`, `socket.gethostbyname`, `socket.sendto`, `socket.sendmsg`) and process creation (`subprocess.Popen`, `os.system`, `os.exec*`, `os.spawn*`, `os.posix_spawn`, `os.fork*`, `os.startfile`, `_winapi.CreateProcess`). |
 | **Resource limits** | Windows: a Job Object (memory, kill-on-close); the program starts suspended and runs only once it is inside the job. POSIX: `setrlimit(RLIMIT_AS)` and an `RLIMIT_CPU` backstop of twice the wall-clock limit (it stops a program whose host was killed), a session of its own, and a process-group kill on timeout. macOS does not enforce `RLIMIT_AS`, so there the memory limit is not enforced. The step budget, memory limit and wall-clock safety limit are the task's routed budget (§5, `ExecutionProfileRecipe`). |
-| **Interpreter isolation** | `python -I -S -X utf8 -u` (`-I` ignores `PYTHON*` variables, so UTF-8 and unbuffered streams are set on the command line), run in an ephemeral scratchpad cwd. |
+| **Interpreter isolation** | The base interpreter (`sys._base_executable`, never a venv shim) as `python -I -S -X utf8 -u` (`-I` ignores `PYTHON*` variables, so UTF-8 and unbuffered streams are set on the command line), run in the run's own empty directory. |
 
-**Honest boundary statement:** these controls are defense in depth, not a VM or container boundary. Audit hooks run in-process, and hostile native code can defeat them. Stronger isolation (microVM, per ADR-0011) remains roadmap.
+**Honest boundary statement:** the OS-native layer holds without the audit hook (`tests/test_confinement.py` checks each backend with the hook switched off), but it is not a VM boundary: CPU and memory side channels and kernel exploits are out of scope. Landlock does not cover UDP or pathname UNIX sockets and cannot deny `fork` (the hook covers those; exec of anything but the interpreter is denied natively). macOS does not enforce `RLIMIT_AS`. The container mode is the stronger option; a microVM (ADR-0011) remains roadmap.
 
 ---
 
@@ -306,7 +312,8 @@ timeline
       Extend GUARD-05 scan with manifest-derived tokens : Lean Build
     section Phase 1 : Session Sandbox
       Construct ExecutionSandbox in SessionEngine.__init__ : Lean Build
-      Session cleanup hooks : Target v2.7.0-P1
+      Session cleanup hooks : Lean Build
+      OS-native confinement, fail closed (ADR-0021) : Lean Build
     section Phase 2 : Condition Routing
       Knowledge cutoff via S1 state (no regex) : Lean Build
       Deploy ExecutionProfileRecipe in sys1 : Lean Build

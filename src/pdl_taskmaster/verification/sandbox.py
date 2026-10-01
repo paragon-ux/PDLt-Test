@@ -210,6 +210,8 @@ def _sandbox_policy(denied, native_modules, native_events):
         if dir_fd is not None and dir_fd >= 0 and not path_mod.isabs(link):
             base = path_mod.join(descriptor_path(dir_fd), base)
         check(event, path_mod.join(base, target) if relative else target, True)
+    def at(args, index):  # optional event arguments differ by Python version
+        return args[index] if len(args) > index else None
     def hook(event, args):
         if event in denied:
             if event.startswith("socket."):
@@ -230,18 +232,18 @@ def _sandbox_policy(denied, native_modules, native_events):
         elif event in ("os.listdir", "os.scandir", "os.chdir", "os.listxattr", "os.getxattr"):
             check(event, args[0], False)
         elif event in ("os.remove", "os.rmdir", "shutil.rmtree"):
-            check(event, args[0], True, args[1])
+            check(event, args[0], True, at(args, 1))
         elif event in ("os.mkdir", "os.chmod", "os.utime", "os.chown"):
-            check(event, args[0], True, args[-1])
+            check(event, args[0], True, args[-1] if len(args) > 1 else None)
         elif event in ("os.truncate", "os.chflags", "os.lchflags", "os.setxattr", "os.removexattr",
                        "shutil.chown"):
             check(event, args[0], True)
         elif event in ("os.rename", "os.link"):
-            check(event, args[0], True, args[2])
-            check(event, args[1], True, args[3])
+            check(event, args[0], True, at(args, 2))
+            check(event, args[1], True, at(args, 3))
         elif event == "os.symlink":
-            check(event, args[1], True, args[2])
-            check_link_target(event, args[0], args[1], args[2])
+            check(event, args[1], True, at(args, 2))
+            check_link_target(event, args[0], args[1], at(args, 2))
         elif event in ("shutil.copyfile", "shutil.copymode", "shutil.copystat", "shutil.copytree"):
             check(event, args[0], False)
             check(event, args[1], True)
@@ -250,10 +252,10 @@ def _sandbox_policy(denied, native_modules, native_events):
             check(event, args[1], True)
         elif event == "shutil.make_archive":
             check(event, args[0], True)
-            check(event, args[2] or ".", False)
+            check(event, at(args, 2) or ".", False)
         elif event == "shutil.unpack_archive":
             check(event, args[0], False)
-            check(event, args[1] or ".", True)
+            check(event, at(args, 1) or ".", True)
         elif event == "sqlite3.connect":
             database = args[0]
             if isinstance(database, bytes):
@@ -727,7 +729,8 @@ class ExecutionSandbox:
             "execution_environment": (
                 f"Python {version} interpreter with the standard library only; third-party packages are not "
                 f"installed; network access is {'enabled' if self.allow_network else 'disabled'}; each program "
-                "runs in an empty temporary directory with empty standard input."
+                "runs in its own empty directory with empty standard input, may read and write files only in that "
+                "directory, and cannot start other processes."
             ),
             "step_definition": (
                 "One step is one executed Python bytecode instruction of the program's own code, including every "
@@ -770,7 +773,10 @@ class ExecutionSandbox:
                 "description": (
                     f"Python {version} with the standard library only; third-party packages are not installed. "
                     "The host runs the deliverable as a script when the whole deliverable is Python source; otherwise it "
-                    "runs every ```python fenced block as a separate script, in an empty temporary directory. "
+                    "runs every ```python fenced block as a separate script, each in its own empty directory. A script "
+                    "may read and write files only in that directory (it can also read the Python standard library); "
+                    + ("other files and starting other processes are denied. " if self.allow_network else
+                       "other files, network access and starting other processes are denied. ")
                     + steps
                     + f"Memory is limited to {megabytes} MB. Standard input is empty. Standard output, standard error "
                     "and the exit status are captured by the host."

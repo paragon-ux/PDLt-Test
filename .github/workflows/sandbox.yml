@@ -1,0 +1,71 @@
+# Session-scoped OS-native confinement (ADR-0021).
+#
+# The Seatbelt (macOS) and AppContainer (Windows) backends can only be verified on
+# their own OS: this workflow is where they run. PDLT_REQUIRE_BACKENDS turns a
+# backend the leg must have into a failure instead of a skip, so a leg cannot go
+# green by skipping the escape suite.
+name: sandbox
+
+on:
+  push:
+    paths:
+      - "src/pdl_taskmaster/verification/**"
+      - "tests/test_confinement.py"
+      - "tests/test_sandbox.py"
+      - ".github/workflows/sandbox.yml"
+  pull_request:
+    paths:
+      - "src/pdl_taskmaster/verification/**"
+      - "tests/test_confinement.py"
+      - "tests/test_sandbox.py"
+      - ".github/workflows/sandbox.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    name: native / ${{ matrix.os }} / py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.10", "3.12"]
+    env:
+      PDLT_REQUIRE_BACKENDS: native
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: python -m pip install -e ".[test]"
+      - name: Confinement suite and sandbox tests
+        if: runner.os != 'macOS'
+        run: python -m pytest tests/test_confinement.py tests/test_sandbox.py -v -rs
+      - name: Confinement suite and sandbox tests (macOS)
+        if: runner.os == 'macOS'
+        # macOS does not enforce RLIMIT_AS (ADR-0021): the memory-limit test cannot pass there.
+        run: >-
+          python -m pytest tests/test_confinement.py tests/test_sandbox.py -v -rs
+          --deselect tests/test_sandbox.py::test_sandbox_memory_limit_oom
+
+  container:
+    name: container / ubuntu-latest / py3.12
+    runs-on: ubuntu-latest
+    env:
+      PDLT_REQUIRE_BACKENDS: native,container
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install -e ".[test]"
+      - name: Pull the sandbox image
+        run: docker pull python:3.12-slim
+      - name: Confinement suite (native and container backends)
+        run: python -m pytest tests/test_confinement.py -v -rs

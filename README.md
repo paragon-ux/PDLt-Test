@@ -61,4 +61,6 @@ Read-only and localhost-only. Browse every `catalogue-runs/run-*` (scoreboard, p
 
 ## Sandbox
 
-Model-authored code runs in a session-scoped subprocess sandbox with an environment allowlist (no API keys), an audit hook denying network and process creation, and CPU/memory limits. This is defense in depth, not a VM boundary.
+Model-authored code runs in a session-scoped sandbox ([ADR-0021](docs/adr/0021-session-scoped-os-native-confinement.md)). Each program gets a fresh, empty directory under the system temp directory and may read and write only there; it can also read the base Python install. Other files, network access and starting processes are denied by the OS: Landlock on Linux, Seatbelt on macOS, an AppContainer on Windows, or a docker/podman container with `--sandbox container`. Programs also get an environment allowlist (no API keys), CPU and memory limits, and an in-process audit hook as defense in depth.
+
+If the native confinement cannot apply (for example, Linux before 5.13), no program runs and the REPL says so. `--sandbox audit-only` (or `PDLT_SANDBOX=audit-only`) is the explicit opt-out: programs then run under the audit hook and limits only. This is not a VM boundary.
