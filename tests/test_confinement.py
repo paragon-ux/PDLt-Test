@@ -18,6 +18,7 @@ from pdl_taskmaster.verification import sandbox as sb
 from pdl_taskmaster.verification.sandbox import ExecutionSandbox
 
 ROOT = Path(__file__).resolve().parents[1]
+_IS_WINDOWS = sys.platform == "win32"
 
 
 def _dead_pid() -> int:
@@ -196,16 +197,19 @@ def test_audit_layer_confines_reads_and_writes(secret, tmp_path):
 
 
 def test_audit_layer_allows_the_run_directory_and_the_standard_library():
+    posix_only = (  # descriptors of directories and dir_fd are POSIX; Windows links need a privilege
+        "fd = os.open('a', os.O_RDONLY)\n"
+        "os.mkdir('c', dir_fd=fd)\n"
+        "os.symlink('b', 'a/link')\n"
+        "assert os.listdir('a/link') == ['renamed.py']\n"
+    ) if not _IS_WINDOWS else ""
     code = (
         "import os, shutil, sqlite3, json\n"
         "assert open(os.__file__, encoding='utf-8').read(10)\n"
         "os.makedirs('a/b')\n"
-        "fd = os.open('a', os.O_RDONLY)\n"
-        "os.mkdir('c', dir_fd=fd)\n"
         "shutil.copy('program.py', 'a/b/copy.py')\n"
         "os.rename('a/b/copy.py', 'a/b/renamed.py')\n"
-        "os.symlink('b', 'a/link')\n"
-        "assert os.listdir('a/link') == ['renamed.py']\n"
+        + posix_only +
         "shutil.rmtree('a')\n"
         "sqlite3.connect('local.db').execute('create table t (x)')\n"
         "sqlite3.connect(':memory:').execute('select 1')\n"

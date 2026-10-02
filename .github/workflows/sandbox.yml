@@ -52,6 +52,14 @@ jobs:
         run: >-
           python -m pytest tests/test_confinement.py tests/test_sandbox.py -v -rs
           --deselect tests/test_sandbox.py::test_sandbox_memory_limit_oom
+      - name: AppContainer path diagnostics (on failure)
+        if: failure() && runner.os == 'Windows'
+        run: >-
+          python -c "from pdl_taskmaster.verification.sandbox import ExecutionSandbox as S;
+          s = S(); s._policy_hooks = False;
+          r = s.run_code('import os, sys; p = os.path; print(repr(os.getcwd()), repr(p.realpath(os.getcwd())),
+          repr(p.realpath(chr(46) * 2 + chr(92) + chr(120))), repr(p.realpath(os.devnull)), sys.path)');
+          print(r.stdout, r.stderr); s.close()"
       - name: Seatbelt denials (on failure)
         if: failure() && runner.os == 'macOS'
         run: log show --last 10m --style compact --predicate 'sender == "Sandbox"' | tail -n 80
