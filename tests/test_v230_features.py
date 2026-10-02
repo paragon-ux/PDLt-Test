@@ -164,3 +164,27 @@ def test_explicit_reasoning_effort_reaches_every_operation():
     assert pinned._reasoning_for("EXECUTE") == "low" and pinned._reasoning_for("DRAFT_PLAN") == "high"
     default = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT)
     assert default._reasoning_for("EXECUTE") == "low"  # the model mapping, when no effort is given
+
+
+def test_gpt_oss_default_reasoning_is_high_except_execute():
+    """ADR-0022: the configuration the catalogue validated (high everywhere,
+    EXECUTE=low) is the live default; at all-LOW, plans echoed the prompt."""
+    mapping = get_proportional_reasoning_mapping("openai/gpt-oss-120b")
+    assert mapping["EXECUTE"] == "low"
+    assert {effort for op, effort in mapping.items() if op != "EXECUTE"} == {"high"}
+    assert mapping["INTERPRET_EXECUTION_INPUT"] == "high"
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT)
+    for op in ("BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN", "INTERPRET_PROMPT_REVIEW"):
+        assert worker._reasoning_for(op) == "high", op
+    for op in ("ANSWER_PROTOCOL_DISCUSSION", "BYPASS_ORDINARY"):
+        assert worker._reasoning_for(op) == "low", op  # outside the mapping: the worker default
+
+
+def test_session_start_records_the_effective_reasoning():
+    from pdl_taskmaster.host.repl import _reasoning_record
+
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT)
+    line = _reasoning_record(worker)
+    assert line.startswith("default=low per_operation=")
+    assert '"DRAFT_PLAN": "high"' in line and '"EXECUTE": "low"' in line
+    assert _reasoning_record(object()) is None

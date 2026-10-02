@@ -351,6 +351,16 @@ def _api_run_settings(args) -> dict:
     return settings
 
 
+def _reasoning_record(worker: Any) -> str | None:
+    """One line stating the worker's effective reasoning: the default effort and
+    the per-operation efforts. None for a worker without reasoning settings."""
+    if not hasattr(worker, "reasoning_by_operation"):
+        return None
+    default = getattr(worker, "reasoning_effort", None)
+    per_operation = json.dumps(getattr(worker, "reasoning_by_operation", None) or {}, sort_keys=True)
+    return f"default={default} per_operation={per_operation}"
+
+
 def _parse_reasoning_operations(pairs: list[str] | None) -> dict[str, str | int]:
     """Parse repeatable --api-reasoning-operation OP=EFFORT flags into a dict."""
     mapping: dict[str, str | int] = {}
@@ -1047,6 +1057,13 @@ def main() -> int:
             flush=True,
         )
     _write_transcript("WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION")
+    reasoning = _reasoning_record(worker)
+    if reasoning:
+        # The effective effort per operation, so drift from the catalogue's
+        # configuration is visible in every session record (ADR-0022).
+        _write_transcript("REASONING: " + reasoning)
+        if dev_mode:
+            print(f"[dev:telemetry] reasoning: {reasoning}", flush=True)
     _enable_bracketed_paste()
     harness_error: str | None = None  # headless: the call failure that ended the run
     harness_record: dict = {}

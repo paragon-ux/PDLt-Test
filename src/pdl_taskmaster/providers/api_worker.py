@@ -258,15 +258,10 @@ class ApiWorker:
         # An explicit effort applies to every operation (per-operation flags still
         # win); the per-model mapping is the default only when none is given.
         # Otherwise "--reasoning high" never reached EXECUTE (runs 2026-09-30).
-        self.reasoning_effort = reasoning_effort if reasoning_effort is not None else "low"
-        if reasoning_by_operation:
-            self.reasoning_by_operation = dict(reasoning_by_operation)
-        elif reasoning_effort is not None:
-            self.reasoning_by_operation = {}
-        else:
-            from pdl_taskmaster.runtime.model_classification import get_proportional_reasoning_mapping
-            mapping = get_proportional_reasoning_mapping(self.model)
-            self.reasoning_by_operation = mapping if mapping else {}
+        from pdl_taskmaster.runtime.model_classification import resolve_reasoning
+        self.reasoning_effort, self.reasoning_by_operation = resolve_reasoning(
+            self.model, reasoning_effort, reasoning_by_operation
+        )
         self.model_by_operation = dict(model_by_operation or {})
         self.reorder_keys_for_cache = reorder_keys_for_cache
         self.structured_output = structured_output

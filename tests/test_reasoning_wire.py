@@ -67,6 +67,8 @@ def _stub_server(seen: list[tuple[str, object]], bodies: list | None = None):
     ("high", [], {"BOOTSTRAP_ANALYSIS": "high", "DRAFT_PROMPT": "high", "DRAFT_PLAN": "high", "EXECUTE": "high"}),
     ("low", ["EXECUTE=high"], {"BOOTSTRAP_ANALYSIS": "low", "DRAFT_PLAN": "low", "EXECUTE": "high"}),
     ("high", ["EXECUTE=low"], {"BOOTSTRAP_ANALYSIS": "high", "DRAFT_PLAN": "high", "EXECUTE": "low"}),
+    # No effort: the harness default, the same as a live session (ADR-0022).
+    (None, [], {"BOOTSTRAP_ANALYSIS": "high", "DRAFT_PROMPT": "high", "DRAFT_PLAN": "high", "EXECUTE": "low"}),
 ])
 def test_runner_command_sends_the_requested_effort_per_operation(tmp_path, effort, ops, expected):
     import run_catalogue
@@ -166,3 +168,27 @@ def test_provider_error_ends_a_headless_run_as_a_harness_error(tmp_path):
     assert record["category"] == "PROVIDER_REJECTED_REQUEST" and record["status"] == 400
     assert record["operation"] == "BOOTSTRAP_ANALYSIS"  # the stage that failed is named
     assert [a["provider"] for a in record["attempts"]] == ["Cerebras", "Groq"]
+
+
+def test_runner_without_reasoning_flag_defers_to_the_harness_default(tmp_path):
+    """Live sessions ran all-LOW while the catalogue ran high/EXECUTE=low: the
+    runner's --reasoning forced "low" instead of the harness default."""
+    import run_catalogue
+
+    cmd = run_catalogue.build_harness_command(tmp_path / "p.txt", "s", tmp_path / "t", tmp_path / "d",
+                                              "openai/gpt-oss-120b", None)
+    assert "--api-reasoning-effort" not in cmd
+    explicit = run_catalogue.build_harness_command(tmp_path / "p.txt", "s", tmp_path / "t", tmp_path / "d",
+                                                   "openai/gpt-oss-120b", "medium", ["EXECUTE=high"])
+    assert explicit[explicit.index("--api-reasoning-effort") + 1] == "medium"
+    assert explicit[explicit.index("--api-reasoning-operation") + 1] == "EXECUTE=high"
+
+
+def test_run_meta_records_the_effective_reasoning_per_operation():
+    import run_catalogue
+
+    default = run_catalogue.effective_reasoning("openai/gpt-oss-120b", None)
+    assert default["default"] == "low"
+    assert default["by_operation"]["DRAFT_PLAN"] == "high" and default["by_operation"]["EXECUTE"] == "low"
+    explicit = run_catalogue.effective_reasoning("openai/gpt-oss-120b", "high", ["EXECUTE=low"])
+    assert explicit == {"default": "high", "by_operation": {"EXECUTE": "low"}}

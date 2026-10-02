@@ -299,10 +299,24 @@ def harness_error_record(stderr: str) -> dict | None:
     return None
 
 
+def effective_reasoning(model, reasoning_effort, reasoning_ops=()):
+    """The reasoning effort each operation runs at, resolved exactly as the harness
+    resolves it (model_classification.resolve_reasoning), for RUN_META."""
+    from pdl_taskmaster.runtime.model_classification import resolve_reasoning
+
+    by_operation = {key.strip(): value.strip().lower()
+                    for key, _, value in (op.partition("=") for op in reasoning_ops or () if "=" in op)}
+    default, mapping = resolve_reasoning(model, reasoning_effort, by_operation)
+    return {"default": default, "by_operation": mapping}
+
+
 def build_harness_command(prompt_file, session_id, transcript_path, session_dir, model, reasoning_effort,
                           reasoning_ops=(), run_settings=None):
-    """The exact harness command line for one prompt."""
+    """The exact harness command line for one prompt. With no reasoning effort the
+    harness's per-model default applies (ADR-0022), as in a live session."""
     reasoning_args = [arg for op in reasoning_ops for arg in ("--api-reasoning-operation", op)]
+    if reasoning_effort is not None:
+        reasoning_args = ["--api-reasoning-effort", reasoning_effort, *reasoning_args]
     settings = run_settings or {}
     setting_args = []
     for flag, key in (("--max-output-tokens", "max_output_tokens"), ("--max-repairs", "max_repairs"),
@@ -324,7 +338,6 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
         "--workspace-root", str(session_dir),
         "--workdir", str(session_dir),
         "--model", model,
-        "--api-reasoning-effort", reasoning_effort,
         *reasoning_args,
         *setting_args,
         "--api-structured-output",
@@ -773,9 +786,10 @@ def main():
     )
     parser.add_argument("--model", default="openai/gpt-oss-120b",
                         help="Model to test (default: openai/gpt-oss-120b)")
-    parser.add_argument("--reasoning", default="low",
+    parser.add_argument("--reasoning", default=None,
                         choices=["low", "medium", "high"],
-                        help="Reasoning effort level (default: low)")
+                        help="reasoning effort for every operation (default: the harness's per-model default, "
+                             "for gpt-oss high with EXECUTE=low, the same as a live session)")
     parser.add_argument("--category", default=None,
                         help="Run only a specific category (e.g. 'combinatorial_search' or '01,13,14')")
     parser.add_argument("--categories", dest="category",
@@ -834,7 +848,11 @@ def main():
     print(f"PDLt Prompt Catalogue Test Runner")
     print(f"{'=' * 50}")
     print(f"Model:      {args.model}")
-    print(f"Reasoning:  {args.reasoning}" + (f" (per operation: {', '.join(args.reasoning_op)})" if args.reasoning_op else ""))
+    reasoning_effective = effective_reasoning(args.model, args.reasoning, args.reasoning_op)
+    print(f"Reasoning:  {args.reasoning or 'harness default'}"
+          + (f" (per operation: {', '.join(args.reasoning_op)})" if args.reasoning_op else ""))
+    print(f"            effective: default={reasoning_effective['default']}, "
+          f"per operation={json.dumps(reasoning_effective['by_operation'])}")
     print(f"Prompts:    {len(entries)}" + (f" x {args.repeat} repeats = {len(runs)} runs" if args.repeat > 1 else ""))
     print(f"Timeout:    {args.timeout}s per prompt")
     shown = {k: v for k, v in run_settings.items() if v is not None and v is not False}
@@ -859,8 +877,9 @@ def main():
         "run_id": run_id,
         "start_time": datetime.now(timezone.utc).isoformat(),
         "model": args.model,
-        "reasoning_effort": args.reasoning,
+        "reasoning_effort": args.reasoning or "harness-default",
         "reasoning_by_operation": args.reasoning_op,
+        "reasoning_effective": reasoning_effective,
         "run_settings": run_settings,
         "category_filter": args.category,
         "prompt_id_filter": args.prompt_id,

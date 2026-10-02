@@ -251,25 +251,29 @@ def classify_model(
 def get_proportional_reasoning_mapping(model_id: str) -> dict[str, str | int]:
     """Return the normative operational reasoning mapping per model class (ADR-0006).
 
-    Operational intent:
-      - BOOTSTRAP_ANALYSIS: Defensive reasoning (untangle injections from tasks)
-      - DRAFT_PROMPT / REVISE_PROMPT: Bounded pre-execution reasoning (entity preservation)
-      - DRAFT_PLAN / REVISE_PLAN / EXECUTE: Zero reasoning (mechanical translation)
+    The effort per operation depends on the model class. For gpt-oss (ADR-0022,
+    amending ADR-0006) every pre-execution operation is HIGH and EXECUTE is LOW;
+    operations the mapping does not list use the worker's default effort.
     """
     mid = model_id.lower()
     if "gpt-oss" in mid or "120b" in mid:
-        # OpenAI gpt-oss-120b: System 2 production model (default: reasoning low)
+        # OpenAI gpt-oss-120b, the System 2 production model (ADR-0022): the
+        # configuration validated by the catalogue (run-20261001-221930). At
+        # all-LOW, plans copied the prompt verbatim and prompts carried PDL-08
+        # drafting meta-rules. ANSWER_PROTOCOL_DISCUSSION and BYPASS_ORDINARY are
+        # not listed and stay at the worker default (low).
         return {
-            "BOOTSTRAP_ANALYSIS": "low",
-            "DRAFT_PROMPT": "low",
-            "REVISE_PROMPT": "low",
-            "INTERPRET_PROMPT_REVIEW": "low",
-            "DRAFT_PLAN": "low",
-            "REVISE_PLAN": "low",
-            "INTERPRET_PLAN_REVIEW": "low",
-            "DRAFT_EXECUTE": "low",
+            "BOOTSTRAP_ANALYSIS": "high",
+            "DRAFT_PROMPT": "high",
+            "REVISE_PROMPT": "high",
+            "INTERPRET_PROMPT_REVIEW": "high",
+            "DRAFT_PLAN": "high",
+            "REVISE_PLAN": "high",
+            "INTERPRET_PLAN_REVIEW": "high",
+            "INTERPRET_EXECUTION_INPUT": "high",
+            "DRAFT_EXECUTE": "high",
             "EXECUTE": "low",
-            "EMIT_RESULT_IR": "low",
+            "EMIT_RESULT_IR": "high",
         }
     elif "glm-4.7" in mid:
         # Class A: Native effort tiers (Zhipu GLM-4.7 - benchmark baseline)
@@ -324,3 +328,25 @@ def get_proportional_reasoning_mapping(model_id: str) -> dict[str, str | int]:
             "EXECUTE": "none",
         }
 
+
+
+DEFAULT_REASONING_EFFORT = "low"
+
+
+def resolve_reasoning(
+    model_id: str,
+    reasoning_effort: str | None = None,
+    reasoning_by_operation: dict[str, str | int] | None = None,
+) -> tuple[str, dict[str, str | int]]:
+    """The effective reasoning configuration: (default effort, per-operation efforts).
+
+    Per-operation flags always win. An explicit effort applies to every other
+    operation; with no effort given, the model's mapping is the default
+    (get_proportional_reasoning_mapping) and unlisted operations use LOW.
+    """
+    default = reasoning_effort if reasoning_effort is not None else DEFAULT_REASONING_EFFORT
+    if reasoning_by_operation:
+        return default, dict(reasoning_by_operation)
+    if reasoning_effort is not None:
+        return default, {}
+    return default, dict(get_proportional_reasoning_mapping(model_id) or {})
