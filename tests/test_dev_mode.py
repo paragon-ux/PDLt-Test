@@ -207,3 +207,13 @@ Result IR:
     # RS-01: an IR written into the model's own text is shown as text, never parsed.
     assert "I explored some nodes" in u_formatted and "Result IR:" in u_formatted
 
+
+
+def test_help_renders_the_render_compact_percentage():
+    """`pdlt --help` printed argparse's internal dict in place of the
+    --render-compact help: "~23% smaller" was read as a format code."""
+    from pdl_taskmaster.host.repl import _build_parser
+
+    text = " ".join(_build_parser().format_help().split())
+    assert "23% smaller" in text
+    assert "option_strings" not in text

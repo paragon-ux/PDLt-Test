@@ -772,13 +772,8 @@ def _handle_dev_command(
     return True, dev_mode
 
 
-def main() -> int:
-    try:
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-    except Exception:
-        pass
-
+def _build_parser() -> argparse.ArgumentParser:
+    """The REPL's command line (help strings are %-formatted by argparse)."""
     parser = argparse.ArgumentParser(description="PDLt terminal REPL")
     parser.add_argument(
         "--candidate-repo",
@@ -892,7 +887,7 @@ def main() -> int:
     parser.add_argument(
         "--render-compact",
         action="store_true",
-        help="serialize operation projections as compact JSON (~23% smaller; "
+        help="serialize operation projections as compact JSON (~23%% smaller; "
         "identical semantics; recorded-fixture replay requires the default pretty render)",
     )
     parser.add_argument(
@@ -963,7 +958,17 @@ def main() -> int:
         default=None,
         help="initial prompt string to execute",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main() -> int:
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+    args = _build_parser().parse_args()
 
     if args.worker != "codex":
         if args.config_override:
