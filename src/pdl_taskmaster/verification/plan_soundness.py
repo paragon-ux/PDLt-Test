@@ -4,7 +4,9 @@ Deterministic harness-level validator that inspects Prompt and Response Plan
 pseudocode before the review gate, on first drafts and on revisions. It checks
 notation only, and it is the one place these rules are enforced: a violation
 gets one redraft carrying the finding, never a wire failure and never a host
-rewrite of the body (AUTH-05).
+rewrite of the body (AUTH-05). A violation that survives the redraft is
+published unchanged with a host note at the review gate naming each finding and
+its line (``line_violations``).
 
 - PDL-05: no invented fielded schema (``TASK:``, ``STEP 1:``, inline ``OUTPUT:``).
 - PDL-06: no programming-language imitation via code fences.
@@ -126,3 +128,41 @@ def validate_plan_soundness(
             )
 
     return PlanSoundnessResult(valid=not violations, violations=violations)
+
+
+@dataclass(frozen=True)
+class LineViolation:
+    """One notation finding located on its line (1-based), for the host note at
+    the review gate. ``text`` is the matched span, quoted back verbatim."""
+
+    line: int
+    clause: str
+    kind: str
+    text: str
+
+
+def line_violations(body: str) -> list[LineViolation]:
+    """Every notation finding in ``body`` with its line, every match on every line.
+
+    A line-level view of the same patterns ``validate_plan_soundness`` uses (whose
+    contract, one finding per pattern, is unchanged). It reports; it never edits
+    the body (AUTH-05).
+    """
+    found: list[LineViolation] = []
+    for number, line in enumerate((body or "").splitlines(), 1):
+        for pattern, clause, kind in (
+            (_DEFERRAL_PATTERNS, "PDL-08", "deferral"),
+            (_META_RULE_PATTERNS, "PDL-08", "meta_rule"),
+            (_PLACEHOLDER_PATTERNS, "PLAN-10", "placeholder"),
+        ):
+            for match in pattern.finditer(line):
+                found.append(LineViolation(number, clause, kind, match.group(0).strip()))
+        if _CODE_FENCE.match(line):
+            found.append(LineViolation(number, "PDL-06", "fence", line.strip()))
+        fielded = _FIELDED_PREFIX.match(line)
+        if fielded:
+            found.append(LineViolation(number, "PDL-05", "field_label", fielded.group(1) + ":"))
+        else:
+            for match in _INLINE_FIELD.finditer(line):
+                found.append(LineViolation(number, "PDL-05", "field_label", match.group(1) + ":"))
+    return found

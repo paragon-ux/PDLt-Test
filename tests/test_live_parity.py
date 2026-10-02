@@ -122,7 +122,11 @@ def host_notes() -> list[str]:
     """Every host note a deliverable or review gate can carry, rendered."""
     from pdl_taskmaster.runtime import presentation
 
-    return [presentation.provisional_note()]
+    from pdl_taskmaster.verification.plan_soundness import LineViolation
+
+    kinds = ("meta_rule", "deferral", "placeholder", "fence", "field_label")
+    lint = presentation.lint_note([LineViolation(1, "PDL-08", kind, "x") for kind in kinds])
+    return [presentation.provisional_note(), *lint.splitlines()]
 
 
 def test_host_notes_satisfy_no_grader_phrase_and_name_no_manifest_tag():
@@ -136,3 +140,67 @@ def test_host_notes_satisfy_no_grader_phrase_and_name_no_manifest_tag():
             assert phrase not in low, (note, phrase)
         for tag in _manifest_tag_phrases():
             assert not re.search(r"\b" + r"[\s_-]".join(map(re.escape, tag.split("-"))) + r"\b", low), (note, tag)
+
+
+# --------------------------------------------------------------------------- A3
+
+STICK_PROMPT = (
+    "READ the problem statement\n"
+    "CALCULATE the requested probability\n"
+    "DO NOT perform the calculation.\n"
+    "RETURN the probability as a simplified fraction"
+)
+
+
+def test_residual_meta_rule_is_published_unchanged_with_a_line_note(tmp_path):
+    """Live stick sessions: the redraft kept "DO NOT perform the calculation", the
+    engine logged PROMPT_LINT_UNRESOLVED and published it with no word to the user;
+    the deliverable then refused to compute."""
+    draft = {"kind": "PROMPT", "prompt_body": STICK_PROMPT, "approach_handoff": "NONE"}
+    worker = ScriptedWorker(DRAFT_PROMPT=[draft])
+    engine = engine_with(tmp_path, worker, ScriptedSys1())
+    response = ask(engine, "a fully specified question")
+    assert len(worker.calls("DRAFT_PROMPT")) == 2  # one redraft, as before
+    assert engine.controller.state.current_prompt.body == STICK_PROMPT  # no host rewrite (AUTH-05)
+    assert '[host] PDL-08: line 3 "DO NOT perform the calculation" is a drafting meta-rule; /revise to remove it' \
+        in response.text
+    assert response.text.index("[host]") > response.text.index("RETURN the probability")
+    (event,) = events(engine, "PROMPT_LINT_UNRESOLVED")
+    assert event["payload"]["lines"] == [
+        {"line": 3, "clause": "PDL-08", "kind": "meta_rule", "text": "DO NOT perform the calculation"}
+    ]
+    assert event["payload"]["host_note"] is True
+
+
+def test_every_residual_finding_is_named_with_its_line(tmp_path):
+    body = "TASK: compute the value\nDERIVE it\nINSERT placeholders for the results\nTBD"
+    worker = ScriptedWorker(DRAFT_PROMPT=[{"kind": "PROMPT", "prompt_body": body, "approach_handoff": "NONE"}])
+    response = ask(engine_with(tmp_path, worker, ScriptedSys1()), "a task")
+    notes = [line for line in response.text.splitlines() if line.startswith("[host]")]
+    assert notes == [
+        '[host] PDL-05: line 1 "TASK:" is an invented field label; /revise to state the operation directly',
+        '[host] PLAN-10: line 3 "INSERT placeholders for the results" is a placeholder step; '
+        "/revise to state the operation that produces the result",
+        '[host] PDL-08: line 4 "TBD" is a deferral marker; /revise to state the operation instead',
+    ]
+
+
+def test_clean_redraft_carries_no_note(tmp_path):
+    clean = {"kind": "PROMPT", "prompt_body": "CALCULATE the requested probability", "approach_handoff": "NONE"}
+    dirty = {"kind": "PROMPT", "prompt_body": STICK_PROMPT, "approach_handoff": "NONE"}
+    engine = engine_with(tmp_path, ScriptedWorker(DRAFT_PROMPT=[dirty, clean]), ScriptedSys1())
+    response = ask(engine, "a task")
+    assert "[host]" not in response.text and not events(engine, "PROMPT_LINT_UNRESOLVED")
+
+
+def test_plan_path_names_residual_findings_too(tmp_path):
+    plan = "DERIVE the value\nDO NOT perform the calculation\nRETURN it"
+    worker = ScriptedWorker(DRAFT_PLAN=[{"neutral_plan_body": plan}])
+    engine = engine_with(tmp_path, worker, ScriptedSys1())
+    ask(engine, "a task")
+    response = engine.handle_user_message("/confirm")
+    assert len(worker.calls("DRAFT_PLAN")) == 2
+    assert engine.controller.state.current_plan.body == plan
+    assert '[host] PDL-08: line 2 "DO NOT perform the calculation" is a drafting meta-rule' in response.text
+    (event,) = events(engine, "PLAN_LINT_UNRESOLVED")
+    assert event["payload"]["operation"] == "DRAFT_PLAN" and event["payload"]["lines"][0]["line"] == 2

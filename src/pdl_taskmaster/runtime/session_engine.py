@@ -961,13 +961,12 @@ class SessionEngine:
                 return self._refuse(redraft.response, traces, "prompt_draft")
             if redraft.prompt_body is not None:
                 outcome = redraft
-                if not validate_plan_soundness(outcome.prompt_body).valid:
-                    self.workspace.append_event("PROMPT_LINT_UNRESOLVED", {})
+        host_note = self._residual_lint_note(outcome.prompt_body, "PROMPT", "DRAFT_PROMPT")
         self.controller = self._bind_new_controller(self.workspace)
         approach_source = substantive_request if outcome.approach_handoff == "CARRY_SOURCE_TO_PLAN" else None
         self.controller.commit_initial_prompt(outcome.prompt_body, approach_source)
         self._publish_prompt()
-        return EngineResponse(presentation.prompt_artifact(outcome.prompt_body), traces)
+        return EngineResponse(presentation.prompt_artifact(outcome.prompt_body, host_note), traces)
 
     def _sync_review_edit(self) -> None:
         assert self.controller is not None and self.workspace is not None
@@ -1072,7 +1071,7 @@ class SessionEngine:
         if carried_raw != self.controller.state.approach_sources:
             raise WorkspaceError("approach_source_handoff")
         carried = [self._compile_approach_context(s, traces) for s in carried_raw]
-        body = self._linted_call(
+        body, host_note = self._linted_call(
             "DRAFT_PLAN",
             {
                 "CONFIRMED_PROMPT_BODY": prompt_body,
@@ -1084,33 +1083,51 @@ class SessionEngine:
         )
         self.controller.commit_plan(body)
         self._publish_plan()
-        return EngineResponse(presentation.plan_artifact(body), traces)
+        return EngineResponse(presentation.plan_artifact(body, host_note), traces)
 
     def _linted_call(
         self, operation: str, context: dict[str, Any], traces: list[CallTrace], *, parser: Any, artifact: str
-    ) -> str:
+    ) -> tuple[str, str | None]:
         """Call an operation that returns pseudocode and lint the body (plan_soundness).
         A violation gets exactly one redraft carrying the finding; a residual
-        violation is recorded and the body stands for the user's review."""
+        violation is recorded and the body stands for the user's review, with a
+        host note naming each finding. Returns (body, host note or None)."""
         from pdl_taskmaster.verification.plan_soundness import validate_plan_soundness
 
         assert self.workspace is not None
         body = self._call(operation, context, traces, parser=parser)
         lint = validate_plan_soundness(body)
         if lint.valid:
-            return body
+            return body, None
         self.workspace.append_event(
             f"{artifact}_LINT_RETRY", {"operation": operation, "violations": lint.violations}
         )
         body = self._call(
             operation, context, traces, parser=parser, operator_correction="OPERATOR CORRECTION: " + lint.feedback
         )
+        return body, self._residual_lint_note(body, artifact, operation)
+
+    def _residual_lint_note(self, body: str, artifact: str, operation: str) -> str | None:
+        """After the one redraft: a body that still fails the lint is published
+        unchanged (AUTH-05, no host rewrite) with a factual note at the review
+        gate naming every finding and its line, so the user can /revise it."""
+        from pdl_taskmaster.verification.plan_soundness import line_violations, validate_plan_soundness
+
+        assert self.workspace is not None
         residual = validate_plan_soundness(body)
-        if not residual.valid:
-            self.workspace.append_event(
-                f"{artifact}_LINT_UNRESOLVED", {"operation": operation, "violations": residual.violations}
-            )
-        return body
+        if residual.valid:
+            return None
+        located = line_violations(body)
+        self.workspace.append_event(
+            f"{artifact}_LINT_UNRESOLVED",
+            {
+                "operation": operation,
+                "violations": residual.violations,
+                "lines": [{"line": v.line, "clause": v.clause, "kind": v.kind, "text": v.text} for v in located],
+                "host_note": True,
+            },
+        )
+        return presentation.lint_note(located, residual.violations)
 
     def _revise_prompt(self, transition: Transition, traces: list[CallTrace]) -> EngineResponse:
         assert self.controller is not None and self.workspace is not None
@@ -1122,7 +1139,7 @@ class SessionEngine:
         change_id = transition.payload["change_id"]
         had_plan = self.controller.state.current_plan is not None
         try:
-            body = self._linted_call(
+            body, host_note = self._linted_call(
                 "REVISE_PROMPT",
                 {
                     "CURRENT_PROMPT_BODY": prompt_body,
@@ -1151,7 +1168,7 @@ class SessionEngine:
         if had_plan:
             self.workspace.invalidate_artifact("plan", "prompt_revision")
         self._publish_prompt()
-        return EngineResponse(presentation.prompt_artifact(body), traces)
+        return EngineResponse(presentation.prompt_artifact(body, host_note), traces)
 
     def _revise_plan(self, transition: Transition, traces: list[CallTrace]) -> EngineResponse:
         assert self.controller is not None and self.workspace is not None
@@ -1168,7 +1185,7 @@ class SessionEngine:
         if carried_raw != self.controller.state.approach_sources:
             raise WorkspaceError("approach_source_handoff")
         try:
-            body = self._linted_call(
+            body, host_note = self._linted_call(
                 "REVISE_PLAN",
                 {
                     "CONFIRMED_PROMPT_BODY": prompt_body,
@@ -1187,7 +1204,7 @@ class SessionEngine:
             self.controller.abort_pending_change(change_id)
             raise
         self._publish_plan()
-        return EngineResponse(presentation.plan_artifact(body), traces)
+        return EngineResponse(presentation.plan_artifact(body, host_note), traces)
 
     def _execute(self, transition: Transition, traces: list[CallTrace]) -> EngineResponse:
         """Phases 4 and 5 (TARGET_ARCHITECTURE §3): one EXECUTE call, deterministic
