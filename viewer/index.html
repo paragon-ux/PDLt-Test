@@ -166,10 +166,38 @@ function applySession(s) {
   renderMid(); renderRight();
 }
 
+// One poll at a time (never a fixed interval that can overlap a slow answer),
+// slower while the followed session is idle, and slower still in a hidden tab.
+const POLL_MS = 2000, POLL_IDLE_MS = 10000, POLL_HIDDEN_MS = 30000, RUNS_MS = 15000;
+let pollDelay = POLL_MS, pollTimer = null, polling = false, lastSeen = null;
+
 async function poll() {
   if ($('follow').checked && !state.selectedPath) {
-    try { applySession(await api('/api/status')); } catch (e) {}
+    try {
+      const s = await api('/api/status');
+      const seen = `${s.session_id}|${s.activity}`;
+      if (seen === lastSeen) {
+        pollDelay = Math.min(pollDelay * 1.5, POLL_IDLE_MS);
+      } else {
+        pollDelay = POLL_MS;
+        lastSeen = seen;
+        applySession(s);
+      }
+    } catch (e) {}
   }
+}
+
+async function pollLoop() {
+  clearTimeout(pollTimer);
+  if (polling) return;  // the poll in flight schedules the next one
+  polling = true;
+  try { await poll(); } finally { polling = false; }
+  pollTimer = setTimeout(pollLoop, document.hidden ? POLL_HIDDEN_MS : pollDelay);
+}
+
+async function runsLoop() {
+  if (!document.hidden && $('follow').checked) { try { await loadRuns(); } catch (e) {} }
+  setTimeout(runsLoop, RUNS_MS);
 }
 
 async function selectResult(path) {
@@ -252,15 +280,19 @@ document.querySelectorAll('[data-mid]').forEach(t => t.onclick = () => {
 $('run-select').onchange = (e) => { state.selectedPath = null; loadRun(e.target.value); };
 $('result-filter').oninput = renderResults;
 $('cat-filter').oninput = renderCatalogue;
-$('follow').onchange = () => { if ($('follow').checked) state.selectedPath = null; };
+$('follow').onchange = () => {
+  if ($('follow').checked) { state.selectedPath = null; lastSeen = null; pollDelay = POLL_MS; pollLoop(); }
+};
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { pollDelay = POLL_MS; pollLoop(); }
+});
 
 (async function init() {
   renderStages('IDLE');
   try { state.catalogue = await api('/api/catalogue'); renderCatalogue(); } catch (e) {}
   try { await loadRuns(); } catch (e) {}
-  await poll();
-  setInterval(poll, 2000);
-  setInterval(() => { if ($('follow').checked) loadRuns().catch(() => {}); }, 15000);
+  pollLoop();
+  setTimeout(runsLoop, RUNS_MS);
 })();
 </script>
 </body>

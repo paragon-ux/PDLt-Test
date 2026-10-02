@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import json
+import os
+import threading
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -143,3 +146,103 @@ def test_requests_for_another_host_are_refused(tmp_path):
 def test_viewer_does_not_import_the_harness():
     text = (Path(__file__).resolve().parents[1] / "viewer" / "server.py").read_text(encoding="utf-8")
     assert "pdl_taskmaster" not in text
+
+
+def _live_session(root: Path, name: str, mtime: float) -> Path:
+    session = root / "runs" / "live-sessions" / name
+    deep = session / "workspaces" / "W-1" / "turns" / "turn_001" / "stages"
+    deep.mkdir(parents=True)
+    log = session / "worker-progress.log"
+    log.write_text("[dev:telemetry] controller stage: PROMPT_REVIEW\n", encoding="utf-8")
+    for path in (log, session / "workspaces", session):
+        os.utime(path, (mtime, mtime))
+    return session
+
+
+def test_latest_session_never_walks_whole_trees(tmp_path, monkeypatch):
+    """Polling must not rescan every file of every session (a catalogue holds tens of
+    thousands): the newest session is judged from its own top-level entries."""
+    root = _make_root(tmp_path)
+    old = _live_session(root, "session-old", 1_000_000_000)
+    new = _live_session(root, "session-new", 2_000_000_000)
+    # A deep write in an old session does not make it newest; its transcript would.
+    (old / "workspaces" / "W-1" / "turns" / "turn_001" / "stages" / "deep.json").write_text("{}", encoding="utf-8")
+
+    def no_walk(self, pattern):
+        raise AssertionError(f"rglob({pattern!r}) while choosing the latest session")
+
+    monkeypatch.setattr(Path, "rglob", no_walk)
+    assert latest_session_dir(root) == new
+    os.utime(old / "worker-progress.log", (3_000_000_000, 3_000_000_000))
+    assert latest_session_dir(root) == old
+
+
+def test_concurrent_polls_share_one_computation(tmp_path, monkeypatch):
+    """A page polling faster than the disk answers must not pile up work: polls that
+    arrive during a computation wait for it and get its answer."""
+    from viewer import server as viewer_server
+
+    root = _make_root(tmp_path)
+    calls = []
+    real = viewer_server.read_session
+
+    def slow_read(target):
+        calls.append(target)
+        time.sleep(0.3)
+        return real(target)
+
+    monkeypatch.setattr(viewer_server, "read_session", slow_read)
+    _, server, port = start_server(root, port=0)
+    try:
+        base = f"http://127.0.0.1:{port}"
+        results = []
+        threads = [threading.Thread(target=lambda: results.append(json.loads(_get(base, "/api/status")[1])))
+                   for _ in range(8)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        assert len(results) == 8 and len(calls) == 1
+        assert all(r["session_id"] == "01-01_demo_prompt" and "activity" in r for r in results)
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_transcript_tail_reads_only_the_end(tmp_path):
+    from viewer.server import LOG_TAIL_LINES, _tail_lines
+
+    path = tmp_path / "transcript.txt"
+    path.write_text("".join(f"line {i:06d} " + "x" * 40 + "\n" for i in range(20_000)), encoding="utf-8")
+    lines = _tail_lines(path, LOG_TAIL_LINES)
+    assert len(lines) == LOG_TAIL_LINES
+    assert lines[-1].startswith("line 019999") and lines[0].startswith("line 019800")
+    assert _tail_lines(path, 5, max_bytes=120) == [f"line {i:06d} " + "x" * 40 for i in (19998, 19999)]
+
+
+def test_page_polls_without_overlap_and_backs_off_when_hidden():
+    html = (Path(__file__).resolve().parents[1] / "viewer" / "index.html").read_text(encoding="utf-8")
+    assert "setInterval" not in html  # a fixed interval keeps firing while a slow answer is pending
+    assert "visibilitychange" in html and "document.hidden" in html
+
+
+def test_followed_status_is_reread_after_its_max_age(tmp_path, monkeypatch):
+    """A change deep in the followed session (no top-level entry touched) still shows
+    up: the payload is reread from disk once it is older than the max age."""
+    from viewer import server as viewer_server
+
+    root = _make_root(tmp_path)
+    calls = []
+    real = viewer_server.read_session
+    monkeypatch.setattr(viewer_server, "read_session", lambda target: calls.append(target) or real(target))
+    clock = [1000.0]
+    monkeypatch.setattr(viewer_server.time, "monotonic", lambda: clock[0])
+    cache = viewer_server._StatusCache(root)
+    cache.get()
+    for step in (2.0, 2.0, 2.0, 2.0):  # unchanged session, polled every 2 s
+        clock[0] += step
+        cache.get()
+    assert len(calls) == 1
+    clock[0] += 3.0  # 11 s since the read
+    cache.get()
+    assert len(calls) == 2

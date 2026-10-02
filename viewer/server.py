@@ -69,13 +69,42 @@ def session_candidates(root: Path) -> list[Path]:
 
 
 def _activity(path: Path) -> float:
-    files = [p for p in path.rglob("*") if p.is_file()]
-    return max((p.stat().st_mtime for p in files), default=path.stat().st_mtime)
+    """When a session last changed, from its own top-level entries only. The harness
+    and the runner write the transcript, worker-progress.log and session.json there
+    while a turn runs, so walking the whole tree is never needed: a catalogue holds
+    tens of thousands of files and the page polls every few seconds."""
+    newest = 0.0
+    try:
+        newest = path.stat().st_mtime
+        with os.scandir(path) as entries:
+            for entry in entries:
+                try:
+                    newest = max(newest, entry.stat(follow_symlinks=False).st_mtime)
+                except OSError:
+                    pass
+    except OSError:
+        pass
+    return newest
+
+
+# Catalogue result directories that hold result.json: the runner never writes them
+# again, so their activity is measured once.
+_FINISHED_ACTIVITY: dict[Path, float] = {}
+
+
+def _session_activity(path: Path) -> float:
+    cached = _FINISHED_ACTIVITY.get(path)
+    if cached is not None:
+        return cached
+    activity = _activity(path)
+    if path.parent.name == "results" and (path / "result.json").is_file():
+        _FINISHED_ACTIVITY[path] = activity
+    return activity
 
 
 def latest_session_dir(root: Path) -> Path | None:
     candidates = session_candidates(root)
-    return max(candidates, key=_activity) if candidates else None
+    return max(candidates, key=_session_activity) if candidates else None
 
 
 _FENCE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.S)
@@ -91,6 +120,20 @@ def _witness_from(deliverable: str) -> Any:
         if isinstance(obj, dict) and obj.get("witness"):
             return obj["witness"]
     return None
+
+
+def _tail_lines(path: Path, count: int, max_bytes: int = 256 * 1024) -> list[str]:
+    """The last ``count`` lines of a file, reading at most ``max_bytes`` from its end
+    (a long session's transcript is never loaded whole on every poll)."""
+    with open(path, "rb") as handle:
+        handle.seek(0, os.SEEK_END)
+        start = max(0, handle.tell() - max_bytes)
+        handle.seek(start)
+        data = handle.read()
+    lines = data.decode("utf-8-sig" if start == 0 else "utf-8", errors="replace").splitlines()
+    if start > 0:
+        lines = lines[1:]  # the first line read is cut off
+    return lines[-count:]
 
 
 def read_session(session_dir: Path | None) -> dict[str, Any]:
@@ -118,11 +161,11 @@ def read_session(session_dir: Path | None) -> dict[str, Any]:
     logs: list[str] = []
     transcript = session_dir / "transcript.txt"
     if transcript.is_file():
-        logs = _read(transcript).splitlines()
+        logs = _tail_lines(transcript, LOG_TAIL_LINES)
     else:
         progress = _newest(list(session_dir.rglob("worker-progress.log")) + list(session_dir.rglob("transcript.log")))
         if progress:
-            logs = _read(progress).splitlines()
+            logs = _tail_lines(progress, LOG_TAIL_LINES)
 
     return {
         "session_id": session_dir.name,
@@ -133,12 +176,17 @@ def read_session(session_dir: Path | None) -> dict[str, Any]:
         "code_snippet": code,
         "witness": _witness_from(deliverable) if deliverable else None,
         "deliverable": deliverable,
-        "logs": logs[-LOG_TAIL_LINES:],
+        "logs": logs,
         "result": _read_json(session_dir / "result.json"),
     }
 
 
 # --------------------------------------------------------------------------- runs & catalogue
+
+# Rows of finished runs (SCOREBOARD.json written), keyed by the scoreboard's mtime:
+# their results are not listed again on every refresh.
+_FINISHED_RUN_ROWS: dict[Path, tuple[float, dict[str, Any]]] = {}
+
 
 def list_runs(root: Path) -> list[dict[str, Any]]:
     runs_dir = root / "catalogue-runs"
@@ -146,6 +194,14 @@ def list_runs(root: Path) -> list[dict[str, Any]]:
     if not runs_dir.is_dir():
         return out
     for run in sorted((p for p in runs_dir.glob("run-*") if p.is_dir()), reverse=True):
+        try:
+            board_mtime = (run / "SCOREBOARD.json").stat().st_mtime
+        except OSError:
+            board_mtime = None
+        cached = _FINISHED_RUN_ROWS.get(run)
+        if cached is not None and cached[0] == board_mtime:
+            out.append(cached[1])
+            continue
         board = _read_json(run / "SCOREBOARD.json") or {}
         meta = _read_json(run / "RUN_META.json") or {}
         results = sorted((run / "results").glob("*/result.json")) if (run / "results").is_dir() else []
@@ -160,6 +216,8 @@ def list_runs(root: Path) -> list[dict[str, Any]]:
             "false_positives": len(board.get("false_positives") or []),
             "complete": bool(board),
         })
+        if board and board_mtime is not None:
+            _FINISHED_RUN_ROWS[run] = (board_mtime, out[-1])
     return out
 
 
@@ -233,7 +291,47 @@ def _local_host(header: str | None) -> bool:
     return host in _LOCAL_HOSTS
 
 
+# A followed status is recomputed at most this often, however many pages poll, and
+# always after this long even when the session's top-level entries look unchanged.
+_STATUS_MIN_INTERVAL = 1.0
+_STATUS_MAX_AGE = 10.0
+
+
+class _StatusCache:
+    """Serves /api/status one computation at a time. Polls that arrive meanwhile wait
+    and share the answer, so a slow disk never piles up request threads (each holding
+    a directory scan) behind a page that keeps polling."""
+
+    def __init__(self, root: Path) -> None:
+        self.root = root
+        self.lock = threading.Lock()
+        self.key: tuple[str, str, float] | None = None
+        self.payload: dict[str, Any] | None = None
+        self.checked_at = 0.0  # last time the followed session was looked up
+        self.read_at = 0.0  # last time the payload was read from disk
+
+    def get(self, target: Path | None = None, *, follow: bool = True) -> dict[str, Any]:
+        with self.lock:
+            now = time.monotonic()
+            if follow and self.payload is not None and self.key is not None and self.key[0] == "follow" and (
+                now - self.checked_at < _STATUS_MIN_INTERVAL
+            ):
+                return self.payload
+            if follow:
+                target = latest_session_dir(self.root)
+                self.checked_at = now
+            activity = _activity(target) if target is not None else 0.0
+            key = ("follow" if follow else "path", str(target), activity)
+            if key != self.key or self.payload is None or now - self.read_at > _STATUS_MAX_AGE:
+                self.payload = {**read_session(target), "activity": activity}
+                self.key = key
+                self.read_at = now
+            return self.payload
+
+
 def make_handler(root: Path):
+    status = _StatusCache(root)
+
     class Handler(http.server.BaseHTTPRequestHandler):
         def log_message(self, *args):  # keep the console quiet
             pass
@@ -258,15 +356,13 @@ def make_handler(root: Path):
                 if url.path in {"/", "/index.html"}:
                     return self._send(200, INDEX_HTML.read_bytes(), "text/html; charset=utf-8")
                 if url.path == "/api/status":
-                    target = None
                     if q.get("path"):
                         target = (root / q["path"]).resolve()
                         allowed = [root / "catalogue-runs", root / "runs"]
                         if not any(_inside(a, target) for a in allowed):
                             return self._json({"error": "path outside viewer roots"}, 400)
-                    else:
-                        target = latest_session_dir(root)
-                    return self._json(read_session(target))
+                        return self._json(status.get(target, follow=False))
+                    return self._json(status.get())
                 if url.path == "/api/runs":
                     return self._json(list_runs(root))
                 if url.path == "/api/run":
