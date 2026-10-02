@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-5754617346",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-5754617346-P1",
+    "body": "FIND all subsets of the given set S that sum exactly to the target value T = 40.\nEMIT each subset and VERIFY its sum.\nREPORT the total number of subsets found.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-5754617346-R1",
+    "body": "PARSE set S and target T = 40\nINITIALIZE empty list of solution subsets\nDEFINE BACKTRACK(current_subset, current_sum, next_index)\n    IF current_sum equals T THEN EMIT current_subset; VERIFY its sum; ADD to solution list\n    ELSE IF current_sum > T OR next_index >= SIZE OF S THEN RETURN\n    ELSE\n        INCLUDE element S[next_index] IN current_subset; INCREMENT current_sum; CALL BACKTRACK with next_index + 1\n        EXCLUDE element S[next_index] FROM current_subset; CALL BACKTRACK with next_index + 1\nCALL BACKTRACK with empty subset, sum 0, index 0\nREPORT total number of solution subsets found",
+    "confirmed": true,
+    "source_prompt_id": "I-5754617346-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-5754617346-X1",
+    "body": "ea4e688c4755b145c2ef294123cb3d43ff87405f0754c02f8d29fef2fbedf796",
+    "confirmed": true,
+    "source_prompt_id": "I-5754617346-P1",
+    "source_plan_id": "I-5754617346-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

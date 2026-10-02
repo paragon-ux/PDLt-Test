@@ -1,0 +1,75 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[dev:telemetry] reasoning: default=low per_operation={"BOOTSTRAP_ANALYSIS": "high", "DRAFT_EXECUTE": "high", "DRAFT_PLAN": "high", "DRAFT_PROMPT": "high", "EMIT_RESULT_IR": "high", "EXECUTE": "low", "INTERPRET_EXECUTION_INPUT": "high", "INTERPRET_PLAN_REVIEW": "high", "INTERPRET_PROMPT_REVIEW": "high", "REVISE_PLAN": "high", "REVISE_PROMPT": "high"}
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\06-07_encoding_mojibake\session\catalogue-06-07-1790918975\worker-progress.log]
+[api] response received in 1649ms
+[api] response received in 2021ms
+Prompt Pseudocode
+
+DIAGNOSE the encoding round-trip corruption in the provided Python code that saves text using latin-1 encoding and loads it using utf-8 encoding.
+IDENTIFY which characters become corrupted during the round-trip.
+SUPPLY corrected versions of save_to_file and load_from_file that use a consistent Unicode-compatible encoding.
+PROVIDE a test script that demonstrates the fix using sample text containing characters from at least three Unicode blocks: the Latin text "Café résumé naïve Üntermensch", a CJK example, and an emoji example.
+VERIFY that loading the saved sample text reproduces the original text exactly.
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\06-07_encoding_mojibake\session\catalogue-06-07-1790918975\worker-progress.log]
+[api] response received in 1208ms
+Response Plan Pseudocode
+
+DIAGNOSE the encoding mismatch in the existing save and load implementations.
+IDENTIFY the characters that become corrupted during the round‑trip.
+DESIGN corrected save_to_file and load_from_file functions that use a consistent Unicode‑compatible encoding.
+DEVELOP a test script that includes sample text from three Unicode blocks (Latin with diacritics, CJK, and emojis).
+EXECUTE the test script to SAVE the sample text using the corrected save function, then LOAD it using the corrected load function.
+VERIFY that the loaded text reproduces the original sample text exactly.
+DELIVER the corrected code and test script.
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\06-07_encoding_mojibake\session\catalogue-06-07-1790918975\worker-progress.log]
+[api] response received in 798ms
+# Fixed encoding functions using UTF-8 (a Unicode‑compatible encoding)
+
+def save_to_file(text: str, filepath: str) -> None:
+    """Save *text* to *filepath* using UTF‑8 encoding.
+    """
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(text)
+
+
+def load_from_file(filepath: str) -> str:
+    """Load text from *filepath* assuming UTF‑8 encoding.
+    """
+    with open(filepath, "r", encoding="utf-8") as f:
+        return f.read()
+
+# Test script demonstrating the fix
+if __name__ == "__main__":
+    # Sample text containing characters from three Unicode blocks:
+    #   • Latin‑1 Supplement (diacritics)
+    #   • CJK Unified Ideographs (Chinese characters)
+    #   • Emoji (Emoticons)
+    sample_text = (
+        "Café résumé naïve Üntermensch "  # Latin‑1 Supplement
+        "中文例子 "                         # CJK
+        "🚀🔥😊"                             # Emoji
+    )
+
+    file_path = "test_data.txt"
+    save_to_file(sample_text, file_path)
+    recovered = load_from_file(file_path)
+
+    print("Original:  ", sample_text)
+    print("Recovered: ", recovered)
+    print("Match: ", sample_text == recovered)
+    # Assertion to ensure exact round‑trip fidelity
+    assert sample_text == recovered, "Round‑trip mismatch!"
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

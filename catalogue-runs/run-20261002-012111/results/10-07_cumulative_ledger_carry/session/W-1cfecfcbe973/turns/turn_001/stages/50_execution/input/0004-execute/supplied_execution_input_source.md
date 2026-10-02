@@ -1,0 +1,1 @@
+Implement FizzBuzz for numbers 1 to 100.

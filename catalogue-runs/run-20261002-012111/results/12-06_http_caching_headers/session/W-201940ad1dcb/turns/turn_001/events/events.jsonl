@@ -1,0 +1,26 @@
+{"at_utc":"2026-10-02T05:36:56.435928+00:00","kind":"WORKSPACE_CREATED","payload":{"workspace_id":"W-201940ad1dcb","turn_id":"turn_001"}}
+{"at_utc":"2026-10-02T05:36:56.435928+00:00","kind":"EXPLICIT_INVOCATION_OBSERVED","payload":{"substantive_request_present":true}}
+{"at_utc":"2026-10-02T05:36:56.664754+00:00","kind":"ACTIVATION_ROUTED","payload":{"verdict":"APPLY_PROTOCOL","passed_gating":true,"confidence":0.97}}
+{"at_utc":"2026-10-02T05:36:57.177832+00:00","kind":"EXECUTION_PROFILE_ROUTED","payload":{"predicted_steps":"WITHIN_100K_STEPS","distribution":{"BEYOND_100M_STEPS":0.0,"WITHIN_100M_STEPS":0.0,"WITHIN_100K_STEPS":0.96,"WITHIN_10M_STEPS":0.04},"tier":"MINIMAL","passed_gating":true,"step_limit":100000,"timeout_seconds":30.0,"memory_mb":256}}
+{"at_utc":"2026-10-02T05:36:57.177832+00:00","kind":"PROBLEM_CLASS_CLASSIFIED","payload":{"requires_verified_execution":false,"domain":null,"verdict":"STANDARD_EXECUTION","confidence":1.0,"passed_gating":true}}
+{"at_utc":"2026-10-02T05:36:57.225133+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-10-02T05:36:59.131308+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-10-02T05:36:59.146910+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}
+{"at_utc":"2026-10-02T05:37:01.778217+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}
+{"at_utc":"2026-10-02T05:37:01.793761+00:00","kind":"PROTOCOL_BOUND","payload":{"instance_id":"I-da5aa3c779","turn_id":"turn_001"}}
+{"at_utc":"2026-10-02T05:37:01.809388+00:00","kind":"ARTIFACT_PUBLISHED","payload":{"kind":"prompt","artifact_id":"I-da5aa3c779-P1","confirmed":false}}
+{"at_utc":"2026-10-02T05:37:01.872317+00:00","kind":"ARTIFACT_CONFIRMED","payload":{"kind":"prompt","artifact_id":"I-da5aa3c779-P1"}}
+{"at_utc":"2026-10-02T05:37:01.887939+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PLAN","stage":"30_plan","invocation_id":"0003-draft_plan"}}
+{"at_utc":"2026-10-02T05:37:03.404244+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PLAN","stage":"30_plan","invocation_id":"0003-draft_plan"}}
+{"at_utc":"2026-10-02T05:37:03.404244+00:00","kind":"ARTIFACT_PUBLISHED","payload":{"kind":"plan","artifact_id":"I-da5aa3c779-R1","confirmed":false}}
+{"at_utc":"2026-10-02T05:37:03.419761+00:00","kind":"PLAN_PROMPT_ECHO","payload":{"plan_id":"I-da5aa3c779-R1","identical":false,"copied_line_ratio":0.071}}
+{"at_utc":"2026-10-02T05:37:03.451484+00:00","kind":"ARTIFACT_CONFIRMED","payload":{"kind":"plan","artifact_id":"I-da5aa3c779-R1"}}
+{"at_utc":"2026-10-02T05:37:03.702882+00:00","kind":"PLAN_PROFILE_ROUTED","payload":{"predicted_steps":"WITHIN_100K_STEPS","distribution":{"BEYOND_100M_STEPS":0.0,"WITHIN_10M_STEPS":0.06,"WITHIN_100K_STEPS":0.94,"WITHIN_100M_STEPS":0.0},"passed_gating":true,"request_tier":"MINIMAL","plan_tier":"MINIMAL","tier":"MINIMAL","budget_raised":false,"step_limit":100000}}
+{"at_utc":"2026-10-02T05:37:03.720439+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"EXECUTE","stage":"50_execution","invocation_id":"0004-execute"}}
+{"at_utc":"2026-10-02T05:37:05.120138+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"EXECUTE","stage":"50_execution","invocation_id":"0004-execute"}}
+{"at_utc":"2026-10-02T05:37:05.524702+00:00","kind":"SANDBOX_SESSION","payload":{"backend":"appcontainer","mode":"auto","available":true,"root":"C:\\Users\\USER\\AppData\\Local\\Temp\\pdlt-sandboxes\\engine-s5snf1py","os":"Windows 10.0.22000","profile":"PDLt.Sandbox.engine-s5snf1py","sid":"S-1-15-2-3374935420-3891155047-2764553779-2275155685-3537058314-1842028146-3109697579"}}
+{"at_utc":"2026-10-02T05:37:05.526045+00:00","kind":"SANDBOX_RUN","payload":{"block":1,"backend":"appcontainer","tier":"MINIMAL","exit_code":1,"step_budget_exceeded":false,"steps_used":65,"timed_out":false,"oom_killed":false,"duration_ms":263.3}}
+{"at_utc":"2026-10-02T05:37:05.664301+00:00","kind":"SANDBOX_RUN","payload":{"block":2,"backend":"appcontainer","tier":"MINIMAL","exit_code":1,"step_budget_exceeded":false,"steps_used":57,"timed_out":false,"oom_killed":false,"duration_ms":130.1}}
+{"at_utc":"2026-10-02T05:37:05.667303+00:00","kind":"EXECUTION_ATTEMPTS","payload":{"attempts":1,"repairs_used":0,"unmeasured_repairs":0,"repairs_allowed":1,"tier":"MINIMAL"}}
+{"at_utc":"2026-10-02T05:37:05.671298+00:00","kind":"TURN_STATUS","payload":{"turn_id":"turn_001","status":"CLOSED_SUCCESS"}}
+{"at_utc":"2026-10-02T05:37:05.680948+00:00","kind":"EXECUTION_OUTCOME_PUBLISHED","payload":{"kind":"RESULT","source_prompt_id":"I-da5aa3c779-P1","source_plan_id":"I-da5aa3c779-R1","result_body_hash":"537b4dc87cb9649cc464d0fac885b7dda0e093c372bbec814d037ba3e9c6f9e8","confirmed_prompt_hash":"e7a6498ee56db6d98a96bde2caf97419f4f2f51be401e7066d11884bb31f89b3","confirmed_plan_hash":"dfd1c43669e28f1b64b017e607eb55c811f44a176620942d762d23090e121105"}}

@@ -1,0 +1,3 @@
+[
+  "APPROACH CONSTRAINT (TASK-02 operative requirement; incorporate per PLAN-08):\nComplete the partially filled 7x7 Latin square by filling the empty cells marked with 0 such that each row and each column contains the numbers 1 through 7 exactly once. After solving, emit the completed square and verify that every row and column is a permutation of the set {1,...,7}.\nImplement a constraint-propagation solver with backtracking.\nOPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):\n- 7x7\n- Latin square"
+]

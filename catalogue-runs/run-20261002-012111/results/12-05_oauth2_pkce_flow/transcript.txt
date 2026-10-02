@@ -1,0 +1,147 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+REASONING: default=low per_operation={"BOOTSTRAP_ANALYSIS": "high", "DRAFT_EXECUTE": "high", "DRAFT_PLAN": "high", "DRAFT_PROMPT": "high", "EMIT_RESULT_IR": "high", "EXECUTE": "low", "INTERPRET_EXECUTION_INPUT": "high", "INTERPRET_PLAN_REVIEW": "high", "INTERPRET_PROMPT_REVIEW": "high", "REVISE_PLAN": "high", "REVISE_PROMPT": "high"}
+USER> Implement the OAuth2 Authorization Code Flow with PKCE in Python (client-side only, no server framework).
+
+1. Generate a code_verifier (43-128 character random string) and code_challenge (S256 hash).
+2. Build the authorization URL with the correct parameters (client_id, redirect_uri, code_challenge, code_challenge_method, response_type, scope, state).
+3. After receiving the authorization code, exchange it for tokens by POSTing to the token endpoint with the code_verifier.
+4. Implement token refresh using the refresh_token.
+5. Include CSRF protection via the state parameter.
+
+Use only the standard library (urllib, hashlib, secrets, base64). Include a test that verifies the code_challenge is correctly derived from the code_verifier per RFC 7636.
+ASSISTANT> Prompt Pseudocode
+
+OPERATIVE TASK ENTITIES: OAuth2, Authorization Code Flow, PKCE, Python, code_verifier, code_challenge, S256, client_id, redirect_uri, code_challenge_method, response_type, scope, state, refresh_token, urllib, hashlib, secrets, base64, RFC 7636
+GENERATE a random code_verifier string of length 43-128 characters using the secrets module
+COMPUTE its S256 code_challenge using hashlib and base64 URL-safe encoding
+CONSTRUCT the authorization URL including client_id, redirect_uri, code_challenge, code_challenge_method='S256', response_type='code', scope, and state
+ENSURE the state parameter is cryptographically random to protect against CSRF
+MAKE a POST request to the token endpoint using urllib to exchange the authorization code for access token and refresh_token, supplying code_verifier
+IMPLEMENT token refresh by making a POST request to the token endpoint with grant_type='refresh_token' and the refresh_token using urllib
+PROVIDE a test that verifies that the code_challenge derived from the code_verifier matches the S256 computation as defined in RFC 7636
+USE only the Python standard library modules urllib, hashlib, secrets, and base64
+
+[host] PDL-05: line 1 "OPERATIVE TASK ENTITIES:" is an invented field label; /revise to state the operation directly
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+GENERATE a cryptographically random code_verifier string of length between 43 and 128 characters using the secrets module
+COMPUTE the S256 code_challenge from the code_verifier by applying SHA-256 via hashlib and encoding the digest using URL-safe base64
+ENSURE that the generated code_verifier and computed code_challenge conform to RFC 7636 specifications
+GENERATE a cryptographically random state value for CSRF protection using the secrets module
+CONSTRUCT the authorization URL with query parameters: client_id, redirect_uri, response_type='code', scope, code_challenge_method='S256', code_challenge, and state
+MAKE a POST request to the token endpoint using urllib, including the authorization code and the original code_verifier, to obtain an access token and a refresh token
+IMPLEMENT token refresh by making a POST request to the token endpoint using urllib with grant_type='refresh_token' and the refresh token
+PROVIDE a test that asserts the code_challenge derived from the code_verifier matches the expected S256 computation as defined in RFC 7636
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> import urllib.parse
+import urllib.request
+import hashlib
+import base64
+import secrets
+
+# Configuration (replace with your actual values)
+CLIENT_ID = 'your_client_id'
+REDIRECT_URI = 'https://localhost/callback'
+SCOPE = 'openid profile email'
+AUTHORIZATION_ENDPOINT = 'https://authorization.server/authorize'
+TOKEN_ENDPOINT = 'https://authorization.server/token'
+
+def generate_code_verifier(length: int = 64) -> str:
+    """Generate a cryptographically random code verifier.
+    Length must be between 43 and 128 characters as per RFC 7636.
+    """
+    # Use URL‑safe base64 without padding to get a string of the desired length
+    # 6 bits per character, so we need ceil(length*6/8) bytes.
+    nbytes = (length * 6 + 7) // 8
+    verifier = base64.urlsafe_b64encode(secrets.token_bytes(nbytes)).decode('utf-8').rstrip('=')
+    return verifier[:length]
+
+def compute_code_challenge(verifier: str) -> str:
+    """Compute the S256 code challenge from a verifier.
+    RFC 7636: BASE64URL-ENCODE(SHA256(ASCII(verifier)))
+    """
+    sha256 = hashlib.sha256(verifier.encode('utf-8')).digest()
+    challenge = base64.urlsafe_b64encode(sha256).decode('utf-8').rstrip('=')
+    return challenge
+
+def generate_state(length: int = 32) -> str:
+    """Generate a CSRF protection state parameter (URL‑safe)."""
+    return base64.urlsafe_b64encode(secrets.token_bytes(length)).decode('utf-8').rstrip('=')
+
+def build_authorization_url(code_challenge: str, state: str) -> str:
+    """Construct the authorization URL with PKCE parameters."""
+    query = {
+        'response_type': 'code',
+        'client_id': CLIENT_ID,
+        'redirect_uri': REDIRECT_URI,
+        'scope': SCOPE,
+        'code_challenge': code_challenge,
+        'code_challenge_method': 'S256',
+        'state': state,
+    }
+    return f"{AUTHORIZATION_ENDPOINT}?{urllib.parse.urlencode(query)}"
+
+def exchange_code_for_tokens(authorization_code: str, code_verifier: str) -> dict:
+    """POST to the token endpoint to exchange the auth code for tokens.
+    Returns the parsed JSON response.
+    """
+    data = urllib.parse.urlencode({
+        'grant_type': 'authorization_code',
+        'code': authorization_code,
+        'redirect_uri': REDIRECT_URI,
+        'client_id': CLIENT_ID,
+        'code_verifier': code_verifier,
+    }).encode('utf-8')
+    req = urllib.request.Request(TOKEN_ENDPOINT, data=data)
+    with urllib.request.urlopen(req) as resp:
+        return json.load(resp)
+
+def refresh_access_token(refresh_token: str) -> dict:
+    """Refresh the access token using the refresh token."""
+    data = urllib.parse.urlencode({
+        'grant_type': 'refresh_token',
+        'refresh_token': refresh_token,
+        'client_id': CLIENT_ID,
+    }).encode('utf-8')
+    req = urllib.request.Request(TOKEN_ENDPOINT, data=data)
+    with urllib.request.urlopen(req) as resp:
+        return json.load(resp)
+
+# ---------------------------------------------------------------------------
+# Test verifying the code_challenge computation matches RFC 7636
+# ---------------------------------------------------------------------------
+import unittest
+import json
+
+class TestPKCE(unittest.TestCase):
+    def test_code_challenge(self):
+        verifier = generate_code_verifier(64)
+        # Manual computation as defined in RFC 7636
+        sha256 = hashlib.sha256(verifier.encode('utf-8')).digest()
+        expected_challenge = base64.urlsafe_b64encode(sha256).decode('utf-8').rstrip('=')
+        actual_challenge = compute_code_challenge(verifier)
+        self.assertEqual(actual_challenge, expected_challenge)
+
+if __name__ == '__main__':
+    # Example usage (commented out to avoid network calls during import)
+    # verifier = generate_code_verifier()
+    # challenge = compute_code_challenge(verifier)
+    # state = generate_state()
+    # print('Open this URL in a browser:')
+    # print(build_authorization_url(challenge, state))
+    # # After redirect, manually provide the code below
+    # auth_code = input('Enter authorization code: ')
+    # tokens = exchange_code_for_tokens(auth_code, verifier)
+    # print('Tokens:', tokens)
+    # # Refresh example
+    # refreshed = refresh_access_token(tokens['refresh_token'])
+    # print('Refreshed tokens:', refreshed)
+    unittest.main(argv=['first-arg-is-ignored'], exit=False)
+PROTOCOL_CLOSED
+=== PDLt session ended ===

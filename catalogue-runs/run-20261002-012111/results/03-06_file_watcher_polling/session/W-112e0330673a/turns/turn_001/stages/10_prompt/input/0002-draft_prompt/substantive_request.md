@@ -1,0 +1,16 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Implement a cross‑platform file change detector in Python using only os.stat (explicitly prohibiting use of inotify, watchdog, or FSEvents). Provide a function watch that takes a directory path, a callback function, and an optional interval defaulting to interval=1.0 seconds, which periodically polls the entire directory tree at the given interval and detects file creation, deletion, and modification by comparing modification times (mtime). For each detected change, invoke the callback with event_type and filepath. The detector must also handle creation and deletion of subdirectories. Include an automated test that creates a temporary directory, starts the watcher, performs file operations (create, modify, delete), waits for callbacks, and verifies that all expected events are reported.
+APPROACH/RISK NOTES:
+
+OPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):
+- watch
+- os.stat
+- inotify
+- watchdog
+- FSEvents
+- directory
+- callback
+- interval=1.0
+- mtime
+- event_type
+- filepath

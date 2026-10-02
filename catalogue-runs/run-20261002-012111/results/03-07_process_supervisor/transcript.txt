@@ -1,0 +1,162 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+REASONING: default=low per_operation={"BOOTSTRAP_ANALYSIS": "high", "DRAFT_EXECUTE": "high", "DRAFT_PLAN": "high", "DRAFT_PROMPT": "high", "EMIT_RESULT_IR": "high", "EXECUTE": "low", "INTERPRET_EXECUTION_INPUT": "high", "INTERPRET_PLAN_REVIEW": "high", "INTERPRET_PROMPT_REVIEW": "high", "REVISE_PLAN": "high", "REVISE_PROMPT": "high"}
+USER> Implement a process supervisor in Python that manages child processes with restart-on-crash:
+1. register(name, cmd): Register a named process with its command line.
+2. start_all(): Launch all registered processes.
+3. The supervisor monitors children. If any child exits with a non-zero code, restart it with exponential backoff (1s, 2s, 4s, max 30s).
+4. If a child crashes 5 times within 60 seconds, mark it as failed and stop restarting.
+5. stop_all(): Gracefully terminate all children (SIGTERM, then SIGKILL after 5s timeout).
+6. Include a test with a child script that crashes 3 times then succeeds, verifying the supervisor restarts it correctly with backoff.
+ASSISTANT> Prompt Pseudocode
+
+REGISTER a child process using register(name, cmd).
+CALL start_all() to launch all registered processes.
+FOR EACH registered child:
+    MONITOR the child process.
+    IF the child exits with a non-zero status THEN
+        RESTART the child using exponential backoff intervals of 1s, 2s, 4s, up to a maximum of 30s.
+        INCREMENT the failure count for that child.
+        IF the child has failed 5 times within 60 seconds THEN
+            MARK the child as failed and cease further restarts.
+        ENDIF
+    ENDIF
+END FOR
+PROVIDE stop_all() to gracefully terminate all children by sending SIGTERM.
+WAIT up to 5s for children to exit.
+IF any child remains after 5s THEN
+    SEND SIGKILL to force termination.
+ENDIF
+TEST the supervisor by creating a child script that crashes 3 times before succeeding, verifying the correct restart behavior with exponential backoff.
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+REGISTER a child process using register(name, cmd).
+CALL start_all() to launch all registered processes.
+FOR EACH registered child
+    MONITOR the child process.
+    IF the child exits with a non-zero status
+        RESTART the child using exponential backoff intervals of 1s, 2s, 4s, up to a maximum of 30s.
+        INCREMENT the failure count for that child.
+        IF the child has failed 5 times within 60 seconds
+            MARK the child as failed and cease further restarts.
+        ENDIF
+    ENDIF
+ENDFOR
+PROVIDE stop_all() to gracefully terminate all children by sending SIGTERM.
+WAIT up to 5s for children to exit.
+IF any child remains after 5s
+    SEND SIGKILL to force termination.
+ENDIF
+TEST the supervisor by creating a child script that crashes 3 times before succeeding, verifying the correct restart behavior with exponential backoff.
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> import subprocess
+import threading
+import time
+import signal
+from collections import defaultdict
+
+class ChildProcess:
+    def __init__(self, name, cmd):
+        self.name = name
+        self.cmd = cmd
+        self.process = None
+        self.restart_delay = 1  # initial backoff in seconds
+        self.failures = []  # timestamps of recent failures
+        self.failed = False
+        self.lock = threading.Lock()
+
+    def start(self):
+        with self.lock:
+            if self.failed:
+                return
+            self.process = subprocess.Popen(self.cmd, preexec_fn=lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+            threading.Thread(target=self._monitor, daemon=True).start()
+
+    def _monitor(self):
+        ret = self.process.wait()
+        if ret == 0:
+            return  # normal exit, do not restart
+        self._handle_crash()
+
+    def _handle_crash(self):
+        now = time.time()
+        self.failures = [t for t in self.failures if now - t < 60]
+        self.failures.append(now)
+        if len(self.failures) >= 5:
+            self.failed = True
+            return
+        # exponential backoff up to 30s
+        delay = self.restart_delay
+        self.restart_delay = min(self.restart_delay * 2, 30)
+        time.sleep(delay)
+        self.start()
+
+    def terminate(self):
+        with self.lock:
+            if self.process and self.process.poll() is None:
+                self.process.terminate()
+                try:
+                    self.process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    self.process.kill()
+                self.process = None
+
+class Supervisor:
+    def __init__(self):
+        self.children = {}
+        self.lock = threading.Lock()
+
+    def register(self, name, cmd):
+        with self.lock:
+            if name in self.children:
+                raise ValueError(f"Process {name} already registered")
+            self.children[name] = ChildProcess(name, cmd)
+
+    def start_all(self):
+        with self.lock:
+            for child in self.children.values():
+                child.start()
+
+    def stop_all(self):
+        with self.lock:
+            for child in self.children.values():
+                child.terminate()
+
+# Example test harness
+if __name__ == "__main__":
+    import os
+    # Create a temporary script that fails 3 times then succeeds
+    script_path = "temp_child.py"
+    with open(script_path, "w") as f:
+        f.write("""
+import sys, os
+state_file = 'state.txt'
+if os.path.exists(state_file):
+    with open(state_file) as sf:
+        count = int(sf.read())
+else:
+    count = 0
+if count < 3:
+    count += 1
+    with open(state_file, 'w') as sf:
+        sf.write(str(count))
+    sys.exit(1)
+else:
+    sys.exit(0)
+""")
+    sup = Supervisor()
+    sup.register('test_child', ['python', script_path])
+    sup.start_all()
+    # Let it run for a while to observe restarts
+    time.sleep(20)
+    sup.stop_all()
+    os.remove(script_path)
+    if os.path.exists('state.txt'):
+        os.remove('state.txt')
+PROTOCOL_CLOSED
+=== PDLt session ended ===

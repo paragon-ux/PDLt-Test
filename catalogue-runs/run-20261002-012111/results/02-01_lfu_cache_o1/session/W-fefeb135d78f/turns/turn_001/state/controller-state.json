@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-0cb621bbc2",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-0cb621bbc2-P1",
+    "body": "IMPLEMENT a Least Frequently Used (LFU) cache in Python.\nENSURE that GET(key) and PUT(key, value) operate in O(1) average time complexity.\nWHEN capacity is exceeded, EVICT the key with the lowest frequency.\nIF multiple keys share the minimum frequency, EVICT the least recently used among them.\nON each GET(key) or PUT(key, value) access, INCREMENT the frequency count for that key.\nINCLUDE a self-contained test suite that verifies capacity limits, frequency updates, and LRU tie-breaking.\n\n- Python\n- get(key)\n- put(key, value)\n- O(1)\n- self-contained test suite",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-0cb621bbc2-R1",
+    "body": "DEFINE LFUCache class with constructor(capacity)\nINITIALIZE key_to_node hashmap\nINITIALIZE freq_to_nodes hashmap of ordered collections\nINITIALIZE min_frequency variable set to 0\nIMPLEMENT get(key) method\n  IF key not present THEN RETURN -1\n  CALL update_node_frequency(node)\n  RETURN node.value\nIMPLEMENT put(key, value) method\n  IF capacity is 0 THEN EXIT\n  IF key present THEN UPDATE node.value and CALL update_node_frequency(node)\n  ELSE\n    IF cache size equals capacity THEN CALL evict_least_frequently_used()\n    INSERT new node with frequency 1 into key_to_node and freq_to_nodes[1]\n    SET min_frequency to 1\nIMPLEMENT update_node_frequency(node) helper\n  REMOVE node from freq_to_nodes[node.frequency]\n  IF freq_to_nodes[node.frequency] is empty AND node.frequency equals min_frequency THEN INCREMENT min_frequency\n  INCREMENT node.frequency\n  ADD node to freq_to_nodes[node.frequency] as most recent\nIMPLEMENT evict_least_frequently_used() helper\n  SELECT LRU node from freq_to_nodes[min_frequency]\n  REMOVE selected node from key_to_node and freq_to_nodes[min_frequency]\nENSURE all operations maintain O(1) average time complexity\nCREATE self-contained test suite\n  DEFINE test case verifying basic put and get operations\n  DEFINE test case verifying capacity eviction of least frequently used key\n  DEFINE test case verifying frequency count increments on get and put\n  DEFINE test case verifying LRU tie-breaking among keys with equal minimum frequency\n  EXECUTE each test case and VERIFY expected cache state and returned values\nREPORT test suite outcomes",
+    "confirmed": true,
+    "source_prompt_id": "I-0cb621bbc2-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-0cb621bbc2-X1",
+    "body": "689ba7ba6247637c0edf50338db1dfbdb4d7a00137cd1b810547dfa0ec445aeb",
+    "confirmed": true,
+    "source_prompt_id": "I-0cb621bbc2-P1",
+    "source_plan_id": "I-0cb621bbc2-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

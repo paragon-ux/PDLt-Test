@@ -1,0 +1,9 @@
+REWRITE the Python function process_sales using functional constructs.
+FILTER the records using filter (or a list comprehension) to retain only records where amount > 0 and status != refunded.
+MAP each filtered r using map (or a comprehension) to assign a rate based on region with the mapping US:0.08, EU:0.20, UK:0.20, JP:0.10, and default rate 0.15.
+MAP each r to compute total = amount * (1 + rate) and apply round to 2 decimal places.
+GROUP the mapped records by region using a dictionary comprehension or itertools.groupby.
+REDUCE each group to compute a summary containing count of items and total of total field, rounding the total to 2 decimals.
+RETURN a summary dictionary mapping each region to its summary, preserving the exact output format of the original function.
+PROVIDE pytest‑style unit tests with a sample dataset that includes at least one record per region and a refunded record, and assert that the original and functional implementations produce identical results.
+NOTE the following identifiers must be used verbatim: process_sales, records, r, amount, status, refunded, US, EU, UK, JP, region, rate, total, summary, items, item, count, round, 0, 0.08, 0.20, 0.10, 0.15, 2, map, filter, reduce, comprehensions.

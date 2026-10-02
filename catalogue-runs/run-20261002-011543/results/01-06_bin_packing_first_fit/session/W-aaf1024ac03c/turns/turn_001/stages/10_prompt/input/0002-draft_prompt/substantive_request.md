@@ -1,0 +1,6 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Run the First Fit algorithm on the items given in the order [5, 5, 5, 3, 3, 3, 7, 7] with bin capacity C = 10 and report the resulting packing. Compute an optimal packing that minimizes the number of bins. Report the gap between the First Fit packing and the optimal packing, and explain why the arrival order causes the First Fit algorithm to use more bins. Include a self-test that verifies both packings use all items exactly once and respect the capacity constraint.
+APPROACH/RISK NOTES:
+Apply the standard First Fit heuristic to the sequence of items in the order provided, using bins of capacity 10. Then determine an optimal bin‑packing solution (e.g., via exhaustive search or a known optimal algorithm) to find the minimum number of bins required. Compare the bin counts to obtain the gap and provide an explanation of how the arrival order affects First Fit's performance. Finally, implement a self‑test that checks each item appears exactly once across the packings and that no bin exceeds capacity 10.
+OPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):
+- C = 10

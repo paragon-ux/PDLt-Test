@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-a0730fdb94",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-a0730fdb94-P1",
+    "body": "ENTITIES: allocate(), free(offset), PoolExhausted, malloc, new, list.append, N, B\n\nIMPLEMENT a fixed-block memory pool allocator in Python.\nINITIALIZE the pool with a fixed buffer of N blocks each of size B bytes.\nPROVIDE an allocate() method that:\n    RETURNS the offset of a free block.\n    RAISES PoolExhausted when no free blocks are available.\nPROVIDE a free(offset) method that:\n    RETURNS the block at the given offset to the pool.\nENSURE allocate() and free(offset) do NOT call malloc, new, or list.append after initialization; they MUST manage the free list directly within the buffer.\nINCLUDE tests that:\n    VERIFY allocation of all N blocks succeeds.\n    VERIFY a PoolExhausted exception is raised on the N+1 allocation attempt.\n    VERIFY correct free-and-reallocate cycles.\n    VERIFY detection of double-free errors.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-a0730fdb94-R1",
+    "body": "DEFINE a FixedBlockMemoryPool class\nINITIALIZE the pool with a fixed buffer of N blocks each of size B bytes\nSETUP a free list within the buffer to track available blocks\nIMPLEMENT allocate() method that\n    SEARCH the free list for a free block\n    RETURN the offset of the selected block\n    REMOVE the block from the free list\n    RAISE PoolExhausted if the free list is empty\nIMPLEMENT free(offset) method that\n    VALIDATE that offset corresponds to a block within the pool\n    DETECT double-free attempts and raise an appropriate exception\n    INSERT the block back into the free list\nENSURE allocate() and free(offset) do NOT invoke external allocation functions or list.append after initialization, managing the free list directly within the buffer\nDEFINE a custom PoolExhausted exception type\nWRITE test suite that\n    CREATE a pool instance with specific N and B values\n    CALL allocate() N times and VERIFY each returned offset is distinct\n    ATTEMPT a (N+1)th allocation and VERIFY that PoolExhausted is raised\n    CALL free(offset) on a subset of allocated offsets\n    CALL allocate() again to VERIFY that freed blocks are reusable\n    CALL free(offset) twice on the same offset and VERIFY detection of double-free error\nRUN the test suite and VERIFY all assertions pass",
+    "confirmed": true,
+    "source_prompt_id": "I-a0730fdb94-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-a0730fdb94-X1",
+    "body": "2538d5e4b0c4c9a9386a58dd55bdba21677fc790e46d2bea56042295e8a590b7",
+    "confirmed": true,
+    "source_prompt_id": "I-a0730fdb94-P1",
+    "source_plan_id": "I-a0730fdb94-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

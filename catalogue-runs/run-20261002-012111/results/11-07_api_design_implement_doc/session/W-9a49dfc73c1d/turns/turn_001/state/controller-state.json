@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-bfe9599a44",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-bfe9599a44-P1",
+    "body": "DESIGN a REST API for a bookmarks service that provides CRUD operations for bookmarks with fields url, title, tags, and created_at, and includes a tag-based search endpoint.\nIMPLEMENT the API using only the Python standard library (http.server, json, urllib) and do NOT use Flask or FastAPI.\nGENERATE an OpenAPI 3.0 specification in YAML or JSON describing the endpoints, request/response schemas, status codes, and example values.\nCREATE a self-contained test that starts the server, performs create, read, update, delete, and tag-search operations, and verifies the responses.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-bfe9599a44-R1",
+    "body": "DESIGN the bookmark data model with fields url, title, tags, and created_at\nDEFINE CRUD endpoint paths and HTTP methods for the bookmark resource\nDEFINE a tag-based search endpoint using a query parameter to filter bookmarks by tag\nSPECIFY request and response schemas, status codes, and example values for each endpoint\nCOMPOSE an OpenAPI 3.0 specification document in YAML or JSON that includes the defined endpoints and schemas\nIMPLEMENT an HTTP server using Python http.server that dispatches requests to handlers for each endpoint\n    PARSE request bodies as JSON using the json module\n    EXTRACT query parameters using urllib.parse\n    MANAGE bookmark records in an in-memory data store\n    SERIALIZE response bodies as JSON with appropriate content-type headers\n    RETURN correct HTTP status codes for each operation\nDEVELOP a self-contained test harness that starts the server in a background thread or subprocess\n    PERFORM HTTP requests using urllib.request to create a bookmark\n    PERFORM HTTP requests using urllib.request to retrieve the created bookmark\n    PERFORM HTTP requests using urllib.request to update the bookmark\n    PERFORM HTTP requests using urllib.request to delete the bookmark\n    PERFORM HTTP requests using urllib.request to search for bookmarks by tag\n    ASSERT that each response status code and payload matches the expected values from the OpenAPI specification\nSHUTDOWN the server after test execution completes",
+    "confirmed": true,
+    "source_prompt_id": "I-bfe9599a44-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-bfe9599a44-X1",
+    "body": "fd6003c28b7c77e24496c4935ebd588d9bf9a0ce13209788e4dd98ae95daa610",
+    "confirmed": true,
+    "source_prompt_id": "I-bfe9599a44-P1",
+    "source_plan_id": "I-bfe9599a44-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

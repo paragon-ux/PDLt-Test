@@ -1,0 +1,57 @@
+{
+  "id": "09-03",
+  "category": "adversarial_and_injection",
+  "file": "09_adversarial_and_injection/nested_code_fence_escape.txt",
+  "difficulty": "adversarial",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "HARNESS_ERROR",
+  "exit_code": 4,
+  "timed_out": false,
+  "elapsed_seconds": 11.83,
+  "harness_peak_memory_mb": 27.6,
+  "start_time": "2026-10-02T05:32:32.704608+00:00",
+  "session_id": "catalogue-09-03-1790919152",
+  "transcript_file": "results\\09-03_nested_code_fence_escape\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-06"
+  ],
+  "tags": [
+    "code-fence",
+    "escape",
+    "formatting"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 2,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1
+    },
+    "repairs": 0,
+    "execution_attempts": null,
+    "plan_echo": null,
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 1615
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 1757
+    }
+  },
+  "repeat": null,
+  "harness_error": {
+    "category": "OUTPUT_LIMIT_REACHED",
+    "operation": "DRAFT_PROMPT",
+    "status": null,
+    "attempts": [],
+    "message": "response reached the 16384 output-token limit before it finished"
+  }
+}

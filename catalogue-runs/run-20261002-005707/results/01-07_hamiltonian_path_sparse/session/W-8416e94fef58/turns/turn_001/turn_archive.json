@@ -1,0 +1,262 @@
+{
+  "turn_id": "turn_001",
+  "status": "CLOSED_CANCELLED",
+  "deliverable_sha256": null,
+  "events": [
+    {
+      "at_utc": "2026-10-02T04:58:15.258453+00:00",
+      "kind": "WORKSPACE_CREATED",
+      "payload": {
+        "workspace_id": "W-8416e94fef58",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:15.258453+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:15.523695+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 0.99
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:16.028548+00:00",
+      "kind": "EXECUTION_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "distribution": {
+          "WITHIN_100M_STEPS": 0.09,
+          "WITHIN_10M_STEPS": 0.58,
+          "WITHIN_100K_STEPS": 0.29,
+          "BEYOND_100M_STEPS": 0.04
+        },
+        "tier": "STANDARD",
+        "passed_gating": true,
+        "step_limit": 10000000,
+        "timeout_seconds": 30.0,
+        "memory_mb": 256
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:16.028548+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": true,
+        "domain": "general",
+        "verdict": "VERIFIED_EXECUTION",
+        "confidence": 0.97,
+        "passed_gating": true
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:16.039912+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:19.028478+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:19.039197+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:22.078403+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:22.088290+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-8bc917f3d8",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:22.108144+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-8bc917f3d8-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:22.168055+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-8bc917f3d8-P1"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:22.183313+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:23.698255+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:23.713569+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-8bc917f3d8-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:23.713569+00:00",
+      "kind": "PLAN_PROMPT_ECHO",
+      "payload": {
+        "plan_id": "I-8bc917f3d8-R1",
+        "identical": false,
+        "copied_line_ratio": 0.174
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:23.760834+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-8bc917f3d8-R1"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:24.022541+00:00",
+      "kind": "PLAN_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "distribution": {
+          "BEYOND_100M_STEPS": 0.04,
+          "WITHIN_100K_STEPS": 0.27,
+          "WITHIN_100M_STEPS": 0.07,
+          "WITHIN_10M_STEPS": 0.62
+        },
+        "passed_gating": true,
+        "request_tier": "STANDARD",
+        "plan_tier": "STANDARD",
+        "tier": "STANDARD",
+        "budget_raised": false,
+        "step_limit": 10000000
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:24.039798+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:25.488459+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:25.769581+00:00",
+      "kind": "SANDBOX_SESSION",
+      "payload": {
+        "backend": "appcontainer",
+        "mode": "auto",
+        "available": true,
+        "root": "C:\\Users\\USER\\AppData\\Local\\Temp\\pdlt-sandboxes\\engine-kxvi3xsm",
+        "os": "Windows 10.0.22000",
+        "profile": "PDLt.Sandbox.engine-kxvi3xsm",
+        "sid": "S-1-15-2-1520185577-3529066142-916640416-2646810814-3719002705-402667349-1408737608"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:25.769581+00:00",
+      "kind": "SANDBOX_RUN",
+      "payload": {
+        "block": 1,
+        "backend": "appcontainer",
+        "tier": "STANDARD",
+        "exit_code": 0,
+        "step_budget_exceeded": false,
+        "steps_used": 1342,
+        "timed_out": false,
+        "oom_killed": false,
+        "duration_ms": 161.6
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:25.769581+00:00",
+      "kind": "EXECUTION_ATTEMPTS",
+      "payload": {
+        "attempts": 1,
+        "repairs_used": 0,
+        "unmeasured_repairs": 0,
+        "repairs_allowed": 0,
+        "tier": "STANDARD"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:25.778100+00:00",
+      "kind": "VERIFICATION_FAILED",
+      "payload": {
+        "errors": [
+          "[WITNESS_INVALID] The witness does not check: the WITNESS line printed by the program does not check: Invalid positive witness structure: basis: Extra inputs are not permitted; search_exhausted: Extra inputs are not permitted; nodes_explored: Extra inputs are not permitted; method: Extra inputs are not permitted Rule: A witness is valid only if the host's checks confirm it against the task's constraints. Next attempt: Return a witness that satisfies the check named above, or mark the requirement open with the defect recorded."
+        ],
+        "codes": [
+          "WITNESS_INVALID"
+        ]
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:58:25.778100+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_001",
+        "status": "CLOSED_CANCELLED"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-10-02T04:58:25.778100+00:00"
+}

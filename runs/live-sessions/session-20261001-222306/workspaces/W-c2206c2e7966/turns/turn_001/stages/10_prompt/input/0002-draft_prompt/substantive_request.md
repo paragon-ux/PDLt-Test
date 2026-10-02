@@ -1,0 +1,3 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Calculate the expected number of total rolls required for a game where a fair six-sided die is rolled repeatedly until a 6 appears, with the condition that if two consecutive rolls of 5 occur before a 6, the roll count resets to zero and the process restarts.
+APPROACH/RISK NOTES:

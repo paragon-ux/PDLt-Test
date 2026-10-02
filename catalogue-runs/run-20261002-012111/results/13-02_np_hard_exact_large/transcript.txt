@@ -1,0 +1,12 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+REASONING: default=low per_operation={"BOOTSTRAP_ANALYSIS": "high", "DRAFT_EXECUTE": "high", "DRAFT_PLAN": "high", "DRAFT_PROMPT": "high", "EMIT_RESULT_IR": "high", "EXECUTE": "low", "INTERPRET_EXECUTION_INPUT": "high", "INTERPRET_PLAN_REVIEW": "high", "INTERPRET_PROMPT_REVIEW": "high", "REVISE_PLAN": "high", "REVISE_PROMPT": "high"}
+USER> Find the exact minimum vertex cover of the following graph with 50 nodes:
+
+Nodes: 0 through 49
+Edges: Every node i is connected to node (i+1) mod 50, node (i+7) mod 50, and node (i+13) mod 50.
+
+This is a regular graph with 150 edges. Minimum vertex cover is NP-hard. You must find the provably optimal solution, not an approximation.
+ASSISTANT> This request asks for a result that must be certified, and it is more likely than not to need more than 100,000,000 computation steps, the largest step budget of this environment. No verifier is available to certify such a result by other means, so an exact answer could not be produced or checked here and the request was not attempted. A smaller instance, or an explicitly approximate answer, fits within the environment.
+PROTOCOL_CLOSED
+=== PDLt session ended ===

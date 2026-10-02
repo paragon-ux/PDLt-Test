@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-de732a9597",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-de732a9597-P1",
+    "body": "OTHERWISE: IMPLEMENT a write-ahead log (WAL) in Python with crash recovery.\nOTHERWISE: PROVIDE an append(record: bytes) -> int function that appends a record prefixed with a 4-byte length, a 4-byte CRC32 checksum, and an 8-byte sequence number, returning its sequence number.\nOTHERWISE: PROVIDE a recover() -> list[bytes] function that reads the log file from disk and returns all valid records, stopping at the first corrupted or truncated record.\nOTHERWISE: PROVIDE a sync() function that forces an fsync to disk.\nOTHERWISE: INCLUDE a test that writes 100 records, closes the log, truncates the file mid-record to simulate a crash, reopens the log, and verifies that recover() returns exactly the intact records with correct checksums.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-de732a9597-R1",
+    "body": "DEFINE the WAL file format as sequential records each consisting of a 4‑byte length field, a 4‑byte CRC32 checksum, an 8‑byte sequence number, and the payload bytes.\nIMPLEMENT an append(record: bytes) -> int function that:\n    CALCULATE the length of the payload\n    ASSIGN the next sequence number\n    COMPUTE the CRC32 checksum of the payload\n    OPEN the WAL file in append binary mode\n    WRITE the length, checksum, sequence number, and payload in the specified order\n    RETURN the assigned sequence number\nIMPLEMENT a sync() function that:\n    OPEN the WAL file descriptor if not already open\n    CALL os.fsync on the file descriptor to force data to disk\nIMPLEMENT a recover() -> list[bytes] function that:\n    OPEN the WAL file in binary read mode\n    INITIALIZE an empty list for recovered records\n    WHILE not at end of file:\n        READ the 4‑byte length field\n        IF insufficient bytes, STOP processing\n        READ the 4‑byte checksum\n        READ the 8‑byte sequence number\n        READ the payload of the specified length\n        IF payload length is incomplete, STOP processing\n        VERIFY the CRC32 checksum matches the payload\n        IF verification fails, STOP processing\n        APPEND the payload to the recovered records list\n    RETURN the list of recovered records\nCREATE a test that:\n    INSTANTIATE a new WAL instance\n    FOR i from 1 to 100:\n        CALL append with a distinct record payload\n    CLOSE the WAL\n    TRUNCATE the WAL file at a random byte offset that falls within a record to simulate a crash\n    REOPEN the WAL\n    CALL recover to retrieve the list of intact records\n    COMPARE the recovered records with the subset of records written before the truncation point\n    ASSERT that the number of recovered records matches the expected count and that each record’s checksum is valid\nOPTIONALLY INCLUDE error handling that relies on the native runtime to propagate exceptions for unexpected I/O failures.",
+    "confirmed": true,
+    "source_prompt_id": "I-de732a9597-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-de732a9597-X1",
+    "body": "c71348add6d61631729cfd9e4596c358055dbc97e113fcb4047d440980248b8b",
+    "confirmed": true,
+    "source_prompt_id": "I-de732a9597-P1",
+    "source_plan_id": "I-de732a9597-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

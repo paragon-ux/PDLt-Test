@@ -1,0 +1,1 @@
+A fair, 6-sided die is rolled repeatedly until a 6 is rolled. Let \[X\] be the total number of rolls. However, there is a catch: if at any point you roll two 5s in a row before rolling a 6, the game immediately resets completely, and your current roll count resets back to 0. What is the expected (average) number of total rolls required to finish the game?

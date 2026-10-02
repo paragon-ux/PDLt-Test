@@ -1,0 +1,147 @@
+{
+  "provider": "Groq",
+  "operation": "DRAFT_PROMPT",
+  "verdict": "OK",
+  "text": "{\n  \"pseudocode\": [\n    \"ADD 2 AND 3\",\n    \"RETURN THE RESULT\"\n  ]\n}",
+  "metadata": {
+    "worker": "api",
+    "model": "openai/gpt-oss-120b",
+    "observed_model": "openai/gpt-oss-120b",
+    "mode": "live-api",
+    "reasoning_effort": "low",
+    "operation": "DRAFT_PROMPT",
+    "not_a_qualified_measurement_condition": true,
+    "base_url": "https://openrouter.ai/api/v1",
+    "response_id": "gen-1790916991-6VMejBZXh7V2hPYhpp3j",
+    "latency_ms": 1075.435,
+    "token_telemetry": "enabled",
+    "usage": {
+      "input_tokens": 324,
+      "output_tokens": 58,
+      "total_tokens": 382,
+      "cached_tokens": 0,
+      "reasoning_tokens": 23
+    },
+    "usage_source": "responses_api",
+    "usage_exact": true
+  },
+  "seconds": 1.08,
+  "request_body": {
+    "model": "openai/gpt-oss-120b",
+    "input": "You are a stateless operation worker.\n\nDraft Prompt Pseudocode for: add 2 and 3.\n\nReturn only a JSON object. Do not include markdown fences, commentary, or extra text.",
+    "instructions": "NORMATIVE GUIDELINES FOR PROMPT PSEUDOCODE (PDL-01 to PDL-08, PROMPT-01 to PROMPT-05):\n1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n   Example format:\n   READ the monthly sales records from the supplied CSV data\n   GROUP the records by region\n   RETURN the total sales for each region\n2. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n3. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n4. Purpose-Complete Target: Prompt Pseudocode defines the substantive requirements to be solved upon execution (PROMPT-01). DO NOT insert internal meta-rules, drafting instructions, or negative execution prohibitions (PROMPT-02, PDL-08).",
+    "max_output_tokens": 4096,
+    "reasoning": {
+      "effort": "low"
+    },
+    "provider": {
+      "order": [
+        "Groq"
+      ],
+      "allow_fallbacks": false
+    },
+    "safety_settings": [
+      {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_NONE"
+      }
+    ]
+  },
+  "response_body": {
+    "id": "gen-1790916991-6VMejBZXh7V2hPYhpp3j",
+    "object": "response",
+    "created_at": 1790916991,
+    "model": "openai/gpt-oss-120b",
+    "status": "completed",
+    "completed_at": 1790916992,
+    "output": [
+      {
+        "id": "rs_tmp_c9hl358lrc",
+        "type": "reasoning",
+        "status": "completed",
+        "content": [
+          {
+            "type": "reasoning_text",
+            "text": "We need to output JSON with pseudocode lines. Probably array of strings. Provide JSON object. No markdown."
+          }
+        ],
+        "summary": [],
+        "format": "unknown"
+      },
+      {
+        "id": "msg_tmp_4yg6lxlwvx",
+        "type": "message",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\n  \"pseudocode\": [\n    \"ADD 2 AND 3\",\n    \"RETURN THE RESULT\"\n  ]\n}",
+            "annotations": [],
+            "logprobs": []
+          }
+        ]
+      }
+    ],
+    "error": null,
+    "incomplete_details": null,
+    "tools": [],
+    "tool_choice": "auto",
+    "parallel_tool_calls": true,
+    "max_output_tokens": 4096,
+    "temperature": 1,
+    "top_p": 1,
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "top_logprobs": 0,
+    "max_tool_calls": null,
+    "metadata": {},
+    "background": false,
+    "previous_response_id": null,
+    "service_tier": "flex",
+    "truncation": "disabled",
+    "store": false,
+    "instructions": "NORMATIVE GUIDELINES FOR PROMPT PSEUDOCODE (PDL-01 to PDL-08, PROMPT-01 to PROMPT-05):\n1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n   Example format:\n   READ the monthly sales records from the supplied CSV data\n   GROUP the records by region\n   RETURN the total sales for each region\n2. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n3. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n4. Purpose-Complete Target: Prompt Pseudocode defines the substantive requirements to be solved upon execution (PROMPT-01). DO NOT insert internal meta-rules, drafting instructions, or negative execution prohibitions (PROMPT-02, PDL-08).",
+    "text": {
+      "format": {
+        "type": "text"
+      }
+    },
+    "reasoning": {
+      "effort": "low"
+    },
+    "safety_identifier": null,
+    "prompt_cache_key": null,
+    "prompt_cache_options": null,
+    "usage": {
+      "input_tokens": 324,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens": 58,
+      "output_tokens_details": {
+        "reasoning_tokens": 23
+      },
+      "total_tokens": 382,
+      "cost": 8.34e-05,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 8.34e-05,
+        "upstream_inference_input_cost": 4.86e-05,
+        "upstream_inference_output_cost": 3.48e-05
+      }
+    }
+  }
+}

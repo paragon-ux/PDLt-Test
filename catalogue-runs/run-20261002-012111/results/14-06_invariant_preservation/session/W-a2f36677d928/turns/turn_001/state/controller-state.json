@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-169891205e",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-169891205e-P1",
+    "body": "READ the traffic light controller state machine description.\nIDENTIFY the invariant 'At most one direction has a non-RED light at any time'.\nPROVE that the invariant is preserved by all transitions of the state machine.\nUSE INDUCTION on the number of transitions taken.\nIDENTIFY and LIST any assumptions required for the proof to hold.\nINCLUDE the term RED.\nINCLUDE the phrase At most one direction has a non-RED light at any time.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-169891205e-R1",
+    "body": "READ the traffic light controller state machine description.\nEXTRACT the states, transitions, and associated light signals.\nDEFINE the invariant phrase \"At most one direction has a non-RED light at any time\".\nAPPLY induction on the number of transitions taken.\n    ESTABLISH base case: verify the invariant holds in the initial state.\n    ESTABLISH inductive step: assume the invariant holds after n transitions, then for each possible transition verify that the invariant holds after the transition.\nIDENTIFY required assumptions for the proof to hold.\nLIST the identified assumptions.\nINCLUDE the term RED in the proof outline.\nINCLUDE the phrase \"At most one direction has a non-RED light at any time\" in the proof outline.\nGENERATE the proof outline.",
+    "confirmed": true,
+    "source_prompt_id": "I-169891205e-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-169891205e-X1",
+    "body": "c133e77a3f920605eb2b2e24e46669ce2dd85b41cb4823e6edcec7acd8b51da7",
+    "confirmed": true,
+    "source_prompt_id": "I-169891205e-P1",
+    "source_plan_id": "I-169891205e-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

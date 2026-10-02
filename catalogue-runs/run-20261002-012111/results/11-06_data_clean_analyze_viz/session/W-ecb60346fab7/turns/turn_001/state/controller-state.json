@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-391206d211",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-391206d211-P1",
+    "body": "OPERATIVE TASK ENTITIES:\n- Name\n- Age\n- Salary\n- Department\n- Start Date\n- 2026-09-28\n\nLOAD the CSV containing columns Name, Age, Salary, Department, and Start Date.\nHANDLE missing or invalid values by filling, dropping, or flagging as appropriate.\nCOMPUTE per-department statistics:\n    FOR each Department:\n        CALCULATE count of records.\n        CALCULATE mean salary.\n        CALCULATE median salary.\n        CALCULATE salary standard deviation.\nCALCULATE each employee's tenure in years from Start Date to reference date 2026-09-28.\nOUTPUT a cleaned summary table.\nOUTPUT a dataset suitable for a bar chart showing average salary by department.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-391206d211-R1",
+    "body": "LOAD the CSV file with columns Name, Age, Salary, Department, Start Date\nHANDLE missing or invalid values by filling, dropping, or flagging as appropriate\nGROUP records BY Department\nFOR each Department\n    CALCULATE count of records\n    CALCULATE mean salary\n    CALCULATE median salary\n    CALCULATE salary standard deviation\nENDFOR\nCALCULATE each employee's tenure in years as the difference between Start Date and reference date 2026-09-28\nCOMPOSE a cleaned summary table with per-department statistics and tenure information\nPREPARE a dataset for a bar chart showing average salary by department\nOUTPUT the cleaned summary table\nOUTPUT the bar chart dataset",
+    "confirmed": true,
+    "source_prompt_id": "I-391206d211-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-391206d211-X1",
+    "body": "0122cc544b931d5c965dd4478b5b6e4b6ebab681e8a88cbe9151fbe2aa5c3d88",
+    "confirmed": true,
+    "source_prompt_id": "I-391206d211-P1",
+    "source_plan_id": "I-391206d211-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

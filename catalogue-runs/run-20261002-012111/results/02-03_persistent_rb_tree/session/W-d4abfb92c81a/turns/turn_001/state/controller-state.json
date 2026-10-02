@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-7355992886",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-7355992886-P1",
+    "body": "IMPLEMENT a persistent functional red‑black tree in Python using path copying.\nPROVIDE three operations:\n  insert(tree, key) -> new_tree returns a new tree with the key inserted while leaving the original tree unchanged.\n  lookup(tree, key) -> bool checks whether a key is present.\n  to_sorted_list(tree) -> list returns an in‑order traversal of the tree.\nINCLUDE tests that verify persistence, red‑black invariants, and binary‑search‑tree ordering:\n  VERIFY that modifying the new tree does not affect the original tree.\n  ENSURE red‑black invariants:\n    - the root is black.\n    - no red parent has a red child.\n    - all paths have equal black‑height.\n  CONFIRM that the tree maintains binary‑search‑tree ordering.\nRETURN the complete Python source code and the test suite.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-7355992886-R1",
+    "body": "DEFINE node data class with attributes key, color, left, right.\nDEFINE tree data class with attribute root.\nIMPLEMENT insert(tree, key) RETURNING new_tree using path copying and red-black fix-up.\nIMPLEMENT lookup(tree, key) RETURNING bool via binary search.\nIMPLEMENT to_sorted_list(tree) RETURNING list via in-order traversal.\nIMPLEMENT rotate_left(node) and rotate_right(node) as helpers.\nIMPLEMENT recolor(node) and fix_insert(node) as red-black fix-up.\nIMPLEMENT verify_red_black_invariants(tree) that checks root black, no red-red parent-child, equal black-height.\nIMPLEMENT verify_bst_ordering(tree) that checks in-order traversal yields sorted keys.\nIMPLEMENT test_persistence:\n    CREATE baseline_tree as empty tree.\n    PERFORM insert(baseline_tree, key) => new_tree.\n    ASSERT baseline_tree unchanged.\n    CALL verify_red_black_invariants(new_tree).\n    CALL verify_bst_ordering(new_tree).\nIMPLEMENT test_multiple_insertions:\n    SET current_tree to empty tree.\n    FOR each key in a sample key set:\n        PERFORM insert(current_tree, key) => next_tree.\n        ASSERT current_tree unchanged.\n        CALL verify_red_black_invariants(next_tree).\n        CALL verify_bst_ordering(next_tree).\n        UPDATE current_tree to next_tree.\nRUN all test cases and report results.",
+    "confirmed": true,
+    "source_prompt_id": "I-7355992886-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-7355992886-X1",
+    "body": "794c3dc067135623b866c737a9c20604274a5b9b72471c2e14af8e6791f28781",
+    "confirmed": true,
+    "source_prompt_id": "I-7355992886-P1",
+    "source_plan_id": "I-7355992886-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

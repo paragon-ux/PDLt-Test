@@ -1,0 +1,1 @@
+{"kind": "PROMPT", "prompt_body": "IMPLEMENT a Caesar cipher encoder\n    SHIFT alphabetic characters by a specified key\nIMPLEMENT a Caesar cipher decoder\n    REVERSE the encoder operation using the same key\nRETURN the encoder and decoder implementations", "approach_handoff": "NONE", "task_entities": ["Caesar cipher", "encoder", "decoder"]}

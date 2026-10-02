@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-7310fb434c",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-7310fb434c-P1",
+    "body": "COMPUTE the probability that, when a unit-length stick is broken at two points chosen uniformly and independently at random, the ratio of the shortest piece (L_min) to the longest piece (L_max) is greater than or equal to 1/4.\nRETURN the probability value.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-7310fb434c-R1",
+    "body": "DEFINE two independent uniform random variables X and Y on the interval [0,1] representing the break points.\nORDER the break points so that X ≤ Y.\nCOMPUTE the three segment lengths L1 = X, L2 = Y – X, L3 = 1 – Y.\nIDENTIFY L_min as the smallest of {L1, L2, L3} and L_max as the largest of {L1, L2, L3}.\nFORMULATE the condition C: L_min / L_max ≥ 1/4.\nDETERMINE the region in the (X, Y) unit square where condition C holds.\nSET UP the double integral of the joint density (constant 2) over the region satisfying C.\nCOMPUTE the probability by evaluating the integral.\nPREPARE a detailed step-by-step derivation, including geometric interpretation of the region, integration limits, and algebraic simplifications.\nRETURN the probability value as the final result.",
+    "confirmed": true,
+    "source_prompt_id": "I-7310fb434c-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-7310fb434c-X1",
+    "body": "957a56645adbd1f26850d2aa5ced8ab202f906642efbde31e6572b664d2391cf",
+    "confirmed": true,
+    "source_prompt_id": "I-7310fb434c-P1",
+    "source_plan_id": "I-7310fb434c-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

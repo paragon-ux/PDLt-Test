@@ -1,0 +1,28 @@
+{"at_utc":"2026-10-02T05:31:57.048199+00:00","kind":"WORKSPACE_CREATED","payload":{"workspace_id":"W-f9c93c0b3d31","turn_id":"turn_001"}}
+{"at_utc":"2026-10-02T05:31:57.049197+00:00","kind":"EXPLICIT_INVOCATION_OBSERVED","payload":{"substantive_request_present":true}}
+{"at_utc":"2026-10-02T05:31:57.488967+00:00","kind":"ACTIVATION_ROUTED","payload":{"verdict":"APPLY_PROTOCOL","passed_gating":true,"confidence":0.93}}
+{"at_utc":"2026-10-02T05:31:57.991875+00:00","kind":"EXECUTION_PROFILE_ROUTED","payload":{"predicted_steps":"WITHIN_100K_STEPS","distribution":{"WITHIN_10M_STEPS":0.0,"BEYOND_100M_STEPS":0.0,"WITHIN_100M_STEPS":0.0,"WITHIN_100K_STEPS":1.0},"tier":"MINIMAL","passed_gating":true,"step_limit":100000,"timeout_seconds":30.0,"memory_mb":256}}
+{"at_utc":"2026-10-02T05:31:57.995361+00:00","kind":"PROBLEM_CLASS_CLASSIFIED","payload":{"requires_verified_execution":false,"domain":null,"verdict":"STANDARD_EXECUTION","confidence":0.95,"passed_gating":true}}
+{"at_utc":"2026-10-02T05:31:58.007637+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-10-02T05:31:59.832966+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-10-02T05:31:59.836702+00:00","kind":"TASK_ENTITY_DROPPED_UNSAFE","payload":{"count":1}}
+{"at_utc":"2026-10-02T05:31:59.847707+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}
+{"at_utc":"2026-10-02T05:32:02.708119+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}
+{"at_utc":"2026-10-02T05:32:02.711147+00:00","kind":"PROMPT_LINT_RETRY","payload":{"violations":["Line begins with invented field label 'DEFINE USER STORY 1:' (PDL-05); state each operation directly."]}}
+{"at_utc":"2026-10-02T05:32:02.720353+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0003-draft_prompt"}}
+{"at_utc":"2026-10-02T05:32:06.522644+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0003-draft_prompt"}}
+{"at_utc":"2026-10-02T05:32:06.525667+00:00","kind":"PROMPT_LINT_UNRESOLVED","payload":{"operation":"DRAFT_PROMPT","violations":["Line begins with invented field label 'COMBINED REQUEST:' (PDL-05); state each operation directly."],"lines":[{"line":2,"clause":"PDL-05","kind":"field_label","text":"COMBINED REQUEST:"}],"host_note":true}}
+{"at_utc":"2026-10-02T05:32:06.537102+00:00","kind":"PROTOCOL_BOUND","payload":{"instance_id":"I-caf8c3614b","turn_id":"turn_001"}}
+{"at_utc":"2026-10-02T05:32:06.547102+00:00","kind":"ARTIFACT_PUBLISHED","payload":{"kind":"prompt","artifact_id":"I-caf8c3614b-P1","confirmed":false}}
+{"at_utc":"2026-10-02T05:32:06.625553+00:00","kind":"ARTIFACT_CONFIRMED","payload":{"kind":"prompt","artifact_id":"I-caf8c3614b-P1"}}
+{"at_utc":"2026-10-02T05:32:06.640416+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PLAN","stage":"30_plan","invocation_id":"0004-draft_plan"}}
+{"at_utc":"2026-10-02T05:32:07.521015+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PLAN","stage":"30_plan","invocation_id":"0004-draft_plan"}}
+{"at_utc":"2026-10-02T05:32:07.529043+00:00","kind":"ARTIFACT_PUBLISHED","payload":{"kind":"plan","artifact_id":"I-caf8c3614b-R1","confirmed":false}}
+{"at_utc":"2026-10-02T05:32:07.532043+00:00","kind":"PLAN_PROMPT_ECHO","payload":{"plan_id":"I-caf8c3614b-R1","identical":false,"copied_line_ratio":0.0}}
+{"at_utc":"2026-10-02T05:32:07.597043+00:00","kind":"ARTIFACT_CONFIRMED","payload":{"kind":"plan","artifact_id":"I-caf8c3614b-R1"}}
+{"at_utc":"2026-10-02T05:32:07.929658+00:00","kind":"PLAN_PROFILE_ROUTED","payload":{"predicted_steps":"WITHIN_100K_STEPS","distribution":{"WITHIN_100M_STEPS":0.0,"WITHIN_10M_STEPS":0.01,"BEYOND_100M_STEPS":0.0,"WITHIN_100K_STEPS":0.99},"passed_gating":true,"request_tier":"MINIMAL","plan_tier":"MINIMAL","tier":"MINIMAL","budget_raised":false,"step_limit":100000}}
+{"at_utc":"2026-10-02T05:32:08.353639+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"EXECUTE","stage":"50_execution","invocation_id":"0005-execute"}}
+{"at_utc":"2026-10-02T05:32:08.905050+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"EXECUTE","stage":"50_execution","invocation_id":"0005-execute"}}
+{"at_utc":"2026-10-02T05:32:08.908079+00:00","kind":"EXECUTION_ATTEMPTS","payload":{"attempts":1,"repairs_used":0,"unmeasured_repairs":0,"repairs_allowed":1,"tier":"MINIMAL"}}
+{"at_utc":"2026-10-02T05:32:08.911077+00:00","kind":"TURN_STATUS","payload":{"turn_id":"turn_001","status":"CLOSED_SUCCESS"}}
+{"at_utc":"2026-10-02T05:32:08.917382+00:00","kind":"EXECUTION_OUTCOME_PUBLISHED","payload":{"kind":"RESULT","source_prompt_id":"I-caf8c3614b-P1","source_plan_id":"I-caf8c3614b-R1","result_body_hash":"85de9f9bc762a7ed31a2530abb5833726b4d05674e228c0a7e2c8bdae543c295","confirmed_prompt_hash":"de62689d43c3a52200f26e5dfafb794ea61044086793afe7a1a35a9aa12e46f8","confirmed_plan_hash":"835905811193081783e5c0b92a81c2f42260be26db17d4b198639c5e8faab32b"}}

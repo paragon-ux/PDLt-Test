@@ -1,0 +1,80 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+REASONING: default=low per_operation={"BOOTSTRAP_ANALYSIS": "high", "DRAFT_EXECUTE": "high", "DRAFT_PLAN": "high", "DRAFT_PROMPT": "high", "EMIT_RESULT_IR": "high", "EXECUTE": "low", "INTERPRET_EXECUTION_INPUT": "high", "INTERPRET_PLAN_REVIEW": "high", "INTERPRET_PROMPT_REVIEW": "high", "REVISE_PLAN": "high", "REVISE_PROMPT": "high"}
+USER> Given the following query workload on a PostgreSQL database, recommend an optimal index set:
+
+Table: events (id BIGINT PK, user_id INT, event_type TEXT, payload JSONB, created_at TIMESTAMP, processed BOOLEAN)
+Row count: 50 million
+
+Query workload (with frequency):
+Q1 (40%): SELECT * FROM events WHERE user_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT 50
+Q2 (30%): SELECT * FROM events WHERE event_type = ? AND processed = false ORDER BY created_at ASC LIMIT 100
+Q3 (15%): SELECT user_id, COUNT(*) FROM events WHERE created_at BETWEEN ? AND ? GROUP BY user_id HAVING COUNT(*) > 10
+Q4 (10%): SELECT * FROM events WHERE payload @> '{"key": "value"}'
+Q5 (5%):  SELECT * FROM events WHERE id = ?
+
+For each recommended index: specify the exact CREATE INDEX statement (including partial indexes and expression indexes where appropriate), explain which queries it serves, and estimate the space overhead.
+ASSISTANT> Prompt Pseudocode
+
+TASK ENTITIES: events, id, user_id, event_type, payload, created_at, processed, BIGINT, INT, TEXT, JSONB, TIMESTAMP, BOOLEAN, {\"key\": \"value\"}
+TABLE DEFINITION: events (id BIGINT PK, user_id INT, event_type TEXT, payload JSONB, created_at TIMESTAMP, processed BOOLEAN)
+QUERY WORKLOAD: Q1 (40%): SELECT * FROM events WHERE user_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT 50
+QUERY WORKLOAD: Q2 (30%): SELECT * FROM events WHERE event_type = ? AND processed = false ORDER BY created_at ASC LIMIT 100
+QUERY WORKLOAD: Q3 (15%): SELECT user_id, COUNT(*) FROM events WHERE created_at BETWEEN ? AND ? GROUP BY user_id HAVING COUNT(*) > 10
+QUERY WORKLOAD: Q4 (10%): SELECT * FROM events WHERE payload @> '{\"key\": \"value\"}'
+QUERY WORKLOAD: Q5 (5%): SELECT * FROM events WHERE id = ?
+RECOMMEND optimal set of PostgreSQL indexes for the table events based on the query workload
+FOR EACH recommended index, PROVIDE the exact CREATE INDEX statement
+FOR EACH recommended index, EXPLAIN which queries it serves
+FOR EACH recommended index, ESTIMATE the space overhead
+
+[host] PDL-05: line 1 "TASK ENTITIES:" is an invented field label; /revise to state the operation directly
+[host] PDL-05: line 2 "TABLE DEFINITION:" is an invented field label; /revise to state the operation directly
+[host] PDL-05: line 3 "QUERY WORKLOAD:" is an invented field label; /revise to state the operation directly
+[host] PDL-05: line 4 "QUERY WORKLOAD:" is an invented field label; /revise to state the operation directly
+[host] PDL-05: line 5 "QUERY WORKLOAD:" is an invented field label; /revise to state the operation directly
+[host] PDL-05: line 6 "QUERY WORKLOAD:" is an invented field label; /revise to state the operation directly
+[host] PDL-05: line 7 "QUERY WORKLOAD:" is an invented field label; /revise to state the operation directly
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+PARSE the query workload definitions for the events table
+EXTRACT filter, order, group, and JSONB containment predicates from each query
+IDENTIFY unique column combinations used in predicates
+FOR each unique column combination
+    DETERMINE suitable index type (e.g., BTREE for scalar columns, GIN for JSONB)
+    FORMULATE a candidate CREATE INDEX definition for the column combination and index type
+    ESTIMATE the storage overhead for the candidate index
+    ASSIGN the candidate index to the queries that can benefit from it
+ENDFOR
+COMPOSE the CREATE INDEX statements with explanations of which queries each index serves
+OUTPUT the composed index recommendations
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> -- Index recommendations for the events table based on the given workload
+
+-- 1. Supports Q1 (filter by user_id and created_at, order by created_at DESC)
+CREATE INDEX idx_events_user_created_desc ON events (user_id, created_at DESC);
+
+-- 2. Supports Q2 (filter by event_type and processed, order by created_at ASC). Including the primary key column can make index‑only scans possible.
+CREATE INDEX idx_events_eventtype_processed ON events (event_type, processed) INCLUDE (id);
+
+-- 3. Supports Q3 (range on created_at) and also benefits Q1 ordering. A simple btree on created_at covers the range and ordering requirements.
+CREATE INDEX idx_events_created_at ON events (created_at);
+
+-- 4. Supports Q4 (JSONB containment). Use a GIN index on the payload column.
+CREATE INDEX idx_events_payload_gin ON events USING GIN (payload);
+
+-- 5. Q5 is already covered by the primary key on id (id BIGINT PRIMARY KEY), so no additional index is needed.
+
+-- Space overhead estimates (approximate, based on typical PostgreSQL index size factors):
+-- * idx_events_user_created_desc: ~1.2 GB (covers two columns, ~2.5 % of table size)
+-- * idx_events_eventtype_processed: ~800 MB (two columns with INCLUDE, ~1.5 % of table size)
+-- * idx_events_created_at: ~600 MB (single column, ~1 % of table size)
+-- * idx_events_payload_gin: ~1.5 GB (GIN index on JSONB, ~3 % of table size)
+-- Total additional storage ≈ 4.1 GB, roughly 8 % of the 50 M‑row table size.
+PROTOCOL_CLOSED
+=== PDLt session ended ===

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-792ffe8e22",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-792ffe8e22-P1",
+    "body": "IDENTIFY contradictions in the API specification for the following entities:\nPOST /users\n201 Created\n200 OK\n409 Conflict\nBearer token\npublic registration endpoint\nauto-incrementing integers starting from 1\nUUIDs generated client-side\n\nLIST each identified contradiction.\n\nPROPOSE a consistent resolution for each contradiction.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-792ffe8e22-R1",
+    "body": "READ the supplied API specification text\nANALYZE the specification for internal consistency regarding status codes, authentication, identifier generation, and endpoint behavior\nIDENTIFY any contradictions among these elements\nRECORD each identified contradiction\nFOR each recorded contradiction\n    PROPOSE a consistent resolution that reconciles the conflicting elements\nFORMAT the output as a list of contradictions followed by their resolutions",
+    "confirmed": true,
+    "source_prompt_id": "I-792ffe8e22-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-792ffe8e22-X1",
+    "body": "3098cb76fd619520c177b1caf06e670ba33ca2800f2edb1a7c09ecfd98fcadd0",
+    "confirmed": true,
+    "source_prompt_id": "I-792ffe8e22-P1",
+    "source_plan_id": "I-792ffe8e22-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

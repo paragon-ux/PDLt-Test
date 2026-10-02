@@ -1,0 +1,1 @@
+{"kind":"ANALYSIS","task_summary":"Implement a function that computes all prime numbers up to a given integer N using the Sieve of Eratosthenes algorithm.","approach_notes":"","risk_notes":"","task_entities":["N","Sieve of Eratosthenes"]}

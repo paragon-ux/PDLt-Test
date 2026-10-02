@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-9a880848e7",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-9a880848e7-P1",
+    "body": "OPERATIVE TASK ENTITIES: OAuth2, Authorization Code Flow, PKCE, Python, code_verifier, code_challenge, S256, client_id, redirect_uri, code_challenge_method, response_type, scope, state, refresh_token, urllib, hashlib, secrets, base64, RFC 7636\nGENERATE a random code_verifier string of length 43-128 characters using the secrets module\nCOMPUTE its S256 code_challenge using hashlib and base64 URL-safe encoding\nCONSTRUCT the authorization URL including client_id, redirect_uri, code_challenge, code_challenge_method='S256', response_type='code', scope, and state\nENSURE the state parameter is cryptographically random to protect against CSRF\nMAKE a POST request to the token endpoint using urllib to exchange the authorization code for access token and refresh_token, supplying code_verifier\nIMPLEMENT token refresh by making a POST request to the token endpoint with grant_type='refresh_token' and the refresh_token using urllib\nPROVIDE a test that verifies that the code_challenge derived from the code_verifier matches the S256 computation as defined in RFC 7636\nUSE only the Python standard library modules urllib, hashlib, secrets, and base64",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-9a880848e7-R1",
+    "body": "GENERATE a cryptographically random code_verifier string of length between 43 and 128 characters using the secrets module\nCOMPUTE the S256 code_challenge from the code_verifier by applying SHA-256 via hashlib and encoding the digest using URL-safe base64\nENSURE that the generated code_verifier and computed code_challenge conform to RFC 7636 specifications\nGENERATE a cryptographically random state value for CSRF protection using the secrets module\nCONSTRUCT the authorization URL with query parameters: client_id, redirect_uri, response_type='code', scope, code_challenge_method='S256', code_challenge, and state\nMAKE a POST request to the token endpoint using urllib, including the authorization code and the original code_verifier, to obtain an access token and a refresh token\nIMPLEMENT token refresh by making a POST request to the token endpoint using urllib with grant_type='refresh_token' and the refresh token\nPROVIDE a test that asserts the code_challenge derived from the code_verifier matches the expected S256 computation as defined in RFC 7636",
+    "confirmed": true,
+    "source_prompt_id": "I-9a880848e7-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-9a880848e7-X1",
+    "body": "1553e62733fae53f9feb9eaf4d2d90c3fffecfb8ded8ab1072cc0cf49b0f37d0",
+    "confirmed": true,
+    "source_prompt_id": "I-9a880848e7-P1",
+    "source_plan_id": "I-9a880848e7-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

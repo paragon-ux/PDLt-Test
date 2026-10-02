@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-873a07a35d",
+  "stage": "CLOSED_CANCELLED",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-873a07a35d-P1",
+    "body": "READ the universe U = {1,2,3,4,5,6,7,8,9}\nREAD the sets S1 through S9\nAPPLY Algorithm X with dancing links to search for all exact covers of U using the given sets\nENUMERATE every subcollection of S1‑S9 where each element of U appears in exactly one selected set\nOUTPUT each exact cover solution\nPROVIDE a self‑contained test that verifies each solution covers U exactly once",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-873a07a35d-R1",
+    "body": "READ the universe U = {1,2,3,4,5,6,7,8,9}\nREAD the sets S1 through S9\nAPPLY Algorithm X with dancing links to search for all exact covers of U using the given sets\nENUMERATE every subcollection of S1‑S9 where each element of U appears in exactly one selected set\nOUTPUT each exact cover solution\nPROVIDE a self‑contained test that verifies each solution covers U exactly once",
+    "confirmed": true,
+    "source_prompt_id": "I-873a07a35d-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

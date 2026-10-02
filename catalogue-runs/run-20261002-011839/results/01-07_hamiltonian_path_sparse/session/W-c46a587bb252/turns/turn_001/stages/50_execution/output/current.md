@@ -1,0 +1,91 @@
+import json
+
+def find_hamiltonian_path(edges, num_nodes):
+    # Build adjacency list
+    adj = {i: set() for i in range(num_nodes)}
+    for u, v in edges:
+        adj[u].add(v)
+        adj[v].add(u)
+    path = []
+    visited = [False] * num_nodes
+    nodes_explored = 0
+
+    def backtrack(current):
+        nonlocal nodes_explored
+        path.append(current)
+        visited[current] = True
+        nodes_explored += 1
+        if len(path) == num_nodes:
+            return True
+        # Prune: if any unvisited node has no unvisited neighbors, dead end
+        for nxt in adj[current]:
+            if not visited[nxt]:
+                # Further pruning: check degree of unvisited nodes
+                dead = False
+                for node in range(num_nodes):
+                    if not visited[node]:
+                        # count unvisited neighbors
+                        if len([nbr for nbr in adj[node] if not visited[nbr]]) == 0:
+                            dead = True
+                            break
+                if dead:
+                    continue
+                if backtrack(nxt):
+                    return True
+        # backtrack
+        visited[current] = False
+        path.pop()
+        return False
+
+    for start in range(num_nodes):
+        # reset for each start
+        path.clear()
+        visited = [False] * num_nodes
+        nodes_explored = 0
+        if backtrack(start):
+            return path, nodes_explored
+    return None, nodes_explored
+
+edges = [(0,1), (1,2), (2,3), (3,4), (4,5), (5,6), (6,7), (7,8), (8,9), (9,10), (10,11), (0,3), (2,7), (4,9), (6,11), (1,8)]
+num_nodes = 12
+path, explored = find_hamiltonian_path(edges, num_nodes)
+if path:
+    # verification
+    edge_set = {frozenset(e) for e in edges}
+    valid = all(frozenset([path[i], path[i+1]]) in edge_set for i in range(len(path)-1)) and len(set(path)) == num_nodes
+    witness = {
+        "polarity": "positive",
+        "data": {"hamiltonian_path": path},
+        "evidence": {"path": "execution://body", "section": None, "observed": None}
+    }
+else:
+    witness = {
+        "polarity": "negative",
+        "basis": "search",
+        "search_exhausted": True,
+        "nodes_explored": explored,
+        "method": "backtracking with pruning",
+        "evidence": {"path": "execution://body", "section": None, "observed": None}
+    }
+print("WITNESS: " + json.dumps(witness))
+
+```json
+{
+  "files": [],
+  "reconciliation": [],
+  "open_defects": [],
+  "witness": {
+    "polarity": "negative",
+    "basis": "search",
+    "search_exhausted": true,
+    "nodes_explored": 110,
+    "method": "backtracking with pruning",
+    "evidence": {
+      "path": "execution://body",
+      "section": null,
+      "observed": null
+    },
+    "provisional": false
+  }
+}
+```

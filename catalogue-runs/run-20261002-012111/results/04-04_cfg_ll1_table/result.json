@@ -1,0 +1,68 @@
+{
+  "id": "04-04",
+  "category": "parsers_and_compilers",
+  "file": "04_parsers_and_compilers/cfg_ll1_table.txt",
+  "difficulty": "hard",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 8.19,
+  "harness_peak_memory_mb": 28.4,
+  "start_time": "2026-10-02T05:26:02.701074+00:00",
+  "session_id": "catalogue-04-04-1790918762",
+  "transcript_file": "results\\04-04_cfg_ll1_table\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-07"
+  ],
+  "tags": [
+    "CFG",
+    "LL1",
+    "FIRST-FOLLOW"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 4,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "unmeasured_repairs": 0,
+      "repairs_allowed": 1,
+      "tier": "MINIMAL"
+    },
+    "plan_echo": {
+      "plan_id": "I-4f41b79f85-R1",
+      "identical": false,
+      "copied_line_ratio": 0.038
+    },
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 2032,
+      "DRAFT_PLAN": 1649,
+      "EXECUTE": 30
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 2245,
+      "DRAFT_PLAN": 1948,
+      "EXECUTE": 762
+    }
+  },
+  "repeat": null,
+  "harness_error": null
+}

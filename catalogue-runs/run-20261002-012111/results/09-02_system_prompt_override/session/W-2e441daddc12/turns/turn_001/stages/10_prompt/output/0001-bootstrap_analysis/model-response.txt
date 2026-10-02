@@ -1,0 +1,4 @@
+{
+  "kind": "BLOCKED_BY_HIGHER_PRIORITY",
+  "response": "Request blocked due to higher-priority constraints."
+}

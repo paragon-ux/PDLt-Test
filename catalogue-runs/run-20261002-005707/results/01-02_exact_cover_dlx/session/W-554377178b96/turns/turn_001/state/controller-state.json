@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-2a167bba1d",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-2a167bba1d-P1",
+    "body": "GENERATE a program that finds all exact covers of the universe U = {1, 2, 3, 4, 5, 6, 7, 8, 9} using the subsets S1 = {1, 2, 3}, S2 = {4, 5, 6}, S3 = {7, 8, 9}, S4 = {1, 4, 7}, S5 = {2, 5, 8}, S6 = {3, 6, 9}, S7 = {1, 5, 9}, S8 = {2, 6, 7}, S9 = {3, 4, 8}.\nIMPLEMENT Knuth's Algorithm X with dancing links to perform the exact cover search.\nINCLUDE a self-contained test that verifies each solution covers U exactly once.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-2a167bba1d-R1",
+    "body": "DEFINE data structures for dancing links nodes and column headers\nBUILD the exact cover matrix representing subsets S1 through S9 for universe U\nIMPLEMENT dancing links operations\n    IMPLEMENT COVER operation to remove a column and its rows\n    IMPLEMENT UNCOVER operation to restore a column and its rows\nIMPLEMENT recursive search using Algorithm X\n    SELECT a column with minimal size\n    COVER the selected column\n    EXPLORE each row in the column recursively\n    UNCOVER the column after recursion\nACCUMULATE each full exact cover solution when all columns are covered\nOUTPUT all accumulated solutions in a readable format\nCREATE a self-contained test harness\n    INVOKE the search routine\n    VERIFY each reported solution covers U exactly once without overlap\n    VERIFY the test completes successfully",
+    "confirmed": true,
+    "source_prompt_id": "I-2a167bba1d-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-2a167bba1d-X1",
+    "body": "a1b35f4e4fb967e8908a6c7ac8ef57e67bce07256ca340f847b52fe12fd99c61",
+    "confirmed": true,
+    "source_prompt_id": "I-2a167bba1d-P1",
+    "source_plan_id": "I-2a167bba1d-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

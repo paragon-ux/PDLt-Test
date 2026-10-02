@@ -1,0 +1,13 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Implement a fixed-block memory pool allocator in Python. The pool is initialized with a fixed buffer of N blocks each of size B bytes. Provide an allocate() method that returns the offset of a free block or raises PoolExhausted when no blocks are available. Provide a free(offset) method that returns a block to the pool. After initialization, allocate() and free() must not call malloc, new, or list.append; they must manage the free list directly within the buffer. Include tests that verify allocation of all N blocks, raising PoolExhausted on the N+1 request, correct free-and-reallocate cycles, and detection of double-free errors.
+APPROACH/RISK NOTES:
+
+OPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):
+- allocate()
+- free(offset)
+- PoolExhausted
+- malloc
+- new
+- list.append
+- N
+- B

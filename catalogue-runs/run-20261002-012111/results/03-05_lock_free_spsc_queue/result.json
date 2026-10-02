@@ -1,0 +1,68 @@
+{
+  "id": "03-05",
+  "category": "systems_programming",
+  "file": "03_systems_programming/lock_free_spsc_queue.txt",
+  "difficulty": "hard",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 15.3,
+  "harness_peak_memory_mb": 42.8,
+  "start_time": "2026-10-02T05:24:49.104291+00:00",
+  "session_id": "catalogue-03-05-1790918689",
+  "transcript_file": "results\\03-05_lock_free_spsc_queue\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-03",
+    "PDL-06"
+  ],
+  "tags": [
+    "lock-free",
+    "ring-buffer",
+    "concurrency"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 4,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "unmeasured_repairs": 0,
+      "repairs_allowed": 2,
+      "tier": "HEAVY_COMPUTE"
+    },
+    "plan_echo": {
+      "plan_id": "I-7fe480c8e4-R1",
+      "identical": false,
+      "copied_line_ratio": 0.0
+    },
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 4026,
+      "DRAFT_PLAN": 2955,
+      "EXECUTE": 99
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 4222,
+      "DRAFT_PLAN": 3186,
+      "EXECUTE": 846
+    }
+  },
+  "repeat": null,
+  "harness_error": null
+}

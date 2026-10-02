@@ -1,0 +1,1 @@
+{"kind": "RESULT", "body": "\\frac{7}{18}", "result_ir": {"files": [], "reconciliation": [], "open_defects": [], "witness": null}}

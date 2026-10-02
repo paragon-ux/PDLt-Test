@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-67be70472f",
+  "stage": "CLOSED_CANCELLED",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-67be70472f-P1",
+    "body": "READ the set S = {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21}\nREAD the target T = 40\nIDENTIFY all subsets of S that sum exactly to T\nFOR EACH identified subset\n    EMIT the subset\n    VERIFY its sum equals T\nEND_FOR\nREPORT the total number of identified subsets",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-67be70472f-R1",
+    "body": "READ the set S = {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21}\nREAD the target T = 40\nINITIALIZE an empty collection SOLUTIONS\nDEFINE a BACKTRACKING PROCEDURE with parameters CURRENT_SUBSET and REMAINING_SUM\n    IF REMAINING_SUM equals 0 THEN\n        EMIT CURRENT_SUBSET\n        VERIFY that the sum of CURRENT_SUBSET equals T\n        ADD CURRENT_SUBSET to SOLUTIONS\n    ELSE IF REMAINING_SUM less than 0 THEN\n        RETURN\n    ELSE\n        FOR each ELEMENT in the remaining elements of S not yet considered\n            APPEND ELEMENT to CURRENT_SUBSET\n            CALL BACKTRACKING PROCEDURE with CURRENT_SUBSET and REMAINING_SUM minus ELEMENT\n            REMOVE ELEMENT from CURRENT_SUBSET\n        END_FOR\n    END_IF\nEND_PROCEDURE\nCALL BACKTRACKING PROCEDURE with an empty CURRENT_SUBSET and REMAINING_SUM set to T\nREPORT the total number of subsets stored in SOLUTIONS",
+    "confirmed": true,
+    "source_prompt_id": "I-67be70472f-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

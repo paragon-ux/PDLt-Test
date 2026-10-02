@@ -1,0 +1,68 @@
+{
+  "id": "03-06",
+  "category": "systems_programming",
+  "file": "03_systems_programming/file_watcher_polling.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 14.86,
+  "harness_peak_memory_mb": 36.3,
+  "start_time": "2026-10-02T05:25:04.433653+00:00",
+  "session_id": "catalogue-03-06-1790918704",
+  "transcript_file": "results\\03-06_file_watcher_polling\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-03",
+    "PDL-06"
+  ],
+  "tags": [
+    "file-watcher",
+    "polling",
+    "cross-platform"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 4,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "unmeasured_repairs": 0,
+      "repairs_allowed": 1,
+      "tier": "STANDARD"
+    },
+    "plan_echo": {
+      "plan_id": "I-73f274ab0f-R1",
+      "identical": false,
+      "copied_line_ratio": 0.0
+    },
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 2711,
+      "DRAFT_PLAN": 1669,
+      "EXECUTE": 51
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 2962,
+      "DRAFT_PLAN": 1949,
+      "EXECUTE": 1162
+    }
+  },
+  "repeat": null,
+  "harness_error": null
+}

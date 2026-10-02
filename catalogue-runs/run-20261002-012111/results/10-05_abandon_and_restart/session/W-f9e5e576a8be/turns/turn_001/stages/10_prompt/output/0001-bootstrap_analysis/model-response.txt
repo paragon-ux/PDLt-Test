@@ -1,0 +1,11 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Implement a Caesar cipher encoder and decoder that shifts alphabetic characters by a specified key and can reverse the operation.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "Caesar cipher",
+    "encoder",
+    "decoder"
+  ]
+}

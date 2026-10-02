@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-c0fdf1d113",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-c0fdf1d113-P1",
+    "body": "READ the provided SQL query\nANALYZE its performance characteristics\nIDENTIFY which indexes should exist on tables referenced by the query\nDETERMINE whether the query plan will perform a sequential scan or an index scan\nEXAMINE how the LEFT JOIN interacts with the WHERE clause on o.status\nREWRITE the query to improve performance, ensuring correct semantics\nPROVIDE the corrected query\nSUPPLY appropriate CREATE INDEX statements for the identified indexes",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-c0fdf1d113-R1",
+    "body": "READ the provided SQL query\nANALYZE its performance characteristics\nIDENTIFY required indexes on tables referenced by the query\nDETERMINE whether the execution plan will use sequential scans or index scans\nEXAMINE how the LEFT JOIN interacts with the WHERE clause on o.status\nREWRITE the query to improve performance while preserving correct semantics\nPROVIDE the corrected query\nSUPPLY appropriate CREATE INDEX statements for the identified indexes",
+    "confirmed": true,
+    "source_prompt_id": "I-c0fdf1d113-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-c0fdf1d113-X1",
+    "body": "bfcb4fb6f7084436ffb2ed9a9df05b16c909211a59760dc2d3b8aca122b048f2",
+    "confirmed": true,
+    "source_prompt_id": "I-c0fdf1d113-P1",
+    "source_plan_id": "I-c0fdf1d113-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

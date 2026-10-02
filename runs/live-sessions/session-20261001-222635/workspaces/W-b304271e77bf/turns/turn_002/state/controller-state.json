@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-a5d81c3a43",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-a5d81c3a43-P1",
+    "body": "READ the problem of breaking a unit-length stick at two points chosen uniformly and independently at random\nCALCULATE the probability that the ratio of the shortest piece (L_min) to the longest piece (L_max) is at least 1/4\nRETURN the result as a simplified fraction",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-a5d81c3a43-R1",
+    "body": "READ the problem of breaking a unit-length stick at two points chosen uniformly and independently at random\nDEFINE the random variables representing the break points and the resulting three piece lengths\nIDENTIFY the condition that the ratio of the shortest piece (L_min) to the longest piece (L_max) is at least 1/4\nFORMULATE the region in the unit square of break-point coordinates that satisfies this condition\nCALCULATE the probability as the area of this region divided by the total area of the unit square\nSIMPLIFY the resulting probability to a reduced fraction\nEMIT the simplified fraction as the final result",
+    "confirmed": true,
+    "source_prompt_id": "I-a5d81c3a43-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-a5d81c3a43-X1",
+    "body": "4e783bf784dfe4cac6add44f2fc10d7f56f788b73472b1b6316c818687c26fd0",
+    "confirmed": true,
+    "source_prompt_id": "I-a5d81c3a43-P1",
+    "source_plan_id": "I-a5d81c3a43-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

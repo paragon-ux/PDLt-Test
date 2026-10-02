@@ -1,0 +1,110 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[dev:telemetry] reasoning: default=low per_operation={"BOOTSTRAP_ANALYSIS": "high", "DRAFT_EXECUTE": "high", "DRAFT_PLAN": "high", "DRAFT_PROMPT": "high", "EMIT_RESULT_IR": "high", "EXECUTE": "low", "INTERPRET_EXECUTION_INPUT": "high", "INTERPRET_PLAN_REVIEW": "high", "INTERPRET_PROMPT_REVIEW": "high", "REVISE_PLAN": "high", "REVISE_PROMPT": "high"}
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\06-02_deadlock_two_locks\session\catalogue-06-02-1790918902\worker-progress.log]
+[api] response received in 3231ms
+[api] response received in 1115ms
+[api] response received in 3016ms
+Prompt Pseudocode
+
+ENTITIES: transfer_ab, transfer_ba, lock_a, lock_b, 100, 5, ab, ba, i, join, timeout
+DIAGNOSE the deadlock caused by opposite lock acquisition order in the transfer_ab and transfer_ba functions.
+EXPLAIN the lock ordering violation that leads to a deadlock.
+PROVIDE a corrected version of the program that enforces a consistent lock acquisition order for both transfer_ab and transfer_ba.
+INCLUDE a test that spawns 100 threads for each direction (ab and ba) and uses join with a timeout of 5 seconds to demonstrate the deadlock risk in the original code.
+VERIFY that the corrected code runs without hanging under the same test conditions.
+
+[host] PDL-05: line 1 "ENTITIES:" is an invented field label; /revise to state the operation directly
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\06-02_deadlock_two_locks\session\catalogue-06-02-1790918902\worker-progress.log]
+[api] response received in 1314ms
+Response Plan Pseudocode
+
+DIAGNOSE the lock acquisition sequence in transfer_ab and transfer_ba functions
+IDENTIFY the order in which lock_a and lock_b are acquired in each function
+DETECT the circular wait condition arising from opposite lock ordering
+EXPLAIN the lock ordering violation that leads to deadlock
+DEVELOP a corrected program version that acquires locks in a consistent order (e.g., lock_a then lock_b) in both transfer_ab and transfer_ba
+IMPLEMENT the corrected transfer functions with unified lock acquisition
+CREATE a test harness that
+    SPAWNS 100 threads invoking transfer_ab
+    SPAWNS 100 threads invoking transfer_ba
+    STARTS all threads
+    JOINS all threads with a timeout of 5 seconds
+RUN the test harness against the original program to demonstrate deadlock risk
+RUN the test harness against the corrected program to verify no deadlock occurs within the timeout
+REPORT the findings of the original deadlock demonstration and the corrected program verification
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\06-02_deadlock_two_locks\session\catalogue-06-02-1790918902\worker-progress.log]
+[api] response received in 589ms
+```python
+import threading
+import time
+
+# Shared resources
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+results = []
+
+# Consistent lock ordering: always acquire lock_a then lock_b
+def transfer_ab(amount):
+    with lock_a:
+        with lock_b:
+            results.append(('ab', amount))
+
+def transfer_ba(amount):
+    # Acquire locks in the same order as transfer_ab
+    with lock_a:
+        with lock_b:
+            results.append(('ba', amount))
+
+def run_test(deadlock_demo=True):
+    threads = []
+    for i in range(100):
+        if deadlock_demo:
+            # Original functions that could deadlock
+            threads.append(threading.Thread(target=transfer_ab_original, args=(i,)))
+            threads.append(threading.Thread(target=transfer_ba_original, args=(i,)))
+        else:
+            # Fixed functions with consistent lock ordering
+            threads.append(threading.Thread(target=transfer_ab, args=(i,)))
+            threads.append(threading.Thread(target=transfer_ba, args=(i,)))
+    for t in threads:
+        t.start()
+    start = time.time()
+    for t in threads:
+        t.join(timeout=5)
+    elapsed = time.time() - start
+    return elapsed, any(t.is_alive() for t in threads)
+
+# Original (deadlocking) implementations for demonstration
+
+def transfer_ab_original(amount):
+    with lock_a:
+        with lock_b:
+            results.append(('ab', amount))
+
+def transfer_ba_original(amount):
+    with lock_b:
+        with lock_a:
+            results.append(('ba', amount))
+
+if __name__ == "__main__":
+    # Demonstrate deadlock risk
+    elapsed_dead, still_running_dead = run_test(deadlock_demo=True)
+    print(f"Original run: elapsed={elapsed_dead:.2f}s, any thread still alive={still_running_dead}")
+    # Verify corrected version does not hang
+    elapsed_fixed, still_running_fixed = run_test(deadlock_demo=False)
+    print(f"Fixed run: elapsed={elapsed_fixed:.2f}s, any thread still alive={still_running_fixed}")
+```
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

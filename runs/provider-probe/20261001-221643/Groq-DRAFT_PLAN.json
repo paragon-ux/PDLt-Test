@@ -1,0 +1,178 @@
+{
+  "provider": "Groq",
+  "operation": "DRAFT_PLAN",
+  "verdict": "OK",
+  "text": "{\"neutral_plan_body\":\"READ the numbers 2 and 3\\nADD the numbers together\\nEMIT the sum\"}",
+  "metadata": {
+    "worker": "api",
+    "model": "openai/gpt-oss-120b",
+    "observed_model": "openai/gpt-oss-120b",
+    "mode": "live-api",
+    "reasoning_effort": "low",
+    "operation": "DRAFT_PLAN",
+    "not_a_qualified_measurement_condition": true,
+    "base_url": "https://openrouter.ai/api/v1",
+    "response_id": "gen-1790907407-4t5u8nSBpj4BN6vygiOr",
+    "latency_ms": 455.821,
+    "token_telemetry": "enabled",
+    "usage": {
+      "input_tokens": 396,
+      "output_tokens": 82,
+      "total_tokens": 478,
+      "cached_tokens": 0,
+      "reasoning_tokens": 45
+    },
+    "usage_source": "responses_api",
+    "usage_exact": true
+  },
+  "seconds": 0.46,
+  "request_body": {
+    "model": "openai/gpt-oss-120b",
+    "input": "You are a stateless operation worker.\n\nCONFIRMED_PROMPT_BODY: COMPUTE the sum of 2 and 3\n\nReturn only a JSON object. Do not include markdown fences, commentary, or extra text.",
+    "instructions": "NORMATIVE GUIDELINES FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-08, PLAN-01 to PLAN-10):\n1. Express the response plan in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n   Example format:\n   PARSE the supplied CSV records\n   AGGREGATE the sales amounts for each region\n   EMIT the per-region totals\n2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n4. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04), and NEVER insert placeholder steps or meta-prohibitions like 'insert placeholders without performing computation' (PLAN-10).\n5. Plan the steps that produce the deliverable itself. Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue.",
+    "max_output_tokens": 4096,
+    "reasoning": {
+      "effort": "low"
+    },
+    "provider": {
+      "order": [
+        "Groq"
+      ],
+      "allow_fallbacks": false
+    },
+    "safety_settings": [
+      {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_NONE"
+      }
+    ],
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "json_object",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "neutral_plan_body": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "neutral_plan_body"
+          ],
+          "type": "object"
+        }
+      }
+    }
+  },
+  "response_body": {
+    "id": "gen-1790907407-4t5u8nSBpj4BN6vygiOr",
+    "object": "response",
+    "created_at": 1790907407,
+    "model": "openai/gpt-oss-120b",
+    "status": "completed",
+    "completed_at": 1790907407,
+    "output": [
+      {
+        "id": "rs_tmp_uqrbn0y00ho",
+        "type": "reasoning",
+        "status": "completed",
+        "content": [
+          {
+            "type": "reasoning_text",
+            "text": "We need to output JSON with neutral_plan_body containing the plan in structured English steps. Compute sum of 2 and 3. So plan: READ the numbers, ADD them, OUTPUT the result. Provide as string."
+          }
+        ],
+        "summary": [],
+        "format": "unknown"
+      },
+      {
+        "id": "msg_tmp_w30towx7g6",
+        "type": "message",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"neutral_plan_body\":\"READ the numbers 2 and 3\\nADD the numbers together\\nEMIT the sum\"}",
+            "annotations": [],
+            "logprobs": []
+          }
+        ]
+      }
+    ],
+    "error": null,
+    "incomplete_details": null,
+    "tools": [],
+    "tool_choice": "auto",
+    "parallel_tool_calls": true,
+    "max_output_tokens": 4096,
+    "temperature": 1,
+    "top_p": 1,
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "top_logprobs": 0,
+    "max_tool_calls": null,
+    "metadata": {},
+    "background": false,
+    "previous_response_id": null,
+    "service_tier": "on_demand",
+    "truncation": "disabled",
+    "store": false,
+    "instructions": "NORMATIVE GUIDELINES FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-08, PLAN-01 to PLAN-10):\n1. Express the response plan in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n   Example format:\n   PARSE the supplied CSV records\n   AGGREGATE the sales amounts for each region\n   EMIT the per-region totals\n2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n4. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04), and NEVER insert placeholder steps or meta-prohibitions like 'insert placeholders without performing computation' (PLAN-10).\n5. Plan the steps that produce the deliverable itself. Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue.",
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "json_object",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "neutral_plan_body": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "neutral_plan_body"
+          ],
+          "type": "object"
+        }
+      }
+    },
+    "reasoning": {
+      "effort": "low"
+    },
+    "safety_identifier": null,
+    "prompt_cache_key": null,
+    "prompt_cache_options": null,
+    "usage": {
+      "input_tokens": 396,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens": 82,
+      "output_tokens_details": {
+        "reasoning_tokens": 45
+      },
+      "total_tokens": 478,
+      "cost": 0.0001086,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0001086,
+        "upstream_inference_input_cost": 5.94e-05,
+        "upstream_inference_output_cost": 4.92e-05
+      }
+    }
+  }
+}

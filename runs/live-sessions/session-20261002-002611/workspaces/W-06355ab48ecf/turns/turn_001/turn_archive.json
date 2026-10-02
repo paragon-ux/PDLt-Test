@@ -1,0 +1,333 @@
+{
+  "turn_id": "turn_001",
+  "status": "CLOSED_SUCCESS",
+  "deliverable_sha256": "0cadf0fb3d172d7a11a32994936a0618ade8121aea6b86de1125fce051d73550",
+  "events": [
+    {
+      "at_utc": "2026-10-02T04:27:28.886040+00:00",
+      "kind": "WORKSPACE_CREATED",
+      "payload": {
+        "workspace_id": "W-06355ab48ecf",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:28.886040+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:29.514213+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 0.99
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:30.001224+00:00",
+      "kind": "EXECUTION_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_100K_STEPS",
+        "distribution": {
+          "WITHIN_100M_STEPS": 0.01,
+          "WITHIN_10M_STEPS": 0.1,
+          "BEYOND_100M_STEPS": 0.01,
+          "WITHIN_100K_STEPS": 0.88
+        },
+        "tier": "MINIMAL",
+        "passed_gating": true,
+        "step_limit": 100000,
+        "timeout_seconds": 30.0,
+        "memory_mb": 256
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:30.001224+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": true,
+        "domain": "general",
+        "verdict": "VERIFIED_EXECUTION",
+        "confidence": 0.96,
+        "passed_gating": true
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:30.016848+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:31.288439+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:31.288439+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:33.471300+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:33.502549+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-0f5066b6ea",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:33.502549+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-0f5066b6ea-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:39.089739+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-0f5066b6ea-P1"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:39.105304+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:40.566851+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:40.582477+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-0f5066b6ea-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:40.582477+00:00",
+      "kind": "PLAN_PROMPT_ECHO",
+      "payload": {
+        "plan_id": "I-0f5066b6ea-R1",
+        "identical": false,
+        "copied_line_ratio": 0.0
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:43.697208+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-0f5066b6ea-R1"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:44.042543+00:00",
+      "kind": "PLAN_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "distribution": {
+          "WITHIN_10M_STEPS": 0.15,
+          "WITHIN_100M_STEPS": 0.02,
+          "WITHIN_100K_STEPS": 0.81,
+          "BEYOND_100M_STEPS": 0.02
+        },
+        "passed_gating": true,
+        "request_tier": "MINIMAL",
+        "plan_tier": "STANDARD",
+        "tier": "STANDARD",
+        "budget_raised": true,
+        "step_limit": 10000000
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:44.058604+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:45.056103+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:49.791195+00:00",
+      "kind": "SANDBOX_SESSION",
+      "payload": {
+        "backend": "appcontainer",
+        "mode": "auto",
+        "available": true,
+        "root": "C:\\Users\\USER\\AppData\\Local\\Temp\\pdlt-sandboxes\\engine-8jzows95",
+        "os": "Windows 10.0.22000",
+        "profile": "PDLt.Sandbox.engine-8jzows95",
+        "sid": "S-1-15-2-2786830562-1811054374-2764903127-748162957-2516945544-1738089003-3464346090"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:49.791195+00:00",
+      "kind": "SANDBOX_RUN",
+      "payload": {
+        "block": 1,
+        "backend": "appcontainer",
+        "tier": "STANDARD",
+        "exit_code": 125,
+        "step_budget_exceeded": true,
+        "steps_used": 10000001,
+        "timed_out": false,
+        "oom_killed": false,
+        "duration_ms": 4317.0
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:49.806805+00:00",
+      "kind": "VERIFICATION_REPAIR",
+      "payload": {
+        "errors": [
+          "[STEP_BUDGET_EXCEEDED] Python block 1 was stopped after 10,000,000 steps without finishing. Rule: The step budget counts every executed bytecode instruction of the program's own code, including each loop and comprehension iteration; standard-library and built-in internals are not counted. A program's step count is the number of candidates or iterations it visits times the work done for each. Next attempt: The next attempt has the same budget of 10,000,000 steps. Submit a program whose step count for this input fits within it. If the result cannot be obtained within the budget, run a program that attempts it, emit no witness, and mark the requirement open with the defect recorded.",
+          "[WITNESS_NOT_PRINTED] No witness was established: Missing witness in Result IR for task requiring verified execution. Host observation: the deliverable contains no program that ran successfully. Rule: A result that must be certified is certified by a line of the form `WITNESS: <json>` printed by a program the host runs. Next attempt: Include in the deliverable a Python program that prints its result as a `WITNESS: <json>` line; the host runs it. If the result cannot be obtained, emit no witness and mark the requirement open with the defect recorded."
+        ],
+        "codes": [
+          "STEP_BUDGET_EXCEEDED",
+          "WITNESS_NOT_PRINTED"
+        ],
+        "repair": 1,
+        "counted": true,
+        "repairs_allowed": 1
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:49.806805+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0005-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:50.592902+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0005-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:50.749590+00:00",
+      "kind": "SANDBOX_RUN",
+      "payload": {
+        "block": 1,
+        "backend": "appcontainer",
+        "tier": "STANDARD",
+        "exit_code": 0,
+        "step_budget_exceeded": false,
+        "steps_used": 97,
+        "timed_out": false,
+        "oom_killed": false,
+        "duration_ms": 147.0
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:50.749590+00:00",
+      "kind": "VERIFICATION_PASSED",
+      "payload": {
+        "provisional": false,
+        "sandbox_reproduced": true,
+        "domain_checked": false,
+        "details": {
+          "polarity": "positive",
+          "data_keys": [
+            "probability"
+          ]
+        }
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:50.749590+00:00",
+      "kind": "RESULT_IR_VALIDATED",
+      "payload": {
+        "ir": {
+          "files": [],
+          "reconciliation": [],
+          "open_defects": [],
+          "witness": {
+            "polarity": "positive",
+            "data": {
+              "probability": "1/4"
+            },
+            "provisional": false
+          }
+        }
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:50.749590+00:00",
+      "kind": "EXECUTION_ATTEMPTS",
+      "payload": {
+        "attempts": 2,
+        "repairs_used": 1,
+        "unmeasured_repairs": 0,
+        "repairs_allowed": 1,
+        "tier": "STANDARD"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T04:27:50.749590+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_001",
+        "status": "CLOSED_SUCCESS"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-10-02T04:27:50.749590+00:00"
+}

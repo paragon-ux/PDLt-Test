@@ -1,0 +1,4 @@
+{"at_utc":"2026-10-02T02:13:19.451617+00:00","kind":"TURN_CHAINED","payload":{"turn_id":"turn_002","previous_deliverable":true,"previous_status":"CLOSED_SUCCESS","previous_request":true}}
+{"at_utc":"2026-10-02T02:13:19.451617+00:00","kind":"EXPLICIT_INVOCATION_OBSERVED","payload":{"substantive_request_present":true}}
+{"at_utc":"2026-10-02T02:13:19.861239+00:00","kind":"ACTIVATION_ROUTED","payload":{"verdict":"BYPASS","passed_gating":true,"confidence":0.92}}
+{"at_utc":"2026-10-02T02:13:19.861239+00:00","kind":"DIRECT_ANSWER_ROUTED","payload":{"route":"BYPASS"}}

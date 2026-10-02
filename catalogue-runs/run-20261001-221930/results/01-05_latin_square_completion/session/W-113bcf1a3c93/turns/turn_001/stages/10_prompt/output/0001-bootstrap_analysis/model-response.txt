@@ -1,0 +1,20 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Fill the empty cells of the given 7x7 Latin square so that each row and column contains each of the numbers 1 through 7 exactly once, then output the completed square and verify that each row and column is a permutation of {1,...,7}.",
+  "approach_notes": "Use a constraint‑propagation method with backtracking to explore possible assignments and fill the Latin square.",
+  "risk_notes": "",
+  "task_entities": [
+    "partially filled 7x7 Latin square",
+    "the numbers 1-7",
+    "Row 1: [1, 0, 0, 0, 5, 6, 7]",
+    "Row 2: [0, 0, 0, 0, 0, 0, 0]",
+    "Row 3: [3, 0, 0, 0, 7, 0, 2]",
+    "Row 4: [4, 0, 0, 7, 0, 0, 0]",
+    "Row 5: [5, 6, 7, 1, 0, 3, 0]",
+    "Row 6: [0, 7, 1, 2, 0, 4, 0]",
+    "Row 7: [0, 0, 0, 0, 0, 0, 6]",
+    "constraint-propagation solver with backtracking",
+    "Emit the completed square",
+    "verify that every row and column is a permutation of {1,...,7}"
+  ]
+}

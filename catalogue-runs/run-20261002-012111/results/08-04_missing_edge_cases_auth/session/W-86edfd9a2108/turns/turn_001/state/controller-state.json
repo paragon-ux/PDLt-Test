@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-9f5e52a605",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-9f5e52a605-P1",
+    "body": "READ the authentication system specification:\n- users register with email and password\n- users login with email and password and receive a JWT\n- JWT included in the Authorization header for all subsequent requests\n- admins can view all users\n- users can view only their own profile\nIDENTIFY at least 7 missing security or usability requirements for the described system\nLIST each identified requirement as a separate bullet point",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-9f5e52a605-R1",
+    "body": "READ the authentication system specification\nANALYZE the specification for missing security requirements\nANALYZE the specification for missing usability requirements\nIDENTIFY at least seven missing requirements covering security and usability\nFOR each identified requirement\n    FORMULATE a concise bullet point description\nEMIT the list of bullet points as the response",
+    "confirmed": true,
+    "source_prompt_id": "I-9f5e52a605-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-9f5e52a605-X1",
+    "body": "593728422a2e6c708919220adc55281602f6d805a2985db7716700d0feda3c98",
+    "confirmed": true,
+    "source_prompt_id": "I-9f5e52a605-P1",
+    "source_plan_id": "I-9f5e52a605-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

@@ -1,0 +1,7 @@
+{
+  "RAW_PROTOCOL_QUESTION": "raw_protocol_question.md",
+  "CURRENT_STAGE_CLASS": "current_stage_class.json",
+  "BOUND_REVIEW_SUBJECT_KIND": "bound_review_subject_kind.json",
+  "BOUND_REVIEW_SUBJECT_BODY": "bound_review_subject_body.json",
+  "HIGHER_PRIORITY_CONSTRAINTS": "higher_priority_constraints.md"
+}

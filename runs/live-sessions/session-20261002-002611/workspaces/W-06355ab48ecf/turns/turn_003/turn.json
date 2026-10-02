@@ -1,0 +1,8 @@
+{
+  "turn_id": "turn_003",
+  "status": "CLOSED_SUCCESS",
+  "created_at_utc": "2026-10-02T04:30:16.299957+00:00",
+  "protocol_instance_id": "I-3d246fa4ca",
+  "deliverable_sha256": "caca561989a33b1c3cc28687ae63729661e11f0a95f1e77122baf49088b25318",
+  "updated_at_utc": "2026-10-02T04:30:31.225829+00:00"
+}

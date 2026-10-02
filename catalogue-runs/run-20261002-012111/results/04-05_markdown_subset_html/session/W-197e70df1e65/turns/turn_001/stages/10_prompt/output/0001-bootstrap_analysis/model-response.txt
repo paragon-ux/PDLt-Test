@@ -1,0 +1,24 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Implement a Python program that converts Markdown text to HTML without using any external libraries. The converter must support header syntax for levels 1 to 6 (# through ######), bold formatting using both **text** and __text__, italic formatting using both *text* and _text_, inline code delimited by backticks (e.g., `code`), links formatted as [text](url), unordered lists where items start with a hyphen (-) or an asterisk (*), code blocks indicated by four-space indentation or fenced with backticks, and paragraphs that wrap consecutive non-blank lines in <p> tags. Additionally, provide a test suite containing at least 10 distinct Markdown test strings covering all listed features, nested formatting cases such as bold inside italic, and edge cases like empty headers and links with special characters.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "Python",
+    "Markdown-to-HTML",
+    "#",
+    "######",
+    "**text**",
+    "__text__",
+    "*text*",
+    "_text_",
+    "`code`",
+    "[text](url)",
+    "-",
+    "*",
+    "4 spaces",
+    "```",
+    "10",
+    "Do NOT use any external libraries."
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "id": "01-02",
+  "category": "combinatorial_search",
+  "file": "01_combinatorial_search/exact_cover_dlx.txt",
+  "difficulty": "hard",
+  "expected_routing": "VERIFIED_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "verified",
+  "verdict": "CLOSED_CANCELLED",
+  "exit_code": 1,
+  "timed_out": false,
+  "elapsed_seconds": 10.95,
+  "harness_peak_memory_mb": 28.3,
+  "start_time": "2026-10-02T02:17:41.090815+00:00",
+  "session_id": "catalogue-01-02-1790907461",
+  "transcript_file": "results\\01-02_exact_cover_dlx\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/01_combinatorial_search/exact_cover_dlx.json",
+    "expected_behavior": null,
+    "polarity": "positive",
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "FAIL",
+    "reason": "missing 3 of 3 exact covers"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-07",
+    "PDL-08"
+  ],
+  "tags": [
+    "exact-cover",
+    "dlx",
+    "enumeration"
+  ],
+  "regression_ref": "REG-011",
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 3,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "unmeasured_repairs": 0,
+      "repairs_allowed": 0,
+      "tier": "STANDARD"
+    },
+    "plan_echo": {
+      "plan_id": "I-873a07a35d-R1",
+      "identical": true,
+      "copied_line_ratio": 1.0
+    },
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 115,
+      "DRAFT_PLAN": 80
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 307,
+      "DRAFT_PLAN": 196
+    }
+  },
+  "repeat": null,
+  "harness_error": null
+}

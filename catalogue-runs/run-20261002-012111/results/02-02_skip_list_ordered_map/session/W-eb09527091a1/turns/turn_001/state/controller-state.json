@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-e0dae59a80",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-e0dae59a80-P1",
+    "body": "IMPLEMENT a skip list in Python that provides an ordered map interface.\nDEFINE operation insert(key, value) to insert or update a key-value pair.\nDEFINE operation search(key) to return the value for a key or None.\nDEFINE operation delete(key) to remove a key.\nDEFINE operation range_query(lo, hi) to return all key-value pairs where lo <= key <= hi.\nUSE probabilistic level generation by coin flip with probability 0.5, limiting to a maximum of 16 levels.\nINCLUDE a test suite that verifies ordering invariants, probabilistic level distribution over 1000 insertions, and correct range query results.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-e0dae59a80-R1",
+    "body": "DEFINE SKIP LIST CLASS WITH NODE STRUCTURE AND MAXIMUM LEVEL 16\nIMPLEMENT LEVEL GENERATION USING COIN FLIP PROBABILITY 0.5 LIMITED TO 16 LEVELS\nIMPLEMENT INSERT(key, value) METHOD TO INSERT OR UPDATE KEY-VALUE PAIR WHILE MAINTAINING ORDERED LINKS\nIMPLEMENT SEARCH(key) METHOD TO RETURN ASSOCIATED VALUE OR NONE\nIMPLEMENT DELETE(key) METHOD TO REMOVE NODE AND RECONNECT LINKS\nIMPLEMENT RANGE_QUERY(lo, hi) METHOD TO RETURN ALL KEY-VALUE PAIRS WHERE lo <= KEY <= hi\nDEVELOP TEST SUITE THAT INCLUDES\n    VERIFY ORDERING INVARIANTS AFTER INSERTIONS\n    MEASURE LEVEL DISTRIBUTION ACROSS 1000 INSERTIONS AND VALIDATE PROBABILISTIC EXPECTATION\n    VALIDATE CORRECTNESS OF RANGE_QUERY RESULTS FOR REPRESENTATIVE INTERVALS\nEXECUTE TEST SUITE AND COLLECT RESULTS",
+    "confirmed": true,
+    "source_prompt_id": "I-e0dae59a80-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-e0dae59a80-X1",
+    "body": "1664c0c868e535338877d3555bfad4c22671b8b3c722e54ab66b7235ffe9e049",
+    "confirmed": true,
+    "source_prompt_id": "I-e0dae59a80-P1",
+    "source_plan_id": "I-e0dae59a80-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

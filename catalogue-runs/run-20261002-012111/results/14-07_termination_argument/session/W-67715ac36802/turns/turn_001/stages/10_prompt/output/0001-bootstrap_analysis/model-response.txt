@@ -1,0 +1,9 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Provide a rigorous mathematical proof that the recursive Python function collatz_steps, defined as shown, terminates for every non‑negative integer input.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "def collatz_steps(n):\n    if n <= 1:\n        return 0\n    elif n % 2 == 0:\n        return 1 + collatz_steps(n // 2)\n    else:\n        return 1 + collatz_steps(3 * n + 1)"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-9ee04c1a27",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-9ee04c1a27-P1",
+    "body": "READ the process of rolling a fair six-sided die repeatedly until a roll of 6 occurs.\nIF two consecutive rolls of 5 occur before a 6, THEN reset the roll count to zero and restart the process.\nCALCULATE the expected total number of rolls required for the entire process to terminate.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-9ee04c1a27-R1",
+    "body": "READ the description of the stochastic process involving die rolls\nDEFINE states representing the current roll count and whether a recent roll of 5 has occurred\nFORMULATE recursive expectation equations for each state using the probabilities of die outcomes\nSOLVE the system of linear equations to obtain the expected total number of rolls\nEMIT the computed expectation as the final result",
+    "confirmed": true,
+    "source_prompt_id": "I-9ee04c1a27-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-9ee04c1a27-X1",
+    "body": "e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683",
+    "confirmed": true,
+    "source_prompt_id": "I-9ee04c1a27-P1",
+    "source_plan_id": "I-9ee04c1a27-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

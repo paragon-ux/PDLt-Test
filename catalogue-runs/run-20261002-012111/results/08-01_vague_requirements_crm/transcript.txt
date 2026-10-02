@@ -1,0 +1,91 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+REASONING: default=low per_operation={"BOOTSTRAP_ANALYSIS": "high", "DRAFT_EXECUTE": "high", "DRAFT_PLAN": "high", "DRAFT_PROMPT": "high", "EMIT_RESULT_IR": "high", "EXECUTE": "low", "INTERPRET_EXECUTION_INPUT": "high", "INTERPRET_PLAN_REVIEW": "high", "INTERPRET_PROMPT_REVIEW": "high", "REVISE_PLAN": "high", "REVISE_PROMPT": "high"}
+USER> A stakeholder says: "Build a CRM." Extract a concrete specification from this vague requirement. Identify at least: 5 core entities with their attributes, 8 business rules or constraints, 5 edge cases the stakeholder probably hasn't considered, and 3 clarifying questions you would need answered before implementation.
+ASSISTANT> Prompt Pseudocode
+
+- CRM
+FOR the CRM:
+    IDENTIFY at least five core entities with their attributes.
+    IDENTIFY eight business rules or constraints.
+    IDENTIFY five edge cases.
+    IDENTIFY three clarifying questions needed before implementation.
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+PARSE the CRM task requirement
+IDENTIFY at least five core entities for the CRM
+FOR each core entity
+    DEFINE its attributes
+ENDFOR
+IDENTIFY eight business rules or constraints for the CRM
+IDENTIFY five edge cases for the CRM
+IDENTIFY three clarifying questions needed before implementation
+COMPILE the identified outputs into a structured response
+EMIT the structured response
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> Core Entities:
+1. Customer
+   - CustomerID (unique identifier)
+   - Name
+   - Email
+   - Phone
+   - Address
+   - CreatedDate
+2. Contact
+   - ContactID
+   - CustomerID (foreign key)
+   - Name
+   - Relationship (e.g., primary, secondary)
+   - Email
+   - Phone
+3. Interaction
+   - InteractionID
+   - CustomerID (foreign key)
+   - ContactID (foreign key, optional)
+   - InteractionType (call, email, meeting, etc.)
+   - DateTime
+   - Subject
+   - Notes
+4. Opportunity
+   - OpportunityID
+   - CustomerID (foreign key)
+   - Name
+   - Stage (prospecting, qualified, proposal, won, lost)
+   - Amount
+   - CloseDate
+   - OwnerID
+5. User (CRM user/agent)
+   - UserID
+   - Username
+   - Email
+   - Role (admin, sales, support)
+   - AssignedCustomers (list of CustomerIDs)
+
+Business Rules / Constraints:
+1. Every Customer must have a unique CustomerID.
+2. Email fields must be in valid email format.
+3. Interaction records cannot be created for a non‑existent Customer.
+4. Opportunities can only be associated with active Customers.
+5. Only Users with the "admin" role may delete Customer records.
+6. The sum of Opportunity amounts for a Customer cannot exceed a configurable credit limit.
+7. Interaction dates cannot be in the future.
+8. When a Customer is marked as "inactive", no new Opportunities may be added.
+
+Edge Cases:
+1. Importing a Customer list with duplicate Email addresses.
+2. Recording an Interaction where the Contact belongs to a different Customer.
+3. Changing a Customer's status from active to inactive while having open Opportunities.
+4. Deleting a User who is the sole owner of several Opportunities.
+5. Handling extremely large Notes fields that exceed typical storage limits.
+
+Clarifying Questions:
+1. What are the required compliance or data‑privacy standards for storing personal contact information?
+2. Should the CRM support multi‑currency handling for Opportunity amounts, and if so, what exchange‑rate management is needed?
+3. Are there any integration requirements with external systems (e.g., email servers, telephony, accounting software) that would affect entity design?
+PROTOCOL_CLOSED
+=== PDLt session ended ===

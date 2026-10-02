@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-2a49f2876c",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-2a49f2876c-P1",
+    "body": "READ the SLA document\nFOR EACH SLA commitment DO\n  IF commitment is 99.9% monthly uptime THEN\n    IDENTIFY the metric to monitor as monthly uptime percentage\n    SET the alerting threshold to less than 99.9% uptime\n    DEFINE the measurement window as one calendar month\n    GENERATE a sample Prometheus‑style alerting rule for uptime\n  ENDIF\n  IF commitment is read latency ≤200ms at the 95th percentile THEN\n    IDENTIFY the metric to monitor as read latency at the 95th percentile\n    SET the alerting threshold to greater than 200ms\n    DEFINE the measurement window appropriate for latency measurement\n    GENERATE a sample Prometheus‑style alerting rule for read latency\n  ENDIF\n  IF commitment is write latency ≤500ms at the 95th percentile THEN\n    IDENTIFY the metric to monitor as write latency at the 95th percentile\n    SET the alerting threshold to greater than 500ms\n    DEFINE the measurement window appropriate for latency measurement\n    GENERATE a sample Prometheus‑style alerting rule for write latency\n  ENDIF\n  IF commitment is error rate ≤0.1% of total requests THEN\n    IDENTIFY the metric to monitor as error rate percentage of total requests\n    SET the alerting threshold to greater than 0.1% error rate\n    DEFINE the measurement window appropriate for error rate calculation\n    GENERATE a sample Prometheus‑style alerting rule for error rate\n  ENDIF\n  IF commitment is maintenance windows up to 4 hours per month excluded from uptime calculations THEN\n    IDENTIFY the metric to monitor as effective uptime excluding maintenance windows\n    SET the alerting threshold to less than 99.9% effective uptime\n    DEFINE the measurement window as one calendar month, excluding up to 4 hours of maintenance per month\n    GENERATE a sample Prometheus‑style alerting rule for effective uptime\n  ENDIF\n  IF commitment is 48‑hour prior customer notification requirement THEN\n    IDENTIFY the metric to monitor as notification compliance timing\n    SET the alerting threshold to notification sent later than 48 hours before required event\n    DEFINE the measurement window appropriate for tracking notifications\n    GENERATE a sample Prometheus‑style alerting rule for notification compliance\n  ENDIF\nEND FOR",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-2a49f2876c-R1",
+    "body": "READ the SLA document\nFOR EACH SLA commitment DO\n  IF commitment is 99.9% monthly uptime THEN\n    IDENTIFY the metric to monitor as monthly uptime percentage\n    SET the alerting threshold to less than 99.9% uptime\n    DEFINE the measurement window as one calendar month\n    GENERATE a sample Prometheus‑style alerting rule for uptime\n  ENDIF\n  IF commitment is read latency ≤200ms at the 95th percentile THEN\n    IDENTIFY the metric to monitor as read latency at the 95th percentile\n    SET the alerting threshold to greater than 200ms\n    DEFINE the measurement window appropriate for latency measurement\n    GENERATE a sample Prometheus‑style alerting rule for read latency\n  ENDIF\n  IF commitment is write latency ≤500ms at the 95th percentile THEN\n    IDENTIFY the metric to monitor as write latency at the 95th percentile\n    SET the alerting threshold to greater than 500ms\n    DEFINE the measurement window appropriate for latency measurement\n    GENERATE a sample Prometheus‑style alerting rule for write latency\n  ENDIF\n  IF commitment is error rate ≤0.1% of total requests THEN\n    IDENTIFY the metric to monitor as error rate percentage of total requests\n    SET the alerting threshold to greater than 0.1% error rate\n    DEFINE the measurement window appropriate for error rate calculation\n    GENERATE a sample Prometheus‑style alerting rule for error rate\n  ENDIF\n  IF commitment is maintenance windows up to 4 hours per month excluded from uptime calculations THEN\n    IDENTIFY the metric to monitor as effective uptime excluding maintenance windows\n    SET the alerting threshold to less than 99.9% effective uptime\n    DEFINE the measurement window as one calendar month, excluding up to 4 hours of maintenance per month\n    GENERATE a sample Prometheus‑style alerting rule for effective uptime\n  ENDIF\n  IF commitment is 48‑hour prior customer notification requirement THEN\n    IDENTIFY the metric to monitor as notification compliance timing\n    SET the alerting threshold to notification sent later than 48 hours before required event\n    DEFINE the measurement window appropriate for tracking notifications\n    GENERATE a sample Prometheus‑style alerting rule for notification compliance\n  ENDIF\nEND FOR",
+    "confirmed": true,
+    "source_prompt_id": "I-2a49f2876c-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-2a49f2876c-X1",
+    "body": "65153f794ec64a8ac1f67a4b7b51b529d259b729259c96367557c000580e87f5",
+    "confirmed": true,
+    "source_prompt_id": "I-2a49f2876c-P1",
+    "source_plan_id": "I-2a49f2876c-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

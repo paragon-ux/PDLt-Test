@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-105fe7022c",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-105fe7022c-P1",
+    "body": "IMPLEMENT a thread-safe sharded LRU cache in Python.\nDIVIDE the cache into N shards, default 16.\nASSIGN each shard a separate lock and capacity.\nROUTE keys to shards using hash(key) % N.\nMAINTAIN LRU eviction order independently within each shard.\nENSURE get() and put() operations do NOT hold a global lock.\nINCLUDE a multi-threaded stress test with 8 threads.\nEXECUTE concurrent reads and writes.\nVERIFY no data corruption.\nVERIFY correct eviction behavior.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-105fe7022c-R1",
+    "body": "DESIGN the sharded LRU cache architecture.\nDETERMINE the number of shards (default 16).\nALLOCATE a separate lock and capacity for each shard.\nDEFINE the mapping of keys to shards using hash(key) % N.\nSPECIFY per‑shard LRU eviction order using an appropriate data structure.\nIMPLEMENT the get(key) operation to locate the shard, acquire its lock, retrieve the value, update LRU order, and release the lock.\nIMPLEMENT the put(key, value) operation to locate the shard, acquire its lock, insert or update the entry, enforce capacity by evicting the least‑recently‑used entry if needed, and release the lock.\nENSURE that no global lock is used across shards.\nCONSTRUCT a multi‑threaded stress test harness.\nCREATE eight worker threads that perform a mix of get and put operations on the cache concurrently.\nINVOCATE the stress test, allowing threads to run for a sufficient duration to exercise concurrent access patterns.\nMONITOR for data corruption by checking consistency of retrieved values against expected entries.\nASSESS eviction correctness by verifying that entries exceeding per‑shard capacity are removed according to LRU order.\nREPORT the test results indicating whether data integrity and eviction behavior are correct.",
+    "confirmed": true,
+    "source_prompt_id": "I-105fe7022c-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-105fe7022c-X1",
+    "body": "087b3de89bc5ad19fd44e47df9fbe16dc431b76c38ae71f3cd06ab300611f5b8",
+    "confirmed": true,
+    "source_prompt_id": "I-105fe7022c-P1",
+    "source_plan_id": "I-105fe7022c-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

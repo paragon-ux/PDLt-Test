@@ -1,0 +1,68 @@
+{
+  "id": "07-06",
+  "category": "refactoring_and_design",
+  "file": "07_refactoring_and_design/monolith_to_modules.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 11.84,
+  "harness_peak_memory_mb": 37.8,
+  "start_time": "2026-10-02T05:30:52.039943+00:00",
+  "session_id": "catalogue-07-06-1790919052",
+  "transcript_file": "results\\07-06_monolith_to_modules\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-06",
+    "PDL-08"
+  ],
+  "tags": [
+    "monolith",
+    "modules",
+    "package"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 4,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "unmeasured_repairs": 0,
+      "repairs_allowed": 1,
+      "tier": "STANDARD"
+    },
+    "plan_echo": {
+      "plan_id": "I-82d47a0462-R1",
+      "identical": false,
+      "copied_line_ratio": 0.368
+    },
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 1750,
+      "DRAFT_PLAN": 2296,
+      "EXECUTE": 119
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 1955,
+      "DRAFT_PLAN": 2584,
+      "EXECUTE": 2215
+    }
+  },
+  "repeat": null,
+  "harness_error": null
+}

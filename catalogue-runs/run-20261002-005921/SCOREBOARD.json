@@ -1,0 +1,86 @@
+{
+  "run_id": "run-20261002-005921",
+  "timestamp": "2026-10-02T04:59:21.426194+00:00",
+  "model": "openai/gpt-oss-120b",
+  "reasoning_effort": "harness-default",
+  "total_prompts": 7,
+  "passed": 4,
+  "failed": 3,
+  "stage_passed": 5,
+  "manual_spot_check": [],
+  "pass_rate_pct": 57.1,
+  "total_elapsed_seconds": 88.1,
+  "model_calls": {
+    "total": 29,
+    "execute": 7,
+    "repairs": 0,
+    "execute_reasoning_tokens": 1551,
+    "execute_output_tokens": 5887
+  },
+  "plan_echo": {
+    "plans": 7,
+    "identical": [],
+    "copied_80pct": 0
+  },
+  "repeat_pass_rates": {},
+  "ground_truth": {
+    "PASS": 4,
+    "FAIL": 3,
+    "MANUAL": 0,
+    "ERROR": 0
+  },
+  "false_positives": [
+    {
+      "id": "01-03",
+      "reason": "no proper 4-coloring among 0 candidate colorings"
+    }
+  ],
+  "by_verdict": {
+    "CLOSED_CANCELLED": 2,
+    "CLOSED_SUCCESS": 5
+  },
+  "by_category": {
+    "combinatorial_search": {
+      "total": 7,
+      "pass": 4,
+      "fail": 3
+    }
+  },
+  "by_difficulty": {
+    "hard": {
+      "total": 5,
+      "pass": 2
+    },
+    "medium": {
+      "total": 2,
+      "pass": 2
+    }
+  },
+  "regressions_hit": [
+    {
+      "id": "01-01",
+      "regression_ref": "REG-003",
+      "verdict": "CLOSED_CANCELLED"
+    }
+  ],
+  "failures": [
+    {
+      "id": "01-01",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 14.95
+    },
+    {
+      "id": "01-03",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 10.48
+    },
+    {
+      "id": "01-07",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 17.58
+    }
+  ]
+}

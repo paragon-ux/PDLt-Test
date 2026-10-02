@@ -1,0 +1,9 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Trace the complete DNS resolution path for the domain \"api.staging.example.com\" starting from a cold cache. Show each query and response at the root nameserver, TLD nameserver, and authoritative nameserver. Explain CNAME handling if the domain is an alias. Implement a simplified iterative DNS resolver in Python that uses only UDP sockets, without relying on dnspython or socket.getaddrinfo.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "api.staging.example.com"
+  ]
+}

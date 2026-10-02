@@ -1,0 +1,24 @@
+TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
+Implement an OAuth2 Authorization Code Flow with PKCE in Python using only the standard library. Actions include: generate a code_verifier (a random string of 43-128 characters) and compute its S256 code_challenge; construct the authorization URL containing client_id, redirect_uri, code_challenge, code_challenge_method, response_type, scope, and state; exchange the received authorization code for tokens via a POST request to the token endpoint, supplying the code_verifier; implement token refresh using the refresh_token; protect against CSRF using the state parameter; and provide a test that verifies the code_challenge derivation from the code_verifier according to RFC 7636. Required libraries are urllib, hashlib, secrets, and base64.
+APPROACH/RISK NOTES:
+
+OPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):
+- OAuth2
+- Authorization Code Flow
+- PKCE
+- Python
+- code_verifier
+- code_challenge
+- S256
+- client_id
+- redirect_uri
+- code_challenge_method
+- response_type
+- scope
+- state
+- refresh_token
+- urllib
+- hashlib
+- secrets
+- base64
+- RFC 7636

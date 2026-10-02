@@ -1,0 +1,1 @@
+{"neutral_plan_body":"READ the collection of sets S1‑S9 and the universe U\nIMPLEMENT Knuth's Algorithm X using dancing‑links to search for exact covers of U\nFOR each exact cover found\n    OUTPUT the list of set identifiers constituting the cover\nEND_FOR\nCREATE a self‑contained test that verifies each reported solution covers U exactly once"}

@@ -1,0 +1,1 @@
+{"body":"I operate within a tightly sandboxed environment that isolates my processing from external systems. I have no access to the internet, file system, or persistent storage, and I cannot execute code or retrieve real‑time data. All interactions are limited to the text you provide and the internal knowledge cutoff (September 2024)."}

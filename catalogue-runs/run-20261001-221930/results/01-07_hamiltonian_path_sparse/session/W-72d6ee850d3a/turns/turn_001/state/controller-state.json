@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-6b14a9b06f",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-6b14a9b06f-P1",
+    "body": "READ the undirected graph G with 12 nodes labeled 0 through 11 and edges [(0,1), (1,2), (2,3), (3,4), (4,5), (5,6), (6,7), (7,8), (8,9), (9,10), (10,11), (0,3), (2,7), (4,9), (6,11), (1,8)].\nDETERMINE if G contains a Hamiltonian path.\nIF a Hamiltonian path exists THEN\n    OUTPUT the complete Hamiltonian path.\n    VERIFY that the path visits all 12 nodes.\n    VERIFY that each consecutive pair of nodes in the path corresponds to a valid edge in G.\nELSE\n    OUTPUT that no Hamiltonian path exists.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-6b14a9b06f-R1",
+    "body": "READ the undirected graph G with nodes 0 through 11 and the given edges\nINITIALIZE a backtracking search with pruning for a Hamiltonian path in G\nFOR each node in G as a start node DO\n    START a new path containing the start node\n    RECURSIVELY EXTEND the path\n        SELECT an adjacent node not yet visited\n        APPEND the node to the path\n        IF the path length equals 12 THEN\n            STORE the complete path as a candidate solution\n            BREAK the recursion\n        ENDIF\n        PRUNE the branch if no further extension is possible\n    END RECURSIVE EXTENSION\nEND FOR\nIF a candidate Hamiltonian path was found THEN\n    EMIT the Hamiltonian path\n    VERIFY that the path visits all 12 nodes\n    VERIFY that each consecutive pair of nodes in the path corresponds to a valid edge in G\nELSE\n    EMIT that no Hamiltonian path exists\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": "I-6b14a9b06f-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-6b14a9b06f-X1",
+    "body": "a1d1c46db267d6336003c75d6278e880513686143a97ce91a220bae5e2e40673",
+    "confirmed": true,
+    "source_prompt_id": "I-6b14a9b06f-P1",
+    "source_plan_id": "I-6b14a9b06f-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

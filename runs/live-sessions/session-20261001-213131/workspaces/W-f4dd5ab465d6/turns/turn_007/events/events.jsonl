@@ -1,0 +1,26 @@
+{"at_utc":"2026-10-02T01:42:46.402262+00:00","kind":"TURN_CHAINED","payload":{"turn_id":"turn_007","previous_deliverable":false,"previous_status":"CLOSED_SUCCESS","previous_request":true}}
+{"at_utc":"2026-10-02T01:42:46.402262+00:00","kind":"EXPLICIT_INVOCATION_OBSERVED","payload":{"substantive_request_present":true}}
+{"at_utc":"2026-10-02T01:42:46.754562+00:00","kind":"ACTIVATION_ROUTED","payload":{"verdict":"BLOCKED_BY_HIGHER_PRIORITY","passed_gating":false,"confidence":0.48}}
+{"at_utc":"2026-10-02T01:42:47.274790+00:00","kind":"EXECUTION_PROFILE_ROUTED","payload":{"predicted_steps":"WITHIN_100K_STEPS","distribution":{"WITHIN_10M_STEPS":0.0,"WITHIN_100K_STEPS":1.0,"BEYOND_100M_STEPS":0.0,"WITHIN_100M_STEPS":0.0},"tier":"MINIMAL","passed_gating":true,"step_limit":100000,"timeout_seconds":30.0,"memory_mb":256}}
+{"at_utc":"2026-10-02T01:42:47.274790+00:00","kind":"PROBLEM_CLASS_CLASSIFIED","payload":{"requires_verified_execution":false,"domain":null}}
+{"at_utc":"2026-10-02T01:42:47.290784+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-10-02T01:42:47.698781+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
+{"at_utc":"2026-10-02T01:42:47.714789+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}
+{"at_utc":"2026-10-02T01:42:48.290818+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}
+{"at_utc":"2026-10-02T01:42:48.314785+00:00","kind":"PROTOCOL_BOUND","payload":{"instance_id":"I-d67c12a888","turn_id":"turn_007"}}
+{"at_utc":"2026-10-02T01:42:48.322785+00:00","kind":"ARTIFACT_PUBLISHED","payload":{"kind":"prompt","artifact_id":"I-d67c12a888-P1","confirmed":false}}
+{"at_utc":"2026-10-02T01:42:54.477595+00:00","kind":"ARTIFACT_CONFIRMED","payload":{"kind":"prompt","artifact_id":"I-d67c12a888-P1"}}
+{"at_utc":"2026-10-02T01:42:54.501514+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PLAN","stage":"30_plan","invocation_id":"0003-draft_plan"}}
+{"at_utc":"2026-10-02T01:42:54.901819+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"DRAFT_PLAN","stage":"30_plan","invocation_id":"0003-draft_plan"}}
+{"at_utc":"2026-10-02T01:42:54.909804+00:00","kind":"ARTIFACT_PUBLISHED","payload":{"kind":"plan","artifact_id":"I-d67c12a888-R1","confirmed":false}}
+{"at_utc":"2026-10-02T01:42:54.909804+00:00","kind":"PLAN_PROMPT_ECHO","payload":{"plan_id":"I-d67c12a888-R1","identical":true,"copied_line_ratio":1.0}}
+{"at_utc":"2026-10-02T01:42:56.561321+00:00","kind":"ARTIFACT_CONFIRMED","payload":{"kind":"plan","artifact_id":"I-d67c12a888-R1"}}
+{"at_utc":"2026-10-02T01:42:56.977039+00:00","kind":"PLAN_PROFILE_ROUTED","payload":{"predicted_steps":"WITHIN_100K_STEPS","distribution":{"WITHIN_100K_STEPS":1.0,"BEYOND_100M_STEPS":0.0,"WITHIN_100M_STEPS":0.0,"WITHIN_10M_STEPS":0.0},"passed_gating":true,"request_tier":"MINIMAL","plan_tier":"MINIMAL","tier":"MINIMAL","budget_raised":false,"step_limit":100000}}
+{"at_utc":"2026-10-02T01:42:57.000961+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"EXECUTE","stage":"50_execution","invocation_id":"0004-execute"}}
+{"at_utc":"2026-10-02T01:42:57.530089+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"EXECUTE","stage":"50_execution","invocation_id":"0004-execute"}}
+{"at_utc":"2026-10-02T01:42:57.538011+00:00","kind":"EXECUTION_ATTEMPTS","payload":{"attempts":1,"repairs_used":0,"unmeasured_repairs":0,"repairs_allowed":1,"tier":"MINIMAL"}}
+{"at_utc":"2026-10-02T01:42:57.546008+00:00","kind":"EXECUTION_OUTCOME_PUBLISHED","payload":{"kind":"REQUEST_INPUT","expected_type":"string","description":"The file content is required to perform the read-modify-write operation."}}
+{"at_utc":"2026-10-02T01:43:29.829622+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"INTERPRET_EXECUTION_INPUT","stage":"50_execution","invocation_id":"0005-interpret_execution_input"}}
+{"at_utc":"2026-10-02T01:43:30.277844+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"INTERPRET_EXECUTION_INPUT","stage":"50_execution","invocation_id":"0005-interpret_execution_input"}}
+{"at_utc":"2026-10-02T01:43:39.864533+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"INTERPRET_EXECUTION_INPUT","stage":"50_execution","invocation_id":"0006-interpret_execution_input"}}
+{"at_utc":"2026-10-02T01:43:40.315265+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"INTERPRET_EXECUTION_INPUT","stage":"50_execution","invocation_id":"0006-interpret_execution_input"}}

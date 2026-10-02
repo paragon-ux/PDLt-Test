@@ -1,0 +1,10 @@
+{
+  "operation": "INTERPRET_EXECUTION_INPUT",
+  "stage": "50_execution",
+  "invocation_id": "0005-interpret_execution_input",
+  "input_symbols": [
+    "BOUND_REVIEW_SUBJECT_KIND",
+    "BOUND_REVIEW_SUBJECT_BODY",
+    "RAW_USER_REVIEW_MESSAGE"
+  ]
+}

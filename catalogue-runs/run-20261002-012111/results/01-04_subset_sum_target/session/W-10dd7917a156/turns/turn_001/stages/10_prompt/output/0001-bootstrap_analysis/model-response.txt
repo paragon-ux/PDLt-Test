@@ -1,0 +1,10 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Find and output all subsets of the given set S that sum exactly to the target value T = 40. For each solution, emit the subset and verify its sum. After enumerating all solutions, report the total number of solutions.",
+  "approach_notes": "Use a backtracking algorithm that explores the full search tree, systematically including or excluding each element of S and backtracking when the partial sum exceeds the target.",
+  "risk_notes": "",
+  "task_entities": [
+    "S = {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21}",
+    "T = 40"
+  ]
+}

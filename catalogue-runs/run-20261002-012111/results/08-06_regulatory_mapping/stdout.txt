@@ -1,0 +1,81 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[dev:telemetry] reasoning: default=low per_operation={"BOOTSTRAP_ANALYSIS": "high", "DRAFT_EXECUTE": "high", "DRAFT_PLAN": "high", "DRAFT_PROMPT": "high", "EMIT_RESULT_IR": "high", "EXECUTE": "low", "INTERPRET_EXECUTION_INPUT": "high", "INTERPRET_PLAN_REVIEW": "high", "INTERPRET_PROMPT_REVIEW": "high", "REVISE_PLAN": "high", "REVISE_PROMPT": "high"}
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\08-06_regulatory_mapping\session\catalogue-08-06-1790919129\worker-progress.log]
+[api] response received in 1601ms
+[api] response received in 1877ms
+Prompt Pseudocode
+
+READ the provided privacy policy excerpt.
+FOR EACH statement in the policy excerpt
+    MAP the statement to the applicable GDPR article(s).
+    RECORD the mapping.
+END_FOR
+IDENTIFY any GDPR requirements that are not covered by the policy.
+OUTPUT the statement-to-article mappings and the list of uncovered GDPR requirements.
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\08-06_regulatory_mapping\session\catalogue-08-06-1790919129\worker-progress.log]
+[api] response received in 800ms
+Response Plan Pseudocode
+
+READ the provided privacy policy excerpt
+FOR EACH statement in the policy excerpt
+    MAP the statement to the applicable GDPR article(s)
+    RECORD the mapping
+END_FOR
+IDENTIFY any GDPR requirements that are not covered by the policy
+OUTPUT the statement-to-article mappings and the list of uncovered GDPR requirements
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\08-06_regulatory_mapping\session\catalogue-08-06-1790919129\worker-progress.log]
+[api] response received in 836ms
+Statement-to-article mappings:
+1. "We collect your name, email, and browsing history to improve our services." → GDPR Art. 5(1)(b) (purpose limitation), Art. 6(1)(f) (legitimate interests), Art. 7 (conditions for consent if consent is used), Art. 15 (right of access – informs data subject of processing).
+2. "We share data with our advertising partners." → GDPR Art. 5(1)(e) (accuracy & storage limitation), Art. 6(1)(f) (legitimate interests), Art. 28 (processor agreements), Art. 44‑50 (international data transfers if partners are abroad).
+3. "You can email us to request deletion of your data." → GDPR Art. 17 (right to erasure), Art. 12‑13 (transparent information), Art. 20 (right to restriction/objection).
+4. "We store data on servers in the United States." → GDPR Art. 44‑50 (transfer of personal data to a third country), Art. 45 (adequacy decision) or appropriate safeguards.
+5. "Children under 13 should not use our service." → GDPR Art. 8 (conditions for child’s consent), Art. 6(1)(a) (lawfulness of processing of special categories if applicable).
+
+Uncovered GDPR requirements (not addressed in the excerpt):
+- Art. 30: Records of processing activities.
+- Art. 32: Security of processing (technical and organisational measures).
+- Art. 33‑34: Notification of personal data breach to supervisory authority and data subjects.
+- Art. 24: Responsibility of the controller.
+- Art. 35: Data Protection Impact Assessment for high‑risk processing.
+- Art. 37‑39: Designation and duties of a Data Protection Officer (if required).
+- Art. 40‑43: Codes of conduct and binding corporate rules.
+- Art. 58: Powers of supervisory authorities.
+- Art. 71‑73: Remedies, compensation and liability.
+- Art. 77‑79: Right to lodge a complaint with a supervisory authority.
+- Art. 80: Right to an effective judicial remedy against a controller or processor.
+- Art. 82: Right to compensation and liability.
+- Art. 88‑89: Processing in the context of employment.
+- Art. 90‑91: Specific processing for freedom of expression and public safety.
+- Art. 95‑101: Miscellaneous provisions (e.g., data transfers to international organisations).
+- Art. 14: Information to be provided where personal data have not been obtained from the data subject.
+- Art. 16: Right to rectification.
+- Art. 18: Right to restriction of processing.
+- Art. 22: Automated individual decision‑making, including profiling.
+- Art. 26: Joint controllers.
+- Art. 27: Representatives of controllers or processors not established in the Union.
+- Art. 31: Cooperation with supervisory authorities.
+- Art. 52‑55: Supervisory authority powers and procedures.
+- Art. 56‑60: Cooperation and consistency mechanisms among supervisory authorities.
+- Art. 62‑64: European Data Protection Board duties.
+- Art. 65‑67: Amendments, corrections and withdrawals of decisions.
+- Art. 68‑70: Special categories of data processing (e.g., health data) not mentioned.
+- Art. 75‑79: International cooperation.
+- Art. 80‑84: Additional provisions related to specific sectors and contexts.
+- Art. 85‑91: Obligations related to data protection by design and by default, and other sector‑specific rules.
+- Art. 92‑93: Remedies and sanctions.
+- Art. 94‑101: General provisions and final clauses.
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

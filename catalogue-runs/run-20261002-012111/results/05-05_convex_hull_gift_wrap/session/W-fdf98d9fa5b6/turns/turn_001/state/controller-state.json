@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-c5dc22887e",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-c5dc22887e-P1",
+    "body": "IMPLEMENT the gift wrapping (Jarvis march) convex hull algorithm in Python.\nINPUT a list of 2D points given as (x, y) tuples.\nOUTPUT the convex hull vertices in counter‑clockwise order, INCLUDING all collinear points on the hull boundary.\nPROVIDE test case for a simple convex polygon.\nPROVIDE test case for points with collinear edges.\nPROVIDE test case for all points collinear (degenerate case).\nPROVIDE test case for duplicate points.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-c5dc22887e-R1",
+    "body": "VALIDATE the input list of 2D points is non-empty.\nREMOVE duplicate points from the input.\nIF the number of unique points is less than 3 THEN\n    RETURN the unique points as the convex hull.\nENDIF\nSELECT the point with the smallest x-coordinate (and smallest y if tie) as the start vertex.\nINITIALIZE an empty list to hold hull vertices.\nSET current vertex to the start vertex.\nREPEAT\n    ADD current vertex to the hull list.\n    SELECT the next vertex by scanning all other points and choosing the one that yields the most counter‑clockwise orientation relative to the current vertex, INCLUDING collinear points on the hull boundary.\n    IF the selected next vertex equals the start vertex THEN\n        EXIT REPEAT.\n    ENDIF\n    SET current vertex to the selected next vertex.\nENDREPEAT\nENSURE the hull vertices are ordered counter‑clockwise and include all collinear boundary points.\nRETURN the hull vertices.\n\nDEFINE a test case for a simple convex polygon.\nDEFINE a test case for points with collinear edges on the hull.\nDEFINE a test case for the degenerate case where all points are collinear.\nDEFINE a test case that includes duplicate points.\nFOR each test case DO\n    INVOKE the convex hull implementation with the test case points.\n    VERIFY that the output hull matches the expected counter‑clockwise ordering and includes collinear points where required.\nENDFOR",
+    "confirmed": true,
+    "source_prompt_id": "I-c5dc22887e-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-c5dc22887e-X1",
+    "body": "427345a62ba935cc2019fd9e26fe9a0d11f811f5daa22d392bc2990826333b9d",
+    "confirmed": true,
+    "source_prompt_id": "I-c5dc22887e-P1",
+    "source_plan_id": "I-c5dc22887e-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

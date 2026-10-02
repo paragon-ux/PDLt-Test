@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-235cac3310",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-235cac3310-P1",
+    "body": "IMPLEMENT a comparison-based sorting algorithm\nENSURE worst-case time complexity is O(n)\nENSURE algorithm is stable\nENSURE algorithm sorts in-place with O(1) extra space\n- O(n)\n- O(1)",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-235cac3310-R1",
+    "body": "DESIGN a comparison-based sorting algorithm targeting the specified constraints\nIMPLEMENT the algorithm in the desired programming language\nVERIFY that the worst-case time complexity is O(n)\nVERIFY that the algorithm is stable\nVERIFY that the algorithm sorts in-place with O(1) extra space\nEMIT the algorithm source code",
+    "confirmed": true,
+    "source_prompt_id": "I-235cac3310-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-235cac3310-X1",
+    "body": "d42fdb21040ec3103c6dcff4fe48945b625a88ae0ed74481c5d88769c76089ad",
+    "confirmed": true,
+    "source_prompt_id": "I-235cac3310-P1",
+    "source_plan_id": "I-235cac3310-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

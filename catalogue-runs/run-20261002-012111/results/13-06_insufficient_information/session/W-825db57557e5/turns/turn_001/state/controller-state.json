@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-a242c87375",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-a242c87375-P1",
+    "body": "OPTIMIZE the database query SELECT * FROM ??? for maximum performance.\nOUTPUT the optimized query.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-a242c87375-R1",
+    "body": "PARSE the supplied SQL query\nANALYZE the relevant database schema and indexes\nIDENTIFY performance bottlenecks and suboptimal constructs in the query\nREWRITE the query to replace SELECT * with an explicit column list and improve predicate placement\nOPTIMIZE join ordering and apply predicate pushdown where beneficial\nCONSIDER adding or modifying indexes to support the rewritten query\nEVALUATE the execution plan using EXPLAIN or an equivalent profiling tool\nSELECT the version of the query with the lowest estimated cost\nOUTPUT the optimized query",
+    "confirmed": true,
+    "source_prompt_id": "I-a242c87375-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-a242c87375-X1",
+    "body": "f2e2a5a63c9fe77e585e405fd8e36e55ebe095fe9e106904e41d3b06e9ca34fe",
+    "confirmed": true,
+    "source_prompt_id": "I-a242c87375-P1",
+    "source_plan_id": "I-a242c87375-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

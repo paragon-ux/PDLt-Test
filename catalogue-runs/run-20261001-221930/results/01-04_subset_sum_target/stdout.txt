@@ -1,0 +1,206 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-221930\results\01-04_subset_sum_target\session\catalogue-01-04-1790907616\worker-progress.log]
+[api] response received in 2421ms
+[api] response received in 2123ms
+Prompt Pseudocode
+
+- S = {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21}
+- T = 40
+FIND all subsets of the set S that sum exactly to target T.
+FOR each solution:
+    EMIT the subset.
+    VERIFY its sum.
+REPORT the total number of solutions.
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-221930\results\01-04_subset_sum_target\session\catalogue-01-04-1790907616\worker-progress.log]
+[api] response received in 2075ms
+Response Plan Pseudocode
+
+USE backtracking algorithm that explores the full search tree
+LOAD the set S and the target T
+INITIALIZE solution counter to zero
+DEFINE BACKTRACK(index, subset, sum):
+    IF sum equals T THEN EMIT subset; VERIFY sum equals T; INCREMENT solution counter
+    IF sum > T OR index >= length of S THEN RETURN
+    CALL BACKTRACK(index + 1, subset with S[index] added, sum + S[index])
+    CALL BACKTRACK(index + 1, subset, sum)
+CALL BACKTRACK(0, empty set, 0)
+REPORT solution counter
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261001-221930\results\01-04_subset_sum_target\session\catalogue-01-04-1790907616\worker-progress.log]
+[api] response received in 668ms
+import json
+S = [3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21]
+T = 40
+solutions = []
+
+def backtrack(index, subset, current_sum):
+    if current_sum == T:
+        solutions.append(list(subset))
+        return
+    if current_sum > T or index >= len(S):
+        return
+    # include S[index]
+    subset.append(S[index])
+    backtrack(index + 1, subset, current_sum + S[index])
+    subset.pop()
+    # exclude S[index]
+    backtrack(index + 1, subset, current_sum)
+
+backtrack(0, [], 0)
+# Verify each solution sums to T
+assert all(sum(sol) == T for sol in solutions)
+# Prepare witness
+witness = {
+    "polarity": "positive",
+    "data": {
+        "solutions": solutions,
+        "total_solutions": len(solutions)
+    }
+}
+print("WITNESS: " + json.dumps(witness))
+
+```json
+{
+  "files": [],
+  "reconciliation": [],
+  "open_defects": [],
+  "witness": {
+    "polarity": "positive",
+    "data": {
+      "solutions": [
+        [
+          3,
+          7,
+          12,
+          5,
+          11,
+          2
+        ],
+        [
+          3,
+          7,
+          5,
+          8,
+          15,
+          2
+        ],
+        [
+          3,
+          7,
+          11,
+          19
+        ],
+        [
+          3,
+          12,
+          8,
+          15,
+          2
+        ],
+        [
+          3,
+          5,
+          11,
+          2,
+          19
+        ],
+        [
+          3,
+          5,
+          11,
+          21
+        ],
+        [
+          3,
+          26,
+          11
+        ],
+        [
+          7,
+          12,
+          11,
+          8,
+          2
+        ],
+        [
+          7,
+          12,
+          2,
+          19
+        ],
+        [
+          7,
+          12,
+          21
+        ],
+        [
+          7,
+          5,
+          26,
+          2
+        ],
+        [
+          7,
+          5,
+          11,
+          15,
+          2
+        ],
+        [
+          12,
+          5,
+          8,
+          15
+        ],
+        [
+          12,
+          5,
+          2,
+          21
+        ],
+        [
+          12,
+          26,
+          2
+        ],
+        [
+          12,
+          11,
+          15,
+          2
+        ],
+        [
+          11,
+          8,
+          2,
+          19
+        ],
+        [
+          11,
+          8,
+          21
+        ],
+        [
+          19,
+          21
+        ]
+      ],
+      "total_solutions": 19
+    },
+    "provisional": false
+  }
+}
+```
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

@@ -1,0 +1,230 @@
+{
+  "run_id": "run-20261002-012111",
+  "timestamp": "2026-10-02T05:21:11.244734+00:00",
+  "model": "openai/gpt-oss-120b",
+  "reasoning_effort": "harness-default",
+  "total_prompts": 105,
+  "passed": 97,
+  "failed": 8,
+  "stage_passed": 102,
+  "manual_spot_check": [
+    "14-02",
+    "14-04",
+    "14-06"
+  ],
+  "pass_rate_pct": 92.4,
+  "total_elapsed_seconds": 1151.7,
+  "model_calls": {
+    "total": 406,
+    "execute": 99,
+    "repairs": 4,
+    "execute_reasoning_tokens": 5961,
+    "execute_output_tokens": 91397
+  },
+  "plan_echo": {
+    "plans": 95,
+    "identical": [
+      "05-02",
+      "08-06",
+      "08-07",
+      "13-01"
+    ],
+    "copied_80pct": 4
+  },
+  "repeat_pass_rates": {},
+  "ground_truth": {
+    "PASS": 12,
+    "FAIL": 6,
+    "MANUAL": 3,
+    "ERROR": 0
+  },
+  "false_positives": [
+    {
+      "id": "01-03",
+      "reason": "no proper 4-coloring among 0 candidate colorings"
+    },
+    {
+      "id": "01-04",
+      "reason": "0 of 19 solution subsets presented"
+    },
+    {
+      "id": "13-01",
+      "reason": "does not report unsatisfiability"
+    },
+    {
+      "id": "13-06",
+      "reason": "optimizes against a guessed schema ('FROM your_table_name')"
+    },
+    {
+      "id": "14-01",
+      "reason": "proof omits: initialization, maintenance, termination"
+    }
+  ],
+  "by_verdict": {
+    "CLOSED_CANCELLED": 1,
+    "CLOSED_SUCCESS": 102,
+    "HARNESS_ERROR": 2
+  },
+  "by_category": {
+    "combinatorial_search": {
+      "total": 7,
+      "pass": 4,
+      "fail": 3
+    },
+    "data_structures": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "systems_programming": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "parsers_and_compilers": {
+      "total": 7,
+      "pass": 6,
+      "fail": 1
+    },
+    "algorithm_design": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "debugging_and_repair": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "refactoring_and_design": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "specification_extraction": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "adversarial_and_injection": {
+      "total": 7,
+      "pass": 6,
+      "fail": 1
+    },
+    "multi_turn_and_revision": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "cross_domain_composition": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "domain_knowledge": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "negative_and_impossible": {
+      "total": 7,
+      "pass": 5,
+      "fail": 2
+    },
+    "formal_verification": {
+      "total": 7,
+      "pass": 6,
+      "fail": 1
+    },
+    "performance_and_scale": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    }
+  },
+  "by_difficulty": {
+    "hard": {
+      "total": 43,
+      "pass": 39
+    },
+    "medium": {
+      "total": 44,
+      "pass": 41
+    },
+    "easy": {
+      "total": 7,
+      "pass": 7
+    },
+    "adversarial": {
+      "total": 11,
+      "pass": 10
+    }
+  },
+  "regressions_hit": [
+    {
+      "id": "01-01",
+      "regression_ref": "REG-003",
+      "verdict": "CLOSED_CANCELLED"
+    },
+    {
+      "id": "13-01",
+      "regression_ref": "REG-003",
+      "verdict": "CLOSED_SUCCESS"
+    },
+    {
+      "id": "13-06",
+      "regression_ref": "REG-013",
+      "verdict": "CLOSED_SUCCESS"
+    }
+  ],
+  "failures": [
+    {
+      "id": "01-01",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 21.3
+    },
+    {
+      "id": "01-03",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 10.02
+    },
+    {
+      "id": "01-04",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 10.89
+    },
+    {
+      "id": "04-02",
+      "category": "parsers_and_compilers",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 12.31
+    },
+    {
+      "id": "09-03",
+      "category": "adversarial_and_injection",
+      "verdict": "HARNESS_ERROR",
+      "elapsed": 11.83
+    },
+    {
+      "id": "13-01",
+      "category": "negative_and_impossible",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 10.39
+    },
+    {
+      "id": "13-06",
+      "category": "negative_and_impossible",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 7.33
+    },
+    {
+      "id": "14-01",
+      "category": "formal_verification",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 7.48
+    }
+  ]
+}

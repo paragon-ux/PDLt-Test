@@ -1,0 +1,146 @@
+{
+  "provider": "Groq",
+  "operation": "BOOTSTRAP_ANALYSIS",
+  "verdict": "OK",
+  "text": "{\"result\":5}",
+  "metadata": {
+    "worker": "api",
+    "model": "openai/gpt-oss-120b",
+    "observed_model": "openai/gpt-oss-120b",
+    "mode": "live-api",
+    "reasoning_effort": "low",
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "not_a_qualified_measurement_condition": true,
+    "base_url": "https://openrouter.ai/api/v1",
+    "response_id": "gen-1790907406-mqb47gMEqotkAlzsaJ5F",
+    "latency_ms": 433.644,
+    "token_telemetry": "enabled",
+    "usage": {
+      "input_tokens": 110,
+      "output_tokens": 23,
+      "total_tokens": 133,
+      "cached_tokens": 0,
+      "reasoning_tokens": 9
+    },
+    "usage_source": "responses_api",
+    "usage_exact": true
+  },
+  "seconds": 0.43,
+  "request_body": {
+    "model": "openai/gpt-oss-120b",
+    "input": "You are a stateless operation worker.\n\nSummarize the task: add 2 and 3.\n\nReturn only a JSON object. Do not include markdown fences, commentary, or extra text.",
+    "max_output_tokens": 4096,
+    "reasoning": {
+      "effort": "low"
+    },
+    "provider": {
+      "order": [
+        "Groq"
+      ],
+      "allow_fallbacks": false
+    },
+    "safety_settings": [
+      {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_NONE"
+      },
+      {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_NONE"
+      }
+    ]
+  },
+  "response_body": {
+    "id": "gen-1790907406-mqb47gMEqotkAlzsaJ5F",
+    "object": "response",
+    "created_at": 1790907406,
+    "model": "openai/gpt-oss-120b",
+    "status": "completed",
+    "completed_at": 1790907406,
+    "output": [
+      {
+        "id": "rs_tmp_05gukfsadeof",
+        "type": "reasoning",
+        "status": "completed",
+        "content": [
+          {
+            "type": "reasoning_text",
+            "text": "We need JSON with result 5."
+          }
+        ],
+        "summary": [],
+        "format": "unknown"
+      },
+      {
+        "id": "msg_tmp_0rodvrjjsbc",
+        "type": "message",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"result\":5}",
+            "annotations": [],
+            "logprobs": []
+          }
+        ]
+      }
+    ],
+    "error": null,
+    "incomplete_details": null,
+    "tools": [],
+    "tool_choice": "auto",
+    "parallel_tool_calls": true,
+    "max_output_tokens": 4096,
+    "temperature": 1,
+    "top_p": 1,
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "top_logprobs": 0,
+    "max_tool_calls": null,
+    "metadata": {},
+    "background": false,
+    "previous_response_id": null,
+    "service_tier": "flex",
+    "truncation": "disabled",
+    "store": false,
+    "instructions": null,
+    "text": {
+      "format": {
+        "type": "text"
+      }
+    },
+    "reasoning": {
+      "effort": "low"
+    },
+    "safety_identifier": null,
+    "prompt_cache_key": null,
+    "prompt_cache_options": null,
+    "usage": {
+      "input_tokens": 110,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens": 23,
+      "output_tokens_details": {
+        "reasoning_tokens": 9
+      },
+      "total_tokens": 133,
+      "cost": 3.03e-05,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 3.03e-05,
+        "upstream_inference_input_cost": 1.65e-05,
+        "upstream_inference_output_cost": 1.38e-05
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-4045b7a02b",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-4045b7a02b-P1",
+    "body": "- CRM\nFOR the CRM:\n    IDENTIFY at least five core entities with their attributes.\n    IDENTIFY eight business rules or constraints.\n    IDENTIFY five edge cases.\n    IDENTIFY three clarifying questions needed before implementation.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-4045b7a02b-R1",
+    "body": "PARSE the CRM task requirement\nIDENTIFY at least five core entities for the CRM\nFOR each core entity\n    DEFINE its attributes\nENDFOR\nIDENTIFY eight business rules or constraints for the CRM\nIDENTIFY five edge cases for the CRM\nIDENTIFY three clarifying questions needed before implementation\nCOMPILE the identified outputs into a structured response\nEMIT the structured response",
+    "confirmed": true,
+    "source_prompt_id": "I-4045b7a02b-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-4045b7a02b-X1",
+    "body": "c2e720febed7387727305b08175dd3b6005590057bdff2bcff5ecb71c37e78c9",
+    "confirmed": true,
+    "source_prompt_id": "I-4045b7a02b-P1",
+    "source_plan_id": "I-4045b7a02b-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

@@ -1,0 +1,105 @@
+{
+  "run_id": "run-20261002-011839",
+  "timestamp": "2026-10-02T05:18:39.383818+00:00",
+  "model": "openai/gpt-oss-120b",
+  "reasoning_effort": "low",
+  "total_prompts": 7,
+  "passed": 3,
+  "failed": 4,
+  "stage_passed": 6,
+  "manual_spot_check": [],
+  "pass_rate_pct": 42.9,
+  "total_elapsed_seconds": 42.2,
+  "model_calls": {
+    "total": 30,
+    "execute": 7,
+    "repairs": 0,
+    "execute_reasoning_tokens": 955,
+    "execute_output_tokens": 4197
+  },
+  "plan_echo": {
+    "plans": 7,
+    "identical": [],
+    "copied_80pct": 0
+  },
+  "repeat_pass_rates": {},
+  "ground_truth": {
+    "PASS": 3,
+    "FAIL": 4,
+    "MANUAL": 0,
+    "ERROR": 0
+  },
+  "false_positives": [
+    {
+      "id": "01-03",
+      "reason": "no proper 4-coloring among 0 candidate colorings"
+    },
+    {
+      "id": "01-05",
+      "reason": "no valid 7x7 completion respecting the givens"
+    },
+    {
+      "id": "01-07",
+      "reason": "no valid Hamiltonian path presented"
+    }
+  ],
+  "by_verdict": {
+    "CLOSED_CANCELLED": 1,
+    "CLOSED_SUCCESS": 6
+  },
+  "by_category": {
+    "combinatorial_search": {
+      "total": 7,
+      "pass": 3,
+      "fail": 4
+    }
+  },
+  "by_difficulty": {
+    "hard": {
+      "total": 5,
+      "pass": 1
+    },
+    "medium": {
+      "total": 2,
+      "pass": 2
+    }
+  },
+  "regressions_hit": [
+    {
+      "id": "01-01",
+      "regression_ref": "REG-003",
+      "verdict": "CLOSED_CANCELLED"
+    },
+    {
+      "id": "01-05",
+      "regression_ref": "REG-012",
+      "verdict": "CLOSED_SUCCESS"
+    }
+  ],
+  "failures": [
+    {
+      "id": "01-01",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 5.47
+    },
+    {
+      "id": "01-03",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 7.38
+    },
+    {
+      "id": "01-05",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 6.03
+    },
+    {
+      "id": "01-07",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_SUCCESS",
+      "elapsed": 6.14
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+A stick of unit length \([0, 1]\) is broken at two points chosen uniformly and independently at random, dividing the stick into three pieces. Let \(L_{min}\) be the length of the shortest piece and \(L_{max}\) be the length of the longest piece. What is the probability that the ratio of the shortest piece to the longest piece is greater than or equal to \(\frac{1}{4}\)? (i.e., Find \(P\left(\frac{L_{min}}{L_{max}} \ge \frac{1}{4}\right)\)).
+
+Follow-up from the user, referring to the request above:
+perform the calculation and RETURN as a simplified fraction.
+
+Follow-up from the user, referring to the request above:
+incorrect, try again

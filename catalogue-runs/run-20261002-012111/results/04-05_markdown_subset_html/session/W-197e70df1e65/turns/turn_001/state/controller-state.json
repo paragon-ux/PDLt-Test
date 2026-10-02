@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-3d9d6e859d",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-3d9d6e859d-P1",
+    "body": "WRITE a Python program that converts Markdown text to HTML without using any external libraries. The program MUST support:\n- HEADER syntax for levels 1 to 6 using # through ######.\n- BOLD formatting using **text** and __text__.\n- ITALIC formatting using *text* and _text_.\n- INLINE CODE delimited by backticks `code`.\n- LINKS formatted as [text](url).\n- UNORDERED LISTS where items start with - or *.\n- CODE BLOCKS indicated by four-space indentation or fenced with backticks.\n- PARAGRAPHS that wrap consecutive non-blank lines in <p> tags.\nPROVIDE a test suite containing at least 10 distinct Markdown test strings covering all listed features, including nested formatting cases such as bold inside italic, and edge cases like empty headers and links with special characters.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-3d9d6e859d-R1",
+    "body": "PARSE the markdown source into lines\nDETERMINE block boundaries (headers, code blocks, lists, paragraphs)\nFOR each line\n  IF line matches header syntax with 1–6 leading '#'\n    CONVERT to the corresponding <h1>–<h6> tag\n  ELSE IF line matches fenced code block delimiter (``` ) OR four‑space indentation\n    COLLECT code block content\n    WRAP in <pre><code> tags\n  ELSE IF line matches unordered list marker '-' OR '*'\n    GROUP consecutive list items\n    WRAP in <ul> and <li> tags\n  ELSE\n    TREAT as normal paragraph text\n    WRAP in <p> tags after processing inline formatting\nPROCESS inline formatting within each block\n  REPLACE **text** and __text__ with <strong>text</strong>\n  REPLACE *text* and _text_ with <em>text</em>\n  REPLACE `code` with <code>code</code>\n  REPLACE [text](url) with <a href=\"url\">text</a>\n  HANDLE nested formatting by applying replacements without overlap\nASSEMBLE all converted blocks into the final HTML document string\nCREATE a test suite with at least ten markdown strings covering header levels, bold, italic, nested formatting, inline code, links with special characters, unordered lists with '-' and '*', code blocks via indentation and fences, paragraph wrapping, and edge cases such as empty headers\nFOR each test case\n  EXECUTE the conversion program on the markdown input\n  COMPARE the generated HTML to the expected HTML for that case\n  RECORD success or failure\nREPORT that all tests must pass before final delivery\nENSURE the implementation uses only Python's standard library and does not import external packages",
+    "confirmed": true,
+    "source_prompt_id": "I-3d9d6e859d-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-3d9d6e859d-X1",
+    "body": "179ea653e3e5a165f99cd3f3ea03006fea34d030c1ead9c8c0bf5ead86622619",
+    "confirmed": true,
+    "source_prompt_id": "I-3d9d6e859d-P1",
+    "source_plan_id": "I-3d9d6e859d-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

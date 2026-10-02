@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-0f5066b6ea",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-0f5066b6ea-P1",
+    "body": "CALCULATE the probability that, for a stick of unit length broken at two uniformly random independent points, the ratio of the shortest piece (L_min) to the longest piece (L_max) is at least 1/4.\nRETURN the probability as an exact rational number or simplified expression.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-0f5066b6ea-R1",
+    "body": "GENERATE the joint distribution of two independent uniform break points on the interval [0,1]\nORDER the break points to define the segment endpoints\nCALCULATE the lengths of the three resulting pieces as functions of the ordered points\nDEFINE the condition that the ratio of the shortest piece to the longest piece is at least 1/4\nIDENTIFY the region in the ordered-point space where the condition holds\nINTEGRATE the joint density over that region to obtain the exact probability\nSIMPLIFY the resulting expression to a rational number in lowest terms\nRETURN the simplified probability",
+    "confirmed": true,
+    "source_prompt_id": "I-0f5066b6ea-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-0f5066b6ea-X1",
+    "body": "0cadf0fb3d172d7a11a32994936a0618ade8121aea6b86de1125fce051d73550",
+    "confirmed": true,
+    "source_prompt_id": "I-0f5066b6ea-P1",
+    "source_plan_id": "I-0f5066b6ea-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

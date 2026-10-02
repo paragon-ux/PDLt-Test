@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-fc80c361e9",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-fc80c361e9-P1",
+    "body": "PRODUCE forward migration SQL that:\n  CREATE a new table addresses with columns id INT PK, user_id INT FK->users, street TEXT, city TEXT, state TEXT, zip TEXT, is_primary BOOL\n  ALTER the orders table to ADD COLUMN shipping_address_id INT FK->addresses\n  KEEP the existing users table with columns id INT PK, name TEXT, email TEXT, created_at TIMESTAMP\n  KEEP the existing orders table with columns id INT PK, user_id INT FK->users, total DECIMAL, status TEXT, created_at TIMESTAMP\nPRODUCE rollback migration SQL that:\n  DROP column shipping_address_id from the orders table\n  DROP the addresses table\nPRODUCE backfill script that:\n  INSERT a default address for each existing user into the addresses table using placeholder data for street, city, state, zip, and set is_primary TRUE\n  UPDATE each order to set shipping_address_id to the newly inserted address for its user_id\nPRODUCE validation query that:\n  CHECK that every order's shipping_address_id references an existing address in the addresses table\n  ENSURE no missing address references are found after migration",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-fc80c361e9-R1",
+    "body": "DETERMINE the schema modifications needed for the forward migration\nGENERATE forward migration SQL to create the addresses table with columns id, user_id, street, city, state, zip, is_primary and appropriate primary and foreign key constraints\nGENERATE forward migration SQL to alter the orders table by adding the shipping_address_id column with a foreign key constraint to addresses\nGENERATE rollback migration SQL to drop the shipping_address_id column from the orders table\nGENERATE rollback migration SQL to drop the addresses table\nGENERATE backfill script to insert a default address for each existing user using placeholder values for street, city, state, zip and setting is_primary to TRUE\nGENERATE backfill script to update each order to set shipping_address_id to the address inserted for its user_id\nGENERATE validation query to verify that every order's shipping_address_id references an existing address and that no missing address references exist\nOUTPUT the forward migration SQL, rollback migration SQL, backfill script, and validation query as separate artifacts",
+    "confirmed": true,
+    "source_prompt_id": "I-fc80c361e9-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-fc80c361e9-X1",
+    "body": "251d6357761cf27c3a83faa1da2201b69d08661ed6bcd38ae6ac0c77f846c723",
+    "confirmed": true,
+    "source_prompt_id": "I-fc80c361e9-P1",
+    "source_plan_id": "I-fc80c361e9-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

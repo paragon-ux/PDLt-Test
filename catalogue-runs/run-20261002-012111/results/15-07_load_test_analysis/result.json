@@ -1,0 +1,69 @@
+{
+  "id": "15-07",
+  "category": "performance_and_scale",
+  "file": "15_performance_and_scale/load_test_analysis.txt",
+  "difficulty": "medium",
+  "expected_routing": "STANDARD_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "not_required",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 10.42,
+  "harness_peak_memory_mb": 28.4,
+  "start_time": "2026-10-02T05:40:21.349848+00:00",
+  "session_id": "catalogue-15-07-1790919621",
+  "transcript_file": "results\\15-07_load_test_analysis\\transcript.txt",
+  "ground_truth_check": null,
+  "ground_truth_grade": {
+    "grade": "N/A",
+    "reason": "no ground truth required"
+  },
+  "pdl_rules_stressed": [
+    "PDL-03",
+    "PDL-06",
+    "PDL-08"
+  ],
+  "tags": [
+    "load-testing",
+    "saturation",
+    "bottleneck"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 5,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 2
+    },
+    "repairs": 1,
+    "execution_attempts": {
+      "attempts": 2,
+      "repairs_used": 1,
+      "unmeasured_repairs": 0,
+      "repairs_allowed": 1,
+      "tier": "MINIMAL"
+    },
+    "plan_echo": {
+      "plan_id": "I-662531b6df-R1",
+      "identical": false,
+      "copied_line_ratio": 0.25
+    },
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 2199,
+      "DRAFT_PLAN": 962,
+      "EXECUTE": 32
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 2336,
+      "DRAFT_PLAN": 1119,
+      "EXECUTE": 717
+    }
+  },
+  "repeat": null,
+  "harness_error": null
+}

@@ -1,0 +1,1 @@
+{"kind": "PROMPT", "prompt_body": "FIND all subsets of the given set S that sum exactly to the target value T = 40.\nEMIT each subset and VERIFY its sum.\nREPORT the total number of subsets found.", "approach_handoff": "CARRY_SOURCE_TO_PLAN", "task_entities": ["T = 40"]}

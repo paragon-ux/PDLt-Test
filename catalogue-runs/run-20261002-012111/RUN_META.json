@@ -1,0 +1,47 @@
+{
+  "run_id": "run-20261002-012111",
+  "start_time": "2026-10-02T05:21:11.244734+00:00",
+  "model": "openai/gpt-oss-120b",
+  "reasoning_effort": "harness-default",
+  "reasoning_by_operation": [],
+  "reasoning_effective": {
+    "default": "low",
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": "high",
+      "DRAFT_PROMPT": "high",
+      "REVISE_PROMPT": "high",
+      "INTERPRET_PROMPT_REVIEW": "high",
+      "DRAFT_PLAN": "high",
+      "REVISE_PLAN": "high",
+      "INTERPRET_PLAN_REVIEW": "high",
+      "INTERPRET_EXECUTION_INPUT": "high",
+      "DRAFT_EXECUTE": "high",
+      "EXECUTE": "low",
+      "EMIT_RESULT_IR": "high"
+    }
+  },
+  "run_settings": {
+    "max_output_tokens": null,
+    "max_repairs": null,
+    "providers": "Cerebras",
+    "draft_execute": false,
+    "sandbox": "auto"
+  },
+  "category_filter": null,
+  "prompt_id_filter": null,
+  "total_prompts": 105,
+  "repeat": 1,
+  "timeout_per_prompt": 600,
+  "harness_memory_mb": 4096,
+  "sandbox": "auto",
+  "pdlt_test_root": "C:\\Users\\USER\\Desktop\\Frameworks\\PDLt-Test",
+  "rules": {
+    "retries_allowed": 0,
+    "do_overs_allowed": false,
+    "non_interactive": true,
+    "exit_on_close": true,
+    "dev_mode": true,
+    "structured_output": true,
+    "gate_policy": "evaluator_confirms_via_stdin"
+  }
+}

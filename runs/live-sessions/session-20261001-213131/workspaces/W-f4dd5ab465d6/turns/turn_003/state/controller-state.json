@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-54486e3ecb",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-54486e3ecb-P1",
+    "body": "READ the user's request for an opinion on the REPL and suggestions for improvement\nGENERATE an unbiased evaluation describing strengths and weaknesses of the REPL\nPROVIDE specific, actionable suggestions to enhance the REPL's functionality, usability, and performance\nRETURN the evaluation and suggestions as a concise, structured text response",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-54486e3ecb-R1",
+    "body": "READ the user's request for an opinion on the REPL and suggestions for improvement\nGENERATE an unbiased evaluation describing strengths and weaknesses of the REPL\nPROVIDE specific, actionable suggestions to enhance the REPL's functionality, usability, and performance\nRETURN the evaluation and suggestions as a concise, structured text response",
+    "confirmed": true,
+    "source_prompt_id": "I-54486e3ecb-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-54486e3ecb-X1",
+    "body": "700a0a309d37d1125871b2207263e20d96ed885ceb8cfa359f998a02c9aa730f",
+    "confirmed": true,
+    "source_prompt_id": "I-54486e3ecb-P1",
+    "source_plan_id": "I-54486e3ecb-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

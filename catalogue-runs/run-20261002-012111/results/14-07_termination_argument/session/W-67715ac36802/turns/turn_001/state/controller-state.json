@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-d35ae70363",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-d35ae70363-P1",
+    "body": "PROVIDE a rigorous mathematical proof that the recursive Python function collatz_steps, defined as shown, terminates for every non‑negative integer input.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-d35ae70363-R1",
+    "body": "EXTRACT the collatz_steps function definition.\nDEFINE the domain of inputs (non‑negative integers) and the termination property to prove.\nSELECT a suitable well‑founded ordering (e.g., the natural numbers with the usual < relation) as a measure of progress.\nDECOMPOSE the recursive cases of collatz_steps into even and odd branches.\nPROVE that in each branch the chosen measure strictly decreases.\nPROVE the base case(s) where the recursion halts (e.g., n == 0 or n == 1).\nAPPLY the well‑founded induction principle using the decreasing measure and base case to conclude that the function terminates for all inputs.\nWRITE the rigorous mathematical proof, including definitions, lemmas, and concluding argument.",
+    "confirmed": true,
+    "source_prompt_id": "I-d35ae70363-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-d35ae70363-X1",
+    "body": "b6183453e9fd8c7c564adecd585d4e30f69405a38835d71a3dd8a7281dcf98b1",
+    "confirmed": true,
+    "source_prompt_id": "I-d35ae70363-P1",
+    "source_plan_id": "I-d35ae70363-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

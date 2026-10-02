@@ -1,0 +1,1 @@
+{"kind": "PROMPT", "prompt_body": "CALCULATE the ratio p/n\nWHERE a class of p students has an average score of 70\nAND a class of n students has an average score of 92\nAND the combined average of both classes is 86\nOUTPUT the ratio p/n", "approach_handoff": "NONE", "task_entities": ["p", "n", "70", "92", "86", "p/n"]}

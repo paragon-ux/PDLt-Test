@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-9e48c4f6d4",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-9e48c4f6d4-P1",
+    "body": "DIAGNOSE the SSL certificate chain issue shown in the provided openssl s_client output.\nEXPLAIN the meaning of the 'unable to get local issuer certificate' error.\nDESCRIBE why the chain includes only a single certificate.\nIDENTIFY the missing intermediate CA certificate and its expected source.\nPROVIDE exact step‑by‑step server‑side remediation instructions.\nPROVIDE debugging steps including the specific openssl commands to verify the fix.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-9e48c4f6d4-R1",
+    "body": "PARSE the supplied openssl s_client output\nEXTRACT the presented certificate(s) and chain information\nDETERMINE whether intermediate certificates are present in the chain\nIF intermediate certificates are missing THEN\n    IDENTIFY the expected intermediate CA certificate based on the server certificate issuer\n    SEARCH the issuer's public repository for the missing intermediate certificate\n    RETRIEVE the intermediate certificate\nENDIF\nCONSTRUCT a complete certificate chain file including the server certificate and any retrieved intermediates\nPREPARE server‑side remediation instructions for updating the TLS configuration with the new chain file\nUPDATE the server configuration directives to reference the complete chain\nRESTART or reload the TLS service to apply the new configuration\nCOMPOSE debugging steps including specific openssl s_client commands to verify the chain\nRUN the verification commands to confirm that the error no longer appears\nEXPLAIN the meaning of the “unable to get local issuer certificate” error\nDESCRIBE why the chain may include only a single certificate",
+    "confirmed": true,
+    "source_prompt_id": "I-9e48c4f6d4-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-9e48c4f6d4-X1",
+    "body": "82073b511b57d7519683666e8f30fac63641a1f996edf9cdd1e17265afa3b936",
+    "confirmed": true,
+    "source_prompt_id": "I-9e48c4f6d4-P1",
+    "source_plan_id": "I-9e48c4f6d4-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

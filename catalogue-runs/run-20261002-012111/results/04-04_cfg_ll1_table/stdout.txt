@@ -1,0 +1,103 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[dev:telemetry] reasoning: default=low per_operation={"BOOTSTRAP_ANALYSIS": "high", "DRAFT_EXECUTE": "high", "DRAFT_PLAN": "high", "DRAFT_PROMPT": "high", "EMIT_RESULT_IR": "high", "EXECUTE": "low", "INTERPRET_EXECUTION_INPUT": "high", "INTERPRET_PLAN_REVIEW": "high", "INTERPRET_PROMPT_REVIEW": "high", "REVISE_PLAN": "high", "REVISE_PROMPT": "high"}
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\04-04_cfg_ll1_table\session\catalogue-04-04-1790918762\worker-progress.log]
+[api] response received in 1518ms
+[api] response received in 1470ms
+Prompt Pseudocode
+
+COMPUTE FIRST sets for all non-terminals E, E', T, T', F.
+COMPUTE FOLLOW sets for all non-terminals E, E', T, T', F.
+CONSTRUCT LL(1) parse table using the computed FIRST and FOLLOW sets.
+DISPLAY the FIRST sets, FOLLOW sets, and the parse table as a formatted matrix.
+PARSE the input string "id + id * id" using the parse table, showing each step with the parsing stack and the remaining input.
+USE the following operatives: E, E', T, T', F, id, +, *, (, ).
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\04-04_cfg_ll1_table\session\catalogue-04-04-1790918762\worker-progress.log]
+[api] response received in 1306ms
+Response Plan Pseudocode
+
+COMPUTE FIRST sets for non-terminals E, E', T, T', F.
+COMPUTE FOLLOW sets for non-terminals E, E', T, T', F.
+CONSTRUCT LL(1) parse table using the computed FIRST and FOLLOW sets.
+FORMAT the FIRST sets, FOLLOW sets, and parse table as a readable matrix.
+INITIALIZE parsing stack with start symbol E and input pointer at the beginning of the string "id + id * id".
+WHILE parsing stack is not empty DO
+    READ the top symbol of the stack and the current input token.
+    IF the top symbol is a terminal THEN
+        IF it matches the current input token THEN
+            POP the terminal from the stack.
+            ADVANCE the input pointer.
+        ELSE
+            SIGNAL a parsing error.
+        ENDIF
+    ELSE IF the top symbol is a non-terminal THEN
+        LOOKUP the parse-table entry for (top symbol, current input token).
+        IF entry exists THEN
+            POP the non-terminal.
+            PUSH the production symbols onto the stack in reverse order.
+        ELSE
+            SIGNAL a parsing error.
+        ENDIF
+    ENDIF
+    RECORD the current stack contents and the remaining input.
+ENDWHILE
+EMIT the recorded parsing steps as a step-by-step trace showing the stack and remaining input.
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\04-04_cfg_ll1_table\session\catalogue-04-04-1790918762\worker-progress.log]
+[api] response received in 834ms
+FIRST sets:
+E  = {id, (}
+E' = {+, ε}
+T  = {id, (}
+T' = {*, ε}
+F  = {id, (}
+
+FOLLOW sets:
+E  = {), $}
+E' = {), $}
+T  = {+, ), $}
+T' = {+, ), $}
+F  = {*, +, ), $}
+
+LL(1) Parse Table (rows = non‑terminals, columns = terminals id, +, *, (, ), $):
+
+          id        +        *        (        )        $
+----------------------------------------------------------
+E   | E→T E'  |          |          | E→T E' |          |   
+E'  | ε       | E'→+ T E'|          | ε       | E'→ε   | E'→ε 
+T   | T→F T'  |          |          | T→F T' |          |   
+T'  | ε       | T'→ε    | T'→* F T'| ε       | T'→ε   | T'→ε 
+F   | F→id    |          |          | F→( E )|          |   
+
+Parsing steps for input "id + id * id" (tokens: id + id * id $):
+
+Step 0: Stack [E $]          Input: id + id * id $
+Step 1: Expand E → T E'   Stack [E' T $]
+Step 2: Expand T → F T'   Stack [T' F E' $]
+Step 3: Expand F → id      Stack [id T' E' $]   (match id)
+Step 4: Match id           Stack [T' E' $]    Input: + id * id $
+Step 5: T' → ε (since + ∈ FOLLOW(T'))   Stack [E' $]
+Step 6: Expand E' → + T E' Stack [E' T + $]
+Step 7: Match +            Stack [E' T $]     Input: id * id $
+Step 8: Expand T → F T'   Stack [T' F E' $]
+Step 9: Expand F → id      Stack [id T' E' $]   (match id)
+Step10: Match id           Stack [T' E' $]    Input: * id $
+Step11: T' → * F T'       Stack [T' F * E' $]
+Step12: Match *            Stack [T' F E' $]   Input: id $
+Step13: Expand F → id      Stack [id T' E' $]   (match id)
+Step14: Match id           Stack [T' E' $]    Input: $ 
+Step15: T' → ε (ε ∈ FOLLOW(T')) Stack [E' $]
+Step16: E' → ε            Stack [$]          Input: $ 
+Step17: $ matches $       Stack []           Input: $ (accepted)
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

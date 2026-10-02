@@ -1,0 +1,105 @@
+{
+  "run_id": "run-20261001-221730",
+  "timestamp": "2026-10-02T02:17:30.158125+00:00",
+  "model": "openai/gpt-oss-120b",
+  "reasoning_effort": "low",
+  "total_prompts": 7,
+  "passed": 2,
+  "failed": 5,
+  "stage_passed": 2,
+  "manual_spot_check": [],
+  "pass_rate_pct": 28.6,
+  "total_elapsed_seconds": 74.2,
+  "model_calls": {
+    "total": 23,
+    "execute": 2,
+    "repairs": 0,
+    "execute_reasoning_tokens": 10065,
+    "execute_output_tokens": 10665
+  },
+  "plan_echo": {
+    "plans": 7,
+    "identical": [
+      "01-02"
+    ],
+    "copied_80pct": 1
+  },
+  "repeat_pass_rates": {},
+  "ground_truth": {
+    "PASS": 2,
+    "FAIL": 5,
+    "MANUAL": 0,
+    "ERROR": 0
+  },
+  "false_positives": [],
+  "by_verdict": {
+    "CLOSED_CANCELLED": 5,
+    "CLOSED_SUCCESS": 2
+  },
+  "by_category": {
+    "combinatorial_search": {
+      "total": 7,
+      "pass": 2,
+      "fail": 5
+    }
+  },
+  "by_difficulty": {
+    "hard": {
+      "total": 5,
+      "pass": 1
+    },
+    "medium": {
+      "total": 2,
+      "pass": 1
+    }
+  },
+  "regressions_hit": [
+    {
+      "id": "01-01",
+      "regression_ref": "REG-003",
+      "verdict": "CLOSED_CANCELLED"
+    },
+    {
+      "id": "01-02",
+      "regression_ref": "REG-011",
+      "verdict": "CLOSED_CANCELLED"
+    },
+    {
+      "id": "01-05",
+      "regression_ref": "REG-012",
+      "verdict": "CLOSED_CANCELLED"
+    }
+  ],
+  "failures": [
+    {
+      "id": "01-01",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 10.86
+    },
+    {
+      "id": "01-02",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 10.95
+    },
+    {
+      "id": "01-05",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 10.31
+    },
+    {
+      "id": "01-06",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 10.36
+    },
+    {
+      "id": "01-07",
+      "category": "combinatorial_search",
+      "verdict": "CLOSED_CANCELLED",
+      "elapsed": 10.22
+    }
+  ]
+}

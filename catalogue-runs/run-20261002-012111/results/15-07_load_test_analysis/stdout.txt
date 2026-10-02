@@ -1,0 +1,70 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[dev:telemetry] reasoning: default=low per_operation={"BOOTSTRAP_ANALYSIS": "high", "DRAFT_EXECUTE": "high", "DRAFT_PLAN": "high", "DRAFT_PROMPT": "high", "EMIT_RESULT_IR": "high", "EXECUTE": "low", "INTERPRET_EXECUTION_INPUT": "high", "INTERPRET_PLAN_REVIEW": "high", "INTERPRET_PROMPT_REVIEW": "high", "REVISE_PLAN": "high", "REVISE_PROMPT": "high"}
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\15-07_load_test_analysis\session\catalogue-15-07-1790919621\worker-progress.log]
+[api] response received in 1877ms
+[api] response received in 2289ms
+Prompt Pseudocode
+
+READ the provided load test results table.
+ANALYZE the average response time, percentile latencies (P95, P99), throughput, error rate, CPU usage, memory usage, and database connections across the various load levels.
+IDENTIFY the saturation point where throughput plateaus.
+DETERMINE the primary bottleneck resource causing performance degradation.
+EXPLAIN the reasons for throughput decrease at 1000 concurrent users.
+RECOMMEND the maximum concurrent users for the system.
+PROVIDE specific scaling recommendations.
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\15-07_load_test_analysis\session\catalogue-15-07-1790919621\worker-progress.log]
+[api] response received in 958ms
+Response Plan Pseudocode
+
+READ the provided load test results table
+EXTRACT the average response time, P95, P99, throughput, error rate, CPU usage, memory usage, and database connections for each load level
+COMPUTE the metric values and trends across load levels
+IDENTIFY the saturation point where throughput plateaus
+ANALYZE the metrics around the saturation point to DETERMINE the primary bottleneck resource causing performance degradation
+EXPLAIN the reasons for throughput decrease at 1000 concurrent users based on the identified bottleneck and metric behavior
+RECOMMEND the maximum concurrent user count supported before performance degrades beyond acceptable thresholds
+PROVIDE specific scaling recommendations to address the identified bottleneck and improve capacity
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\15-07_load_test_analysis\session\catalogue-15-07-1790919621\worker-progress.log]
+[api] response received in 744ms
+[api] response received in 931ms
+**Analysis of Load Test Results**
+
+1. **Saturation Point**
+   - Throughput increases rapidly up to 300 concurrent users (2,680 req/s) and then plateaus. From 300 to 500 users the throughput rises only slightly (2,680 → 2,710 req/s), and at 1000 users it actually drops to 2,650 req/s. Therefore, the saturation point is around **300 concurrent users** where throughput begins to level off.
+
+2. **Primary Bottleneck Resource**
+   - **CPU usage** reaches 98 % at 300 users and stays at 99 % for higher loads, indicating the CPU is fully utilized.
+   - **Memory usage** is still below critical thresholds (52 % at 300 users, 65 % at 500, 78 % at 1000), so memory is not the limiting factor yet.
+   - **Database connections** are capped at 150 from 300 users onward, but the DB usage does not show a spike in latency until the extreme load of 1000 users, where response times explode. The combination of near‑maxed CPU and stable DB connections suggests the **CPU is the primary bottleneck**, with secondary pressure from the database at very high concurrency.
+
+3. **Why Throughput Decreases at 1000 Users**
+   - At 1000 users, average response time surges to 4500 ms (P95 = 12 000 ms, P99 = timeout) and error rate jumps to 23.4 %.
+   - The CPU is already saturated at 99 %, leaving virtually no headroom for additional processing. The extreme response times cause requests to stack up, increasing queuing delays and timeouts, which in turn reduce the effective throughput despite the same number of concurrent users.
+   - The high error rate further reduces successful request processing, contributing to the observed decline in throughput.
+
+4. **Maximum Recommended Concurrent Users**
+   - To stay within acceptable performance limits (response times < 200 ms, error rate < 1 %, CPU < 85 %), the system should be limited to **approximately 200 concurrent users**. At this level, average response time is 78 ms, P95 is 145 ms, and CPU usage is 91 % (still high but manageable). A more conservative recommendation would be **150 concurrent users** to keep CPU usage under 85 % and provide a safety margin.
+
+5. **Scaling Recommendations**
+   - **Vertical Scaling**: Increase CPU capacity (e.g., add more cores or move to a higher‑performance instance) to relieve the CPU bottleneck.
+   - **Horizontal Scaling**: Deploy additional application instances behind a load balancer to distribute load, effectively increasing aggregate CPU resources.
+   - **Database Optimization**: Since DB connections plateau at 150, consider increasing the connection pool size or scaling the database tier (read replicas or stronger DB instance) to handle higher concurrency.
+   - **Caching**: Introduce an in‑memory cache (e.g., Redis) for frequently accessed data to reduce CPU work per request.
+   - **Async Processing**: Offload long‑running tasks to background workers to free up request‑handling threads.
+   - **Resource Monitoring**: Implement fine‑grained monitoring and auto‑scaling policies that trigger additional instances when CPU usage exceeds 80 %.
+
+These actions together will raise the system’s capacity beyond the current saturation point and improve resilience under heavier loads.
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

@@ -1,0 +1,250 @@
+{
+  "turn_id": "turn_001",
+  "status": "CLOSED_SUCCESS",
+  "deliverable_sha256": "8df509639dab82bcee7bbaae24ed31b4c6711b60431080792169e8559d90e491",
+  "events": [
+    {
+      "at_utc": "2026-10-02T05:26:40.753579+00:00",
+      "kind": "WORKSPACE_CREATED",
+      "payload": {
+        "workspace_id": "W-52403ec6c4dc",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:40.755581+00:00",
+      "kind": "EXPLICIT_INVOCATION_OBSERVED",
+      "payload": {
+        "substantive_request_present": true
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:41.044583+00:00",
+      "kind": "ACTIVATION_ROUTED",
+      "payload": {
+        "verdict": "APPLY_PROTOCOL",
+        "passed_gating": true,
+        "confidence": 1.0
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:41.641915+00:00",
+      "kind": "EXECUTION_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "distribution": {
+          "WITHIN_10M_STEPS": 0.41,
+          "WITHIN_100K_STEPS": 0.53,
+          "WITHIN_100M_STEPS": 0.04,
+          "BEYOND_100M_STEPS": 0.02
+        },
+        "tier": "STANDARD",
+        "passed_gating": true,
+        "step_limit": 10000000,
+        "timeout_seconds": 30.0,
+        "memory_mb": 256
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:41.644864+00:00",
+      "kind": "PROBLEM_CLASS_CLASSIFIED",
+      "payload": {
+        "requires_verified_execution": false,
+        "domain": null,
+        "verdict": "STANDARD_EXECUTION",
+        "confidence": 0.93,
+        "passed_gating": true
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:41.655886+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:43.368840+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "BOOTSTRAP_ANALYSIS",
+        "stage": "10_prompt",
+        "invocation_id": "0001-bootstrap_analysis"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:43.382866+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:45.751602+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PROMPT",
+        "stage": "10_prompt",
+        "invocation_id": "0002-draft_prompt"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:45.763602+00:00",
+      "kind": "PROTOCOL_BOUND",
+      "payload": {
+        "instance_id": "I-1fdf839ea0",
+        "turn_id": "turn_001"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:45.774604+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-1fdf839ea0-P1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:45.818612+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "prompt",
+        "artifact_id": "I-1fdf839ea0-P1"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:45.833604+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:48.735717+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "DRAFT_PLAN",
+        "stage": "30_plan",
+        "invocation_id": "0003-draft_plan"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:48.742720+00:00",
+      "kind": "ARTIFACT_PUBLISHED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-1fdf839ea0-R1",
+        "confirmed": false
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:48.745718+00:00",
+      "kind": "PLAN_PROMPT_ECHO",
+      "payload": {
+        "plan_id": "I-1fdf839ea0-R1",
+        "identical": false,
+        "copied_line_ratio": 0.0
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:48.785871+00:00",
+      "kind": "ARTIFACT_CONFIRMED",
+      "payload": {
+        "kind": "plan",
+        "artifact_id": "I-1fdf839ea0-R1"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:49.037088+00:00",
+      "kind": "PLAN_PROFILE_ROUTED",
+      "payload": {
+        "predicted_steps": "WITHIN_10M_STEPS",
+        "distribution": {
+          "BEYOND_100M_STEPS": 0.02,
+          "WITHIN_100K_STEPS": 0.47,
+          "WITHIN_100M_STEPS": 0.04,
+          "WITHIN_10M_STEPS": 0.47
+        },
+        "passed_gating": true,
+        "request_tier": "STANDARD",
+        "plan_tier": "STANDARD",
+        "tier": "STANDARD",
+        "budget_raised": false,
+        "step_limit": 10000000
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:49.054470+00:00",
+      "kind": "OPERATION_MATERIALIZED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:50.887321+00:00",
+      "kind": "MODEL_OUTPUT_RECORDED",
+      "payload": {
+        "operation": "EXECUTE",
+        "stage": "50_execution",
+        "invocation_id": "0004-execute"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:51.367906+00:00",
+      "kind": "SANDBOX_SESSION",
+      "payload": {
+        "backend": "appcontainer",
+        "mode": "auto",
+        "available": true,
+        "root": "C:\\Users\\USER\\AppData\\Local\\Temp\\pdlt-sandboxes\\engine-wwi8dcqk",
+        "os": "Windows 10.0.22000",
+        "profile": "PDLt.Sandbox.engine-wwi8dcqk",
+        "sid": "S-1-15-2-1353930882-1711483722-733815437-644090839-2794918888-1956561286-196039113"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:51.369898+00:00",
+      "kind": "SANDBOX_RUN",
+      "payload": {
+        "block": 1,
+        "backend": "appcontainer",
+        "tier": "STANDARD",
+        "exit_code": 0,
+        "step_budget_exceeded": false,
+        "steps_used": 208,
+        "timed_out": false,
+        "oom_killed": false,
+        "duration_ms": 361.6
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:51.370903+00:00",
+      "kind": "EXECUTION_ATTEMPTS",
+      "payload": {
+        "attempts": 1,
+        "repairs_used": 0,
+        "unmeasured_repairs": 0,
+        "repairs_allowed": 1,
+        "tier": "STANDARD"
+      }
+    },
+    {
+      "at_utc": "2026-10-02T05:26:51.375920+00:00",
+      "kind": "TURN_STATUS",
+      "payload": {
+        "turn_id": "turn_001",
+        "status": "CLOSED_SUCCESS"
+      }
+    }
+  ],
+  "flushed_at_utc": "2026-10-02T05:26:51.376897+00:00"
+}

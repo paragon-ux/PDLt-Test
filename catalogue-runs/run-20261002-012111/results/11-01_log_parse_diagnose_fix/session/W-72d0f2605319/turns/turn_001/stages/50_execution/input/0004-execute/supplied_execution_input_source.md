@@ -1,0 +1,35 @@
+Given the following application error log, parse it to identify the root cause, diagnose the failure, and emit a code patch that fixes the bug.
+
+`
+2026-09-27 14:23:01.445 ERROR [worker-3] app.services.PaymentService - Payment processing failed
+  Traceback (most recent call last):
+    File "app/services/payment.py", line 89, in process_payment
+      result = self.gateway.charge(amount=order.total, currency=order.currency)
+    File "app/gateways/stripe_gateway.py", line 34, in charge
+      response = self._client.post("/v1/charges", json=payload)
+    File "app/gateways/stripe_gateway.py", line 18, in post
+      return self._session.post(self.base_url + path, json=data, timeout=self.timeout)
+    File "app/gateways/http_client.py", line 42, in post
+      raise TimeoutError(f"Request to {url} timed out after {timeout}s")
+  TimeoutError: Request to https://api.stripe.com/v1/charges timed out after 5s
+
+2026-09-27 14:23:01.446 ERROR [worker-3] app.services.OrderService - Order ORD-7842 failed
+  Traceback (most recent call last):
+    File "app/services/order.py", line 156, in complete_order
+      payment_id = self.payment_service.process_payment(order)
+    File "app/services/order.py", line 158, in complete_order
+      order.status = 'FAILED'
+      self.db.save(order)
+      raise
+  app.exceptions.OrderFailedException: Payment failed for ORD-7842
+
+2026-09-27 14:23:02.001 WARN  [worker-3] app.services.OrderService - Retry 1/3 for ORD-7842
+2026-09-27 14:23:07.502 ERROR [worker-3] app.services.PaymentService - Payment processing failed
+  TimeoutError: Request to https://api.stripe.com/v1/charges timed out after 5s
+2026-09-27 14:23:07.503 WARN  [worker-3] app.services.OrderService - Retry 2/3 for ORD-7842
+2026-09-27 14:23:13.004 ERROR [worker-3] app.services.PaymentService - Payment processing failed
+  TimeoutError: Request to https://api.stripe.com/v1/charges timed out after 5s
+2026-09-27 14:23:13.005 ERROR [worker-3] app.services.OrderService - All retries exhausted for ORD-7842
+`
+
+Diagnose the issue, identify the missing resilience patterns, and produce a corrected version of the payment service with: retry with exponential backoff, circuit breaker pattern, and idempotency key to prevent double charges on retry.

@@ -1,0 +1,1 @@
+{"kind": "PROMPT", "prompt_body": "OPTIMIZE the database query SELECT * FROM ??? for maximum performance.\nOUTPUT the optimized query.", "approach_handoff": "NONE", "task_entities": ["SELECT * FROM ???"]}

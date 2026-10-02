@@ -1,0 +1,1 @@
+{"neutral_plan_body":"READ the list L of 45 distinct positive integers\nANALYZE possible triples (a, b, c) where a + b = c\nSEARCH for a collection of 15 disjoint triples satisfying the condition\nIF a valid partition exists THEN CONSTRUCT one complete example of such a partition\nOUTPUT the example partition"}

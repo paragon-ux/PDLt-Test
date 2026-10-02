@@ -1,0 +1,1 @@
+{"neutral_plan_body":"READ numeric temperature value as temperature\nREAD source temperature scale as source_scale\nREAD target temperature scale as target_scale\nIF source_scale EQUALS target_scale THEN\n    RETURN temperature\nELSE\n    CONVERT temperature FROM source_scale TO target_scale\n    RETURN converted temperature\nENDIF"}

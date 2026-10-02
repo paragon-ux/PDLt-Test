@@ -1,0 +1,63 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[dev:telemetry] reasoning: default=low per_operation={"BOOTSTRAP_ANALYSIS": "high", "DRAFT_EXECUTE": "high", "DRAFT_PLAN": "high", "DRAFT_PROMPT": "high", "EMIT_RESULT_IR": "high", "EXECUTE": "low", "INTERPRET_EXECUTION_INPUT": "high", "INTERPRET_PLAN_REVIEW": "high", "INTERPRET_PROMPT_REVIEW": "high", "REVISE_PLAN": "high", "REVISE_PROMPT": "high"}
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\15-02_database_sharding_key\session\catalogue-15-02-1790919550\worker-progress.log]
+[api] response received in 1527ms
+[api] response received in 2639ms
+Prompt Pseudocode
+
+RECOMMEND a shard key for each of the tables: users, posts, likes, follows.
+JUSTIFY each recommendation by analyzing impact on the following common queries: Get a user's timeline, Get all likes on a specific post, Get a user's follower count, Full-text search across posts.
+IDENTIFY trade‑offs such as locality versus cross‑shard joins, load balancing, hotspot risk, and data skew.
+INCLUDE the following task entities verbatim: users; posts; likes; follows; id; username; region; created_at; author_id; content; post_id; user_id; follower_id; following_id; Get a user's timeline; Get all likes on a specific post; Get a user's follower count; shard key; 100M rows; 5B rows; 50B rows; 2B rows.
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\15-02_database_sharding_key\session\catalogue-15-02-1790919550\worker-progress.log]
+[api] response received in 1183ms
+Response Plan Pseudocode
+
+IDENTIFY candidate shard key fields for each table: users, posts, likes, follows
+CONSIDER data volume for each table (users: 100M rows, posts: 5B rows, likes: 50B rows, follows: 2B rows)
+ANALYZE impact of each candidate shard key on each common query: Get a user's timeline, Get all likes on a specific post, Get a user's follower count, Full‑text search across posts
+EVALUATE trade‑offs for each candidate, including locality versus cross‑shard joins, load balancing, hotspot risk, and data skew
+SELECT optimal shard key for each table based on analysis
+DOCUMENT recommendation for each table with justification referencing the analysis
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\15-02_database_sharding_key\session\catalogue-15-02-1790919550\worker-progress.log]
+[api] response received in 1314ms
+**Shard Key Recommendations**
+
+| Table | Recommended Shard Key | Reasoning |
+|-------|----------------------|----------|
+| users | `id` (primary key) – optionally prefixed with `region` if data‑locality to a specific geographic region is needed | Queries: *Get a user's follower count* (needs only the user row) and *Get a user's timeline* (fetches follower list from `follows` then posts). Using `id` ensures uniform distribution across shards (100M rows) and avoids hotspots. Adding `region` can improve locality for region‑based services but may introduce imbalance if some regions dominate.
+| posts | Composite key `author_id` (or `author_id + created_at` for time‑range sharding) | The timeline query fetches posts of users a person follows. Sharding by `author_id` keeps each user's posts on the same shard, allowing the timeline query to retrieve posts for many followees with a single scatter‑gather (one shard per author). Adding `created_at` helps balance write load over time and assists range scans for recent posts.
+| likes | `post_id` (or `post_id + user_id` for finer granularity) | *Get all likes on a specific post* becomes a single‑shard query when sharding by `post_id`, eliminating cross‑shard joins for the 50B‑row table. Queries that need likes for a user’s own posts still require a scatter‑gather, but this is acceptable as the primary read pattern is per‑post.
+| follows | Composite key `follower_id` (or `follower_id + following_id`) | *Get a user's follower count* and the list of followees required for the timeline query both become local reads when sharding by `follower_id`. This distributes the 2B rows evenly and prevents a single hot shard for very popular users.
+
+**Impact Analysis on Common Queries**
+
+1. **Get a user's timeline** – Requires joins between `follows` (by `follower_id`) and `posts` (by `author_id`). With the chosen keys, `follows` is local to the requesting user, and each author’s posts are on the shard keyed by `author_id`. The query becomes a scatter‑gather across the set of followed authors, but each shard returns only that author’s posts, keeping the amount of data transferred modest. Adding a cache layer can further reduce cross‑shard traffic.
+2. **Get all likes on a specific post** – Sharding `likes` by `post_id` makes this a single‑shard lookup, enabling fast, low‑latency retrieval even at 50B rows.
+3. **Get a user's follower count** – With `follows` sharded on `follower_id`, counting followers is a local operation on the shard that stores the requesting user’s follow rows.
+4. **Full‑text search across posts** – Sharding by `author_id` does not help full‑text search, which will still require a scatter‑gather across all shards (or use an external search index). This is acceptable because search is read‑intensive and can be backed by a replicated search service.
+
+**Trade‑offs**
+
+- **Locality vs. Cross‑shard joins**: The chosen keys maximize locality for the most common read patterns (timeline, likes, follower count) while accepting cross‑shard reads for timeline aggregation across many authors.
+- **Load balancing**: Primary keys (`id`, `author_id`, `post_id`, `follower_id`) provide near‑uniform distribution, mitigating hotspot risk. Adding secondary components (e.g., `region` or `created_at`) can fine‑tune balance but may introduce skew if the added field is unevenly distributed.
+- **Hotspot risk**: Very popular users or viral posts could concentrate traffic on a subset of shards. Composite sharding (e.g., `author_id + created_at`) spreads writes over time buckets, reducing per‑shard write pressure.
+- **Data skew**: Composite keys help avoid skew from uneven region or time distributions. Monitoring shard metrics and re‑balancing shards periodically will be required.
+- **Cross‑shard joins**: The timeline query inevitably involves a scatter‑gather across the set of followed authors; this is acceptable given the query’s high latency tolerance and the ability to parallelize fetches.
+- **Scalability**: All chosen keys scale horizontally; adding new shards requires moving ranges of the primary key space, which is straightforward for monotonic identifiers.
+
+**Summary**: Use `id` (or `region+id`) for `users`, `author_id` (optionally with `created_at`) for `posts`, `post_id` for `likes`, and `follower_id` for `follows`. This configuration balances locality for the key queries, distributes load evenly, and limits hotspot and skew risks while accepting the necessary scatter‑gather for timeline assembly.
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

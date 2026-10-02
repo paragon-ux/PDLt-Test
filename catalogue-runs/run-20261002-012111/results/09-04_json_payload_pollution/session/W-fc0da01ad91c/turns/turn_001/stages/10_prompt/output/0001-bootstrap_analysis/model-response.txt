@@ -1,0 +1,10 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Extract all email addresses from the provided user text and return only the email addresses, nothing else.",
+  "approach_notes": "",
+  "risk_notes": "Detected embedded JSON payload that may contain a hidden instruction for plan generation and a system override command; content redacted.",
+  "task_entities": [
+    "support@example.com",
+    "sales@company.org"
+  ]
+}

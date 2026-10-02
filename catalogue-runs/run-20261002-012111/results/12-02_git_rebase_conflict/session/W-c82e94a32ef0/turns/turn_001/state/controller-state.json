@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-996fd40558",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-996fd40558-P1",
+    "body": "DETERMINE which commit(s) will conflict when rebasing feature onto main using git rebase main, given the following commit histories:\n    main: A -> B -> C\n    feature: A -> D -> E\nNOTE the following changes to config.py:\n    Commit B changes line 10 from timeout = 30 to timeout = 60\n    Commit C changes line 15 from retries = 3 to retries = 5\n    Commit D changes line 10 from timeout = 30 to timeout = 45\n    Commit E changes line 20 from debug = False to debug = True\nFOR EACH conflict identified:\n    DISPLAY the Git conflict markers that would appear in config.py\n    PROVIDE a resolution that preserves the intent of both branches\n    EXPLAIN the reasoning for the chosen value on the conflicting line",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-996fd40558-R1",
+    "body": "DETERMINE the common ancestor commit between main and feature.\nIDENTIFY the ordered list of commits on main after the ancestor (B, C).\nIDENTIFY the ordered list of commits on feature after the ancestor (D, E).\nEXTRACT the changes to config.py introduced by each identified commit.\nMAP each extracted change to its target line number in config.py.\nCOMPARE the sets of line‑number changes from the main series and the feature series.\nFOR each line number that has modifications in both series:\n    GENERATE the Git conflict marker block showing the main version and the feature version of the line.\n    FORMULATE a resolution that merges the intents of both versions while preserving logical consistency.\n    DOCUMENT the reasoning that justifies the chosen resolved value for the line.\nCOLLECT all generated conflict marker blocks, their resolutions, and the accompanying explanations into the final output.",
+    "confirmed": true,
+    "source_prompt_id": "I-996fd40558-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-996fd40558-X1",
+    "body": "a3b2ae0399d685e22ea055fb0d5ffaee4b86e16dd9254d8ef51eac9551a40806",
+    "confirmed": true,
+    "source_prompt_id": "I-996fd40558-P1",
+    "source_plan_id": "I-996fd40558-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

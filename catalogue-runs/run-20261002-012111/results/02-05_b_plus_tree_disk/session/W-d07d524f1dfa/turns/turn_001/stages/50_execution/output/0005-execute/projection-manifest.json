@@ -1,0 +1,65 @@
+{
+  "operation": "EXECUTE",
+  "included_symbols": [
+    "OPERATION_ID",
+    "CONFIRMED_PROMPT_BODY",
+    "CONFIRMED_PLAN_BODY",
+    "REQUIRED_TASK_INPUTS",
+    "SUPPLIED_EXECUTION_INPUT_SOURCE",
+    "APPLICABLE_STANDARD_CLAUSES",
+    "HIGHER_PRIORITY_CONSTRAINTS",
+    "AVAILABLE_EXECUTION_TOOLS"
+  ],
+  "excluded_symbols": [
+    "REJECTED_ARTIFACTS",
+    "REVISION_CONVERSATION",
+    "CONFIRMATION_CONVERSATION",
+    "ARTIFACT_GENERATION_EXAMPLES",
+    "GLOBAL_PROTOCOL_PROSE",
+    "CALIBRATION_CORPUS",
+    "REPOSITORY_DISCOVERY"
+  ],
+  "requirement_ids": [
+    "AUTH-03",
+    "AUTH-04",
+    "EXEC-01",
+    "EXEC-05",
+    "RS-01",
+    "RS-02",
+    "RS-03",
+    "RS-04",
+    "RS-05",
+    "RS-06",
+    "RS-07",
+    "RS-08",
+    "RS-09",
+    "RS-10"
+  ],
+  "clause_sha256": {
+    "AUTH-03": "5c1384692cbe600ea6328b27262eb499cf0b4499cc96c0a3dacfc66be8a7a4d5",
+    "AUTH-04": "456071c197961be788b294bb2fd021c9aa596ae3bbf4893bb54e4944e7b7f23e",
+    "EXEC-01": "7eb41702c5d3963804b5d61238337ccda7740edb214a0c00e1957c66b0cd9772",
+    "EXEC-05": "e00ac302c27005bcb5a4021db20bd3aa968f0731c6021a5b102fd4bfddffd122",
+    "RS-01": "d23ce3fdf747e850b61bc8d31451489bb1f0d7e9ff72d14ecc5de5e76f941491",
+    "RS-02": "03b661259c3a52485a032e05302098a001594fc09fa10bb698e1fbdf38f0820f",
+    "RS-03": "0fb44946c39de3760895a3dcec54e6ac36989c49448fa4bdcf708465c85eebca",
+    "RS-04": "77f1ce429868beb87de0d8d2c4f69c261e70ca8ab8e4582b5a267c68f5372a10",
+    "RS-05": "5d4b78411fd07dbaa1e709a86f4d0c40ea0db97a3aa583d253f324ec924729ce",
+    "RS-06": "840db677f5f11d374b0a4b5a91480069c12a37fd5239944c2c19b58374f0d6cc",
+    "RS-07": "9294f624e840e1767c04cbbfad791f4da24ce013ec25c66d6c98416b1bddd733",
+    "RS-08": "f8791e1dc3d23a66e3594cf1d37cb3dc586c25b01feacd47ff805826ceb10095",
+    "RS-09": "2060db032e6d6c7f339c08d30e66e7c1e7e37352324ff9eabc1e957d16caf2ef",
+    "RS-10": "051aba9404fb74e4ba7cdbc5c331e06e1987b2db970e101d65a450c584b0dd12"
+  },
+  "output_kind": "EXECUTION_OUTCOME",
+  "output_fields": [
+    "kind",
+    "body",
+    "expected_type",
+    "description",
+    "result_ir"
+  ],
+  "output_schema": "controller/schemas/execution_outcome.schema.json",
+  "output_schema_sha256": "d6259ff4cffe4e0abb108f21de9eb44f1166512f0f14b9ab74696b5b5203c66a",
+  "projection_sha256": "9d4313dd7e2f306242bc34c57469eeefe2d424c3871e32278accc181d2722b09"
+}

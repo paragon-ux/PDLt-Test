@@ -1,0 +1,13 @@
+Interpret the following load test results and identify the saturation point and bottleneck.
+
+| Concurrent Users | Avg Response Time (ms) | P95 (ms) | P99 (ms) | Throughput (req/s) | Error Rate (%) | CPU (%) | Memory (%) | DB Connections |
+|------------------|----------------------|----------|----------|-------------------|---------------|---------|------------|---------------|
+| 10               | 45                   | 62       | 78       | 220               | 0.0           | 15      | 40         | 10            |
+| 50               | 48                   | 71       | 95       | 1040              | 0.0           | 45      | 42         | 48            |
+| 100              | 55                   | 89       | 120      | 1810              | 0.0           | 72      | 45         | 95            |
+| 200              | 78                   | 145      | 210      | 2560              | 0.1           | 91      | 48         | 150           |
+| 300              | 156                  | 380      | 890      | 2680              | 1.2           | 98      | 52         | 150           |
+| 500              | 890                  | 2400     | 5200     | 2710              | 8.5           | 99      | 65         | 150           |
+| 1000             | 4500                 | 12000    | timeout  | 2650              | 23.4          | 99      | 78         | 150           |
+
+Identify: (1) the saturation point (where throughput plateaus), (2) the primary bottleneck resource, (3) why throughput decreases at 1000 users, (4) the maximum recommended concurrent users for this system, and (5) specific scaling recommendations.

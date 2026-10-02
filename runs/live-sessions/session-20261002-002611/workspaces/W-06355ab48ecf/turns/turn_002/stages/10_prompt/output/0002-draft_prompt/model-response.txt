@@ -1,0 +1,1 @@
+{"kind": "PROMPT", "prompt_body": "COMPUTE the probability that, when a unit-length stick is broken at two points chosen uniformly and independently at random, the ratio of the shortest piece (L_min) to the longest piece (L_max) is greater than or equal to 1/4.\nRETURN the probability value.", "approach_handoff": "CARRY_SOURCE_TO_PLAN", "task_entities": ["L_min", "L_max", "1/4"]}

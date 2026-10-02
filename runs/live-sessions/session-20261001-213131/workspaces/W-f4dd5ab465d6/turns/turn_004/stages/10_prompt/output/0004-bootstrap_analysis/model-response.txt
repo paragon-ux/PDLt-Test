@@ -1,0 +1,7 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "User requests editing of the provided content.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": []
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-2595dab57d",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-2595dab57d-P1",
+    "body": "READ the grid dimensions as NxM.\nREAD the grid cell movement costs; TREAT any cell with cost -1 as impassable.\nALLOW movement from a cell to its four cardinal neighbours (up, down, left, right); MOVING INTO a neighbour incurs the neighbour's movement cost.\nUSE Manhattan distance as the heuristic for A*.\nIMPLEMENT A* pathfinding algorithm in Python for the described weighted grid.\nRETURN the shortest path as an ordered list of (row, col) coordinate tuples and the total path cost.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-2595dab57d-R1",
+    "body": "READ NxM grid dimensions.\nREAD cell movement costs into a grid matrix, treating any cell with cost -1 as impassable.\nINITIALIZE data structures for A* (open set, closed set, cost maps).\nDEFINE heuristic function as Manhattan distance between a cell and the target cell.\nWHILE open set is not empty DO\n    SELECT cell with lowest f-score from open set.\n    IF selected cell is the target THEN\n        BREAK loop.\n    ENDIF\n    FOR each cardinal neighbour of selected cell DO\n        IF neighbour is impassable THEN\n            CONTINUE to next neighbour.\n        ENDIF\n        CALCULATE tentative g-score as current cell's g-score plus neighbour's movement cost.\n        IF tentative g-score is lower than recorded g-score for neighbour THEN\n            UPDATE neighbour's g-score and f-score.\n            RECORD selected cell as neighbour's predecessor.\n            ADD neighbour to open set if not already present.\n        ENDIF\n    ENDFOR\nENDWHILE\nRECONSTRUCT path by tracing predecessors from target back to start, producing ordered list of (row, col) tuples.\nCALCULATE total path cost as sum of movement costs of cells in the path.\nWRITE Python implementation of the above A* procedure for weighted grid.\nCREATE a 10x10 test grid with specified walls (cells with cost -1) and varying terrain costs.\nEXECUTE the A* implementation on the test grid to obtain path and total cost.\nEXECUTE Dijkstra's algorithm on the same test grid to obtain optimal path cost.\nCOMPARE A* total path cost to Dijkstra optimal cost to verify optimality.\nRETURN the shortest path list and associated total cost.",
+    "confirmed": true,
+    "source_prompt_id": "I-2595dab57d-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-2595dab57d-X1",
+    "body": "d3002b90b9621660f629587b1c4ebb191ec42ee67b25edc5971ed8cdb882c91e",
+    "confirmed": true,
+    "source_prompt_id": "I-2595dab57d-P1",
+    "source_plan_id": "I-2595dab57d-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

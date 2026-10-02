@@ -1,0 +1,85 @@
+PDLt REPL started (v2.6.0rc1).
+Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.
+Commands: /help (full roster), /paste (multi-line), /status, /quit
+[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)
+[dev:telemetry] reasoning: default=low per_operation={"BOOTSTRAP_ANALYSIS": "high", "DRAFT_EXECUTE": "high", "DRAFT_PLAN": "high", "DRAFT_PROMPT": "high", "EMIT_RESULT_IR": "high", "EXECUTE": "low", "INTERPRET_EXECUTION_INPUT": "high", "INTERPRET_PLAN_REVIEW": "high", "INTERPRET_PROMPT_REVIEW": "high", "REVISE_PLAN": "high", "REVISE_PROMPT": "high"}
+[working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\10-06_execution_mode_switch\session\catalogue-10-06-1790919237\worker-progress.log]
+[api] response received in 1659ms
+[api] response received in 1460ms
+Prompt Pseudocode
+
+READ the numeric temperature value as temperature
+READ the source temperature scale as source_scale (Celsius, Fahrenheit, Kelvin)
+READ the target temperature scale as target_scale (Celsius, Fahrenheit, Kelvin)
+IF source_scale EQUALS target_scale THEN
+    RETURN temperature
+ELSE
+    CONVERT temperature FROM source_scale TO target_scale
+    RETURN the converted temperature
+ENDIF
+
+Confirm or correct this interpretation.
+[dev:telemetry] controller stage: PROMPT_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\10-06_execution_mode_switch\session\catalogue-10-06-1790919237\worker-progress.log]
+[api] response received in 760ms
+Response Plan Pseudocode
+
+READ numeric temperature value as temperature
+READ source temperature scale as source_scale
+READ target temperature scale as target_scale
+IF source_scale EQUALS target_scale THEN
+    RETURN temperature
+ELSE
+    CONVERT temperature FROM source_scale TO target_scale
+    RETURN converted temperature
+ENDIF
+
+Confirm or correct this response approach.
+[dev:telemetry] controller stage: PLAN_REVIEW
+> [working...]
+[worker progress -> C:\Users\USER\Desktop\Frameworks\PDLt-Test\catalogue-runs\run-20261002-012111\results\10-06_execution_mode_switch\session\catalogue-10-06-1790919237\worker-progress.log]
+[api] response received in 549ms
+def convert_temperature(temperature, source_scale, target_scale):
+    """Convert a temperature between Celsius, Fahrenheit, and Kelvin.
+
+    Args:
+        temperature (float): The numeric temperature value.
+        source_scale (str): The scale of the input temperature. Must be one of
+            "Celsius", "Fahrenheit", or "Kelvin" (case‑insensitive).
+        target_scale (str): The desired output scale. Same allowed values as
+            ``source_scale``.
+
+    Returns:
+        float: The temperature expressed in the target scale.
+    """
+    # Normalise scale identifiers
+    src = source_scale.strip().lower()
+    tgt = target_scale.strip().lower()
+
+    # If the scales are the same, return the original temperature
+    if src == tgt:
+        return temperature
+
+    # Convert the source temperature to Celsius as an intermediate step
+    if src == "celsius":
+        celsius = temperature
+    elif src == "fahrenheit":
+        celsius = (temperature - 32) * 5 / 9
+    elif src == "kelvin":
+        celsius = temperature - 273.15
+    else:
+        raise ValueError(f"Unsupported source scale: {source_scale}")
+
+    # Convert from Celsius to the target scale
+    if tgt == "celsius":
+        return celsius
+    elif tgt == "fahrenheit":
+        return celsius * 9 / 5 + 32
+    elif tgt == "kelvin":
+        return celsius + 273.15
+    else:
+        raise ValueError(f"Unsupported target scale: {target_scale}")
+[dev:telemetry] controller stage: CLOSED_SUCCESS
+[protocol closed]

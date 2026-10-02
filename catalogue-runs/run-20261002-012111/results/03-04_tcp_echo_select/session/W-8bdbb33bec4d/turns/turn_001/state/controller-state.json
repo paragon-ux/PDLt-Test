@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-5f2bd8098c",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-5f2bd8098c-P1",
+    "body": "IMPLEMENT a TCP echo server in Python using ONLY the select module.\nPROHIBIT the use of asyncio.\nPROHIBIT the use of threading.\nCONFIGURE the listening port as a parameter.\nLISTEN on the configured port.\nSUPPORT up to 64 simultaneous connections.\nREJECT any connections beyond 64 with an appropriate message.\nACCEPT multiple concurrent clients.\nFOR each client, ECHO back every line received, preserving newlines.\nHANDLE client disconnection gracefully by removing the client from the select set and closing its socket.\nPROVIDE a test that:\n  START the server.\n  CONNECT three clients concurrently.\n  FOR each client, SEND a distinct message.\n  VERIFY that each client receives the correct echoed messages, preserving newlines.\n  DISCONNECT the clients.\n  CONFIRM that the server cleans up resources correctly.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-5f2bd8098c-R1",
+    "body": "VALIDATE the listening port parameter is provided and is a positive integer.\nCREATE a TCP listening socket bound to the configured port.\nSET the listening socket to non‑blocking mode.\nINITIALIZE a collection to track active client sockets and define MAX_CONNECTIONS = 64.\nADD the listening socket to the select read set.\nWHILE true DO\n    CALL select on the read set to obtain sockets ready for I/O.\n    FOR each ready socket DO\n        IF the ready socket is the listening socket THEN\n            IF the current client count is less than MAX_CONNECTIONS THEN\n                ACCEPT the incoming connection.\n                SET the new client socket to non‑blocking mode.\n                ADD the client socket to the select read set and to the tracking collection.\n            ELSE\n                SEND a rejection message to the connecting client.\n                CLOSE the connecting socket.\n            ENDIF\n        ELSE\n            RECEIVE data from the client socket.\n            IF no data is received (client closed) THEN\n                REMOVE the client socket from the select read set and the tracking collection.\n                CLOSE the client socket.\n            ELSE\n                SEND the received data back to the same client, preserving newlines.\n            ENDIF\n        ENDIF\n    ENDFOR\nENDWHILE\nCOMPOSE a Python script that implements the above behavior using only the select module.\nCOMPOSE a test script that:\n    STARTS the server on a chosen port.\n    ESTABLISHes three concurrent client connections.\n    FOR each client, SENDs a distinct multi‑line message.\n    RECEIVEs the echoed response.\n    VERIFIES that the echo matches the sent message with original newlines.\n    DISCONNECTs all clients.\n    SHUTDOWNs the server and CONFIRMs that all sockets are closed.",
+    "confirmed": true,
+    "source_prompt_id": "I-5f2bd8098c-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-5f2bd8098c-X1",
+    "body": "d4b6ba35a82946ed16553ad303c87c6c04ab5441ca2d810f1eea4c0b79fc76c7",
+    "confirmed": true,
+    "source_prompt_id": "I-5f2bd8098c-P1",
+    "source_plan_id": "I-5f2bd8098c-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

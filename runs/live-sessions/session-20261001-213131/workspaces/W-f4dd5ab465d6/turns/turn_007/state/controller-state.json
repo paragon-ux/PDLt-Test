@@ -1,0 +1,32 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-d67c12a888",
+  "stage": "WAITING_INPUT",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-d67c12a888-P1",
+    "body": "READ the file at \"C:\\Users\\USER\\Desktop\\Frameworks\\PDLt-Test\\README.md\"\nINSERT a smiley face \":)\" into the file\nSAVE the modified file",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-d67c12a888-R1",
+    "body": "READ the file at \"C:\\Users\\USER\\Desktop\\Frameworks\\PDLt-Test\\README.md\"\nINSERT a smiley face \":)\" into the file\nSAVE the modified file",
+    "confirmed": true,
+    "source_prompt_id": "I-d67c12a888-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": {
+    "input_id": "X-393ca47d55",
+    "expected_type": "string",
+    "description": "The file content is required to perform the read-modify-write operation."
+  },
+  "in_flight_action": null
+}

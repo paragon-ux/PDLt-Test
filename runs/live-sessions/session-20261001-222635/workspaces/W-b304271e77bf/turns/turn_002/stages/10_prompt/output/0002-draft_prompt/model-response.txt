@@ -1,0 +1,1 @@
+{"kind": "PROMPT", "prompt_body": "READ the problem of breaking a unit-length stick at two points chosen uniformly and independently at random\nCALCULATE the probability that the ratio of the shortest piece (L_min) to the longest piece (L_max) is at least 1/4\nRETURN the result as a simplified fraction", "approach_handoff": "NONE", "task_entities": null}

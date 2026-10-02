@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-1f54f1fac9",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-1f54f1fac9-P1",
+    "body": "OPERATIVE TASK ENTITIES: G, 12 nodes, 0-11, Hamiltonian path, verification\nDETERMINE whether the undirected graph G with 12 nodes labeled 0-11 and the provided edge list contains a Hamiltonian path (a path that visits every node exactly once).\nIF a Hamiltonian path exists THEN\n  OUTPUT the complete Hamiltonian path.\n  VERIFY that the path visits all 12 nodes.\n  VERIFY that each consecutive pair of nodes in the path corresponds to a valid edge in the graph.\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-1f54f1fac9-R1",
+    "body": "LOAD the undirected graph G with its 12 nodes and edge list.\nFOR each node in G as a potential start node DO\n    INITIALIZE a path containing the start node.\n    PERFORM a BACKTRACKING SEARCH with pruning to extend the path:\n        WHILE the path length is less than 12 DO\n            SELECT an adjacent node not yet visited.\n            IF such a node exists THEN\n                APPEND the node to the path.\n            ELSE\n                PRUNE the current partial path and backtrack.\n            ENDIF\n        ENDWHILE\n    IF a complete path of length 12 is discovered THEN\n        EMIT the Hamiltonian path.\n        VERIFY that the path includes all 12 distinct nodes.\n        VERIFY that each consecutive node pair corresponds to an edge in G.\n        TERMINATE the search.\n    ENDIF\nENDFOR\nIF no Hamiltonian path was found after exploring all start nodes THEN\n    REPORT that no Hamiltonian path exists.\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": "I-1f54f1fac9-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-1f54f1fac9-X1",
+    "body": "33c2ec52ea0ffd55ea09b789550c603baaa509ef7c28a5dcd42e4366f9c34bba",
+    "confirmed": true,
+    "source_prompt_id": "I-1f54f1fac9-P1",
+    "source_plan_id": "I-1f54f1fac9-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

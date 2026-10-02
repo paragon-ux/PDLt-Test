@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-8a68854705",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-8a68854705-P1",
+    "body": "READ the callback-based Python code containing functions fetch_user, fetch_org, fetch_permissions, and get_user_context\nCONVERT the code to an async/await Python version using async def for each function\nUSE await when calling fetch_user, fetch_org, and fetch_permissions within get_user_context\nPRESERVE the original logical flow and error handling with try/except blocks capturing exceptions as e\nENSURE that any identifier such as id is correctly handled in the async version\nPROPAGATE any exceptions raised by fetch_user, fetch_org, fetch_permissions, or get_user_context to the caller\nCREATE unit tests that verify successful execution of get_user_context with correct user, org, and permissions data\nCREATE unit tests that verify error propagation when fetch_user raises an exception\nCREATE unit tests that verify error propagation when fetch_org raises an exception\nCREATE unit tests that verify error propagation when fetch_permissions raises an exception\nUSE a testing framework such as unittest or pytest for the tests",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-8a68854705-R1",
+    "body": "READ the callback-based Python code containing fetch_user, fetch_org, fetch_permissions, and get_user_context\nANALYZE each function to identify synchronous calls and existing error handling\nCONVERT each function definition to async def\nINSERT await before calls to fetch_user, fetch_org, and fetch_permissions inside get_user_context\nPRESERVE the original try/except blocks capturing exceptions as e\nENSURE any identifier such as id is correctly referenced in the async version\nPROPAGATE any exceptions raised by fetch_user, fetch_org, fetch_permissions, or get_user_context to the caller\nSELECT a testing framework (unittest or pytest) for the unit tests\nCREATE unit tests\n    CREATE a unit test that mocks fetch_user, fetch_org, and fetch_permissions to return valid data and verifies that get_user_context returns the combined result\n    CREATE a unit test that mocks fetch_user to raise an exception and verifies that the exception propagates from get_user_context\n    CREATE a unit test that mocks fetch_org to raise an exception and verifies that the exception propagates from get_user_context\n    CREATE a unit test that mocks fetch_permissions to raise an exception and verifies that the exception propagates from get_user_context\nEXECUTE the test suite to confirm successful execution and correct error propagation",
+    "confirmed": true,
+    "source_prompt_id": "I-8a68854705-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-8a68854705-X1",
+    "body": "a9a3c68ddc92d851eebff59ae27c13e705b74cea8288067bb2f28d44edbebc4a",
+    "confirmed": true,
+    "source_prompt_id": "I-8a68854705-P1",
+    "source_plan_id": "I-8a68854705-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

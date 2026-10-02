@@ -1,0 +1,27 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Determine the missing entries in the provided sequence of numbers: 8, 18, 11, 15, 5, 4, 14, 9, 19, 1, 7, 17, 6, 16, ?, ?, ?, ?, ?. Return the completed sequence with all numbers filled in.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "8",
+    "18",
+    "11",
+    "15",
+    "5",
+    "4",
+    "14",
+    "9",
+    "19",
+    "1",
+    "7",
+    "17",
+    "6",
+    "16",
+    "?",
+    "?",
+    "?",
+    "?",
+    "?"
+  ]
+}
