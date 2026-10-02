@@ -1507,7 +1507,11 @@ class SessionEngine:
                 self.workspace.append_event("OUTPUT_LIMIT_REACHED", {"limit": limit})
                 finding = Finding("OUTPUT_LIMIT_REACHED", limit=limit)
             else:
-                self.workspace.append_event("EXECUTE_WIRE_FAILURE", {"reason": str(exc)})
+                failure = {"reason": str(exc)}
+                if getattr(exc, "failed_generation", None):
+                    # What the provider rejected, for diagnosis; never sent back to the model.
+                    failure["failed_generation"] = str(exc.failed_generation)[:4000]
+                self.workspace.append_event("EXECUTE_WIRE_FAILURE", failure)
                 finding = Finding("OUTPUT_MALFORMED", reason=str(exc))
             return _FailedExecution(), [finding], "", True
         if outcome.kind != "RESULT":

@@ -82,41 +82,62 @@ _UNREPRESENTABLE = object()
 _UNSUPPORTED_KEYWORDS = ("minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "pattern", "format",
                          "default", "multipleOf")
 
+# A free-form object (a dict with no declared properties, e.g. a positive
+# witness's data) as a provider that accepts one receives it.
+_FREE_FORM_OBJECT: dict[str, Any] = {"type": "object", "additionalProperties": True}
 
-def _strict_schema(node: Any) -> Any:
+# Providers whose schema check requires every object to be closed. Cerebras: "'additionalProperties'
+# is required to be supplied and set to false" (runs 135851/135951). Groq's strict check, over the
+# same 56 requests, rejected only incomplete `required` lists, never the free-form witness data nor
+# additionalProperties true; and Groq validates each generation against the schema, so leaving the
+# free-form object out made every reply carrying a positive witness fail there (session 024627).
+_CLOSED_OBJECT_PROVIDERS = frozenset({"cerebras"})
+
+
+def _accepts_free_form_objects(pinning: Any) -> bool:
+    """Whether the request may carry a free-form object: no provider in its
+    order requires closed objects."""
+    order = pinning.get("order") if isinstance(pinning, dict) else None
+    return not any(str(name).strip().lower() in _CLOSED_OBJECT_PROVIDERS for name in order or [])
+
+
+def _strict_schema(node: Any, *, free_form_objects: bool = False) -> Any:
     """Strict structured-output form (Groq strict mode, Cerebras): every object
-    declares additionalProperties false and lists all its properties as required;
-    a property that was optional becomes nullable instead. A free-form object (a
-    dict with no declared properties) cannot be expressed, so it is left out of
-    the provider schema: an optional property or union branch holding one is
-    dropped. The host validates the reply against the exact pydantic model, where
-    a null for a defaulted field means "not given" (wire_payloads)."""
-    result = _strictify(node)
+    with declared properties sets additionalProperties false and lists all its
+    properties as required; a property that was optional becomes nullable
+    instead. A free-form object (a dict with no declared properties) is sent as
+    an open object when every configured provider accepts one
+    (free_form_objects); otherwise it cannot be expressed and is left out: an
+    optional property or union branch holding one is dropped. The host validates
+    the reply against the exact pydantic model, where a null for a defaulted
+    field means "not given" (wire_payloads)."""
+    result = _strictify(node, free_form_objects)
     return {"type": "object", "properties": {}, "required": [], "additionalProperties": False} \
         if result is _UNREPRESENTABLE else result
 
 
-def _strictify(node: Any) -> Any:
+def _strictify(node: Any, free_form_objects: bool = False) -> Any:
     if not isinstance(node, dict):
         return node
     node = {k: v for k, v in node.items() if k not in _UNSUPPORTED_KEYWORDS}
     if "anyOf" in node:
-        branches = [b for b in (_strictify(b) for b in node["anyOf"]) if b is not _UNREPRESENTABLE]
+        branches = [b for b in (_strictify(b, free_form_objects) for b in node["anyOf"])
+                    if b is not _UNREPRESENTABLE]
         if not branches:
             return _UNREPRESENTABLE
         rest = {k: v for k, v in node.items() if k != "anyOf"}
         return {**rest, "anyOf": branches} if len(branches) > 1 else {**rest, **branches[0]}
     if node.get("type") == "array" and "items" in node:
-        items = _strictify(node["items"])
+        items = _strictify(node["items"], free_form_objects)
         return _UNREPRESENTABLE if items is _UNREPRESENTABLE else {**node, "items": items}
     if node.get("type") == "object" or "properties" in node:
         properties = node.get("properties")
         if not properties:
-            return _UNREPRESENTABLE
+            return dict(_FREE_FORM_OBJECT) if free_form_objects else _UNREPRESENTABLE
         required = set(node.get("required") or [])
         strict_properties: dict[str, Any] = {}
         for name, spec in properties.items():
-            converted = _strictify(spec)
+            converted = _strictify(spec, free_form_objects)
             if converted is _UNREPRESENTABLE:
                 if name in required:
                     return _UNREPRESENTABLE
@@ -153,14 +174,18 @@ class ProviderError(TransportError):
         self.status = status
         self.attempts = attempts or []
         self.operation = operation
+        # The generation a provider rejected against the schema, when it returns
+        # it (Groq: failed_generation): what the model wrote, for diagnosis only.
+        self.failed_generation: str | None = None
 
     @classmethod
     def from_http(cls, status: int, body: str) -> "ProviderError":
         attempts: list[dict[str, str]] = []
         try:
-            error = json.loads(body).get("error") or {}
+            parsed_body = json.loads(body)
+            error = parsed_body.get("error") or {}
         except (ValueError, AttributeError):
-            error = {}
+            parsed_body, error = None, {}
         metadata = error.get("metadata") or {} if isinstance(error, dict) else {}
 
         def provider_message(raw: Any) -> str:
@@ -179,11 +204,50 @@ class ProviderError(TransportError):
             attempts.append({"provider": str(metadata["provider_name"]), "message": provider_message(metadata.get("raw"))})
         category = "PROVIDER_REJECTED_REQUEST" if 400 <= status < 500 and status != 429 else "PROVIDER_UNAVAILABLE"
         summary = "; ".join(f"{a['provider']}: {a['message']}" for a in attempts) or body[:600]
-        return cls(category, f"HTTP {status}: {summary}", status=status, attempts=attempts)
+        error = cls(category, f"HTTP {status}: {summary}", status=status, attempts=attempts)
+        error.failed_generation = _failed_generation(parsed_body)
+        return error
 
     def as_record(self) -> dict[str, Any]:
-        return {"category": self.category, "operation": self.operation, "status": self.status,
-                "attempts": self.attempts, "message": str(self)[:2000]}
+        record = {"category": self.category, "operation": self.operation, "status": self.status,
+                  "attempts": self.attempts, "message": str(self)[:2000]}
+        if self.failed_generation:
+            record["failed_generation"] = self.failed_generation[:_FAILED_GENERATION_CHARS]
+        return record
+
+
+_FAILED_GENERATION_CHARS = 4000
+
+
+def _failed_generation(payload: Any, depth: int = 0) -> str | None:
+    """The rejected generation a provider attached to its error, wherever the
+    response carries it: error.failed_generation, error.metadata, or inside the
+    provider's raw error (a JSON string OpenRouter forwards in metadata.raw)."""
+    if depth > 8:
+        return None
+    if isinstance(payload, str):
+        if "failed_generation" not in payload:
+            return None
+        try:
+            return _failed_generation(json.loads(payload), depth + 1)
+        except ValueError:
+            return None
+    if isinstance(payload, dict):
+        value = payload.get("failed_generation")
+        if isinstance(value, str) and value.strip():
+            return value
+        if value is not None and not isinstance(value, str):
+            return json.dumps(value, ensure_ascii=False)
+        children: Any = payload.values()
+    elif isinstance(payload, list):
+        children = payload
+    else:
+        return None
+    for child in children:
+        found = _failed_generation(child, depth + 1)
+        if found:
+            return found
+    return None
 
 
 def _rejecting_provider(error: BaseException, order: list[str]) -> str | None:
@@ -255,6 +319,7 @@ class ApiWorker:
         safety_settings: list[dict[str, str]] | None = None,
         max_tokens: int = 4096,
         on_progress: Any = None,
+        progress_path: str | Path | None = None,
     ):
         self.model = self._normalize_model_name(model)
         self.max_tokens = int(max_tokens)
@@ -282,6 +347,7 @@ class ApiWorker:
         self.provider_pinning = provider_pinning if provider_pinning is not None else dict(DEFAULT_PROVIDER_PINNING)
         self.safety_settings = safety_settings if safety_settings is not None else list(DEFAULT_SAFETY_SETTINGS)
         self.on_progress = on_progress
+        self.progress_path = Path(progress_path) if progress_path else None
         self.worker_profile = "api"
         self.api_key_command = api_key_command or self._default_api_key_command(api_key_env)
         bootstrap_path = Path(__file__).resolve().parents[1] / "runtime" / "worker-bootstrap.txt"
@@ -401,12 +467,13 @@ class ApiWorker:
         return json.dumps(ordered, ensure_ascii=False, separators=(",", ":"))
 
     @staticmethod
-    def _sanitize_schema_for_grammar(schema: Any) -> Any:
+    def _sanitize_schema_for_grammar(schema: Any, *, free_form_objects: bool = False) -> Any:
         """Sanitize schema for strict grammar engines (Groq, Vertex, Venice, Outlines, vLLM).
 
         Inlines $defs/$ref pointers recursively, cleans unsupported keywords like
         $schema, title, description, minLength, converts 'const' to single-item 'enum',
-        and enforces object constraints.
+        and enforces object constraints. ``free_form_objects`` keeps free-form
+        objects as open objects (see _strict_schema).
         """
         if not isinstance(schema, dict):
             return schema
@@ -466,6 +533,14 @@ class ApiWorker:
                 res["anyOf"] = [_clean_node(b) for b in res.pop("oneOf")]
             if "anyOf" in res and isinstance(res["anyOf"], list):
                 res["anyOf"] = [_clean_node(b) for b in res["anyOf"]]
+                # The discriminator keyword is dropped, but the host still needs the
+                # tag: keep it required in every variant, so the strict form never
+                # offers a null tag (REQUEST_INPUT's kind and the positive witness's
+                # polarity were nullable, and no reply with a null tag parses host-side).
+                tag = (node.get("discriminator") or {}).get("propertyName")
+                for branch in res["anyOf"] if tag else []:
+                    if isinstance(branch, dict) and tag in (branch.get("properties") or {}):
+                        branch["required"] = list(dict.fromkeys([*(branch.get("required") or []), tag]))
             if "allOf" in res and isinstance(res["allOf"], list):
                 res["allOf"] = [_clean_node(b) for b in res["allOf"]]
             if "properties" in res and isinstance(res["properties"], dict):
@@ -475,7 +550,7 @@ class ApiWorker:
                     res["additionalProperties"] = False
             return res
 
-        return _strict_schema(_wrap_top_level_union(_clean_node(schema)))
+        return _strict_schema(_wrap_top_level_union(_clean_node(schema)), free_form_objects=free_form_objects)
 
     def _send_json_with_retries(self, req: urllib.request.Request, deadline: float | None = None) -> dict[str, Any]:
         """POST with exponential-backoff retries; returns the parsed response.
@@ -509,19 +584,18 @@ class ApiWorker:
                                                      f"generation did not match the schema: {message[:800]}",
                                                      wire_equivalent=True)
                             mismatch.response_body = parsed  # for the provider probe's raw record
+                            mismatch.failed_generation = (_failed_generation(parsed)
+                                                          or self._extract_output_text(parsed) or None)
+                            self._report_failed_generation(mismatch)
                             raise mismatch
                     if err and attempt < 4:
                         err_code = str(err.get("code") if isinstance(err, dict) else err).lower()
                         err_msg = str(err.get("message") if isinstance(err, dict) else "").lower()
                         if "server" in err_code or "rate" in err_code or "internal" in err_code or "timeout" in err_code or "failed to validate json" in err_msg:
                             delay = 0.5 * (2 ** attempt)
-                            if self.on_progress is not None:
-                                try:
-                                    self.on_progress(
-                                        f"upstream error ({err.get('code', 'error')}); retrying in {delay:.1f}s (attempt {attempt + 1}/5)..."
-                                    )
-                                except Exception:
-                                    pass
+                            self._progress(
+                                f"upstream error ({err.get('code', 'error')}); retrying in {delay:.1f}s (attempt {attempt + 1}/5)..."
+                            )
                             _sleep_within(delay, deadline)
                             continue
                     return parsed
@@ -539,27 +613,21 @@ class ApiWorker:
                                     delay = val
                             except (ValueError, TypeError):
                                 pass
-                    if self.on_progress is not None:
-                        try:
-                            self.on_progress(
-                                f"HTTP {exc.code} received; retrying in {delay:.1f}s (attempt {attempt + 1}/5)..."
-                            )
-                        except Exception:
-                            pass
+                    self._progress(
+                        f"HTTP {exc.code} received; retrying in {delay:.1f}s (attempt {attempt + 1}/5)..."
+                    )
                     _sleep_within(delay, deadline)
                     continue
-                detail = exc.read().decode("utf-8", errors="replace")[:4000]
-                raise ProviderError.from_http(exc.code, detail) from exc
+                detail = exc.read().decode("utf-8", errors="replace")[:16000]
+                rejected = ProviderError.from_http(exc.code, detail)
+                self._report_failed_generation(rejected)
+                raise rejected from exc
             except urllib.error.URLError as exc:
                 if attempt < 4:
                     delay = 0.5 * (2 ** attempt)
-                    if self.on_progress is not None:
-                        try:
-                            self.on_progress(
-                                f"transport error: {exc.reason}; retrying in {delay:.1f}s (attempt {attempt + 1}/5)..."
-                            )
-                        except Exception:
-                            pass
+                    self._progress(
+                        f"transport error: {exc.reason}; retrying in {delay:.1f}s (attempt {attempt + 1}/5)..."
+                    )
                     _sleep_within(delay, deadline)
                     continue
                 raise ProviderError("PROVIDER_UNAVAILABLE", f"transport error: {exc.reason}") from exc
@@ -579,13 +647,9 @@ class ApiWorker:
                         raise ProviderError("PROVIDER_UNAVAILABLE", f"read timed out twice ({exc})") from exc
                 if attempt < 4 and deadline - time.monotonic() > 0:
                     delay = 0.5 * (2 ** attempt)
-                    if self.on_progress is not None:
-                        try:
-                            self.on_progress(
-                                f"connection error ({type(exc).__name__}: {exc}); retrying in {delay:.1f}s (attempt {attempt + 1}/5)..."
-                            )
-                        except Exception:
-                            pass
+                    self._progress(
+                        f"connection error ({type(exc).__name__}: {exc}); retrying in {delay:.1f}s (attempt {attempt + 1}/5)..."
+                    )
                     _sleep_within(delay, deadline)
                     continue
                 raise ProviderError("PROVIDER_UNAVAILABLE", f"connection failed after retries: {exc}") from exc
@@ -822,7 +886,8 @@ class ApiWorker:
                         except Exception:
                             schema = None
             if schema and isinstance(schema, dict):
-                sent_schema = self._sanitize_schema_for_grammar(schema)
+                sent_schema = self._sanitize_schema_for_grammar(
+                    schema, free_form_objects=_accepts_free_form_objects(body.get("provider")))
                 union_wrapped = list((sent_schema.get("properties") or {})) == [UNION_WRAPPER]
                 body["text"] = {
                     "format": {
@@ -848,11 +913,7 @@ class ApiWorker:
                                                                        union_wrapped)
         latency_ms = (time.perf_counter() - started) * 1000.0
 
-        if self.on_progress is not None:
-            try:
-                self.on_progress(f"response received in {latency_ms:.0f}ms")
-            except Exception:
-                pass
+        self._progress(f"response received in {latency_ms:.0f}ms")
 
         if data.get("error"):
             raise ProviderError("PROVIDER_REJECTED_REQUEST", f"provider reported an error: {data['error']}")
@@ -923,12 +984,33 @@ class ApiWorker:
             method="POST",
         )
 
-    def _progress(self, line: str) -> None:
+    def _progress(self, line: str, *, console: str | None = None) -> None:
+        """One progress line to the console callback (``console`` when given, a
+        shorter form) and the session's worker-progress log (progress_path, set
+        by the host per session)."""
         if self.on_progress is not None:
             try:
-                self.on_progress(line)
+                self.on_progress(line if console is None else console)
             except Exception:
                 pass
+        if self.progress_path is not None:
+            try:
+                path = Path(self.progress_path)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                with path.open("a", encoding="utf-8", newline="\n") as handle:
+                    handle.write(f"{time.strftime('%Y-%m-%dT%H:%M:%S')} {' '.join(line.split())}\n")
+            except OSError:
+                pass
+
+    def _report_failed_generation(self, error: ProviderError) -> None:
+        """A rejected generation, as one line in the worker-progress log."""
+        if error.failed_generation:
+            provider = _rejecting_provider(error, list((self.provider_pinning or {}).get("order") or [])) \
+                if "Upstream error from " in str(error) else None
+            label = f"failed_generation{f' ({provider})' if provider else ''}"
+            self._progress(f"{label}: " + json.dumps(error.failed_generation[:_FAILED_GENERATION_CHARS],
+                                                    ensure_ascii=False),
+                           console=f"{label}: {len(error.failed_generation)} chars, in the worker-progress log")
 
     def _schema_rejection_fallback(
         self, body: dict[str, Any], api_key: str, rejection: ProviderError, deadline: float, union_wrapped: bool

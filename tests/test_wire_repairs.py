@@ -640,3 +640,176 @@ def test_repl_reports_a_provider_error_on_one_line() -> None:
     line = _one_line_error(exc)
     assert "\n" not in line and len(line) <= 240
     assert line.startswith("OUTPUT_MALFORMED at DRAFT_PROMPT: generation did not match the schema")
+
+
+# Session 024627 (--api-providers Groq): every EXECUTE reply carrying a witness was
+# rejected ("'/outcome' does not validate with /properties/outcome/anyOf/0/required:
+# missing properties: 'expected_type', 'description'"). The positive witness's data
+# is a free-form object, and the strict schema dropped the whole positive branch.
+
+def _witness_reply(witness: dict) -> dict:
+    return {"outcome": {"kind": "RESULT", "body": "P = 0.1785",
+                        "result_ir": {"files": [], "reconciliation": [], "open_defects": [], "witness": witness}}}
+
+
+_POSITIVE = {"polarity": "positive", "evidence": None,
+             "data": {"probability": 0.1785, "any_key_the_task_chooses": [1, 2], "nested": {"x": {"y": [None]}}},
+             "basis": None, "search_exhausted": None, "nodes_explored": None, "method": None, "argument": None,
+             "domain": None, "provisional": None}
+
+
+def _provider_schema(operation: str, providers: list[str]) -> dict:
+    from pdl_taskmaster.providers.api_worker import ApiWorker, _accepts_free_form_objects
+    from pdl_taskmaster.runtime.wire_payloads import get_operation_pydantic_schema
+
+    return ApiWorker._sanitize_schema_for_grammar(
+        get_operation_pydantic_schema(operation),
+        free_form_objects=_accepts_free_form_objects({"order": providers, "allow_fallbacks": False}))
+
+
+def test_free_form_objects_are_sent_unless_a_provider_requires_closed_objects() -> None:
+    from pdl_taskmaster.providers.api_worker import _accepts_free_form_objects
+
+    assert _accepts_free_form_objects({"order": ["Groq"]})
+    assert _accepts_free_form_objects({"order": ["Groq", "Baseten", "Amazon Bedrock"], "allow_fallbacks": True})
+    assert _accepts_free_form_objects(None) and _accepts_free_form_objects({})
+    assert not _accepts_free_form_objects({"order": ["Cerebras"]})
+    assert not _accepts_free_form_objects({"order": ["Groq", "cerebras"]})
+
+
+def test_groq_execute_schema_accepts_a_positive_witness_with_arbitrary_data_keys() -> None:
+    jsonschema = pytest.importorskip("jsonschema")
+    from pdl_taskmaster.providers.api_worker import _unwrap_union_reply
+
+    schema = _provider_schema("EXECUTE", ["Groq"])
+    jsonschema.Draft202012Validator.check_schema(schema)
+    validator = jsonschema.Draft202012Validator(schema)
+    witness = schema["properties"]["outcome"]["anyOf"][1]["properties"]["result_ir"]["anyOf"][0]["properties"]["witness"]
+    polarities = [b["properties"]["polarity"]["enum"] for b in witness["anyOf"][0]["anyOf"]]
+    assert polarities == [["positive"], ["negative"]]
+
+    reply = _witness_reply(_POSITIVE)
+    assert list(validator.iter_errors(reply)) == []
+    # The shape a program reports when it found the result by search (run 022105).
+    provenance = {**_POSITIVE, "basis": "search", "search_exhausted": False, "method": "backtracking"}
+    assert list(validator.iter_errors(_witness_reply(provenance))) == []
+    # Everything the provider schema accepts here, the host accepts.
+    parsed = BRIDGE.parse_execution(_unwrap_union_reply(json.dumps(reply)))
+    assert parsed.result_ir["witness"]["data"]["nested"] == {"x": {"y": [None]}}
+    # The host's rules still hold provider-side: no null tag, no undeclared key.
+    assert list(validator.iter_errors(_witness_reply({**_POSITIVE, "polarity": None})))
+    assert list(validator.iter_errors(_witness_reply({**_POSITIVE, "confidence": 0.9})))
+
+
+def test_strict_schema_without_free_form_objects_is_what_groq_rejected() -> None:
+    """The schema sent before (and still sent to Cerebras) has no positive branch:
+    the session's reply fails it, which is the rejection Groq reported."""
+    jsonschema = pytest.importorskip("jsonschema")
+
+    schema = _provider_schema("EXECUTE", ["Cerebras"])
+    assert '"positive"' not in json.dumps(schema)
+    assert list(jsonschema.Draft202012Validator(schema).iter_errors(_witness_reply(_POSITIVE)))
+
+
+@pytest.mark.parametrize("operation", ["DRAFT_PROMPT", "REVISE_PROMPT", "DRAFT_PLAN", "REVISE_PLAN", "EXECUTE",
+                                       "DRAFT_EXECUTE", "EMIT_RESULT_IR", "INTERPRET_PROMPT_REVIEW",
+                                       "INTERPRET_PLAN_REVIEW", "INTERPRET_EXECUTION_INPUT",
+                                       "ANSWER_PROTOCOL_DISCUSSION"])
+def test_groq_schema_meets_strict_rules_except_the_open_free_form_objects(operation) -> None:
+    """The only open objects are the free-form values (witness data, entities),
+    each exactly {"type": "object", "additionalProperties": true}, the form Groq's
+    strict check accepted in runs 135851/135951; every other object stays closed."""
+    from pdl_taskmaster.providers.api_worker import _FREE_FORM_OBJECT
+
+    schema = _provider_schema(operation, ["Groq"])
+    assert all(v.endswith(": free-form object") for v in _strict_violations(schema))
+
+    def open_objects(node):
+        if isinstance(node, list):
+            return [o for child in node for o in open_objects(child)]
+        if not isinstance(node, dict):
+            return []
+        here = [node] if node.get("type") == "object" and not node.get("properties") else []
+        return here + [o for key, child in node.items() if key != "enum" for o in open_objects(child)]
+
+    assert all(node == _FREE_FORM_OBJECT for node in open_objects(schema))
+
+
+def test_union_tags_are_required_in_every_provider_variant() -> None:
+    """The discriminator keyword is stripped for Cerebras; the tag must still be
+    required, or the strict form offers a null kind (REQUEST_INPUT, PROMPT) or a
+    null polarity that the host cannot route."""
+    for providers in (["Groq"], ["Cerebras"]):
+        execute = _provider_schema("EXECUTE", providers)
+        asked = execute["properties"]["outcome"]["anyOf"][0]
+        assert asked["properties"]["kind"] == {"type": "string", "enum": ["REQUEST_INPUT"]}
+        prompt = _provider_schema("DRAFT_PROMPT", providers)["properties"]["outcome"]["anyOf"][0]
+        assert prompt["properties"]["kind"] == {"type": "string", "enum": ["PROMPT"]}
+
+
+def test_worker_sends_the_positive_witness_branch_only_where_it_is_accepted(monkeypatch) -> None:
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+
+    reply = json.dumps({"outcome": {"kind": "RESULT", "body": "5"}})
+    sent = _scripted_send(monkeypatch, [reply, reply])
+    for providers in (["Groq"], ["Cerebras"]):
+        ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT,
+                  provider_pinning={"order": providers, "allow_fallbacks": False}).call(_draft_request("EXECUTE"))
+    groq, cerebras = (json.dumps(body["text"]["format"]["schema"]) for body in sent)
+    assert '"positive"' in groq and '"additionalProperties": true' in groq
+    assert '"positive"' not in cerebras and '"additionalProperties": true' not in cerebras
+
+
+def _groq_rejection_body(failed_generation: str) -> dict:
+    body = json.loads((ROOT / "tests" / "fixtures" / "openrouter_groq_schema_mismatch.json").read_text(encoding="utf-8"))
+    body["error"]["metadata"] = {"provider_name": "Groq", "raw": json.dumps(
+        {"error": {"message": "Generated JSON does not match the expected schema.",
+                   "type": "invalid_request_error", "code": "json_validate_failed",
+                   "failed_generation": failed_generation}})}
+    return body
+
+
+def test_schema_rejection_records_the_failed_generation(monkeypatch, tmp_path) -> None:
+    """Groq returns the rejected generation (failed_generation): it goes to the
+    worker-progress log (one line) and the error record, never to the console line."""
+    import io
+    import urllib.request
+
+    from pdl_taskmaster.host.repl import _one_line_error
+    from pdl_taskmaster.providers.api_worker import ApiWorker, ProviderError
+
+    generation = '{"outcome": {"kind": "RESULT",\n "body": "P = 0.1785"}}'
+    body = _groq_rejection_body(generation)
+
+    class _Resp(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout=None: _Resp(json.dumps(body).encode()))
+    console: list[str] = []
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT, on_progress=console.append,
+                       progress_path=tmp_path / "worker-progress.log",
+                       provider_pinning={"order": ["Groq"], "allow_fallbacks": False})
+    req = urllib.request.Request("http://stub/responses", data=b"{}", method="POST")
+    with pytest.raises(ProviderError) as info:
+        worker._send_json_with_retries(req)
+    error = info.value
+    assert error.failed_generation == generation
+    assert error.as_record()["failed_generation"] == generation
+    log = (tmp_path / "worker-progress.log").read_text(encoding="utf-8").splitlines()
+    assert len(log) == 1 and "failed_generation (Groq): " in log[0] and "P = 0.1785" in log[0]
+    assert console == [f"failed_generation (Groq): {len(generation)} chars, in the worker-progress log"]
+    line = _one_line_error(error)
+    assert "\n" not in line and len(line) <= 240 and "P = 0.1785" not in line
+
+
+def test_http_rejection_records_the_failed_generation() -> None:
+    from pdl_taskmaster.providers.api_worker import ProviderError
+
+    error = ProviderError.from_http(400, json.dumps(_groq_rejection_body('{"kind": "RESULT"}')))
+    assert error.failed_generation == '{"kind": "RESULT"}'
+    assert ProviderError.from_http(400, '{"error": {"message": "bad"}}').failed_generation is None
+    assert "failed_generation" not in ProviderError.from_http(400, "not json").as_record()

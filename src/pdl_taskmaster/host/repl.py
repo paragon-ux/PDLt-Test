@@ -239,6 +239,10 @@ def open_session(
     observation_dir = args.observation_dir or session_dir / "observations"
     if hasattr(worker, "workdir"):
         worker.workdir = str(args.workdir or session_dir)
+    if hasattr(worker, "progress_path"):
+        # The worker's progress lines (the API worker's provider rejections
+        # included) go to this session's log, the path the REPL announces.
+        worker.progress_path = session_dir / "worker-progress.log"
     pointer = session_dir / "session.json"
     if pointer.is_file() and restore_path is None:
         data = json.loads(pointer.read_text(encoding="utf-8"))
