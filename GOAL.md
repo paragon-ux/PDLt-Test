@@ -3,8 +3,8 @@
 ## MISSION
 
 Execute the complete 105-prompt PDLt System 2 Prompt Catalogue through the live pdlt REPL
-to produce a definitive scoreboard measuring protocol fidelity on `gpt-oss-120b` at low
-reasoning effort. Results are written to `catalogue-runs/<run-timestamp>/`.
+to produce a definitive scoreboard measuring protocol fidelity on `gpt-oss-120b` at the
+harness's default reasoning (high before execution, low at EXECUTE; ADR-0022). Results are written to `catalogue-runs/<run-timestamp>/`.
 
 ---
 
@@ -34,7 +34,9 @@ Response Plan Pseudocode autonomously; the harness's grammar lint is the only ga
 Every session must produce a transcript file. Sessions without transcripts are invalid.
 
 ### 6. Single Model, Single Configuration
-The entire run uses one model (`openai/gpt-oss-120b`) at one reasoning effort (`low`).
+The entire run uses one model (`openai/gpt-oss-120b`) at one reasoning configuration: the
+harness default (high before execution, low at EXECUTE; ADR-0022), which is also what a live
+session runs at. `RUN_META.json` records the effective effort per operation (`reasoning_effective`).
 No switching models mid-run. No escalating reasoning effort for hard prompts.
 
 ---
@@ -56,7 +58,7 @@ harness pipeline works end-to-end. Check the generated result.json and transcrip
 
 ### Step 3: Full Run
 ```powershell
-python run_catalogue.py --model openai/gpt-oss-120b --reasoning low --timeout 180
+python run_catalogue.py --model openai/gpt-oss-120b --timeout 180
 ```
 This will take approximately 30-60 minutes depending on API latency.
 

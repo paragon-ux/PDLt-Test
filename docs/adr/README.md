@@ -23,6 +23,7 @@
 | [ADR-0019](0019-headless-waiting-input-exit-and-wire-tolerance.md) | Accepted | Headless WAITING_INPUT Exit Code & Execution Wire Input Tolerance. |
 | [ADR-0020](0020-system-1-environment-conditioned-refusal-routing.md) | Accepted | System 1 Environment-Conditioned Boundary Interception & Immediate Refusal Routing. |
 | [ADR-0021](0021-session-scoped-os-native-confinement.md) | Accepted | Session-scoped OS-native confinement (Landlock, Seatbelt, AppContainer, opt-in container), failing closed; supersedes ADR-0013's unenforced filesystem clause. |
+| [ADR-0022](0022-default-reasoning-high-pre-execution.md) | Accepted | Default reasoning for gpt-oss: high before execution, low at EXECUTE, shared by live sessions and the catalogue runner; amends ADR-0006's model class matrix. |
 
 The records are intentionally separated so UI, context construction, execution
 isolation, output representation, and reasoning policy can evolve without

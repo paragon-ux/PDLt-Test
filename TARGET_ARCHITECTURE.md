@@ -71,7 +71,7 @@ The target architecture enforces a strict tripartite separation of concerns:
                    │                           └───────────────────────────┘
                    ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
-│ 2. SOLVER (System 2 Frontier LLM - e.g. gpt-oss-120b @ low reasoning)    │
+│ 2. SOLVER (System 2 LLM - e.g. gpt-oss-120b, high; EXECUTE low, ADR-0022)│
 │    • Responsibility: Pure reasoning under neutral protocol contracts      │
 │    • Operations:                                                          │
 │      - DRAFT_PROMPT: Compiles natural input into Prompt Pseudocode        │
