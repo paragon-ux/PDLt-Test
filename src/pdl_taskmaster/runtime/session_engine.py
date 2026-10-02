@@ -1705,6 +1705,8 @@ class SessionEngine:
         if transition.action == NextAction.DEFER_SUBSTANTIVE:
             return EngineResponse(presentation.deferred_substantive(), traces)
         if transition.action == NextAction.REQUEST_REVIEW_CLARIFICATION:
+            if self.controller is not None and self.controller.state.stage == Stage.WAITING_INPUT:
+                return self._waiting_input_guidance(traces)
             return EngineResponse(presentation.review_clarification(), traces)
         if transition.action == NextAction.SHOW_CURRENT_PROMPT:
             assert self.controller is not None and self.workspace is not None
@@ -1729,6 +1731,11 @@ class SessionEngine:
             )
         raise ControllerError(f"transition:{transition.action.value}")
 
+    def _waiting_input_guidance(self, traces: list[CallTrace]) -> EngineResponse:
+        assert self.controller is not None
+        pending = self.controller.state.pending_input
+        return EngineResponse(presentation.waiting_input_guidance(pending.description if pending else None), traces)
+
     def handle_explicit_review(self, intent: Intent, feedback: str | None = None) -> EngineResponse:
         """Directly apply a review intent without LLM interpretation overhead (fast-path)."""
         traces: list[CallTrace] = []
@@ -1745,6 +1752,13 @@ class SessionEngine:
         if self.controller.state.stage not in {Stage.PROMPT_REVIEW, Stage.PLAN_REVIEW, Stage.WAITING_INPUT}:
             raise ControllerError("user_message_stage")
 
+        if self.controller.state.stage == Stage.WAITING_INPUT:
+            # Execution waits for input: there is no artifact to accept, and a
+            # revision there changes the task (REVISE_APPROACH is not allowed).
+            if intent == Intent.ACCEPT_CURRENT:
+                return self._waiting_input_guidance(traces)
+            if intent == Intent.REVISE_APPROACH:
+                intent = Intent.REVISE_TASK
         self._sync_review_edit()
         previous_stage = self.controller.state.stage
         decision = ReviewDecision(intent=intent)
@@ -1780,6 +1794,9 @@ class SessionEngine:
             raise ControllerError("user_message_stage")
 
         stripped = user_message.strip()
+        waiting = self.controller.state.stage == Stage.WAITING_INPUT
+        if waiting and (not stripped or stripped.lower() == "/confirm"):
+            return self._waiting_input_guidance(traces)
         # Silence-deferral fix (Finding D3): do not route empty/whitespace input to LLM interpretation
         if not stripped:
             artifact_name = "prompt pseudocode" if self.controller.state.stage == Stage.PROMPT_REVIEW else "execution plan"
@@ -1788,9 +1805,10 @@ class SessionEngine:
                 traces,
             )
 
-        # Fast-path commands
+        # Fast-path commands. At WAITING_INPUT there is nothing to accept: these
+        # words are a plain reply there, which may be the input itself.
         lower = stripped.lower()
-        if lower in {
+        if not waiting and lower in {
             "/confirm", "confirm", "yes", "y", "proceed",
             "looks good", "lgtm", "approved", "ok", "okay", "accept",
         }:
@@ -1801,7 +1819,7 @@ class SessionEngine:
                 return EngineResponse("Please specify your revisions: /revise <feedback>", traces)
             target_intent = (
                 Intent.REVISE_TASK
-                if self.controller.state.stage == Stage.PROMPT_REVIEW
+                if self.controller.state.stage in {Stage.PROMPT_REVIEW, Stage.WAITING_INPUT}
                 else Intent.REVISE_APPROACH
             )
             return self.handle_explicit_review(target_intent, fb)
@@ -1817,16 +1835,27 @@ class SessionEngine:
             Stage.PLAN_REVIEW: ("INTERPRET_PLAN_REVIEW", self.bridge.parse_plan_review),
             Stage.WAITING_INPUT: ("INTERPRET_EXECUTION_INPUT", self.bridge.parse_execution_input),
         }[previous_stage]
-        decision = ReviewDecision.from_dict(self._call(
-            operation,
-            {
-                "BOUND_REVIEW_SUBJECT_KIND": subject_kind,
-                "BOUND_REVIEW_SUBJECT_BODY": subject_body,
-                "RAW_USER_REVIEW_MESSAGE": user_message,
-            },
-            traces,
-            parser=parser,
-        ))
+        try:
+            decision = ReviewDecision.from_dict(self._call(
+                operation,
+                {
+                    "BOUND_REVIEW_SUBJECT_KIND": subject_kind,
+                    "BOUND_REVIEW_SUBJECT_BODY": subject_body,
+                    "RAW_USER_REVIEW_MESSAGE": user_message,
+                },
+                traces,
+                parser=parser,
+            ))
+        except Exception as exc:
+            if not (waiting and _is_wire_failure(exc)):
+                raise
+            decision = ReviewDecision(intent=Intent.UNRESOLVED)
+        if waiting and decision.intent == Intent.UNRESOLVED:
+            # WAITING_INPUT exists to receive the input the execution asked for: a
+            # message that maps to nothing else is that input. EXECUTE sees it with
+            # the confirmed prompt and plan and may ask again, with its own words.
+            self.workspace.append_event("EXECUTION_INPUT_DEFAULTED", {"reason": "interpretation_unresolved"})
+            decision = ReviewDecision(intent=Intent.SUPPLY_EXECUTION_INPUT)
         transition = self.controller.apply_review_decision(decision, user_message)
 
         if decision.intent == Intent.ACCEPT_CURRENT:

@@ -128,7 +128,7 @@ def host_notes() -> list[str]:
 
     kinds = ("meta_rule", "deferral", "placeholder", "fence", "field_label")
     lint = presentation.lint_note([LineViolation(1, "PDL-08", kind, "x") for kind in kinds])
-    return [presentation.provisional_note(), *lint.splitlines()]
+    return [presentation.provisional_note(), *lint.splitlines(), presentation.waiting_input_guidance("x")]
 
 
 def test_host_notes_satisfy_no_grader_phrase_and_name_no_manifest_tag():
@@ -281,3 +281,74 @@ def test_without_a_gated_decision_the_message_is_merged(tmp_path, sys1, fallback
     assert FIRST in bootstrap.prompt and SECOND in bootstrap.prompt
     (event,) = events(engine, "FOLLOW_UP_ROUTED")
     assert event["payload"]["merged"] is True and event["payload"]["fallback"] == fallback
+
+
+# --------------------------------------------------------------------------- B2
+
+ASK_FOR_FILE = {"kind": "REQUEST_INPUT", "body": "Please provide the current contents of README.md.",
+                "expected_type": "text", "description": "the current contents of README.md"}
+
+
+def _waiting(tmp_path, **replies):
+    replies.setdefault("EXECUTE", [ASK_FOR_FILE, {"kind": "RESULT", "body": "Done."}])
+    worker = ScriptedWorker(**replies)
+    engine = engine_with(tmp_path, worker, ScriptedSys1())
+    for message in ("$confirm-with-pseudocode add a smiley to README.md", "/confirm", "/confirm"):
+        engine.handle_user_message(message)
+    assert engine.controller.state.stage.value == "WAITING_INPUT"
+    return engine, worker
+
+
+def test_plain_reply_at_waiting_input_is_used_as_the_input(tmp_path):
+    """Session log: every free-text reply got "Please clarify how that message
+    should affect the current review." forever."""
+    engine, worker = _waiting(tmp_path)
+    reply = "you have to edit it without me providing the contents of the file"
+    response = engine.handle_user_message(reply)
+    assert response.text == "Done."
+    executes = worker.calls("EXECUTE")
+    assert len(executes) == 2 and reply in executes[1].prompt  # as SUPPLIED_EXECUTION_INPUT_SOURCE
+    assert events(engine, "EXECUTION_INPUT_DEFAULTED")
+
+
+def test_waiting_input_never_repeats_a_dead_end(tmp_path):
+    from pdl_taskmaster.runtime import presentation
+
+    engine, worker = _waiting(tmp_path, EXECUTE=[ASK_FOR_FILE])
+    for message in ("this is a test", "ok", "still testing"):
+        response = engine.handle_user_message(message)
+        assert response.text != presentation.review_clarification()
+        assert engine.controller.state.stage.value == "WAITING_INPUT"
+    assert len(worker.calls("EXECUTE")) == 4  # each reply was offered as the input
+
+
+def test_interpretation_failure_at_waiting_input_still_uses_the_reply(tmp_path):
+    engine, worker = _waiting(tmp_path, INTERPRET_EXECUTION_INPUT="not json at all")
+    assert engine.handle_user_message("here are the contents").text == "Done."
+
+
+@pytest.mark.parametrize("message", ["/confirm", "   "])
+def test_waiting_input_guidance_says_how_to_proceed(tmp_path, message):
+    engine, worker = _waiting(tmp_path)
+    before = len(worker.requests)
+    response = engine.handle_user_message(message)
+    assert "the current contents of README.md" in response.text
+    assert "/revise <feedback>" in response.text and "/stop" in response.text
+    assert len(worker.requests) == before  # no model call, no exception
+
+
+def test_revise_at_waiting_input_changes_the_task(tmp_path):
+    """/revise mapped to REVISE_APPROACH, which WAITING_INPUT does not allow:
+    the REPL printed a ControllerError."""
+    engine, worker = _waiting(tmp_path)
+    response = engine.handle_user_message("/revise only describe the edit")
+    assert engine.controller.state.stage.value == "PROMPT_REVIEW"
+    assert response.text.startswith("Prompt Pseudocode") and worker.calls("REVISE_PROMPT")
+
+
+def test_unresolved_review_clarification_is_waiting_input_guidance(tmp_path):
+    from pdl_taskmaster.controller.mechanical_controller import NextAction, Transition
+
+    engine, _ = _waiting(tmp_path)
+    response = engine._apply_transition(Transition(NextAction.REQUEST_REVIEW_CLARIFICATION), "x", [])
+    assert "waiting for input" in response.text

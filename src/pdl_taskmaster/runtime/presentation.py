@@ -40,6 +40,15 @@ def review_clarification() -> str:
     return "Please clarify how that message should affect the current review."
 
 
+def waiting_input_guidance(description: str | None) -> str:
+    """How to proceed while execution waits for input: never a dead end."""
+    awaited = (description or "").strip() or "the input the execution asked for"
+    return (
+        f"The execution is waiting for input: {awaited}\n"
+        "Reply with that input, use /revise <feedback> to change the task, or /stop to cancel."
+    )
+
+
 def provisional_note() -> str:
     """Factual note on a result whose witness no program run by the host reproduced."""
     return "[host] Witness not reproduced by a program run; unverified."
