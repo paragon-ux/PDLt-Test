@@ -558,8 +558,12 @@ class _SandboxSession:
     def new_run_dir(self) -> Path:
         self._runs += 1
         run_dir = self.work / f"run-{self._runs:04d}-{secrets.token_hex(3)}"
-        run_dir.mkdir(mode=0o700)
-        (run_dir / "tmp").mkdir(mode=0o700)
+        # On Windows, mode 0o700 gives a protected owner-only DACL (CPython 3.12.4+,
+        # 3.13): the run directory would not inherit the backend's grant on work/.
+        # The default mode inherits work/'s ACL, which is already private.
+        mode = 0o777 if _IS_WINDOWS else 0o700
+        run_dir.mkdir(mode=mode)
+        (run_dir / "tmp").mkdir(mode=mode)
         return run_dir
 
     def clear_work(self) -> None:
