@@ -55,6 +55,8 @@ class ScriptedWorker:
         reply = self.replies[request.operation]
         if isinstance(reply, list):
             reply = reply.pop(0) if len(reply) > 1 else reply[0]
+        if callable(reply):
+            reply = reply(request)
         return reply if isinstance(reply, str) else json.dumps(reply)
 
     def calls(self, operation: str) -> list:
@@ -204,3 +206,78 @@ def test_plan_path_names_residual_findings_too(tmp_path):
     assert '[host] PDL-08: line 2 "DO NOT perform the calculation" is a drafting meta-rule' in response.text
     (event,) = events(engine, "PLAN_LINT_UNRESOLVED")
     assert event["payload"]["operation"] == "DRAFT_PLAN" and event["payload"]["lines"][0]["line"] == 2
+
+
+# --------------------------------------------------------------------------- B1
+
+FIRST = "Report the strengths and weaknesses of this REPL"
+SECOND = "are you capable of editing the readme of this repo? C:/repo/README.md"
+
+
+def _bootstrap_echo(request):
+    """BOOTSTRAP_ANALYSIS whose summary names the raw content it read."""
+    raw = request.prompt.split('"RAW_UNTRUSTED_CONTENT"', 1)[-1][:400]
+    marker = "readme" if "readme" in raw.lower() else ("nothing else" if "nothing else" in raw else "other")
+    return {"kind": "ANALYSIS", "task_summary": f"The user asks about the {marker} matter in this message.",
+            "approach_notes": "", "risk_notes": "", "task_entities": []}
+
+
+def _two_turns(tmp_path, sys1, second=SECOND):
+    worker = ScriptedWorker(BOOTSTRAP_ANALYSIS=_bootstrap_echo,
+                            EXECUTE={"kind": "RESULT", "body": "Strengths: fast. Weaknesses: terse."})
+    engine = engine_with(tmp_path, worker, sys1)
+    for message in ("$confirm-with-pseudocode " + FIRST, "/confirm", "/confirm"):
+        engine.handle_user_message(message)
+    assert engine.controller.state.stage.value == "CLOSED_SUCCESS"
+    first_calls = len(worker.requests)
+    ask(engine, second)
+    return engine, worker, worker.requests[first_calls:]
+
+
+def test_follow_up_is_merged_with_the_previous_request(tmp_path):
+    engine, _, calls = _two_turns(tmp_path, ScriptedSys1(follow_up=("FOLLOW_UP", 0.95)), "incorrect, try again")
+    bootstrap = next(c for c in calls if c.operation == "BOOTSTRAP_ANALYSIS")
+    assert FIRST in bootstrap.prompt and "incorrect, try again" in bootstrap.prompt
+    assert "PREVIOUS_DELIVERABLE" in bootstrap.prompt
+    (event,) = events(engine, "FOLLOW_UP_ROUTED")
+    assert event["payload"] == {"verdict": "FOLLOW_UP", "confidence": 0.95, "passed_gating": True,
+                                "merged": True, "fallback": None}
+
+
+def test_new_request_starts_clean(tmp_path):
+    """Session log: a question about the README was merged into the earlier REPL
+    critique, and the drafted prompt carried both tasks."""
+    sys1 = ScriptedSys1(follow_up=("NEW_REQUEST", 0.95))
+    engine, worker, calls = _two_turns(tmp_path, sys1)
+    bootstrap = next(c for c in calls if c.operation == "BOOTSTRAP_ANALYSIS")
+    assert SECOND in bootstrap.prompt and FIRST not in bootstrap.prompt
+    assert "PREVIOUS_DELIVERABLE" not in bootstrap.prompt and "Strengths: fast" not in bootstrap.prompt
+    routed = [r.state["request"] for r in sys1.requests if "problem_class" in r.questions]
+    assert routed[-1] == SECOND
+    (event,) = events(engine, "FOLLOW_UP_ROUTED")
+    assert event["payload"]["merged"] is False and event["payload"]["verdict"] == "NEW_REQUEST"
+    assert event["payload"]["passed_gating"] is True and event["payload"]["confidence"] == 0.95
+    # A narrowing correction is compiled from the correction alone and reaches
+    # REVISE_PROMPT; neither the previous request nor its deliverable is there.
+    revise_from = len(worker.requests)
+    engine.handle_user_message("/revise edit the readme, nothing else")
+    later = worker.requests[revise_from:]
+    correction_read = next(c for c in later if c.operation == "BOOTSTRAP_ANALYSIS")
+    assert "edit the readme, nothing else" in correction_read.prompt
+    assert "PREVIOUS_DELIVERABLE" not in correction_read.prompt
+    revise = next(c for c in later if c.operation == "REVISE_PROMPT")
+    assert "readme matter" in revise.prompt
+    assert FIRST not in revise.prompt and "Strengths: fast" not in revise.prompt
+
+
+@pytest.mark.parametrize("sys1, fallback", [
+    (None, "sys1_unavailable"),
+    (ScriptedSys1(follow_up=("NEW_REQUEST", 0.6)), "below_floor"),
+])
+def test_without_a_gated_decision_the_message_is_merged(tmp_path, sys1, fallback):
+    """Session 20261001-122654: the merge is the safe default."""
+    engine, _, calls = _two_turns(tmp_path, sys1)
+    bootstrap = next(c for c in calls if c.operation == "BOOTSTRAP_ANALYSIS")
+    assert FIRST in bootstrap.prompt and SECOND in bootstrap.prompt
+    (event,) = events(engine, "FOLLOW_UP_ROUTED")
+    assert event["payload"]["merged"] is True and event["payload"]["fallback"] == fallback

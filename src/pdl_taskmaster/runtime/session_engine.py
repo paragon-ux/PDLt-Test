@@ -856,6 +856,31 @@ class SessionEngine:
             },
         )
 
+    def _is_follow_up(self, previous_request: str, message: str) -> bool:
+        """System 1 decides whether a message after a closed turn continues the
+        previous request. Only a gated NEW_REQUEST stops the merge: System 1
+        absent, failing or below its floor keeps the follow-up behaviour."""
+        from pdl_taskmaster.providers.sys1.recipes.follow_up import FollowUpRecipe
+
+        assert self.workspace is not None
+        decision: dict[str, Any] = {"verdict": None, "confidence": None, "passed_gating": False}
+        follow_up, fallback = True, "sys1_unavailable"
+        if self.sys1_client is not None and self.sys1_client.is_configured:
+            recipe = FollowUpRecipe()
+            try:
+                body, duration_ms = self.sys1_client.call(
+                    recipe.build_request({"previous_request": previous_request, "message": message})
+                )
+                result = recipe.parse_response(body, duration_ms=duration_ms)
+                decision = {"verdict": result.verdict, "confidence": round(result.confidence, 4),
+                            "passed_gating": result.passed_gating}
+                follow_up = recipe.map_to_wire(result)["follow_up"]
+                fallback = None if result.passed_gating else "below_floor"
+            except Exception:
+                fallback = "sys1_failed"
+        self.workspace.append_event("FOLLOW_UP_ROUTED", {**decision, "merged": follow_up, "fallback": fallback})
+        return follow_up
+
     def _draft_initial_prompt(
         self,
         substantive_request: str,
@@ -865,7 +890,7 @@ class SessionEngine:
     ) -> EngineResponse:
         assert self.workspace is not None
         previous_request = (getattr(self, "_previous_turn", None) or {}).get("request")
-        if previous_request:
+        if previous_request and self._is_follow_up(previous_request, substantive_request):
             # A follow-up refers to the previous request: routing, drafting and the
             # execution source all work from both, never from the follow-up alone
             # (session 20261001-122654: "try a more efficient method" was routed as
@@ -874,6 +899,10 @@ class SessionEngine:
                 f"{previous_request}\n\nFollow-up from the user, referring to the request above:\n"
                 f"{substantive_request}"
             )
+        elif previous_request:
+            # A new, independent request starts clean: no merged source, and the
+            # previous deliverable is not background to its semantic reads.
+            self._previous_deliverable = None
         self._source_request = substantive_request
         self.workspace.write_turn_source(substantive_request)
         from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe

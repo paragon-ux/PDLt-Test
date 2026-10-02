@@ -210,3 +210,22 @@ def test_problem_class_routes_checkable_exact_values_to_verified_execution() -> 
     assert "word problem" not in standard
     # A witness is requested, never code (GUARD-03).
     assert "code" not in verified and "python" not in verified and "program" not in verified
+
+
+def test_follow_up_recipe_gates_only_a_confident_new_request() -> None:
+    from pdl_taskmaster.providers.sys1.recipes.follow_up import FollowUpRecipe
+
+    recipe = FollowUpRecipe()
+    request = recipe.build_request({"previous_request": "task one", "message": "incorrect, try again"})
+    assert request.state == {"previous_request": "task one", "message": "incorrect, try again"}
+    assert request.questions["follow_up"].choices == ["FOLLOW_UP", "NEW_REQUEST"]
+
+    def decide(choice, confidence):
+        body = {"answers": {"follow_up": {"choice": choice, "confidence": confidence,
+                                          "probabilities": {choice: confidence, "other": 1 - confidence}}}}
+        return recipe.map_to_wire(recipe.parse_response(body))["follow_up"]
+
+    assert decide("NEW_REQUEST", 0.95) is False
+    assert decide("FOLLOW_UP", 0.95) is True
+    assert decide("NEW_REQUEST", 0.6) is True  # below the floor: keep the merge
+    assert decide("WITHIN_10M_STEPS", 0.97) is True  # not one of the choices
