@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 import http.client
 import json
 import os
@@ -32,6 +33,45 @@ def _default_provider_order() -> list[str]:
         if fb.lower() != primary.lower():
             order.append(fb)
     return order
+
+
+# Provider names OpenRouter routes openai/gpt-oss-120b to (its routing funnel in
+# probe 20261001-142720) and the ones this repo names. A configured name outside
+# the list gets a warning, never a refusal: OpenRouter adds providers.
+KNOWN_PROVIDERS: tuple[str, ...] = (
+    "Cerebras", "Groq", "SambaNova", "Crusoe", "Baseten", "DeepInfra", "Fireworks", "Together", "Novita",
+    "Parasail", "Nebius", "Amazon Bedrock", "Google Vertex", "CoreWeave", "DigitalOcean", "Phala",
+    "SiliconFlow", "Mancer", "AkashML", "DekaLLM", "Mara",
+)
+
+
+def _provider_key(name: str) -> str:
+    """A provider name compared without case, spaces or punctuation
+    ("amazon-bedrock" is "Amazon Bedrock")."""
+    return "".join(ch for ch in str(name).lower() if ch.isalnum())
+
+
+def unknown_provider_names(names: list[str]) -> dict[str, str | None]:
+    """Each configured name that is not a known provider, with the closest known
+    name (or None)."""
+    known = {_provider_key(k): k for k in KNOWN_PROVIDERS}
+    unknown: dict[str, str | None] = {}
+    for name in names:
+        key = _provider_key(name)
+        if key and key not in known:
+            close = difflib.get_close_matches(key, list(known), n=1, cutoff=0.75)
+            unknown[name] = known[close[0]] if close else None
+    return unknown
+
+
+def unknown_provider_warnings(names: list[str]) -> list[str]:
+    """One warning line per configured provider name that is not a known one."""
+    return [
+        f"provider '{name}' is not a known OpenRouter provider name"
+        + (f" (did you mean {suggestion}?)" if suggestion else "")
+        + "; it is used as given, and a misspelled name makes every call fail with 'No endpoints found'"
+        for name, suggestion in unknown_provider_names(names).items()
+    ]
 
 
 DEFAULT_PROVIDER_PINNING: dict[str, Any] = {
@@ -665,7 +705,26 @@ class ApiWorker:
             return self._call(request)
         except ProviderError as exc:
             exc.operation = exc.operation or getattr(request, "operation", None)
+            unrouted = self._no_endpoint_error(exc, getattr(request, "operation", None))
+            if unrouted is not None:
+                raise unrouted from exc
             raise
+
+    def _no_endpoint_error(self, exc: ProviderError, operation: str | None) -> ProviderError | None:
+        """OpenRouter's 404 "No endpoints found" while providers are configured,
+        as one clear line naming them (a misspelled --api-providers name gave an
+        opaque routing-funnel dump). OpenRouter's own text stays in the attempts."""
+        order = [str(p) for p in (self.provider_pinning or {}).get("order") or []]
+        if exc.status != 404 or not order or "no endpoints found" not in str(exc).lower():
+            return None
+        hints = "".join(f" ({name}: did you mean {suggestion}?)" if suggestion else f" ({name}: not a known name)"
+                        for name, suggestion in unknown_provider_names(order).items())
+        message = (f"OpenRouter found no endpoint for {self._model_for(operation)} at the configured providers "
+                   f"({', '.join(order)}): check the spelling of each name{hints} and that it serves this model")
+        error = ProviderError(exc.category, message, status=exc.status, operation=exc.operation,
+                              attempts=[*exc.attempts, {"provider": "OpenRouter", "message": str(exc)[:600]}])
+        error.failed_generation = exc.failed_generation
+        return error
 
     def _call(self, request: Any) -> WorkerResult:
         operation_name = getattr(request, "operation", None)

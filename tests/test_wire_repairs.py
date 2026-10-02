@@ -813,3 +813,92 @@ def test_http_rejection_records_the_failed_generation() -> None:
     assert error.failed_generation == '{"kind": "RESULT"}'
     assert ProviderError.from_http(400, '{"error": {"message": "bad"}}').failed_generation is None
     assert "failed_generation" not in ProviderError.from_http(400, "not json").as_record()
+
+
+# Session log 2026-10-02: --api-providers Cerebrus (misspelled) failed every call with
+# OpenRouter's routing-funnel 404 cut off mid-sentence.
+
+_NO_ENDPOINTS_404 = json.dumps({"error": {"message": (
+    "No endpoints found for openai/gpt-oss-120b. Every candidate endpoint was removed during routing: "
+    "Filter by Regional Surcharge removed amazon-bedrock/eu-west-1; Filter by Parameters removed novita/fp4, "
+    "digitalocean, sambanova, amazon-bedrock; Filter by Fallback removed coreweave/fp4, dekallm/bf16"),
+    "code": 404, "metadata": {"routing_funnel": []}}})
+
+
+def _raise_from_send(monkeypatch, error):
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+
+    def fake_send(self, req, deadline=None):
+        raise error
+
+    monkeypatch.setattr(ApiWorker, "_send_json_with_retries", fake_send)
+    monkeypatch.setattr(ApiWorker, "_resolve_api_key", lambda self: "k")
+
+
+def test_no_endpoints_with_configured_providers_is_one_clear_line(monkeypatch) -> None:
+    from pdl_taskmaster.host.repl import _one_line_error
+    from pdl_taskmaster.providers.api_worker import ApiWorker, ProviderError
+
+    _raise_from_send(monkeypatch, ProviderError.from_http(404, _NO_ENDPOINTS_404))
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT,
+                       provider_pinning={"order": ["Cerebrus"], "allow_fallbacks": False})
+    with pytest.raises(ProviderError) as info:
+        worker.call(_draft_request("BOOTSTRAP_ANALYSIS"))
+    error = info.value
+    assert error.category == "PROVIDER_REJECTED_REQUEST" and error.status == 404
+    assert error.operation == "BOOTSTRAP_ANALYSIS"
+    line = _one_line_error(error)
+    assert line == ("PROVIDER_REJECTED_REQUEST at BOOTSTRAP_ANALYSIS: OpenRouter found no endpoint for "
+                    "openai/gpt-oss-120b at the configured providers (Cerebrus): check the spelling of each name "
+                    "(Cerebrus: did you mean Cerebras?) and that it serves this model")
+    assert "Filter by Regional Surcharge" in error.attempts[-1]["message"]  # OpenRouter's text is kept
+
+
+def test_no_endpoints_for_a_known_provider_names_it_without_a_suggestion(monkeypatch) -> None:
+    from pdl_taskmaster.providers.api_worker import ApiWorker, ProviderError
+
+    _raise_from_send(monkeypatch, ProviderError.from_http(404, _NO_ENDPOINTS_404))
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT,
+                       provider_pinning={"order": ["SambaNova", "NewCo"], "allow_fallbacks": False})
+    with pytest.raises(ProviderError) as info:
+        worker.call(_draft_request("DRAFT_PLAN"))
+    message = str(info.value)
+    assert "(SambaNova, NewCo)" in message and "(NewCo: not a known name)" in message
+    assert "SambaNova:" not in message
+
+
+def test_other_provider_errors_are_unchanged(monkeypatch) -> None:
+    from pdl_taskmaster.providers.api_worker import ApiWorker, ProviderError
+
+    original = ProviderError.from_http(404, _NO_ENDPOINTS_404)
+    _raise_from_send(monkeypatch, original)
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT, provider_pinning={})
+    with pytest.raises(ProviderError) as info:
+        worker.call(_draft_request("DRAFT_PLAN"))
+    assert info.value is original
+    other = ProviderError.from_http(400, '{"error": {"message": "bad request"}}')
+    _raise_from_send(monkeypatch, other)
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT,
+                       provider_pinning={"order": ["Cerebrus"], "allow_fallbacks": False})
+    with pytest.raises(ProviderError) as info:
+        worker.call(_draft_request("DRAFT_PLAN"))
+    assert info.value is other
+
+
+def test_unknown_provider_names_are_warned_never_refused(capsys) -> None:
+    from argparse import Namespace
+
+    from pdl_taskmaster.host.repl import _api_run_settings, _warn_unknown_providers
+    from pdl_taskmaster.providers.api_worker import unknown_provider_names
+
+    assert unknown_provider_names(["Cerebras", "groq", "amazon-bedrock", "Amazon Bedrock", "DeepInfra"]) == {}
+    assert unknown_provider_names(["Cerebrus", "Grok", "NewCo"]) == {"Cerebrus": "Cerebras", "Grok": "Groq",
+                                                                    "NewCo": None}
+    args = Namespace(api_providers="Cerebrus,Groq")
+    _warn_unknown_providers(args)
+    out = capsys.readouterr().out.splitlines()
+    assert out == ["[warn] provider 'Cerebrus' is not a known OpenRouter provider name (did you mean Cerebras?); "
+                   "it is used as given, and a misspelled name makes every call fail with 'No endpoints found'"]
+    assert _api_run_settings(args)["provider_pinning"]["order"] == ["Cerebrus", "Groq"]  # used as given
+    _warn_unknown_providers(Namespace(api_providers="Cerebras,Groq"))
+    assert capsys.readouterr().out == ""

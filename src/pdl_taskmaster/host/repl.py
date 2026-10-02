@@ -45,7 +45,7 @@ def _default_session_base() -> Path:
     return Path.home() / ".pdlt" / "runs" / "live-sessions"
 
 from pdl_taskmaster.host.app import PDLtHost
-from pdl_taskmaster.providers.api_worker import ApiWorker
+from pdl_taskmaster.providers.api_worker import ApiWorker, unknown_provider_warnings
 from pdl_taskmaster.providers.fixtures import build_recorded_fixture, build_recorded_fixture_from_vendored
 
 
@@ -353,6 +353,14 @@ def _api_run_settings(args) -> dict:
     if providers:
         settings["provider_pinning"] = {"order": providers, "allow_fallbacks": False}
     return settings
+
+
+def _warn_unknown_providers(args) -> None:
+    """Warn, never refuse, for an --api-providers name that is not a known
+    provider: a misspelling ("Cerebrus") otherwise surfaced as an opaque 404."""
+    providers = [p.strip() for p in (getattr(args, "api_providers", None) or "").split(",") if p.strip()]
+    for warning in unknown_provider_warnings(providers):
+        print(f"[warn] {warning}", flush=True)
 
 
 def _reasoning_record(worker: Any) -> str | None:
@@ -698,6 +706,8 @@ def _handle_dev_command(
                 "sambanova": "SambaNova",
             }
             resolved = [mapping.get(p.lower(), p) for p in names]
+            for warning in unknown_provider_warnings(resolved):
+                print(f"[warn] {warning}", flush=True)
             if hasattr(worker, "provider_pinning") and isinstance(worker.provider_pinning, dict):
                 worker.provider_pinning["order"] = resolved
                 print(f"[dev] provider pinning order set to: {resolved}", flush=True)
@@ -1032,6 +1042,7 @@ def main() -> int:
         except RuntimeError as exc:
             raise SystemExit(str(exc))
     elif args.worker == "api":
+        _warn_unknown_providers(args)
         worker = ApiWorker(
             model=args.model,
             repo_root=args.candidate_repo,
