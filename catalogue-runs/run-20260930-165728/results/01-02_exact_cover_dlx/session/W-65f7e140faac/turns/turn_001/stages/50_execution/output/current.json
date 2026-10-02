@@ -1,7 +1,0 @@
-{
-  "kind": "VERIFICATION_FAILED",
-  "errors": [
-    "python block 1 exited with code 1 in the sandbox (stderr:     if header['R'] == header: /        ^^^^^^^^^^^^^^^^^^^^^ / RecursionError: maximum recursion depth exceeded in comparison)",
-    "Substantive verification error: Missing witness in Result IR for task requiring verified execution. Host observation: the deliverable contains no program that ran successfully."
-  ]
-}

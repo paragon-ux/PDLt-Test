@@ -1,8 +1,0 @@
-IDENTIFY the race condition in the given Python code where multiple threads increment the shared global variable 'counter' without synchronization.
-DEMONSTRATE that concurrent increments by 4 threads each performing 100000 increments can produce a final count less than 400000.
-PROVIDE FIX (a): ADD a threading.Lock to protect the increment operation.
-WRITE test script that creates a threading.Lock, wraps the increment of 'counter' with the lock (using acquire/release or a context manager), starts 4 threads each performing 100000 increments, joins all threads, and ASSERT that the final value of 'counter' equals 400000.
-OUTPUT the final count from the test script to confirm it matches the expected 400000.
-PROVIDE FIX (b): USE a thread‑safe alternative without an explicit lock, such as a multiprocessing.Value or a thread‑safe Counter.
-WRITE test script that replaces the plain integer 'counter' with the chosen thread‑safe construct, runs 4 threads each performing 100000 increments, joins the threads, and ASSERT that the final count equals 400000.
-OUTPUT the final count from this test script to confirm it matches the expected 400000.

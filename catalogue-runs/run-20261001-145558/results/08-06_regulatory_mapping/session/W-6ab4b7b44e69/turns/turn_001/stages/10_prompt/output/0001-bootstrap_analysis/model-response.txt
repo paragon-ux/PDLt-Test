@@ -1,7 +1,0 @@
-{
-  "kind": "ANALYSIS",
-  "task_summary": "Map each statement in the provided privacy policy excerpt to the specific GDPR articles it relates to, and identify any GDPR requirements that are NOT covered by this policy.",
-  "approach_notes": "",
-  "risk_notes": "",
-  "task_entities": []
-}

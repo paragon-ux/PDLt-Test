@@ -1,3 +1,0 @@
-{
-  "neutral_plan_body": "READ the set S = {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21}\nREAD the target sum T = 40\nAPPLY a backtracking algorithm that explores the full search tree to FIND all subsets of S whose elements sum exactly to T\nFOR each solution EMIT the subset\nVERIFY that the emitted subset sum equals T\nREPORT the total number of solutions found"
-}

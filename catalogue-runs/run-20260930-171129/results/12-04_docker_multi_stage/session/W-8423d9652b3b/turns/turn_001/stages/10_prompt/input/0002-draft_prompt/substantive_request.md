@@ -1,3 +1,0 @@
-TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
-Convert the provided Dockerfile into an optimized multi-stage Dockerfile that minimizes final image size. Use multi-stage builds to separate build-time dependencies (e.g., gcc, libpq-dev) from runtime, select a slim or distroless base for the final stage, exclude test files and build tools from the final image, and structure layers to maximize caching. Explain each optimization step and give an estimate of the size reduction compared to the original image.
-APPROACH/RISK NOTES:

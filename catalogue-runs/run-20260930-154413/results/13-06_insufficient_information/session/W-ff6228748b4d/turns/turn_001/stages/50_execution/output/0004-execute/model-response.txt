@@ -1,1 +1,0 @@
-{"kind":"REQUEST_INPUT","body":"Please provide the full original SQL query (including table names, joins, and any WHERE clauses) to be optimized.","expected_type":"string,"}

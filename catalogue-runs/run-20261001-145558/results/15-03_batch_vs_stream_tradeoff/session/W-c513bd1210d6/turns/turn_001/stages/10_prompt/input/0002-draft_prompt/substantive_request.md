@@ -1,3 +1,0 @@
-TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
-Analyze latency tradeoff (batch: 24h + 45min vs stream: seconds), cost tradeoff (batch: single large compute job vs stream: always-on infrastructure), complexity tradeoff (batch: simple retry vs stream: exactly-once, watermarks, late data), and provide a recommendation with justification for choosing between batch processing and stream processing for a data pipeline that currently processes clickstream events (50 million events per day, ~600 events/second average, 3000 events/second peak, 500-byte average event size, batch job duration 45 minutes, downstream dashboards refresh daily).
-APPROACH/RISK NOTES:

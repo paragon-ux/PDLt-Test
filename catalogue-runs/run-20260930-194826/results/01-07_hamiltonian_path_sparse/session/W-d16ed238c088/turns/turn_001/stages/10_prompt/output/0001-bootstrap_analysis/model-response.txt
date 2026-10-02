@@ -1,7 +1,0 @@
-{
-  "kind": "ANALYSIS",
-  "task_summary": "Determine whether the given undirected graph with 12 nodes (0-11) and the specified edge list contains a Hamiltonian path. If such a path exists, output the complete sequence of node labels representing the path. Verify that the path includes all 12 nodes and that each consecutive pair of nodes in the sequence corresponds to an edge in the graph. Use a backtracking search with pruning to find the path.",
-  "approach_notes": "",
-  "risk_notes": "",
-  "task_entities": []
-}

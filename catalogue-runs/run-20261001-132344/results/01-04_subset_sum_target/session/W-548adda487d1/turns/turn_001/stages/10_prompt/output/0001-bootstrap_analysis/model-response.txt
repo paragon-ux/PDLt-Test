@@ -1,3 +1,0 @@
-{
-  "kind": "BLOCKED_BY_HIGHER_PRIORITY",
-  "response": "Confirmation received. No further action required."}

@@ -1,1 +1,0 @@
-{"neutral_plan_body":"READ the FrostbiteDB SDK documentation\nCONNECT to the target FrostbiteDB instance using the SDK\nCREATE a new collection within the connected instance\nINSERT three documents into the newly created collection\nQUERY the collection to retrieve the inserted documents\nRETURN the retrieved documents"}

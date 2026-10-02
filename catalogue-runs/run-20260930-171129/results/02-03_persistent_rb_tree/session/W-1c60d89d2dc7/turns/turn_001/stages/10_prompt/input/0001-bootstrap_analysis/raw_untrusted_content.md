@@ -1,6 +1,0 @@
-Implement a persistent (functional) red-black tree in Python using path copying. The tree must support:
-- insert(tree, key) -> new_tree: Returns a new tree with the key inserted (original unchanged)
-- lookup(tree, key) -> bool: Check membership
-- to_sorted_list(tree) -> list: In-order traversal
-
-The key constraint is immutability: after insert(t1, k) -> t2, t1 must still be valid and unchanged. Include tests that verify persistence (modify t2, check t1 still works), red-black invariants (root is black, no red-red parent-child, equal black-height on all paths), and BST ordering.

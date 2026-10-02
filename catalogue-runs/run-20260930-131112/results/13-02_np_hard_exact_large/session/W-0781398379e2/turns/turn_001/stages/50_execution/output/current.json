@@ -1,6 +1,0 @@
-{
-  "kind": "VERIFICATION_FAILED",
-  "errors": [
-    "Result IR missing or not a JSON object (TRD-0003 RS-01)"
-  ]
-}

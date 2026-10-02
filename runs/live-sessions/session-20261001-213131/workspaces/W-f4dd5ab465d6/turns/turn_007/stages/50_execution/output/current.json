@@ -1,5 +1,0 @@
-{
-  "kind": "REQUEST_INPUT",
-  "expected_type": "string",
-  "description": "The file content is required to perform the read-modify-write operation."
-}

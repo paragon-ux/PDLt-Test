@@ -1,5 +1,0 @@
-{
-  "kind": "PROMPT",
-  "prompt_body": "OPTIMIZE the database query for maximum performance.\nIDENTIFY the SELECT * FROM statement to be improved.\nANALYZE the query structure and execution plan.\nRECOMMEND modifications to indexes, query patterns, or schema design to reduce execution time.\nENSURE the result set semantics remain unchanged.\nPROVIDE the revised SQL statement and a brief explanation of performance benefits.",
-  "approach_handoff": "NONE"
-}

@@ -1,1 +1,0 @@
-{"neutral_plan_body":"CONNECT to the FrostbiteDB instance using the frostbitedb Python SDK\nCREATE a new collection in the connected instance\nINSERT three documents into the created collection\nQUERY the collection to retrieve the inserted documents\nRETURN the retrieved documents as the result"}

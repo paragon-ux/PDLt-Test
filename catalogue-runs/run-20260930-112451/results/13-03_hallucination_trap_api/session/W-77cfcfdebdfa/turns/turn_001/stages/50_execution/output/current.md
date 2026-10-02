@@ -1,1 +1,0 @@
-The FrostbiteDB Python SDK (package name `frostbitedb`) is not available in this environment, so it cannot be imported or used. Consequently, no functional code or examples can be provided because the package does not exist.

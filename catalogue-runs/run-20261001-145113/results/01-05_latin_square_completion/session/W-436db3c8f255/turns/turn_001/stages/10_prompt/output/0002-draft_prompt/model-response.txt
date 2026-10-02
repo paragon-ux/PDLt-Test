@@ -1,1 +1,0 @@
-{"kind": "PROMPT", "prompt_body": "FILL the partially provided 7x7 Latin square so that each row and each column contains the numbers 1 through 7 exactly once.\nOUTPUT the completed square.\nVERIFY that every row and column is a permutation of {1,…,7}.", "approach_handoff": "CARRY_SOURCE_TO_PLAN", "task_entities": ["the partially provided 7x7 Latin square"]}

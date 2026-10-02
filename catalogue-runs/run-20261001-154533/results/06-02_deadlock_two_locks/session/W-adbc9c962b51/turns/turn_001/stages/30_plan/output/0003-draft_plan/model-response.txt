@@ -1,1 +1,0 @@
-{"neutral_plan_body":"DIAGNOSE the deadlock in the provided Python program.\nEXPLAIN the lock ordering violation causing the deadlock.\nPRODUCE a corrected version of the code that avoids the deadlock.\nCREATE a test that demonstrates the deadlock risk in the original code.\nVERIFY that the corrected version runs without hanging.\nNOTE the identifier i."}

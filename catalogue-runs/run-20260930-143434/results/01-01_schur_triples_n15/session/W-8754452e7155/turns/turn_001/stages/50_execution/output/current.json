@@ -1,5 +1,0 @@
-{
-  "kind": "REQUEST_INPUT",
-  "expected_type": "json containing the list L as provided in the prompt text",
-  "description": "Need the list L of 45 distinct positive integers to process."
-}

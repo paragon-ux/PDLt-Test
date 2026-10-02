@@ -1,6 +1,0 @@
-{
-  "kind": "VERIFICATION_FAILED",
-  "errors": [
-    "Substantive verification error: Missing witness in Result IR for task requiring verified execution."
-  ]
-}

@@ -1,5 +1,0 @@
-{
-  "sources": [
-    "The following tree serialization function blows the stack on deep trees. Diagnose why and convert it to an iterative solution that handles trees of depth 100,000+.\n\n```python\nclass Node:\n    def __init__(self, val, children=None):\n        self.val = val\n        self.children = children or []\n\ndef serialize(node):\n    if node is None:\n        return \"null\"\n    child_strs = \",\".join(serialize(c) for c in node.children)\n    return f\"{node.val}({child_strs})\"\n\n# Build a deep chain: 1 -> 2 -> 3 -> ... -> 50000\nroot = Node(1)\ncurrent = root\nfor i in range(2, 50001):\n    child = Node(i)\n    current.children.append(child)\n    current = child\n\nprint(serialize(root)[:100])  # RecursionError!\n```\n\nProvide the iterative solution and test it on a depth-50000 chain."
-  ]
-}

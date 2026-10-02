@@ -1,5 +1,0 @@
-{
-  "kind": "REQUEST_INPUT",
-  "expected_type": "string, a valid HTTP/HTTPS URL pointing to the HTML content to be processed.",
-  "description": "Please provide the URL of the HTML page to scrape."
-}

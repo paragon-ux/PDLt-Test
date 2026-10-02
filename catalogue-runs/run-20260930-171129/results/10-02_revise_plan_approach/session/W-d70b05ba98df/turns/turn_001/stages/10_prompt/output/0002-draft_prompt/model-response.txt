@@ -1,1 +1,0 @@
-{"kind":"PROMPT","prompt_body":"READ the HTML content from the specified page\nEXTRACT all hyperlink elements (<a>) and their href attributes\nRETURN a list of URLs representing the extracted links","approach_handoff":"NONE"}

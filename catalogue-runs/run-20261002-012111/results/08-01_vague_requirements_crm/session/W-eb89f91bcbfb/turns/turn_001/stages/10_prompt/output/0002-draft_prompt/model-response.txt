@@ -1,1 +1,0 @@
-{"kind": "PROMPT", "prompt_body": "- CRM\nFOR the CRM:\n    IDENTIFY at least five core entities with their attributes.\n    IDENTIFY eight business rules or constraints.\n    IDENTIFY five edge cases.\n    IDENTIFY three clarifying questions needed before implementation.", "approach_handoff": "NONE", "task_entities": ["CRM"]}

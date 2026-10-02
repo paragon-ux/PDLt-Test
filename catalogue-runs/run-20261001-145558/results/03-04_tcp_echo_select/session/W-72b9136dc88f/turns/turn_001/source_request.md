@@ -1,6 +1,0 @@
-Implement a TCP echo server in Python using only the select module (no asyncio, no threading):
-1. Listen on a configurable port, accept multiple concurrent clients.
-2. Echo back every line received from each client, preserving newlines.
-3. Handle client disconnection gracefully (remove from select set, close socket).
-4. Support a maximum of 64 simultaneous connections; reject with a message if exceeded.
-5. Include a test that spawns the server, connects 3 clients concurrently, sends different messages from each, verifies correct echoes, then disconnects and verifies cleanup.

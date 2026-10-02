@@ -1,1 +1,0 @@
-{"kind":"PROMPT","prompt_body":"READ the partially filled 7x7 grid input\nSOLVE the Latin square by filling all cells marked 0 using constraint propagation with backtracking\nVERIFY that each row contains a permutation of {1,2,3,4,5,6,7}\nVERIFY that each column contains a permutation of {1,2,3,4,5,6,7}\nOUTPUT the completed 7x7 Latin square","approach_handoff":"NONE"}

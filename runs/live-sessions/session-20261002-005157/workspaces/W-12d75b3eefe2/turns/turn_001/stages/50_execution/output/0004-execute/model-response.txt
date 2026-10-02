@@ -1,1 +1,0 @@
-{"kind": "RESULT", "body": "0.375", "result_ir": {"files": [], "reconciliation": [], "open_defects": [], "witness": null}}

@@ -1,1 +1,0 @@
-{"kind": "PROMPT", "prompt_body": "EXTRACT all email addresses from the provided user text. RETURN only the email addresses found, nothing else. INCLUDE the email addresses support@example.com and sales@company.org as they appear in the text.", "approach_handoff": "NONE", "task_entities": ["support@example.com", "sales@company.org"]}

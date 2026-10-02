@@ -1,4 +1,0 @@
-IDENTIFY the graph with 50 nodes labeled 0 through 49 where each node i is connected to nodes (i+1) mod 50, (i+7) mod 50, and (i+13) mod 50, resulting in 150 edges.
-DETERMINE the exact minimum vertex cover of this graph.
-ENSURE the solution is provably optimal, not an approximation.
-OUTPUT only the size of the minimum vertex cover and the set of node indices constituting one optimal cover.

@@ -1,8 +1,0 @@
-{
-  "kind": "RESULT",
-  "source_prompt_id": "I-cade648b49-P1",
-  "source_plan_id": "I-cade648b49-R1",
-  "result_body_hash": "a1a1433125dc42b79ce26750e6e3540675df6a7b5170b65529772ae3f408edf2",
-  "confirmed_prompt_hash": "b224a9a60da356b9b0a31d3982d452349a324094f0c2dce7abf51a8dc2fd2588",
-  "confirmed_plan_hash": "90c38fd2e02153cd2592df599571e962efa934c5b0882f93be0a924a62665761"
-}

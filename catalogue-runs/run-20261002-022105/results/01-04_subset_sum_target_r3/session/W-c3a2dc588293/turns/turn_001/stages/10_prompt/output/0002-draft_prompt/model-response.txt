@@ -1,1 +1,0 @@
-{"kind": "PROMPT", "prompt_body": "READ the given set S.\nSET T to 40.\nFIND all subsets of S that sum exactly to T.\nEMIT each qualifying subset.\nVERIFY each emitted subset sums to T.\nREPORT the total number of qualifying subsets.", "approach_handoff": "CARRY_SOURCE_TO_PLAN", "task_entities": ["S", "T", "40"]}

@@ -1,1 +1,0 @@
-{"kind": "RESULT", "body": "support@example.com\nsales@company.org", "result_ir": {"files": [], "reconciliation": [], "open_defects": [], "witness": null}}

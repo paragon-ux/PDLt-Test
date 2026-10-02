@@ -1,2 +1,0 @@
-SEARCH for all exact covers of the universe U = {1,2,3,4,5,6,7,8,9} USING Algorithm X WITH dancing links
-GENERATE a self‑contained test THAT verifies each produced solution covers U exactly once

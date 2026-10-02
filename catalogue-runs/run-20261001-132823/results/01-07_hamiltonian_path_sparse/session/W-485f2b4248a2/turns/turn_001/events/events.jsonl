@@ -1,8 +1,0 @@
-{"at_utc":"2026-10-01T17:28:59.993474+00:00","kind":"WORKSPACE_CREATED","payload":{"workspace_id":"W-485f2b4248a2","turn_id":"turn_001"}}
-{"at_utc":"2026-10-01T17:28:59.994477+00:00","kind":"EXPLICIT_INVOCATION_OBSERVED","payload":{"substantive_request_present":true}}
-{"at_utc":"2026-10-01T17:29:00.294787+00:00","kind":"ACTIVATION_ROUTED","payload":{"verdict":"APPLY_PROTOCOL","passed_gating":true,"confidence":0.99}}
-{"at_utc":"2026-10-01T17:29:00.866045+00:00","kind":"EXECUTION_PROFILE_ROUTED","payload":{"predicted_steps":"WITHIN_10M_STEPS","distribution":{"BEYOND_100M_STEPS":0.05,"WITHIN_10M_STEPS":0.56,"WITHIN_100K_STEPS":0.29,"WITHIN_100M_STEPS":0.1},"tier":"STANDARD","passed_gating":true,"step_limit":10000000,"timeout_seconds":30.0,"memory_mb":256}}
-{"at_utc":"2026-10-01T17:29:00.869065+00:00","kind":"PROBLEM_CLASS_CLASSIFIED","payload":{"requires_verified_execution":true,"domain":"general"}}
-{"at_utc":"2026-10-01T17:29:00.882043+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
-{"at_utc":"2026-10-01T17:29:01.493867+00:00","kind":"MODEL_OUTPUT_RECORDED","payload":{"operation":"BOOTSTRAP_ANALYSIS","stage":"10_prompt","invocation_id":"0001-bootstrap_analysis"}}
-{"at_utc":"2026-10-01T17:29:01.507861+00:00","kind":"OPERATION_MATERIALIZED","payload":{"operation":"DRAFT_PROMPT","stage":"10_prompt","invocation_id":"0002-draft_prompt"}}

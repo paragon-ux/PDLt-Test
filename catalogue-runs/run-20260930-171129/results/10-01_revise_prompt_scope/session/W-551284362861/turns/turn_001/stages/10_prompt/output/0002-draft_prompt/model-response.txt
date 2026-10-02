@@ -1,5 +1,0 @@
-{
-  "kind": "PROMPT",
-  "prompt_body": "DEFINE a function that computes all prime numbers up to a given integer N using the Sieve of Eratosthenes.\nRETURN the list of prime numbers up to N.",
-  "approach_handoff": "NONE"
-}

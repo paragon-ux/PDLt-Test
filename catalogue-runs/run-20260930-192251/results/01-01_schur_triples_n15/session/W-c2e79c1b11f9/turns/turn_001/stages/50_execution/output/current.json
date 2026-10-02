@@ -1,6 +1,0 @@
-{
-  "kind": "VERIFICATION_FAILED",
-  "errors": [
-    "Substantive verification error: the Result IR declares requirements open and carries no witness, but the deliverable contains no program; the host observed no attempt to obtain the result"
-  ]
-}

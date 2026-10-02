@@ -1,7 +1,0 @@
-{
-  "kind": "ANALYSIS",
-  "task_summary": "Implement a comparison-based sorting algorithm that runs in O(n) worst-case time, is stable, and sorts in-place using O(1) extra space.",
-  "approach_notes": "",
-  "risk_notes": "",
-  "task_entities": []
-}

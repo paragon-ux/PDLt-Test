@@ -1,2 +1,0 @@
-PROVIDE a valid 4-coloring of the wheel graph W_11 (12 nodes: central hub node 0 connected to each peripheral node 1-11, with peripheral nodes forming a cycle 1-2-3-...-11-1), using colors from the set {1,2,3,4}, such that no two adjacent nodes share the same color.
-PROVE that a 3-coloring of the wheel graph W_11 is impossible, by demonstrating that the odd peripheral cycle together with the hub node 0 requires at least four colors.

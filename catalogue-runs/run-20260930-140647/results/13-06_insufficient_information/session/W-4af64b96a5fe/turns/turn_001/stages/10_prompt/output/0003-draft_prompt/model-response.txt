@@ -1,1 +1,0 @@
-{"kind":"PROMPT","prompt_body":"QUERY: SELECT * FROM ???\nOPTIMIZE: Maximize performance of the query\nRETURN: Optimized query statement and explanation of changes","approach_handoff":"NONE","task_entities":["SELECT * FROM ???"]}

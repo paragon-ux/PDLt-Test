@@ -1,9 +1,0 @@
-{
-  "kind": "ANALYSIS",
-  "task_summary": "User requests to edit the file located at \"C:\\Users\\USER\\Desktop\\Frameworks\\PDLt-Test\\README.md\" by adding a smiley face.",
-  "approach_notes": "",
-  "risk_notes": "",
-  "task_entities": [
-    "C:\\Users\\USER\\Desktop\\Frameworks\\PDLt-Test\\README.md"
-  ]
-}

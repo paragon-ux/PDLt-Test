@@ -1,1 +1,0 @@
-{"neutral_plan_body":"PARSE the provided HTML document into a DOM representation\nFOR EACH anchor element in the DOM\n    EXTRACT the href attribute value\n    IF the href attribute exists\n        ADD the extracted URL to the results list\nRETURN the results list"}

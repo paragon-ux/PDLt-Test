@@ -1,7 +1,0 @@
-{
-  "kind": "ANALYSIS",
-  "task_summary": "Implement a function that, given a sorted list of non-overlapping intervals and a new interval, inserts the new interval into the list and merges any overlapping intervals, returning the resulting sorted list. The implementation must run in O(n) time. Provide tests covering insertion at the beginning, end, and middle; a new interval that merges all existing intervals; a new interval that overlaps none; and the case of an empty initial list.",
-  "approach_notes": "",
-  "risk_notes": "",
-  "task_entities": []
-}

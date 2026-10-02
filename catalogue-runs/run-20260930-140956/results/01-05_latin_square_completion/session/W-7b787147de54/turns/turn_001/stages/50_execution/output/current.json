@@ -1,7 +1,0 @@
-{
-  "kind": "VERIFICATION_FAILED",
-  "errors": [
-    "reconciliation[2] (R2): cited section marker not found in artifact: 'output'",
-    "reconciliation[3] (R3): cited section marker not found in artifact: 'verification'"
-  ]
-}

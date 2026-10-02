@@ -1,1 +1,0 @@
-DETERMINE whether a solution exists for the constraint satisfaction problem with variables x, y, z each taking values in {1,2,3} and the constraints C1: x != y, C2: y != z, C3: z != x, C4: x + y + z = 4, C5: x >= y, C6: y >= z. IF solutions exist, LIST all solutions. IF no solutions exist, PROVIDE a minimal explanation identifying which constraints are in conflict.

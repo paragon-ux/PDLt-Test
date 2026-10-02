@@ -1,1 +1,0 @@
-{"kind":"PROMPT","prompt_body":"CONNECT to the FrostbiteDB instance using the frostbitedb SDK\nCREATE a new collection in the connected database\nINSERT three documents into the collection\nQUERY the collection to retrieve the inserted documents","approach_handoff":"NONE","task_entities":["frostbitedb"]}

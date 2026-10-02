@@ -1,1 +1,0 @@
-{"kind": "PROMPT", "prompt_body": "IMPLEMENT a web scraper that\n  GIVEN an HTML page,\n  EXTRACT all hyperlink URLs from the page,\n  RETURN the list of links.", "approach_handoff": "NONE", "task_entities": ["web scraper", "HTML page", "hyperlink URLs", "list of links"]}

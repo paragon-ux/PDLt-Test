@@ -1,1 +1,0 @@
-{"neutral_plan_body":"IDENTIFY at least five core entities for the CRM system\nFOR each identified entity, LIST its attributes\nIDENTIFY eight business rules or constraints that the CRM must satisfy\nIDENTIFY five edge cases the stakeholder probably hasn't considered\nFORMULATE three clarifying questions needed before implementation"}

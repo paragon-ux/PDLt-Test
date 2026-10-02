@@ -1,7 +1,0 @@
-{
-  "kind": "ANALYSIS",
-  "task_summary": "User requests a description of the system's capabilities and functionalities.",
-  "approach_notes": "",
-  "risk_notes": "",
-  "task_entities": []
-}

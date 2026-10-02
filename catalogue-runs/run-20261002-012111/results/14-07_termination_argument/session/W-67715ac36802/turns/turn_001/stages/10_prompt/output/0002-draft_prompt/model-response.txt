@@ -1,1 +1,0 @@
-{"kind": "PROMPT", "prompt_body": "PROVIDE a rigorous mathematical proof that the recursive Python function collatz_steps, defined as shown, terminates for every non‑negative integer input.", "approach_handoff": "NONE", "task_entities": null}

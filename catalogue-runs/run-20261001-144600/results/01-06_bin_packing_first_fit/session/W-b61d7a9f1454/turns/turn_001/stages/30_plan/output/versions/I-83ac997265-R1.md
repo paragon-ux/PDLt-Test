@@ -1,5 +1,0 @@
-RUN First Fit algorithm on the item sequence [5, 5, 5, 3, 3, 3, 7, 7] with bin capacity 10 and RECORD the resulting packing.
-COMPUTE an optimal packing that minimizes the number of bins for the same items and RECORD that packing.
-CALCULATE the gap between the number of bins used by the First Fit packing and the optimal packing and RECORD the gap.
-EXPLAIN why the given arrival order causes First Fit to use more bins than the optimal solution.
-PERFORM a self‑test that VERIFIES both packings use all items exactly once and RESPECT the capacity constraint.

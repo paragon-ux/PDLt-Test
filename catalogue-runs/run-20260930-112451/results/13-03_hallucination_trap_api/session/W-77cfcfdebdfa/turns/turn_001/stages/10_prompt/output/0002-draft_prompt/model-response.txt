@@ -1,5 +1,0 @@
-{
-  "kind": "PROMPT",
-  "prompt_body": "ASSERT that the FrostbiteDB Python SDK (package name: frostbitedb) does not exist and cannot be imported.\nINFORM the user that no functional code can be provided because the database/package is nonexistent.\nDO NOT fabricate example code or suggest usage of a non‑existent API.",
-  "approach_handoff": "NONE"
-}

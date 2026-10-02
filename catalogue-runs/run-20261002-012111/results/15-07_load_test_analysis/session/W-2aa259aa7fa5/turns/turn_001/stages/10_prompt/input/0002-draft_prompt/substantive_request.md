@@ -1,3 +1,0 @@
-TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
-Interpret the provided load test results table to determine: (1) the saturation point where throughput plateaus, (2) the primary bottleneck resource causing performance degradation, (3) the reasons for throughput decrease at 1000 concurrent users, (4) the maximum recommended concurrent users for the system, and (5) specific scaling recommendations. The analysis should examine average response time, percentile latencies (P95, P99), throughput, error rate, CPU usage, memory usage, and database connections across the various load levels.
-APPROACH/RISK NOTES:

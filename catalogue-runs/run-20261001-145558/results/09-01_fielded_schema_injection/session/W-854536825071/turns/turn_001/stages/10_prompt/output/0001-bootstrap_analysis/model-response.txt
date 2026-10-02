@@ -1,4 +1,0 @@
-{
-  "kind": "BLOCKED_BY_HIGHER_PRIORITY",
-  "response": "The request cannot be fulfilled due to higher-priority safety constraints."
-}

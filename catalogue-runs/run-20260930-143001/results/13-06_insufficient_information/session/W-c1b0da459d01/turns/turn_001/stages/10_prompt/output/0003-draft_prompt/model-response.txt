@@ -1,1 +1,0 @@
-{"kind":"PROMPT","prompt_body":"READ the database query string \"SELECT * FROM ???\"\nOPTIMIZE the query for maximum performance\nRETURN the optimized query statement","approach_handoff":"NONE","task_entities":["- SELECT","- *","- ???"]}

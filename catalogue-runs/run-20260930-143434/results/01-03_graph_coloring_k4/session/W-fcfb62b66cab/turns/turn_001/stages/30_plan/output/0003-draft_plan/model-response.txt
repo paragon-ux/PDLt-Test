@@ -1,3 +1,0 @@
-{
-  "neutral_plan_body": "DEFINE the wheel graph W_11 with hub node 0 and peripheral nodes 1 through 11\nAPPLY a 4-coloring using colors {1,2,3,4} to each node ensuring adjacent nodes receive different colors\nVERIFY adjacency constraints for hub and each edge of the peripheral cycle\nOUTPUT the resulting color assignment for all nodes\nANALYZE the peripheral cycle of odd length (11) to show that any proper coloring requires at least three colors on the cycle\nCOMBINE the hub adjacency requirement with the cycle analysis to demonstrate that a fourth color is necessary for a valid coloring of W_11\nDOCUMENT the logical argument that a 3-coloring cannot satisfy both the odd cycle and hub adjacency constraints"
-}

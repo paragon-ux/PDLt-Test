@@ -1,1 +1,0 @@
-Please provide the table name and its schema (column names, data types, indexes) as well as the intended query predicates, joins, ordering, and required result columns so that the query can be optimized for performance.

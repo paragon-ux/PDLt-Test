@@ -1,7 +1,0 @@
-PARSE the provided list of 45 distinct positive integers
-GENERATE all possible ordered pairs (a, b) from the list where a < b
-FOR each pair compute sum = a + b and CHECK if sum exists in the list and is distinct from a and b
-BUILD a candidate set of triples (a, b, sum) ensuring no integer appears in more than one triple
-SEARCH for a selection of 15 disjoint triples that covers all 45 integers (e.g., via backtracking or constraint‑solving)
-IF a complete partition of 15 disjoint triples is found THEN PREPARE the 15 triples for output
-ELSE DETERMINE that no such partition exists

@@ -1,1 +1,0 @@
-{"neutral_plan_body":"READ the list L of 45 distinct positive integers\nGENERATE all possible triples (a, b, c) from L where a + b = c\nSEARCH for a collection of 15 disjoint triples that together cover every element of L exactly once\nIF such a collection is found THEN OUTPUT one complete example of the 15 triples\nELSE REPORT that no valid partition exists"}

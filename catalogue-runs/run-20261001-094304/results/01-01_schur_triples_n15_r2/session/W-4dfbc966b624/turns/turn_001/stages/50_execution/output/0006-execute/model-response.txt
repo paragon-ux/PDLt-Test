@@ -1,5 +1,0 @@
-{
-  "kind": "REQUEST_INPUT",
-  "body": "Need to execute a search for valid triple partition. Provide computational resources to run Python code.",
-  "expected_type": "python"
-}

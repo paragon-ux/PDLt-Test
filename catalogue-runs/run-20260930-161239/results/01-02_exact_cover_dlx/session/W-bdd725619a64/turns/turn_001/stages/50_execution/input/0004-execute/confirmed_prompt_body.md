@@ -1,1 +1,0 @@
-IMPLEMENT Algorithm X with dancing links to SEARCH for ALL exact covers of the universe U = {1,2,3,4,5,6,7,8,9} USING the collection of sets S1={1,2,3}, S2={4,5,6}, S3={7,8,9}, S4={1,4,7}, S5={2,5,8}, S6={3,6,9}, S7={1,5,9}, S8={2,6,7}, S9={3,4,8}. INCLUDE a SELF-CONTAINED implementation and a TEST that VERIFIES each FOUND solution COVERS every element of U EXACTLY ONCE.

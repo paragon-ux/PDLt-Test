@@ -1,4 +1,0 @@
-TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
-Refactor the provided monolithic Python class that manages users, sessions, and email queuing into at least three separate cohesive classes, each with a single responsibility (e.g., UserRepository, SessionManager, EmailDispatcher). Preserve all existing behavior, including user creation, login/logout, session cleanup, email queuing and sending, user activation/deactivation, and listing active users. Also provide unit tests that demonstrate the refactored implementation retains the original functionality.
-APPROACH/RISK NOTES:
-Separate concerns by extracting data persistence, session handling, and email queuing into distinct classes. Use composition within a higher-level orchestrator if needed. Ensure method signatures remain compatible with existing usage patterns. Write tests covering user creation, login, logout, session expiration, email dispatch, deactivation, and active-user listing.

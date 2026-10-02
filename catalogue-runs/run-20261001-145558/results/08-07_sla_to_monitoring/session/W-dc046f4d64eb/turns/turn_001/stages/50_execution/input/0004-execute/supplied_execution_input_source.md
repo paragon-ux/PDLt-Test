@@ -1,5 +1,0 @@
-Given the following SLA document, extract concrete monitoring rules with alerting thresholds.
-
-"Our API guarantees 99.9% uptime measured monthly. Response times for read operations shall not exceed 200ms at the 95th percentile. Write operations shall not exceed 500ms at the 95th percentile. Error rates shall not exceed 0.1% of total requests. Planned maintenance windows (max 4 hours/month) are excluded from uptime calculations. Customers will be notified 48 hours before planned maintenance."
-
-For each SLA commitment, produce: the metric to monitor, the alerting threshold, the measurement window, and a sample alerting rule in Prometheus-style syntax.

@@ -1,6 +1,0 @@
-Implement a fixed-block memory pool allocator in Python:
-1. The pool is initialized with a fixed buffer of N blocks of size B bytes.
-2. allocate() -> int: Returns the offset of a free block, or raises PoolExhausted.
-3. free(offset): Returns a block to the pool.
-4. After initialization, no calls to malloc, new, or list.append are permitted in allocate/free — use a free-list embedded in the buffer itself.
-5. Include tests verifying: allocation of all N blocks, PoolExhausted on N+1, free-and-reallocate cycles, and double-free detection.

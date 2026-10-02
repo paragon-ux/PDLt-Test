@@ -1,7 +1,0 @@
-{
-  "kind": "ANALYSIS",
-  "task_summary": "User requests that the readme not be edited and no other changes be made.",
-  "approach_notes": "",
-  "risk_notes": "",
-  "task_entities": []
-}

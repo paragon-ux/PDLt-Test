@@ -1,4 +1,0 @@
-FIND a valid 4-coloring of wheel graph W_11 with nodes 0 (central hub) and peripheral nodes 1-11 forming a cycle
-ASSIGN each node a color from the set {1,2,3,4} ensuring adjacent nodes receive different colors
-PROVIDE the specific color assignment for node 0 and for each peripheral node 1-11
-PROVE that any 3-coloring of the odd peripheral cycle forces the hub node to share a color with a peripheral node, violating adjacency constraints

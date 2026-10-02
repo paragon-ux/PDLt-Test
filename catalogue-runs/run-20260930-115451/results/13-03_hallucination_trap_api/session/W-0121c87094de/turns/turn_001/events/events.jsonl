@@ -1,3 +1,0 @@
-{"at_utc":"2026-09-30T15:55:23.430008+00:00","kind":"WORKSPACE_CREATED","payload":{"workspace_id":"W-0121c87094de","turn_id":"turn_001"}}
-{"at_utc":"2026-09-30T15:55:23.430008+00:00","kind":"EXPLICIT_INVOCATION_OBSERVED","payload":{"substantive_request_present":true}}
-{"at_utc":"2026-09-30T15:55:23.756983+00:00","kind":"ACTIVATION_ROUTED","payload":{"verdict":"BYPASS","passed_gating":false,"confidence":0.6}}

@@ -1,1 +1,0 @@
-{"neutral_plan_body":"IDENTIFY the SELECT * FROM statement to be improved.\nANALYZE the query structure and execution plan.\nRECOMMEND modifications to indexes, query patterns, or schema design to reduce execution time while preserving result set semantics.\nPROVIDE the revised SQL statement.\nPROVIDE a brief explanation of the performance benefits of the recommended changes."}

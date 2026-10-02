@@ -1,9 +1,0 @@
-{
-  "kind": "VERIFICATION_FAILED",
-  "errors": [
-    "[OUTPUT_MALFORMED] The response was not a valid output object: generation did not match the schema: Upstream error from Groq: Generated JSON does not match the expected schema. Please adjust your prompt. See 'failed_generation' for more details. Error: jsonschema: '/outcome' does not validate with /properties/outcome/anyOf/0/required: missing properties: 'expected_type', 'description' Rule: The output must be one JSON object matching the declared schema. Next attempt: Return exactly one JSON object matching the declared schema, with no text around it."
-  ],
-  "codes": [
-    "OUTPUT_MALFORMED"
-  ]
-}

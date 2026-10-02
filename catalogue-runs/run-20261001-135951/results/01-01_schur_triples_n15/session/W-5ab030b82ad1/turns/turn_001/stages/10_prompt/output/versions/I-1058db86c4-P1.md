@@ -1,2 +1,0 @@
-DETERMINE whether the given list L of 45 distinct positive integers can be partitioned into 15 disjoint triples (a_i, b_i, c_i) such that for each triple a_i + b_i = c_i.
-IF such a partition exists, PRODUCE one complete example of the 15 triples.

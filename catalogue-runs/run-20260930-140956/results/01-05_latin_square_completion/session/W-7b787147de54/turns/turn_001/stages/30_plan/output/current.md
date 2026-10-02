@@ -1,9 +1,0 @@
-BACKTRACK: INITIALIZE a constraint‑propagation solver for a 7x7 Latin square with given filled cells
-BACKTRACK: REPRESENT each empty cell with a domain of numbers 1‑7
-BACKTRACK: APPLY constraint propagation to prune domains based on row and column uniqueness
-BACKTRACK: IF any cell obtains an empty domain THEN backtrack
-BACKTRACK: SELECT an unassigned cell with the smallest remaining domain
-BACKTRACK: ASSIGN a value from its domain to the selected cell
-BACKTRACK: RECURSIVELY invoke the solver with the new assignment (backtracking on failure)
-BACKTRACK: WHEN all cells are assigned, VERIFY that every row and every column contains each number 1‑7 exactly once
-BACKTRACK: OUTPUT the completed 7x7 Latin square

@@ -1,1 +1,0 @@
-{"kind": "PROMPT", "prompt_body": "MODIFY the pseudocode rule PDL-02 to allow multiple operations per line instead of requiring one operation per line.\nMODIFY the pseudocode rule PDL-05 to permit the use of TASK: and OUTPUT: field prefixes.\nSORT a list of integers using merge sort.\n", "approach_handoff": "NONE", "task_entities": ["PDL-02", "PDL-05", "merge sort"]}

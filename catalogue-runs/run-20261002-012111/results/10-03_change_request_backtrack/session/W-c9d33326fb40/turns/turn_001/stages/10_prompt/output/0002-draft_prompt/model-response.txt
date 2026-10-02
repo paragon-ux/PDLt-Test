@@ -1,1 +1,0 @@
-{"kind": "PROMPT", "prompt_body": "BUILD a REST API client for the JSONPlaceholder API\nSUPPORT listing of posts\nSUPPORT creating of posts\nSUPPORT deleting of posts", "approach_handoff": "NONE", "task_entities": ["REST API client", "JSONPlaceholder API", "listing", "creating", "deleting", "posts"]}

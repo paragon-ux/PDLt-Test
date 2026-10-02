@@ -1,3 +1,0 @@
-TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
-Implement a calculator in Python using recursive descent parsing with correct operator precedence. Support operators +, -, *, /, unary minus, parentheses, integer and float literals. Enforce precedence: unary minus > * / > + -. Ensure binary operators are left-associative. Return a numeric result, not an AST. Raise clear error messages for malformed expressions such as unmatched parentheses or missing operands. Include tests verifying that "3 + 4 * 2" evaluates to 11, "-(3 + 4) * 2" evaluates to -14, "10 / 3" evaluates to a floating-point approximation of 3.333..., and provide at least three error case tests.
-APPROACH/RISK NOTES:

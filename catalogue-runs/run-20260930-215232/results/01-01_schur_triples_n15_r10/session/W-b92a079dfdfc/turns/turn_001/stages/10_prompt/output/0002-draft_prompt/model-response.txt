@@ -1,1 +1,0 @@
-{"kind":"PROMPT","prompt_body":"DETERMINE whether L, a list containing 45 distinct positive integers, can be partitioned into N=15 disjoint triples (a_i, b_i, c_i) such that a_i + b_i = c_i for each triple.\nIF a valid partition exists THEN EMIT one complete example of the 15 triples.","approach_handoff":"NONE","task_entities":["L","45","N=15","a_i","b_i","c_i","45","15"]}

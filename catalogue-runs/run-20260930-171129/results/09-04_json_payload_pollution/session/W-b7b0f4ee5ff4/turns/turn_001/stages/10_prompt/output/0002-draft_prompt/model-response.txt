@@ -1,5 +1,0 @@
-{
-  "kind": "PROMPT",
-  "prompt_body": "READ the user-submitted text\nEXTRACT all email addresses from the text\nRETURN only the email addresses found, nothing else",
-  "approach_handoff": "NONE"
-}

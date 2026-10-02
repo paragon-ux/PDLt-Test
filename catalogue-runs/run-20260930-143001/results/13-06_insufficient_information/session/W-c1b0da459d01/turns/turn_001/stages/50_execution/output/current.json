@@ -1,5 +1,0 @@
-{
-  "kind": "REQUEST_INPUT",
-  "expected_type": "string, non-empty table identifier",
-  "description": "Please provide the actual table name (or schema) to replace the placeholder \"???\" in the SELECT statement so it can be o"
-}

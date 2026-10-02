@@ -1,1 +1,0 @@
-{"neutral_plan_body":"PARSE the combined request text\nEXTRACT each functional requirement clause\nMAP each clause to the user story template \"As a user, I want ... so that ...\"\nGENERATE three independent user stories from the mapped clauses\nEMIT the three independent user stories"}

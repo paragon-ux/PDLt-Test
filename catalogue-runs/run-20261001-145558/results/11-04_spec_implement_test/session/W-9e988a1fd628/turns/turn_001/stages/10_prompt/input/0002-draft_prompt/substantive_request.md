@@ -1,3 +1,0 @@
-TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
-Implement a password strength checker that evaluates a password and returns its strength level ('weak', 'medium', or 'strong') along with a list of specific suggestions for improvement. The criteria are: weak if under 8 characters or contains only letters; medium if 8-12 characters with at least one letter and one digit; strong if over 12 characters with uppercase, lowercase, digits, and at least one special character from !@#$%^&*. The implementation must output the determined strength level and generate improvement suggestions based on which criteria are not met.
-APPROACH/RISK NOTES:

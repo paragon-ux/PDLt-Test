@@ -1,1 +1,0 @@
-The requested constraints are contradictory: a comparison‑based sorting algorithm cannot achieve O(n) worst‑case time complexity due to the Ω(n·log n) lower bound for comparison sorts. Consequently, no algorithm can simultaneously satisfy all four requirements (comparison‑based, O(n) worst‑case, stable, and in‑place O(1) extra space).

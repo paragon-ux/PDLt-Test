@@ -1,1 +1,0 @@
-IMPLEMENT a constraint-propagation solver with backtracking to complete the partially filled 7x7 Latin square, ENSURING each row and column contains the numbers 1 through 7 exactly once, THEN EMIT the completed square, AND VERIFY that every row and column is a permutation of {1,2,3,4,5,6,7}.

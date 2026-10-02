@@ -1,6 +1,0 @@
-{
-  "kind": "VERIFICATION_FAILED",
-  "errors": [
-    "python block 1 exceeded the 10,000,000-step budget in the sandbox (stderr: PDLT_STEP_BUDGET_EXCEEDED: more than 10000000 steps)"
-  ]
-}

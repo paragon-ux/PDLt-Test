@@ -1,1 +1,0 @@
-Please provide access to an exact integer linear programming solver or allow execution of an external optimization library (e.g., PuLP with CBC, OR-Tools, or a MILP solver) to compute the provably optimal minimum vertex cover for the specified 50-node regular graph.

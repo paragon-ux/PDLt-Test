@@ -1,3 +1,0 @@
-TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
-Determine whether there exists any assignment of integer values to variables x, y, z each drawn from the set {1, 2, 3} that satisfies all of the following constraints: C1: x != y, C2: y != z, C3: z != x, C4: x + y + z = 4, C5: x >= y, and C6: y >= z. If solutions exist, enumerate all such solutions; if none exist, provide a minimal explanation of which constraints are in conflict.
-APPROACH/RISK NOTES:

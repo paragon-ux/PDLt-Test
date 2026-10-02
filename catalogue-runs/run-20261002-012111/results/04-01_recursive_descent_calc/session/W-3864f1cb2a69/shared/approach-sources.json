@@ -1,5 +1,0 @@
-{
-  "sources": [
-    "Implement a calculator in Python using recursive descent parsing with correct operator precedence:\n1. Support: +, -, *, /, unary minus, parentheses, integer and float literals.\n2. Precedence: unary minus > * / > + - (standard math rules).\n3. Left-associative binary operators.\n4. Return a numeric result (not an AST).\n5. Raise a clear error message for malformed expressions (unmatched parens, missing operand, etc.).\n6. Include tests: \"3 + 4 * 2\" = 11, \"-(3 + 4) * 2\" = -14, \"10 / 3\" = 3.333..., and at least 3 error cases."
-  ]
-}

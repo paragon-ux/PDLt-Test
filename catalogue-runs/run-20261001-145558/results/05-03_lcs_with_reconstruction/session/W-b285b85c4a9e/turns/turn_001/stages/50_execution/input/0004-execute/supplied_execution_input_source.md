@@ -1,6 +1,0 @@
-Implement the longest common subsequence (LCS) algorithm in Python using dynamic programming:
-1. Input: two strings s1 and s2.
-2. Output: the length of the LCS AND the actual subsequence (not just the length).
-3. Reconstruct the subsequence by backtracking through the DP table.
-4. Test with: s1 = "AGGTAB", s2 = "GXTXAYB" -> LCS = "GTAB" (length 4).
-   Additional tests: identical strings, one empty string, no common characters.

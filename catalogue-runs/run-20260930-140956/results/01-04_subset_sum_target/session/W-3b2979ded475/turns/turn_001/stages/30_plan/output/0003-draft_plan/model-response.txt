@@ -1,1 +1,0 @@
-{"neutral_plan_body":"BACKTRACK through the set S to generate all possible subsets\nFOR each generated subset DO\n    VERIFY that the sum of its elements equals 40\n    IF the sum equals 40 THEN\n        EMIT the subset\n    ENDIF\nENDFOR\nCOUNT the number of emitted subsets\nREPORT the total count of solutions found"}

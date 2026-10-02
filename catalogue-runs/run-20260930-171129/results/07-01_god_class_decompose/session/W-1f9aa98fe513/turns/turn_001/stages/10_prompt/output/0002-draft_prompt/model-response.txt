@@ -1,9 +1,0 @@
-{
-  "kind": "PROMPT",
-  "prompt_body": "DECOMPOSE the provided 300-line Python UserManager class into at least three cohesive classes, each with a single responsibility, while preserving all existing behavior.\n\nPRESERVE functionality for user storage, session management, email queuing, user creation, authentication, deactivation, listing active users, and session cleanup.\n\nINCLUDE tests that verify all original behaviors continue to work after the refactor.\n\nOPERATIVE TASK ENTITIES:\n- UserManager\n- users",
-  "approach_handoff": "NONE",
-  "task_entities": [
-    "UserManager",
-    "users"
-  ]
-}

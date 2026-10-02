@@ -1,2 +1,0 @@
-Sys1 backend request failed after 15077.2ms: <urlopen error _ssl.c:989: The handshake operation timed out>
-[headless close] Session closed with a published refusal (closure=REFUSED, code 0).

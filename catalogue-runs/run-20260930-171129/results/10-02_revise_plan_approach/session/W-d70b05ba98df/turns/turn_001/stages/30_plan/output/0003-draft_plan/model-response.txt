@@ -1,1 +1,0 @@
-{"neutral_plan_body":"READ the HTML content from the specified page\nEXTRACT all hyperlink (<a>) elements and their href attributes\nCOLLECT the href values into a list of URLs\nRETURN the list of URLs"}

@@ -1,1 +1,0 @@
-{"kind": "RESULT", "body": "As per the instruction not to perform the calculation, the exact probability expression is not computed here.", "result_ir": {"files": [], "reconciliation": [], "open_defects": [], "witness": null}}

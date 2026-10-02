@@ -1,1 +1,0 @@
-{"kind":"PROMPT","prompt_body":"READ the list L of 45 distinct positive integers\nDETERMINE whether L can be partitioned into 15 disjoint triples (a_i, b_i, c_i) such that for each triple a_i + b_i = c_i\nIF such a partition exists THEN\n   PROVIDE one complete example of the 15 triples\nELSE\n   INDICATE that no such partition exists","approach_handoff":"NONE"}

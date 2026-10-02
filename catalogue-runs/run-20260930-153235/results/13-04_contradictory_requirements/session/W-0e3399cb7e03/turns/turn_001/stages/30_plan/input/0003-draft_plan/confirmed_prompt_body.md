@@ -1,2 +1,0 @@
-READ the user request for a comparison‑based sorting algorithm that must run in O(n) worst‑case time, be stable, and sort in‑place using O(1) extra space
-RETURN a specification of an algorithm that satisfies these constraints, describing its high‑level approach, required data structures, and stability and space‑usage properties without providing concrete code or implementation details

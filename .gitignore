@@ -1,9 +1,11 @@
 .pytest_cache/
 __pycache__/
 *.egg-info/
+catalogue-runs/
 .venv/
 venv/
 mlruns/
+runs/
 mlflow.db
 *.log
 .env

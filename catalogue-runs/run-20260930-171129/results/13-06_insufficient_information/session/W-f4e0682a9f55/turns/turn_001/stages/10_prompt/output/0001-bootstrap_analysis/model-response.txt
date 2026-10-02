@@ -1,9 +1,0 @@
-{
-  "kind": "ANALYSIS",
-  "task_summary": "Optimize the following database query for maximum performance:\n\nSELECT * FROM ???",
-  "approach_notes": "",
-  "risk_notes": "",
-  "task_entities": [
-    "SELECT * FROM ???"
-  ]
-}

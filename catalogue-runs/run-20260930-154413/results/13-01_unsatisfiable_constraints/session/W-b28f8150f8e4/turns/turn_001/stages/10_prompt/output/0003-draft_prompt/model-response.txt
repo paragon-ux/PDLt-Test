@@ -1,1 +1,0 @@
-{"kind":"PROMPT","prompt_body":"C1: ASSIGN integer values 1, 2, or 3 to variables x, y, and z\nC2: ENSURE x != y\nC3: ENSURE y != z\nC4: ENSURE z != x\nC5: ENSURE x + y + z = 4\nC6: ENSURE x >= y\nC7: ENSURE y >= z\nC8: IF solutions exist, LIST all solutions\nC9: ELSE PROVIDE a minimal explanation of the conflicting constraints","approach_handoff":"NONE"}

@@ -1,1 +1,0 @@
-{"kind": "RESULT", "body": "SELECT column1, column2, column3\nFROM your_table_name\nWHERE some_condition = true\nORDER BY indexed_column;", "result_ir": {"files": [], "reconciliation": [], "open_defects": [], "witness": null}}

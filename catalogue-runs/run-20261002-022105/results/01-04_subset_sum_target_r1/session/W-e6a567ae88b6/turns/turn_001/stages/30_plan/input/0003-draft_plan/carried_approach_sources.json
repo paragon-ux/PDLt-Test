@@ -1,3 +1,0 @@
-[
-  "APPROACH CONSTRAINT (TASK-02 operative requirement; incorporate per PLAN-08):\nFind all subsets of the set S = {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21} that sum exactly to target T = 40. Emit each subset that meets this sum, verify its sum, and report the total number of such subsets.\nUse a backtracking algorithm that explores the full search tree to enumerate all possible subsets.\nOPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):\n- S\n- T\n- 40\n- {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21}"
-]

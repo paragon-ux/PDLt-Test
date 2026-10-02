@@ -1,7 +1,0 @@
-{
-  "kind": "ANALYSIS",
-  "task_summary": "Complete a 7x7 Latin square puzzle by filling all zeros so each row and each column contains the numbers 1 through 7 exactly once. Implement a constraint‑propagation solver with backtracking, output the finished square, and verify that every row and column is a permutation of {1,…,7}.",
-  "approach_notes": "",
-  "risk_notes": "",
-  "task_entities": []
-}

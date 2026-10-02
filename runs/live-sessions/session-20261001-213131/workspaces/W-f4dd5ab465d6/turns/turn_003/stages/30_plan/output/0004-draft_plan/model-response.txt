@@ -1,1 +1,0 @@
-{"neutral_plan_body":"READ the user's request for an opinion on the REPL and suggestions for improvement\nGENERATE an unbiased evaluation describing strengths and weaknesses of the REPL\nPROVIDE specific, actionable suggestions to enhance the REPL's functionality, usability, and performance\nRETURN the evaluation and suggestions as a concise, structured text response"}

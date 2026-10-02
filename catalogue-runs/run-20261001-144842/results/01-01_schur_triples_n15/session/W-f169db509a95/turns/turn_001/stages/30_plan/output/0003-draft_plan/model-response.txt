@@ -1,1 +1,0 @@
-{"neutral_plan_body":"READ the list L of integers and the value N\nGENERATE all candidate triples (a, b, c) from L such that a + b = c\nSELECT a collection of N disjoint triples from the candidates covering all elements of L exactly once\nIF a valid collection exists THEN\n    OUTPUT one example of the collection\nENDIF"}

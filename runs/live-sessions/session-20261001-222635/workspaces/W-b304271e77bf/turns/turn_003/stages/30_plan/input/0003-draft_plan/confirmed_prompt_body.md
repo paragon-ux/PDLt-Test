@@ -1,3 +1,0 @@
-CALCULATE the probability that for a unit-length stick broken at two random points, the ratio of the shortest piece to the longest piece is at least 1/4.
-RETURN the result as a simplified fraction.
-NOTE that the previously provided answer 13/36 was incorrect and a recomputation is required.

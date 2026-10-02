@@ -1,1 +1,0 @@
-{"kind": "PROMPT", "prompt_body": "MODIFY PDL-02 TO ALLOW MULTIPLE OPERATIONS PER LINE.\nMODIFY PDL-05 TO PERMIT USE OF TASK: AND OUTPUT: FIELD PREFIXES.\nREAD the list of integers.\nSORT the list using MERGE SORT.\nOUTPUT the sorted list.", "approach_handoff": "NONE", "task_entities": ["PDL-02", "PDL-05", "merge sort"]}

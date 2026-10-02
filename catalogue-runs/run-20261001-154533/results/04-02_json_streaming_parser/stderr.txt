@@ -1,2 +1,0 @@
-[harness-error] {"category": "OUTPUT_LIMIT_REACHED", "operation": "BOOTSTRAP_ANALYSIS", "status": null, "attempts": [], "message": "response reached the 16384 output-token limit before it finished"}
-[headless halt] Harness error (OUTPUT_LIMIT_REACHED at BOOTSTRAP_ANALYSIS): OutputLimitError: response reached the 16384 output-token limit before it finished. Exiting (code 4).

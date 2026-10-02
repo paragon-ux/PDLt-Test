@@ -1,6 +1,0 @@
-{
-  "kind": "VERIFICATION_FAILED",
-  "errors": [
-    "[WITNESS_NOT_PRINTED] No witness was established: Invalid positive witness structure: data: Input should be a valid dictionary. Host observation: the deliverable contains no program that ran successfully. Rule: A result that must be certified is certified by a line of the form `WITNESS: <json>` printed by a program the host runs. Next attempt: Have the program print its result as a `WITNESS: <json>` line, or, if the result cannot be obtained, emit no witness and mark the requirement open with the defect recorded."
-  ]
-}

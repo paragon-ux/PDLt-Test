@@ -1,5 +1,0 @@
-{
-  "kind": "PROMPT",
-  "prompt_body": "OPTIMIZE the database query for maximum performance.\nIDENTIFY the target table(s) and columns referenced in the query.\nANALYZE current execution plan and indexes.\nRECOMMEND rewrites such as selecting only needed columns, adding appropriate indexes, and restructuring joins.\nENSURE the optimized query returns the same result set as the original.\nOUTPUT the revised SQL statement and a brief explanation of the performance improvements.",
-  "approach_handoff": "NONE"
-}

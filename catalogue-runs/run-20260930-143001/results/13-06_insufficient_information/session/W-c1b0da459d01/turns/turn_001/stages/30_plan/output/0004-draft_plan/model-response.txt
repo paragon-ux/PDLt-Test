@@ -1,1 +1,0 @@
-{"neutral_plan_body":"READ the supplied database query string\nANALYZE the query for performance characteristics and potential bottlenecks\nREWRITE the query to improve execution efficiency while preserving semantics\nVALIDATE the optimized query syntax\nRETURN the optimized query statement"}

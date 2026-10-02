@@ -1,1 +1,0 @@
-{"kind":"ANALYSIS","task_summary":"Implement a web scraper that, given an HTML page, extracts all hyperlink URLs from the page and returns the list of links.","approach_notes":"","risk_notes":"","task_entities":[]}

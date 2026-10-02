@@ -1,4 +1,0 @@
-READ the wheel graph W_11 with nodes 0-11 where node 0 connects to nodes 1-11 and nodes 1-11 form a cycle.
-DETERMINE a valid 4-coloring assignment for all nodes such that adjacent nodes receive different colors.
-OUTPUT the 4-coloring assignment for each node.
-EXPLAIN why a 3-coloring is impossible because the odd cycle (nodes 1-11) together with the hub node 0 forces the need for a fourth color.

@@ -1,7 +1,0 @@
-{
-  "kind": "ANALYSIS",
-  "task_summary": "Calculate the ratio p/n given that a class of p students has an average score of 70, another class of n students has an average score of 92, and the combined average of both classes is 86.",
-  "approach_notes": "",
-  "risk_notes": "",
-  "task_entities": ["p", "n", "70", "92", "86", "p/n"]
-}

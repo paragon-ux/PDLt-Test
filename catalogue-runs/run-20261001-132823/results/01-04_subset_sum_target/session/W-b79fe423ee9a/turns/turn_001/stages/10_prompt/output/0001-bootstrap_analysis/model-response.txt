@@ -1,4 +1,0 @@
-{
-  "kind": "BLOCKED_BY_HIGHER_PRIORITY",
-  "response": "No actionable task detected; the input appears to be a control command without operative semantics."
-}

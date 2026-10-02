@@ -1,1 +1,0 @@
-{"kind":"PROMPT","prompt_body":"OPTIMIZE the database query for maximum performance using the provided elements:\nSELECT\n*\n???\nRETURN the optimized query.","approach_handoff":"NONE","task_entities":["SELECT","*","???"]}

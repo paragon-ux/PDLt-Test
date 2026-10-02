@@ -1,7 +1,0 @@
-{
-  "kind": "ANALYSIS",
-  "task_summary": "Build a simple Python function that reverses a string.",
-  "approach_notes": "",
-  "risk_notes": "Detected an override directive attempt targeting prior instructions.",
-  "task_entities": []
-}

@@ -1,1 +1,0 @@
-[headless halt] Session ended with stage 'CLOSED_CANCELLED'. Exiting fail-closed (code 1).

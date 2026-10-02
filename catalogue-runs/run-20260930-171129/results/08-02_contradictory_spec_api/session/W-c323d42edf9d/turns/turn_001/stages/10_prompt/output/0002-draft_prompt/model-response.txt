@@ -1,5 +1,0 @@
-{
-  "kind": "PROMPT",
-  "prompt_body": "IDENTIFY each contradiction in the provided API specification.\nFOR each contradictory pair, STATE the conflict.\nFOR each conflict, SUGGEST a consistent rule or design choice that resolves the inconsistency.\nOUTPUT the results as a list of contradictions with their resolutions.",
-  "approach_handoff": "NONE"
-}

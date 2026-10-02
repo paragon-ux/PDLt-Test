@@ -1,1 +1,0 @@
-{"neutral_plan_body":"READ the supplied database query request\nANALYZE the query for performance bottlenecks\nIDENTIFY indexes, joins, filters, and table structures that affect execution\nRECOMMEND modifications to maximize performance without altering the requested result set\nOUTPUT the optimized SQL statement and a brief rationale for each change"}

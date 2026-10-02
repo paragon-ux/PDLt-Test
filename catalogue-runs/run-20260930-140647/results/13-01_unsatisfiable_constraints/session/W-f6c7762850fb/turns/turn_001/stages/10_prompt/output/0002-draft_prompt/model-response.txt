@@ -1,1 +1,0 @@
-{"kind":"PROMPT","prompt_body":"READ integer variables x, y, z each from the set {1, 2, 3}\nAPPLY constraints: x != y, y != z, z != x, x + y + z = 4, x >= y, y >= z\nDETERMINE whether any assignment satisfies all constraints\nIF solutions exist THEN ENUMERATE all such assignments\nELSE PROVIDE a minimal explanation of which constraints are in conflict","approach_handoff":"NONE"}

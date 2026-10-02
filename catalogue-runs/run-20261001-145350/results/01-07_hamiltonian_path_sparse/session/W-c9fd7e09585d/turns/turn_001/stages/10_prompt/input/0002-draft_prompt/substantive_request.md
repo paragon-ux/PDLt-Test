@@ -1,3 +1,0 @@
-TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
-Determine whether the given undirected graph with 12 nodes (0-11) and the specified edge list contains a Hamiltonian path. If a Hamiltonian path exists, output the complete path. Use a backtracking search with pruning and include verification that the path visits all 12 nodes and each consecutive pair in the path is a valid edge.
-APPROACH/RISK NOTES:

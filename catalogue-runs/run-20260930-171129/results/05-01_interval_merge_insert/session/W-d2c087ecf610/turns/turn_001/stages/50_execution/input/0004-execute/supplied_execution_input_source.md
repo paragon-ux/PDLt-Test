@@ -1,6 +1,0 @@
-Given a sorted list of non-overlapping intervals and a new interval, insert the new interval and merge all overlapping intervals. Return the resulting sorted list.
-
-Input: intervals = [[1,3], [6,9], [12,15], [18,20]], new_interval = [5,13]
-Expected output: [[1,3], [5,15], [18,20]]
-
-Implement in O(n) time. Include tests covering: insertion at the beginning, end, middle; new interval that merges all existing intervals; new interval that overlaps none; empty initial list.

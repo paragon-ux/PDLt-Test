@@ -1,4 +1,0 @@
-GENERATE a valid 4-color assignment for nodes 0 through 11 of wheel graph W_11 respecting adjacency constraints
-VALIDATE that the central hub node 0 uses a distinct color from each peripheral node and that adjacent peripheral nodes receive different colors
-PREPARE a demonstration that any attempted 3-coloring fails because the odd peripheral cycle requires three alternating colors which conflict with the hub’s adjacency, forcing a fourth color
-LIST the operative task entities exactly as provided: 0, 1, 2, 3, 4, 11, 1, 2, 3, 4

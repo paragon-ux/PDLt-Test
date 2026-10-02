@@ -1,6 +1,0 @@
-[
-  {
-    "name": "python",
-    "description": "Python 3.11 with the standard library only; third-party packages are not installed. The host runs the deliverable as a script when the whole deliverable is Python source; otherwise it runs every ```python fenced block as a separate script. Each script runs in an empty temporary directory, with a 15-second time limit and a 256 MB memory limit. Standard input is empty. Standard output, standard error and the exit status are captured by the host."
-  }
-]

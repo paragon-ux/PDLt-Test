@@ -1,1 +1,0 @@
-{"kind":"PROMPT","prompt_body":"STATE that the FrostbiteDB database and the frostbitedb Python SDK do not exist and cannot be used, and no code should be fabricated.","approach_handoff":"NONE","task_entities":["FrostbiteDB","frostbitedb","Python"]}

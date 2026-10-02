@@ -1,8 +1,0 @@
-{
-  "kind": "RESULT",
-  "source_prompt_id": "I-6b84751191-P1",
-  "source_plan_id": "I-6b84751191-R1",
-  "result_body_hash": "1019d1ce2607e2addd7cf3100037561635e2e2beb3863446ed7af7db12de67e2",
-  "confirmed_prompt_hash": "a1594362bb26987a296e70803326bf4b298f65172569d9e9efed41bb119587b6",
-  "confirmed_plan_hash": "6bdd2ec2e7fcfeb5fb51915c4a940f1f8eb38c753261470ef1f3a64caf47670f"
-}

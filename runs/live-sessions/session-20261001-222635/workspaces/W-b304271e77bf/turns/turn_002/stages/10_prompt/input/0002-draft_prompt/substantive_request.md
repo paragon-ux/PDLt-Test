@@ -1,3 +1,0 @@
-TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
-Calculate the probability that, when a unit-length stick is broken at two points chosen uniformly and independently at random, the ratio of the shortest piece (L_min) to the longest piece (L_max) is at least 1/4, and return the result as a simplified fraction.
-APPROACH/RISK NOTES:

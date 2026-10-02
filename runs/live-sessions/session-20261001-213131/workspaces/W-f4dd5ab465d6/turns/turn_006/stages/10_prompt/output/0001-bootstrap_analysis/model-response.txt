@@ -1,4 +1,0 @@
-{
-  "kind": "BLOCKED_BY_HIGHER_PRIORITY",
-  "response": "I’m sorry for any confusion. It seems you’re expressing dissatisfaction rather than requesting a specific task. How can I assist you further?"
-}

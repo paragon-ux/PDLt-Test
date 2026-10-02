@@ -1,1 +1,0 @@
-{"kind": "PROMPT", "prompt_body": "READ the file at \"C:\\Users\\USER\\Desktop\\Frameworks\\PDLt-Test\\README.md\"\nINSERT a smiley face \":)\" into the file\nSAVE the modified file", "approach_handoff": "NONE", "task_entities": ["C:\\Users\\USER\\Desktop\\Frameworks\\PDLt-Test\\README.md"]}

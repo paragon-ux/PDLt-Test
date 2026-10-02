@@ -1,7 +1,0 @@
-{"at_utc":"2026-10-01T19:07:21.149301+00:00","kind":"WORKSPACE_CREATED","payload":{"workspace_id":"W-d8b4240848a0","turn_id":"turn_001"}}
-{"at_utc":"2026-10-01T19:07:21.150274+00:00","kind":"EXPLICIT_INVOCATION_OBSERVED","payload":{"substantive_request_present":true}}
-{"at_utc":"2026-10-01T19:07:21.491139+00:00","kind":"ACTIVATION_ROUTED","payload":{"verdict":"APPLY_PROTOCOL","passed_gating":false,"confidence":0.84}}
-{"at_utc":"2026-10-01T19:07:22.170770+00:00","kind":"EXECUTION_PROFILE_ROUTED","payload":{"predicted_steps":"BEYOND_100M_STEPS","distribution":{"WITHIN_100K_STEPS":0.01,"BEYOND_100M_STEPS":0.71,"WITHIN_100M_STEPS":0.15,"WITHIN_10M_STEPS":0.13},"tier":"HEAVY_COMPUTE","passed_gating":true,"step_limit":100000000,"timeout_seconds":120.0,"memory_mb":512}}
-{"at_utc":"2026-10-01T19:07:22.172782+00:00","kind":"PROBLEM_CLASS_CLASSIFIED","payload":{"requires_verified_execution":true,"domain":"general"}}
-{"at_utc":"2026-10-01T19:07:22.173767+00:00","kind":"BUDGET_REFUSAL","payload":{"p_beyond_largest_budget":0.71,"largest_step_budget":100000000}}
-{"at_utc":"2026-10-01T19:07:22.174767+00:00","kind":"PROTOCOL_REFUSED","payload":{"phase":"budget"}}

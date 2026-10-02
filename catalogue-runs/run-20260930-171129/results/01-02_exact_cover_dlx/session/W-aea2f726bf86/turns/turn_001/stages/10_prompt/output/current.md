@@ -1,2 +1,0 @@
-IMPLEMENT Knuth's Algorithm X with dancing links to search for all exact covers of the universe U = {1,2,3,4,5,6,7,8,9} using the provided collection of sets S1 through S9.
-PRODUCE a self‑contained test that verifies each generated solution covers U exactly once.

@@ -1,5 +1,0 @@
-{
-  "kind": "PROMPT",
-  "prompt_body": "WRITE a function that converts temperatures between Celsius, Fahrenheit, and Kelvin.\nOUTPUT the function definition with appropriate parameters for input temperature and source/target units.\nENSURE the function correctly applies conversion formulas for all unit combinations.",
-  "approach_handoff": "NONE"
-}

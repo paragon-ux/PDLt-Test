@@ -1,1 +1,0 @@
-Implement a function that finds all prime numbers up to N using the Sieve of Eratosthenes.

@@ -1,1 +1,0 @@
-{"kind":"PROMPT","prompt_body":"EXTRACT a concrete specification from the stakeholder request to build a CRM\nIDENTIFY at least five core entities with their attributes\nIDENTIFY eight business rules or constraints\nIDENTIFY five edge cases the stakeholder probably hasn't considered\nIDENTIFY three clarifying questions needed before implementation","approach_handoff":"NONE"}

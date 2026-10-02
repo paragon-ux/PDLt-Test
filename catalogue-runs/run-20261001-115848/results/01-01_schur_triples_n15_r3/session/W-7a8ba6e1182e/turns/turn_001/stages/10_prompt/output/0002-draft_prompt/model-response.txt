@@ -1,4 +1,0 @@
-{
-  "kind": "PROMPT",
-  "prompt_body": "READ  \n\n---\n\n  \nt  \"\"\"  \n  "
-}

@@ -1,1 +1,0 @@
-{"neutral_plan_body":"READ the graph definition of nodes 0 through 49 and edges (i+1) mod 50, (i+7) mod 50, and (i+13) mod 50\nCONSTRUCT an internal representation of the graph (nodes and edges)\nAPPLY an exact minimum vertex cover algorithm to the graph representation\nCOLLECT the resulting vertex cover set\nOUTPUT the vertex cover set and its size"}

@@ -1,1 +1,0 @@
-It is impossible to satisfy all the given constraints simultaneously. No comparison‑based sorting algorithm can achieve O(n) worst‑case time complexity, be stable, and run in‑place with O(1) extra space. The lower bound for comparison‑based sorts is Ω(n log n) time in the worst case, which violates the O(n) requirement. Therefore the task cannot be fulfilled as stated.

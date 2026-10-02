@@ -1,1 +1,0 @@
-{"neutral_plan_body":"DIAGNOSE why Python garbage collector generation 2 collections are becoming slower\nINTERPRET the increasing object count in generation 2\nLIST three common code patterns that cause this behavior\nPROVIDE tuning recommendations for specific operations using gc.set_threshold, gc.freeze, and gc.disable"}

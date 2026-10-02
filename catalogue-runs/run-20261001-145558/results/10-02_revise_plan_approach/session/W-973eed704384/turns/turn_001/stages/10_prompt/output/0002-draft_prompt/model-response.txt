@@ -1,1 +1,0 @@
-{"kind": "PROMPT", "prompt_body": "READ the HTML content of the given page\nEXTRACT all hyperlink URLs from the page\nRETURN the list of extracted links", "approach_handoff": "NONE", "task_entities": null}

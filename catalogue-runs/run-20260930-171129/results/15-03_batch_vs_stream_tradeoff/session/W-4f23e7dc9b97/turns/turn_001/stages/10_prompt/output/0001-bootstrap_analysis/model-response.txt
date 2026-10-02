@@ -1,7 +1,0 @@
-{
-  "kind": "ANALYSIS",
-  "task_summary": "Analyze the latency, cost, and complexity tradeoffs between the current nightly batch processing of clickstream events and a proposed stream processing approach, then provide a recommendation with justification for which approach to use. The analysis must consider latency (batch: 24h+45min vs stream: seconds), cost (batch: single large compute job vs stream: always-on infrastructure), and complexity (batch: simple retry vs stream: exactly-once, watermarks, late data) given 50 million events per day (~600 avg, 3000 peak events/second) with 500-byte average size, current batch job duration of 45 minutes, and downstream dashboards refreshing daily.",
-  "approach_notes": "",
-  "risk_notes": "",
-  "task_entities": []
-}

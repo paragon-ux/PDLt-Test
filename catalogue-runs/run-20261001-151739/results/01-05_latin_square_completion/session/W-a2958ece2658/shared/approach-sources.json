@@ -1,5 +1,0 @@
-{
-  "sources": [
-    "Complete the following partially filled 7x7 Latin square. Each row and column must contain the numbers 1-7 exactly once. Cells marked 0 are empty and must be filled.\n\nRow 1: [1, 0, 0, 0, 5, 6, 7]\nRow 2: [0, 0, 0, 0, 0, 0, 0]\nRow 3: [3, 0, 0, 0, 7, 0, 2]\nRow 4: [4, 0, 0, 7, 0, 0, 0]\nRow 5: [5, 6, 7, 1, 0, 3, 0]\nRow 6: [0, 7, 1, 2, 0, 4, 0]\nRow 7: [0, 0, 0, 0, 0, 0, 6]\n\nImplement a constraint-propagation solver with backtracking. Emit the completed square and verify that every row and column is a permutation of {1,...,7}."
-  ]
-}

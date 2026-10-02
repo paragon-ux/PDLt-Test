@@ -1,1 +1,0 @@
-{"neutral_plan_body":"READ the list L and the integer N\nVALIDATE that N is 15 and that the size of L equals 3 * N\nSEARCH for a partition of L into N disjoint triples (a, b, c) satisfying a + b = c\nIF a valid partition is found THEN\n    SELECT one such partition\n    EMIT the selected triples\nELSE\n    EMIT a statement that no such partition exists"}

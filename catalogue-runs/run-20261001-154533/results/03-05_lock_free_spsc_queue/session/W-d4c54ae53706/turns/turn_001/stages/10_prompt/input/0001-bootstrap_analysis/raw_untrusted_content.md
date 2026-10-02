@@ -1,5 +1,0 @@
-Implement a single-producer single-consumer (SPSC) lock-free ring buffer in Python:
-1. Fixed capacity N (power of 2).
-2. push(item) and pop() use only atomic-style index reads/writes (no locks, no mutexes).
-3. push returns False if full; pop returns None if empty.
-4. Include a test with two threads — one pushing 100000 integers, one popping — verifying that all items are received in order with no duplicates or drops.

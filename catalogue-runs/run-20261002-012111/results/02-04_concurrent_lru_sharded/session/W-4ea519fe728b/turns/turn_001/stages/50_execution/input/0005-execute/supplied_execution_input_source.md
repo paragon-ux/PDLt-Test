@@ -1,6 +1,0 @@
-Implement a thread-safe sharded LRU cache in Python with these requirements:
-1. The cache is divided into N shards (default 16), each with its own lock and capacity.
-2. Keys are routed to shards via hash(key) % N.
-3. Each shard independently maintains LRU eviction order.
-4. No global lock is held during get() or put() operations.
-5. Include a multi-threaded stress test with 8 threads performing concurrent reads and writes, verifying no data corruption and correct eviction behavior.

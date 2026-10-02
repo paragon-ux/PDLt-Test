@@ -1,1 +1,0 @@
-{"neutral_plan_body":"READ the set L\nGENERATE candidate triples (a, b, c) from L where a + b = c\nSELECT a collection of 15 disjoint triples that together cover every element of L\nIF a valid collection of 15 disjoint triples is found THEN\n   EMIT the example list of the 15 triples\nELSE\n   EMIT a statement that no such partition exists"}

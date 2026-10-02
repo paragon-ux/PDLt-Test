@@ -1,1 +1,0 @@
-{"kind": "PROMPT", "prompt_body": "READ the provided API specification\nIDENTIFY each contradiction concerning response codes, duplicate email handling, authentication requirements, and user ID formats\nENUMERATE the contradictions\nPROPOSE a consistent resolution for each identified conflict", "approach_handoff": "NONE", "task_entities": null}

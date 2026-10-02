@@ -1,9 +1,0 @@
-TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
-Find the exact minimum vertex cover of a regular graph with 50 nodes (0 through 49) where each node i is connected to nodes (i+1) mod 50, (i+7) mod 50, and (i+13) mod 50. The request demands the provably optimal solution, not an approximation.
-APPROACH/RISK NOTES:
-
-OPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the task_entities array AND reproduce each verbatim inside the prompt body):
-- 0 through 49
-- (i+1) mod 50
-- (i+7) mod 50
-- (i+13) mod 50

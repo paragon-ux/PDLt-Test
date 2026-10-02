@@ -1,4 +1,0 @@
-TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):
-Fill the empty cells of the given 7x7 Latin square so that each row and column contains each of the numbers 1 through 7 exactly once, then output the completed square and verify that each row and column is a permutation of {1,...,7}.
-APPROACH/RISK NOTES:
-Use a constraint‑propagation method with backtracking to explore possible assignments and fill the Latin square.
