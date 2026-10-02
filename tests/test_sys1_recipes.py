@@ -191,3 +191,22 @@ def test_activation_route_sys1_blocked_wire_conformance() -> None:
     assert payload.route.value == "BLOCKED_BY_HIGHER_PRIORITY"
     assert payload.response == "Requested operations exceed defined policy boundary."
 
+
+
+def test_problem_class_routes_checkable_exact_values_to_verified_execution() -> None:
+    """Live sessions: a fully specified question with one exact numeric answer was
+    classified standard ("word problems" was a STANDARD criterion), so the answer
+    was published with nothing checked."""
+    from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
+
+    question = ProblemClassRecipe().build_request({"request": "any task"}).questions["problem_class"]
+    verified = question.criteria["VERIFIED_EXECUTION"].lower()
+    standard = question.criteria["STANDARD_EXECUTION"].lower()
+    assert "fully specified, concrete inputs" in verified
+    for kind in ("single exact value", "count", "probability", "expected value"):
+        assert kind in verified, kind
+    # GUARD-03.2: symbolic-parameter answers, proofs and open analysis stay standard.
+    assert "symbolic parameters" in standard and "proof" in standard and "open-ended analysis" in standard
+    assert "word problem" not in standard
+    # A witness is requested, never code (GUARD-03).
+    assert "code" not in verified and "python" not in verified and "program" not in verified

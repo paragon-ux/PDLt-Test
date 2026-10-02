@@ -879,12 +879,17 @@ class SessionEngine:
         from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
         from pdl_taskmaster.verification.checkers.base import ProblemDomain
         requires_verified = False
+        # What System 1 decided, recorded whether or not it passed gating: a
+        # STANDARD verdict and a VERIFIED one below the floor both route standard.
+        classification: dict[str, Any] = {"verdict": None, "confidence": None, "passed_gating": False}
         if self.sys1_client and self.sys1_client.is_configured:
             try:
                 recipe = ProblemClassRecipe()
                 sys1_req = recipe.build_request({"request": substantive_request})
                 resp_body, dur_ms = self.sys1_client.call(sys1_req)
                 res = recipe.parse_response(resp_body, duration_ms=dur_ms)
+                classification = {"verdict": res.verdict, "confidence": round(res.confidence, 4),
+                                  "passed_gating": res.passed_gating}
                 if res.passed_gating:
                     requires_verified = (res.verdict == "VERIFIED_EXECUTION")
             except Exception:
@@ -901,6 +906,7 @@ class SessionEngine:
                 {
                     "requires_verified_execution": self._requires_verified_execution,
                     "domain": self._problem_domain.value if self._problem_domain else None,
+                    **classification,
                 },
             )
         budget_refusal = self._budget_refusal()
