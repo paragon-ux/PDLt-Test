@@ -104,6 +104,37 @@ def test_posix_burst_paste_confirmed():
         assert result == "step 1: do something\nstep 2: verify something"
 
 
+# Session log 2026-10-02: Enter on an empty prompt, then "/confirm" typed ahead
+# while a turn ran, was held as "[Pasted 1 lines. Press Enter to submit ...]".
+
+@pytest.mark.skipif(sys.platform == "win32", reason="select burst detection is POSIX-only")
+def test_posix_typed_command_after_an_empty_enter_is_not_a_paste(capsys):
+    with patch("sys.stdin.isatty", return_value=True), \
+         patch("select.select", side_effect=[([1], [], []), ([], [], [])]), \
+         patch("builtins.input", side_effect=["", "/confirm"]):
+        result = _read_repl_input()
+    assert result == "/confirm"
+    assert "Pasted" not in capsys.readouterr().out
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="select burst detection is POSIX-only")
+def test_posix_typed_paste_command_after_an_empty_enter_still_opens_paste_mode():
+    with patch("sys.stdin.isatty", return_value=True), \
+         patch("select.select", side_effect=[([1], [], []), ([], [], [])]), \
+         patch("builtins.input", side_effect=["", "/paste", "first", "second", ""]):
+        assert _read_repl_input() == "first\nsecond"
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="msvcrt is Windows-only")
+def test_console_typed_command_after_an_empty_enter_is_not_a_paste(capsys):
+    with patch("sys.stdin.isatty", return_value=True), \
+         patch("msvcrt.kbhit", side_effect=[True, False]), \
+         patch("builtins.input", side_effect=["", "/confirm"]):
+        result = _read_repl_input()
+    assert result == "/confirm"
+    assert "Pasted" not in capsys.readouterr().out
+
+
 def test_triple_quote_multiline_input():
     inputs = [
         '"""',

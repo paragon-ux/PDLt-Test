@@ -534,9 +534,14 @@ def _read_repl_input(prompt: str = "> ") -> str:
         except Exception:
             pass
 
-    if len(lines) > 1:
-        pasted = "\n".join(lines).replace("\r", "").strip()
-        line_count = len(pasted.splitlines())
+    content = "\n".join(lines).replace("\r", "").strip().splitlines()
+    if len(lines) > 1 and len(content) <= 1:
+        # Blank lines plus one typed line is typing, not a paste: Enter on an empty
+        # prompt, then "/confirm" typed ahead, was held as "[Pasted 1 lines ...]".
+        raw = content[0].strip() if content else ""
+    elif len(lines) > 1:
+        pasted = "\n".join(content)
+        line_count = len(content)
         print(f"\n[Pasted {line_count} lines. Press Enter to submit, or type /cancel to discard]")
         try:
             confirm = input("> ").strip()
