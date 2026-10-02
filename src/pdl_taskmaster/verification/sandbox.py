@@ -151,7 +151,8 @@ _NATIVE_CODE_EVENTS = ("sqlite3.enable_load_extension", "sqlite3.load_extension"
 
 # Paths: writes stay inside the run directory; reads inside the run directory or the
 # interpreter's standard library (its import path at startup). Each path is resolved
-# with realpath and compared by commonpath, never by string prefix. An integer path
+# with realpath (after abspath on Windows) and compared by commonpath, never by string
+# prefix; a path that still holds ".." after resolution is refused. An integer path
 # is a descriptor that an already-checked open returned (os.open's dir_fd is not in
 # its audit event; the native backend covers that case). A symbolic link may only
 # point inside the run directory, by an absolute path or a relative one without
@@ -160,8 +161,14 @@ _POLICY_PRELUDE = r"""
 import sys as _sys, os as _os
 def _sandbox_policy(denied, native_modules, native_events):
     path_mod = _os.path
-    def _resolve(path):
-        return path_mod.normcase(path_mod.realpath(path))
+    if _os.name == "nt":
+        # Win32 collapses ".." lexically before the kernel sees a path (GetFullPathName);
+        # ntpath.realpath can leave it in a path it cannot fully open.
+        def _resolve(path):
+            return path_mod.normcase(path_mod.realpath(path_mod.abspath(path)))
+    else:
+        def _resolve(path):
+            return path_mod.normcase(path_mod.realpath(path))
     run_dir = _resolve(_os.getcwd())
     devices = [_os.devnull] + (["/dev/urandom"] if _os.name == "posix" else [])
     writable = [run_dir] + [_resolve(p) for p in devices[:1]]
@@ -195,7 +202,9 @@ def _sandbox_policy(denied, native_modules, native_events):
             resolved = _resolve(path)
         except (OSError, TypeError, ValueError):
             resolved = None
-        if resolved is None or not within(resolved, writable if write else readable):
+        if resolved is None or ".." in resolved.replace("\\", "/").split("/") or not within(
+            resolved, writable if write else readable
+        ):
             raise PermissionError(
                 "File access outside the run directory is denied inside ExecutionSandbox (" + event + ": "
                 + str(path) + ")"
