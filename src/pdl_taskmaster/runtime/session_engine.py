@@ -917,8 +917,11 @@ class SessionEngine:
                 sys1_req = recipe.build_request({"request": substantive_request})
                 resp_body, dur_ms = self.sys1_client.call(sys1_req)
                 res = recipe.parse_response(resp_body, duration_ms=dur_ms)
+                # Margin, entropy and distribution say which gate criterion failed.
                 classification = {"verdict": res.verdict, "confidence": round(res.confidence, 4),
-                                  "passed_gating": res.passed_gating}
+                                  "passed_gating": res.passed_gating, "margin": round(res.margin, 4),
+                                  "entropy": round(res.entropy, 4),
+                                  "distribution": {k: round(v, 4) for k, v in res.probabilities.items()}}
                 if res.passed_gating:
                     requires_verified = (res.verdict == "VERIFIED_EXECUTION")
             except Exception:

@@ -1,9 +1,10 @@
 """ProblemClass Sys1 Decision Recipe (P0).
 
-Classifies whether an incoming request requires verified execution (a specific,
-checkable result for fully specified, concrete inputs) or standard execution.
-Verified execution asks for a witness; it never requires code (GUARD-03): a
-non-code deliverable's model witness is accepted and marked provisional.
+Classifies whether an incoming request requires verified execution (combinatorial
+existence, exact witness checking, mathematical verification, a single exact value
+for fully specified, concrete inputs) or standard execution. Verified execution asks
+for a witness; it never requires code (GUARD-03): a non-code deliverable's model
+witness is accepted and marked provisional.
 """
 
 from __future__ import annotations
@@ -28,19 +29,23 @@ class ProblemClassRecipe(Sys1Recipe):
     def build_request(self, state: dict[str, Any], **kwargs: Any) -> Sys1Request:
         task_text = state.get("request", "") or state.get("task_summary", "")
         instruction = as_decision_instruction(
-            "Classify whether this task requires verified execution: does it ask for a specific, checkable "
-            "result for fully specified, concrete inputs, or is it standard execution?"
+            "Classify whether this task requires verified execution: does it ask whether a structure "
+            "satisfying stated constraints exists, ask for an exact/optimal solution with a verifiable "
+            "witness, ask for a single exact value determined by fully specified, concrete inputs, or is "
+            "it standard execution?"
         )
         criteria = {
             "VERIFIED_EXECUTION": (
-                "The task asks for a specific, checkable result for fully specified, concrete inputs: whether a "
-                "structure satisfying stated constraints exists, an optimal or constrained structure, or a single "
-                "exact value such as a count, a probability, an expected value or another number."
+                "The task asks whether a discrete structure satisfying stated constraints exists, or asks for "
+                "an exact/optimal solution accompanied by a checkable witness, or asks for a single exact value "
+                "(a count, a probability, an expected value or another number) determined by fully specified, "
+                "concrete inputs."
             ),
+            # GUARD-03.2: an answer that is a formula in symbolic parameters stays standard.
             "STANDARD_EXECUTION": (
-                "The task is programming, drafting, text manipulation, explanation, a proof, or open-ended "
-                "analysis, or its answer is a formula in symbolic parameters rather than a value for concrete "
-                "inputs."
+                "The task is standard programming, drafting, text manipulation, explanation, a proof, "
+                "symbolic/algebraic deduction whose answer is a formula in symbolic parameters, or does not "
+                "require deterministic combinatorial witness verification."
             ),
         }
         question = Sys1Question(

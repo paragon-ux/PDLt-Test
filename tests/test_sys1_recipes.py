@@ -195,8 +195,8 @@ def test_activation_route_sys1_blocked_wire_conformance() -> None:
 
 def test_problem_class_routes_checkable_exact_values_to_verified_execution() -> None:
     """Live sessions: a fully specified question with one exact numeric answer was
-    classified standard ("word problems" was a STANDARD criterion), so the answer
-    was published with nothing checked."""
+    classified standard ("word problems" and "analytical reasoning" were STANDARD
+    criteria), so the answer was published with nothing checked."""
     from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
 
     question = ProblemClassRecipe().build_request({"request": "any task"}).questions["problem_class"]
@@ -205,11 +205,30 @@ def test_problem_class_routes_checkable_exact_values_to_verified_execution() -> 
     assert "fully specified, concrete inputs" in verified
     for kind in ("single exact value", "count", "probability", "expected value"):
         assert kind in verified, kind
-    # GUARD-03.2: symbolic-parameter answers, proofs and open analysis stay standard.
-    assert "symbolic parameters" in standard and "proof" in standard and "open-ended analysis" in standard
-    assert "word problem" not in standard
+    # GUARD-03.2: symbolic-parameter answers and proofs stay standard.
+    assert "symbolic/algebraic deduction whose answer is a formula in symbolic parameters" in standard
+    assert "proof" in standard
+    assert "word problem" not in standard and "analytical reasoning" not in standard
     # A witness is requested, never code (GUARD-03).
     assert "code" not in verified and "python" not in verified and "program" not in verified
+
+
+# The VERIFIED_EXECUTION criterion before the exact-value clause was added. Rewording
+# it (cc917c9e) left category-01 requests that had passed the gate at confidence
+# 0.44-0.87, below it, so they ran standard and nothing was verified.
+_ORIGINAL_VERIFIED_CRITERION = (
+    "The task asks whether a discrete structure satisfying stated constraints exists, or asks for "
+    "an exact/optimal solution accompanied by a checkable witness"
+)
+
+
+def test_problem_class_verified_criterion_keeps_the_original_sentence_verbatim() -> None:
+    from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
+
+    question = ProblemClassRecipe().build_request({"request": "any task"}).questions["problem_class"]
+    assert question.criteria["VERIFIED_EXECUTION"].startswith(_ORIGINAL_VERIFIED_CRITERION)
+    assert "ask whether a structure satisfying stated constraints exists, ask for an exact/optimal solution " \
+           "with a verifiable witness" in question.instructions
 
 
 def test_follow_up_recipe_gates_only_a_confident_new_request() -> None:

@@ -95,6 +95,19 @@ def test_problem_class_event_records_verdict_confidence_and_gating(tmp_path):
     assert event["payload"]["confidence"] == 0.6 and event["payload"]["passed_gating"] is False
 
 
+def test_problem_class_event_records_which_gate_criterion_failed(tmp_path):
+    """Catalogue: a VERIFIED verdict at confidence 0.85-0.87 failed a 0.85 floor and
+    the event could not say why. With two choices, the 0.35 entropy ceiling needs a
+    top probability of about 0.934, so it binds before the 0.40 margin floor."""
+    engine = engine_with(tmp_path, ScriptedWorker(), ScriptedSys1(problem_class=("VERIFIED_EXECUTION", 0.87)))
+    ask(engine, "a fully specified question")
+    (event,) = events(engine, "PROBLEM_CLASS_CLASSIFIED")
+    payload = event["payload"]
+    assert payload["confidence"] == 0.87 and payload["passed_gating"] is False
+    assert payload["margin"] == 0.74 and payload["entropy"] > 0.35
+    assert payload["distribution"] == {"VERIFIED_EXECUTION": 0.87, "STANDARD_EXECUTION": 0.13}
+
+
 def _grader_phrases() -> list[str]:
     import sys
 
