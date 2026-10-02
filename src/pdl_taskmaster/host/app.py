@@ -40,6 +40,13 @@ def _plain_reply_text(text: str | None) -> str | None:
     return text
 
 
+REVIEW_COMMANDS = frozenset({"/confirm", "/revise", "/stop", "/cancel"})
+NO_OPEN_REVIEW = (
+    "No review is open: /confirm, /revise, /stop and /cancel apply to a pending prompt or plan review. "
+    "Send a new request to start a task."
+)
+
+
 DEFAULT_HIGHER_PRIORITY_CONSTRAINTS = (
     "Obey applicable provider/platform safety, privacy, permission, and tool constraints."
 )
@@ -141,6 +148,12 @@ class PDLtHost:
     def handle(self, user_message: str) -> HostTurn:
         if self.observed is None:
             raise RuntimeError("host not started")
+        command = user_message.split(maxsplit=1)[0].lower() if user_message.strip() else ""
+        if command in REVIEW_COMMANDS and self._at_protocol_entry():
+            # A review command with no open review is not a request: wrapped as one, a
+            # piped /confirm left over after closure started the task again.
+            return HostTurn(text=NO_OPEN_REVIEW, bypass=False, closed=False,
+                            state_after=controller_snapshot(self.engine))
         routed_message = self._ensure_protocol_entry(user_message)
         response = self.observed.handle_user_message(routed_message)
         if response.bypass and response.text is None:
@@ -171,11 +184,14 @@ class PDLtHost:
         return (f"{environment} Programs run only in the execution stage of a confirmed task, "
                 "not during a direct reply.")
 
-    def _ensure_protocol_entry(self, user_message: str) -> str:
+    def _at_protocol_entry(self) -> bool:
+        """No protocol instance is open: the next request starts one."""
         if self.engine is None or self.engine.controller is None:
-            return self._with_invocation(user_message)
-        stage = self.engine.controller.state.stage.value
-        if stage in {"CLOSED_SUCCESS", "CLOSED_CANCELLED"}:
+            return True
+        return self.engine.controller.state.stage.value in {"CLOSED_SUCCESS", "CLOSED_CANCELLED"}
+
+    def _ensure_protocol_entry(self, user_message: str) -> str:
+        if self._at_protocol_entry():
             return self._with_invocation(user_message)
         return user_message
 

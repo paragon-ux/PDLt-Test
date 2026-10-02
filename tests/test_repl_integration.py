@@ -110,6 +110,25 @@ def test_repl_headless_exit_fail_closed_on_unconfirmed_stage(tmp_path: Path) -> 
     assert "[headless halt] Session ended at non-terminal stage" in proc.stderr
 
 
+def test_headless_review_commands_after_closure_do_not_restart_the_task(tmp_path: Path) -> None:
+    """Piped /confirm lines left over after CLOSED_SUCCESS are not a new request (FINDING-19)."""
+    proc = _run_repl(tmp_path, _g06_turns() + ["/confirm", "/confirm"], "headless_leftover")
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 0, out[-3000:]
+    assert out.count("[protocol closed]") == 1
+    assert out.count("No review is open") == 2
+    assert "[headless halt]" not in out
+    assert "[error]" not in out
+
+
+def test_review_command_before_any_task_is_not_a_request(tmp_path: Path) -> None:
+    proc = _run_repl(tmp_path, ["/confirm", "/quit"], "no_task_confirm")
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 0, out[-3000:]
+    assert "No review is open" in out
+    assert "[error]" not in out
+
+
 def test_cli_keyboard_interrupt_clean_exit(monkeypatch, capsys) -> None:
     """CLI intercepts KeyboardInterrupt, prints user notice, and exits 130 cleanly without tracebacks."""
     from pdl_taskmaster.host import cli
