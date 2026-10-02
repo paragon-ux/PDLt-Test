@@ -141,7 +141,8 @@ def host_notes() -> list[str]:
 
     kinds = ("meta_rule", "deferral", "placeholder", "fence", "field_label")
     lint = presentation.lint_note([LineViolation(1, "PDL-08", kind, "x") for kind in kinds])
-    return [presentation.provisional_note(), *lint.splitlines(), presentation.waiting_input_guidance("x")]
+    return [presentation.provisional_note(), presentation.literal_witness_note(), *lint.splitlines(),
+            presentation.waiting_input_guidance("x")]
 
 
 def test_host_notes_satisfy_no_grader_phrase_and_name_no_manifest_tag():

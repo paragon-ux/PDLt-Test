@@ -34,6 +34,75 @@ def _wrap_witness(d: dict[str, Any]) -> dict[str, Any]:
     return {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": d}
 
 
+def _is_trivial_leaf(value: Any) -> bool:
+    """Booleans, None, the empty string and the numbers -1, 0 and 1 occur
+    incidentally in almost any program; they say nothing about where a value came from."""
+    if value is None or isinstance(value, bool):
+        return True
+    if isinstance(value, (int, float)):
+        return value in (-1, 0, 1)
+    return value == ""
+
+
+def _leaf_values(value: Any) -> list[Any]:
+    """The scalar values inside nested dicts and lists (keys are not values)."""
+    if isinstance(value, dict):
+        return [leaf for item in value.values() for leaf in _leaf_values(item)]
+    if isinstance(value, (list, tuple)):
+        return [leaf for item in value for leaf in _leaf_values(item)]
+    return [value]
+
+
+def _program_constants(source: str) -> set[Any]:
+    """Every literal constant in the program's syntax tree, a signed number
+    (``-5``) included. Booleans are left out: ``True == 1`` in Python."""
+    import ast
+
+    try:
+        tree = ast.parse(source)
+    except (SyntaxError, ValueError, MemoryError, RecursionError):
+        return set()
+    constants: set[Any] = set()
+    signed: set[int] = set()  # operands of a sign, counted once with their sign
+    for node in ast.walk(tree):
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.USub, ast.UAdd)) \
+                and isinstance(node.operand, ast.Constant) and isinstance(node.operand.value, (int, float)) \
+                and not isinstance(node.operand.value, bool):
+            constants.add(-node.operand.value if isinstance(node.op, ast.USub) else node.operand.value)
+            signed.add(id(node.operand))
+        elif isinstance(node, ast.Constant) and not isinstance(node.value, bool) and id(node) not in signed:
+            try:
+                constants.add(node.value)
+            except TypeError:
+                continue
+    return constants
+
+
+def _witness_written_in_program(witness: dict[str, Any], source: str | None) -> bool:
+    """Every non-trivial leaf value of the witness data is a literal constant of the
+    program that printed it, compared by Python value: the program states the
+    values instead of computing them. A string constant that is itself the printed
+    witness line (``print('WITNESS: {...}')``) states them too. Only trivial leaves
+    (or none) flag nothing."""
+    if not source or not isinstance(witness, dict):
+        return False
+    leaves = [leaf for leaf in _leaf_values(witness.get("data")) if not _is_trivial_leaf(leaf)]
+    if not leaves:
+        return False
+    constants = _program_constants(source)
+
+    def stated(w: dict[str, Any] | None) -> dict[str, Any] | None:
+        return {k: v for k, v in w.items() if k != "provisional"} if isinstance(w, dict) else None
+
+    printed = stated(witness)
+    if any(isinstance(c, str) and stated(_parse_sandbox_witness(c)) == printed for c in constants):
+        return True
+    try:
+        return all(leaf in constants for leaf in leaves)
+    except TypeError:
+        return False
+
+
 def _parse_sandbox_witness(stdout_text: str) -> dict[str, Any] | None:
     """Parse the host-reproduced witness from sandbox stdout (ADR-0018).
 
@@ -1450,13 +1519,15 @@ class SessionEngine:
         """Run every declared Python block in the session sandbox.
 
         Returns the host-reproduced witness (the last block that printed one wins)
-        and one factual finding per block that did not run cleanly.
+        and one factual finding per block that did not run cleanly. The block that
+        printed the witness is kept as (index, source) in ``_last_witness_block``.
         """
         assert self.workspace is not None
         witness: dict[str, Any] | None = None
         failures: list[str] = []
         self._last_program_outputs: list[str] = []
         self._last_programs_run = 0
+        self._last_witness_block: tuple[int, str] | None = None
         for index, block in enumerate(_python_blocks(body), 1):
             self._last_programs_run += 1
             run = self.sandbox.run_code(
@@ -1501,6 +1572,7 @@ class SessionEngine:
             candidate = _parse_sandbox_witness(run.stdout)
             if candidate is not None:
                 witness = candidate
+                self._last_witness_block = (index, block)
             else:
                 tail = " / ".join((run.stdout or "").strip().splitlines()[-3:])[:300]
                 self._last_program_outputs.append(f"python block {index} exited 0" + (f" and printed: {tail}" if tail else " and printed nothing"))
@@ -1560,6 +1632,9 @@ class SessionEngine:
             return payload_findings, body
 
         errors: list[str] = list(payload_findings)
+        # A witness whose values the program states as literals was printed, not
+        # computed: it counts as unreproduced (provisional) and is labelled, never failed.
+        literal_witness = False
         # RS-01: the Result IR travels only in the structured field; the deliverable
         # text is never scanned for it. An absent IR claims nothing: a witness the
         # program printed still counts.
@@ -1607,6 +1682,11 @@ class SessionEngine:
                     sandbox_witness["provisional"] = False
                     if model_witness is not None and model_witness != sandbox_witness:
                         self.workspace.append_event("WITNESS_OVERRIDDEN_BY_SANDBOX", {})
+                    block = getattr(self, "_last_witness_block", None)
+                    if block is not None and _witness_written_in_program(sandbox_witness, block[1]):
+                        literal_witness = True
+                        sandbox_witness["provisional"] = True
+                        self.workspace.append_event("WITNESS_LITERAL_IN_PROGRAM", {"block": block[0]})
                     ir["witness"] = sandbox_witness
             else:
                 errors.extend(run_failures)
@@ -1630,9 +1710,10 @@ class SessionEngine:
                 self.workspace.append_event(
                     "VERIFICATION_PASSED",
                     {
-                        # §2.1: provisional means no sandbox run reproduced the witness.
-                        "provisional": sandbox_witness is None,
-                        "sandbox_reproduced": sandbox_witness is not None,
+                        # §2.1: provisional means no sandbox run reproduced the witness;
+                        # a program that prints literal values reproduces nothing.
+                        "provisional": sandbox_witness is None or literal_witness,
+                        "sandbox_reproduced": sandbox_witness is not None and not literal_witness,
                         "domain_checked": not verdict.provisional,
                         "details": verdict.details,
                     },
@@ -1662,7 +1743,8 @@ class SessionEngine:
         if verified and isinstance(ir.get("witness"), dict) and ir["witness"].get("provisional") is True:
             # The user sees that the result was not checked by a program run; the
             # deliverable text itself is unchanged (the note follows it).
-            return [], _attach_result_ir(body.rstrip() + "\n\n" + presentation.provisional_note(), ir)
+            note = presentation.literal_witness_note() if literal_witness else presentation.provisional_note()
+            return [], _attach_result_ir(body.rstrip() + "\n\n" + note, ir)
         return [], _attach_result_ir(body, ir)
 
     def _discuss_protocol(self, question: str, traces: list[CallTrace]) -> EngineResponse:

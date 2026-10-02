@@ -54,5 +54,10 @@ def provisional_note() -> str:
     return "[host] Witness not reproduced by a program run; unverified."
 
 
+def literal_witness_note() -> str:
+    """Factual note on a result whose printed witness values are literals in the program."""
+    return "[host] Witness values are written into the program, not computed; unverified."
+
+
 def cancelled() -> str:
     return "Cancelled."

@@ -109,7 +109,8 @@ def test_standard_execution_runs_code_as_telemetry_only(tmp_path):
 
 
 def test_sandbox_witness_is_authoritative(tmp_path):
-    code = 'import json\nprint("WITNESS: " + json.dumps({"answer": 7}))'
+    # The program computes its value: a value it only states is not reproduced.
+    code = 'import json\nprint("WITNESS: " + json.dumps({"answer": 3 + 4}))'
     body = f"```python\n{code}\n```"
     asserted = {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"answer": 9}}
     engine, response, executes, events = _run(
@@ -155,12 +156,116 @@ def test_provisional_result_is_published_with_a_host_note(tmp_path):
 def test_reproduced_result_carries_no_provisional_note(tmp_path):
     from pdl_taskmaster.runtime import presentation
 
-    code = 'import json\nprint("WITNESS: " + json.dumps({"answer": 7}))'
+    code = 'import json\nprint("WITNESS: " + json.dumps({"answer": 3 + 4}))'
     engine, response, _, _ = _run(
         tmp_path, [{"kind": "RESULT", "body": f"```python\n{code}\n```"}], problem_class="VERIFIED_EXECUTION",
     )
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
     assert presentation.provisional_note() not in response.text
+    assert presentation.literal_witness_note() not in response.text
+
+
+# Live session 002611: the program set prob = "1/4" (wrong) and printed it as the
+# WITNESS; the host logged sandbox_reproduced: true and published it as verified.
+_LITERAL_PROGRAM = (
+    "import json\n"
+    "def main():\n"
+    '    prob = "1/4"\n'
+    '    witness = {"polarity": "positive", "data": {"probability": prob}}\n'
+    '    print("WITNESS: " + json.dumps(witness))\n'
+    "main()\n"
+)
+
+
+def test_program_printing_its_literal_value_is_not_a_reproduced_witness(tmp_path):
+    from pdl_taskmaster.runtime import presentation
+    from pdl_taskmaster.runtime.text_blocks import split_published_ir
+
+    engine, response, executes, events = _run(
+        tmp_path, [{"kind": "RESULT", "body": f"```python\n{_LITERAL_PROGRAM}```", "result_ir": _ir()}],
+        problem_class="VERIFIED_EXECUTION",
+    )
+    # A label, not a failure: the turn closes as before, with one EXECUTE.
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS and len(executes) == 1
+    flagged = next(e for e in events if e["kind"] == "WITNESS_LITERAL_IN_PROGRAM")["payload"]
+    assert flagged == {"block": 1}
+    passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
+    assert passed["provisional"] is True and passed["sandbox_reproduced"] is False
+    text, ir = split_published_ir(response.text)
+    assert text.endswith("\n\n" + presentation.literal_witness_note())
+    assert ir["witness"]["provisional"] is True and ir["witness"]["data"] == {"probability": "1/4"}
+
+
+def test_program_computing_its_value_is_a_reproduced_witness(tmp_path):
+    code = 'import json\nprint(json.dumps({"total": sum(range(10)), "label": "sum"}))'
+    engine, response, _, events = _run(
+        tmp_path, [{"kind": "RESULT", "body": f"```python\n{code}\n```", "result_ir": _ir()}],
+        problem_class="VERIFIED_EXECUTION",
+    )
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert "WITNESS_LITERAL_IN_PROGRAM" not in _kinds(events)
+    passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
+    assert passed["sandbox_reproduced"] is True and passed["provisional"] is False
+
+
+def test_literal_check_applies_to_the_block_that_printed_the_witness(tmp_path):
+    computed = 'import json\nprint("WITNESS: " + json.dumps({"answer": 2 * 21}))'
+    stated = 'import json\nprint("WITNESS: " + json.dumps({"answer": 42}))'
+    engine, _, _, events = _run(
+        tmp_path, [{"kind": "RESULT", "body": f"```python\n{computed}\n```\n```python\n{stated}\n```",
+                    "result_ir": _ir()}],
+        problem_class="VERIFIED_EXECUTION",
+    )
+    assert next(e for e in events if e["kind"] == "WITNESS_LITERAL_IN_PROGRAM")["payload"] == {"block": 2}
+    engine, _, _, events = _run(
+        tmp_path / "reversed", [{"kind": "RESULT", "body": f"```python\n{stated}\n```\n```python\n{computed}\n```",
+                                 "result_ir": _ir()}],
+        problem_class="VERIFIED_EXECUTION",
+    )
+    assert "WITNESS_LITERAL_IN_PROGRAM" not in _kinds(events)
+
+
+def test_literal_witness_detection_by_python_value():
+    from pdl_taskmaster.runtime.session_engine import _witness_written_in_program
+
+    def written(data, source):
+        return _witness_written_in_program({"polarity": "positive", "data": data}, source)
+
+    assert written({"probability": "1/4"}, 'p = "1/4"\nprint(p)')
+    assert written({"count": 6}, "n = 6\nprint(n)")
+    assert written({"offset": -5}, "x = -5\nprint(x)") and not written({"offset": 5}, "x = -5\nprint(x)")
+    # A computed value is not a literal, even when its operands are.
+    assert not written({"probability": "1/4"}, "from fractions import Fraction\nprint(Fraction(1, 4))")
+    assert not written({"count": 6}, "import math\nprint(math.comb(4, 2))")
+    # Every non-trivial leaf must be a literal for the witness to be flagged.
+    assert not written({"count": 6, "total": 45}, "n = 6\nprint(n, sum(range(10)))")
+    # The printed witness line written whole as one string literal.
+    assert _witness_written_in_program(
+        {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"answer": 9},
+         "provisional": False},
+        "print('WITNESS: {\"answer\": 9}')",
+    )
+
+
+def test_literal_witness_detection_ignores_trivial_leaves():
+    from pdl_taskmaster.runtime.session_engine import _witness_written_in_program
+
+    source = "ok = True\nn = 1\nz = 0\nm = None\ne = ''\nprint(ok, n, z, m, e)"
+    data = {"ok": True, "n": 1, "z": 0, "m": None, "e": "", "neg": -1}
+    assert not _witness_written_in_program({"data": data}, source)
+    # Trivial leaves neither flag nor block a flag raised by the other leaves.
+    assert _witness_written_in_program({"data": {**data, "count": 6}}, source + "\nc = 6")
+    assert not _witness_written_in_program({"data": {}}, source)
+
+
+def test_literal_witness_detection_handles_nested_data():
+    from pdl_taskmaster.runtime.session_engine import _witness_written_in_program
+
+    data = {"grid": [[2, 3], [3, 2]], "meta": {"size": 4, "name": "square"}}
+    literal = 'grid = [[2, 3], [3, 2]]\nmeta = {"size": 4, "name": "square"}\nprint(grid, meta)'
+    assert _witness_written_in_program({"data": data}, literal)
+    computed = 'grid = [[2, 3], [3, 2]]\nmeta = {"size": len(grid) * 2, "name": "square"}\nprint(grid, meta)'
+    assert not _witness_written_in_program({"data": data}, computed)
 
 
 def test_proof_is_a_first_class_negative_deliverable(tmp_path):
@@ -216,7 +321,7 @@ def test_request_input_pauses(tmp_path):
 
 def test_unfenced_program_body_is_run(tmp_path):
     """Models return code as the raw body; grammar, not fences or keywords, decides."""
-    body = 'import json\nprint("WITNESS: " + json.dumps({"answer": 7}))'
+    body = 'import json\nprint("WITNESS: " + json.dumps({"answer": 3 + 4}))'
     engine, _, _, events = _run(
         tmp_path, [{"kind": "RESULT", "body": body, "result_ir": _ir()}],
         problem_class="VERIFIED_EXECUTION",
