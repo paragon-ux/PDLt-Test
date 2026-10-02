@@ -522,8 +522,14 @@ def test_escape_native_code_cannot_read_the_secret_without_the_audit_hook(mode, 
     )
     with _open((mode, False)) as sandbox:
         result = sandbox.run_code(code)
+    assert "top-secret-value" not in result.stdout
+    if _IS_WINDOWS and "DLL load failed while importing _ctypes" in result.stderr:
+        # The AppContainer refused to initialise _ctypes.pyd: the native layer
+        # stopped native code before it ran, which is the property under test.
+        assert not result.success
+        return
     assert result.success, result.stderr  # ctypes itself loaded: the hook was off
-    assert "denied" in result.stdout and "top-secret-value" not in result.stdout
+    assert "denied" in result.stdout
 
 
 def test_escape_connecting_to_a_localhost_listener_is_denied(configuration):

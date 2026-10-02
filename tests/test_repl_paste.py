@@ -62,32 +62,49 @@ def test_multiline_bracketed_paste_cancelled():
 import pytest
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="msvcrt is Windows-only")
+class _FakeConsole:
+    """msvcrt stand-in: kbhit/getwch over a buffer of pending console keys."""
+
+    def __init__(self, pending: str) -> None:
+        self.pending = list(pending)
+
+    def kbhit(self) -> bool:
+        return bool(self.pending)
+
+    def getwch(self) -> str:
+        return self.pending.pop(0)
+
+
+def _windows_console(pending: str):
+    return patch.multiple(sys, platform="win32"), \
+        patch.dict(sys.modules, {"msvcrt": _FakeConsole(pending)}), \
+        patch("sys.stdin.isatty", return_value=True)
+
+
 def test_console_burst_paste_confirmed():
-    inputs = [
-        "step 1: do something",
-        "step 2: verify something",
-        "",  # User confirms with Enter
-    ]
-    with patch("sys.stdin.isatty", return_value=True), \
-         patch("msvcrt.kbhit", side_effect=[True, False]), \
-         patch("builtins.input", side_effect=inputs):
+    platform, msvcrt, tty = _windows_console("step 2: verify something\r")
+    with platform, msvcrt, tty, \
+         patch("builtins.input", side_effect=["step 1: do something", ""]):
         result = _read_repl_input()
         assert result == "step 1: do something\nstep 2: verify something"
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="msvcrt is Windows-only")
 def test_console_burst_paste_discarded():
-    inputs = [
-        "step 1: do something",
-        "step 2: verify something",
-        "/cancel",
-    ]
-    with patch("sys.stdin.isatty", return_value=True), \
-         patch("msvcrt.kbhit", side_effect=[True, False]), \
-         patch("builtins.input", side_effect=inputs):
+    platform, msvcrt, tty = _windows_console("step 2: verify something\r")
+    with platform, msvcrt, tty, \
+         patch("builtins.input", side_effect=["step 1: do something", "/cancel"]):
         result = _read_repl_input()
         assert result == ""
+
+
+def test_console_burst_without_trailing_newline_does_not_block():
+    # kbhit() is true for a partial line; input() here blocked until Enter.
+    platform, msvcrt, tty = _windows_console("step 2\r\nstep 3 (no newline)")
+    with platform, msvcrt, tty, \
+         patch("builtins.input", side_effect=["step 1", ""]) as typed:
+        result = _read_repl_input()
+    assert result == "step 1\nstep 2\nstep 3 (no newline)"
+    assert typed.call_count == 2  # the first line and the paste confirmation only
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="select burst detection is POSIX-only")
@@ -121,15 +138,13 @@ def test_posix_typed_command_after_an_empty_enter_is_not_a_paste(capsys):
 def test_posix_typed_paste_command_after_an_empty_enter_still_opens_paste_mode():
     with patch("sys.stdin.isatty", return_value=True), \
          patch("select.select", side_effect=[([1], [], []), ([], [], [])]), \
-         patch("builtins.input", side_effect=["", "/paste", "first", "second", ""]):
+         patch("builtins.input", side_effect=["", "/paste", "first", "second", "EOF"]):
         assert _read_repl_input() == "first\nsecond"
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="msvcrt is Windows-only")
 def test_console_typed_command_after_an_empty_enter_is_not_a_paste(capsys):
-    with patch("sys.stdin.isatty", return_value=True), \
-         patch("msvcrt.kbhit", side_effect=[True, False]), \
-         patch("builtins.input", side_effect=["", "/confirm"]):
+    platform, msvcrt, tty = _windows_console("/confirm\r")
+    with platform, msvcrt, tty, patch("builtins.input", side_effect=[""]):
         result = _read_repl_input()
     assert result == "/confirm"
     assert "Pasted" not in capsys.readouterr().out
@@ -145,6 +160,12 @@ def test_triple_quote_multiline_input():
     with patch("builtins.input", side_effect=inputs):
         result = _read_repl_input()
         assert result == "line 1\nline 2"
+
+
+def test_paste_mode_keeps_blank_lines_until_eof():
+    inputs = ["/paste", "def foo():", "", "    return 42", "", "EOF"]
+    with patch("builtins.input", side_effect=inputs):
+        assert _read_repl_input() == "def foo():\n\n    return 42"
 
 
 def test_backslash_continuation():

@@ -203,7 +203,12 @@ def test_sandbox_windows_environment_keeps_what_python_needs():
 def test_sandbox_blocks_startfile_on_windows():
     result = ExecutionSandbox().run_code("import os\nos.startfile('cmd.exe')")
     assert not result.success
-    assert "PermissionError" in result.stderr, result.stderr
+    # The audit hook denies it (PermissionError), unless ShellExecute is unavailable
+    # in the AppContainer: os.startfile then raises NotImplementedError before
+    # the audit event fires. Either way nothing was launched.
+    assert "PermissionError" in result.stderr or (
+        "NotImplementedError: startfile not available" in result.stderr
+    ), result.stderr
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows exit statuses")
