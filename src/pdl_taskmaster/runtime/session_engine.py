@@ -1610,6 +1610,10 @@ class SessionEngine:
         if errors:
             return errors, body
         self.workspace.append_event("RESULT_IR_VALIDATED", {"ir": ir})
+        if verified and isinstance(ir.get("witness"), dict) and ir["witness"].get("provisional") is True:
+            # The user sees that the result was not checked by a program run; the
+            # deliverable text itself is unchanged (the note follows it).
+            return [], _attach_result_ir(body.rstrip() + "\n\n" + presentation.provisional_note(), ir)
         return [], _attach_result_ir(body, ir)
 
     def _discuss_protocol(self, question: str, traces: list[CallTrace]) -> EngineResponse:

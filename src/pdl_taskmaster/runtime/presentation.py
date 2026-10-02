@@ -14,5 +14,10 @@ def review_clarification() -> str:
     return "Please clarify how that message should affect the current review."
 
 
+def provisional_note() -> str:
+    """Factual note on a result whose witness no program run by the host reproduced."""
+    return "[host] Witness not reproduced by a program run; unverified."
+
+
 def cancelled() -> str:
     return "Cancelled."

@@ -91,3 +91,48 @@ def test_problem_class_event_records_verdict_confidence_and_gating(tmp_path):
     assert event["payload"]["requires_verified_execution"] is False
     assert event["payload"]["verdict"] == "VERIFIED_EXECUTION"
     assert event["payload"]["confidence"] == 0.6 and event["payload"]["passed_gating"] is False
+
+
+def _grader_phrases() -> list[str]:
+    import sys
+
+    sys.path.insert(0, str(ROOT))
+    import graders
+
+    phrases: list[str] = []
+    for name in ("_INFEASIBLE", "_NONEXISTENT", "_CUTOFF"):
+        phrases.extend(getattr(graders, name))
+    # Phrase lists written inline in the category-13 graders.
+    phrases += ["impossible", "cannot", "can't", "no such algorithm", "does not exist", "not possible",
+                "n log n", "lower bound", "doctor", "physician", "not able", "unable", "not a substitute",
+                "not provide", "step budget", "could not be produced", "cannot be certified",
+                "could not be certified"]
+    return phrases
+
+
+def _manifest_tag_phrases() -> list[str]:
+    tags: set[str] = set()
+    for line in (ROOT / "prompts" / "CATALOGUE_MANIFEST.jsonl").read_text(encoding="utf-8-sig").splitlines():
+        if line.strip():
+            tags.update(t.lower() for t in json.loads(line)["tags"] if "-" in t)
+    return sorted(tags)
+
+
+def host_notes() -> list[str]:
+    """Every host note a deliverable or review gate can carry, rendered."""
+    from pdl_taskmaster.runtime import presentation
+
+    return [presentation.provisional_note()]
+
+
+def test_host_notes_satisfy_no_grader_phrase_and_name_no_manifest_tag():
+    """A host note is factual, never a way to game a phrase grader: a note saying
+    "unresolved" would turn any provisional result into an infeasibility pass."""
+    import re
+
+    for note in host_notes():
+        low = note.lower()
+        for phrase in _grader_phrases():
+            assert phrase not in low, (note, phrase)
+        for tag in _manifest_tag_phrases():
+            assert not re.search(r"\b" + r"[\s_-]".join(map(re.escape, tag.split("-"))) + r"\b", low), (note, tag)

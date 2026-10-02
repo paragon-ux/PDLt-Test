@@ -136,6 +136,33 @@ def test_unreproduced_witness_is_provisional(tmp_path):
     assert passed["provisional"] and not passed["sandbox_reproduced"]
 
 
+def test_provisional_result_is_published_with_a_host_note(tmp_path):
+    """A2: a verified result whose witness no program reproduced was published
+    with nothing telling the user it was unchecked."""
+    from pdl_taskmaster.runtime import presentation
+    from pdl_taskmaster.runtime.text_blocks import split_published_ir
+
+    asserted = {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"answer": 9}}
+    engine, response, _, _ = _run(
+        tmp_path, [{"kind": "RESULT", "body": "The answer is 9.", "result_ir": _ir(asserted)}],
+        problem_class="VERIFIED_EXECUTION",
+    )
+    text, ir = split_published_ir(response.text)
+    assert text == "The answer is 9.\n\n" + presentation.provisional_note()
+    assert ir["witness"]["provisional"] is True
+
+
+def test_reproduced_result_carries_no_provisional_note(tmp_path):
+    from pdl_taskmaster.runtime import presentation
+
+    code = 'import json\nprint("WITNESS: " + json.dumps({"answer": 7}))'
+    engine, response, _, _ = _run(
+        tmp_path, [{"kind": "RESULT", "body": f"```python\n{code}\n```"}], problem_class="VERIFIED_EXECUTION",
+    )
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert presentation.provisional_note() not in response.text
+
+
 def test_proof_is_a_first_class_negative_deliverable(tmp_path):
     proof = {"polarity": "negative", "evidence": {"path": "execution://witness"},
              "basis": "proof", "argument": "The constraints force an odd total equal to an even one."}
