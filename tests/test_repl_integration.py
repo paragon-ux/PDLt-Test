@@ -129,6 +129,17 @@ def test_review_command_before_any_task_is_not_a_request(tmp_path: Path) -> None
     assert "[error]" not in out
 
 
+@pytest.mark.parametrize("command", ["/stop", "/cancel"])
+def test_repl_review_cancel_commands_close_cancelled(tmp_path: Path, command: str) -> None:
+    """/cancel is engine review vocabulary; the REPL rejected it as an unknown command."""
+    turns = _g06_turns()
+    proc = _run_repl(tmp_path, turns[:1] + [command], "headless_cancel")
+    out = proc.stdout + proc.stderr
+    assert "unknown command" not in out
+    assert proc.returncode == 1, out[-2000:]  # ADR-0019: CLOSED_CANCELLED
+    assert "[protocol closed]" in out
+
+
 def test_cli_keyboard_interrupt_clean_exit(monkeypatch, capsys) -> None:
     """CLI intercepts KeyboardInterrupt, prints user notice, and exits 130 cleanly without tracebacks."""
     from pdl_taskmaster.host import cli

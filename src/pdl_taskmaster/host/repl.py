@@ -472,6 +472,49 @@ def _disable_bracketed_paste() -> None:
             pass
 
 
+# Review commands handed to SessionEngine.handle_user_message; every other slash
+# command is host-side. Must match the engine's review vocabulary.
+REVIEW_COMMANDS = frozenset({"/confirm", "/revise", "/stop", "/cancel"})
+
+
+def _drain_console_burst_win32() -> list[str]:
+    """Read what is already buffered in the Windows console, without blocking.
+
+    msvcrt.kbhit() is true for any pending key, but input() blocks until Enter:
+    typed-ahead text or a paste without a trailing newline hung the REPL. Read
+    characters instead; a trailing partial line is returned as the last line.
+    """
+    import msvcrt
+    import time
+
+    lines: list[str] = []
+    current: list[str] = []
+    previous = ""
+    while msvcrt.kbhit():
+        while msvcrt.kbhit():
+            ch = msvcrt.getwch()
+            if ch == "\x00":
+                msvcrt.getwch()  # function key: discard its scan code
+            elif ch == "\n" and previous == "\r":
+                pass  # CRLF already ended the line
+            elif ch in {"\r", "\n"}:
+                lines.append("".join(current))
+                current = []
+            elif ch == "\x08":
+                if current:
+                    current.pop()
+            else:
+                current.append(ch)
+            previous = ch
+        time.sleep(0.02)
+    if current:
+        lines.append("".join(current))
+    if lines:
+        # getwch does not echo; show what was captured as input() would have.
+        print("\n".join(lines), flush=True)
+    return lines
+
+
 def _read_repl_input(prompt: str = "> ") -> str:
     """Read a line or multi-line pasted block from user input.
 
@@ -520,11 +563,7 @@ def _read_repl_input(prompt: str = "> ") -> str:
     if sys.stdin.isatty():
         try:
             if sys.platform == "win32":
-                import msvcrt
-                import time
-                while msvcrt.kbhit():
-                    lines.append(input())
-                    time.sleep(0.02)
+                lines.extend(_drain_console_burst_win32())
             else:
                 import select
                 r, _, _ = select.select([sys.stdin], [], [], 0.0)
@@ -559,7 +598,7 @@ def _read_repl_input(prompt: str = "> ") -> str:
         lines_buf = []
         if raw.startswith('"""') and raw != '"""':
             lines_buf.append(raw[3:])
-        prompt_msg = "Multi-line input (type '\"\"\"' on a new line to finish):" if raw.startswith('"""') else "Paste mode (enter text, then type 'EOF' or a blank line to finish):"
+        prompt_msg = "Multi-line input (type '\"\"\"' on a new line to finish):" if raw.startswith('"""') else "Paste mode (enter text, then type 'EOF' on a new line to finish):"
         print(prompt_msg, flush=True)
         while True:
             try:
@@ -569,7 +608,9 @@ def _read_repl_input(prompt: str = "> ") -> str:
             if raw.startswith('"""') and sub.strip().endswith('"""'):
                 lines_buf.append(sub.strip()[:-3])
                 break
-            if not raw.startswith('"""') and (sub.strip() in {"EOF", "eof", '"""'} or (not sub.strip() and lines_buf)):
+            # Only an explicit marker ends /paste: blank lines are content (paragraph
+            # breaks, code), and ending on one silently dropped the rest of the paste.
+            if not raw.startswith('"""') and sub.strip() in {"EOF", "eof", '"""'}:
                 break
             lines_buf.append(sub)
         return "\n".join(lines_buf).strip()
@@ -1137,7 +1178,7 @@ def main() -> int:
                     "normal text -> SessionEngine\n"
                     "/confirm -> accept review artifact immediately (fast-path)\n"
                     "/revise <feedback> -> request revision on review artifact (fast-path)\n"
-                    "/stop -> cancel current session (fast-path)\n"
+                    "/stop | /cancel -> cancel current session (fast-path)\n"
                     "/paste -> enter multi-line paste mode (or use \"\"\" ... \"\"\")\n"
                     "/status -> read-only host state\n"
                     "/session -> current session directory\n"
@@ -1393,12 +1434,12 @@ def main() -> int:
                             for path in sessions:
                                 age_days = (datetime.now().timestamp() - path.stat().st_mtime) / 86400
                                 print(f"  {path.name}  ({age_days:.1f}d ago)", flush=True)
-                elif cmd in {"/confirm", "/revise", "/stop"}:
+                elif cmd in REVIEW_COMMANDS:
                     pass
                 else:
                     print(f"unknown command: {cmd}", flush=True)
                     continue
-                if cmd not in {"/confirm", "/revise", "/stop"}:
+                if cmd not in REVIEW_COMMANDS:
                     # REPL commands are never requests: before this guard /worker,
                     # /sessions and others fell through and reached the engine as a
                     # follow-up ("Follow-up from the user ...: /worker recorded").
