@@ -213,8 +213,10 @@ def test_audit_layer_allows_the_run_directory_and_the_standard_library():
         "shutil.rmtree('a')\n"
         "sqlite3.connect('local.db').execute('create table t (x)')\n"
         "sqlite3.connect(':memory:').execute('select 1')\n"
-        "with open(os.devnull, 'w') as sink:\n"
-        "    sink.write('x')\n"
+        + (  # an AppContainer cannot open NUL: its DACL has no ALL APPLICATION PACKAGES entry (ADR-0021)
+            "with open(os.devnull, 'w') as sink:\n"
+            "    sink.write('x')\n" if not _IS_WINDOWS else ""
+        ) +
         "print(sorted(os.listdir('.')))"
     )
     with ExecutionSandbox() as sandbox:
