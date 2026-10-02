@@ -33,7 +33,10 @@ SIZE_T = ctypes.c_size_t
 
 EXTENDED_STARTUPINFO_PRESENT = 0x00080000
 CREATE_UNICODE_ENVIRONMENT = 0x00000400
-CREATE_NO_WINDOW = 0x08000000
+# No console at all: a console host (conhost.exe) would start as the program's child,
+# which the child-process policy and a one-process job refuse (STATUS_DLL_INIT_FAILED).
+# The program's standard streams are pipes, so it needs no console.
+DETACHED_PROCESS = 0x00000008
 STARTF_USESTDHANDLES = 0x00000100
 HANDLE_FLAG_INHERIT = 0x00000001
 INFINITE = 0xFFFFFFFF
@@ -278,7 +281,7 @@ def spawn(
         block = ctypes.create_unicode_buffer(environment_block(env))
         _check(k32.CreateProcessW(
             argv[0], command_line, None, None, True,
-            EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW,
+            EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT | DETACHED_PROCESS,
             block, cwd, ctypes.byref(startup), ctypes.byref(info),
         ), "CreateProcessW")
         k32.CloseHandle(info.hThread)

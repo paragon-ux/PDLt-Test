@@ -115,8 +115,9 @@ def test_interrupted_host_leaves_no_orphaned_program(monkeypatch):
             raise KeyboardInterrupt
         return real_communicate(self, *args, **kwargs)
 
-    monkeypatch.setattr(subprocess.Popen, "communicate", interrupted)
     with ExecutionSandbox(timeout_seconds=30) as sandbox:
+        assert sandbox.run_code("pass").success  # the session (and any backend self-test) is built first
+        monkeypatch.setattr(subprocess.Popen, "communicate", interrupted)
         with pytest.raises(KeyboardInterrupt):
             sandbox.run_code("import time\ntime.sleep(60)")
         assert sandbox.session_info is not None
@@ -953,7 +954,7 @@ def test_container_lifecycle_and_commands_with_a_fake_runtime(fake_runtime):
     run = next(c for c in calls if c[0] == "run")
     for flag in (["--network", "none"], ["--read-only"], ["--tmpfs", "/tmp"], ["--cap-drop", "ALL"],
                  ["--security-opt", "no-new-privileges"], ["--pids-limit", "64"], ["--memory", "512m"],
-                 ["--user", f"{os.getuid()}:{os.getgid()}"], ["--label", f"pdlt.sandbox={root.name}"],
+                 ["--user", cc.container_user()], ["--label", f"pdlt.sandbox={root.name}"],
                  ["-v", f"{root / 'work'}:/work"], ["-d", "--rm"]):
         assert any(run[i:i + len(flag)] == flag for i in range(len(run))), flag
     assert run[-3:] == ["python:{}.{}-slim".format(*sys.version_info[:2]), "sleep", "infinity"]
@@ -967,6 +968,8 @@ def test_container_lifecycle_and_commands_with_a_fake_runtime(fake_runtime):
     assert not root.exists()
 
 
+@pytest.mark.skipif(not sys.platform.startswith("linux"),
+                    reason="the fake runtime runs the program on the host; a real container is Linux")
 def test_container_memory_limit_is_set_inside_the_program(fake_runtime):
     with ExecutionSandbox(mode="container") as sandbox:
         result = sandbox.run_code("import resource\nprint(resource.getrlimit(resource.RLIMIT_AS)[0])",
