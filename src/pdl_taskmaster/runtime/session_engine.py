@@ -1691,7 +1691,9 @@ class SessionEngine:
             else:
                 errors.extend(run_failures)
                 verdict = verifier.check(model_witness, constraints, domain=self._problem_domain, body=body)
-                claims_search = isinstance(model_witness, dict) and model_witness.get("polarity") == "negative" and (
+                # Only a negative witness claims a search: on a positive one the same
+                # provenance fields are metadata about how a result was found.
+                claims_search =isinstance(model_witness, dict) and model_witness.get("polarity") == "negative" and (
                     model_witness.get("basis", "search") == "search"
                     or bool(model_witness.get("search_exhausted"))
                     or model_witness.get("nodes_explored") is not None

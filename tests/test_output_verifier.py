@@ -148,3 +148,39 @@ def test_negative_witness_by_proof_is_first_class():
     assert inferred.valid and inferred.details["basis"] == "proof"
     empty = FallbackChecker().check({"polarity": "negative", "basis": "proof", "argument": " "}, {})
     assert not empty.valid
+
+
+# Runs 022105 01-02 / 01-05: the program found a correct result and printed it
+# with search provenance; the extra keys made the positive witness invalid.
+_POSITIVE_WITH_PROVENANCE = {
+    "polarity": "positive",
+    "data": {"solution": [[1, 2, 3], [2, 3, 1], [3, 1, 2]]},
+    "basis": "search",
+    "search_exhausted": False,
+    "nodes_explored": None,
+    "method": "backtracking",
+    "argument": None,
+    "domain": None,
+    "provisional": False,
+}
+
+
+@pytest.mark.parametrize("witness", [
+    _POSITIVE_WITH_PROVENANCE,
+    {**_POSITIVE_WITH_PROVENANCE, "search_exhausted": True, "method": "exact cover search"},
+    {**_POSITIVE_WITH_PROVENANCE, "nodes_explored": 412},
+    {**_POSITIVE_WITH_PROVENANCE, "basis": "proof", "argument": "The rows are cyclic shifts."},
+])
+def test_positive_witness_accepts_search_provenance_as_metadata(witness):
+    verdict = FallbackChecker().check(witness, {})
+    assert verdict.valid and verdict.details["polarity"] == "positive"
+
+
+def test_positive_witness_still_forbids_other_keys_and_requires_data():
+    unknown = FallbackChecker().check({**_POSITIVE_WITH_PROVENANCE, "confidence": 0.9}, {})
+    assert not unknown.valid and "confidence" in unknown.diagnostic
+    no_data = {k: v for k, v in _POSITIVE_WITH_PROVENANCE.items() if k != "data"}
+    missing = FallbackChecker().check(no_data, {})
+    assert not missing.valid and "data" in missing.diagnostic
+    bad_basis = FallbackChecker().check({**_POSITIVE_WITH_PROVENANCE, "basis": "guess"}, {})
+    assert not bad_basis.valid

@@ -6,6 +6,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    NonNegativeInt,
     PositiveInt,
     TypeAdapter,
     ValidationError,
@@ -307,10 +308,21 @@ class Evidence(WireModel):
 
 
 class PositiveWitness(WireModel):
+    """A found result. A program may also report how it found the result (the
+    provenance fields NegativeWitness declares); they are metadata only and
+    never a claim that no solution exists: the host's search-claim rule reads
+    them on a negative witness alone (session_engine._verify_result). Programs
+    that printed a correct result with them were rejected before (run 022105)."""
+
     model_config = ConfigDict(extra="forbid")
     polarity: Literal["positive"] = "positive"
     evidence: Evidence = Field(default_factory=lambda: Evidence(path="execution://witness"))
     data: dict[str, Any]
+    basis: Optional[Literal["search", "proof"]] = None
+    search_exhausted: Optional[bool] = None
+    nodes_explored: Optional[NonNegativeInt] = None
+    method: Optional[str] = None
+    argument: Optional[str] = None
     domain: Optional[str] = None  # typed checker selector (GUARD-02); never inferred from text
     provisional: Optional[bool] = None  # set by the host when no sandbox run reproduced the witness
 

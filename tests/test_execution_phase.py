@@ -657,3 +657,31 @@ def test_draft_execute_runs_once_and_feeds_its_brief_to_execute(tmp_path):
 def test_without_the_flag_there_is_no_draft_execute_call(tmp_path):
     engine, _, executes, events = _run(tmp_path, [{"kind": "RESULT", "body": "42"}])
     assert not any(e["kind"].startswith("EXECUTION_BRIEF") for e in events)
+
+
+def test_positive_witness_with_search_provenance_is_accepted(tmp_path):
+    """Runs 022105 01-02 / 01-05: a program found the result and printed it with
+    basis, search_exhausted and method; the host rejected a correct answer."""
+    code = ("import json\nn = 3\nrows = [[(r + c) % n + 1 for c in range(n)] for r in range(n)]\n"
+            "witness = {'polarity': 'positive', 'data': {'solution': rows}, 'basis': 'search', "
+            "'search_exhausted': False, 'nodes_explored': None, 'method': 'backtracking', "
+            "'argument': None, 'domain': None, 'provisional': False}\n"
+            "print('WITNESS: ' + json.dumps(witness))")
+    engine, _, executes, events = _run(tmp_path, [{"kind": "RESULT", "body": code, "result_ir": _ir()}],
+                                       problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
+    assert passed["sandbox_reproduced"]
+
+
+def test_positive_witness_with_search_provenance_is_not_a_search_claim(tmp_path):
+    """A positive witness reporting how it was found claims a result, not that none
+    exists: without a program run it is provisional, not SEARCH_CLAIM_UNREPRODUCED."""
+    witness = {"polarity": "positive", "evidence": {"path": "execution://witness"},
+               "data": {"answer": 42}, "basis": "search", "search_exhausted": True,
+               "nodes_explored": 9, "method": "enumeration"}
+    reply = {"kind": "RESULT", "body": "The answer is 42.", "result_ir": _ir(witness)}
+    engine, _, executes, events = _run(tmp_path, [reply], problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
+    assert passed["provisional"] and not passed["sandbox_reproduced"]
