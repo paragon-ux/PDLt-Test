@@ -5,7 +5,9 @@ policies. Every path reaches it as a ``-D`` parameter (never interpolated into t
 profile text), after realpath: ``/var/folders`` is ``/private/var/folders``.
 
 - process-exec: the interpreter literal(s) only; no process-fork.
-- file-read*: the policy's read roots (subpaths, or literals for files).
+- Apple's system.sb baseline (dyld shared cache, libSystem, system frameworks).
+- file-read* and file-map-executable: the policy's read roots (subpaths, or
+  literals for files).
 - file-read* file-write*: the session's work directory.
 - file-read-metadata and sysctl-read everywhere; no network*.
 
@@ -36,6 +38,9 @@ def build_profile(policy: SandboxPolicy) -> tuple[str, dict[str, str]]:
     lines = [
         "(version 1)",
         "(deny default)",
+        # Apple's baseline for any process: the dyld shared cache, libSystem's
+        # initialisers and the system frameworks. It grants no user data.
+        '(import "system.sb")',
         "(allow file-read-metadata)",
         "(allow sysctl-read)",
         "(allow signal (target self))",
@@ -51,7 +56,8 @@ def build_profile(policy: SandboxPolicy) -> tuple[str, dict[str, str]]:
         lines.append(f"(allow process-exec (literal {param('EXEC', path)}))")
     for path in policy.read_roots:
         kind = "subpath" if path.is_dir() else "literal"
-        lines.append(f"(allow file-read* ({kind} {param('READ', path)}))")
+        # file-map-executable: extension modules and libpython are mapped executable.
+        lines.append(f"(allow file-read* file-map-executable ({kind} {param('READ', path)}))")
     for path in policy.write_roots:
         lines.append(f"(allow file-read* file-write* (subpath {param('WRITE', path)}))")
     lines.append('(allow file-read* file-write-data file-ioctl (literal "/dev/null"))')

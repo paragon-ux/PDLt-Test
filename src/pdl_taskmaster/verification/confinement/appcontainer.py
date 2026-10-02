@@ -47,6 +47,9 @@ TRUSTEE_IS_UNKNOWN = 0
 # FILE_GENERIC_EXECUTE | DELETE); never WRITE_DAC or WRITE_OWNER.
 FILE_MODIFY = 0x001301BF
 FILE_READ_EXECUTE = 0x001200A9  # FILE_GENERIC_READ | FILE_GENERIC_EXECUTE
+# CreateProcessW derives an AppContainer process's profile paths from these; without
+# them it fails with ERROR_ENVVAR_NOT_FOUND. They name directories, never secrets.
+PROFILE_ENV = ("USERPROFILE", "LOCALAPPDATA", "APPDATA")
 _SELF_TEST_SECONDS = 30.0
 
 
@@ -185,9 +188,14 @@ def grant_marker(prefix: Path) -> Path:
     return Path.home() / ".pdlt" / f"appcontainer-read-grant-{digest}.json"
 
 
+def _with_profile_env(env: dict[str, str]) -> dict[str, str]:
+    return {**{k: os.environ[k] for k in PROFILE_ENV if k in os.environ}, **env}
+
+
 class AppContainerBackend(Backend):
     name = "appcontainer"
     job_active_process_limit = 1  # the Job Object admits the program and nothing else
+    entry_temp = True  # Windows points an AppContainer's TEMP at its own profile; the run's tmp/ wins
 
     def __init__(self) -> None:
         self.profile = ""
@@ -240,7 +248,7 @@ class AppContainerBackend(Backend):
             proc = winproc.spawn(
                 [str(policy.interpreter), "-I", "-S", "-c", "pass"],
                 cwd=str(policy.write_roots[0]),
-                env={k: os.environ[k] for k in ("SYSTEMROOT", "WINDIR", "PATH") if k in os.environ},
+                env=_with_profile_env({k: os.environ[k] for k in ("SYSTEMROOT", "WINDIR", "PATH") if k in os.environ}),
                 appcontainer_sid=self.sid,
             )
             _, err = proc.communicate(timeout=_SELF_TEST_SECONDS)
@@ -282,7 +290,8 @@ class AppContainerBackend(Backend):
         if not limits.job:
             raise LaunchError("job_create_failed")  # never run outside the memory limit and kill-on-close
         try:
-            return winproc.spawn(argv, cwd=str(cwd), env=env, appcontainer_sid=self.sid, job=limits.job)
+            return winproc.spawn(argv, cwd=str(cwd), env=_with_profile_env(env), appcontainer_sid=self.sid,
+                                 job=limits.job)
         except OSError as exc:
             raise LaunchError(f"appcontainer_launch_failed: {exc}") from exc
 

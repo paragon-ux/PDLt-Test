@@ -849,7 +849,13 @@ class ExecutionSandbox:
         try:
             entry_file = run_dir / "_entry.py"
 
+            run_tmp = str(run_dir / "tmp")
             content_parts: list[str] = []
+            if session.backend.entry_temp:
+                content_parts.append(
+                    f"import os as _os\n_os.environ.update(dict.fromkeys(('TMPDIR', 'TEMP', 'TMP'), {run_tmp!r}))\n"
+                    "del _os\n"
+                )
             if session.backend.entry_limits:
                 content_parts.append(_ENTRY_LIMITS_PRELUDE.format(
                     memory=int(effective_memory), cpu=int(math.ceil(effective_timeout * 2)) + 1,
@@ -874,7 +880,6 @@ class ExecutionSandbox:
             entry_file.write_text("\n".join(content_parts), encoding="utf-8")
 
             # Temporary files land in the run's own directory (deleted with it).
-            run_tmp = str(run_dir / "tmp")
             run_env = {"TMPDIR": run_tmp, "TEMP": run_tmp, "TMP": run_tmp, **(env or {})}
             result = self._execute_process(
                 [str(session.policy.interpreter), *_INTERPRETER_FLAGS, entry_file.name],

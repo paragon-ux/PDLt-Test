@@ -52,6 +52,9 @@ jobs:
         run: >-
           python -m pytest tests/test_confinement.py tests/test_sandbox.py -v -rs
           --deselect tests/test_sandbox.py::test_sandbox_memory_limit_oom
+      - name: Seatbelt denials (on failure)
+        if: failure() && runner.os == 'macOS'
+        run: log show --last 10m --style compact --predicate 'sender == "Sandbox"' | tail -n 80
 
   container:
     name: container / ubuntu-latest / py3.12

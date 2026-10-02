@@ -72,6 +72,7 @@ class Backend:
     native = True  # False only for the audit-only opt-out
     job_active_process_limit = 0  # Windows: >0 caps the processes the run's Job Object admits
     entry_limits = False  # True: memory and CPU limits are set inside the program (no host preexec)
+    entry_temp = False  # True: the program re-points TMP/TEMP/TMPDIR at the run's tmp/ first thing
 
     def probe(self) -> str | None:
         """None when this backend can run on this machine, else the reason."""

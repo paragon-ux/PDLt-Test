@@ -712,11 +712,11 @@ def _policy(tmp_path, **kwargs):
 def test_seatbelt_profile_denies_by_default_and_takes_paths_as_parameters(tmp_path):
     profile, params = seatbelt.build_profile(_policy(tmp_path))
     lines = profile.splitlines()
-    assert lines[:2] == ["(version 1)", "(deny default)"]
+    assert lines[:3] == ["(version 1)", "(deny default)", '(import "system.sb")']
     assert "network" not in profile and "process-fork" not in profile
     assert '(allow process-exec (literal (param "EXEC_0")))' in lines
-    assert '(allow file-read* (subpath (param "READ_1")))' in lines
-    assert '(allow file-read* (literal (param "READ_2")))' in lines  # a file root is a literal
+    assert '(allow file-read* file-map-executable (subpath (param "READ_1")))' in lines
+    assert '(allow file-read* file-map-executable (literal (param "READ_2")))' in lines  # a file is a literal
     assert '(allow file-read* file-write* (subpath (param "WRITE_0")))' in lines
     assert params == {"EXEC_0": sys.executable, "READ_0": str(tmp_path / "work"), "READ_1": str(tmp_path / "lib"),
                       "READ_2": str(tmp_path / "lib" / "file.so"), "WRITE_0": str(tmp_path / "work")}
