@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 from typing import Any
 import sys
@@ -22,6 +23,21 @@ class HostTurn:
 class _PlainRequest:
     prompt: str
     operation: str = "BYPASS_ORDINARY"
+    environment: str | None = None  # the session's execution environment, capabilities only
+
+
+def _plain_reply_text(text: str | None) -> str | None:
+    """A direct reply as text: a JSON object holding a single string (e.g.
+    {"message": "..."} or {"response": "..."}) is presented as that string."""
+    try:
+        value = json.loads(text or "")
+    except ValueError:
+        return text
+    if isinstance(value, dict) and len(value) == 1:
+        (only,) = value.values()
+        if isinstance(only, str):
+            return only
+    return text
 
 
 DEFAULT_HIGHER_PRIORITY_CONSTRAINTS = (
@@ -128,9 +144,9 @@ class PDLtHost:
         routed_message = self._ensure_protocol_entry(user_message)
         response = self.observed.handle_user_message(routed_message)
         if response.bypass and response.text is None:
-            plain = self.worker.call(_PlainRequest(user_message))
+            plain = self.worker.call(_PlainRequest(user_message, environment=self._bypass_environment()))
             return HostTurn(
-                text=plain.text,
+                text=_plain_reply_text(plain.text),
                 bypass=True,
                 closed=False,
                 state_after=controller_snapshot(self.engine),
@@ -141,6 +157,19 @@ class PDLtHost:
             closed=bool(response.closed),
             state_after=controller_snapshot(self.engine),
         )
+
+    def _bypass_environment(self) -> str | None:
+        """The factual execution environment for a direct reply (the sandbox's
+        own System 1 routing state), and where programs actually run."""
+        sandbox = getattr(self.engine, "sandbox", None)
+        if sandbox is None:
+            return None
+        try:
+            environment = sandbox.decision_state()["execution_environment"]
+        except Exception:
+            return None
+        return (f"{environment} Programs run only in the execution stage of a confirmed task, "
+                "not during a direct reply.")
 
     def _ensure_protocol_entry(self, user_message: str) -> str:
         if self.engine is None or self.engine.controller is None:

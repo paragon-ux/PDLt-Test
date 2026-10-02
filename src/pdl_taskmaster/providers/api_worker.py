@@ -718,7 +718,10 @@ class ApiWorker:
         instructions, input_text = self._split_prompt(request.prompt)
         if self.reorder_keys_for_cache:
             input_text = self._reorder_for_cache(input_text.lstrip())
-        input_text = input_text.rstrip() + _JSON_ONLY_SUFFIX
+        if operation_name != "BYPASS_ORDINARY":
+            # A direct reply is plain text: the suffix made it answer in JSON
+            # ({"message": "Hello! ..."} printed raw in the REPL).
+            input_text = input_text.rstrip() + _JSON_ONLY_SUFFIX
 
         body: dict[str, Any] = {
             "model": self._model_for(getattr(request, "operation", None)),
@@ -733,7 +736,11 @@ class ApiWorker:
         schema_enforced = self.structured_output and operation_name not in _SEMANTIC_READ_OPERATIONS
 
         extra_guidance = ""
-        if operation_name in ("DRAFT_PROMPT", "REVISE_PROMPT"):
+        if operation_name == "BYPASS_ORDINARY" and getattr(request, "environment", None):
+            # Capabilities only, from the session sandbox (never task guidance): a
+            # direct reply claimed "I cannot execute code" in a session that runs it.
+            extra_guidance = "Execution environment of this session (host fact): " + request.environment
+        elif operation_name in ("DRAFT_PROMPT", "REVISE_PROMPT"):
             extra_guidance = (
                 "\n\nNORMATIVE GUIDELINES FOR PROMPT PSEUDOCODE (PDL-01 to PDL-08, PROMPT-01 to PROMPT-05):\n"
                 "1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"

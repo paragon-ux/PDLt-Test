@@ -130,3 +130,64 @@ def test_ungated_bypass_keeps_the_explicit_invocation(tmp_path, monkeypatch):
     engine = _engine(tmp_path, sys1, s2_calls, monkeypatch)
     engine.handle_user_message("$confirm-with-pseudocode hello")
     assert s2_calls and s2_calls[0].operation == "BOOTSTRAP_ANALYSIS"
+
+
+def test_direct_reply_is_presented_as_text_with_the_execution_environment(tmp_path, monkeypatch):
+    """Session log: bypass replies printed raw JSON ({"message": "Hello! ..."}) and
+    claimed "I cannot execute code" in a session whose sandbox runs Python."""
+    from pdl_taskmaster.host.app import PDLtHost
+    from pdl_taskmaster.providers.base import WorkerResult
+
+    monkeypatch.setenv("PDLT_KNOWLEDGE_CUTOFF", CUTOFF)
+
+    class BypassWorker:
+        sys1_client = FakeSys1(route_choice="BYPASS")
+        requests: list = []
+
+        def call(self, request):
+            self.requests.append(request)
+            return WorkerResult('{"message": "Hello! How can I assist you today?"}')
+
+    worker = BypassWorker()
+    host = PDLtHost(ROOT, worker=worker, workspace_root=tmp_path / "ws", run_id="bypass").start()
+    try:
+        turn = host.handle("hi")
+    finally:
+        host.close()
+    assert turn.bypass and turn.text == "Hello! How can I assist you today?"
+    (request,) = worker.requests
+    assert request.operation == "BYPASS_ORDINARY" and request.prompt == "hi"
+    environment = host.engine.sandbox.decision_state()["execution_environment"]
+    assert request.environment.startswith(environment)
+    assert "Programs run only in the execution stage of a confirmed task" in request.environment
+
+
+def test_plain_reply_text_unwraps_only_a_single_string():
+    from pdl_taskmaster.host.app import _plain_reply_text
+
+    assert _plain_reply_text('{"response": "Yes, I\'m here."}') == "Yes, I'm here."
+    assert _plain_reply_text("Plain answer.") == "Plain answer."
+    assert _plain_reply_text('{"a": "x", "b": "y"}') == '{"a": "x", "b": "y"}'
+    assert _plain_reply_text('{"count": 3}') == '{"count": 3}'
+
+
+def test_api_worker_sends_a_direct_reply_as_plain_text(monkeypatch):
+    from pdl_taskmaster.host.app import _PlainRequest
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+
+    sent = {}
+
+    def fake_send(self, req, deadline=None):
+        sent.update(json.loads(req.data))
+        return {"status": "completed", "output": [{"type": "message", "content": [
+            {"type": "output_text", "text": "Hello."}]}]}
+
+    monkeypatch.setattr(ApiWorker, "_send_json_with_retries", fake_send)
+    monkeypatch.setattr(ApiWorker, "_resolve_api_key", lambda self: "k")
+    result = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT).call(
+        _PlainRequest("hi", environment="Python 3.12 interpreter; network access is disabled."))
+    assert result.text == "Hello."
+    assert sent["input"] == "hi" and "JSON" not in sent["input"]
+    assert sent["instructions"] == ("Execution environment of this session (host fact): "
+                                    "Python 3.12 interpreter; network access is disabled.")
+    assert "text" not in sent
