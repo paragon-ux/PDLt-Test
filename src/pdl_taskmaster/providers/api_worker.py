@@ -186,6 +186,20 @@ class ProviderError(TransportError):
                 "attempts": self.attempts, "message": str(self)[:2000]}
 
 
+def _rejecting_provider(error: BaseException, order: list[str]) -> str | None:
+    """The configured provider that rejected a generation: OpenRouter names it in
+    its error ("Upstream error from <provider>: ..."); otherwise the first one
+    tried. Transport metadata only, never task content."""
+    marker = "Upstream error from "
+    text = str(error)
+    if marker in text:
+        named = text.split(marker, 1)[1].split(":", 1)[0].strip().lower()
+        for provider in order:
+            if provider.lower() == named:
+                return provider
+    return order[0] if order else None
+
+
 class OutputLimitError(ProviderError):
     """The response reached the output-token cap before it finished: in EXECUTE a
     failed attempt to penalise; at any other operation a reported harness error."""
@@ -812,19 +826,19 @@ class ApiWorker:
                 }
 
         api_key = self._resolve_api_key()
-        req = urllib.request.Request(
-            f"{self.base_url}/responses",
-            data=json.dumps(body).encode("utf-8"),
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
+        req = self._responses_request(body, api_key)
 
         started = time.perf_counter()
         call_deadline = time.monotonic() + self.max_call_seconds
-        data = self._send_json_with_retries(req, call_deadline)
+        try:
+            data = self._send_json_with_retries(req, call_deadline)
+        except ProviderError as exc:
+            # EXECUTE keeps one call per counted attempt: its rejection is the
+            # attempt's failure. Every other operation falls back (see below).
+            if not exc.wire_equivalent or operation_name == "EXECUTE" or "text" not in body:
+                raise
+            data, req, union_wrapped = self._schema_rejection_fallback(body, api_key, exc, call_deadline,
+                                                                       union_wrapped)
         latency_ms = (time.perf_counter() - started) * 1000.0
 
         if self.on_progress is not None:
@@ -890,6 +904,71 @@ class ApiWorker:
             metadata["usage_source"] = "responses_api"
             metadata["usage_exact"] = True
         return WorkerResult(text, metadata)
+
+    def _responses_request(self, body: dict[str, Any], api_key: str) -> urllib.request.Request:
+        return urllib.request.Request(
+            f"{self.base_url}/responses",
+            data=json.dumps(body).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+    def _progress(self, line: str) -> None:
+        if self.on_progress is not None:
+            try:
+                self.on_progress(line)
+            except Exception:
+                pass
+
+    def _schema_rejection_fallback(
+        self, body: dict[str, Any], api_key: str, rejection: ProviderError, deadline: float, union_wrapped: bool
+    ) -> tuple[dict[str, Any], urllib.request.Request, bool]:
+        """A provider rejected the generation against the output schema (Groq
+        strict mode, in a live REPL session). Retry on each remaining configured
+        provider; with none left, retry once without the decoding constraint. The
+        host still validates every reply against the exact pydantic model, so
+        nothing is loosened. Returns (response, the request that produced it,
+        whether the reply is union-wrapped)."""
+        pinning = dict(body.get("provider") or {})
+        remaining = list(pinning.get("order") or [])
+        rejected: list[str] = []
+        error = rejection
+        while True:
+            provider = _rejecting_provider(error, remaining)
+            if provider is not None:
+                rejected.append(provider)
+                remaining = remaining[remaining.index(provider) + 1:] if provider in remaining else remaining[1:]
+            if not remaining:
+                break
+            self._progress(f"{provider or 'the provider'} rejected the output against the schema; "
+                           f"retrying on {remaining[0]}")
+            trial = {**body, "provider": {**pinning, "order": remaining, "ignore": list(rejected)}}
+            req = self._responses_request(trial, api_key)
+            try:
+                return self._send_json_with_retries(req, deadline), req, union_wrapped
+            except ProviderError as exc:
+                if not exc.wire_equivalent:
+                    raise
+                error = exc
+        self._progress("every configured provider rejected the output against the schema; "
+                       "retrying once without the schema constraint")
+        trial = {key: value for key, value in body.items() if key != "text"}
+        req = self._responses_request(trial, api_key)
+        try:
+            return self._send_json_with_retries(req, deadline), req, False
+        except ProviderError as exc:
+            if not exc.wire_equivalent:
+                raise
+            tried = ", ".join(rejected) or "the provider"
+            raise ProviderError(
+                "OUTPUT_MALFORMED",
+                f"the reply did not match the output schema at {tried}, nor once without the constraint",
+                wire_equivalent=True,
+                attempts=[{"provider": name, "message": "output rejected against the schema"} for name in rejected],
+            ) from exc
 
     @staticmethod
     def _extract_output_text(data: dict[str, Any]) -> str:

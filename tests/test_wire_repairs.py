@@ -534,3 +534,109 @@ def test_worker_unwraps_the_reply_to_a_wrapped_schema(monkeypatch) -> None:
     result = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT).call(_Req())
     assert list(sent["text"]["format"]["schema"]["properties"]) == ["outcome"]
     assert json.loads(result.text) == inner
+
+
+# Provider schema rejection (session log 2026-10-01): Groq rejected DRAFT_PROMPT's
+# generation against the schema twice and the REPL printed the raw error, while
+# the same call worked on Cerebras.
+
+_GROQ_REJECTION = ("generation did not match the schema: Upstream error from {provider}: Generated JSON does "
+                   "not match the expected schema. Please adjust your prompt. See 'failed_generation' for more "
+                   "details. Error: jsonschema: '/outcome/kind' does not validate with /properties/outcome/anyOf/0/"
+                   "properties/kind/anyOf/0/type: expected null, but got string")
+
+
+def _scripted_send(monkeypatch, outcomes):
+    """Replace the transport: each call pops an outcome (a provider name to reject
+    as, or a reply text to return); every request body is recorded."""
+    from pdl_taskmaster.providers.api_worker import ApiWorker, ProviderError
+
+    sent: list[dict] = []
+
+    def fake_send(self, req, deadline=None):
+        sent.append(json.loads(req.data))
+        outcome = outcomes.pop(0)
+        if outcome.startswith("reject:"):
+            raise ProviderError("OUTPUT_MALFORMED", _GROQ_REJECTION.format(provider=outcome[7:]),
+                                wire_equivalent=True)
+        return {"status": "completed", "output": [{"type": "message", "content": [
+            {"type": "output_text", "text": outcome}]}]}
+
+    monkeypatch.setattr(ApiWorker, "_send_json_with_retries", fake_send)
+    monkeypatch.setattr(ApiWorker, "_resolve_api_key", lambda self: "k")
+    return sent
+
+
+def _draft_request(operation="DRAFT_PROMPT"):
+    class _Req:
+        prompt = "Draft Prompt Pseudocode for: add 2 and 3."
+        manifest: dict = {}
+        projection = None
+
+    _Req.operation = operation
+    return _Req()
+
+
+_INNER = {"kind": "PROMPT", "prompt_body": "ADD 2 and 3", "approach_handoff": None, "task_entities": None}
+
+
+def test_schema_rejection_retries_on_the_next_configured_provider(monkeypatch) -> None:
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+
+    sent = _scripted_send(monkeypatch, ["reject:Groq", json.dumps({"outcome": _INNER})])
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT,
+                       provider_pinning={"order": ["Groq", "Baseten", "Amazon Bedrock"], "allow_fallbacks": True})
+    result = worker.call(_draft_request())
+    assert len(sent) == 2
+    assert sent[1]["provider"] == {"order": ["Baseten", "Amazon Bedrock"], "allow_fallbacks": True,
+                                   "ignore": ["Groq"]}
+    assert sent[1]["text"] == sent[0]["text"]  # still schema-constrained
+    assert json.loads(result.text) == _INNER
+
+
+def test_schema_rejection_with_no_provider_left_retries_once_unconstrained(monkeypatch) -> None:
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+
+    sent = _scripted_send(monkeypatch, ["reject:Cerebras", json.dumps(_INNER)])
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT,
+                       provider_pinning={"order": ["Cerebras"], "allow_fallbacks": False})
+    result = worker.call(_draft_request())
+    assert len(sent) == 2 and "text" in sent[0] and "text" not in sent[1]
+    assert sent[1]["provider"] == {"order": ["Cerebras"], "allow_fallbacks": False}
+    assert BRIDGE.parse_prompt_draft(result.text).prompt_body == "ADD 2 and 3"  # host validation unchanged
+
+
+def test_schema_rejection_everywhere_is_one_malformed_output_error(monkeypatch) -> None:
+    from pdl_taskmaster.providers.api_worker import ApiWorker, ProviderError
+    from pdl_taskmaster.runtime.session_engine import _is_wire_failure
+
+    sent = _scripted_send(monkeypatch, ["reject:Groq", "reject:Baseten", "reject:Baseten"])
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT,
+                       provider_pinning={"order": ["Groq", "Baseten"], "allow_fallbacks": True})
+    with pytest.raises(ProviderError) as info:
+        worker.call(_draft_request())
+    assert len(sent) == 3 and "text" not in sent[2]
+    assert info.value.category == "OUTPUT_MALFORMED" and _is_wire_failure(info.value)
+    assert "\n" not in str(info.value) and [a["provider"] for a in info.value.attempts] == ["Groq", "Baseten"]
+
+
+def test_execute_schema_rejection_stays_one_counted_call(monkeypatch) -> None:
+    from pdl_taskmaster.providers.api_worker import ApiWorker, ProviderError
+
+    sent = _scripted_send(monkeypatch, ["reject:Groq", json.dumps({"kind": "RESULT", "body": "5"})])
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT,
+                       provider_pinning={"order": ["Groq", "Baseten"], "allow_fallbacks": True})
+    with pytest.raises(ProviderError):
+        worker.call(_draft_request("EXECUTE"))
+    assert len(sent) == 1
+
+
+def test_repl_reports_a_provider_error_on_one_line() -> None:
+    from pdl_taskmaster.host.repl import _one_line_error
+    from pdl_taskmaster.providers.api_worker import ProviderError
+
+    exc = ProviderError("OUTPUT_MALFORMED", _GROQ_REJECTION.format(provider="Groq") + "\n" + "x" * 2000,
+                        wire_equivalent=True, operation="DRAFT_PROMPT")
+    line = _one_line_error(exc)
+    assert "\n" not in line and len(line) <= 240
+    assert line.startswith("OUTPUT_MALFORMED at DRAFT_PROMPT: generation did not match the schema")

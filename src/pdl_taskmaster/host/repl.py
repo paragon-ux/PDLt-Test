@@ -427,6 +427,17 @@ def _harness_error_record(exc: BaseException) -> dict:
     return {"category": "HARNESS_EXCEPTION", "operation": None, "status": None, "attempts": [],
             "message": f"{type(exc).__name__}: {exc}"[:2000]}
 
+def _one_line_error(exc: BaseException, limit: int = 240) -> str:
+    """A failed call as one short line for the console: category, operation and
+    the first part of the message. The full record stays in the transcript and,
+    headless, in the [harness-error] record."""
+    record = _harness_error_record(exc)
+    message = " ".join(str(record.get("message") or exc).split())
+    operation = record.get("operation")
+    line = f"{record['category']}" + (f" at {operation}" if operation else "") + f": {message}"
+    return line if len(line) <= limit else line[: limit - 3] + "..."
+
+
 PASTE_START = "\x1b[200~"
 PASTE_END = "\x1b[201~"
 
@@ -1385,7 +1396,7 @@ def main() -> int:
                 continue
             except Exception as exc:
                 message = f"{type(exc).__name__}: {exc}"
-                print(f"[error] {message}", flush=True)
+                print(f"[error] {_one_line_error(exc)}", flush=True)
                 _write_transcript("ERROR> " + message)
                 if not _is_interactive(args):
                     # Headless: a failed call ends the run. Feeding the remaining piped
