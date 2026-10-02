@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-6ac95925bd",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-6ac95925bd-P1",
+    "body": "DETERMINE whether the undirected graph G with 12 nodes labeled 0-11 and the edge list [(0,1), (1,2), (2,3), (3,4), (4,5), (5,6), (6,7), (7,8), (8,9), (9,10), (10,11), (0,3), (2,7), (4,9), (6,11), (1,8)] contains a Hamiltonian path.\nIF a Hamiltonian path exists THEN\n    OUTPUT the complete Hamiltonian path.\n    VERIFY that the path visits all 12 nodes.\n    VERIFY that each consecutive pair in the path is a valid edge in the graph.\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-6ac95925bd-R1",
+    "body": "DEFINE graph G with 12 nodes labeled 0-11 and edges (0,1), (1,2), (2,3), (3,4), (4,5), (5,6), (6,7), (7,8), (8,9), (9,10), (10,11), (0,3), (2,7), (4,9), (6,11), (1,8)\nDETERMINE if G contains a Hamiltonian path\nUSE backtracking search with pruning to explore possible node sequences\nIF a Hamiltonian path exists THEN\n    OUTPUT the complete Hamiltonian path\n    VERIFY that the path visits all 12 nodes\n    VERIFY that each consecutive pair in the path is a valid edge in G\nENDIF",
+    "confirmed": true,
+    "source_prompt_id": "I-6ac95925bd-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-6ac95925bd-X1",
+    "body": "75770b2545b2de0a198b1986151d9d56965fbe0b5efe042344e728d26ebb8b22",
+    "confirmed": true,
+    "source_prompt_id": "I-6ac95925bd-P1",
+    "source_plan_id": "I-6ac95925bd-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

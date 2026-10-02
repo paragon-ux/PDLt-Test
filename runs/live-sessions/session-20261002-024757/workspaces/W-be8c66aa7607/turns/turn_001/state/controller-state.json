@@ -1,0 +1,28 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-7ed2e3f03c",
+  "stage": "CLOSED_CANCELLED",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 0,
+  "current_prompt": {
+    "artifact_id": "I-7ed2e3f03c-P1",
+    "body": "READ the problem description of a stick of unit length [0,1] broken at two points chosen uniformly and independently at random, dividing the stick into three pieces.\nDEFINE L_{min} as the length of the shortest piece.\nDEFINE L_{max} as the length of the longest piece.\nCALCULATE the probability that the ratio L_{min} / L_{max} is greater than or equal to 1/4.\nRETURN the probability value.",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-7ed2e3f03c-R1",
+    "body": "READ the problem description of a unit stick broken at two uniformly random points.\nDEFINE random variables X and Y for the break positions, with X < Y.\nCOMPUTE segment lengths: L1 = X, L2 = Y - X, L3 = 1 - Y.\nIDENTIFY L_min as the minimum of L1, L2, L3 and L_max as the maximum of L1, L2, L3.\nFORMULATE the condition L_min / L_max ≥ 1/4.\nDETERMINE the region in the (X, Y) unit triangle where the condition holds.\nCALCULATE the probability as the ratio of the area of that region to the total area of the unit triangle.\nRETURN the probability value.",
+    "confirmed": true,
+    "source_prompt_id": "I-7ed2e3f03c-P1",
+    "source_plan_id": null
+  },
+  "current_result": null,
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

@@ -1,0 +1,9 @@
+{
+  "kind": "VERIFICATION_FAILED",
+  "errors": [
+    "[WITNESS_INVALID] The witness does not check: the WITNESS line printed by the program does not check: Invalid positive witness structure: data: Field required; basis: Extra inputs are not permitted Rule: A witness is valid only if the host's checks confirm it against the task's constraints. Next attempt: Return a witness that satisfies the check named above, or mark the requirement open with the defect recorded."
+  ],
+  "codes": [
+    "WITNESS_INVALID"
+  ]
+}

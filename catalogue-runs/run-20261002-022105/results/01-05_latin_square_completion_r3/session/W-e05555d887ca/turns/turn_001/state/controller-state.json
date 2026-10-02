@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-7f60efb356",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-7f60efb356-P1",
+    "body": "READ the partially filled 7x7 Latin square\nFILL all zero cells so that each row and column contains the numbers 1 through 7 exactly once\nEMIT the completed square\nVERIFY that every row is a permutation of {1,...,7}\nVERIFY that every column is a permutation of {1,...,7}",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-7f60efb356-R1",
+    "body": "READ the partially filled 7x7 Latin square\nINITIALIZE cell domains with values 1..7 for zero cells\nAPPLY constraint propagation to enforce row and column uniqueness constraints\nIF any cell domain remains ambiguous THEN\n    PERFORM backtracking search to assign values consistent with constraints\nENDIF\nFILL all zero cells with the determined values\nEMIT the completed square\nVERIFY that every row is a permutation of {1,...,7}\nVERIFY that every column is a permutation of {1,...,7}",
+    "confirmed": true,
+    "source_prompt_id": "I-7f60efb356-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-7f60efb356-X1",
+    "body": "adfea7665be6a7949e60e2b539c5bd8ba7aaf8c831b97eae68d1befb069b4a5d",
+    "confirmed": true,
+    "source_prompt_id": "I-7f60efb356-P1",
+    "source_plan_id": "I-7f60efb356-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

@@ -1,0 +1,12 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Find all subsets of the set S = {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21} that sum exactly to target T = 40. Emit each subset that meets this sum, verify its sum, and report the total number of such subsets.",
+  "approach_notes": "Use a backtracking algorithm that explores the full search tree to enumerate all possible subsets.",
+  "risk_notes": "",
+  "task_entities": [
+    "S",
+    "T",
+    "40",
+    "{3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21}"
+  ]
+}

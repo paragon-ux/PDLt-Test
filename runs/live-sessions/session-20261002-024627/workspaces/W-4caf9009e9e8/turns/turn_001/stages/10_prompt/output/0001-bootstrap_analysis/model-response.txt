@@ -1,0 +1,12 @@
+{
+  "kind": "ANALYSIS",
+  "task_summary": "Calculate the probability that, for a stick of unit length broken at two uniformly random independent points (creating three pieces), the ratio of the shortest piece length L_min to the longest piece length L_max is at least 1/4.",
+  "approach_notes": "",
+  "risk_notes": "",
+  "task_entities": [
+    "[0, 1]",
+    "L_{min}",
+    "L_{max}",
+    "1/4"
+  ]
+}

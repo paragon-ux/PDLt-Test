@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-288631311c",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-288631311c-P1",
+    "body": "READ the set S = {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21}\nREAD the target value T = 40\nFIND all subsets of S that sum exactly to T\nFOR each subset that meets the sum\n    VERIFY that the subset's sum equals T\n    EMIT the subset\nEND_FOR\nCOUNT the total number of emitted subsets\nREPORT the total count",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-288631311c-R1",
+    "body": "READ the set S = {3, 34, 7, 12, 5, 26, 11, 8, 15, 2, 19, 21}\nREAD the target value T = 40\nINITIALIZE an empty collection for matching subsets\nINITIALIZE a counter set to zero\nAPPLY BACKTRACKING algorithm with parameters (current_subset, start_index, current_sum) that\n    IF current_sum equals T THEN\n        VERIFY that the sum of current_subset equals T\n        EMIT current_subset\n        INCREMENT counter\n    ENDIF\n    IF current_sum > T OR start_index >= size of S THEN\n        RETURN\n    ENDIF\n    FOR each element i from start_index to size of S - 1 DO\n        ADD element i to current_subset\n        RECURSE BACKTRACKING with (current_subset, i+1, current_sum + element i)\n        REMOVE element i from current_subset\n    ENDFOR\nREPORT counter as the total number of emitted subsets",
+    "confirmed": true,
+    "source_prompt_id": "I-288631311c-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-288631311c-X1",
+    "body": "0e30bc6b13049be5fb183207f3f15e94a4e4e7cae56fd4e7e429d41f68701f19",
+    "confirmed": true,
+    "source_prompt_id": "I-288631311c-P1",
+    "source_plan_id": "I-288631311c-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

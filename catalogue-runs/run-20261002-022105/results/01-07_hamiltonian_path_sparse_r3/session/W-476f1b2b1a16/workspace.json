@@ -1,0 +1,11 @@
+{
+  "schema_version": "C0-ICM-WORKSPACE-5",
+  "workspace_id": "W-476f1b2b1a16",
+  "protocol_instance_id": "I-4b6355c20e",
+  "created_at_utc": "2026-10-02T06:25:02.868886+00:00",
+  "icm_reference": "arXiv:2603.16021v2",
+  "context_flow": "filesystem_stage_handoffs",
+  "control_flow": "mechanical_controller",
+  "turn_id": "turn_001",
+  "session_hierarchy": true
+}

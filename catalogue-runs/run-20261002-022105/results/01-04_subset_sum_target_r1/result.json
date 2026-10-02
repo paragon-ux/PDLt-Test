@@ -1,0 +1,72 @@
+{
+  "id": "01-04",
+  "category": "combinatorial_search",
+  "file": "01_combinatorial_search/subset_sum_target.txt",
+  "difficulty": "medium",
+  "expected_routing": "VERIFIED_EXECUTION",
+  "expected_stage": "CLOSED_SUCCESS",
+  "ground_truth_status": "verified",
+  "verdict": "CLOSED_SUCCESS",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 10.59,
+  "harness_peak_memory_mb": 36.0,
+  "start_time": "2026-10-02T06:23:05.998274+00:00",
+  "session_id": "catalogue-01-04-1790922185-r1",
+  "transcript_file": "results\\01-04_subset_sum_target_r1\\transcript.txt",
+  "ground_truth_check": {
+    "solution_file": "solutions/01_combinatorial_search/subset_sum_target.json",
+    "expected_behavior": null,
+    "polarity": "positive",
+    "note": "Ground truth available - manual or automated comparison required post-run"
+  },
+  "ground_truth_grade": {
+    "grade": "PASS",
+    "reason": "all 19 subsets and the total presented"
+  },
+  "pdl_rules_stressed": [
+    "PDL-02",
+    "PDL-08"
+  ],
+  "tags": [
+    "subset-sum",
+    "backtracking"
+  ],
+  "regression_ref": null,
+  "tester_note": null,
+  "multi_turn_script": null,
+  "model_calls": {
+    "total": 4,
+    "by_operation": {
+      "BOOTSTRAP_ANALYSIS": 1,
+      "DRAFT_PROMPT": 1,
+      "DRAFT_PLAN": 1,
+      "EXECUTE": 1
+    },
+    "repairs": 0,
+    "execution_attempts": {
+      "attempts": 1,
+      "repairs_used": 0,
+      "unmeasured_repairs": 0,
+      "repairs_allowed": 1,
+      "tier": "STANDARD"
+    },
+    "plan_echo": {
+      "plan_id": "I-288631311c-R1",
+      "identical": false,
+      "copied_line_ratio": 0.105
+    },
+    "reasoning_tokens": {
+      "BOOTSTRAP_ANALYSIS": 2867,
+      "DRAFT_PLAN": 4496,
+      "EXECUTE": 167
+    },
+    "output_tokens": {
+      "BOOTSTRAP_ANALYSIS": 3056,
+      "DRAFT_PLAN": 4726,
+      "EXECUTE": 477
+    }
+  },
+  "repeat": 1,
+  "harness_error": null
+}

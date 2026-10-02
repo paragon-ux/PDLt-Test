@@ -1,0 +1,34 @@
+{
+  "schema_version": "C0-HOST-4",
+  "instance_id": "I-fd279f44fe",
+  "stage": "CLOSED_SUCCESS",
+  "prompt_highwater": 1,
+  "plan_highwater": 1,
+  "action_highwater": 0,
+  "result_highwater": 1,
+  "current_prompt": {
+    "artifact_id": "I-fd279f44fe-P1",
+    "body": "- U = {1, 2, 3, 4, 5, 6, 7, 8, 9}\n- S1 = {1, 2, 3}\n- S2 = {4, 5, 6}\n- S3 = {7, 8, 9}\n- S4 = {1, 4, 7}\n- S5 = {2, 5, 8}\n- S6 = {3, 6, 9}\n- S7 = {1, 5, 9}\n- S8 = {2, 6, 7}\n- S9 = {3, 4, 8}\nREAD the universe definition U = {1, 2, 3, 4, 5, 6, 7, 8, 9}\nREAD the set definitions S1 = {1, 2, 3}\nREAD the set definitions S2 = {4, 5, 6}\nREAD the set definitions S3 = {7, 8, 9}\nREAD the set definitions S4 = {1, 4, 7}\nREAD the set definitions S5 = {2, 5, 8}\nREAD the set definitions S6 = {3, 6, 9}\nREAD the set definitions S7 = {1, 5, 9}\nREAD the set definitions S8 = {2, 6, 7}\nREAD the set definitions S9 = {3, 4, 8}\nFIND all exact covers of U using the sets S1, S2, S3, S4, S5, S6, S7, S8, S9\nIMPLEMENT a self-contained program that enumerates all exact covers\nINCLUDE a test that verifies each solution covers U exactly once",
+    "confirmed": true,
+    "source_prompt_id": null,
+    "source_plan_id": null
+  },
+  "current_plan": {
+    "artifact_id": "I-fd279f44fe-R1",
+    "body": "READ the universe definition U = {1, 2, 3, 4, 5, 6, 7, 8, 9}\nREAD the set definitions S1 = {1, 2, 3}\nREAD the set definitions S2 = {4, 5, 6}\nREAD the set definitions S3 = {7, 8, 9}\nREAD the set definitions S4 = {1, 4, 7}\nREAD the set definitions S5 = {2, 5, 8}\nREAD the set definitions S6 = {3, 6, 9}\nREAD the set definitions S7 = {1, 5, 9}\nREAD the set definitions S8 = {2, 6, 7}\nREAD the set definitions S9 = {3, 4, 8}\nBUILD an exact cover matrix with rows for each set and columns for each element of U\nIMPLEMENT Knuth's Algorithm X using dancing links to manipulate the matrix\nEXECUTE the Algorithm X search to enumerate all exact cover solutions\nCOLLECT each solution as a set of selected subsets\nVERIFY that each solution covers every element of U exactly once\nINCLUDE a test that asserts the verification condition for each enumerated solution\nEMIT the self-contained implementation and the verification test",
+    "confirmed": true,
+    "source_prompt_id": "I-fd279f44fe-P1",
+    "source_plan_id": null
+  },
+  "current_result": {
+    "artifact_id": "I-fd279f44fe-X1",
+    "body": "1e9bb3f2b6ed833f195245f8e318d712b052234237c080bde381ceca28ea206d",
+    "confirmed": true,
+    "source_prompt_id": "I-fd279f44fe-P1",
+    "source_plan_id": "I-fd279f44fe-R1"
+  },
+  "pending_change": null,
+  "approach_sources": [],
+  "pending_input": null,
+  "in_flight_action": null
+}

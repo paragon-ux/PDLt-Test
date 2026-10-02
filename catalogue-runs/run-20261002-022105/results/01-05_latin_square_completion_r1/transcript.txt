@@ -1,0 +1,223 @@
+=== PDLt session started ===
+WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION
+REASONING: default=low per_operation={"BOOTSTRAP_ANALYSIS": "high", "DRAFT_EXECUTE": "high", "DRAFT_PLAN": "high", "DRAFT_PROMPT": "high", "EMIT_RESULT_IR": "high", "EXECUTE": "low", "INTERPRET_EXECUTION_INPUT": "high", "INTERPRET_PLAN_REVIEW": "high", "INTERPRET_PROMPT_REVIEW": "high", "REVISE_PLAN": "high", "REVISE_PROMPT": "high"}
+USER> Complete the following partially filled 7x7 Latin square. Each row and column must contain the numbers 1-7 exactly once. Cells marked 0 are empty and must be filled.
+
+Row 1: [1, 0, 0, 0, 5, 6, 7]
+Row 2: [0, 0, 0, 0, 0, 0, 0]
+Row 3: [3, 0, 0, 0, 7, 0, 2]
+Row 4: [4, 0, 0, 7, 0, 0, 0]
+Row 5: [5, 6, 7, 1, 0, 3, 0]
+Row 6: [0, 7, 1, 2, 0, 4, 0]
+Row 7: [0, 0, 0, 0, 0, 0, 6]
+
+Implement a constraint-propagation solver with backtracking. Emit the completed square and verify that every row and column is a permutation of {1,...,7}.
+ASSISTANT> Prompt Pseudocode
+
+READ the partially filled 7x7 Latin square with empty cells marked 0
+FILL the empty cells (marked 0) so that each row and each column contain the numbers 1 through 7 exactly once
+RETURN the completed 7x7 Latin square
+VERIFY each row is a permutation of {1,…,7}
+VERIFY each column is a permutation of {1,…,7}
+- 7x7 Latin square
+
+Confirm or correct this interpretation.
+USER> /confirm
+ASSISTANT> Response Plan Pseudocode
+
+READ the partially filled 7x7 Latin square
+CONVERT the input into a matrix representation with cell domains
+IDENTIFY empty cells (marked 0)
+APPLY constraint propagation to reduce domains using row and column uniqueness constraints
+USE backtracking search to assign values to empty cells
+WHILE there exist unfilled cells
+    IF any cell has a single possible value
+        ASSIGN that value to the cell
+        APPLY constraint propagation
+    ELSE
+        SELECT an empty cell with the smallest domain
+        FOR each possible value in the selected cell's domain
+            ASSIGN the value tentatively
+            APPLY constraint propagation
+            IF no conflict arises
+                CONTINUE solving
+            ENDIF
+            REVERT the tentative assignment
+        ENDFOR
+    ENDIF
+ENDWHILE
+VERIFY each row contains each number 1 through 7 exactly once
+VERIFY each column contains each number 1 through 7 exactly once
+RETURN the completed 7x7 Latin square
+
+Confirm or correct this response approach.
+USER> /confirm
+ASSISTANT> import json
+
+def solve_latin_square():
+    # initial grid with 0 as empty
+    grid = [
+        [1, 0, 0, 0, 5, 6, 7],
+        [0, 0, 0, 0, 0, 0, 0],
+        [3, 0, 0, 0, 7, 0, 2],
+        [4, 0, 0, 7, 0, 0, 0],
+        [5, 6, 7, 1, 0, 3, 0],
+        [0, 7, 1, 2, 0, 4, 0],
+        [0, 0, 0, 0, 0, 0, 6],
+    ]
+    N = 7
+    # precompute possible values for each cell
+    rows = [set() for _ in range(N)]
+    cols = [set() for _ in range(N)]
+    for r in range(N):
+        for c in range(N):
+            val = grid[r][c]
+            if val != 0:
+                rows[r].add(val)
+                cols[c].add(val)
+    def domain(r, c):
+        return set(range(1, N+1)) - rows[r] - cols[c]
+    # find empty cells
+    empties = [(r, c) for r in range(N) for c in range(N) if grid[r][c] == 0]
+    # backtracking with MRV
+    def backtrack(index=0):
+        if index == len(empties):
+            return True
+        # select cell with smallest domain
+        best_i = None
+        best_domain = None
+        for i in range(index, len(empties)):
+            r, c = empties[i]
+            d = domain(r, c)
+            if not d:
+                return False
+            if best_domain is None or len(d) < len(best_domain):
+                best_domain = d
+                best_i = i
+                if len(d) == 1:
+                    break
+        # swap to current position
+        empties[index], empties[best_i] = empties[best_i], empties[index]
+        r, c = empties[index]
+        for val in best_domain:
+            # assign
+            grid[r][c] = val
+            rows[r].add(val)
+            cols[c].add(val)
+            if backtrack(index + 1):
+                return True
+            # revert
+            grid[r][c] = 0
+            rows[r].remove(val)
+            cols[c].remove(val)
+        # restore order
+        empties[index], empties[best_i] = empties[best_i], empties[index]
+        return False
+    success = backtrack()
+    if not success:
+        raise ValueError("No solution found")
+    # verify rows and columns are permutations 1..7
+    for r in range(N):
+        if set(grid[r]) != set(range(1, N+1)):
+            raise AssertionError(f"Row {r+1} invalid")
+    for c in range(N):
+        col = {grid[r][c] for r in range(N)}
+        if col != set(range(1, N+1)):
+            raise AssertionError(f"Column {c+1} invalid")
+    return grid
+
+def main():
+    solution = solve_latin_square()
+    witness = {
+        "polarity": "positive",
+        "data": {
+            "completed_square": solution
+        }
+    }
+    print("WITNESS: " + json.dumps(witness))
+
+if __name__ == "__main__":
+    main()
+
+[host] Witness values are written into the program, not computed; unverified.
+
+```json
+{
+  "files": [],
+  "reconciliation": [],
+  "open_defects": [],
+  "witness": {
+    "polarity": "positive",
+    "data": {
+      "completed_square": [
+        [
+          1,
+          2,
+          4,
+          3,
+          5,
+          6,
+          7
+        ],
+        [
+          7,
+          5,
+          3,
+          6,
+          4,
+          2,
+          1
+        ],
+        [
+          3,
+          4,
+          6,
+          5,
+          7,
+          1,
+          2
+        ],
+        [
+          4,
+          1,
+          2,
+          7,
+          6,
+          5,
+          3
+        ],
+        [
+          5,
+          6,
+          7,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          6,
+          7,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        [
+          2,
+          3,
+          5,
+          4,
+          1,
+          7,
+          6
+        ]
+      ]
+    },
+    "provisional": true
+  }
+}
+```
+PROTOCOL_CLOSED
+=== PDLt session ended ===
