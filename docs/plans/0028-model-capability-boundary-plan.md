@@ -24,10 +24,11 @@ Goal: encode the invariant and the observed behaviour before changing code.
      - `EXECUTE`: `witness`, and `open_defects[].evidence.section`;
      - `INTERPRET_ACTIVATION`, `INTERPRET_PROMPT_REVIEW`, `INTERPRET_PLAN_REVIEW` and `INTERPRET_EXECUTION_INPUT`: `confidence`.
 2. **The description-preservation test.** Every `description` in today's `controller/schemas/*.schema.json` (39 lines across 11 files) appears verbatim in the generated prompt schema at the same path.
-3. **Metadata fixtures.** These are offline copies of OpenRouter's records, nothing else:
+3. **The adaptation test (ADR-0028 rule 5).** With Groq configured as the provider, `EXECUTE` and `EMIT_RESULT_IR` are still sent to Groq, without the schema, and a valid reply is accepted after host validation. This fails today: those operations are routed away from Groq.
+4. **Metadata fixtures.** These are offline copies of OpenRouter's records, nothing else:
    - `tests/fixtures/openrouter/models.json`: the `/api/v1/models` entries for the two named models;
    - `tests/fixtures/openrouter/endpoints-*.json`: their `/endpoints` responses, captured once.
-4. **The stall regression** (already in `tests/test_wire_repairs.py`, from `aada9387`) stays, as the adapter's safety-net test.
+5. **The stall regression** (already in `tests/test_wire_repairs.py`, from `aada9387`) stays, as the adapter's safety-net test.
 
 ## Phase 1: One output contract per operation (fixes the stall), IMPL-0001
 **Files:**
@@ -94,7 +95,7 @@ Goal: encode the invariant and the observed behaviour before changing code.
      - pre-execution stages `medium`;
      - `EXECUTE` `low` with a 2048 budget and `json` grammar.
    - **gpt-oss:** unchanged (ADR-0022 mapping, Baseten then Crusoe, `EXECUTE` `json`).
-   - **Providers:** `strict_all_required` and schema rejections for Groq and Cerebras, moved from `api_worker.py:135-149`.
+   - **Providers:** `strict_all_required` for Cerebras, and a `json` grammar cap for Groq on `EXECUTE` and `EMIT_RESULT_IR`. These replace the routing exclusions in `api_worker.py:135-173`.
 4. **Resolution, per setting and per call:**
    1. the per-operation CLI flag;
    2. the all-operations CLI flag;
@@ -116,7 +117,7 @@ Goal: encode the invariant and the observed behaviour before changing code.
      - `off` becomes `{enabled: false}` unless reasoning is mandatory; for gpt-oss it becomes the lowest supported level.
      - A budget is sent as `reasoning.max_tokens` when supported; otherwise it falls back to the level.
    - **Grammar.**
-     - `schema` requires `structured_outputs` (or `response_format`) on the routed endpoints.
+     - `schema` requires `structured_outputs` (or `response_format`) on the routed endpoints, and no per-operation `json` cap for that provider (ADR-0028 rule 5).
      - Otherwise it falls back to `json`, then to `none`.
      - The schema form follows the provider's `strict_all_required`.
    - **Sampling.** The profile's values, sent only when they are in `supported_parameters`.

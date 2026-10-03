@@ -51,7 +51,11 @@ OpenRouter publishes that metadata:
      - an unsupported level goes to the nearest supported one, downward first;
      - `off` becomes `enabled: false` unless reasoning is mandatory, and the lowest supported level if it is;
      - a budget is sent as `max_tokens` when supported, and as the level otherwise.
-   - **Grammar:** `schema` needs structured-output support on the routed endpoints, otherwise `json`, otherwise `none`. The schema form follows the provider's declaration (IMPL-0003).
+   - **Grammar (ADR-0028 rule 5):** the stage's requested grammar is capped at what the routed provider accepts for that operation:
+     - `schema` needs structured-output support, and must not be on the provider's per-operation `json` list (IMPL-0003);
+     - otherwise the cap is `json`, and without JSON mode, `none`.
+     
+     The host validates every reply against the Pydantic model regardless. A provider is never routed away from an operation because it cannot take the schema. This replaces `_route_schema_operation` and `_SCHEMA_UNSUPPORTED_OPERATIONS` (`api_worker.py:143-173`), which removed Groq from `EXECUTE` and `EMIT_RESULT_IR`. The schema form (`strict_all_required`) follows the provider's declaration.
    - **Settings come from the profile, resolved per stage (IMPL-0003).** Sampling is sent only if supported. Providers are sent as the profile's `order` and `allow_fallbacks`, checked against the model's endpoints. A pinned provider the metadata does not list is an error at startup, not a silent re-route.
    - **Parameter filter:** nothing outside the model's `supported_parameters` plus the core fields. This drops `safety_settings`.
    - **Adjustments:** each is recorded as `{field, requested, sent, reason}`.

@@ -31,13 +31,14 @@ The protocol and the providers are separated the way MVVM separates the ViewMode
 - **ViewModel:** the protocol plane. It states what each operation needs: its output contract, a reasoning depth, an output budget, and how strictly the output's form must be enforced. It never names a model, a provider or an API parameter.
 - **Model:** the provider plane, reached only through an **adapter**. The adapter owns everything provider-specific: discovering capabilities, translating intent into a request, adjusting to what the model supports, and normalizing the reply.
 
-Five rules follow.
+Six rules follow.
 
 1. **One output contract per operation.** The schema shown to the model and the constraint sent to the provider come from the same definition. Whatever the provider enforces, the model has been shown. Optional parts of a contract stay optional unless a provider requires otherwise, and then the model is shown that form too.
 2. **Capabilities are discovered, not assumed.** The adapter learns what each model and provider supports from the provider's own published metadata. Code does not encode what a model can do.
 3. **Adjustments are explicit.** When intent asks for something a model does not support, the adapter uses the nearest supported equivalent and reports it. It never sends a parameter the model does not list, and never changes a setting silently.
 4. **Model-specific choices are data, per stage.** What metadata cannot express is declared per model in configuration, and can be set separately for each operation (stage). That includes reasoning depth and budget, sampling, how strictly output is constrained, output limits, and which provider serves the model, including pinning one provider with no fallback. Adding a model or tuning a stage never requires a code change.
-5. **Neutrality is unchanged.** The adapter changes how a request is expressed, never the task or the method. No adjustment may add guidance (GUARD-01, GUARD-04), and the text the model reads changes only through reviewed changes to the contracts.
+5. **Adapt to providers; never exclude them for a missing feature.** When a provider cannot enforce an output contract, the adapter sends the strongest constraint that provider accepts: the full schema, plain JSON, or none. The host validates every reply against the contract either way. The decoding constraint is an aid to the model, never the guarantee. A provider is ruled out only when it cannot serve the model at all.
+6. **Neutrality is unchanged.** The adapter changes how a request is expressed, never the task or the method. No adjustment may add guidance (GUARD-01, GUARD-04), and the text the model reads changes only through reviewed changes to the contracts.
 
 ## Options considered
 

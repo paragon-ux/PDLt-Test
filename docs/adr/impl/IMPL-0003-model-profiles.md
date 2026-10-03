@@ -26,7 +26,7 @@ Model and provider specifics are hardcoded in the request path:
    - `max_output_tokens`;
    - `providers`: an `order` and `allow_fallbacks`.
 
-   A provider entry may set `strict_all_required` and the operations whose schema the provider rejects.
+   A provider entry may set `strict_all_required`, and a per-operation grammar cap: for example, `json` for operations whose schema the provider rejects. A cap adapts the request; it never excludes the provider (ADR-0028 rule 5).
 3. **Resolution, for each setting of each call:**
    1. a CLI flag for that operation;
    2. a CLI flag for every operation;
@@ -67,7 +67,7 @@ Model and provider specifics are hardcoded in the request path:
 
    | Provider | Value |
    |---|---|
-   | Groq | rejects the schema for `EXECUTE` and `EMIT_RESULT_IR` |
+   | Groq | grammar cap `json` for `EXECUTE` and `EMIT_RESULT_IR` (its schema check rejects their nested witness union); it still serves them |
    | Cerebras | `strict_all_required`; closed objects only |
 
 6. **Removal.** Everything in the Context table is removed or replaced by the profile file and the adapter's metadata (IMPL-0002). An integrity test fails if a model or provider name appears in `src/pdl_taskmaster` outside `profiles.json`.
