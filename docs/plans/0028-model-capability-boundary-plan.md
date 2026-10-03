@@ -20,10 +20,11 @@ Goal: encode the invariant and the observed behaviour before changing code.
    - For every operation in `OPERATION_PAYLOAD_MODELS` (`wire_payloads.py:474-489`), and for each grammar form (default, and `strict_all_required`):
      - the schema rendered into the prompt and the grammar sent must have the same object paths;
      - they must have the same `required` set and the same `additionalProperties` at every path.
-   - Expected to fail today on:
-     - `EXECUTE`: `witness`, and `open_defects[].evidence.section`;
-     - `INTERPRET_ACTIVATION`, `INTERPRET_PROMPT_REVIEW`, `INTERPRET_PLAN_REVIEW` and `INTERPRET_EXECUTION_INPUT`: `confidence`.
-2. **The description-preservation test.** Every `description` in today's `controller/schemas/*.schema.json` (39 lines across 11 files) appears verbatim in the generated prompt schema at the same path.
+   - It covers the 11 operations that send a grammar today (the semantic reads send none). It fails today on 7, marked strict-xfail until Phase 1 (the table in IMPL-0001):
+     - `EXECUTE` and `EMIT_RESULT_IR`;
+     - the three `INTERPRET_*` review operations;
+     - `DRAFT_PROMPT` and `DRAFT_EXECUTE`.
+2. **The description-preservation test.** All 39 descriptions the model is shown today (12 operations, snapshot in `tests/fixtures/prompt_schema_descriptions.json`) appear verbatim at the same path. It passes today, and guards Phase 1.
 3. **The adaptation test (ADR-0028 rule 5).** With Groq configured as the provider, `EXECUTE` and `EMIT_RESULT_IR` are still sent to Groq, without the schema, and a valid reply is accepted after host validation. This fails today: those operations are routed away from Groq.
 4. **Metadata fixtures.** These are offline copies of OpenRouter's records, nothing else:
    - `tests/fixtures/openrouter/models.json`: the `/api/v1/models` entries for the two named models;

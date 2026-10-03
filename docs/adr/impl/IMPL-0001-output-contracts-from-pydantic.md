@@ -9,12 +9,16 @@ Each operation's output had two definitions:
 - **Shown to the model:** a static file, `src/pdl_taskmaster/controller/schemas/*.schema.json` (11 files). `context_compiler.py:94-116` loads it into the prompt as `output_schema`.
 - **Enforced by the provider:** the Pydantic payload model (`wire_payloads.py:474-498`), rewritten by `_sanitize_schema_for_grammar` (`api_worker.py:615-698`) and `_strictify` (`api_worker.py:198-229`). Lines 224-228 make every optional field required-nullable, for every provider. That form was written for Groq and Cerebras strict mode.
 
-Nothing compared the two. Comparing them structurally found these mismatches:
+Nothing compared the two. Comparing them (`tests/test_output_contracts.py`: same properties, `required` sets and closed objects at every path) finds 7 of the 11 operations that send a grammar disagree:
 
-| Operation | Required by the grammar, absent from the prompt schema |
+| Operation | Disagreement |
 |---|---|
-| `EXECUTE` | `result_ir.witness` (last key of `result_ir`); `open_defects[].evidence.section` |
-| `INTERPRET_ACTIVATION`, `INTERPRET_PROMPT_REVIEW`, `INTERPRET_PLAN_REVIEW`, `INTERPRET_EXECUTION_INPUT` | `confidence` |
+| `EXECUTE`, `EMIT_RESULT_IR` | `result_ir.witness` (the last key of `result_ir`) required but not shown; `evidence.section`/`observed` required but optional in the prompt |
+| `INTERPRET_PROMPT_REVIEW`, `INTERPRET_PLAN_REVIEW`, `INTERPRET_EXECUTION_INPUT` | `confidence` required but not shown; the two review operations are open objects in the prompt and closed in the grammar |
+| `DRAFT_PROMPT` | `task_entities` required by the grammar, optional in the prompt |
+| `DRAFT_EXECUTE` | `execution_entities` items shown with fields the grammar drops |
+
+The semantic reads (`BOOTSTRAP_ANALYSIS`, `INTERPRET_ACTIVATION`) send no grammar. `DRAFT_PLAN`, `REVISE_PLAN`, `REVISE_PROMPT` and `ANSWER_PROTOCOL_DISCUSSION` agree.
 
 ## Evidence
 All from 2026-10-03, on `nvidia/nemotron-3-super-120b-a12b`, through OpenRouter. Captured bytes are under the session's scratch directory, and the regression fixture is `tests/fixtures/nemotron-execute-whitespace-stall.json`.
