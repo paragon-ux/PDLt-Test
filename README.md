@@ -2,7 +2,7 @@
 
 A controller-gated REPL harness that has a model interpret your request as short, readable pseudocode and waits for confirmation before anything runs, plus the frozen **105-prompt catalogue** that measures it. Content quoted or pasted into a task stays passive data (semantic bootstrap containment).
 
-Current design: [`ARCHITECTURE.md`](ARCHITECTURE.md). Direction (not yet implemented): [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md). Guardrails: [`docs/guardrails/`](docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md). Decisions: [`docs/adr/`](docs/adr/).
+Current design: [`ARCHITECTURE.md`](ARCHITECTURE.md). Provider baseline and known provider issues: [`PROVIDERS.md`](PROVIDERS.md). Direction (not yet implemented): [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md). Guardrails: [`docs/guardrails/`](docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md). Decisions: [`docs/adr/`](docs/adr/).
 
 ## Two planes
 

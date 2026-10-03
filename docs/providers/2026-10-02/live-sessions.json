@@ -1,0 +1,968 @@
+{
+  "conditions": {
+    "model": "openai/gpt-oss-120b",
+    "harness": "pdlt 2.6.0rc1 (commit 760e6a36 plus the SambaNova message fix)",
+    "flags": "--dev --non-interactive --exit-on-close --new-session [--api-providers <provider>]",
+    "reasoning": "harness default (ADR-0022): high before EXECUTE, low at EXECUTE",
+    "max_output_tokens": 16384,
+    "input": "<task>\n/confirm\n/confirm\n",
+    "date": "2026-10-02"
+  },
+  "sessions": [
+    {
+      "config": "DEFAULT",
+      "task": "product",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 20.5,
+      "model_s": 16.7,
+      "out_tokens": 5641,
+      "reasoning_tokens": 4651,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 6284.653,
+          "out": 2422,
+          "reasoning": 2370,
+          "in": 2265
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 3662.614,
+          "out": 1427,
+          "reasoning": 1371,
+          "in": 2674
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 2396.378,
+          "out": 957,
+          "reasoning": 910,
+          "in": 2111
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 2618.218,
+          "out": 549,
+          "reasoning": 0,
+          "in": 4002
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 1699.269,
+          "out": 286,
+          "reasoning": 0,
+          "in": 4225
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": {
+        "product": 56
+      },
+      "witness_polarity": "positive"
+    },
+    {
+      "config": "DEFAULT",
+      "task": "factor360",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 16.8,
+      "model_s": 14.1,
+      "out_tokens": 4935,
+      "reasoning_tokens": 4643,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 4524.784,
+          "out": 1939,
+          "reasoning": 1851,
+          "in": 2264
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 6362.765,
+          "out": 1982,
+          "reasoning": 1914,
+          "in": 2687
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 2420.983,
+          "out": 922,
+          "reasoning": 878,
+          "in": 2123
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 753.391,
+          "out": 92,
+          "reasoning": 0,
+          "in": 3642
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": null,
+      "witness_polarity": null
+    },
+    {
+      "config": "Groq",
+      "task": "product",
+      "exit": 4,
+      "final_stage": "PLAN_REVIEW",
+      "wall_s": 14.3,
+      "model_s": 11.0,
+      "out_tokens": 4362,
+      "reasoning_tokens": 4211,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 5054.981,
+          "out": 2037,
+          "reasoning": 1982,
+          "in": 2265
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 3574.015,
+          "out": 1418,
+          "reasoning": 1363,
+          "in": 2678
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 2361.992,
+          "out": 907,
+          "reasoning": 866,
+          "in": 2108
+        }
+      ],
+      "retries": [],
+      "errors": [
+        "[error] PROVIDER_REJECTED_REQUEST at EXECUTE: HTTP 400: Groq: invalid JSON schema for response_format: 'EXECUTION_OUTCOME': /properties/outcome/anyOf/1/properties/result_ir/anyOf/0/properties/witness/anyOf: anyOf object variant error: variant 0:...",
+        "[headless halt] Harness error (PROVIDER_REJECTED_REQUEST at EXECUTE): ProviderError: HTTP 400: Groq: invalid JSON schema for response_format: 'EXECUTION_OUTCOME': /properties/outcome/anyOf/1/properties/result_ir/anyOf/0/properties/witness/anyOf: anyOf object variant error: variant 0: properties must be present (or set additionalProperties:false). Exiting (code 4)."
+      ],
+      "witness_data": null,
+      "witness_polarity": null
+    },
+    {
+      "config": "Groq",
+      "task": "factor360",
+      "exit": 4,
+      "final_stage": "PLAN_REVIEW",
+      "wall_s": 10.7,
+      "model_s": 7.8,
+      "out_tokens": 2850,
+      "reasoning_tokens": 2703,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 2569.927,
+          "out": 973,
+          "reasoning": 932,
+          "in": 2264
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 3158.751,
+          "out": 1210,
+          "reasoning": 1150,
+          "in": 2660
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 2024.092,
+          "out": 667,
+          "reasoning": 621,
+          "in": 2119
+        }
+      ],
+      "retries": [],
+      "errors": [
+        "[error] PROVIDER_REJECTED_REQUEST at EXECUTE: HTTP 400: Groq: invalid JSON schema for response_format: 'EXECUTION_OUTCOME': /properties/outcome/anyOf/1/properties/result_ir/anyOf/0/properties/witness/anyOf: anyOf object variant error: variant 0:...",
+        "[headless halt] Harness error (PROVIDER_REJECTED_REQUEST at EXECUTE): ProviderError: HTTP 400: Groq: invalid JSON schema for response_format: 'EXECUTION_OUTCOME': /properties/outcome/anyOf/1/properties/result_ir/anyOf/0/properties/witness/anyOf: anyOf object variant error: variant 0: properties must be present (or set additionalProperties:false). Exiting (code 4)."
+      ],
+      "witness_data": null,
+      "witness_polarity": null
+    },
+    {
+      "config": "Cerebras",
+      "task": "product",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 6.7,
+      "model_s": 3.7,
+      "out_tokens": 3509,
+      "reasoning_tokens": 3268,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 1349.442,
+          "out": 1304,
+          "reasoning": 1259,
+          "in": 2265
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 936.326,
+          "out": 1108,
+          "reasoning": 1059,
+          "in": 2735
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 925.127,
+          "out": 829,
+          "reasoning": 795,
+          "in": 2131
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 502.617,
+          "out": 268,
+          "reasoning": 155,
+          "in": 3710
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": {
+        "product": 56
+      },
+      "witness_polarity": "positive"
+    },
+    {
+      "config": "Cerebras",
+      "task": "factor360",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 7.8,
+      "model_s": 4.9,
+      "out_tokens": 4606,
+      "reasoning_tokens": 4329,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 1026.99,
+          "out": 1128,
+          "reasoning": 1082,
+          "in": 2264
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 1359.613,
+          "out": 939,
+          "reasoning": 890,
+          "in": 2735
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 2072.451,
+          "out": 2440,
+          "reasoning": 2318,
+          "in": 2129
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 456.841,
+          "out": 99,
+          "reasoning": 39,
+          "in": 3424
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": null,
+      "witness_polarity": null
+    },
+    {
+      "config": "SambaNova",
+      "task": "product",
+      "exit": 4,
+      "final_stage": null,
+      "wall_s": 4.8,
+      "model_s": 2.4,
+      "out_tokens": 1353,
+      "reasoning_tokens": 1300,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 2399.781,
+          "out": 1353,
+          "reasoning": 1300,
+          "in": 2265
+        }
+      ],
+      "retries": [],
+      "errors": [
+        "[error] PROVIDER_REJECTED_REQUEST at DRAFT_PROMPT: OpenRouter found no endpoint for openai/gpt-oss-120b at the configured providers (SambaNova): SambaNova does not support a parameter this request uses, such as structured output: choose a provid...",
+        "[headless halt] Harness error (PROVIDER_REJECTED_REQUEST at DRAFT_PROMPT): ProviderError: OpenRouter found no endpoint for openai/gpt-oss-120b at the configured providers (SambaNova): SambaNova does not support a parameter this request uses, such as structured output: choose a provider that supports it, or run with --no-structured-output. Exiting (code 4)."
+      ],
+      "witness_data": null,
+      "witness_polarity": null
+    },
+    {
+      "config": "SambaNova",
+      "task": "factor360",
+      "exit": 4,
+      "final_stage": null,
+      "wall_s": 4.8,
+      "model_s": 2.6,
+      "out_tokens": 1298,
+      "reasoning_tokens": 1258,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 2592.187,
+          "out": 1298,
+          "reasoning": 1258,
+          "in": 2264
+        }
+      ],
+      "retries": [],
+      "errors": [
+        "[error] PROVIDER_REJECTED_REQUEST at DRAFT_PROMPT: OpenRouter found no endpoint for openai/gpt-oss-120b at the configured providers (SambaNova): SambaNova does not support a parameter this request uses, such as structured output: choose a provid...",
+        "[headless halt] Harness error (PROVIDER_REJECTED_REQUEST at DRAFT_PROMPT): ProviderError: OpenRouter found no endpoint for openai/gpt-oss-120b at the configured providers (SambaNova): SambaNova does not support a parameter this request uses, such as structured output: choose a provider that supports it, or run with --no-structured-output. Exiting (code 4)."
+      ],
+      "witness_data": null,
+      "witness_polarity": null
+    },
+    {
+      "config": "DeepInfra",
+      "task": "product",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 150.1,
+      "model_s": 147.1,
+      "out_tokens": 5909,
+      "reasoning_tokens": 6160,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 35989.053,
+          "out": 1790,
+          "reasoning": 1953,
+          "in": 2252
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 84139.905,
+          "out": 3049,
+          "reasoning": 3224,
+          "in": 2391
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 21467.723,
+          "out": 827,
+          "reasoning": 847,
+          "in": 2009
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 5547.815,
+          "out": 243,
+          "reasoning": 136,
+          "in": 2595
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": {
+        "product": 56
+      },
+      "witness_polarity": "positive"
+    },
+    {
+      "config": "DeepInfra",
+      "task": "factor360",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 103.5,
+      "model_s": 100.6,
+      "out_tokens": 6065,
+      "reasoning_tokens": 6649,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 47204.806,
+          "out": 2790,
+          "reasoning": 3134,
+          "in": 2251
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 37290.856,
+          "out": 2345,
+          "reasoning": 2615,
+          "in": 2393
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 11250.107,
+          "out": 743,
+          "reasoning": 789,
+          "in": 1996
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 4877.87,
+          "out": 187,
+          "reasoning": 111,
+          "in": 2232
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": null,
+      "witness_polarity": null
+    },
+    {
+      "config": "Together",
+      "task": "product",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 47.7,
+      "model_s": 44.3,
+      "out_tokens": 4779,
+      "reasoning_tokens": 4203,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 11745.874,
+          "out": 1530,
+          "reasoning": 1477,
+          "in": 2264
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 20585.375,
+          "out": 1734,
+          "reasoning": 1646,
+          "in": 2410
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 7390.8,
+          "out": 990,
+          "reasoning": 951,
+          "in": 2020
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 2873.909,
+          "out": 322,
+          "reasoning": 47,
+          "in": 2602
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 1745.692,
+          "out": 203,
+          "reasoning": 82,
+          "in": 2672
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": {
+        "product": 56
+      },
+      "witness_polarity": "positive"
+    },
+    {
+      "config": "Together",
+      "task": "factor360",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 46.8,
+      "model_s": 44.0,
+      "out_tokens": 5306,
+      "reasoning_tokens": 4805,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 11052.496,
+          "out": 1420,
+          "reasoning": 1375,
+          "in": 2263
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 20605.632,
+          "out": 2286,
+          "reasoning": 2206,
+          "in": 2400
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 7612.192,
+          "out": 1043,
+          "reasoning": 929,
+          "in": 2014
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 4743.903,
+          "out": 557,
+          "reasoning": 295,
+          "in": 2666
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": {
+        "original": 360,
+        "factorization": "2^3 * 3^2 * 5",
+        "prime_factors": [
+          2,
+          2,
+          2,
+          3,
+          3,
+          5
+        ]
+      },
+      "witness_polarity": "positive"
+    },
+    {
+      "config": "Nebius",
+      "task": "product",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 21.4,
+      "model_s": 18.6,
+      "out_tokens": 4962,
+      "reasoning_tokens": 5261,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 6385.474,
+          "out": 2103,
+          "reasoning": 2316,
+          "in": 2262
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 6164.841,
+          "out": 1484,
+          "reasoning": 1618,
+          "in": 2401
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 4619.916,
+          "out": 1081,
+          "reasoning": 1148,
+          "in": 2011
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 1416.292,
+          "out": 294,
+          "reasoning": 179,
+          "in": 2586
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": {
+        "product": 56
+      },
+      "witness_polarity": "positive"
+    },
+    {
+      "config": "Nebius",
+      "task": "factor360",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 21.4,
+      "model_s": 18.5,
+      "out_tokens": 5042,
+      "reasoning_tokens": 5280,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 4980.479,
+          "out": 1191,
+          "reasoning": 1362,
+          "in": 2261
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 7997.187,
+          "out": 2397,
+          "reasoning": 2570,
+          "in": 2398
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 3862.31,
+          "out": 1190,
+          "reasoning": 1297,
+          "in": 2059
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 1628.037,
+          "out": 264,
+          "reasoning": 51,
+          "in": 2681
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": {
+        "number": 360,
+        "prime_factors": [
+          2,
+          2,
+          2,
+          3,
+          3,
+          5
+        ]
+      },
+      "witness_polarity": "positive"
+    },
+    {
+      "config": "Baseten",
+      "task": "product",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 17.2,
+      "model_s": 14.4,
+      "out_tokens": 3389,
+      "reasoning_tokens": 0,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 3748.641,
+          "out": 814,
+          "reasoning": 0,
+          "in": 2269
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 3904.495,
+          "out": 1076,
+          "reasoning": 0,
+          "in": 2665
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 4197.758,
+          "out": 1000,
+          "reasoning": 0,
+          "in": 2061
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 2582.792,
+          "out": 499,
+          "reasoning": 0,
+          "in": 4000
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": {
+        "product": 56
+      },
+      "witness_polarity": "positive"
+    },
+    {
+      "config": "Baseten",
+      "task": "factor360",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 19.7,
+      "model_s": 17.2,
+      "out_tokens": 3802,
+      "reasoning_tokens": 0,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 5817.623,
+          "out": 1301,
+          "reasoning": 0,
+          "in": 2268
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 5964.69,
+          "out": 1410,
+          "reasoning": 0,
+          "in": 2690
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 3957.156,
+          "out": 864,
+          "reasoning": 0,
+          "in": 2079
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 1413.732,
+          "out": 227,
+          "reasoning": 0,
+          "in": 3642
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": null,
+      "witness_polarity": null
+    },
+    {
+      "config": "Crusoe",
+      "task": "product",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 31.8,
+      "model_s": 28.8,
+      "out_tokens": 4845,
+      "reasoning_tokens": 5158,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 13608.595,
+          "out": 2261,
+          "reasoning": 2507,
+          "in": 2265
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 6137.652,
+          "out": 996,
+          "reasoning": 991,
+          "in": 2401
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 7454.254,
+          "out": 1361,
+          "reasoning": 1538,
+          "in": 2014
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 1602.411,
+          "out": 227,
+          "reasoning": 122,
+          "in": 2587
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": {
+        "product": 56
+      },
+      "witness_polarity": "positive"
+    },
+    {
+      "config": "Crusoe",
+      "task": "factor360",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 48.4,
+      "model_s": 45.8,
+      "out_tokens": 6540,
+      "reasoning_tokens": 7306,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 11765.878,
+          "out": 1794,
+          "reasoning": 2061,
+          "in": 2264
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 23039.69,
+          "out": 3616,
+          "reasoning": 4103,
+          "in": 2401
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 9698.216,
+          "out": 1006,
+          "reasoning": 1097,
+          "in": 2017
+        },
+        {
+          "op": "EXECUTE",
+          "ms": 1326.638,
+          "out": 124,
+          "reasoning": 45,
+          "in": 2252
+        }
+      ],
+      "retries": [],
+      "errors": [],
+      "witness_data": null,
+      "witness_polarity": null
+    }
+  ],
+  "rejected_variant_flattened_union_schema": [
+    {
+      "config": "Groq",
+      "task": "product",
+      "exit": 1,
+      "final_stage": "CLOSED_CANCELLED",
+      "wall_s": 17.0,
+      "model_s": 9.7,
+      "out_tokens": 3691,
+      "reasoning_tokens": 3514,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 3694.568,
+          "out": 1523,
+          "reasoning": 1473,
+          "in": 2265
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 2995.894,
+          "out": 1139,
+          "reasoning": 1081,
+          "in": 2671
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 2995.443,
+          "out": 1029,
+          "reasoning": 960,
+          "in": 2115
+        }
+      ],
+      "retries": [],
+      "errors": [
+        "[headless halt] Session ended with stage 'CLOSED_CANCELLED'. Exiting fail-closed (code 1)."
+      ],
+      "witness_data": null,
+      "witness_polarity": null
+    },
+    {
+      "config": "Groq",
+      "task": "factor360",
+      "exit": 1,
+      "final_stage": "CLOSED_CANCELLED",
+      "wall_s": 14.8,
+      "model_s": 8.7,
+      "out_tokens": 3303,
+      "reasoning_tokens": 3139,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 3465.584,
+          "out": 1227,
+          "reasoning": 1176,
+          "in": 2264
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 3075.577,
+          "out": 1292,
+          "reasoning": 1227,
+          "in": 2670
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 2194.427,
+          "out": 784,
+          "reasoning": 736,
+          "in": 2122
+        }
+      ],
+      "retries": [],
+      "errors": [
+        "[headless halt] Session ended with stage 'CLOSED_CANCELLED'. Exiting fail-closed (code 1)."
+      ],
+      "witness_data": null,
+      "witness_polarity": null
+    },
+    {
+      "config": "DEFAULT",
+      "task": "product",
+      "exit": 1,
+      "final_stage": "CLOSED_CANCELLED",
+      "wall_s": 16.2,
+      "model_s": 10.1,
+      "out_tokens": 3664,
+      "reasoning_tokens": 3482,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 4775.846,
+          "out": 1528,
+          "reasoning": 1452,
+          "in": 2265
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 2734.536,
+          "out": 1098,
+          "reasoning": 1041,
+          "in": 2675
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 2541.744,
+          "out": 1038,
+          "reasoning": 989,
+          "in": 2112
+        }
+      ],
+      "retries": [],
+      "errors": [
+        "[headless halt] Session ended with stage 'CLOSED_CANCELLED'. Exiting fail-closed (code 1)."
+      ],
+      "witness_data": null,
+      "witness_polarity": null
+    },
+    {
+      "config": "DEFAULT",
+      "task": "factor360",
+      "exit": 1,
+      "final_stage": "CLOSED_CANCELLED",
+      "wall_s": 15.3,
+      "model_s": 8.4,
+      "out_tokens": 2974,
+      "reasoning_tokens": 2834,
+      "calls": [
+        {
+          "op": "BOOTSTRAP_ANALYSIS",
+          "ms": 3411.825,
+          "out": 1281,
+          "reasoning": 1234,
+          "in": 2264
+        },
+        {
+          "op": "DRAFT_PROMPT",
+          "ms": 2298.13,
+          "out": 845,
+          "reasoning": 794,
+          "in": 2667
+        },
+        {
+          "op": "DRAFT_PLAN",
+          "ms": 2660.555,
+          "out": 848,
+          "reasoning": 806,
+          "in": 2106
+        }
+      ],
+      "retries": [],
+      "errors": [
+        "[headless halt] Session ended with stage 'CLOSED_CANCELLED'. Exiting fail-closed (code 1)."
+      ],
+      "witness_data": null,
+      "witness_polarity": null
+    }
+  ]
+}

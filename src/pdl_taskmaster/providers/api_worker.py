@@ -190,6 +190,18 @@ def _strictify(node: Any, free_form_objects: bool = False) -> Any:
     return node
 
 
+def _removed_by_parameter_filter(message: str) -> set[str]:
+    """Provider keys OpenRouter's routing summary lists under "Filter by Parameters
+    removed ...": endpoints that exist but do not support a parameter of the request."""
+    marker = "filter by parameters removed "
+    lowered = message.lower()
+    start = lowered.find(marker)
+    if start < 0:
+        return set()
+    listed = lowered[start + len(marker):].split(";", 1)[0].split(". ", 1)[0]
+    return {_provider_key(tag.split("/", 1)[0]) for tag in listed.split(",") if tag.strip()}
+
+
 def _is_nullable(spec: Any) -> bool:
     if not isinstance(spec, dict):
         return False
@@ -726,8 +738,19 @@ class ApiWorker:
             return None
         hints = "".join(f" ({name}: did you mean {suggestion}?)" if suggestion else f" ({name}: not a known name)"
                         for name, suggestion in unknown_provider_names(order).items())
-        message = (f"OpenRouter found no endpoint for {self._model_for(operation)} at the configured providers "
-                   f"({', '.join(order)}): check the spelling of each name{hints} and that it serves this model")
+        filtered = _removed_by_parameter_filter(str(exc))
+        unsupported = [name for name in order if _provider_key(name) in filtered]
+        parameters = (f"{', '.join(unsupported)} {'does' if len(unsupported) == 1 else 'do'} not support a parameter "
+                      f"this request uses, such as structured output: choose a provider that supports it, or run "
+                      f"with --no-structured-output") if unsupported else ""
+        prefix = (f"OpenRouter found no endpoint for {self._model_for(operation)} at the configured providers "
+                  f"({', '.join(order)}): ")
+        if unsupported and len(unsupported) == len(order):
+            message = prefix + parameters
+        else:
+            message = prefix + f"check the spelling of each name{hints} and that it serves this model"
+            if unsupported:
+                message += f"; {parameters}"
         error = ProviderError(exc.category, message, status=exc.status, operation=exc.operation,
                               attempts=[*exc.attempts, {"provider": "OpenRouter", "message": str(exc)[:600]}])
         error.failed_generation = exc.failed_generation

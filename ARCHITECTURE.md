@@ -54,7 +54,7 @@ src/pdl_taskmaster/
 ### 2.1 Model tiers
 
 - **System 1** (`providers/sys1/`): a fast decision model (default `typesafe/jev-1.13` through OpenRouter's decisions endpoint) that returns calibrated label distributions, never text. Every recipe shares one confidence gate (`gating.py`): confidence $P \ge 0.85$, top-2 margin $\Delta p \ge 0.40$, normalized entropy $H(p) \le 0.35$.
-- **System 2** (`providers/api_worker.py`): a generative model (default `openai/gpt-oss-120b` through OpenRouter) that drafts the Prompt and Plan and executes. Reasoning effort defaults to high before execution and low at `EXECUTE` (ADR-0022). `--api-base-url` points it at another OpenAI-compatible endpoint; provider routing options (`--api-providers`) are OpenRouter's.
+- **System 2** (`providers/api_worker.py`): a generative model (default `openai/gpt-oss-120b` through OpenRouter) that drafts the Prompt and Plan and executes. With no `--api-providers`, the provider order is Groq, then Baseten, then Amazon Bedrock, with fallbacks allowed; measured provider behaviour is in [`PROVIDERS.md`](PROVIDERS.md). Reasoning effort defaults to high before execution and low at `EXECUTE` (ADR-0022). `--api-base-url` points it at another OpenAI-compatible endpoint; provider routing options (`--api-providers`) are OpenRouter's.
 - **Other workers:** `codex` drives the Codex CLI as a System 2 worker; `recorded` replays fixtures for offline tests.
 
 ---
@@ -252,6 +252,7 @@ These are known limits of 2.6.0rc1. Each is captured as future work in [`TARGET_
 - **No effects on the user's project.** Programs cannot create or edit project files, and there is no tool broker (ADR-0025).
 - **No extension model.** Operation prompts are part of the code, contract overrides replace the whole set without a compatibility check, and there are no workflow packs (ADR-0026).
 - **System 1 is remote.** The default System 1 is OpenRouter's decisions endpoint; without it, boundary refusal does not run (§3.3).
+- **Groq cannot serve `EXECUTE`.** It rejects the `EXECUTE` schema; the default order works because OpenRouter falls through to Baseten for that call, and `--api-providers Groq` alone fails at `EXECUTE` ([`PROVIDERS.md`](PROVIDERS.md) §3).
 - **`PDLT_SANDBOX_NETWORK` is routing state only.** Setting it to `true` changes what System 1 is told; the sandbox never grants network access.
 - **Headless review gates are confirmed by piping `/confirm`.** The catalogue measures autonomous drafting under the lint gates, not human review (`gate_policy` in `RUN_META.json`).
 - **The category 10 multi-turn scripts are not run.** Category 10 prompts run single-turn; their scripts are kept in the manifest's `multi_turn_script` field.

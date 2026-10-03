@@ -867,6 +867,21 @@ def test_no_endpoints_for_a_known_provider_names_it_without_a_suggestion(monkeyp
     assert "SambaNova:" not in message
 
 
+def test_a_provider_without_a_requested_parameter_is_named_as_such(monkeypatch) -> None:
+    """Provider probe 20261002: SambaNova serves the model but not structured output, so
+    OpenRouter's parameter filter removes it; the message must not blame the spelling."""
+    from pdl_taskmaster.providers.api_worker import ApiWorker, ProviderError
+
+    _raise_from_send(monkeypatch, ProviderError.from_http(404, _NO_ENDPOINTS_404))
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT,
+                       provider_pinning={"order": ["SambaNova"], "allow_fallbacks": False})
+    with pytest.raises(ProviderError) as info:
+        worker.call(_draft_request("DRAFT_PROMPT"))
+    message = str(info.value)
+    assert "SambaNova does not support a parameter this request uses" in message
+    assert "--no-structured-output" in message and "spelling" not in message
+
+
 def test_other_provider_errors_are_unchanged(monkeypatch) -> None:
     from pdl_taskmaster.providers.api_worker import ApiWorker, ProviderError
 
