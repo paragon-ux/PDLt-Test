@@ -353,6 +353,7 @@ def _step_trace(frame, event, arg):
         return None
     frame.f_trace_lines = False
     frame.f_trace_opcodes = True
+    frame.f_trace = _count  # from Python 3.13, returning _count alone stops opcode events after a few
     return _count
 # The top frame asks for opcode events before settrace is installed: from Python
 # 3.12, settrace turns on opcode events only when a frame already asks for them.
@@ -918,6 +919,12 @@ class ExecutionSandbox:
             session.clear_work()
         from dataclasses import replace
 
+        # From Python 3.13 the interpreter resolves its own real path at startup and,
+        # inside an AppContainer (which may not query final paths), warns before the
+        # program runs. The line is the confinement's, not the program's.
+        startup_warning = f"Failed to find real location of {session.policy.interpreter}\n"
+        if (result.stderr or "").startswith(startup_warning):
+            result = replace(result, stderr=result.stderr[len(startup_warning):])
         if step_limit is not None:
             steps_used, kept = None, []
             for line in (result.stderr or "").splitlines(keepends=True):
