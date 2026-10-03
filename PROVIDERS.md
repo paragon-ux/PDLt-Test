@@ -19,9 +19,9 @@ These numbers are a dated baseline, not a guarantee. Provider performance change
 | **Crusoe** | yes (8/8) | **yes** (2/2) | ~185 tok/s, 2.3 s | Slow pre-execution calls (~13 s each at high reasoning). |
 | **Together** | yes (8/8) | **yes** (2/2) | ~165 tok/s, 2.9 s | ~47 s per session. |
 | **DeepInfra** | yes (8/8) | **yes** (2/2), slowly | ~45 tok/s, 9.5 s | 100–150 s per session. At high reasoning it spent the whole 2,048-token test cap on reasoning (3/3 runs). |
-| **Groq** | yes (8/8) | **no**: fails at `EXECUTE` | ~465 tok/s, 1.1 s | Rejects the harness's `EXECUTE` schema (HTTP 400). Serves every other operation. See §3. |
+| **Groq** | yes (8/8) | **with another provider**: `EXECUTE` and `EMIT_RESULT_IR` are routed away from it | ~465 tok/s, 1.1 s | Rejects the schema of those two operations (HTTP 400) and serves every other operation. Alone it stops at `EXECUTE` with a clear message. See §3. |
 | **SambaNova** | yes (8/8) | **no**: fails at `DRAFT_PROMPT` | ~850 tok/s, 1.0 s | Does not support structured output, so OpenRouter removes it for every schema-carrying request. |
-| *Default order* (no `--api-providers`) | n/a | **yes** (2/2) | n/a | Groq → Baseten → Amazon Bedrock with fallbacks: works because `EXECUTE` falls through to Baseten (§3). |
+| *Default order* (no `--api-providers`) | n/a | **yes** (2/2 on the new order) | n/a | Baseten → Crusoe with fallbacks. Every call of a default session was served by Baseten (verified per call, §3). Groq is no longer in the default order. |
 
 "Routing honoured" counts streaming runs whose response named the requested provider as the one that served it.
 
@@ -43,7 +43,7 @@ Definitions: **TTFT** is the time from sending the request to the first streamed
 
 ## 3. Groq
 
-**Status: Groq does not work as the only provider for `pdlt`.** It answers `BOOTSTRAP_ANALYSIS`, `DRAFT_PROMPT` and `DRAFT_PLAN` correctly and fast, but rejects every `EXECUTE` request before generating:
+**Status: Groq serves every operation except `EXECUTE` and `EMIT_RESULT_IR`, and the harness now routes those two away from it.** It answers `BOOTSTRAP_ANALYSIS`, `DRAFT_PROMPT`, `DRAFT_PLAN` and `DRAFT_EXECUTE` correctly and fast, but rejects every `EXECUTE` and `EMIT_RESULT_IR` request before generating:
 
 ```
 HTTP 400: Groq: invalid JSON schema for response_format: 'EXECUTION_OUTCOME':
@@ -53,7 +53,20 @@ anyOf object variant error: variant 0: properties must be present (or set additi
 
 **Cause.** In the `EXECUTE` schema the optional witness is `anyOf[ anyOf[positive, negative], null ]`. Groq's schema validator reads each union branch as an object type and rejects a branch that is itself a union. The nesting comes from the strict-schema transform in `providers/api_worker.py` (an optional union becomes `anyOf[<union>, null]`) together with the positive-witness branch added in commit `e233258a`; that commit's regression test checked the schema with `jsonschema`, which accepts it, not with Groq's stricter validator.
 
-**Why the default configuration still works.** With no `--api-providers`, the order is Groq → Baseten → Amazon Bedrock with fallbacks allowed. Groq's request-time rejection makes OpenRouter fall through: Groq serves the three pre-execution operations and Baseten serves `EXECUTE` (Amazon Bedrock is removed for lacking structured output). The harness does not record which provider served a call (§6), so "Baseten serves `EXECUTE`" is inferred from the routing rules, Groq's deterministic 400, and the sessions succeeding.
+**Routing (since this release).** `providers/api_worker.py` keeps a table of operations a provider rejects (`_SCHEMA_UNSUPPORTED_OPERATIONS`: Groq → `EXECUTE`, `EMIT_RESULT_IR`). For those operations, when the schema is sent, Groq is removed from the provider order and added to OpenRouter's `ignore` list, so no fallback can land on it; every other operation is unchanged. With `--no-structured-output` no schema is sent and Groq is not excluded. If Groq is the only configured provider, the call stops before any request with `EXECUTE cannot be routed to the configured providers (Groq): Groq rejects its output schema; add another provider to --api-providers or run with --no-structured-output` (exit 4).
+
+**Default order (since this release): Baseten → Crusoe.** Groq was removed from the default order so that a default session is served by one provider, not split between Groq for planning and another provider for `EXECUTE`. Amazon Bedrock was removed as a fallback because it does not support structured output. Cerebras is not a default either: anywhere in the order it closes every free-form object, which drops the positive witness for all providers. `OPENROUTER_PROVIDER` and `OPENROUTER_PROVIDER_ORDER` still override the default. The routing table above stays as a safety net for users who configure Groq themselves.
+
+Verified live on 2026-10-02 with OpenRouter's generation records (`provider_name` per call, [`routing-verification.json`](docs/providers/2026-10-02/routing-verification.json)):
+
+| Configuration | Sessions | Planning calls served by | `EXECUTE` served by | Result |
+|---|---|---|---|---|
+| Default order, new (Baseten → Crusoe) | 2 | Baseten | Baseten | `CLOSED_SUCCESS`, exit 0 (both) |
+| Default order, previous (Groq → Baseten → Amazon Bedrock) | 2 | Groq | Baseten | `CLOSED_SUCCESS`, exit 0 (both) |
+| `--api-providers Groq,Baseten` | 2 | Groq | Baseten | `CLOSED_SUCCESS`, exit 0 (both) |
+| `--api-providers Groq` | 2 | Groq | not sent | exit 4 with the message above (both) |
+
+Before this change the default order worked only by accident: Groq's 400 made OpenRouter fall through to Baseten.
 
 **Why it is not fixed here.** Flattening the nested union was tested on 2026-10-02 and makes Groq accept the schema, but Groq then fails the generation instead:
 
@@ -62,7 +75,7 @@ anyOf object variant error: variant 0: properties must be present (or set additi
 - A generation failure is returned inside a 200 response, and OpenRouter does not fall back on it. With the flattened schema the **default order failed `EXECUTE` in both live sessions**, where the shipped schema succeeds. The flattening was therefore reverted.
 - `EXECUTE` deliberately never retries without the schema (one model call per counted attempt, `api_worker.py`), so the harness's schema-free fallback does not apply.
 
-Making Groq serve `EXECUTE` needs a decision, not a patch: remove Groq from `EXECUTE` routing explicitly, change the default order, or allow a schema-free retry for `EXECUTE`. This belongs to provider capability routing ([ADR-0024](docs/adr/0024-operation-profiles.md)).
+The explicit routing above is the chosen remedy. A general mechanism (providers declaring which operations and schema features they support) belongs to provider capability routing ([ADR-0024](docs/adr/0024-operation-profiles.md)).
 
 **Comparison with known Groq schema issues.** [GlassHaven/Haven#664](https://github.com/GlassHaven/Haven/issues/664) reports the same *class* of failure: Groq rejects a whole request when one schema construct breaks its stricter validator (there, arrays with no `items`). Every harness schema was scanned: no array lacks `items`, and no object has `required` without `properties`. The construct here is different (a union nested inside a union). The second failure mode above, a generation rejected because optional fields were omitted under an all-required schema, is the "optional fields under strict mode" behaviour also commonly reported for Groq.
 
@@ -116,7 +129,7 @@ One call per operation through the harness's own request builder, pinned, fallba
 | Crusoe | OK | OK | OK | OK |
 | Together | OK | OK | OK | OK |
 | DeepInfra | OK 1.8 s | OK 5.3 s | OK 2.2 s | **output cap**: 4,096 tokens reached after 92 s |
-| Groq | OK 0.4 s | OK 1.2 s | OK 0.6 s | **HTTP 400**: schema rejected (§3) |
+| Groq | OK 0.4 s | OK 1.2 s | OK 0.6 s | **HTTP 400**: schema rejected (§3); now never routed there |
 | SambaNova | OK 0.5 s | **HTTP 404** | **HTTP 404** | **HTTP 404** |
 
 `BOOTSTRAP_ANALYSIS` carries no schema, which is why SambaNova passes it. The probe's synthetic `EXECUTE_WITNESS` case (a witness demanded from an artificial input at low reasoning) failed on every provider in different ways, which points at the case rather than the providers; the live verified sessions below are the meaningful test. DeepInfra's capped `EXECUTE` did not recur in live sessions, where `EXECUTE` completed in about 5 s.
@@ -141,8 +154,8 @@ Two sessions per configuration on the final 2.6.0rc1 code. *Verified* means the 
 | Together | factor 360 | 0 | `CLOSED_SUCCESS` | 46.8 | 44.0 | 5,306 | 4 | 0 | verified |
 | DeepInfra | product | 0 | `CLOSED_SUCCESS` | 150.1 | 147.1 | 5,909 | 4 | 0 | verified |
 | DeepInfra | factor 360 | 0 | `CLOSED_SUCCESS` | 103.5 | 100.6 | 6,065 | 4 | 0 | analytical |
-| Groq | product | 4 | `PLAN_REVIEW` | 14.3 | 11.0 | 4,362 | 3 | n/a | HTTP 400 at `EXECUTE` |
-| Groq | factor 360 | 4 | `PLAN_REVIEW` | 10.7 | 7.8 | 2,850 | 3 | n/a | HTTP 400 at `EXECUTE` |
+| Groq | product | 4 | `PLAN_REVIEW` | 14.3 | 11.0 | 4,362 | 3 | n/a | HTTP 400 at `EXECUTE` (before the routing change; now a clear refusal, §3) |
+| Groq | factor 360 | 4 | `PLAN_REVIEW` | 10.7 | 7.8 | 2,850 | 3 | n/a | as above |
 | SambaNova | product | 4 | none | 4.8 | 2.4 | 1,353 | 1 | n/a | HTTP 404 at `DRAFT_PROMPT` |
 | SambaNova | factor 360 | 4 | none | 4.8 | 2.6 | 1,298 | 1 | n/a | HTTP 404 at `DRAFT_PROMPT` |
 
@@ -167,7 +180,7 @@ The three pre-execution operations, run at high reasoning, account for most of e
 
 | Behaviour | Where | What the harness did |
 |---|---|---|
-| Schema rejected at request time (HTTP 400) | Groq, `EXECUTE` | Pinned: no retry, exit 4 with the provider's message. Default order: OpenRouter fell back to the next provider. |
+| Schema rejected at request time (HTTP 400) | Groq, `EXECUTE` and `EMIT_RESULT_IR` | Before this release: pinned, exit 4 with the provider's message; default order, OpenRouter fell back. Now these calls are never sent to Groq (§3). |
 | Provider removed for an unsupported parameter (HTTP 404) | SambaNova, every schema-carrying operation | Pinned: no retry, exit 4. Before this release the message wrongly suggested a misspelled provider name; it now names the unsupported parameter and suggests `--no-structured-output` (`test_a_provider_without_a_requested_parameter_is_named_as_such`). |
 | Generation rejected against the schema (error inside an HTTP 200) | Groq, with the flattened schema only (§3) | `EXECUTE`: counted as a failed attempt, then one repair, then `CLOSED_CANCELLED`. OpenRouter did not fall back. |
 | Output cap reached | DeepInfra (probe `EXECUTE`; benchmark at high reasoning) | Counted as `OUTPUT_LIMIT_REACHED`, never retried silently. |
@@ -178,11 +191,11 @@ The three pre-execution operations, run at high reasoning, account for most of e
 
 ## 6. Findings and recommendations
 
-1. **Groq cannot serve `EXECUTE`** (§3). The default order works only because Groq's rejection is a request-time 400 that OpenRouter falls through. Any change that makes Groq accept the schema without constraining decoding breaks the default order. Recommended: route `EXECUTE` away from Groq explicitly, or lead the default order with a provider that passes every operation. This is a routing-policy decision for ADR-0024.
+1. **Groq cannot serve `EXECUTE` or `EMIT_RESULT_IR`** (§3). It is no longer in the default order, and when a user configures it the harness routes those two operations away from it explicitly; verified per call. Do not "fix" Groq by flattening the schema: Groq then fails generations instead, and OpenRouter does not fall back on that.
 2. **SambaNova needs `--no-structured-output`** to be usable; it was not tested in that mode.
 3. **For speed, Cerebras is the clear choice** (7–8 s per session against 17–21 s for Baseten and Nebius). It receives the closed-object schema, so model-asserted positive witnesses cannot be expressed there; the sandbox witness is unaffected.
 4. **DeepInfra is usable but slow** (45 tok/s), and at high reasoning it can exhaust a small output cap on reasoning alone.
-5. **The harness does not record which provider served a call.** Pinned runs make it certain; with fallbacks it can only be inferred. Recording OpenRouter's `provider` field in call metadata would make routing auditable (ADR-0023 events).
+5. **The harness does not record which provider served a call.** OpenRouter's `/responses` reply has no provider field; the generation lookup (`GET /api/v1/generation?id=<response_id>`, `provider_name`) does, and the session records already hold the `response_id`. Recording it would make routing auditable (ADR-0023 events).
 6. **Throughput alone does not predict session time.** Session time depends on reasoning tokens per pre-execution call, the number of calls, and repairs; Groq's raw speed does not help if `EXECUTE` cannot run there.
 
 ---
@@ -213,3 +226,4 @@ curl -s -H "Authorization: Bearer $OPENROUTER_API_KEY" https://openrouter.ai/api
 | `docs/providers/2026-10-02/stream-benchmark-reasoning-high.json` | Every streaming run at high reasoning |
 | `docs/providers/2026-10-02/harness-probe.json` | Probe verdicts per provider and operation |
 | `docs/providers/2026-10-02/live-sessions.json` | Every live session with per-call latency and tokens, plus the rejected flattened-schema variant |
+| `docs/providers/2026-10-02/routing-verification.json` | Sessions after the routing change, with the provider that served each call |

@@ -32,6 +32,7 @@ Severity: **High** blocks release or misleads users about safety or behaviour; *
 | RA-22 | Low | REPL | The start banner omitted `/cancel`. | Added. |
 | RA-23 | Low | Config | `.gitignore` did not cover build output. | `dist/`, `build/` added. |
 | RA-39 | Medium | CLI | A provider removed by OpenRouter for an unsupported parameter (SambaNova: no structured output) was reported as a possibly misspelled provider name. | The message names the unsupported parameter and suggests `--no-structured-output`; test. |
+| RA-40 | High | Routing | Groq, first in the default provider order, rejects the `EXECUTE` and `EMIT_RESULT_IR` schemas (a union nested inside a union); the default order worked only because OpenRouter fell through to Baseten, and `--api-providers Groq` failed every task at `EXECUTE`. Flattening the union was tested and broke the default order (Groq then fails generations, and OpenRouter does not fall back on that). | Groq removed from the default order (now Baseten → Crusoe, one provider per default session). When a user configures Groq, those two operations are routed away from it (removed from the order, added to `ignore`) when the schema is sent; Groq alone stops with a clear message; tests, and live per-call verification in [`PROVIDERS.md`](../../PROVIDERS.md) §3. |
 
 Fixed earlier on this branch, before this audit: `/cancel` rejected at review gates; `/paste` ending at the first blank line; blocking Windows console burst reads; two Windows-only test failures; a review command after closure restarting the closed task.
 
@@ -49,7 +50,6 @@ These are real, but changing them is a design decision rather than a release fix
 | RA-29 | Medium | Results are text, review gates are prose, observation records are written only after a turn, and there is no session time or token budget. | `ARCHITECTURE.md` §8, §10 | ADR-0023, ADR-0024 |
 | RA-30 | Medium | Contract overrides replace the whole set, are chosen by directory location (the candidate repo defaults to the current directory) and are validated for structure only; operation prompts are Python source. | `ARCHITECTURE.md` §7 | ADR-0026 |
 | RA-31 | Low | `--sandbox auto` is identical to `native`; the name suggests a fallback to the container that does not exist. | `ARCHITECTURE.md` §5.2 | Implementation follow-up |
-| RA-40 | High | Groq, first in the default provider order, rejects the `EXECUTE` schema (a union nested inside a union). The default order works only because OpenRouter falls through to Baseten for `EXECUTE`; `--api-providers Groq` fails every task at `EXECUTE`. Flattening the union was tested and broke the default order, because Groq then fails generations instead (no constrained decoding) and OpenRouter does not fall back on that. | [`PROVIDERS.md`](../../PROVIDERS.md) §3, `ARCHITECTURE.md` §10 | ADR-0024 (explicit per-operation routing) |
 
 ## 3. Deferred implementation follow-ups (not release blocking)
 

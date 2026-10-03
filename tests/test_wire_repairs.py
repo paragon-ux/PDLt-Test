@@ -207,8 +207,10 @@ def test_api_worker_provider_pinning_and_fallbacks() -> None:
     from pdl_taskmaster.providers.api_worker import DEFAULT_PROVIDER_PINNING
     assert DEFAULT_PROVIDER_PINNING["allow_fallbacks"] is True
     order = DEFAULT_PROVIDER_PINNING["order"]
-    assert "Baseten" in order
-    assert "Amazon Bedrock" in order
+    assert order == ["Baseten", "Crusoe"]
+    # Groq rejects the EXECUTE schema (a default session would be split across providers);
+    # Cerebras anywhere closes free-form objects; Amazon Bedrock has no structured output.
+    assert not {"Groq", "Cerebras", "Amazon Bedrock"} & set(order)
 
 
 
@@ -752,11 +754,12 @@ def test_worker_sends_the_positive_witness_branch_only_where_it_is_accepted(monk
 
     reply = json.dumps({"outcome": {"kind": "RESULT", "body": "5"}})
     sent = _scripted_send(monkeypatch, [reply, reply])
-    for providers in (["Groq"], ["Cerebras"]):
+    # Groq never receives EXECUTE (it rejects the schema); Baseten accepts free-form objects.
+    for providers in (["Baseten"], ["Cerebras"]):
         ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT,
                   provider_pinning={"order": providers, "allow_fallbacks": False}).call(_draft_request("EXECUTE"))
-    groq, cerebras = (json.dumps(body["text"]["format"]["schema"]) for body in sent)
-    assert '"positive"' in groq and '"additionalProperties": true' in groq
+    open_form, cerebras = (json.dumps(body["text"]["format"]["schema"]) for body in sent)
+    assert '"positive"' in open_form and '"additionalProperties": true' in open_form
     assert '"positive"' not in cerebras and '"additionalProperties": true' not in cerebras
 
 
@@ -944,3 +947,66 @@ def test_a_custom_key_command_keeps_its_own_error() -> None:
     worker = ApiWorker(repo_root=ROOT, api_key_env="PDLT_TEST_MISSING_KEY", api_key_command=_failing_key_command())
     with pytest.raises(TransportError, match="lookup script noise"):
         worker._resolve_api_key()
+
+
+# PROVIDERS.md §3: Groq rejects the EXECUTE and EMIT_RESULT_IR schemas at request time, so
+# those calls are routed to the other configured providers and Groq is ignored for them.
+
+class _Stop(Exception):
+    pass
+
+
+def _sent_provider(monkeypatch, operation, pinning, structured=True):
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+
+    sent = {}
+
+    def fake_send(self, req, deadline=None):
+        sent.update(json.loads(req.data))
+        raise _Stop
+
+    monkeypatch.setattr(ApiWorker, "_send_json_with_retries", fake_send)
+    monkeypatch.setattr(ApiWorker, "_resolve_api_key", lambda self: "k")
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT, provider_pinning=pinning,
+                       structured_output=structured)
+    with pytest.raises(_Stop):
+        worker.call(_draft_request(operation))
+    return sent.get("provider")
+
+
+@pytest.mark.parametrize("operation", ["EXECUTE", "EMIT_RESULT_IR"])
+def test_schema_operations_groq_rejects_are_routed_past_it(monkeypatch, operation) -> None:
+    from pdl_taskmaster.providers.api_worker import DEFAULT_PROVIDER_PINNING
+
+    default = _sent_provider(monkeypatch, operation, dict(DEFAULT_PROVIDER_PINNING))
+    assert "Groq" not in default["order"] and default["order"] and "Groq" in default["ignore"]
+    assert default["allow_fallbacks"] is True
+    pinned = _sent_provider(monkeypatch, operation, {"order": ["groq", "Cerebras"], "allow_fallbacks": False})
+    assert pinned["order"] == ["Cerebras"] and pinned["allow_fallbacks"] is False
+
+
+def test_other_operations_still_use_groq(monkeypatch) -> None:
+    pinning = {"order": ["Groq", "Baseten"], "allow_fallbacks": True}
+    assert _sent_provider(monkeypatch, "DRAFT_PROMPT", pinning) == pinning
+    assert _sent_provider(monkeypatch, "DRAFT_EXECUTE", pinning) == pinning
+
+
+def test_without_a_schema_groq_may_serve_execute(monkeypatch) -> None:
+    pinning = {"order": ["Groq"], "allow_fallbacks": False}
+    assert _sent_provider(monkeypatch, "EXECUTE", pinning, structured=False) == pinning
+
+
+def test_groq_alone_cannot_serve_execute_and_says_so_before_any_call(monkeypatch) -> None:
+    from pdl_taskmaster.providers.api_worker import ApiWorker, ProviderError
+
+    def no_send(self, req, deadline=None):
+        raise AssertionError("no request may be sent")
+
+    monkeypatch.setattr(ApiWorker, "_send_json_with_retries", no_send)
+    monkeypatch.setattr(ApiWorker, "_resolve_api_key", lambda self: "k")
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT,
+                       provider_pinning={"order": ["Groq"], "allow_fallbacks": False})
+    with pytest.raises(ProviderError) as info:
+        worker.call(_draft_request("EXECUTE"))
+    assert info.value.category == "PROVIDER_REJECTED_REQUEST" and info.value.operation == "EXECUTE"
+    assert "Groq rejects its output schema" in str(info.value) and "--api-providers" in str(info.value)

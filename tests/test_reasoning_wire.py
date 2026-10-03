@@ -118,9 +118,14 @@ def test_runner_settings_reach_the_wire(tmp_path):
     ops, bodies = _run_stub(tmp_path, {"max_output_tokens": 8000, "providers": "Cerebras,Groq,SambaNova",
                                        "draft_execute": True})
     assert ops.count("DRAFT_EXECUTE") == 1 and "EXECUTE" in ops
-    for body in bodies:
+    assert len(ops) == len(bodies)
+    for op, body in zip(ops, bodies):
         assert body.get("max_output_tokens") == 8000 and "max_tokens" not in body
-        assert body.get("provider") == {"order": ["Cerebras", "Groq", "SambaNova"], "allow_fallbacks": False}
+        if op in {"EXECUTE", "EMIT_RESULT_IR"}:  # Groq rejects these schemas (PROVIDERS.md §3)
+            assert body.get("provider") == {"order": ["Cerebras", "SambaNova"], "allow_fallbacks": False,
+                                            "ignore": ["Groq"]}
+        else:
+            assert body.get("provider") == {"order": ["Cerebras", "Groq", "SambaNova"], "allow_fallbacks": False}
 
 
 def test_runner_max_repairs_zero_makes_one_execute_call(tmp_path):

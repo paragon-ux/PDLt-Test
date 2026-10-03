@@ -26,8 +26,12 @@ def _default_provider_order() -> list[str]:
     env_order = os.environ.get("OPENROUTER_PROVIDER_ORDER")
     if env_order:
         return [p.strip() for p in env_order.split(",") if p.strip()]
-    primary = os.environ.get("OPENROUTER_PROVIDER", "Groq")
-    fallbacks = ["Baseten", "Amazon Bedrock"]
+    # Both serve every operation with the harness's schemas (PROVIDERS.md). Groq is
+    # not a default: it rejects the EXECUTE and EMIT_RESULT_IR schemas, so a default session
+    # would be split across providers. Cerebras is not either: anywhere in the order it closes
+    # every free-form object, which drops the positive witness for all providers.
+    primary = os.environ.get("OPENROUTER_PROVIDER", "Baseten")
+    fallbacks = ["Crusoe"]
     order = [primary]
     for fb in fallbacks:
         if fb.lower() != primary.lower():
@@ -132,6 +136,39 @@ _FREE_FORM_OBJECT: dict[str, Any] = {"type": "object", "additionalProperties": T
 # additionalProperties true; and Groq validates each generation against the schema, so leaving the
 # free-form object out made every reply carrying a positive witness fail there (session 024627).
 _CLOSED_OBJECT_PROVIDERS = frozenset({"cerebras"})
+
+
+# Operations whose output schema a provider rejects at request time; they are never routed
+# there when the schema is sent. Groq refuses the witness union nested in these schemas
+# ("anyOf object variant error"), and flattening it only moves the failure to the generation,
+# which OpenRouter does not fall back on (PROVIDERS.md §3, provider probes 20261002).
+_SCHEMA_UNSUPPORTED_OPERATIONS: dict[str, frozenset[str]] = {
+    "Groq": frozenset({"EXECUTE", "EMIT_RESULT_IR"}),
+}
+
+
+def _route_schema_operation(pinning: dict[str, Any], operation: str | None) -> dict[str, Any]:
+    """The provider pinning for a schema-carrying call: providers that reject this
+    operation's schema are taken out of the order and ignored, so no fallback lands on
+    them. Raises when no configured provider is left."""
+    excluded = [name for name, operations in _SCHEMA_UNSUPPORTED_OPERATIONS.items() if operation in operations]
+    if not excluded:
+        return pinning
+    keys = {_provider_key(name) for name in excluded}
+    order = [str(p) for p in pinning.get("order") or []]
+    remaining = [p for p in order if _provider_key(p) not in keys]
+    if order and not remaining:
+        raise ProviderError(
+            "PROVIDER_REJECTED_REQUEST",
+            f"{operation} cannot be routed to the configured providers ({', '.join(order)}): "
+            f"{', '.join(excluded)} rejects its output schema; add another provider to --api-providers "
+            f"or run with --no-structured-output",
+            operation=operation)
+    ignore = [*pinning.get("ignore", []), *(name for name in excluded if name not in pinning.get("ignore", []))]
+    routed = {**pinning, "ignore": ignore}
+    if order:
+        routed["order"] = remaining
+    return routed
 
 
 def _accepts_free_form_objects(pinning: Any) -> bool:
@@ -951,7 +988,8 @@ class ApiWorker:
                 body["reasoning"] = {"effort": effort}
 
         if self.provider_pinning:
-            body["provider"] = self.provider_pinning
+            body["provider"] = (_route_schema_operation(self.provider_pinning, operation_name)
+                                if schema_enforced else self.provider_pinning)
         if self.safety_settings:
             body["safety_settings"] = self.safety_settings
 
