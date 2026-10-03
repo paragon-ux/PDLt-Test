@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 import json
 
+from pdl_taskmaster.runtime.output_contracts import DEFAULT_FORM, ContractForm, prompt_schema
 from pdl_taskmaster.runtime.standard_registry import StandardRegistry
 
 
@@ -52,7 +53,10 @@ class ContextCompiler:
         values: dict[str, Any],
         *,
         higher_priority_constraints: Any = None,
+        contract_form: ContractForm | None = None,
     ) -> CompiledProjection:
+        """``contract_form`` is how the worker will constrain this operation's output;
+        the output_schema shown is generated in that same form (ADR-0028 rule 1)."""
         operations = self.execution_contract["operations"]
         if operation not in operations:
             raise ValueError(f"operation:{operation}")
@@ -91,29 +95,11 @@ class ContextCompiler:
             if symbol in provided and values[symbol] is not None:
                 ordered_inputs[symbol] = values[symbol]
 
-        schema_relative = spec.get("output_schema")
-        if not isinstance(schema_relative, str):
-            raise ValueError(f"output_schema:{operation}")
-        schema_path = Path(schema_relative)
-        if schema_path.is_absolute() or ".." in schema_path.parts:
-            raise ValueError(f"output_schema_path:{operation}")
-        full_schema_path = self.repo_root / schema_path
-        if not full_schema_path.is_file() and not schema_path.is_absolute():
-            rel = Path(*schema_path.parts[1:]) if schema_path.parts and schema_path.parts[0] == "scripts" else schema_path
-            pkg_root = Path(__file__).resolve().parents[1]
-            for c in (
-                pkg_root / rel,
-                self.repo_root / "src" / "pdl_taskmaster" / rel,
-                pkg_root / schema_path,
-                self.repo_root / "src" / "pdl_taskmaster" / schema_path,
-                self.repo_root / "scripts" / schema_path,
-            ):
-                if c.is_file():
-                    full_schema_path = c
-                    break
-        if not full_schema_path.is_file():
-            raise ValueError(f"output_schema_missing:{operation}")
-        output_schema = json.loads(full_schema_path.read_text(encoding="utf-8"))
+        # One output contract per operation (IMPL-0001): generated from the payload model.
+        output_schema = prompt_schema(operation, contract_form or DEFAULT_FORM)
+        if output_schema is None:
+            raise ValueError(f"output_contract_missing:{operation}")
+        schema_text = json.dumps(output_schema, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
         document: dict[str, Any] = {
             "operation": operation,
@@ -136,8 +122,8 @@ class ContextCompiler:
             "clause_sha256": clause_digests,
             "output_kind": spec["output_kind"],
             "output_fields": list(spec.get("output_fields", [])),
-            "output_schema": schema_relative,
-            "output_schema_sha256": sha256(full_schema_path.read_bytes()).hexdigest(),
+            "output_schema": f"wire_payloads:{operation}",
+            "output_schema_sha256": sha256(schema_text.encode("utf-8")).hexdigest(),
         }
         manifest["projection_sha256"] = sha256(
             json.dumps(document, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")

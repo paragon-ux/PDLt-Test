@@ -450,13 +450,9 @@ def test_provider_schema_is_one_object_without_defaults(operation) -> None:
     slower provider, or failed outright with fallbacks off."""
     import json as _json
 
-    from pdl_taskmaster.providers.api_worker import ApiWorker
-    from pdl_taskmaster.runtime.wire_payloads import get_operation_pydantic_schema
+    from pdl_taskmaster.runtime.output_contracts import ContractForm, grammar_schema
 
-    raw = get_operation_pydantic_schema(operation)
-    if not isinstance(raw, dict):
-        pytest.skip("no pydantic schema for this operation")
-    schema = ApiWorker._sanitize_schema_for_grammar(raw)
+    schema = grammar_schema(operation, ContractForm())
     assert schema.get("type") == "object"
     assert not {"anyOf", "oneOf", "discriminator", "enum", "not"} & set(schema)
     text = _json.dumps(schema)
@@ -468,6 +464,17 @@ def test_flattened_schema_still_validates_exactly_host_side() -> None:
     """Flattening is for the provider only: the host keeps the exact union."""
     with pytest.raises(WireError):
         BRIDGE.parse_prompt_body('{"prompt_body": "X", "approach_handoff": "NONE"}')
+
+
+from pdl_taskmaster.runtime.output_contracts import ContractForm, grammar_schema  # noqa: E402
+
+def _variant(variants: list, kind: str) -> dict:
+    """The union variant whose `kind` admits this value (variant order is presentation)."""
+    return next(v for v in variants if kind in (v["properties"]["kind"].get("enum") or []))
+
+
+# The strict form with closed objects only (Cerebras; Groq strict mode for non-free-form objects).
+_STRICT_CLOSED = ContractForm(strict_all_required=True, free_form_objects=False)
 
 
 def _strict_violations(node, path="$"):
@@ -505,19 +512,15 @@ def test_provider_schema_meets_strict_structured_output_rules(operation) -> None
     """Runs 135851/135951: Groq ("required ... must include every key in properties:
     observed, section") and Cerebras ("additionalProperties ... set to false")
     rejected every EXECUTE request at result_ir."""
-    from pdl_taskmaster.providers.api_worker import ApiWorker
-    from pdl_taskmaster.runtime.wire_payloads import get_operation_pydantic_schema
-
-    schema = ApiWorker._sanitize_schema_for_grammar(get_operation_pydantic_schema(operation))
+    schema = grammar_schema(operation, _STRICT_CLOSED)
     assert _strict_violations(schema) == []
 
 
 def test_property_names_are_never_stripped_as_keywords() -> None:
-    from pdl_taskmaster.providers.api_worker import ApiWorker
-    from pdl_taskmaster.runtime.wire_payloads import get_operation_pydantic_schema
-
-    schema = ApiWorker._sanitize_schema_for_grammar(get_operation_pydantic_schema("EXECUTE"))
-    asked, result = schema["properties"]["outcome"]["anyOf"]
+    schema = grammar_schema("EXECUTE", _STRICT_CLOSED)
+    variants = schema["properties"]["outcome"]["anyOf"]
+    asked = _variant(variants, "REQUEST_INPUT")
+    result = _variant(variants, "RESULT")
     assert "description" in asked["properties"]  # REQUEST_INPUT.description
     defect = result["properties"]["result_ir"]["anyOf"][0]["properties"]["open_defects"]["items"]
     assert "description" in defect["properties"]  # RESULT_STANDARD RS-01 reads it
@@ -575,10 +578,9 @@ def test_top_level_union_is_wrapped_with_each_variant_kept_separate() -> None:
     """Probe 20261001-142720: merging DRAFT_PROMPT's variants into one object showed a
     PROMPT reply the blocked variant's blocking_basis, the model filled it, and Groq
     rejected the generation. The union is now nested under "outcome", unmerged."""
-    from pdl_taskmaster.providers.api_worker import UNION_WRAPPER, ApiWorker
-    from pdl_taskmaster.runtime.wire_payloads import get_operation_pydantic_schema
+    from pdl_taskmaster.runtime.output_contracts import UNION_WRAPPER
 
-    schema = ApiWorker._sanitize_schema_for_grammar(get_operation_pydantic_schema("DRAFT_PROMPT"))
+    schema = grammar_schema("DRAFT_PROMPT", _STRICT_CLOSED)
     assert schema["required"] == [UNION_WRAPPER]
     variants = schema["properties"][UNION_WRAPPER]["anyOf"]
     assert len(variants) == 2
@@ -771,19 +773,23 @@ def _witness_reply(witness: dict) -> dict:
                         "result_ir": {"files": [], "reconciliation": [], "open_defects": [], "witness": witness}}}
 
 
+# Every property the strict form lists, null where it does not apply (`provisional` is
+# host-set and not part of the contract).
 _POSITIVE = {"polarity": "positive", "evidence": None,
              "data": {"probability": 0.1785, "any_key_the_task_chooses": [1, 2], "nested": {"x": {"y": [None]}}},
              "basis": None, "search_exhausted": None, "nodes_explored": None, "method": None, "argument": None,
-             "domain": None, "provisional": None}
+             "domain": None}
 
 
 def _provider_schema(operation: str, providers: list[str]) -> dict:
-    from pdl_taskmaster.providers.api_worker import ApiWorker, _accepts_free_form_objects
-    from pdl_taskmaster.runtime.wire_payloads import get_operation_pydantic_schema
+    """The schema these providers get for the operation, in the form the worker picks
+    for them (strict for Groq and Cerebras; closed objects for Cerebras)."""
+    import dataclasses
 
-    return ApiWorker._sanitize_schema_for_grammar(
-        get_operation_pydantic_schema(operation),
-        free_form_objects=_accepts_free_form_objects({"order": providers, "allow_fallbacks": False}))
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+
+    worker = ApiWorker(model="m", repo_root=ROOT, provider_pinning={"order": providers, "allow_fallbacks": False})
+    return grammar_schema(operation, dataclasses.replace(worker.contract_form(operation), grammar="schema"))
 
 
 def test_free_form_objects_are_sent_unless_a_provider_requires_closed_objects() -> None:
@@ -803,7 +809,8 @@ def test_groq_execute_schema_accepts_a_positive_witness_with_arbitrary_data_keys
     schema = _provider_schema("EXECUTE", ["Groq"])
     jsonschema.Draft202012Validator.check_schema(schema)
     validator = jsonschema.Draft202012Validator(schema)
-    witness = schema["properties"]["outcome"]["anyOf"][1]["properties"]["result_ir"]["anyOf"][0]["properties"]["witness"]
+    result = _variant(schema["properties"]["outcome"]["anyOf"], "RESULT")
+    witness = result["properties"]["result_ir"]["anyOf"][0]["properties"]["witness"]
     polarities = [b["properties"]["polarity"]["enum"] for b in witness["anyOf"][0]["anyOf"]]
     assert polarities == [["positive"], ["negative"]]
 
@@ -838,7 +845,7 @@ def test_groq_schema_meets_strict_rules_except_the_open_free_form_objects(operat
     """The only open objects are the free-form values (witness data, entities),
     each exactly {"type": "object", "additionalProperties": true}, the form Groq's
     strict check accepted in runs 135851/135951; every other object stays closed."""
-    from pdl_taskmaster.providers.api_worker import _FREE_FORM_OBJECT
+    from pdl_taskmaster.runtime.output_contracts import _FREE_FORM_OBJECT
 
     schema = _provider_schema(operation, ["Groq"])
     assert all(v.endswith(": free-form object") for v in _strict_violations(schema))
@@ -860,21 +867,22 @@ def test_union_tags_are_required_in_every_provider_variant() -> None:
     null polarity that the host cannot route."""
     for providers in (["Groq"], ["Cerebras"]):
         execute = _provider_schema("EXECUTE", providers)
-        asked = execute["properties"]["outcome"]["anyOf"][0]
+        asked = _variant(execute["properties"]["outcome"]["anyOf"], "REQUEST_INPUT")
         assert asked["properties"]["kind"] == {"type": "string", "enum": ["REQUEST_INPUT"]}
-        prompt = _provider_schema("DRAFT_PROMPT", providers)["properties"]["outcome"]["anyOf"][0]
+        prompt = _variant(_provider_schema("DRAFT_PROMPT", providers)["properties"]["outcome"]["anyOf"], "PROMPT")
         assert prompt["properties"]["kind"] == {"type": "string", "enum": ["PROMPT"]}
 
 
 def test_worker_sends_the_positive_witness_branch_only_where_it_is_accepted(monkeypatch) -> None:
     from pdl_taskmaster.providers.api_worker import ApiWorker
 
-    reply = json.dumps({"outcome": {"kind": "RESULT", "body": "5"}})
+    reply = json.dumps({"result_ir": {"files": [], "reconciliation": [], "open_defects": []}})
     sent = _scripted_send(monkeypatch, [reply, reply])
-    # Groq never receives EXECUTE (it rejects the schema); Baseten accepts free-form objects.
+    # EMIT_RESULT_IR carries the witness schema (EXECUTE is sent in JSON mode, and Groq
+    # gets both in JSON mode, ADR-0028 rule 5); Baseten accepts free-form objects.
     for providers in (["Baseten"], ["Cerebras"]):
         ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT,
-                  provider_pinning={"order": providers, "allow_fallbacks": False}).call(_draft_request("EXECUTE"))
+                  provider_pinning={"order": providers, "allow_fallbacks": False}).call(_draft_request("EMIT_RESULT_IR"))
     open_form, cerebras = (json.dumps(body["text"]["format"]["schema"]) for body in sent)
     assert '"positive"' in open_form and '"additionalProperties": true' in open_form
     assert '"positive"' not in cerebras and '"additionalProperties": true' not in cerebras
@@ -1091,15 +1099,34 @@ def _sent_provider(monkeypatch, operation, pinning, structured=True):
     return sent.get("provider")
 
 
-@pytest.mark.parametrize("operation", ["EXECUTE", "EMIT_RESULT_IR"])
-def test_schema_operations_groq_rejects_are_routed_past_it(monkeypatch, operation) -> None:
-    from pdl_taskmaster.providers.api_worker import DEFAULT_PROVIDER_PINNING
+def _sent_body(monkeypatch, operation, pinning, structured=True):
+    from pdl_taskmaster.providers.api_worker import ApiWorker
 
-    default = _sent_provider(monkeypatch, operation, dict(DEFAULT_PROVIDER_PINNING))
-    assert "Groq" not in default["order"] and default["order"] and "Groq" in default["ignore"]
-    assert default["allow_fallbacks"] is True
-    pinned = _sent_provider(monkeypatch, operation, {"order": ["groq", "Cerebras"], "allow_fallbacks": False})
-    assert pinned["order"] == ["Cerebras"] and pinned["allow_fallbacks"] is False
+    sent = {}
+
+    def fake_send(self, req, deadline=None):
+        sent.update(json.loads(req.data))
+        raise _Stop
+
+    monkeypatch.setattr(ApiWorker, "_send_json_with_retries", fake_send)
+    monkeypatch.setattr(ApiWorker, "_resolve_api_key", lambda self: "k")
+    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT, provider_pinning=pinning,
+                       structured_output=structured)
+    with pytest.raises(_Stop):
+        worker.call(_draft_request(operation))
+    return dict(sent)
+
+
+@pytest.mark.parametrize("operation", ["EXECUTE", "EMIT_RESULT_IR"])
+def test_schema_operations_groq_rejects_are_still_sent_to_it_in_json_mode(monkeypatch, operation) -> None:
+    """ADR-0028 rule 5: Groq rejects these operations' schemas, so it gets them in JSON
+    mode instead of being routed past (it was removed from the order before). The
+    host validates the reply against the Pydantic contract either way."""
+    for pinning in ({"order": ["Groq", "Baseten"], "allow_fallbacks": True},
+                    {"order": ["groq", "Cerebras"], "allow_fallbacks": False}):
+        body = _sent_body(monkeypatch, operation, dict(pinning))
+        assert body["provider"] == pinning
+        assert body["text"] == {"format": {"type": "json_object"}}
 
 
 def test_other_operations_still_use_groq(monkeypatch) -> None:
@@ -1113,17 +1140,8 @@ def test_without_a_schema_groq_may_serve_execute(monkeypatch) -> None:
     assert _sent_provider(monkeypatch, "EXECUTE", pinning, structured=False) == pinning
 
 
-def test_groq_alone_cannot_serve_execute_and_says_so_before_any_call(monkeypatch) -> None:
-    from pdl_taskmaster.providers.api_worker import ApiWorker, ProviderError
-
-    def no_send(self, req, deadline=None):
-        raise AssertionError("no request may be sent")
-
-    monkeypatch.setattr(ApiWorker, "_send_json_with_retries", no_send)
-    monkeypatch.setattr(ApiWorker, "_resolve_api_key", lambda self: "k")
-    worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT,
-                       provider_pinning={"order": ["Groq"], "allow_fallbacks": False})
-    with pytest.raises(ProviderError) as info:
-        worker.call(_draft_request("EXECUTE"))
-    assert info.value.category == "PROVIDER_REJECTED_REQUEST" and info.value.operation == "EXECUTE"
-    assert "Groq rejects its output schema" in str(info.value) and "--api-providers" in str(info.value)
+def test_groq_alone_serves_execute(monkeypatch) -> None:
+    """Groq alone was refused EXECUTE before any call; it now serves it in JSON mode."""
+    body = _sent_body(monkeypatch, "EXECUTE", {"order": ["Groq"], "allow_fallbacks": False})
+    assert body["provider"] == {"order": ["Groq"], "allow_fallbacks": False}
+    assert body["text"] == {"format": {"type": "json_object"}}

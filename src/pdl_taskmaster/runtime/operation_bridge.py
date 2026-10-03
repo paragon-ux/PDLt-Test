@@ -121,6 +121,9 @@ class OperationBridge:
         self.repo_root = Path(repo_root)
         self.render_compact = render_compact
         self.compiler = ContextCompiler(self.repo_root)
+        # The worker's ContractForm for an operation (ApiWorker.contract_form), set by the
+        # host; without one, the default form is shown (ADR-0028 rule 1).
+        self.contract_form: Any = None
         bootstrap_path = Path(__file__).parent / "worker-bootstrap.txt"
         if not bootstrap_path.is_file():
             bootstrap_path = self.repo_root / "src" / "pdl_taskmaster" / "runtime" / "worker-bootstrap.txt"
@@ -139,10 +142,12 @@ class OperationBridge:
             operation, values, higher_priority_constraints=higher_priority_constraints
         )
         materialized_values, materialized_higher_priority = workspace.load_operation_values(invocation)
+        form = self.contract_form(operation) if callable(self.contract_form) else None
         projection = self.compiler.compile(
             operation,
             materialized_values,
             higher_priority_constraints=materialized_higher_priority,
+            contract_form=form,
         )
         workspace.record_projection(invocation, projection.manifest, projection.document)
         prompt = projection.render(self.bootstrap, compact=self.render_compact)

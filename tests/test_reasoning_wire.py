@@ -121,11 +121,11 @@ def test_runner_settings_reach_the_wire(tmp_path):
     assert len(ops) == len(bodies)
     for op, body in zip(ops, bodies):
         assert body.get("max_output_tokens") == 8000 and "max_tokens" not in body
-        if op in {"EXECUTE", "EMIT_RESULT_IR"}:  # Groq rejects these schemas (PROVIDERS.md §3)
-            assert body.get("provider") == {"order": ["Cerebras", "SambaNova"], "allow_fallbacks": False,
-                                            "ignore": ["Groq"]}
-        else:
-            assert body.get("provider") == {"order": ["Cerebras", "Groq", "SambaNova"], "allow_fallbacks": False}
+        # Every operation goes to the configured providers (ADR-0028 rule 5): the ones
+        # Groq rejects the schema of are sent in JSON mode, never routed past it.
+        assert body.get("provider") == {"order": ["Cerebras", "Groq", "SambaNova"], "allow_fallbacks": False}
+        if op in {"EXECUTE", "EMIT_RESULT_IR"}:
+            assert body.get("text") == {"format": {"type": "json_object"}}
 
 
 def test_runner_max_repairs_zero_makes_one_execute_call(tmp_path):

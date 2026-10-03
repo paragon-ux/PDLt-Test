@@ -16,6 +16,13 @@ from typing import Any
 
 from pdl_taskmaster.providers.base import TransportError, WorkerResult
 from pdl_taskmaster.providers.call_trace import AttemptTrace, CallTrace, tracking
+from pdl_taskmaster.runtime.output_contracts import (
+    UNION_WRAPPER,
+    ContractForm,
+    contract_schema,
+    grammar_schema,
+    is_union_wrapped,
+)
 
 _JSON_ONLY_SUFFIX = (
     "\n\nReturn only a JSON object. Do not include markdown fences, commentary, or extra text."
@@ -93,26 +100,6 @@ DEFAULT_SAFETY_SETTINGS: list[dict[str, str]] = [
 ]
 
 
-UNION_WRAPPER = "outcome"
-
-
-def _wrap_top_level_union(schema: Any) -> Any:
-    """Strict providers accept only one object at the top of a response schema
-    (Groq: no anyOf/oneOf there; Cerebras: no discriminator anywhere), but accept
-    a union nested inside one (Groq served EXECUTE's nested witness union). A
-    top-level union is therefore sent as {"outcome": <the union>}, keeping every
-    variant separate: merging them (the previous form) let a PROMPT reply see the
-    blocked variant's blocking_basis, and the model filled it (probe 20261001-142720).
-    The worker unwraps "outcome" before the host reads the reply."""
-    if not isinstance(schema, dict):
-        return schema
-    variants = schema.get("anyOf") or schema.get("oneOf")
-    if not isinstance(variants, list):
-        return schema
-    return {"type": "object", "properties": {UNION_WRAPPER: {"anyOf": variants}},
-            "required": [UNION_WRAPPER], "additionalProperties": False}
-
-
 def _unwrap_union_reply(text: str) -> str:
     """The reply to a wrapped union schema, without the wrapper (see above)."""
     try:
@@ -124,14 +111,6 @@ def _unwrap_union_reply(text: str) -> str:
     return text
 
 
-_UNREPRESENTABLE = object()
-_UNSUPPORTED_KEYWORDS = ("minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "pattern", "format",
-                         "default", "multipleOf")
-
-# A free-form object (a dict with no declared properties, e.g. a positive
-# witness's data) as a provider that accepts one receives it.
-_FREE_FORM_OBJECT: dict[str, Any] = {"type": "object", "additionalProperties": True}
-
 # Providers whose schema check requires every object to be closed. Cerebras: "'additionalProperties'
 # is required to be supplied and set to false" (runs 135851/135951). Groq's strict check, over the
 # same 56 requests, rejected only incomplete `required` lists, never the free-form witness data nor
@@ -140,37 +119,27 @@ _FREE_FORM_OBJECT: dict[str, Any] = {"type": "object", "additionalProperties": T
 _CLOSED_OBJECT_PROVIDERS = frozenset({"cerebras"})
 
 
-# Operations whose output schema a provider rejects at request time; they are never routed
-# there when the schema is sent. Groq refuses the witness union nested in these schemas
-# ("anyOf object variant error"), and flattening it only moves the failure to the generation,
-# which OpenRouter does not fall back on (PROVIDERS.md §3, provider probes 20261002).
-_SCHEMA_UNSUPPORTED_OPERATIONS: dict[str, frozenset[str]] = {
-    "Groq": frozenset({"EXECUTE", "EMIT_RESULT_IR"}),
+# Providers whose strict structured-output mode needs every property required (optional
+# ones nullable): Groq's strict check rejected incomplete required lists; Cerebras.
+_STRICT_ALL_REQUIRED_PROVIDERS = frozenset({"groq", "cerebras"})
+
+# Operations whose schema a provider rejects at request time (Groq: the witness union
+# nested in these schemas, "anyOf object variant error"; PROVIDERS.md §3). The provider
+# still serves them, in JSON mode: it is adapted to, never excluded (ADR-0028 rule 5);
+# the host validates the reply against the Pydantic contract either way.
+_SCHEMA_REJECTED_OPERATIONS: dict[str, frozenset[str]] = {
+    "groq": frozenset({"EXECUTE", "EMIT_RESULT_IR"}),
 }
 
+# Operations sent in JSON mode (no schema) whatever the provider: under the EXECUTE
+# schema Nemotron stalled in whitespace before closing result_ir (IMPL-0001); without
+# it the same request completed 14/14. Moves to the per-stage profile (IMPL-0003).
+JSON_MODE_OPERATIONS = frozenset({"EXECUTE"})
 
-def _route_schema_operation(pinning: dict[str, Any], operation: str | None) -> dict[str, Any]:
-    """The provider pinning for a schema-carrying call: providers that reject this
-    operation's schema are taken out of the order and ignored, so no fallback lands on
-    them. Raises when no configured provider is left."""
-    excluded = [name for name, operations in _SCHEMA_UNSUPPORTED_OPERATIONS.items() if operation in operations]
-    if not excluded:
-        return pinning
-    keys = {_provider_key(name) for name in excluded}
-    order = [str(p) for p in pinning.get("order") or []]
-    remaining = [p for p in order if _provider_key(p) not in keys]
-    if order and not remaining:
-        raise ProviderError(
-            "PROVIDER_REJECTED_REQUEST",
-            f"{operation} cannot be routed to the configured providers ({', '.join(order)}): "
-            f"{', '.join(excluded)} rejects its output schema; add another provider to --api-providers "
-            f"or run with --no-structured-output",
-            operation=operation)
-    ignore = [*pinning.get("ignore", []), *(name for name in excluded if name not in pinning.get("ignore", []))]
-    routed = {**pinning, "ignore": ignore}
-    if order:
-        routed["order"] = remaining
-    return routed
+
+def _order_keys(pinning: Any) -> set[str]:
+    order = pinning.get("order") if isinstance(pinning, dict) else None
+    return {_provider_key(name) for name in order or []}
 
 
 def _accepts_free_form_objects(pinning: Any) -> bool:
@@ -178,55 +147,6 @@ def _accepts_free_form_objects(pinning: Any) -> bool:
     order requires closed objects."""
     order = pinning.get("order") if isinstance(pinning, dict) else None
     return not any(str(name).strip().lower() in _CLOSED_OBJECT_PROVIDERS for name in order or [])
-
-
-def _strict_schema(node: Any, *, free_form_objects: bool = False) -> Any:
-    """Strict structured-output form (Groq strict mode, Cerebras): every object
-    with declared properties sets additionalProperties false and lists all its
-    properties as required; a property that was optional becomes nullable
-    instead. A free-form object (a dict with no declared properties) is sent as
-    an open object when every configured provider accepts one
-    (free_form_objects); otherwise it cannot be expressed and is left out: an
-    optional property or union branch holding one is dropped. The host validates
-    the reply against the exact pydantic model, where a null for a defaulted
-    field means "not given" (wire_payloads)."""
-    result = _strictify(node, free_form_objects)
-    return {"type": "object", "properties": {}, "required": [], "additionalProperties": False} \
-        if result is _UNREPRESENTABLE else result
-
-
-def _strictify(node: Any, free_form_objects: bool = False) -> Any:
-    if not isinstance(node, dict):
-        return node
-    node = {k: v for k, v in node.items() if k not in _UNSUPPORTED_KEYWORDS}
-    if "anyOf" in node:
-        branches = [b for b in (_strictify(b, free_form_objects) for b in node["anyOf"])
-                    if b is not _UNREPRESENTABLE]
-        if not branches:
-            return _UNREPRESENTABLE
-        rest = {k: v for k, v in node.items() if k != "anyOf"}
-        return {**rest, "anyOf": branches} if len(branches) > 1 else {**rest, **branches[0]}
-    if node.get("type") == "array" and "items" in node:
-        items = _strictify(node["items"], free_form_objects)
-        return _UNREPRESENTABLE if items is _UNREPRESENTABLE else {**node, "items": items}
-    if node.get("type") == "object" or "properties" in node:
-        properties = node.get("properties")
-        if not properties:
-            return dict(_FREE_FORM_OBJECT) if free_form_objects else _UNREPRESENTABLE
-        required = set(node.get("required") or [])
-        strict_properties: dict[str, Any] = {}
-        for name, spec in properties.items():
-            converted = _strictify(spec, free_form_objects)
-            if converted is _UNREPRESENTABLE:
-                if name in required:
-                    return _UNREPRESENTABLE
-                continue
-            if name not in required and not _is_nullable(converted):
-                converted = {"anyOf": [converted, {"type": "null"}]}
-            strict_properties[name] = converted
-        return {**node, "type": "object", "properties": strict_properties,
-                "required": list(strict_properties), "additionalProperties": False}
-    return node
 
 
 def _removed_by_parameter_filter(message: str) -> set[str]:
@@ -239,14 +159,6 @@ def _removed_by_parameter_filter(message: str) -> set[str]:
         return set()
     listed = lowered[start + len(marker):].split(";", 1)[0].split(". ", 1)[0]
     return {_provider_key(tag.split("/", 1)[0]) for tag in listed.split(",") if tag.strip()}
-
-
-def _is_nullable(spec: Any) -> bool:
-    if not isinstance(spec, dict):
-        return False
-    if spec.get("type") == "null" or (isinstance(spec.get("type"), list) and "null" in spec["type"]):
-        return True
-    return any(isinstance(b, dict) and b.get("type") == "null" for b in spec.get("anyOf") or [])
 
 
 class ProviderError(TransportError):
@@ -563,6 +475,23 @@ class ApiWorker:
             return self._normalize_model_name(self.model_by_operation[operation])
         return self.model
 
+    def contract_form(self, operation: str | None) -> ContractForm:
+        """How this worker constrains an operation's output (ADR-0028 rules 1 and 5):
+        the grammar mode and the schema form, from the configured providers. The
+        host shows the model its output schema in this same form."""
+        keys = _order_keys(self.provider_pinning)
+        if (not self.structured_output or operation is None or operation in _SEMANTIC_READ_OPERATIONS
+                or operation in self.unconstrained_operations or contract_schema(operation) is None):
+            grammar = "none"
+        elif operation in JSON_MODE_OPERATIONS or any(
+                operation in _SCHEMA_REJECTED_OPERATIONS.get(key, frozenset()) for key in keys):
+            grammar = "json"
+        else:
+            grammar = "schema"
+        return ContractForm(grammar=grammar,
+                            strict_all_required=bool(keys & _STRICT_ALL_REQUIRED_PROVIDERS),
+                            free_form_objects=_accepts_free_form_objects(self.provider_pinning))
+
     def _split_prompt(self, prompt: str) -> tuple[str, str]:
         """Split a rendered request.prompt back into (instructions, input).
 
@@ -610,92 +539,6 @@ class ApiWorker:
                 ordered[key] = value
         ordered["operation"] = doc["operation"]
         return json.dumps(ordered, ensure_ascii=False, separators=(",", ":"))
-
-    @staticmethod
-    def _sanitize_schema_for_grammar(schema: Any, *, free_form_objects: bool = False) -> Any:
-        """Sanitize schema for strict grammar engines (Groq, Vertex, Venice, Outlines, vLLM).
-
-        Inlines $defs/$ref pointers recursively, cleans unsupported keywords like
-        $schema, title, description, minLength, converts 'const' to single-item 'enum',
-        and enforces object constraints. ``free_form_objects`` keeps free-form
-        objects as open objects (see _strict_schema).
-        """
-        if not isinstance(schema, dict):
-            return schema
-
-        defs = schema.get("$defs", {}) or schema.get("definitions", {}) or {}
-
-        def _clean_node(node: Any) -> Any:
-            if not isinstance(node, dict):
-                return node
-            if "$ref" in node:
-                ref_path = str(node["$ref"])
-                if ref_path.startswith("#/$defs/") or ref_path.startswith("#/definitions/"):
-                    def_name = ref_path.split("/")[-1]
-                    if def_name in defs:
-                        inlined = dict(defs[def_name])
-                        for k, v in node.items():
-                            if k != "$ref":
-                                inlined[k] = v
-                        return _clean_node(inlined)
-            res: dict[str, Any] = {}
-            for k, v in node.items():
-                if k == "properties" and isinstance(v, dict):
-                    # Property NAMES are data, not schema keywords: a field called
-                    # "description" or "title" must survive (open_defects[].description,
-                    # REQUEST_INPUT.description were stripped before).
-                    res[k] = {name: _clean_node(spec) for name, spec in v.items()}
-                    continue
-                if k in (
-                    "$defs",
-                    "definitions",
-                    "$schema",
-                    "title",
-                    "description",
-                    "minLength",
-                    "maxLength",
-                    "minItems",
-                    "maxItems",
-                    "uniqueItems",
-                    # A default shown to the model steers it toward that value (EXECUTE's
-                    # kind advertised REQUEST_INPUT; witnesses advertised polarity/basis).
-                    # The host still applies defaults when it validates the reply.
-                    "default",
-                    "discriminator",  # Cerebras rejects it on any object, nested or not
-                ):
-                    continue
-                if isinstance(v, dict):
-                    res[k] = _clean_node(v)
-                elif isinstance(v, list):
-                    res[k] = [_clean_node(item) for item in v]
-                else:
-                    res[k] = v
-            if "const" in res:
-                res["enum"] = [res.pop("const")]
-                if "type" not in res:
-                    res["type"] = "string"
-            if "oneOf" in res and isinstance(res["oneOf"], list):
-                res["anyOf"] = [_clean_node(b) for b in res.pop("oneOf")]
-            if "anyOf" in res and isinstance(res["anyOf"], list):
-                res["anyOf"] = [_clean_node(b) for b in res["anyOf"]]
-                # The discriminator keyword is dropped, but the host still needs the
-                # tag: keep it required in every variant, so the strict form never
-                # offers a null tag (REQUEST_INPUT's kind and the positive witness's
-                # polarity were nullable, and no reply with a null tag parses host-side).
-                tag = (node.get("discriminator") or {}).get("propertyName")
-                for branch in res["anyOf"] if tag else []:
-                    if isinstance(branch, dict) and tag in (branch.get("properties") or {}):
-                        branch["required"] = list(dict.fromkeys([*(branch.get("required") or []), tag]))
-            if "allOf" in res and isinstance(res["allOf"], list):
-                res["allOf"] = [_clean_node(b) for b in res["allOf"]]
-            if "properties" in res and isinstance(res["properties"], dict):
-                if "required" not in res or not res["required"]:
-                    res["required"] = list(res["properties"].keys())
-                if "additionalProperties" not in res:
-                    res["additionalProperties"] = False
-            return res
-
-        return _strict_schema(_wrap_top_level_union(_clean_node(schema)), free_form_objects=free_form_objects)
 
     def _send_json_with_retries(self, req: urllib.request.Request, deadline: float | None = None) -> dict[str, Any]:
         """POST with exponential-backoff retries; returns the parsed response.
@@ -1031,8 +874,7 @@ class ApiWorker:
         # losing the entire task upstream of every gate. Structured output is
         # for ops whose SHAPE is the contract (drafts, executions, reviews);
         # the semantic read must stay free-text.
-        schema_enforced = (self.structured_output and operation_name not in _SEMANTIC_READ_OPERATIONS
-                           and operation_name not in self.unconstrained_operations)
+        form = self.contract_form(operation_name)
 
         extra_guidance = ""
         if operation_name == "BYPASS_ORDINARY" and getattr(request, "environment", None):
@@ -1097,41 +939,20 @@ class ApiWorker:
                 body["reasoning"] = {"effort": effort}
 
         if self.provider_pinning:
-            body["provider"] = (_route_schema_operation(self.provider_pinning, operation_name)
-                                if schema_enforced else self.provider_pinning)
+            body["provider"] = self.provider_pinning
         if self.safety_settings:
             body["safety_settings"] = self.safety_settings
 
+        # The output constraint for this call, in the same form the projection showed
+        # the model (contract_form; ADR-0028 rules 1 and 5).
         union_wrapped = False
-        if schema_enforced:
-            manifest = getattr(request, "manifest", None) or {}
-            output_kind = manifest.get("output_kind", "json_object")
-            from pdl_taskmaster.runtime.wire_payloads import get_operation_pydantic_schema
-            schema = get_operation_pydantic_schema(operation_name)
-            if not isinstance(schema, dict):
-                projection = getattr(request, "projection", None)
-                if projection is not None and isinstance(getattr(projection, "document", None), dict):
-                    schema = projection.document.get("output_schema")
-                if not isinstance(schema, dict) and isinstance(manifest.get("output_schema"), dict):
-                    schema = manifest["output_schema"]
-                elif not isinstance(schema, dict) and isinstance(manifest.get("output_schema"), str):
-                    schema_path = self.repo_root / manifest["output_schema"]
-                    if schema_path.is_file():
-                        try:
-                            schema = json.loads(schema_path.read_text(encoding="utf-8"))
-                        except Exception:
-                            schema = None
-            if schema and isinstance(schema, dict):
-                sent_schema = self._sanitize_schema_for_grammar(
-                    schema, free_form_objects=_accepts_free_form_objects(body.get("provider")))
-                union_wrapped = list((sent_schema.get("properties") or {})) == [UNION_WRAPPER]
-                body["text"] = {
-                    "format": {
-                        "type": "json_schema",
-                        "name": output_kind,
-                        "schema": sent_schema,
-                    }
-                }
+        if form.grammar == "schema":
+            output_kind = (getattr(request, "manifest", None) or {}).get("output_kind", "json_object")
+            sent_schema = grammar_schema(operation_name, form)
+            union_wrapped = is_union_wrapped(sent_schema)
+            body["text"] = {"format": {"type": "json_schema", "name": output_kind, "schema": sent_schema}}
+        elif form.grammar == "json":
+            body["text"] = {"format": {"type": "json_object"}}
 
         api_key = self._resolve_api_key()
         req = self._responses_request(body, api_key)

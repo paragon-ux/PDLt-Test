@@ -132,6 +132,8 @@ class PDLtHost:
                 sandbox_mode=self.sandbox_mode,
             )
         self.engine = engine
+        # Show each operation's output schema in the form the worker will enforce it.
+        engine.bridge.contract_form = getattr(self.worker, "contract_form", None)
         engine.max_repairs = getattr(self.worker, "max_repairs", None)
         engine.draft_execute = bool(getattr(self.worker, "draft_execute", False))
         if self.observation_dir is not None:

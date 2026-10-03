@@ -31,7 +31,6 @@
         "route",
         "response"
       ],
-      "output_schema": "controller/schemas/activation_decision.schema.json",
       "workspace_stage": "00_activation"
     },
     "DRAFT_PROMPT": {
@@ -86,7 +85,6 @@
         "response",
         "task_entities"
       ],
-      "output_schema": "controller/schemas/prompt_artifact.schema.json",
       "artifact_kind": "PROMPT_PSEUDOCODE",
       "workspace_stage": "10_prompt"
     },
@@ -136,7 +134,6 @@
         "approach_change_dimensions",
         "progression_requested"
       ],
-      "output_schema": "controller/schemas/artifact_review_facts.schema.json",
       "workspace_stage": "20_prompt_review"
     },
     "INTERPRET_PLAN_REVIEW": {
@@ -185,7 +182,6 @@
         "approach_change_dimensions",
         "progression_requested"
       ],
-      "output_schema": "controller/schemas/artifact_review_facts.schema.json",
       "workspace_stage": "40_plan_review"
     },
     "INTERPRET_EXECUTION_INPUT": {
@@ -232,7 +228,6 @@
         "kind",
         "also_changes_approach"
       ],
-      "output_schema": "controller/schemas/execution_input_decision.schema.json",
       "workspace_stage": "50_execution"
     },
     "REVISE_PROMPT": {
@@ -278,7 +273,6 @@
       "output_fields": [
         "prompt_body"
       ],
-      "output_schema": "controller/schemas/artifact_body.schema.json",
       "artifact_kind": "PROMPT_PSEUDOCODE",
       "workspace_stage": "10_prompt"
     },
@@ -328,7 +322,6 @@
       "output_fields": [
         "neutral_plan_body"
       ],
-      "output_schema": "controller/schemas/plan_artifact.schema.json",
       "artifact_kind": "RESPONSE_PLAN_PSEUDOCODE",
       "workspace_stage": "30_plan"
     },
@@ -379,7 +372,6 @@
       "output_fields": [
         "neutral_plan_body"
       ],
-      "output_schema": "controller/schemas/plan_artifact.schema.json",
       "artifact_kind": "RESPONSE_PLAN_PSEUDOCODE",
       "workspace_stage": "30_plan"
     },
@@ -427,7 +419,6 @@
         "description",
         "result_ir"
       ],
-      "output_schema": "controller/schemas/execution_outcome.schema.json",
       "workspace_stage": "50_execution",
       "optional_include": [
         "RESULT_IR_INSTRUCTIONS",
@@ -484,7 +475,6 @@
       "output_fields": [
         "body"
       ],
-      "output_schema": "controller/schemas/protocol_discussion.schema.json",
       "workspace_stage": "90_protocol_discussion"
     },
     "BOOTSTRAP_ANALYSIS": {
@@ -536,7 +526,6 @@
         "risk_notes",
         "task_entities"
       ],
-      "output_schema": "controller/schemas/bootstrap_analysis.schema.json",
       "workspace_stage": "10_prompt",
       "optional_include": [
         "PREVIOUS_DELIVERABLE"
@@ -578,7 +567,6 @@
         "blocking_basis",
         "response"
       ],
-      "output_schema": "scripts/controller/schemas/execution_draft.schema.json",
       "workspace_stage": "50_execution"
     },
     "EMIT_RESULT_IR": {
@@ -610,7 +598,6 @@
       "output_fields": [
         "result_ir"
       ],
-      "output_schema": "scripts/controller/schemas/result_ir_repair.schema.json",
       "workspace_stage": "50_execution"
     }
   }

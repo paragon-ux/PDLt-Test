@@ -1,7 +1,7 @@
 # IMPL-0001: Output Contracts Generated from the Pydantic Models
 
 ## Status
-**Proposed.** Implements [ADR-0028](../0028-model-capability-boundary.md) rule 1. Date: 2026-10-03. Plan: Phases 0–1 of [`docs/plans/0028-model-capability-boundary-plan.md`](../../plans/0028-model-capability-boundary-plan.md).
+**Accepted (implemented, phase 1).** Implements [ADR-0028](../0028-model-capability-boundary.md) rule 1, and rule 5 for the grammar mode. Date: 2026-10-03. Plan: Phases 0–1 of [`docs/plans/0028-model-capability-boundary-plan.md`](../../plans/0028-model-capability-boundary-plan.md).
 
 ## Context
 Each operation's output had two definitions:
@@ -41,6 +41,55 @@ All from 2026-10-03, on `nvidia/nemotron-3-super-120b-a12b`, through OpenRouter.
 4. **The prompt is generated.** `context_compiler` renders `output_schema` from `prompt_schema`; `output_schema_sha256` becomes the hash of the rendered schema. The static files and their contract paths are retired.
 5. **The invariant test.** For every operation and both forms, the prompt schema and the grammar have the same object paths, `required` sets and `additionalProperties`.
 6. **`EXECUTE` goes in JSON mode.** It is sent in JSON mode (no schema). Grammar is a per-stage profile setting (IMPL-0003), and returning `EXECUTE` to `schema` needs evidence from the model's own serving endpoint. Without the schema the identical request completed 14/14, and the host validates every reply against the Pydantic model either way.
+
+## As implemented
+- **Generator.** `runtime/output_contracts.py`.
+  - `contract_schema(op)` is the Pydantic schema with `$ref` inlined, discriminator tags required in every variant, objects closed unless declared open, Pydantic's own titles, defaults and docstrings removed, and the `x-contract` annotations applied.
+  - `prompt_schema(op, form)` and `grammar_schema(op, form)` apply the same structural form. The grammar additionally drops descriptions and the keywords decoding engines reject.
+  - `ContractForm` is `grammar` (`schema` / `json` / `none`), `strict_all_required` and `free_form_objects`.
+- **Plumbing.**
+  - `ApiWorker.contract_form(op)` decides the form from the configured providers.
+  - The host hands it to the bridge (`engine.bridge.contract_form`), and the compiler renders `output_schema` in that form.
+  - The worker sends the matching grammar: a JSON schema, `json_object`, or nothing.
+- **Annotations moved into the models** (`contract(...)` in `runtime/wire_payloads.py`):
+  - the 39 descriptions;
+  - `minLength` 1 where the host already rejects empty strings, and `uniqueItems` where it deduplicates;
+  - the `required` sets the contract has always shown where Pydantic is deliberately more lenient (`result_ir` on a RESULT; `files`, `reconciliation`, `open_defects`; `approach_handoff`; `execution_entities`);
+  - closed result-record objects;
+  - `DRAFT_EXECUTE`'s typed entity items.
+- **Hidden from the contract, still validated** (`SkipJsonSchema`):
+  - `confidence`, System 1's channel. The old grammar forced System 2 to emit it, and a low value silently made a review UNRESOLVED.
+  - the witness's host-set `provisional`.
+- **Shown exactly when enforced.**
+  - The `{"outcome": ...}` wrapper strict providers need is shown to the model whenever the grammar carries it. The union's own description stays at the top.
+  - In JSON mode the plain union is shown.
+- **Rule 5.**
+  - `EXECUTE` is sent in JSON mode (`JSON_MODE_OPERATIONS`).
+  - Groq gets `EXECUTE` and `EMIT_RESULT_IR` in JSON mode instead of being routed past (`_SCHEMA_REJECTED_OPERATIONS`).
+  - Groq and Cerebras get the strict all-required form (`_STRICT_ALL_REQUIRED_PROVIDERS`).
+  - These tables move to the per-stage profile (IMPL-0003).
+- **Static schema files retired.**
+  - Deleted: `src/pdl_taskmaster/controller/schemas/*.schema.json`.
+  - The 13 `output_schema` paths were removed from both copies of `EXECUTION_CONTRACT.json`. This is a contract change, so `CONTRACT_MANIFEST.json` records the new hash in both copies (GUARD-05).
+  - The projection manifest names `wire_payloads:<OPERATION>` and hashes the rendered schema.
+- **The replay fixture** (`tests/fixtures/recorded-cases.json`) was re-keyed: prompts only, responses unchanged.
+
+### Model-facing changes, each deliberate
+- **New keys shown.** Keys the grammar already enforced, or the host accepts, are now shown:
+  - `witness` under EXECUTE, with the reviewed witness description;
+  - `evidence.section` and `evidence.observed`;
+  - `task_entities` (DRAFT_PROMPT) and `description` (REQUEST_INPUT) shown as optional, as the host has always treated them.
+- **One wording change.** `approach_notes` says "SEM-05/TASK-03 split" instead of "partition". The benchmark-contamination scan flags that word in harness source, and the description now lives in Python.
+- **Dropped.** The REVIEW_FACTS "at least one change or a progression" rule (`minItems` plus `anyOf`) is no longer shown. Neither the host nor the grammar ever enforced it.
+- **Variant order kept.** Order is what the model reads first; parsing is by `kind`.
+  - Unions keep the order the model has always seen: RESULT before REQUEST_INPUT (EXECUTE), RESULT before BLOCKED (DRAFT_EXECUTE).
+  - In the first live run, with REQUEST_INPUT listed first, Nemotron returned an input request. With the order restored, it returned a RESULT. One run each, so not attributable to the order alone.
+
+### Live verification (2026-10-03, dev-mode REPL, three-gods prompt, `--fast`)
+| Model, providers | `EXECUTE` | Outcome |
+|---|---|---|
+| Nemotron 3 Super `:free`, `--api-providers Nvidia` | `json_object`, 6.8 s, 1,589 output tokens (840 reasoning) | `CLOSED_SUCCESS`; complete `result_ir` including `witness`; the answer is essentially the canonical solution |
+| gpt-oss-120b, default (Baseten, Crusoe) | `json_object`, 1.7 s, 383 output tokens | `CLOSED_SUCCESS`; the default-form schemas for prompt and plan drafting were accepted; the answer is wrong (fixed questions), as before |
 
 ## Consequences
 - **What the model sees changes.** It now sees `witness`, `confidence` and `evidence.section` as optional keys. Behaviour is checked on both named models before acceptance.

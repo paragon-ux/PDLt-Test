@@ -181,11 +181,9 @@ def test_entity_coverage_missing_helper():
 # asks for entities to be listed or required: that padded the prompt pseudocode
 # ("IDENTIFY the monetary amounts ...", "ENSURE ... verbatim").
 
-_SCHEMAS = Path(__file__).resolve().parents[1] / "src" / "pdl_taskmaster" / "controller" / "schemas"
-
-
-def _entity_description(schema_file: str) -> str:
-    import json
+def _entity_description(operation: str) -> str:
+    """The task_entities description the operation's generated output contract shows."""
+    from pdl_taskmaster.runtime.output_contracts import contract_schema
 
     def walk(node):
         if isinstance(node, dict):
@@ -197,27 +195,27 @@ def _entity_description(schema_file: str) -> str:
             for value in node:
                 yield from walk(value)
 
-    (description,) = set(walk(json.loads((_SCHEMAS / schema_file).read_text(encoding="utf-8"))))
+    (description,) = set(walk(contract_schema(operation)))
     return description
 
 
 def test_bootstrap_entities_follow_the_general_spec():
     """One specification for every problem type: exact surface, kind, and what the
     request says about it, unknowns included; nothing dropped, assumed or added."""
-    import json
+    from pdl_taskmaster.runtime.output_contracts import contract_schema
 
-    schema = json.loads((_SCHEMAS / "bootstrap_analysis.schema.json").read_text(encoding="utf-8"))
+    schema = contract_schema("BOOTSTRAP_ANALYSIS")
     entity = schema["oneOf"][0]["properties"]["task_entities"]["items"]
     assert entity["required"] == ["surface", "kind"]
     assert entity["properties"]["kind"]["enum"] == ["identifier", "input_data", "literal", "parameter", "term"]
     assert "unknown, random, ambiguous or in some order" in entity["properties"]["definition"]["description"]
-    text = _entity_description("bootstrap_analysis.schema.json")
+    text = _entity_description("BOOTSTRAP_ANALYSIS")
     assert "nothing it states may be dropped, assumed or resolved here" in text
     assert "MUST reproduce verbatim" not in text
 
 
 def test_prompt_draft_spells_entities_without_listing_or_requiring_them():
-    text = _entity_description("prompt_artifact.schema.json")
+    text = _entity_description("DRAFT_PROMPT")
     assert "add no step, list or requirement" in text
     assert "reproduced verbatim" not in text
 

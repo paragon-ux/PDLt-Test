@@ -27,7 +27,7 @@ They are expected to change as code, providers and models change.
 
 | IMPL | Implements | Status | Decision |
 |---|---|---|---|
-| [IMPL-0001](IMPL-0001-output-contracts-from-pydantic.md) | ADR-0028 rule 1 | Proposed | Prompt schema and grammar are both generated from each operation's Pydantic model; descriptions move verbatim; optional stays optional; static schema files retired; `EXECUTE` sent in JSON mode until measured. |
+| [IMPL-0001](IMPL-0001-output-contracts-from-pydantic.md) | ADR-0028 rule 1 | Accepted (implemented) | Prompt schema and grammar are both generated from each operation's Pydantic model; descriptions move verbatim; optional stays optional; static schema files retired; `EXECUTE` sent in JSON mode until measured. |
 | [IMPL-0002](IMPL-0002-openrouter-capability-adapter.md) | ADR-0028 rules 2, 3 | Proposed | An OpenRouter adapter reads model and endpoint metadata into a validated capabilities record, builds each request from an operation intent, adjusts to supported values, filters unsupported parameters, and records `sent` and `adjustments` per call. |
 | [IMPL-0003](IMPL-0003-model-profiles.md) | ADR-0028 rule 4; amends ADR-0022 | Proposed | Per-model choices live in a validated profile file. It covers reasoning depth per operation, the `EXECUTE` budget, sampling, preferred providers, grammar modes and provider schema forms; the name-matched mappings and provider lists in code are removed. |
 | [IMPL-0004](IMPL-0004-reasoning-allocation-per-model.md) | ADR-0006 (D25), ADR-0022 | Accepted; to be superseded by IMPL-0003 | Today's per-operation reasoning mapping per model, where it lives, and the class matrix with its evidence. |

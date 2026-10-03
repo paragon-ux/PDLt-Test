@@ -32,6 +32,8 @@ Goal: encode the invariant and the observed behaviour before changing code.
 5. **The stall regression** (already in `tests/test_wire_repairs.py`, from `aada9387`) stays, as the adapter's safety-net test.
 
 ## Phase 1: One output contract per operation (fixes the stall), IMPL-0001
+
+**Status: done (2026-10-03).** Details and the live results are in IMPL-0001 "As implemented". The Groq part of rule 5 (JSON mode instead of routing past) landed here as well, because the grammar mode is decided where the form is.
 **Files:**
 - `runtime/wire_payloads.py`
 - `runtime/context_compiler.py`
