@@ -181,6 +181,7 @@ def test_residual_meta_rule_is_published_unchanged_with_a_line_note(tmp_path):
     assert '[host] PDL-08: line 3 "DO NOT perform the calculation" is a drafting meta-rule; /revise to remove it' \
         in response.text
     assert response.text.index("[host]") > response.text.index("RETURN the probability")
+    assert response.review == "prompt" and response.host_findings  # fast mode stops here
     (event,) = events(engine, "PROMPT_LINT_UNRESOLVED")
     assert event["payload"]["lines"] == [
         {"line": 3, "clause": "PDL-08", "kind": "meta_rule", "text": "DO NOT perform the calculation"}
@@ -207,6 +208,7 @@ def test_clean_redraft_carries_no_note(tmp_path):
     engine = engine_with(tmp_path, ScriptedWorker(DRAFT_PROMPT=[dirty, clean]), ScriptedSys1())
     response = ask(engine, "a task")
     assert "[host]" not in response.text and not events(engine, "PROMPT_LINT_UNRESOLVED")
+    assert response.review == "prompt" and not response.host_findings
 
 
 def test_plan_path_names_residual_findings_too(tmp_path):
@@ -218,6 +220,7 @@ def test_plan_path_names_residual_findings_too(tmp_path):
     assert len(worker.calls("DRAFT_PLAN")) == 2
     assert engine.controller.state.current_plan.body == plan
     assert '[host] PDL-08: line 2 "DO NOT perform the calculation" is a drafting meta-rule' in response.text
+    assert response.review == "plan" and response.host_findings
     (event,) = events(engine, "PLAN_LINT_UNRESOLVED")
     assert event["payload"]["operation"] == "DRAFT_PLAN" and event["payload"]["lines"][0]["line"] == 2
 

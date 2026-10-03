@@ -202,7 +202,7 @@ def _manifest_tag_patterns() -> list[str]:
 def test_benchmark_contamination_scan():
     """GUARD-01/02/04/05: harness plane has ZERO benchmark IDs, prompt stems, or problem vocabulary."""
     src_dir = ROOT / "src" / "pdl_taskmaster"
-    prompt_id_pattern = re.compile(r"\b(0[1-9]|1[0-5])-(0[1-7])\b")
+    prompt_id_pattern = re.compile(r"\b(0[1-9]|1[0-6])-(0[1-7])\b")
     word_tokens = [
         r"frostbite", r"schur", r"\bdlx\b", r"dancing\s+link", r"algorithm\s+x", r"backtrack",
         r"\bmrv\b", r"nobel", r"hamiltonian", r"palindrome", r"wheel\s+graph", r"alice\s+has",
@@ -212,7 +212,7 @@ def test_benchmark_contamination_scan():
     tag_patterns = _manifest_tag_patterns()
     assert len(tag_patterns) > 50
     stem_tokens = _manifest_stems()
-    assert len(stem_tokens) == 105
+    assert len(stem_tokens) == 112
 
     violations: list[str] = []
     files = list(src_dir.rglob("*.py")) + list(src_dir.rglob("*.txt"))

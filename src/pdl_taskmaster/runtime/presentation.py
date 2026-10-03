@@ -32,6 +32,37 @@ def lint_note(violations: list, fallback: list[str] | None = None) -> str:
     return "\n".join(lines)
 
 
+_ADVANCEMENT_FEEDBACK = {
+    "solution_actions": "it adds no solution action or deduction beyond the prompt's own lines",
+    "constraints_addressed": "it repeats or ignores the conditions that keep the task from being solved directly "
+                             "instead of stating how the approach handles them",
+    "advances": "it does not show how the result will be obtained",
+}
+
+_ADVANCEMENT_NOTE = {
+    "solution_actions": "adds no step beyond the prompt's own",
+    "constraints_addressed": "does not say how it handles the task's constraints",
+    "advances": "does not show how the result will be reached",
+}
+
+
+def plan_advancement_feedback(failed: list[str]) -> str:
+    """Operator correction for a plan that restates the prompt: which checks failed,
+    never how to solve the task."""
+    reasons = "; ".join(_ADVANCEMENT_FEEDBACK[c] for c in failed if c in _ADVANCEMENT_FEEDBACK)
+    return (
+        "Response plan requirement (PLAN-02, minimum sufficient procedure): the plan restates the confirmed "
+        f"prompt instead of exposing an approach: {reasons}. State how the result will be obtained; do not "
+        "state the result itself (PLAN-04)."
+    )
+
+
+def plan_advancement_note(failed: list[str]) -> str:
+    """Factual host note at the plan review for a plan that still restates the prompt."""
+    reasons = "; ".join(_ADVANCEMENT_NOTE[c] for c in failed if c in _ADVANCEMENT_NOTE)
+    return f"[host] PLAN-02: this plan restates the prompt ({reasons}); /revise to ask for the approach"
+
+
 def deferred_substantive() -> str:
     return "I’ll address that substantive task question after the current confirmations are complete."
 

@@ -10,6 +10,7 @@ from pdl_taskmaster.observation.records import (
     controller_snapshot,
     event_delta,
     read_events,
+    turn_key,
     sha256_json,
     sha256_text,
     utcnow,
@@ -82,6 +83,7 @@ class ObservedSession:
     def handle_user_message(self, user_message: str) -> Any:
         before = controller_snapshot(self.engine)
         events_before = read_events(self.engine.workspace)
+        turn_before = turn_key(self.engine.workspace)
         call_start = len(self.calls)
         started = time.perf_counter()
         exception: dict[str, Any] | None = None
@@ -94,6 +96,8 @@ class ObservedSession:
         wall_ms = (time.perf_counter() - started) * 1000.0
         after = controller_snapshot(self.engine)
         events_after = read_events(self.engine.workspace)
+        if turn_key(self.engine.workspace) != turn_before:
+            events_before = []  # the message opened a new turn: all of its events are new
         new_calls = self.calls[call_start:]
         parsed_calls: list[dict[str, Any]] = []
         observer_analysis_errors: list[str] = []

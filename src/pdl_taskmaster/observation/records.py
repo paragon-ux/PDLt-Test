@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 import hashlib
 import json
@@ -21,16 +20,15 @@ def utcnow() -> str:
 
 
 def read_events(workspace: Any) -> list[dict[str, Any]]:
+    """The active turn's events (turns/<id>/events/events.jsonl in a session workspace)."""
     if workspace is None:
         return []
-    path = Path(workspace.path) / "events" / "events.jsonl"
-    if not path.is_file():
-        return []
-    rows: list[dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.strip():
-            rows.append(json.loads(line))
-    return rows
+    return workspace.read_events()
+
+
+def turn_key(workspace: Any) -> tuple[str, str | None] | None:
+    """Which turn's event log read_events reads, so a delta never spans two turns."""
+    return None if workspace is None else (str(workspace.path), workspace.turn_id)
 
 
 def controller_snapshot(engine: Any) -> dict[str, Any] | None:

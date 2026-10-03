@@ -45,6 +45,7 @@ def _default_session_base() -> Path:
     return Path.home() / ".pdlt" / "runs" / "live-sessions"
 
 from pdl_taskmaster.host.app import PDLtHost
+from pdl_taskmaster.host.console import color_scheme, paint, render_history
 from pdl_taskmaster.providers.api_worker import ApiWorker, unknown_provider_warnings
 from pdl_taskmaster.providers.fixtures import build_recorded_fixture, build_recorded_fixture_from_vendored
 
@@ -149,6 +150,7 @@ class SessionRuntime:
     workspace_root: Path
     observation_dir: Path
     exit_on_close: bool = False
+    prior_transcript: str | None = None  # the session's conversation before this open (a resume)
 
     def close(self) -> None:
         try:
@@ -185,6 +187,12 @@ class SessionRuntime:
         bookkeeping only; protocol authority stays in SessionEngine/Workspace.
         """
         result = self.host.handle(user_message)
+        self._refresh_pointer()
+        return result
+
+    def confirm_on_standing_instruction(self):
+        """Fast mode: accept the open review on the user's advance confirmation."""
+        result = self.host.confirm_on_standing_instruction()
         self._refresh_pointer()
         return result
 
@@ -289,7 +297,15 @@ def open_session(
         )
     transcript_path = args.transcript or session_dir / "transcript.log"
     transcript_path.parent.mkdir(parents=True, exist_ok=True)
+    # A session's own transcript holds its conversation verbatim; a --transcript
+    # file may be shared by several sessions, so it is not replayed.
+    prior_transcript = None
+    if args.transcript is None and transcript_path.is_file():
+        prior_transcript = transcript_path.read_text(encoding="utf-8") or None
     transcript = transcript_path.open("a", encoding="utf-8", newline="\n")
+    if prior_transcript:
+        transcript.write("=== PDLt session resumed ===\n")
+        transcript.flush()
     return SessionRuntime(
         session_id=session_id,
         session_dir=session_dir,
@@ -300,7 +316,38 @@ def open_session(
         workspace_root=workspace_root,
         observation_dir=observation_dir,
         exit_on_close=bool(getattr(args, "exit_on_close", False)),
+        prior_transcript=prior_transcript,
     )
+
+
+_HISTORY_LINE_LIMIT = 400
+_OPEN_GATES = {
+    "PROMPT_REVIEW": "The prompt pseudocode above is awaiting review: /confirm, /revise <feedback>, /stop or /cancel.",
+    "PLAN_REVIEW": "The response plan above is awaiting review: /confirm, /revise <feedback>, /stop or /cancel.",
+    "WAITING_INPUT": "The execution is waiting for the input it asked for above: reply with it, /revise or /stop.",
+}
+
+
+def show_resumed_history(runtime: SessionRuntime, colors: dict[str, str] | None = None) -> None:
+    """On resume, show the session's conversation so far and what waits on the user.
+
+    The text is the session's transcript, one blank line between turns and each
+    speaker in its color; the open gate comes from the restored controller state,
+    not from the text."""
+    history = getattr(runtime, "prior_transcript", None)
+    if not history:
+        return
+    lines = history.rstrip("\n").splitlines()
+    print(paint(f"--- conversation history ({runtime.transcript_path}) ---", "note", colors), flush=True)
+    if len(lines) > _HISTORY_LINE_LIMIT:
+        print(f"[{len(lines) - _HISTORY_LINE_LIMIT} earlier lines are in the transcript]", flush=True)
+        lines = lines[-_HISTORY_LINE_LIMIT:]
+    print("\n".join(render_history("\n".join(lines), colors)), flush=True)
+    print("", flush=True)
+    print(paint("--- end of history ---", "note", colors), flush=True)
+    stage = (runtime.host.status().get("controller_state") or {}).get("stage")
+    if stage in _OPEN_GATES:
+        print(_OPEN_GATES[stage], flush=True)
 
 
 def _announce_sandbox(host: PDLtHost) -> None:
@@ -1014,6 +1061,20 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Start REPL in Dev Mode (enables agentic introspection, telemetry, and live operational mutations)",
     )
     parser.add_argument(
+        "--color",
+        choices=["auto", "always", "never"],
+        default=None,
+        help="Color the conversation by speaker: auto (default; only on a terminal, off with NO_COLOR), always "
+        "or never. Also PDLT_COLOR; PDLT_COLORS sets each role, e.g. user=bright_cyan,assistant=green,note=none",
+    )
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Fast mode: confirm in advance. Every phase still runs and both pseudocode artifacts are shown; "
+        "a review whose artifact has no host findings is accepted without waiting for /confirm, and one "
+        "with findings stops for you as usual. Toggle in the REPL with /fast [on|off]",
+    )
+    parser.add_argument(
         "--exit-on-close",
         action="store_true",
         help="Exit REPL when protocol reaches a closed state (CLOSED_SUCCESS or CLOSED_CANCELLED)",
@@ -1115,6 +1176,11 @@ def main() -> int:
     args.render_compact = _resolve_render_compact(args)
     runtime = open_session(args, session_base, worker, session_id, restore_path=args.restore)
     dev_mode = bool(getattr(args, "dev", False))
+    fast_mode = bool(getattr(args, "fast", False))
+    try:
+        colors = color_scheme(getattr(args, "color", None))
+    except ValueError as exc:
+        raise SystemExit(f"pdlt: {exc}")
 
     def _write_transcript(text: str) -> None:
         runtime.transcript.write(text + "\n")
@@ -1127,6 +1193,10 @@ def main() -> int:
     print("Commands: /help (full roster), /paste (multi-line), /status, /quit", flush=True)
     if dev_mode:
         print("[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)", flush=True)
+    if fast_mode:
+        print("[fast] Fast mode: ON (reviews without host findings are accepted on your advance "
+              "confirmation; /fast off to review each one)", flush=True)
+    show_resumed_history(runtime, colors)  # a session picked at startup resumes like /resume
     if args.allow_bypass:
         print(
             "WARNING: dangerous bypass mode is ON. This condition requires an externally "
@@ -1134,6 +1204,8 @@ def main() -> int:
             flush=True,
         )
     _write_transcript("WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION")
+    if fast_mode:
+        _write_transcript("FAST MODE: ON")
     reasoning = _reasoning_record(worker)
     if reasoning:
         # The effective effort per operation, so drift from the catalogue's
@@ -1155,15 +1227,92 @@ def main() -> int:
             except Exception as e:
                 print(f"[warning: failed to read --prompt-file: {e}]", flush=True)
 
+    def _show_turn(turn) -> bool:
+        """Print a turn's output; True when fast mode accepts the review it left open."""
+        if turn.text:
+            if dev_mode:
+                display_text = turn.text
+            else:
+                from pdl_taskmaster.runtime.result_ir import format_friendly_deliverable
+                display_text = format_friendly_deliverable(turn.text)
+            print("", flush=True)  # a blank line before each reply
+            print(display_text, flush=True)
+            _write_transcript("ASSISTANT> " + display_text)
+        if dev_mode:
+            engine = getattr(runtime.host, "engine", None)
+            ctrl = getattr(engine, "controller", None)
+            stage = ctrl.state.stage.value if ctrl else "no_controller"
+            print(f"[dev:telemetry] controller stage: {stage}", flush=True)
+            traces = getattr(turn, "traces", [])
+            if traces:
+                for idx, tr in enumerate(traces, 1):
+                    op = getattr(tr, "operation", "unknown")
+                    txt = getattr(tr, "model_text", "")
+                    print(f"[dev:telemetry] call #{idx}: {op} ({len(txt)} chars output)", flush=True)
+        if turn.closed:
+            print("[protocol closed]", flush=True)
+            _write_transcript("PROTOCOL_CLOSED")
+            return False
+        if not getattr(turn, "review", None):
+            return False
+        if getattr(turn, "host_findings", False):
+            if fast_mode:
+                print("[fast] The host has findings on this artifact: review it (/confirm, /revise, /stop).",
+                      flush=True)
+            return False
+        return fast_mode
+
+    def _headless_pause(turn) -> bool:
+        """Headless runs stop reading piped lines where they no longer apply."""
+        if _is_interactive(args):
+            return False
+        engine = getattr(runtime.host, "engine", None)
+        ctrl = getattr(engine, "controller", None)
+        if ctrl is None and getattr(turn, "bypass", False):
+            # A direct answer opens no instance; piped review commands do not apply.
+            return True
+        # ADR-0019: headless runs pause cleanly at an input request; remaining
+        # piped review commands do not apply to it.
+        return ctrl is not None and ctrl.state.stage.value == "WAITING_INPUT"
+
+    standing_confirmation = False  # fast mode: the last turn left a review without findings open
     try:
         while True:
             sys.stdout.flush()
+            if standing_confirmation:
+                standing_confirmation = False
+                print(paint("> /confirm  [fast mode: confirmed in advance]", "user", colors), flush=True)
+                _write_transcript("USER> /confirm  [fast mode: confirmed in advance]")
+                print("[working...]", flush=True)
+                try:
+                    turn = runtime.confirm_on_standing_instruction()
+                except KeyboardInterrupt:
+                    print("\n[operation interrupted by user]", flush=True)
+                    _write_transcript("USER_INTERRUPTED")
+                    if not _is_interactive(args):
+                        raise
+                    continue
+                except Exception as exc:
+                    message = f"{type(exc).__name__}: {exc}"
+                    print(f"[error] {_one_line_error(exc)}", flush=True)
+                    _write_transcript("ERROR> " + message)
+                    if not _is_interactive(args):
+                        harness_error = message
+                        harness_record = _harness_error_record(exc)
+                        break
+                    continue
+                standing_confirmation = _show_turn(turn)
+                if turn.closed and runtime.exit_on_close:
+                    break
+                if _headless_pause(turn):
+                    break
+                continue
             if initial_prompt is not None:
                 line = initial_prompt
                 initial_prompt = None
             else:
                 try:
-                    line = _read_repl_input("> ").strip()
+                    line = _read_repl_input(paint("> ", "user", colors)).strip()
                 except (EOFError, KeyboardInterrupt):
                     print("", flush=True)
                     _write_transcript("=== session closed (EOF/interrupted) ===")
@@ -1182,6 +1331,7 @@ def main() -> int:
                     "/paste -> enter multi-line paste mode (or use \"\"\" ... \"\"\")\n"
                     "/status -> read-only host state\n"
                     "/session -> current session directory\n"
+                    "/fast [on|off] -> fast mode: accept reviews without findings on your advance confirmation\n"
                     "/tokens [on|off] -> toggle token telemetry\n"
                     "/timeout [seconds] -> show/set worker timeout\n"
                     "/model [name] -> show/set worker model\n"
@@ -1314,6 +1464,16 @@ def main() -> int:
                         print(f"transcript: {runtime.transcript_path}", flush=True)
                 elif cmd == "/session":
                     print(f"session: {runtime.session_dir}", flush=True)
+                elif cmd == "/fast":
+                    if arg in {"on", "off"}:
+                        fast_mode = arg == "on"
+                    elif arg:
+                        print("usage: /fast [on|off]", flush=True)
+                        continue
+                    else:
+                        fast_mode = not fast_mode
+                    _write_transcript(f"FAST MODE: {'ON' if fast_mode else 'OFF'}")
+                    print(f"fast mode: {'on' if fast_mode else 'off'}", flush=True)
                 elif cmd == "/tokens":
                     if arg in {"on", "off"}:
                         worker.capture_tokens = arg == "on"
@@ -1405,6 +1565,7 @@ def main() -> int:
                         continue
                     runtime = switch_session(runtime, args, session_base, worker, safe_id)
                     print(f"resumed session: {runtime.session_dir}", flush=True)
+                    show_resumed_history(runtime, colors)
                     continue
                 elif cmd == "/sessions":
                     parts = arg.split() if arg else []
@@ -1475,40 +1636,11 @@ def main() -> int:
                     harness_record = _harness_error_record(exc)
                     break
                 continue
-            if turn.text:
-                if dev_mode:
-                    display_text = turn.text
-                else:
-                    from pdl_taskmaster.runtime.result_ir import format_friendly_deliverable
-                    display_text = format_friendly_deliverable(turn.text)
-                print(display_text, flush=True)
-                _write_transcript("ASSISTANT> " + display_text)
-            if dev_mode:
-                engine = getattr(runtime.host, "engine", None)
-                ctrl = getattr(engine, "controller", None)
-                stage = ctrl.state.stage.value if ctrl else "no_controller"
-                print(f"[dev:telemetry] controller stage: {stage}", flush=True)
-                traces = getattr(turn, "traces", [])
-                if traces:
-                    for idx, tr in enumerate(traces, 1):
-                        op = getattr(tr, "operation", "unknown")
-                        txt = getattr(tr, "model_text", "")
-                        print(f"[dev:telemetry] call #{idx}: {op} ({len(txt)} chars output)", flush=True)
-            if turn.closed:
-                print("[protocol closed]", flush=True)
-                _write_transcript("PROTOCOL_CLOSED")
-                if runtime.exit_on_close:
-                    break
-            if not _is_interactive(args):
-                engine = getattr(runtime.host, "engine", None)
-                ctrl = getattr(engine, "controller", None)
-                if ctrl is None and getattr(turn, "bypass", False):
-                    # A direct answer opens no instance; piped review commands do not apply.
-                    break
-                if ctrl is not None and ctrl.state.stage.value == "WAITING_INPUT":
-                    # ADR-0019: headless runs pause cleanly here; remaining piped
-                    # review commands do not apply to an input request.
-                    break
+            standing_confirmation = _show_turn(turn)
+            if turn.closed and runtime.exit_on_close:
+                break
+            if _headless_pause(turn):
+                break
     finally:
         _disable_bracketed_paste()
         try:

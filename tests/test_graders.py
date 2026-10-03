@@ -36,7 +36,7 @@ def _grade(entry_id: str, tmp_path: Path, deliverable: str | None) -> str:
 
 def test_every_verified_entry_has_a_grader_or_manual_marker():
     verified = [e for e in MANIFEST.values() if e["ground_truth_status"] == "verified"]
-    assert len(verified) == 21
+    assert len(verified) == 28
     machine = [e["id"] for e in verified if e["id"] in graders.GRADERS]
     assert machine == [e["id"] for e in verified]  # every verified prompt has a grader
 
@@ -288,3 +288,52 @@ def test_13_06_reads_sql_only_in_sql_context(tmp_path):
     assert grade["grade"] == graders.FAIL and "without asking" in grade["reason"]
     prose_questions = "I need details taken from the table definition. Which table? Which engine?"
     assert _g("13-06", _published(tmp_path / "b", "RESULT", prose_questions)) == graders.PASS
+
+
+# --------------------------------------------------------------------------- 16 logic and reasoning
+# Failing answers are the ones the live sessions produced (runs/live-sessions, 2026-10-03).
+
+def test_16_01_three_gods(tmp_path):
+    gave_up = ("Given only the three recorded answers, it is impossible to uniquely deduce the identities. "
+               "Therefore, the task cannot be completed as stated.")
+    assert _grade("16-01", tmp_path / "a", gave_up) == graders.FAIL
+    solution = "Ask A: 'If I asked you whether B is Random, would you say ja?' ..."
+    assert _grade("16-01", tmp_path / "b", solution) == graders.MANUAL
+
+
+def test_16_02_missing_dollar(tmp_path):
+    good = "No dollar is missing: the $27 the guests paid is $25 for the room plus the $2 tip, so adding $2 counts it twice."
+    assert _grade("16-02", tmp_path / "a", good) == graders.PASS
+    assert _grade("16-02", tmp_path / "b", "The missing dollar was lost.") == graders.MANUAL
+
+
+def test_16_03_knights_and_knaves(tmp_path):
+    assert _grade("16-03", tmp_path / "a", "A is a knight, B is a knave and C is a knave.") == graders.PASS
+    assert _grade("16-03", tmp_path / "b", "A is a knave, B is a knight, C is a knave.") == graders.FAIL
+
+
+def test_16_04_elevator(tmp_path):
+    good = "He is too short to reach the button for the 10th floor; on rainy days he presses it with his umbrella."
+    assert _grade("16-04", tmp_path / "a", good) == graders.PASS
+    wrong = "The elevator does not stop at the higher floors unless a button is pressed from inside the cabin."
+    assert _grade("16-04", tmp_path / "b", wrong) == graders.MANUAL
+
+
+def test_16_05_masked_men(tmp_path):
+    assert _grade("16-05", tmp_path / "a", "He hit a home run: they are the catcher and the umpire.") == graders.PASS
+    gave_up = "The narrative does not provide any information about a man wearing a mask, so the masked individual cannot be identified."
+    assert _grade("16-05", tmp_path / "b", gave_up) == graders.FAIL
+
+
+def test_16_06_sibling_count(tmp_path):
+    assert _grade("16-06", tmp_path / "a", "Each brother has S + 1 sisters: Maya's S sisters and Maya.") == graders.PASS
+    assert _grade("16-06", tmp_path / "b", "Each brother has S sisters.") == graders.MANUAL
+    live = "Expression: S\n\nExplanation: Maya has S sisters."  # the live 2026-10-03 answer
+    assert _grade("16-06", tmp_path / "c", live) == graders.FAIL
+
+
+def test_16_07_house_grid(tmp_path):
+    assert _grade("16-07", tmp_path / "a", "House 3 is blue; Ben lives there and owns the fish.") == graders.PASS
+    assert _grade("16-07", tmp_path / "b", "Ana owns the fish.") == graders.FAIL
+    result_ir = '```json\n{"witness": {"fish_owner": "Ben"}}\n```'  # the live answer, as a result block
+    assert _grade("16-07", tmp_path / "c", result_ir) == graders.PASS

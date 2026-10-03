@@ -57,7 +57,7 @@ def _session(tmp_path, sys1, execute_body: str = "done"):
     engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=sys1)
     for message in ("$confirm-with-pseudocode compute it", "/confirm", "/confirm"):
         engine.handle_user_message(message)
-    return engine, executes, list(engine.workspace._events)
+    return engine, executes, list(engine.workspace.read_events())
 
 
 def _dist(**probs: float) -> dict:
@@ -273,7 +273,7 @@ def test_budget_gate_refuses_uncertifiable_beyond_budget_tasks(tmp_path):
     response = engine.handle_user_message("$confirm-with-pseudocode find the exact optimum")
     assert response.refused and "100,000,000" in response.text and "certif" in response.text
     assert calls == []  # System 2 never ran
-    assert any(e["kind"] == "BUDGET_REFUSAL" for e in engine.workspace._events)
+    assert any(e["kind"] == "BUDGET_REFUSAL" for e in engine.workspace.read_events())
 
 
 @pytest.mark.parametrize("p_beyond", [0.2, 0.5])
@@ -324,7 +324,7 @@ def _verified_session(tmp_path, prediction: str, execute_replies: list[dict]):
     engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=VerifiedPredictingSys1(dist))
     for message in ("$confirm-with-pseudocode compute it", "/confirm", "/confirm"):
         engine.handle_user_message(message)
-    return engine, executes, list(engine.workspace._events)
+    return engine, executes, list(engine.workspace.read_events())
 
 
 _IR = {"files": [], "reconciliation": [{"requirement": "R1", "status": "satisfied", "evidence": {"path": "execution://body"}}],

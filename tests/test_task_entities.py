@@ -162,3 +162,50 @@ def test_entity_coverage_missing_helper():
     eng = _engine_with_workspace(Path("/tmp"))
     assert eng._entity_coverage_missing("body with 4B inside", ("4B",)) == []
     assert eng._entity_coverage_missing("body without it", ("4B",)) == ["4B"]
+
+
+# ------------------------------------------------- what an entity is (wording)
+# Entities are a spelling channel for names the request uses. Narrative figures
+# (a story's or puzzle's amounts) are not entities, and the drafting context never
+# asks for entities to be listed or required: that padded the prompt pseudocode
+# ("IDENTIFY the monetary amounts ...", "ENSURE ... verbatim").
+
+_SCHEMAS = Path(__file__).resolve().parents[1] / "src" / "pdl_taskmaster" / "controller" / "schemas"
+
+
+def _entity_description(schema_file: str) -> str:
+    import json
+
+    def walk(node):
+        if isinstance(node, dict):
+            if "task_entities" in node.get("properties", {}):
+                yield node["properties"]["task_entities"]["description"]
+            for value in node.values():
+                yield from walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                yield from walk(value)
+
+    (description,) = set(walk(json.loads((_SCHEMAS / schema_file).read_text(encoding="utf-8"))))
+    return description
+
+
+def test_bootstrap_entities_are_names_not_narrative_figures():
+    text = _entity_description("bootstrap_analysis.schema.json")
+    assert "identifiers" in text and "file or path names" in text  # exact identifiers still matter
+    assert "not entities" in text and "story, puzzle, word problem or data set" in text
+    assert "MUST reproduce verbatim" not in text and "quantities with units" not in text
+
+
+def test_prompt_draft_spells_entities_without_listing_or_requiring_them():
+    text = _entity_description("prompt_artifact.schema.json")
+    assert "add no step, list or requirement" in text
+    assert "reproduced verbatim" not in text
+
+
+def test_draft_context_and_correction_never_require_verbatim_reproduction(tmp_path, monkeypatch):
+    source = (Path(__file__).resolve().parents[1] / "src" / "pdl_taskmaster" / "runtime" / "session_engine.py").read_text(
+        encoding="utf-8"
+    )
+    assert "they add no step, list" in source
+    assert "reproduce each verbatim" not in source and "MUST appear verbatim" not in source

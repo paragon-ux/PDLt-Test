@@ -323,7 +323,7 @@ def test_engine_reports_sandbox_unavailable_and_runs_no_later_block(tmp_path):
     witness, failures = engine._run_deliverable_code("```python\nprint(1)\n```\n```python\nprint(2)\n```")
     assert witness is None and finding_codes(failures) == ["SANDBOX_UNAVAILABLE"]
     assert "unknown sandbox mode" in failures[0]
-    events = list(engine.workspace._events)
+    events = list(engine.workspace.read_events())
     session = next(e for e in events if e["kind"] == "SANDBOX_SESSION")["payload"]
     assert session["available"] is False and session["backend"] == "bogus"
     assert [e["payload"]["block"] for e in events if e["kind"] == "SANDBOX_RUN"] == [1]

@@ -327,6 +327,8 @@ class EngineResponse:
     bypass: bool = False
     closed: bool = False
     refused: bool = False
+    review: str | None = None  # the review gate this response opens: "prompt" or "plan"
+    host_findings: bool = False  # the reviewed artifact carries host findings (lint notes)
 
 
 class SessionEngine:
@@ -743,8 +745,9 @@ class SessionEngine:
         )
         if entities:
             document += (
-                "\nOPERATIVE TASK ENTITIES (copy each EXACTLY, character-for-character, into the "
-                "task_entities array AND reproduce each verbatim inside the prompt body):\n"
+                "\nEXACT NAMES FROM THE REQUEST (copy each character-for-character into the task_entities "
+                "array; where the prompt body refers to one, it spells it exactly so; they add no step, list "
+                "or requirement of their own):\n"
                 + "\n".join(f"- {e}" for e in entities)
             )
         self._bootstrap_cache[cache_key] = document
@@ -803,8 +806,8 @@ class SessionEngine:
         corrected_context = dict(context)
         corrected_context["SUBSTANTIVE_REQUEST"] = (
             context["SUBSTANTIVE_REQUEST"]
-            + "\n\nOPERATOR CORRECTION (host-side mechanical check): the following task entities are "
-            "missing from the prompt body and MUST appear verbatim, character-for-character: "
+            + "\n\nOPERATOR CORRECTION (host-side mechanical check): the prompt body does not use these exact "
+            "names from the request; where it refers to what they name, it spells them character-for-character: "
             + "; ".join(missing)
         )
         outcome = draft_fn(corrected_context, traces, parser=parser)
@@ -1067,7 +1070,8 @@ class SessionEngine:
         approach_source = substantive_request if outcome.approach_handoff == "CARRY_SOURCE_TO_PLAN" else None
         self.controller.commit_initial_prompt(outcome.prompt_body, approach_source)
         self._publish_prompt()
-        return EngineResponse(presentation.prompt_artifact(outcome.prompt_body, host_note), traces)
+        return EngineResponse(presentation.prompt_artifact(outcome.prompt_body, host_note), traces,
+                              review="prompt", host_findings=bool(host_note))
 
     def _sync_review_edit(self) -> None:
         assert self.controller is not None and self.workspace is not None
@@ -1182,9 +1186,21 @@ class SessionEngine:
             parser=self.bridge.parse_plan_body,
             artifact="PLAN",
         )
+        body, host_note = self._advancing_plan(
+            "DRAFT_PLAN",
+            {
+                "CONFIRMED_PROMPT_BODY": prompt_body,
+                "CARRIED_APPROACH_SOURCES": carried,
+            },
+            traces,
+            prompt_body,
+            body,
+            host_note,
+        )
         self.controller.commit_plan(body)
         self._publish_plan()
-        return EngineResponse(presentation.plan_artifact(body, host_note), traces)
+        return EngineResponse(presentation.plan_artifact(body, host_note), traces,
+                              review="plan", host_findings=bool(host_note))
 
     def _linted_call(
         self, operation: str, context: dict[str, Any], traces: list[CallTrace], *, parser: Any, artifact: str
@@ -1207,6 +1223,71 @@ class SessionEngine:
             operation, context, traces, parser=parser, operator_correction="OPERATOR CORRECTION: " + lint.feedback
         )
         return body, self._residual_lint_note(body, artifact, operation)
+
+    def _advancing_plan(
+        self,
+        operation: str,
+        context: dict[str, Any],
+        traces: list[CallTrace],
+        prompt_body: str,
+        body: str,
+        host_note: str | None,
+    ) -> tuple[str, str | None]:
+        """PLAN-02 gate: a response plan must expose how the result will be obtained,
+        not restate the confirmed prompt. System 1 judges three task-neutral checks
+        (PlanAdvancementRecipe). A plan that confidently fails one gets exactly one
+        redraft naming the failed checks; one that still fails stands unchanged for
+        the user's review (AUTH-05) with a host note, so it is never accepted in
+        advance. Only the names of the failed checks reach the drafting model."""
+        assert self.workspace is not None
+        verdict, failed = self._judge_plan_advancement(operation, prompt_body, body)
+        if verdict != "RESTATES":
+            return body, host_note
+        self.workspace.append_event("PLAN_ADVANCEMENT_RETRY", {"operation": operation, "failed_checks": failed})
+        body = self._call(
+            operation,
+            context,
+            traces,
+            parser=self.bridge.parse_plan_body,
+            operator_correction="OPERATOR CORRECTION: " + presentation.plan_advancement_feedback(failed),
+        )
+        host_note = self._residual_lint_note(body, "PLAN", operation)
+        verdict, failed = self._judge_plan_advancement(operation, prompt_body, body)
+        if verdict == "RESTATES":
+            self.workspace.append_event(
+                "PLAN_ADVANCEMENT_UNRESOLVED", {"operation": operation, "failed_checks": failed, "host_note": True}
+            )
+            host_note = "\n".join(filter(None, [host_note, presentation.plan_advancement_note(failed)]))
+        return body, host_note
+
+    def _judge_plan_advancement(
+        self, operation: str, prompt_body: str, plan_body: str
+    ) -> tuple[str | None, list[str]]:
+        """One PlanAdvancementRecipe decision: (verdict, failed checks). System 1
+        absent, failing or below its floor yields no verdict, and the plan is not flagged."""
+        from pdl_taskmaster.providers.sys1.recipes.plan_advancement import PlanAdvancementRecipe
+
+        assert self.workspace is not None
+        decision: dict[str, Any] = {"operation": operation, "verdict": None, "failed_checks": [], "checks": {},
+                                    "confidence": None, "fallback": "sys1_unavailable"}
+        if self.sys1_client is not None and self.sys1_client.is_configured:
+            recipe = PlanAdvancementRecipe()
+            try:
+                body, duration_ms = self.sys1_client.call(
+                    recipe.build_request({"confirmed_prompt": prompt_body, "response_plan": plan_body})
+                )
+                result = recipe.parse_response(body, duration_ms=duration_ms)
+                wire = recipe.map_to_wire(result)
+                decision.update(
+                    verdict=wire["verdict"], failed_checks=wire["failed_checks"], checks=wire["checks"],
+                    prompt_states_method=wire["prompt_states_method"],
+                    confidence=round(result.confidence, 4),
+                    fallback=None if result.passed_gating else "below_floor",
+                )
+            except Exception as exc:
+                decision["fallback"] = f"sys1_error:{type(exc).__name__}"
+        self.workspace.append_event("PLAN_ADVANCEMENT", decision)
+        return decision["verdict"], list(decision["failed_checks"])
 
     def _residual_lint_note(self, body: str, artifact: str, operation: str) -> str | None:
         """After the one redraft: a body that still fails the lint is published
@@ -1269,7 +1350,8 @@ class SessionEngine:
         if had_plan:
             self.workspace.invalidate_artifact("plan", "prompt_revision")
         self._publish_prompt()
-        return EngineResponse(presentation.prompt_artifact(body, host_note), traces)
+        return EngineResponse(presentation.prompt_artifact(body, host_note), traces,
+                              review="prompt", host_findings=bool(host_note))
 
     def _revise_plan(self, transition: Transition, traces: list[CallTrace]) -> EngineResponse:
         assert self.controller is not None and self.workspace is not None
@@ -1286,26 +1368,25 @@ class SessionEngine:
         if carried_raw != self.controller.state.approach_sources:
             raise WorkspaceError("approach_source_handoff")
         try:
+            context = {
+                "CONFIRMED_PROMPT_BODY": prompt_body,
+                "CURRENT_PLAN_BODY": plan_body,
+                "CARRIED_APPROACH_SOURCES": [
+                    *map(lambda s: self._compile_approach_context(s, traces), carried_raw),
+                    self._compile_approach_context(transition.payload["approach_change_source"], traces),
+                ],
+            }
             body, host_note = self._linted_call(
-                "REVISE_PLAN",
-                {
-                    "CONFIRMED_PROMPT_BODY": prompt_body,
-                    "CURRENT_PLAN_BODY": plan_body,
-                    "CARRIED_APPROACH_SOURCES": [
-                        *map(lambda s: self._compile_approach_context(s, traces), carried_raw),
-                        self._compile_approach_context(transition.payload["approach_change_source"], traces),
-                    ],
-                },
-                traces,
-                parser=self.bridge.parse_plan_body,
-                artifact="PLAN",
+                "REVISE_PLAN", context, traces, parser=self.bridge.parse_plan_body, artifact="PLAN",
             )
+            body, host_note = self._advancing_plan("REVISE_PLAN", context, traces, prompt_body, body, host_note)
             self.controller.commit_plan_revision(change_id, body)
         except Exception:
             self.controller.abort_pending_change(change_id)
             raise
         self._publish_plan()
-        return EngineResponse(presentation.plan_artifact(body, host_note), traces)
+        return EngineResponse(presentation.plan_artifact(body, host_note), traces,
+                              review="plan", host_findings=bool(host_note))
 
     def _execute(self, transition: Transition, traces: list[CallTrace]) -> EngineResponse:
         """Phases 4 and 5 (ARCHITECTURE §3): one EXECUTE call, deterministic
@@ -1804,7 +1885,8 @@ class SessionEngine:
             prompt = self.controller.state.current_prompt
             assert prompt is not None
             self.workspace.publish_approach_sources(list(self.controller.state.approach_sources))
-            return EngineResponse(presentation.prompt_artifact(self.workspace.read_artifact("prompt")[1]), traces)
+            return EngineResponse(presentation.prompt_artifact(self.workspace.read_artifact("prompt")[1]), traces,
+                                  review="prompt")
         if transition.action == NextAction.CLOSED:
             assert self.workspace is not None
             self.workspace.append_event("PROTOCOL_CLOSED", {"reason": "cancelled"})
@@ -1826,6 +1908,20 @@ class SessionEngine:
         assert self.controller is not None
         pending = self.controller.state.pending_input
         return EngineResponse(presentation.waiting_input_guidance(pending.description if pending else None), traces)
+
+    def record_standing_confirmation(self) -> None:
+        """Audit record for a confirmation the user gave in advance (fast mode): the
+        artifact it accepts, before the same mechanical /confirm path applies it."""
+        if self.controller is None or self.workspace is None:
+            return
+        stage = self.controller.state.stage
+        if stage == Stage.PROMPT_REVIEW and self.controller.state.current_prompt is not None:
+            kind, artifact_id = "prompt", self.controller.state.current_prompt.artifact_id
+        elif stage == Stage.PLAN_REVIEW and self.controller.state.current_plan is not None:
+            kind, artifact_id = "plan", self.controller.state.current_plan.artifact_id
+        else:
+            return
+        self.workspace.append_event("STANDING_CONFIRMATION", {"kind": kind, "artifact_id": artifact_id})
 
     def handle_explicit_review(self, intent: Intent, feedback: str | None = None) -> EngineResponse:
         """Directly apply a review intent without LLM interpretation overhead (fast-path)."""

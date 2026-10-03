@@ -128,6 +128,18 @@ class WorkspaceRun:
         the workspace root in legacy flat mode."""
         return self.path / "turns" / self.turn_id if self.turn_id else self.path
 
+    def events_path(self, turn_id: str | None = None) -> Path:
+        """The durable event log of a turn (default: the active turn), every event
+        appended as it happens; a resumed session reads the same file."""
+        base = self.path / "turns" / turn_id if turn_id else self._turn_base()
+        return base / "events" / "events.jsonl"
+
+    def read_events(self, turn_id: str | None = None) -> list[dict[str, Any]]:
+        path = self.events_path(turn_id)
+        if not path.is_file():
+            return []
+        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
     def stages_root(self) -> Path:
         """Public root for this workspace's stage tree (turn-scoped in
         hierarchy mode; workspace root in legacy flat mode). Readers that
@@ -292,7 +304,7 @@ class WorkspaceRun:
         self._record_event(event)
 
     def _record_event(self, event: dict[str, Any]) -> None:
-        events = self._turn_base() / "events" / "events.jsonl"
+        events = self.events_path()
         events.parent.mkdir(parents=True, exist_ok=True)
         with events.open("a", encoding="utf-8", newline="\n") as handle:
             handle.write(json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n")
@@ -580,7 +592,6 @@ class MemoryWorkspaceRun(WorkspaceRun):
     def __init__(self, repo_root: Path, path: Path):
         super().__init__(repo_root, path)
         self._vfs: dict[Path, str] = {}
-        self._events: list[dict[str, Any]] = []
 
     def _write(self, path: Path, content: str) -> None:
         self._vfs[path] = content
@@ -593,17 +604,12 @@ class MemoryWorkspaceRun(WorkspaceRun):
         return path.read_text(encoding="utf-8")
 
     def _record_event(self, event: dict[str, Any]) -> None:
-        self._events.append(event)
-        events = self._turn_base() / "events" / "events.jsonl"
+        events = self.events_path()
         events.parent.mkdir(parents=True, exist_ok=True)
         with events.open("a", encoding="utf-8", newline="\n") as handle:
             handle.write(json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n")
             handle.flush()
             # Bypasses blocking os.fsync(handle.fileno()) per ADR-0011 §1
-
-    def start_turn(self, new_turn_id: str) -> None:
-        super().start_turn(new_turn_id)
-        self._events = []
 
     def mark_turn_status(self, status: str, *, deliverable_sha256: str | None = None) -> None:
         super().mark_turn_status(status, deliverable_sha256=deliverable_sha256)
@@ -627,7 +633,9 @@ class MemoryWorkspaceRun(WorkspaceRun):
             "turn_id": tid,
             "status": status,
             "deliverable_sha256": deliverable_sha256,
-            "events": list(self._events),
+            # The durable log, not this process's memory: a resumed turn keeps the
+            # events recorded before the resume.
+            "events": self.read_events(tid),
             "flushed_at_utc": datetime.now(timezone.utc).isoformat(),
         }
         archive_path.write_text(json.dumps(archive_data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",

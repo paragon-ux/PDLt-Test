@@ -33,7 +33,7 @@ def _g06_turns() -> list[str]:
     return fixture["case_turns"]["G06"]
 
 
-def _run_repl(tmp_path: Path, lines: list[str], session_id: str) -> subprocess.CompletedProcess:
+def _run_repl(tmp_path: Path, lines: list[str], session_id: str, extra: list[str] | None = None) -> subprocess.CompletedProcess:
     cmd = [
         sys.executable,
         "-m",
@@ -50,6 +50,7 @@ def _run_repl(tmp_path: Path, lines: list[str], session_id: str) -> subprocess.C
         str(tmp_path / "sessions"),
         "--session-id",
         session_id,
+        *(extra or []),
     ]
     return subprocess.run(
         cmd,
@@ -119,6 +120,42 @@ def test_headless_review_commands_after_closure_do_not_restart_the_task(tmp_path
     assert out.count("No review is open") == 2
     assert "[headless halt]" not in out
     assert "[error]" not in out
+
+
+def test_resumed_session_shows_its_history_and_keeps_its_record(tmp_path: Path) -> None:
+    """A session stopped at the prompt review and resumed in a new process shows the
+    conversation so far and the open review, and its turn record spans the resume."""
+    turns = _g06_turns()
+    first = _run_repl(tmp_path, turns[:1], "resumable")
+    assert first.returncode == 2, (first.stdout + first.stderr)[-2000:]  # halted at the prompt review
+
+    second = _run_repl(tmp_path, turns[1:] + ["/quit"], "resumable")
+    out = second.stdout + second.stderr
+    assert second.returncode == 0, out[-3000:]
+    history = out[out.index("--- conversation history"):out.index("--- end of history ---")]
+    assert "USER> " + turns[0].splitlines()[0] in history
+    assert "\n\nASSISTANT> Prompt Pseudocode" in history  # a blank line between turns
+    assert "\x1b[" not in out  # piped output is never colored
+    assert "The prompt pseudocode above is awaiting review" in out
+    assert out.count("[protocol closed]") == 1
+
+    session = tmp_path / "sessions" / "resumable"
+    workspace = Path(json.loads((session / "session.json").read_text(encoding="utf-8"))["workspace_path"])
+    archive = json.loads((workspace / "turns" / "turn_001" / "turn_archive.json").read_text(encoding="utf-8"))
+    kinds = [event["kind"] for event in archive["events"]]
+    assert kinds[0] == "WORKSPACE_CREATED" and "SESSION_RESTORED" in kinds  # events before the resume are kept
+    log = (workspace / "turns" / "turn_001" / "events" / "events.jsonl").read_text(encoding="utf-8").splitlines()
+    # The archive is flushed when the turn closes: the whole log up to that point.
+    assert archive["events"] == [json.loads(line) for line in log[:len(archive["events"])]]
+    assert archive["events"][-1]["kind"] == "TURN_STATUS"
+
+    records = [
+        json.loads(line)
+        for line in (session / "observations" / "repl-session.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert records and all(record["events"]["new"] for record in records)  # each turn records its events
+    transcript = (session / "transcript.log").read_text(encoding="utf-8")
+    assert "=== PDLt session resumed ===" in transcript
 
 
 def test_review_command_before_any_task_is_not_a_request(tmp_path: Path) -> None:
@@ -299,3 +336,43 @@ def test_ordinary_session_names_are_accepted() -> None:
 
     for name in ("session-20261001-120000", "console", "com10", "my.session"):
         assert sanitize_session_name(name) == name
+
+
+def test_fast_mode_runs_every_phase_from_one_request(tmp_path: Path) -> None:
+    """Fast mode: the request alone runs prompt drafting, planning and execution; both
+    reviews are accepted on the user's advance confirmation and recorded as such."""
+    turns = _g06_turns()
+    proc = _run_repl(tmp_path, turns[:1], "fast", extra=["--fast"])
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 0, out[-3000:]
+    assert "Prompt Pseudocode" in out and "Response Plan Pseudocode" in out
+    assert out.count("[fast mode: confirmed in advance]") == 2
+    assert out.count("[protocol closed]") == 1
+
+    session = tmp_path / "sessions" / "fast"
+    workspace = Path(json.loads((session / "session.json").read_text(encoding="utf-8"))["workspace_path"])
+    events = [
+        json.loads(line)
+        for line in (workspace / "turns" / "turn_001" / "events" / "events.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    standing = [e["payload"]["kind"] for e in events if e["kind"] == "STANDING_CONFIRMATION"]
+    confirmed = [e["payload"]["kind"] for e in events if e["kind"] == "ARTIFACT_CONFIRMED"]
+    operations = [e["payload"]["operation"] for e in events if e["kind"] == "OPERATION_MATERIALIZED"]
+    assert standing == ["prompt", "plan"] and confirmed == ["prompt", "plan"]
+    assert {"DRAFT_PROMPT", "DRAFT_PLAN", "EXECUTE"} <= set(operations)
+    assert "FAST MODE: ON" in (session / "transcript.log").read_text(encoding="utf-8")
+
+
+def test_fast_mode_stops_at_a_review_with_host_findings(monkeypatch, tmp_path: Path) -> None:
+    """An artifact the host has findings on is never accepted in advance."""
+    from types import SimpleNamespace
+
+    turn = SimpleNamespace(text="Prompt Pseudocode\n\n...\n\n[host] PDL-02: line 1", closed=False, traces=[],
+                           review="prompt", host_findings=True)
+    repl, runtime = _headless_runtime(monkeypatch, tmp_path, lambda line: turn, "PROMPT_REVIEW")
+    standing: list[str] = []
+    runtime.confirm_on_standing_instruction = lambda: standing.append("called")
+    monkeypatch.setattr(sys, "argv", sys.argv + ["--fast"])
+    assert repl.main() == 2  # halted at the unconfirmed review
+    assert standing == []
+    assert runtime.handled[0] == "solve it"

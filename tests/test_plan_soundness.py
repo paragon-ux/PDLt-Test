@@ -84,7 +84,7 @@ def test_notation_violation_gets_one_redraft_with_the_finding(tmp_path):
     drafts = [c for c in calls if c.operation == "DRAFT_PLAN"]
     assert len(drafts) == 2 and "PDL-08" in drafts[1].prompt
     assert engine.controller.state.current_plan.body == "SPLIT the string into palindromes\nRETURN the minimum number of cuts"
-    retry = next(e for e in engine.workspace._events if e["kind"] == "PLAN_LINT_RETRY")["payload"]
+    retry = next(e for e in engine.workspace.read_events() if e["kind"] == "PLAN_LINT_RETRY")["payload"]
     assert retry["operation"] == "DRAFT_PLAN"
     assert "Do not perform" not in response.text
 
@@ -107,5 +107,5 @@ def test_plan_prompt_echo_is_recorded_as_telemetry(tmp_path):
     engine = SessionEngine(Path(__file__).resolve().parents[1], model_call, workspace_root=tmp_path, sys1_client=None)
     engine.handle_user_message("$confirm-with-pseudocode median")
     engine.handle_user_message("/confirm")
-    echo = next(e for e in engine.workspace._events if e["kind"] == "PLAN_PROMPT_ECHO")["payload"]
+    echo = next(e for e in engine.workspace.read_events() if e["kind"] == "PLAN_PROMPT_ECHO")["payload"]
     assert echo["identical"] is True and echo["copied_line_ratio"] == 1.0

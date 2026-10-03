@@ -17,6 +17,8 @@ class HostTurn:
     bypass: bool
     closed: bool
     state_after: dict[str, Any] | None
+    review: str | None = None  # the review gate the turn left open: "prompt" or "plan"
+    host_findings: bool = False  # that artifact carries host findings for the user to see
 
 
 @dataclass
@@ -169,7 +171,16 @@ class PDLtHost:
             bypass=bool(response.bypass),
             closed=bool(response.closed),
             state_after=controller_snapshot(self.engine),
+            review=getattr(response, "review", None),
+            host_findings=bool(getattr(response, "host_findings", False)),
         )
+
+    def confirm_on_standing_instruction(self) -> HostTurn:
+        """Fast mode: accept the open review on the confirmation the user gave in
+        advance. The acceptance is recorded as such, then applied by the same
+        mechanical /confirm path a typed confirmation takes."""
+        self.engine.record_standing_confirmation()
+        return self.handle("/confirm")
 
     def _bypass_environment(self) -> str | None:
         """The factual execution environment for a direct reply (the sandbox's

@@ -108,7 +108,7 @@ def test_gated_bypass_answers_directly_for_explicit_invocations(tmp_path, monkey
     response = engine.handle_user_message("$confirm-with-pseudocode hello")
     assert response.bypass and response.text is None and not response.closed
     assert s2_calls == [] and engine.controller is None
-    assert any(e["kind"] == "DIRECT_ANSWER_ROUTED" for e in engine.workspace._events)
+    assert any(e["kind"] == "DIRECT_ANSWER_ROUTED" for e in engine.workspace.read_events())
 
 
 def test_gated_protocol_discussion_answers_directly_for_explicit_invocations(tmp_path, monkeypatch):

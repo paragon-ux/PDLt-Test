@@ -73,7 +73,7 @@ def _run(tmp_path, execute_replies: list[dict], *, problem_class: str = "STANDAR
     engine.handle_user_message("$confirm-with-pseudocode " + request)
     engine.handle_user_message("/confirm")
     response = engine.handle_user_message("/confirm")
-    events = list(engine.workspace._events)
+    events = list(engine.workspace.read_events())
     return engine, response, [c for c in calls if c.operation == "EXECUTE"], events
 
 
@@ -591,7 +591,7 @@ def _run_raising(tmp_path, execute_results, **engine_settings):
         setattr(engine, key, value)
     for message in ("$confirm-with-pseudocode Solve the stated task.", "/confirm", "/confirm"):
         response = engine.handle_user_message(message)
-    return engine, response, [c for c in calls if c.operation == "EXECUTE"], list(engine.workspace._events)
+    return engine, response, [c for c in calls if c.operation == "EXECUTE"], list(engine.workspace.read_events())
 
 
 def test_output_cut_off_at_the_cap_is_a_counted_failed_attempt(tmp_path):
