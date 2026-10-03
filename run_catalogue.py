@@ -784,8 +784,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="PDLt Prompt Catalogue Test Runner - no retries, no shortcuts"
     )
-    parser.add_argument("--model", default="openai/gpt-oss-120b",
-                        help="Model to test (default: openai/gpt-oss-120b)")
+    parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b:free",
+                        help="Model to test (default: nvidia/nemotron-3-super-120b-a12b:free)")
     parser.add_argument("--reasoning", default=None,
                         choices=["low", "medium", "high"],
                         help="reasoning effort for every operation (default: the harness's per-model default, "

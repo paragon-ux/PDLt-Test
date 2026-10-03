@@ -104,7 +104,7 @@ def main() -> int:
     parser.add_argument("--providers", required=True, help="comma-separated, e.g. Cerebras,Groq,SambaNova")
     parser.add_argument("--operations", default=",".join(_INPUTS),
                         help=f"comma-separated operations or probe cases (default: {','.join(_INPUTS)})")
-    parser.add_argument("--model", default="openai/gpt-oss-120b")
+    parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b:free")
     parser.add_argument("--reasoning", default="low")
     parser.add_argument("--max-output-tokens", type=int, default=4096)
     args = parser.parse_args()

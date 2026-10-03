@@ -38,7 +38,7 @@ def test_repl_does_not_import_codex_worker_at_startup() -> None:
 
 
 def test_repl_default_arguments() -> None:
-    """Verify that the REPL parser defaults to worker='api' and model='openai/gpt-oss-120b'."""
+    """Verify that the REPL parser defaults to worker='api' and model='nvidia/nemotron-3-super-120b-a12b:free'."""
     proc = subprocess.run(
         [sys.executable, "-m", "pdl_taskmaster.host.repl", "--help"],
         cwd=ROOT,
@@ -50,7 +50,8 @@ def test_repl_default_arguments() -> None:
     import re
     assert proc.returncode == 0
     assert re.search(r"default:\s*api", proc.stdout)
-    assert re.search(r"default:\s*openai/gpt-oss-120b", proc.stdout)
+    # argparse may wrap the help text at the hyphens, so ignore whitespace.
+    assert "default:nvidia/nemotron-3-super-120b-a12b:free" in re.sub(r"\s+", "", proc.stdout)
     assert "(codex worker only)" in proc.stdout
 
 

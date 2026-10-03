@@ -426,7 +426,7 @@ class ApiWorker:
     def __init__(
         self,
         *,
-        model: str = "openai/gpt-oss-120b",
+        model: str = "nvidia/nemotron-3-super-120b-a12b:free",
         repo_root: str | Path,
         base_url: str = "https://openrouter.ai/api/v1",
         api_key_env: str = "OPENROUTER_API_KEY",

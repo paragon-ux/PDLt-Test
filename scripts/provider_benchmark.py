@@ -115,7 +115,7 @@ def main() -> int:
                 pass
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--providers", required=True, help="comma-separated OpenRouter provider names")
-    parser.add_argument("--model", default="openai/gpt-oss-120b")
+    parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b:free")
     parser.add_argument("--reasoning", default="low")
     parser.add_argument("--runs", type=int, default=3)
     parser.add_argument("--max-tokens", type=int, default=2048)

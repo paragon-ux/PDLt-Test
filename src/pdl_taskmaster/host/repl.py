@@ -957,8 +957,8 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--model",
-        default="openai/gpt-oss-120b",
-        help="model name to request from the worker (default: openai/gpt-oss-120b)",
+        default="nvidia/nemotron-3-super-120b-a12b:free",
+        help="model name to request from the worker (default: nvidia/nemotron-3-super-120b-a12b:free)",
     )
     parser.add_argument("--eval-root", type=Path, default=None)
     parser.add_argument("--evidence", type=Path, default=None)

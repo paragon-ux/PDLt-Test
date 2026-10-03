@@ -24,7 +24,7 @@ pytest -q                   # offline suite, includes the integrity gate
 ## Run
 
 ```bash
-export OPENROUTER_API_KEY=...          # System 2 (default openai/gpt-oss-120b) and System 1
+export OPENROUTER_API_KEY=...          # System 2 (default nvidia/nemotron-3-super-120b-a12b:free) and System 1
 pdlt --new-session --dev                # interactive REPL
 python run_catalogue.py --dry-run       # validate manifest, list prompts
 python run_catalogue.py --prompt-id 06-04
