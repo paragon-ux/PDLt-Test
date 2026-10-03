@@ -28,6 +28,7 @@
 | [ADR-0024](0024-operation-profiles.md) | Proposed (future) | Operation profiles: reasoning depth, artifact length, verification depth and model routing as separate axes; provider capability descriptors; session budgets. |
 | [ADR-0025](0025-agentic-capability-boundary.md) | Proposed (future) | Agentic capability boundary: effects as reviewed change sets, a tool broker with declared permissions, and a policy for agent workers. |
 | [ADR-0026](0026-extension-and-workflow-model.md) | Proposed (future) | Extension and workflow model: closed core, versioned and validated contracts, workflow packs. |
+| [ADR-0027](0027-typed-task-entity-extraction.md) | Accepted (provisional) | Typed task-entity extraction for every problem type: surface, kind and the request's own definition (unknowns included); containment against the sanitized request; coverage for exact values only. |
 
 The records are intentionally separated so UI, context construction, execution
 isolation, output representation, and reasoning policy can evolve without

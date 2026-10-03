@@ -32,6 +32,7 @@ python run_catalogue.py --category 13 --fail-fast
 python run_catalogue.py                 # full 112-prompt run, one attempt each
 python run_plan_gate.py                 # PLAN-02 gate vs. supplied good and restating plans (live System 1)
 python run_entity_check.py              # entity channel: identifiers kept, narrative figures not forced (live)
+python run_extraction_probe.py --label x # extraction fidelity on every catalogue prompt, up to the prompt review (live)
 python run_catalogue.py --regrade catalogue-runs/run-<ts>   # re-score a finished run, no model calls
 ```
 
@@ -41,7 +42,15 @@ Fast mode (`pdlt --fast`, or `/fast on|off` in the REPL) confirms in advance: ev
 
 Resuming a session (`/resume <session-id>`, or picking one at startup) shows its conversation so far, one blank line between turns, and says which review, if any, is waiting on you.
 
-Speakers are color-coded on a terminal: `--color auto|always|never` (or `PDLT_COLOR`; `NO_COLOR` turns colors off), and `PDLT_COLORS` sets each role, for example `PDLT_COLORS="user=bright_cyan,assistant=green,error=red,note=none"`.
+Speakers are color-coded, in new and resumed chats alike. Pick a theme with `--theme` (or `PDLT_THEME`), or set each side with `--user-color` / `--assistant-color` (or `PDLT_USER_COLOR` / `PDLT_ASSISTANT_COLOR`), from `white, teal, green, blue, purple, yellow, orange`. Individual colors override the theme. In every theme the assistant has the lighter, more prominent color and the user the darker one; a theme that breaks this cannot be defined (`host/console.py`), and a custom pair that breaks it gets a warning. Output to a pipe or file stays plain, and `NO_COLOR` turns colors off.
+
+| Theme | User | Assistant |
+|---|---|---|
+| `default` | teal | white |
+| `bright` | teal | yellow |
+| `classic` | green | white |
+| `bold` | green | purple |
+| `claude` | orange | white |
 
 On Windows, set the key with `setx OPENROUTER_API_KEY ...` (or `$env:OPENROUTER_API_KEY = '...'` for the current PowerShell session) and open a new terminal.
 
