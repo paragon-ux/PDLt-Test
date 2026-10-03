@@ -256,7 +256,11 @@ def get_proportional_reasoning_mapping(model_id: str) -> dict[str, str | int]:
     operations the mapping does not list use the worker's default effort.
     """
     mid = model_id.lower()
-    if "gpt-oss" in mid or "120b" in mid:
+    # Nemotron 3 Super reached this mapping through a bare "120b" match; it is named
+    # so that it keeps the profile it was run with and no other 120b
+    # model inherits gpt-oss's profile by accident. Not tuned for Nemotron: its
+    # EXECUTE reasoning at "low" ranged from 0.6K to 8K tokens.
+    if "gpt-oss" in mid or "nemotron-3-super" in mid:
         # OpenAI gpt-oss-120b, the System 2 production model (ADR-0022): the
         # configuration validated by the catalogue (run-20261001-221930). At
         # all-LOW, plans copied the prompt verbatim and prompts carried PDL-08

@@ -450,6 +450,16 @@ class WorkspaceRun:
             {"operation": invocation.operation, "stage": invocation.stage, "invocation_id": invocation.invocation_id},
         )
 
+    def record_truncated_output(self, invocation: WorkspaceInvocation, model_text: str) -> None:
+        """A reply cut off at the output cap (diagnosis only; replay reads model-response.txt)."""
+        kept = model_text.rstrip()
+        self._write(invocation.output_dir / "model-response.truncated.txt", kept + "\n")
+        self.append_event(
+            "TRUNCATED_OUTPUT_RECORDED",
+            {"operation": invocation.operation, "invocation_id": invocation.invocation_id,
+             "chars": len(kept), "trailing_whitespace": len(model_text) - len(kept)},
+        )
+
     def record_parsed_output(self, invocation: WorkspaceInvocation, value: Any) -> None:
         self._write(
             invocation.output_dir / "parsed-output.json",

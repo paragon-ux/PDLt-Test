@@ -367,4 +367,4 @@ def test_repl_reports_what_was_in_flight(monkeypatch, capsys, tmp_path):
     telemetry = json.loads(out.split("[dev:interrupt] ", 1)[1].splitlines()[0])
     assert telemetry["interrupted_by"] == "local" and telemetry["handled"] is True
     assert (telemetry["sent"], telemetry["acknowledged"], telemetry["response_started"]) == (True, True, False)
-    assert "[dev:call] DRAFT_PROMPT attempt 1, reached acknowledged, HTTP 200" in out
+    assert "[dev:call] DRAFT_PROMPT call 1 (HTTP attempt 1), reached acknowledged, HTTP 200" in out

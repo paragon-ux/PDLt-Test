@@ -327,6 +327,120 @@ def test_worker_sends_the_output_cap_and_reports_truncation(monkeypatch) -> None
     assert caught.value.output_limit == 8000
 
 
+def _replaying_worker(monkeypatch, replies, **settings):
+    """An ApiWorker whose HTTP replies are ``replies`` in order; returns (worker, sent bodies)."""
+    import json as _json
+
+    from pdl_taskmaster.providers import api_worker as module
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+
+    sent: list[dict] = []
+    queue = list(replies)
+
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self):
+            return _json.dumps(self.payload).encode()
+
+    def replay(req, timeout=None):
+        sent.append(_json.loads(req.data))
+        return Response(queue.pop(0))
+
+    monkeypatch.setattr(module.urllib.request, "urlopen", replay)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "stub")
+    return ApiWorker(model="m", repo_root=ROOT, **settings), sent
+
+
+class _ExecuteRequest:
+    operation = "EXECUTE"
+    prompt = "SYSTEM\n\nUSER"
+    manifest = {}
+    projection = None
+
+
+def _stalled_reply() -> dict:
+    """Nemotron's EXECUTE reply from session-20261003-141956: the whole answer,
+    then whitespace until the output cap (tests/fixtures)."""
+    return json.loads((ROOT / "tests" / "fixtures" / "nemotron-execute-whitespace-stall.json").read_text(encoding="utf-8"))
+
+
+def _completed_reply(text: str) -> dict:
+    return {"status": "completed", "output": [{"type": "message", "content": [{"type": "output_text", "text": text}]}],
+            "usage": {"output_tokens": 900, "output_tokens_details": {"reasoning_tokens": 300}}}
+
+
+def test_reply_stalled_in_whitespace_drops_the_schema_for_the_next_attempt(monkeypatch) -> None:
+    """Nemotron under the EXECUTE schema wrote its answer and then only whitespace
+    until the cap, twice in a row (identical retry). The stall is reported, and the
+    next EXECUTE goes without the decoding constraint; the call stays a failed attempt."""
+    from pdl_taskmaster.providers.api_worker import OutputLimitError
+
+    answer = json.dumps({"kind": "RESULT", "body": "answer", "result_ir": {}})
+    worker, sent = _replaying_worker(monkeypatch, [_stalled_reply(), _completed_reply(answer)])
+    with pytest.raises(OutputLimitError) as caught:
+        worker.call(_ExecuteRequest())
+    assert caught.value.whitespace_stall is True
+    assert caught.value.partial_text.rstrip().endswith('"open_defects": []')  # the answer was all there
+    assert "text" in sent[0] and "EXECUTE" in worker.unconstrained_operations
+
+    assert json.loads(worker.call(_ExecuteRequest()).text)["kind"] == "RESULT"
+    assert "text" not in sent[1]  # the repair attempt is not decoded against the schema
+
+    first, second = list(worker.call_traces)[-2:]
+    assert (first.number, second.number) == (1, 2)  # the dev line said "attempt 1" for both
+    assert first.error == "OUTPUT_LIMIT_REACHED" and first.reply["whitespace_stall"] is True
+    assert first.reply["output_tokens"] == 16384 and first.reply["schema_constrained"] is True
+    assert second.reply["schema_constrained"] is False and second.final == "completed"
+    assert "EXECUTE call 2" in second.summary()
+    line = first.summary()
+    assert "EXECUTE call 1" in line and "call failed: OUTPUT_LIMIT_REACHED" in line and "stalled in whitespace" in line
+
+
+def test_reply_cut_off_without_a_whitespace_tail_keeps_the_schema(monkeypatch) -> None:
+    """A reply that is simply too long is not a decoding stall: the next attempt is
+    decoded against the schema as before (gpt-oss never reaches the fallback)."""
+    from pdl_taskmaster.providers.api_worker import OutputLimitError
+
+    long_reply = _stalled_reply()
+    text = long_reply["output"][0]["content"][0]["text"]
+    long_reply["output"][0]["content"][0]["text"] = text.rstrip() + "\n" + "more text " * 400
+    answer = json.dumps({"kind": "RESULT", "body": "answer", "result_ir": {}})
+    worker, sent = _replaying_worker(monkeypatch, [long_reply, _completed_reply(answer)])
+    with pytest.raises(OutputLimitError) as caught:
+        worker.call(_ExecuteRequest())
+    assert caught.value.whitespace_stall is False and caught.value.partial_text
+    worker.call(_ExecuteRequest())
+    assert "text" in sent[1] and not worker.unconstrained_operations
+
+
+def test_whitespace_tail_without_a_schema_is_not_a_stall(monkeypatch) -> None:
+    """With structured output off there is no constraint to drop."""
+    from pdl_taskmaster.providers.api_worker import OutputLimitError
+
+    worker, sent = _replaying_worker(monkeypatch, [_stalled_reply()], structured_output=False)
+    with pytest.raises(OutputLimitError) as caught:
+        worker.call(_ExecuteRequest())
+    assert "text" not in sent[0] and caught.value.whitespace_stall is False
+
+
+def test_nemotron_keeps_its_reasoning_profile_without_a_bare_120b_match() -> None:
+    """Nemotron 3 Super got gpt-oss's per-operation reasoning through a "120b"
+    substring; it is named now, and another 120b model no longer inherits it."""
+    from pdl_taskmaster.runtime.model_classification import get_proportional_reasoning_mapping
+
+    gpt_oss = get_proportional_reasoning_mapping("openai/gpt-oss-120b")
+    assert get_proportional_reasoning_mapping("nvidia/nemotron-3-super-120b-a12b:free") == gpt_oss
+    assert get_proportional_reasoning_mapping("some-lab/other-model-120b") != gpt_oss
+
+
 @pytest.mark.parametrize("operation", ["DRAFT_PROMPT", "REVISE_PROMPT", "DRAFT_PLAN", "REVISE_PLAN", "EXECUTE",
                                        "DRAFT_EXECUTE", "INTERPRET_PROMPT_REVIEW", "INTERPRET_PLAN_REVIEW",
                                        "INTERPRET_EXECUTION_INPUT", "ANSWER_PROTOCOL_DISCUSSION"])

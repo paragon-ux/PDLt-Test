@@ -34,6 +34,7 @@ python run_plan_gate.py                 # PLAN-02 gate vs. supplied good and res
 python run_entity_check.py              # entity channel: identifiers kept, narrative figures not forced (live)
 python run_extraction_probe.py --label x # extraction fidelity on every catalogue prompt, up to the prompt review (live)
 python run_catalogue.py --regrade catalogue-runs/run-<ts>   # re-score a finished run, no model calls
+python scripts/model_compare.py --models A,B --prompts 16-01,01-03   # graded runs per model, with TTFT, tokens, finish and provider per call (live)
 ```
 
 REPL fast path: `/confirm`, `/revise <feedback>`, `/stop` or `/cancel`. `/help` in the REPL and `pdlt --help` list the rest.

@@ -604,6 +604,25 @@ def test_output_cut_off_at_the_cap_is_a_counted_failed_attempt(tmp_path):
     assert repair["counted"] is True  # a truncation is penalised, never a free retry
 
 
+def test_truncated_reply_is_kept_for_diagnosis_and_never_sent_back(tmp_path):
+    """Session-20261003-141956 closed with an empty candidate and no trace of the
+    ~50KB that arrived. The cut-off reply is now kept in the invocation's output
+    directory; it is not parsed, published, or shown to the model."""
+    stalled = _Truncated()
+    stalled.partial_text = '{"outcome": {"kind": "RESULT", "body": "truncated-marker-7f3a"' + "\n   " * 400
+    stalled.whitespace_stall = True
+    good = {"kind": "RESULT", "body": "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'x': 1}}))",
+            "result_ir": {}}
+    engine, _, executes, events = _run_raising(tmp_path, [stalled, good])
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    kept = list(Path(tmp_path).rglob("model-response.truncated.txt"))
+    assert len(kept) == 1 and kept[0].read_text(encoding="utf-8") == '{"outcome": {"kind": "RESULT", "body": "truncated-marker-7f3a"\n'
+    recorded = next(e for e in events if e["kind"] == "TRUNCATED_OUTPUT_RECORDED")["payload"]
+    assert recorded["operation"] == "EXECUTE" and recorded["trailing_whitespace"] == 4 * 400
+    assert next(e for e in events if e["kind"] == "OUTPUT_LIMIT_REACHED")["payload"]["whitespace_stall"] is True
+    assert "truncated-marker-7f3a" not in executes[1].prompt
+
+
 def test_max_repairs_zero_stops_at_the_first_failure_without_any_retry(tmp_path):
     malformed = "this is not json"
     engine, response, executes, events = _run_raising(tmp_path, [malformed, malformed, malformed], max_repairs=0)

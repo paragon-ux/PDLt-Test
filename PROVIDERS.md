@@ -186,6 +186,7 @@ The three pre-execution operations, run at high reasoning, account for most of e
 | Output cap reached | DeepInfra (probe `EXECUTE`; benchmark at high reasoning) | Counted as `OUTPUT_LIMIT_REACHED`, never retried silently. |
 | Verification repair | Default order and Together, one product session each | One repair, then `CLOSED_SUCCESS`. |
 | Transient retries (429, 5xx, timeouts) | none observed | The worker would retry these with backoff, up to 5 attempts within the call deadline. |
+| Reply stalled in whitespace under the output schema | `nvidia/nemotron-3-super-120b-a12b:free` (Nvidia), `EXECUTE`; intermittent (§6.7) | Counted as `OUTPUT_LIMIT_REACHED`; the cut-off reply is kept (`model-response.truncated.txt`), and later `EXECUTE` calls in the session go without the decoding constraint. Before this change the repair was an identical request and failed the same way. |
 
 ---
 
@@ -195,8 +196,17 @@ The three pre-execution operations, run at high reasoning, account for most of e
 2. **SambaNova needs `--no-structured-output`** to be usable; it was not tested in that mode.
 3. **For speed, Cerebras is the clear choice** (7–8 s per session against 17–21 s for Baseten and Nebius). It receives the closed-object schema, so model-asserted positive witnesses cannot be expressed there; the sandbox witness is unaffected.
 4. **DeepInfra is usable but slow** (45 tok/s), and at high reasoning it can exhaust a small output cap on reasoning alone.
-5. **The harness does not record which provider served a call.** OpenRouter's `/responses` reply has no provider field; the generation lookup (`GET /api/v1/generation?id=<response_id>`, `provider_name`) does, and the session records already hold the `response_id`. Recording it would make routing auditable (ADR-0023 events).
+5. **The harness does not record which provider served a call.** OpenRouter's `/responses` reply has no provider field; the generation lookup (`GET /api/v1/generation?id=<response_id>`, `provider_name`) does. Each call's `response_id` is now in the session's `call-trace.jsonl`, and `scripts/model_compare.py` joins the two (TTFT, provider, served model, native finish reason).
 6. **Throughput alone does not predict session time.** Session time depends on reasoning tokens per pre-execution call, the number of calls, and repairs; Groq's raw speed does not help if `EXECUTE` cannot run there.
+7. **Nemotron 3 Super (`:free`, served by Nvidia) can stall under the `EXECUTE` schema** (2026-10-03). In two sessions, every `EXECUTE` reply held the complete answer through `"open_defects": []` and then only `"\n   "` until the 16,384-token cap (26K–29K characters; 39–150 s per call), so the turn closed with no answer. Replaying the captured request: with the schema 0/3 completed (two whitespace stalls, one 8K-token reasoning run); with `json_object` 3/3 and with no format 3/3. Fifty minutes later the same request completed 4/4 with the schema, and six graded catalogue sessions had no stall: the fault is in the provider's constrained decoding and comes and goes. The free endpoint accepts neither `frequency_penalty` nor `repetition_penalty`, so a sampling penalty is not available. When it stalls, the worker drops the constraint for later calls of that operation (ARCHITECTURE §8).
+
+| 2026-10-03, graded catalogue (`scripts/model_compare.py`) | gpt-oss-120b (Baseten) | Nemotron 3 Super `:free` (Nvidia) |
+|---|---|---|
+| Sessions closed `CLOSED_SUCCESS` | 4/4 | 6/6 |
+| Correct answers (16-01 three gods, 16-03 knights, 01-03 coloring, 16-06 siblings) | 3/4 (gods wrong) | 3/6 (gods wrong 3/3) |
+| `EXECUTE`: latency / output tokens (reasoning) | 3.0–3.7 s / 372–770 (0) | 12–32 s / 1.8K–3.0K (0.9K–2.3K) |
+| `EXECUTE` time to first token | not reported by the generation lookup | 367–504 ms (3 calls reported) |
+| Turn time | 52–81 s | 53–126 s |
 
 ---
 

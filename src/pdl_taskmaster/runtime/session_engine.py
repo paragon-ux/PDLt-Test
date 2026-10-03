@@ -513,7 +513,15 @@ class SessionEngine:
         return controller
 
     def _invoke(self, request: ModelRequest, traces: list[CallTrace]) -> str:
-        model_text = self.model_call(request)
+        try:
+            model_text = self.model_call(request)
+        except Exception as exc:
+            partial = getattr(exc, "partial_text", None)
+            if partial and self.workspace is not None:
+                # A reply cut off at the output cap: kept for diagnosis, never parsed,
+                # published or sent back to the model.
+                self.workspace.record_truncated_output(request.workspace_invocation, partial)
+            raise
         self.workspace.record_model_output(request.workspace_invocation, model_text)
         traces.append(
             CallTrace(
@@ -1624,7 +1632,8 @@ class SessionEngine:
                 raise
             assert self.workspace is not None
             if limit is not None:
-                self.workspace.append_event("OUTPUT_LIMIT_REACHED", {"limit": limit})
+                self.workspace.append_event("OUTPUT_LIMIT_REACHED", {
+                    "limit": limit, "whitespace_stall": bool(getattr(exc, "whitespace_stall", False))})
                 finding = Finding("OUTPUT_LIMIT_REACHED", limit=limit)
             else:
                 failure = {"reason": str(exc)}

@@ -355,13 +355,29 @@ def _rejecting_provider(error: BaseException, order: list[str]) -> str | None:
     return order[0] if order else None
 
 
+# A reply cut off at the output cap that ends in at least this many whitespace
+# characters stalled in the schema's whitespace rather than writing too much: under
+# a JSON-schema decoding constraint Nemotron wrote its whole answer and then emitted
+# "\n   " for 3K-29K characters before the closing braces (session-20261003-141956;
+# 5 of 6 constrained EXECUTE replays). No deliverable ends in a run this long.
+STALL_WHITESPACE_CHARS = 1000
+
+
 class OutputLimitError(ProviderError):
     """The response reached the output-token cap before it finished: in EXECUTE a
-    failed attempt to penalise; at any other operation a reported harness error."""
+    failed attempt to penalise; at any other operation a reported harness error.
 
-    def __init__(self, limit: int | None):
-        super().__init__("OUTPUT_LIMIT_REACHED", f"response reached the {limit} output-token limit before it finished")
+    ``partial_text`` is what arrived, for diagnosis only (never parsed or sent back
+    to the model). ``whitespace_stall`` is true when the reply ended in a whitespace
+    run of at least STALL_WHITESPACE_CHARS under a schema constraint."""
+
+    def __init__(self, limit: int | None, *, partial_text: str | None = None, whitespace_stall: bool = False):
+        detail = "; the reply stalled in whitespace under the output schema" if whitespace_stall else ""
+        super().__init__("OUTPUT_LIMIT_REACHED",
+                         f"response reached the {limit} output-token limit before it finished{detail}")
         self.output_limit = limit
+        self.partial_text = partial_text
+        self.whitespace_stall = whitespace_stall
 
 
 def _read_body(resp: Any, trace: AttemptTrace) -> bytes:
@@ -464,6 +480,11 @@ class ApiWorker:
         self.current_call: CallTrace | None = None
         self.call_traces: deque[CallTrace] = deque(maxlen=64)
         self.trace_path: Path | None = None
+        self._calls_per_operation: dict[str, int] = {}
+        # Operations whose reply stalled in whitespace under the output schema: sent
+        # without the decoding constraint for the rest of the session (the host still
+        # validates every reply against the schema).
+        self.unconstrained_operations: set[str] = set()
         self.worker_profile = "api"
         self._default_key_lookup = api_key_command is None
         self.api_key_command = api_key_command or self._default_api_key_command(api_key_env)
@@ -813,6 +834,7 @@ class ApiWorker:
             raise
         except ProviderError as exc:
             trace.final = "failed"
+            trace.error = exc.category
             exc.operation = exc.operation or getattr(request, "operation", None)
             unrouted = self._no_endpoint_error(exc, getattr(request, "operation", None))
             if unrouted is not None:
@@ -825,7 +847,9 @@ class ApiWorker:
             self.end_call(trace)
 
     def begin_call(self, operation: str) -> CallTrace:
-        trace = CallTrace(operation)
+        number = self._calls_per_operation.get(operation, 0) + 1
+        self._calls_per_operation[operation] = number
+        trace = CallTrace(operation, number=number)
         self.current_call = trace
         self.call_traces.append(trace)
         return trace
@@ -1007,7 +1031,8 @@ class ApiWorker:
         # losing the entire task upstream of every gate. Structured output is
         # for ops whose SHAPE is the contract (drafts, executions, reviews);
         # the semantic read must stay free-text.
-        schema_enforced = self.structured_output and operation_name not in _SEMANTIC_READ_OPERATIONS
+        schema_enforced = (self.structured_output and operation_name not in _SEMANTIC_READ_OPERATIONS
+                           and operation_name not in self.unconstrained_operations)
 
         extra_guidance = ""
         if operation_name == "BYPASS_ORDINARY" and getattr(request, "environment", None):
@@ -1123,17 +1148,37 @@ class ApiWorker:
             data, req, union_wrapped = self._schema_rejection_fallback(body, api_key, exc, call_deadline,
                                                                        union_wrapped)
         latency_ms = (time.perf_counter() - started) * 1000.0
+        # Whether the request that answered carried the output schema (the rejection
+        # fallback may have dropped it).
+        try:
+            constrained = "text" in json.loads(req.data or b"{}")
+        except ValueError:
+            constrained = "text" in body
 
         self._progress(f"response received in {latency_ms:.0f}ms")
 
         if data.get("error"):
             raise ProviderError("PROVIDER_REJECTED_REQUEST", f"provider reported an error: {data['error']}")
         status = data.get("status")
+        details = data.get("incomplete_details") or {}
+        reason = details.get("reason") if isinstance(details, dict) else details
+        self._record_reply(data, schema_constrained=constrained)
         if status not in (None, "completed"):
-            details = data.get("incomplete_details") or {}
-            reason = details.get("reason") if isinstance(details, dict) else details
             if status == "incomplete" and reason in ("max_output_tokens", "max_tokens", "length"):
-                raise OutputLimitError(self.max_output_tokens)
+                partial = self._extract_output_text(data, strip=False)
+                trailing = len(partial) - len(partial.rstrip())
+                stall = constrained and trailing >= STALL_WHITESPACE_CHARS
+                if self.current_call is not None:
+                    self.current_call.reply.update(trailing_whitespace=trailing, whitespace_stall=stall)
+                if stall and operation_name:
+                    # The decoding constraint, not the model's length, ended this reply:
+                    # later calls of this operation go without it (the host still
+                    # validates every reply). This call stays a failed attempt.
+                    self.unconstrained_operations.add(operation_name)
+                    self._progress(f"{operation_name}: the reply stalled in whitespace under the output schema "
+                                   f"({trailing} trailing characters); later {operation_name} calls in this "
+                                   "session are sent without the schema constraint")
+                raise OutputLimitError(self.max_output_tokens, partial_text=partial or None, whitespace_stall=stall)
             raise ProviderError("PROVIDER_RESPONSE_UNREADABLE", f"response status={status}: {details}")
 
         text = self._extract_output_text(data)
@@ -1148,6 +1193,7 @@ class ApiWorker:
                 text = self._extract_output_text(data)
                 if text:
                     break
+            self._record_reply(data, schema_constrained=constrained)
             if not text:
                 raise ProviderError("PROVIDER_RESPONSE_UNREADABLE", "no output text after empty-output retries")
         if union_wrapped:
@@ -1183,6 +1229,24 @@ class ApiWorker:
             metadata["usage_source"] = "responses_api"
             metadata["usage_exact"] = True
         return WorkerResult(text, metadata)
+
+    def _record_reply(self, data: dict[str, Any], *, schema_constrained: bool) -> None:
+        """What the API reported for the call in flight (call-trace.jsonl): the
+        response id (OpenRouter's generation id, for its TTFT and provider), status,
+        finish reason, output and reasoning tokens."""
+        if self.current_call is None:
+            return
+        usage = data.get("usage") or {}
+        details = data.get("incomplete_details") or {}
+        self.current_call.reply.update({
+            "response_id": data.get("id"),
+            "model": data.get("model"),
+            "status": data.get("status"),
+            "finish": details.get("reason") if isinstance(details, dict) else details,
+            "output_tokens": usage.get("output_tokens"),
+            "reasoning_tokens": (usage.get("output_tokens_details") or {}).get("reasoning_tokens"),
+            "schema_constrained": schema_constrained,
+        })
 
     def _responses_request(self, body: dict[str, Any], api_key: str) -> urllib.request.Request:
         return urllib.request.Request(
@@ -1271,7 +1335,7 @@ class ApiWorker:
             ) from exc
 
     @staticmethod
-    def _extract_output_text(data: dict[str, Any]) -> str:
+    def _extract_output_text(data: dict[str, Any], *, strip: bool = True) -> str:
         chunks: list[str] = []
         for item in data.get("output") or []:
             if item.get("type") != "message":
@@ -1279,4 +1343,5 @@ class ApiWorker:
             for part in item.get("content") or []:
                 if part.get("type") == "output_text" and isinstance(part.get("text"), str):
                     chunks.append(part["text"])
-        return "".join(chunks).strip()
+        text = "".join(chunks)
+        return text.strip() if strip else text

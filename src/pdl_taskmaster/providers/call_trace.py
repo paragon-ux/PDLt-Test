@@ -69,6 +69,11 @@ class CallTrace:
     operation: str
     attempts: list[AttemptTrace] = field(default_factory=list)
     final: str | None = None  # completed, interrupted, failed
+    number: int = 1  # the n-th call of this operation in the session (a repair is call 2)
+    error: str | None = None  # the failure category when final is "failed"
+    # What the API reported for the reply: response id, status, finish reason,
+    # output and reasoning tokens, whether the output schema constrained decoding.
+    reply: dict[str, Any] = field(default_factory=dict)
 
     def new_attempt(self, body: bytes | None) -> AttemptTrace:
         if self.attempts:
@@ -90,7 +95,8 @@ class CallTrace:
     def to_dict(self) -> dict[str, Any]:
         last = self.attempts[-1] if self.attempts else None
         return {
-            "operation": self.operation, "final": self.final, "sent": self.sent,
+            "operation": self.operation, "number": self.number, "final": self.final, "error": self.error,
+            "reply": dict(self.reply), "sent": self.sent,
             "acknowledged": self.acknowledged,
             "response_started": any("response_started" in a.phases for a in self.attempts),
             "reached": last.reached if last else "prepared",
@@ -104,7 +110,7 @@ class CallTrace:
         last = self.attempts[-1] if self.attempts else None
         if last is None:
             return f"{self.operation}: not sent (no attempt started)"
-        parts = [f"{self.operation} attempt {last.attempt}", f"reached {last.reached}"]
+        parts = [f"{self.operation} call {self.number} (HTTP attempt {last.attempt})", f"reached {last.reached}"]
         if last.status is not None:
             parts.append(f"HTTP {last.status}")
         if "acknowledged" in last.phases:
@@ -116,6 +122,15 @@ class CallTrace:
             parts.append(f"interrupted ({last.interrupted_by})")
         if len(self.attempts) > 1:
             parts.append(f"{len(self.attempts) - 1} retr{'y' if len(self.attempts) == 2 else 'ies'}")
+        if self.reply.get("output_tokens") is not None:
+            tokens = f"{self.reply['output_tokens']} output tokens"
+            if self.reply.get("reasoning_tokens") is not None:
+                tokens += f" ({self.reply['reasoning_tokens']} reasoning)"
+            parts.append(tokens)
+        if self.final == "failed":
+            parts.append(f"call failed: {self.error or 'error'}")
+        if self.reply.get("whitespace_stall"):
+            parts.append(f"reply stalled in whitespace ({self.reply.get('trailing_whitespace')} chars)")
         return ", ".join(parts)
 
 

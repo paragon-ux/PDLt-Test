@@ -2,6 +2,7 @@
 __pycache__/
 *.egg-info/
 catalogue-runs/
+model-compare/
 .venv/
 venv/
 mlruns/
