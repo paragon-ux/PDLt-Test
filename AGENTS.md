@@ -25,7 +25,7 @@
   - `3`: `WAITING_INPUT` (legitimate pause awaiting external input).
   - `4`: harness or provider error (`EXIT_HARNESS_ERROR`); never a protocol result.
   - `130`: interrupted by the user.
-- **Catalogue Verification**: From the repository root, use `python run_catalogue.py --fail-fast` to ensure zero regressions across all 15 categories. Never loosen `is_prompt_pass` or `graders.py` to obtain a green result.
+- **Catalogue Verification**: From the repository root, use `python run_catalogue.py --fail-fast` to ensure zero regressions across all 16 categories. Never loosen `is_prompt_pass` or `graders.py` to obtain a green result.
 
 ## Post-Implementation Anti-Overfitting & Integrity Gate (MANDATORY / SSOT)
 - **The Referee Invariant (GUARD-01, GUARD-04)**: The harness is strictly an objective protocol referee and governor—NEVER an AI task solver. The harness MUST NEVER:

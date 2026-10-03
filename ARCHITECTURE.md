@@ -96,7 +96,9 @@ flowchart TD
     PromptGate -- "/stop, /cancel" --> Cancelled["CLOSED_CANCELLED, exit 1"]
     DraftPlan --> PlanLint{"Grammar lint"}
     PlanLint -- "violation (one redraft)" --> DraftPlan
-    PlanLint -- clean --> PlanGate["PLAN_REVIEW"]
+    PlanLint -- clean --> PlanAdvance{"S1: plan advancement<br/>(PLAN-02)"}
+    PlanAdvance -- "restates the prompt (one redraft)" --> DraftPlan
+    PlanAdvance -- "advances, uncertain, or still restating with a host note" --> PlanGate["PLAN_REVIEW"]
     PlanGate -- "/confirm or agreed" --> Execute["S2: EXECUTE"]
     PlanGate -- "/revise" --> DraftPlan
     PlanGate -- "/stop, /cancel" --> Cancelled
@@ -111,7 +113,7 @@ flowchart TD
     Repair -- "repairs exhausted" --> Cancelled
 ```
 
-Review gates accept the fast-path commands `/confirm`, `/revise <feedback>`, `/stop` and `/cancel` without a model call. Other review text goes to System 1 (`ConfirmationMatch`, then `ReviewFacets`) and, when System 1 is not confident, to System 2 interpretation; the harness never assumes an intent. A review command sent when no review is open gets a notice and is never treated as a new request.
+Review gates accept the fast-path commands `/confirm`, `/revise <feedback>`, `/stop` and `/cancel` without a model call. In fast mode (`--fast`, `/fast on`) the user confirms in advance: a review whose artifact carries no host finding is accepted without waiting (recorded as `STANDING_CONFIRMATION`); one with a finding stops as usual. Other review text goes to System 1 (`ConfirmationMatch`, then `ReviewFacets`) and, when System 1 is not confident, to System 2 interpretation; the harness never assumes an intent. A review command sent when no review is open gets a notice and is never treated as a new request.
 
 ### 3.3 Phases
 
@@ -119,7 +121,8 @@ Review gates accept the fast-path commands `/confirm`, `/revise <feedback>`, `/s
 |---|---|---|
 | **0. Activation** | System 1 `activation_route` over environment **recipe state**: policy scope (`PDLT_POLICY_SCOPE`, default `technical`), network (`PDLT_SANDBOX_NETWORK`, default `false`), knowledge cutoff (`PDLT_KNOWLEDGE_CUTOFF`, default `2024-06`) and the sandbox's execution environment. No keyword, pattern or date matching. These settings never reach System 2. | `APPLY_PROTOCOL` → phase 1; gated `BLOCKED_BY_HIGHER_PRIORITY` → refusal, exit 0; `BYPASS` / `PROTOCOL_DISCUSSION` → direct answer |
 | **1. Prompt review** | Grammar lint, then fast-path commands, then review intent | confirm → phase 2; revise → redraft; cancel → exit 1 |
-| **2. Plan lint** | Deterministic lint (`plan_soundness.py`): PDL-05 no fielded prefixes, PDL-06 no code fences, PDL-08 no deferral or meta markers, PLAN-10 no placeholder steps. One redraft carrying the finding, through operator correction only (never `CARRIED_APPROACH_SOURCES`). No algorithm or execution keywords are required. | clean → plan gate |
+| **2. Plan lint** | Deterministic lint (`plan_soundness.py`): PDL-05 no fielded prefixes, PDL-06 no code fences, PDL-08 no deferral or meta markers, PLAN-10 no placeholder steps. One redraft carrying the finding, through operator correction only (never `CARRIED_APPROACH_SOURCES`). No algorithm or execution keywords are required. | clean → plan advancement |
+| **2b. Plan advancement (PLAN-02)** | System 1 `PlanAdvancementRecipe` compares the plan with the confirmed prompt on three task-neutral checks: the plan adds a solution action or deduction with its content, says how it handles the conditions that keep the task from being solved directly, and shows how the result will be obtained. A fourth question asks whether the prompt already states the method (then a plan has nothing to add). One confident failure gets one redraft whose operator correction names only the failed checks, never the decision text or a method; a plan that still fails is published unchanged (AUTH-05) with a `[host] PLAN-02` note, so fast mode never confirms it in advance. Uncertain or unavailable System 1 does not flag the plan. Every decision is a `PLAN_ADVANCEMENT` event. Live accuracy is measured by `run_plan_gate.py`. | advances → plan gate; restates → one redraft, then plan gate with a note |
 | **3. Plan review** | Fast-path commands, then review intent | confirm → phase 4; revise approach → redraft plan; revise task → phase 1; cancel → exit 1 |
 | **4. Execution** | System 2 `EXECUTE` | result → phase 5; `REQUEST_INPUT` → exit 3 |
 | **5. Verification** | Pydantic output verifier with witness authority (§4). Result IR citation bookkeeping is recorded as `RESULT_IR_CITATION_FINDINGS` and never blocks. | pass → exit 0; contract failure → bounded repair → exit 1 |

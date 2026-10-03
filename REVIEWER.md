@@ -4,7 +4,7 @@
 
 ## 1. System in 30 seconds
 
-Two planes. The **harness** (`src/pdl_taskmaster/`) is a deterministic protocol referee: S1 routes (`providers/sys1/`), S2 drafts and executes (`providers/api_worker.py`), the verifier checks schemas and runs code in a sandbox. The **evaluation plane** (`run_catalogue.py`, `graders.py`, `prompts/`) drives the frozen 105-prompt catalogue and grades answers.
+Two planes. The **harness** (`src/pdl_taskmaster/`) is a deterministic protocol referee: S1 routes (`providers/sys1/`), S2 drafts and executes (`providers/api_worker.py`), the verifier checks schemas and runs code in a sandbox. The **evaluation plane** (`run_catalogue.py`, `graders.py`, `prompts/`) drives the 112-prompt catalogue and grades answers.
 
 **Golden invariant:** the harness is a referee, never a solver. No algorithmic coaching, no keyword gates, no benchmark vocabulary in `src/`, no fabricated witnesses.
 
@@ -42,5 +42,5 @@ Two planes. The **harness** (`src/pdl_taskmaster/`) is a deterministic protocol 
 ```bash
 pytest tests/test_harness_anti_overfitting.py -v   # integrity gate (<1s)
 pytest -q                                           # offline suite
-python run_catalogue.py --dry-run                   # manifest: 105 prompts, 21 verified
+python run_catalogue.py --dry-run                   # manifest: 112 prompts, 28 verified
 ```

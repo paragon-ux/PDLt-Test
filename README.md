@@ -1,6 +1,6 @@
 # PDL Taskmaster (lean build) and the PDLt System 2 Catalogue
 
-A controller-gated REPL harness that has a model interpret your request as short, readable pseudocode and waits for confirmation before anything runs, plus the frozen **105-prompt catalogue** that measures it. Content quoted or pasted into a task stays passive data (semantic bootstrap containment).
+A controller-gated REPL harness that has a model interpret your request as short, readable pseudocode and waits for confirmation before anything runs, plus the **112-prompt catalogue** (16 categories) that measures it. Content quoted or pasted into a task stays passive data (semantic bootstrap containment).
 
 Current design: [`ARCHITECTURE.md`](ARCHITECTURE.md). Provider baseline and known provider issues: [`PROVIDERS.md`](PROVIDERS.md). Direction (not yet implemented): [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md). Guardrails: [`docs/guardrails/`](docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md). Decisions: [`docs/adr/`](docs/adr/).
 
@@ -16,7 +16,8 @@ The harness is a referee, never a solver: no algorithm hints, no keyword gates, 
 ## Install and test (offline)
 
 ```bash
-pip install -e ".[test]"   # Python 3.10+, pydantic v2
+python -m pip install --upgrade pip   # for Python 3.10, upgrade pip first
+pip install -e ".[test]"   # Python 3.10-3.14, pydantic v2
 pytest -q                   # offline suite, includes the integrity gate
 ```
 
@@ -28,11 +29,19 @@ pdlt --new-session --dev                # interactive REPL
 python run_catalogue.py --dry-run       # validate manifest, list prompts
 python run_catalogue.py --prompt-id 06-04
 python run_catalogue.py --category 13 --fail-fast
-python run_catalogue.py                 # full 105-prompt run, one attempt each
+python run_catalogue.py                 # full 112-prompt run, one attempt each
+python run_plan_gate.py                 # PLAN-02 gate vs. supplied good and restating plans (live System 1)
+python run_entity_check.py              # entity channel: identifiers kept, narrative figures not forced (live)
 python run_catalogue.py --regrade catalogue-runs/run-<ts>   # re-score a finished run, no model calls
 ```
 
 REPL fast path: `/confirm`, `/revise <feedback>`, `/stop` or `/cancel`. `/help` in the REPL and `pdlt --help` list the rest.
+
+Fast mode (`pdlt --fast`, or `/fast on|off` in the REPL) confirms in advance: every phase still runs and both pseudocode artifacts are shown, but a review whose artifact has no host findings is accepted without waiting for `/confirm`. Each such acceptance is recorded in the session (`STANDING_CONFIRMATION`). A review with host findings (lint notes) still stops for you.
+
+Resuming a session (`/resume <session-id>`, or picking one at startup) shows its conversation so far, one blank line between turns, and says which review, if any, is waiting on you.
+
+Speakers are color-coded on a terminal: `--color auto|always|never` (or `PDLT_COLOR`; `NO_COLOR` turns colors off), and `PDLT_COLORS` sets each role, for example `PDLT_COLORS="user=bright_cyan,assistant=green,error=red,note=none"`.
 
 On Windows, set the key with `setx OPENROUTER_API_KEY ...` (or `$env:OPENROUTER_API_KEY = '...'` for the current PowerShell session) and open a new terminal.
 
@@ -42,7 +51,7 @@ On Windows, set the key with `setx OPENROUTER_API_KEY ...` (or `$env:OPENROUTER_
 python -m viewer                # http://127.0.0.1:8090, opens your browser; --no-open, --port N
 ```
 
-Read-only and localhost-only. Browse every `catalogue-runs/run-*` (scoreboard, per-prompt verdict and ground-truth grade, transcript, deliverable, code, witness), follow the newest live session, and read the 105 catalogue prompts. It lives in the evaluation plane and imports nothing from the harness.
+Read-only and localhost-only. Browse every `catalogue-runs/run-*` (scoreboard, per-prompt verdict and ground-truth grade, transcript, deliverable, code, witness), follow the newest live session, and read the 112 catalogue prompts. It lives in the evaluation plane and imports nothing from the harness.
 
 ### Environment routing (System 1)
 

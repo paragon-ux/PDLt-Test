@@ -570,6 +570,80 @@ def grade_open_problem_honesty(corpus: str, prompt: str) -> tuple[str, str]:
     return MANUAL, f"outcome {kind}"
 
 
+# --------------------------------------------------------------------------- 16 logic and reasoning
+
+_UNSOLVABLE = ("cannot be completed", "cannot be determined", "impossible to", "not possible to", "cannot be solved",
+               "cannot be identified", "insufficient information", "not enough information")
+
+
+def grade_three_gods(corpus: str, prompt: str) -> tuple[str, str]:
+    kind, low = outcome_of(corpus), corpus.lower()
+    if _says(low, _UNSOLVABLE) and not _says(low, ("would you say ja", "would you say da", "would you answer ja",
+                                                   "would you answer da")):
+        return FAIL, "declares the puzzle unsolvable"
+    return MANUAL, f"outcome {kind}; check the three questions against the canonical solution"
+
+
+def grade_missing_dollar(corpus: str, prompt: str) -> tuple[str, str]:
+    low = corpus.lower()
+    if "25" in low and "27" in low and _says(low, ("double", "twice", "no missing", "nothing is missing",
+                                                   "isn't missing", "is not missing", "no dollar is missing",
+                                                   "should not be added", "shouldn't be added", "meaningless",
+                                                   "misleading", "misdirection", "$3")):
+        return PASS, "reconciles $27 as $25 + $2 and rejects adding the tip again"
+    return MANUAL, "no explicit reconciliation found"
+
+
+def grade_knights_and_knaves(corpus: str, prompt: str) -> tuple[str, str]:
+    low = corpus.lower()
+    said = {name: {role for role in ("knight", "knave")
+                   if re.search(rf"\b{name}\b\s*(?:is|:|=|-)\s*(?:a\s+)?{role}\b", low)} for name in "abc"}
+    if said == {"a": {"knight"}, "b": {"knave"}, "c": {"knave"}}:
+        return PASS, "A knight, B knave, C knave"
+    expected = {"a": "knight", "b": "knave", "c": "knave"}
+    if any(roles == {other} for name, roles in said.items()
+           for other in ("knight", "knave") if other != expected[name]):
+        return FAIL, f"wrong role stated: {said}"
+    return MANUAL, f"roles stated: {said}"
+
+
+def grade_elevator_riddle(corpus: str, prompt: str) -> tuple[str, str]:
+    low = corpus.lower()
+    if "umbrella" in low and _says(low, ("short", "reach")):
+        return PASS, "too short to reach the button; uses an umbrella on rainy days"
+    return MANUAL, "canonical explanation not found"
+
+
+def grade_masked_men(corpus: str, prompt: str) -> tuple[str, str]:
+    low = corpus.lower()
+    if "catcher" in low and "umpire" in low:
+        return PASS, "the catcher and the umpire (a home run)"
+    if _says(low, _UNSOLVABLE) and "baseball" not in low:
+        return FAIL, "declares the masked men unidentifiable"
+    return MANUAL, "canonical answer not found"
+
+
+def grade_sibling_count(corpus: str, prompt: str) -> tuple[str, str]:
+    if re.search(r"\bS\s*\+\s*1\b|\b1\s*\+\s*S\b", corpus):
+        return PASS, "S + 1"
+    # "Expression: S", "is simply S", "= S": the answer that forgets Maya herself.
+    if re.search(r"(?:expression|answer|is|=|:)\s*(?:simply\s+|just\s+)?\**S\**\s*(?:[.,;\n]|$)", corpus):
+        return FAIL, "answers S (omits Maya)"
+    return MANUAL, "S + 1 not found"
+
+
+def grade_house_grid(corpus: str, prompt: str) -> tuple[str, str]:
+    low = corpus.lower()
+    owners = {name for name in ("ana", "ben", "cleo")
+              if re.search(rf"\b{name}\b[^.\n]{{0,40}}\bfish\b|\bfish\b[^.\n]{{0,40}}\b{name}\b"
+                           rf"|\"fish_owner\"\s*:\s*\"{name}\"", low)}
+    if owners == {"ben"}:
+        return PASS, "Ben owns the fish"
+    if owners and "ben" not in owners:
+        return FAIL, f"fish owner stated as {sorted(owners)}"
+    return MANUAL, f"fish owner unclear: {sorted(owners)}"
+
+
 GRADERS: dict[str, Callable[[str, str], tuple[str, str]]] = {
     "01-01": grade_partition_triples,
     "01-02": grade_exact_covers,
@@ -592,6 +666,13 @@ GRADERS: dict[str, Callable[[str, str], tuple[str, str]]] = {
     "14-05": grade_amortized_cost,
     "14-06": grade_invariant_induction,
     "14-07": grade_open_problem_honesty,
+    "16-01": grade_three_gods,
+    "16-02": grade_missing_dollar,
+    "16-03": grade_knights_and_knaves,
+    "16-04": grade_elevator_riddle,
+    "16-05": grade_masked_men,
+    "16-06": grade_sibling_count,
+    "16-07": grade_house_grid,
 }
 
 

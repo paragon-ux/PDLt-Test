@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "description": "PLAN-02 plan-gate cases for the logic-and-reasoning catalogue. For each puzzle, a confirmed Prompt Pseudocode and response plans: a reasoning plan that exposes the approach (expected to pass: not rejected), and copied, paraphrased and mechanically expanded plans that only restate the prompt (expected to be rejected). Reasoning plans state the approach, never the final answer (PLAN-04). Run with: python run_plan_gate.py",
+  "expect": {
+    "reasoning": "pass",
+    "copied": "reject",
+    "paraphrased": "reject",
+    "expanded": "reject"
+  },
+  "cases": [
+    {
+      "id": "16-01",
+      "prompt": "ASK a yes-no question in English to god A, receiving an answer of either \"da\" or \"ja\". RECORD the answer.\nASK a yes-no question in English to god B, receiving an answer of either \"da\" or \"ja\". RECORD the answer.\nASK a yes-no question in English to god C, receiving an answer of either \"da\" or \"ja\". RECORD the answer.\nNOTE that the words \"da\" and \"ja\" correspond to yes and no, but the mapping is unknown.\nDEDUCE the identities of gods A, B, and C (each being True, False, or Random, in some order) using the three recorded answers, the known behavior of each god type, and the unknown \"da\"/\"ja\" mapping.\nOUTPUT the identity of each god (A, B, C) indicating which is the True god, which is the False god, and which is the Random god.",
+      "plans": {
+        "reasoning": "FRAME every question as a question about what the asked god would answer to an inner question, so that the reply means the same whether the god lies and whichever word means yes\nUSE the first question, put to A, to single out one of B and C that cannot be Random\nASK that god the second question to learn whether it is True or False\nASK the same god the third question to learn which of the other two is Random\nASSIGN the remaining identity by elimination",
+        "copied": "ASK a yes-no question in English to god A and RECEIVE an answer of \"da\" or \"ja\".\nRECORD the answer from god A.\nASK a yes-no question in English to god B and RECEIVE an answer of \"da\" or \"ja\".\nRECORD the answer from god B.\nASK a yes-no question in English to god C and RECEIVE an answer of \"da\" or \"ja\".\nRECORD the answer from god C.\nNOTE that the words \"da\" and \"ja\" correspond to yes and no, but the mapping is unknown.\nDEDUCE the identities of gods A, B, and C (True, False, Random) using the three recorded answers, the known behavior of each god type, and the unknown \"da\"/\"ja\" mapping.\nOUTPUT the identity of each god, indicating which is the True god, which is the False god, and which is the Random god.",
+        "paraphrased": "POSE one yes-or-no question to each of the three gods in turn\nCOLLECT each reply, which will be da or ja\nKEEP in mind that it is not known which of da and ja means yes\nWORK OUT from the replies and from how True, False and Random behave which god is which\nREPORT which god is True, which is False and which is Random",
+        "expanded": "SELECT god A\nFORMULATE a yes-no question in English for god A\nASK god A the question\nRECEIVE the answer \"da\" or \"ja\" from god A\nSTORE the answer of god A\nSELECT god B\nFORMULATE a yes-no question in English for god B\nASK god B the question\nRECEIVE the answer \"da\" or \"ja\" from god B\nSTORE the answer of god B\nSELECT god C\nFORMULATE a yes-no question in English for god C\nASK god C the question\nRECEIVE the answer \"da\" or \"ja\" from god C\nSTORE the answer of god C\nCOMBINE the three stored answers with the behavior of True, False and Random and the unknown meaning of \"da\" and \"ja\"\nDETERMINE the identity of each god\nFORMAT the identities as a list\nOUTPUT the list"
+      }
+    },
+    {
+      "id": "16-02",
+      "prompt": "READ the hotel bill scenario: three guests pay $10 each for a $30 bill, the bill is corrected to $25, the bellhop returns $1 to each guest and keeps $2.\nEXPLAIN what happened to the apparently missing $1 in the reasoning that adds the bellhop's $2 to the guests' $27.\nRETURN the explanation in plain language.",
+      "plans": {
+        "reasoning": "TRACE where every dollar of the guests' payment ends up after the refund: the hotel, the bellhop and the guests' pockets\nCOMPARE the guests' net payment with what the hotel and the bellhop received, to see which quantities are parts of which total\nIDENTIFY the step in the stated reasoning that adds two figures belonging to different sides of the account\nEXPLAIN the correct reconciliation of the original payment",
+        "copied": "READ the hotel bill scenario: three guests pay $10 each for a $30 bill, the bill is corrected to $25, the bellhop returns $1 to each guest and keeps $2.\nEXPLAIN what happened to the apparently missing $1 in the reasoning that adds the bellhop's $2 to the guests' $27.\nRETURN the explanation in plain language.",
+        "paraphrased": "REVIEW the story of the three hotel guests, the corrected bill and the bellhop's tip\nACCOUNT for the dollar that seems to have disappeared\nPRESENT the explanation clearly for a general reader",
+        "expanded": "READ the scenario\nNOTE the original bill of $30\nNOTE that each guest paid $10\nNOTE the corrected bill of $25\nNOTE the $5 given to the bellhop\nNOTE the $1 returned to each guest\nNOTE the $2 kept by the bellhop\nNOTE the total of $27\nNOTE the total of $29\nEXPLAIN the missing $1\nRETURN the explanation"
+      }
+    },
+    {
+      "id": "16-03",
+      "prompt": "READ the three statements made by inhabitants A, B and C, each of whom is a knight who always tells the truth or a knave who always lies.\nDETERMINE which of A, B and C are knights and which are knaves.\nSHOW the reasoning that rules out every other assignment.\nRETURN the assignment with the reasoning.",
+      "plans": {
+        "reasoning": "TAKE B's statement about A first: it makes A and B opposite kinds, which halves the possibilities\nTEST each remaining case against A's claim about how many knights there are, keeping only consistent cases\nCHECK C's statement against B's kind in every surviving case to fix C\nCONFIRM that exactly one assignment survives and present the eliminations that removed the others",
+        "copied": "READ the three statements made by inhabitants A, B and C, each of whom is a knight who always tells the truth or a knave who always lies.\nDETERMINE which of A, B and C are knights and which are knaves.\nSHOW the reasoning that rules out every other assignment.\nRETURN the assignment with the reasoning.",
+        "paraphrased": "CONSIDER what A, B and C each said\nFIGURE OUT who is a knight and who is a knave\nEXPLAIN why the other possibilities do not work\nGIVE the answer together with the explanation",
+        "expanded": "READ the statement of A\nREAD the statement of B\nREAD the statement of C\nRECALL that knights tell the truth\nRECALL that knaves lie\nDETERMINE the kind of A\nDETERMINE the kind of B\nDETERMINE the kind of C\nWRITE the reasoning\nRETURN the assignment"
+      }
+    },
+    {
+      "id": "16-04",
+      "prompt": "READ the description of the man who rides the elevator to the 7th floor and walks to the 10th, except on rainy days when he rides to the 10th.\nEXPLAIN why he does this, given that the elevator works perfectly.\nRETURN the explanation.",
+      "plans": {
+        "reasoning": "SET ASIDE the elevator as the cause, since it is stated to work perfectly, and look for the explanation in the man himself\nASK what limits which button he can press and why the limit is the same every dry day\nASK what he has with him only on rainy days that could remove that limit\nCHECK that the explanation also accounts for his riding all the way down every morning\nSTATE the explanation",
+        "copied": "READ the description of the man who rides the elevator to the 7th floor and walks to the 10th, except on rainy days when he rides to the 10th.\nEXPLAIN why he does this, given that the elevator works perfectly.\nRETURN the explanation.",
+        "paraphrased": "CONSIDER the man's elevator habits on dry and rainy days\nDETERMINE the reason for his behaviour, bearing in mind that nothing is wrong with the elevator\nPROVIDE the reason",
+        "expanded": "READ the description\nNOTE that the man lives on the 10th floor\nNOTE that he rides to the 7th floor\nNOTE that he walks the remaining floors\nNOTE the exception on rainy days\nNOTE that the elevator works perfectly\nFIND the reason\nWRITE the reason\nRETURN the explanation"
+      }
+    },
+    {
+      "id": "16-05",
+      "prompt": "READ the description of a man who leaves home, turns left three times while running, and returns home to find two masked men waiting.\nIDENTIFY who the masked men are.\nRETURN the identification with a short explanation.",
+      "plans": {
+        "reasoning": "QUESTION the assumption that home means a house: look for a setting where running and three left turns bring someone back to a place called home\nIDENTIFY the activity in that setting in which people wear masks and wait at that place\nCHECK that the identification explains every detail of the story\nSTATE who the masked men are and why",
+        "copied": "READ the description of a man who leaves home, turns left three times while running, and returns home to find two masked men waiting.\nIDENTIFY who the masked men are.\nRETURN the identification with a short explanation.",
+        "paraphrased": "THINK about the story of the running man and the masked men at his home\nWORK OUT the identity of the two masked men\nGIVE a brief explanation of who they are",
+        "expanded": "READ the story\nNOTE that the man leaves home\nNOTE the first left turn\nNOTE the second left turn\nNOTE the third left turn\nNOTE that he returns home\nNOTE the two masked men\nIDENTIFY the masked men\nWRITE the explanation\nRETURN the answer"
+      }
+    },
+    {
+      "id": "16-06",
+      "prompt": "READ that Maya has B brothers and S sisters, all sharing both parents with her, with B at least 1.\nDETERMINE how many sisters each of Maya's brothers has, as an expression in B and S.\nEXPLAIN why the expression is correct.\nRETURN the expression with the explanation.",
+      "plans": {
+        "reasoning": "LIST the girls among the siblings from a brother's point of view, checking whether Maya herself belongs to the set she is counted from\nRELATE that count to S, which counts Maya's sisters and so excludes Maya\nNOTE that the number of brothers does not change a brother's count of sisters\nEXPRESS the result in terms of S and justify each part",
+        "copied": "READ that Maya has B brothers and S sisters, all sharing both parents with her, with B at least 1.\nDETERMINE how many sisters each of Maya's brothers has, as an expression in B and S.\nEXPLAIN why the expression is correct.\nRETURN the expression with the explanation.",
+        "paraphrased": "CONSIDER Maya's family of B brothers and S sisters\nWORK OUT the number of sisters a brother of Maya has, in terms of B and S\nJUSTIFY the answer\nGIVE the expression and the justification",
+        "expanded": "READ the number of brothers B\nREAD the number of sisters S\nNOTE that B is at least 1\nNOTE that all siblings share both parents\nSELECT one brother\nCOUNT his sisters\nWRITE the count as an expression in B and S\nWRITE the explanation\nRETURN the expression"
+      }
+    },
+    {
+      "id": "16-07",
+      "prompt": "READ the five clues about three houses in a row, each with a different color, owner and pet.\nDETERMINE the full arrangement of colors, owners and pets.\nIDENTIFY who owns the fish.\nSHOW how each clue fixes the arrangement.\nRETURN the arrangement, the fish owner and the reasoning.",
+      "plans": {
+        "reasoning": "PLACE the red and green houses first, since the adjacency clue leaves them only two positions, and let the blue house take what is left\nPUT Ben in the blue house and use the clue that Cleo is not his neighbour to place Cleo and then Ana\nFIX the pets from the middle-house clue and the clue linking the dog to the red house, leaving the fish for the remaining house\nRE-CHECK every clue against the final arrangement and state which clue decided each placement",
+        "copied": "READ the five clues about three houses in a row, each with a different color, owner and pet.\nDETERMINE the full arrangement of colors, owners and pets.\nIDENTIFY who owns the fish.\nSHOW how each clue fixes the arrangement.\nRETURN the arrangement, the fish owner and the reasoning.",
+        "paraphrased": "GO THROUGH the clues about the three houses\nWORK OUT which color, owner and pet belong to each house\nFIND the owner of the fish\nEXPLAIN how the clues lead to the arrangement\nPRESENT the arrangement, the fish owner and the explanation",
+        "expanded": "READ clue 1\nREAD clue 2\nREAD clue 3\nREAD clue 4\nREAD clue 5\nDETERMINE the color of house 1\nDETERMINE the color of house 2\nDETERMINE the color of house 3\nDETERMINE the owner of each house\nDETERMINE the pet of each house\nIDENTIFY the fish owner\nWRITE the reasoning\nRETURN the arrangement"
+      }
+    }
+  ],
+  "extra_cases": [
+    {
+      "id": "16-02",
+      "note": "Live run 2026-10-03: the prompt pseudocode itself stated the whole resolution, so the plan could add nothing. Not a restating plan to reject (PLAN-02 is met by the prompt).",
+      "prompt": "READ the classic \"missing $1\" puzzle scenario where three guests each pay $10 for a $30 hotel bill, the manager adjusts the charge to $25, and returns $5 via the bellhop; the bellhop gives each guest $1 back and keeps $2 as a tip.\nIDENTIFY the accounting error in the standard calculation that incorrectly adds the $2 tip to the $27 total paid by the guests.\nEXPLAIN that the correct accounting is: the guests paid $27 total, which consists of $25 for the room plus $2 kept by the bellhop, and that the $3 returned to the guests ($1 each) completes the original $30.\nCLARIFY that the apparent missing $1 arises from mixing the $2 tip with the $27 paid, which double‑counts the tip; the $2 tip is already included in the $27 and should not be added again.\nPROVIDE the final resolution stating that there is no missing dollar: $25 (room) + $2 (bellhop tip) + $3 (returned to guests) = $30.",
+      "plan": "READ the confirmed prompt describing the missing‑dollar puzzle scenario.\nANALYZE the cash flow to IDENTIFY the accounting error that results from adding the tip to the total paid by the guests.\nDETERMINE the correct accounting breakdown of the original total as the room charge, the bellhop tip, and the amount returned to the guests.\nCOMPOSE an explanation that (1) states the identified error, (2) describes the correct breakdown, (3) clarifies why the tip is double‑counted in the mistaken reasoning, and (4) presents the final resolution that the three components together equal the original amount with no missing dollar.\nOUTPUT the composed explanation as the response.",
+      "expect": "pass"
+    },
+    {
+      "id": "16-01",
+      "note": "Live run 2026-10-03: the drafted plan names a strategy ('DEVISE a logical strategy ...') without stating it, then follows it. Superficial: it must be rejected.",
+      "prompt": "PROVIDE three yes-no questions, each directed to exactly one of the gods A, B, and C, to identify which god is True (always tells the truth), which is False (always lies), and which is Random (answers arbitrarily).\nNOTE that the gods answer using the words da and ja for yes and no, in an unknown order.\nFOR each question, SPECIFY the god (A, B, or C) it is asked to.\nOUTPUT the three questions, indicating the god each is asked to.\nEXPLAIN how the answers determine every god's identity.",
+      "plan": "READ the CONFIRMED_PROMPT_BODY\nIDENTIFY the required deliverable components (three yes-no questions each addressed to a specific god and an explanation of answer interpretation)\nDEVISE a logical strategy for constructing questions that distinguish True, False, and Random given the unknown mapping of da and ja to yes/no\nGENERATE three yes-no questions, assigning each to a distinct god (A, B, C) according to the devised strategy\nDEVELOP an explanation that describes how the pattern of answers (da and ja) can be used to infer each god's identity\nCOMPOSE the final output containing the three questions with their designated gods followed by the explanatory mapping\nOUTPUT the composed response",
+      "expect": "reject"
+    },
+    {
+      "id": "16-01",
+      "note": "Live run 2026-10-03 (second draft): the plan requires each question to determine the gods 'irrespective of the da/ja mapping' but never says how. Superficial: it must be rejected.",
+      "prompt": "PROVIDE three yes-no questions, each directed to exactly one of the gods A, B, and C.\nASSIGN each question to a distinct god (A, B, or C), ensuring that each god receives exactly one question.\nDESIGN the questions such that, when the gods answer using the words da and ja (unknown which means yes or no), the pattern of answers uniquely determines which god is True, which is False, and which is Random.\nOUTPUT the three questions, indicating for each which god (A, B, or C) it is asked to.\nEXPLAIN how the answers (da/ja) can be interpreted to uniquely identify each god, accounting for the unknown mapping of da and ja to yes/no.",
+      "plan": "IDENTIFY the logical requirements for yes‑no questions that differentiate a truth‑telling god, a lying god, and a random god given an unknown mapping of da and ja to yes/no\nDETERMINE a set of three distinct questions, each to be assigned to a different god (A, B, C) such that each god receives exactly one question\nCONSTRUCT each question so that the pattern of da/ja answers uniquely determines which god is True, which is False, and which is Random, irrespective of the da/ja mapping\nFORMULATE an explanation describing how the observed da/ja answer pattern can be interpreted, accounting for the unknown yes/no mapping, to identify each god uniquely\nOUTPUT the three questions together with the designated god for each and the accompanying explanation",
+      "expect": "reject"
+    }
+  ]
+}

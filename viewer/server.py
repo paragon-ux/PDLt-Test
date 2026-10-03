@@ -3,7 +3,7 @@
 Read-only, localhost-only HTTP server that shows:
   * the newest live/catalogue session (stage, prompt, plan, code, witness, transcript),
   * every catalogue run under ``catalogue-runs/`` with scoreboard and per-prompt results,
-  * the 105-prompt catalogue.
+  * the 112-prompt catalogue.
 
 It imports nothing from the harness package: it only reads files the harness and
 runner wrote. Usage: ``python -m viewer [--port 8090] [--no-open] [--root DIR]``.
