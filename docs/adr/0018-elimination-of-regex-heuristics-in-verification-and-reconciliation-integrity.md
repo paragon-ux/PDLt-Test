@@ -1,6 +1,6 @@
 # ADR-0018: Elimination of Regex Heuristics in Substantive Verification & Reconciliation Semantic Integrity
 
-- **Status:** ACCEPTED
+- **Status:** ACCEPTED. Implementation note (2.6.0rc1): §3.3 (reconciliation semantic integrity, `contradictory_reconciliation`) is **not implemented**. Detecting existential requirements by keyword (`GENERATE`, `PROVIDE`, …) would conflict with GUARD-02 and the ban on heuristic regex; the check awaits a typed requirement-kind field and is tracked as future work.
 - **Date:** 2026-09-29
 - **Related Decisions:** [ADR-0010 Pydantic Wire Enforcement](0010-pydantic-wire-enforcement.md), [ADR-0013 Substantive Correctness Verification](0013-substantive-correctness-verification.md), [ADR-0015 Model-Synthesized Verification](0015-model-synthesized-verification-and-confinement-boundaries.md), [ADR-0016 Pydantic SSOT Deliverable Enforcement](0016-pydantic-ssot-wire-and-deliverable-boundary-enforcement.md), [ADR-0017 Dual-Plane Runtime Realignment](0017-dual-plane-runtime-realignment-and-mrv-solver-governance.md)
 - **Evidence:** `session-20260929-063836` (`REG-010`: regex synonym dropout, `nodes_explored: 0` negative witness acceptance, and contradictory reconciliation of existential requirement R2).

@@ -1,10 +1,10 @@
 # ADR-0012: Realignment of Track L — System 1 Decision Models via Contrastive Distillation (RLCD) over Laya/Jev
 
-- Status: Accepted
+- Status: Accepted. In this repository System 1 is the Jev decisions API through `Sys1Client`; the Laya fine-tuning, RLCD training pipeline and Track L distillation flywheel are not part of this repository.
 - Date: 2026-09-26
 - Parent decision: [ADR-0001](0001-controller-gated-pseudocode-protocol.md)
 - Related decisions: [ADR-0003](0003-phase-projected-single-model-contexts.md), [ADR-0006](0006-bounded-pre-execution-reasoning.md), [ADR-0010](0010-pydantic-wire-enforcement.md)
-- Related requirements: [TRD-0002](../trd/0002-controller-gated-pseudocode-protocol.md)
+- Related requirements: TRD-0002 (upstream document, not included in this repository)
 - References: Yang et al., *Reinforcement Learning from Contrastive Distillation for Language Model Alignment* (arXiv:2307.12950)
 
 ## Context

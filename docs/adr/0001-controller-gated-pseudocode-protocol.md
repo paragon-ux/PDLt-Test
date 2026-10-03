@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-08-06
 - Owners: PDL protocol maintainers
-- Related: [Technical requirements](../trd/0001-controller-gated-pseudocode-protocol.md)
+- Related: Technical requirements (upstream document, not included in this repository)
 
 ## Related decisions
 

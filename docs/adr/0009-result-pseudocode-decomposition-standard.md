@@ -3,7 +3,7 @@
 - Status: Accepted (prototype; feature-gated per TRD-0003 RS-10)
 - Date: 2026-09-18
 - Parent decision: [ADR-0005](0005-optional-result-pseudocode.md)
-- Related requirements: [TRD-0003: Result Pseudocode Decomposition Standard](../trd/0003-result-pseudocode-decomposition-standard.md)
+- Related requirements: TRD-0003: Result Pseudocode Decomposition Standard (upstream document, not included in this repository)
 - Related decisions: [ADR-0003](0003-phase-projected-single-model-contexts.md), [ADR-0004](0004-confirmed-artifacts-as-execution-boundary.md), [ADR-0008](0008-context-and-session-management.md)
 
 ## Context

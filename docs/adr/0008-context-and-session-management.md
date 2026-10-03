@@ -4,7 +4,7 @@
 - Date: 2026-09-17
 - Parent decision: [ADR-0001](0001-controller-gated-pseudocode-protocol.md)
 - Related decisions: [ADR-0002](0002-controller-owned-artifact-controls.md), [ADR-0003](0003-phase-projected-single-model-contexts.md), [ADR-0004](0004-confirmed-artifacts-as-execution-boundary.md), [ADR-0007](0007-operationalize-negative-constraints-by-omission.md)
-- Related requirements: [TRD-0002](../trd/0002-controller-gated-pseudocode-protocol.md)
+- Related requirements: TRD-0002 (upstream document, not included in this repository)
 
 ## Context
 

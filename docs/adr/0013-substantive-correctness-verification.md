@@ -2,7 +2,7 @@
 
 - **Status:** ACCEPTED (shipped in v2.5.0)
 - **Date:** 2026-09-27 (v2 — supersedes the v1 draft from earlier the same day)
-- **Related:** [ADR-0014 dual-plane boundary and wire conformance](0014-dual-plane-boundary-and-wire-conformance.md), [substantive-correctness-verification.md](../pdlt-docs/implementation-plans/substantive-correctness-verification.md)
+- **Related:** [ADR-0014 dual-plane boundary and wire conformance](0014-dual-plane-boundary-and-wire-conformance.md), substantive-correctness-verification.md (upstream document, not included in this repository)
 - **Evidence:** `session8-v-2-4-0.txt` (correct, DP-verified palindrome partition), `session9-v-2-4-0.txt` (correct bare "YES" on the Schur-triples instance, followed by a fabricated justification), the on-disk `result_ir` for `session-20260927-052351` turn 1, and a second-reviewer (Gemini) analysis of the same evidence.
 
 > **One correction from v1:** this ADR now lives at `docs/adr/`, not

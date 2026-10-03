@@ -554,7 +554,7 @@ def _read_repl_input(prompt: str = "> ") -> str:
             if confirm == "/cancel":
                 print("[paste discarded]", flush=True)
                 return ""
-            if confirm:
+            if confirm and confirm != "/confirm":  # /confirm submits, like Enter
                 pasted = pasted + "\n" + confirm
         return pasted
 
@@ -589,7 +589,7 @@ def _read_repl_input(prompt: str = "> ") -> str:
         if confirm == "/cancel":
             print("[paste discarded]", flush=True)
             return ""
-        if confirm:
+        if confirm and confirm != "/confirm":  # /confirm submits, like Enter
             pasted = pasted + "\n" + confirm
         return pasted
 
@@ -1123,7 +1123,7 @@ def main() -> int:
     _write_transcript("=== PDLt session started ===")
     from pdl_taskmaster import __version__
     print(f"PDLt REPL started (v{__version__}).", flush=True)
-    print("Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, or /stop.", flush=True)
+    print("Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, /stop or /cancel.", flush=True)
     print("Commands: /help (full roster), /paste (multi-line), /status, /quit", flush=True)
     if dev_mode:
         print("[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)", flush=True)
@@ -1296,10 +1296,18 @@ def main() -> int:
                             print(f"cannot set workdir: {exc}", flush=True)
                 elif cmd == "/transcript":
                     if arg:
-                        runtime.transcript.close()
                         transcript_path = Path(arg)
-                        transcript_path.parent.mkdir(parents=True, exist_ok=True)
-                        runtime.transcript = transcript_path.open("a", encoding="utf-8", newline="\n")
+                        # Open the new file before closing the current one: a bad path keeps
+                        # the session's transcript working instead of leaving a closed handle.
+                        try:
+                            transcript_path.parent.mkdir(parents=True, exist_ok=True)
+                            new_transcript = transcript_path.open("a", encoding="utf-8", newline="\n")
+                        except OSError as exc:
+                            print(f"cannot open transcript {transcript_path}: {exc}; "
+                                  f"still writing to {runtime.transcript_path}", flush=True)
+                            continue
+                        runtime.transcript.close()
+                        runtime.transcript = new_transcript
                         runtime.transcript_path = transcript_path
                         print(f"transcript set to {transcript_path}", flush=True)
                     else:

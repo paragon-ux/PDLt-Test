@@ -101,7 +101,7 @@ def test_refusal_states_the_configured_boundaries(tmp_path, monkeypatch):
 
 
 def test_gated_bypass_answers_directly_for_explicit_invocations(tmp_path, monkeypatch):
-    """TARGET_ARCHITECTURE §3: BYPASS goes to a direct answer even when the host
+    """ARCHITECTURE §3: BYPASS goes to a direct answer even when the host
     prefixed the message with the explicit invocation; no instance is opened."""
     sys1, s2_calls = FakeSys1(route_choice="BYPASS"), []
     engine = _engine(tmp_path, sys1, s2_calls, monkeypatch)

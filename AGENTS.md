@@ -23,6 +23,8 @@
   - `1`: `CLOSED_CANCELLED` / fail-closed error.
   - `2`: `UNCONFIRMED_GATE` (execution stalled at review gate).
   - `3`: `WAITING_INPUT` (legitimate pause awaiting external input).
+  - `4`: harness or provider error (`EXIT_HARNESS_ERROR`); never a protocol result.
+  - `130`: interrupted by the user.
 - **Catalogue Verification**: From the repository root, use `python run_catalogue.py --fail-fast` to ensure zero regressions across all 15 categories. Never loosen `is_prompt_pass` or `graders.py` to obtain a green result.
 
 ## Post-Implementation Anti-Overfitting & Integrity Gate (MANDATORY / SSOT)

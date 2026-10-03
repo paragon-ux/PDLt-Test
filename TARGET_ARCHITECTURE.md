@@ -1,341 +1,156 @@
-# Target Architecture: PDL Taskmaster v2.7.0 — Lean Build
-## Tripartite, Condition-Routed Protocol Governor
+# PDL Taskmaster: Target Architecture
 
-**Status**: Approved Target — Lean Build (PDLt-Test)  
-**Evolution Lineage**: `v2.6.0` (Active Baseline) $\to$ `v2.7.0` (Target Architecture)  
-**Lean Build**: The harness package `src/pdl_taskmaster/` lives in PDLt-Test beside the frozen catalogue. Excluded upstream folders: `eval/`, `tracking/`, `tools/`, `verify/`.  
-**Normative Authorities**: ADR-0001 through ADR-0020 (ported to `docs/adr/`); `docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md` (`GUARD-01` through `GUARD-05`)  
-**Core Axiom**: *"Route the sandbox conditions, not the model."*
+**Status:** Direction, not implementation. Nothing in this document exists in 2.6.0rc1 unless the "Today" column says so.
+**Current architecture:** [`ARCHITECTURE.md`](ARCHITECTURE.md) describes what runs today.
+**Decisions:** [ADR-0023](docs/adr/0023-taskmaster-host-interface-and-event-contract.md), [ADR-0024](docs/adr/0024-operation-profiles.md), [ADR-0025](docs/adr/0025-agentic-capability-boundary.md) and [ADR-0026](docs/adr/0026-extension-and-workflow-model.md), all **Proposed**.
+**Source:** the architecture review of 2026-10-02, which examined token cost, sandbox capability, extensibility, deployment parity and interface trust before the first public release.
 
 ---
 
-## 1. Executive Vision & Foundational Axioms
+## 1. Why a target architecture
 
-The PDL Taskmaster Protocol (`pdl-taskmaster`) is an objective protocol referee and runtime governor. It addresses the foundational dilemma of agentic systems: *the component carrying out the task cannot be the sole entity deciding what the task means*.
+PDL Taskmaster 2.6.0rc1 is a working protocol referee for one main use: a person at a terminal, or a headless runner, driving one task at a time against an OpenRouter model. The public release will be used in more ways than that: as a subagent of another agent, several taskmasters in parallel, through subscription workers such as Codex or Claude, against local models, and for workflows beyond the benchmark (research, coding, mathematics, writing, Q&A). Several assumptions in the current design only hold for the terminal case.
 
-### The Three Foundational Axioms
+This document fixes the direction so that future work is incremental and consistent. It is deliberately high level. The work is traced in this order:
 
-1. **Axiom 1: Route the Sandbox Conditions, Not the Model.**
-   - The harness never qualitatively evaluates plan "completeness", "elegance" or "reasoning style". It uses no heuristic rubrics and no LLM self-grading.
-   - The deterministic pseudocode loop (`PROMPT_REVIEW` $\to$ `PLAN_REVIEW`) already aligns semantic task requirements with the human or evaluator.
-   - System 1's role is strictly physical and operational: routing environment bounds, network permissions, knowledge cutoffs and review intent.
+```
+TARGET_ARCHITECTURE.md  →  REQUIREMENTS.md (planned)  →  ADR-0023 … ADR-0026  →  implementation
+```
 
-2. **Axiom 2: The Referee Invariant (`GUARD-01`, `GUARD-04`).**
-   - The harness is an impartial referee, NEVER an AI task solver.
-   - It never injects algorithmic advice, coaches the model with domain hints, requires algorithmic keywords in review gates, or fabricates synthetic witnesses.
-   - **A failed benchmark is acceptable and diagnostic of genuine model capability boundaries. A gamed benchmark is a critical integrity breach.**
+`REQUIREMENTS.md` does not exist yet. It will hold the concrete, testable requirements derived from §4; each requirement will name the ADR that addresses it, and each ADR will list its requirements. The ADRs reserve requirement ID prefixes for this (§6).
 
-3. **Axiom 3: Session-Scoped Execution Sandbox.**
-   - The host sandbox is not built just in time during the execution turn.
-   - `ExecutionSandbox` is constructed once in `SessionEngine.__init__`, bound to the session lifecycle, and reused by `_execute` for every run in that session.
-   - Latency is measured in dev telemetry, not asserted.
+---
 
-### 1.4 Two Planes: Harness vs. Evaluation
+## 2. What does not change
 
-| Plane | Location | Knows the benchmark? | Responsibility |
+The target architecture extends the current one; it does not replace its core. These hold in every target state:
+
+1. **The referee invariant.** The harness governs the protocol and never solves the task: no algorithmic coaching, no keyword gates, no fabricated witnesses (`GUARD-01` to `GUARD-05`).
+2. **Confirmed artifacts are the execution boundary** (ADR-0004). Nothing substantive happens before the Prompt and the Plan are confirmed, and every new capability (file changes, tools) enters through a reviewed artifact, never around one.
+3. **The controller owns state.** Every stage transition is decided by `MechanicalController`; clients, models and extensions request transitions and never perform them.
+4. **Containment fails closed.** When a confinement or capability cannot be applied, the action does not run.
+5. **Two planes.** The harness never knows the benchmark; the evaluation plane drives and grades it.
+
+---
+
+## 3. Today and target
+
+| Area | Today (2.6.0rc1) | Target | ADR |
 |---|---|---|---|
-| **Harness plane** | `src/pdl_taskmaster/` | **Never** | Protocol governance, containment, sandboxed execution, schema verification |
-| **Evaluation plane** | `run_catalogue.py`, `graders.py` | Yes | Drives headless runs, maps exit codes to verdicts, and grades deliverables against `prompts/solutions/` |
-
-The harness plane never reads `prompts/`. It contains no prompt IDs, fixture names or problem-class vocabulary, and `GUARD-05` enforces this mechanically. All ground-truth knowledge lives in the evaluation plane, so a correct harness cannot pass by recognising a benchmark item.
-
----
-
-## 2. The Tripartite Architecture
-
-The target architecture enforces a strict tripartite separation of concerns:
-
-```
-┌───────────────────────────────────────────────────────────────────────────┐
-│                               USER REQUEST                                │
-└─────────────────────────────────────┬─────────────────────────────────────┘
-                                      │
-                                      ▼
-┌───────────────────────────────────────────────────────────────────────────┐
-│ 1. ROUTER (System 1 Fast Classifier — Jev via Sys1Client)                 │
-│    • Responsibility: Discrete, calibrated state machine labels            │
-│    • Recipes:                                                             │
-│      - ActivationRoute: APPLY_PROTOCOL | PROTOCOL_DISCUSSION | BYPASS |   │
-│                         BLOCKED_BY_HIGHER_PRIORITY                        │
-│      - ProblemClass:    VERIFIED_EXECUTION | STANDARD_EXECUTION           │
-│      - Review Intent:   ConfirmationMatch → ReviewFacets                  │
-│      - ExecutionProfile: predicted step complexity -> step budget         │
-│    • Invariant: Emits discrete labels only; code strictly owns state      │
-│      transitions; zero qualitative plan grading or prompt rewriting       │
-└──────────────────┬─────────────────────────────────────┬──────────────────┘
-                   │                                     │ (Boundary Refusal)
-                   │ (Valid Path)                        ▼
-                   │                           ┌───────────────────────────┐
-                   │                           │ PUBLISHED REFUSAL         │
-                   │                           │ Exit 0 (closure=REFUSED)  │
-                   │                           └───────────────────────────┘
-                   ▼
-┌───────────────────────────────────────────────────────────────────────────┐
-│ 2. SOLVER (System 2 LLM - e.g. gpt-oss-120b, high; EXECUTE low, ADR-0022)│
-│    • Responsibility: Pure reasoning under neutral protocol contracts      │
-│    • Operations:                                                          │
-│      - DRAFT_PROMPT: Compiles natural input into Prompt Pseudocode        │
-│      - DRAFT_PLAN: Generates Response Plan Pseudocode (PDL-01..08)        │
-│      - EXECUTE: Emits deliverable code or analytical symbolic deductions   │
-│    • Invariant: Prompted purely with standard protocol specifications;    │
-│      never receives algorithmic hints, carried crutches, or answer tokens │
-└──────────────────┬────────────────────────────────────────────────────────┘
-                   │
-                   ▼
-┌───────────────────────────────────────────────────────────────────────────┐
-│ 3. VERIFIER (Deterministic Python & Session-Scoped Host Sandbox)          │
-│    • Responsibility: Formal contract evaluation & host execution          │
-│    • Operations:                                                          │
-│      - Grammar Lint: PDL-05/06/08, PLAN-10 on prompt & plan, one redraft  │
-│      - Host Sandbox: Executes code with CPU, memory & containment limits  │
-│      - Witness Capture: `WITNESS: <json>` line or whole-stdout JSON only  │
-│      - Pydantic SSOT (ADR-0018): Schema validation with alias coercion    │
-│      - First-Class Reasoning (GUARD-03): Accepts symbolic proofs as valid │
-│    • Invariant: ZERO regex deliverable scraping; zero model self-grading  │
-└───────────────────────────────────────────────────────────────────────────┘
-```
-
-### 2.1 Witness Authority
-
-- **Sandbox-reproduced witness is authoritative.** When the deliverable contains executable code, the witness is what the sandbox prints: exactly one `WITNESS: <json>` line, or an entire stdout that parses as JSON. A validated sandbox witness **replaces** any model-asserted witness in the Result IR, and a `WITNESS_OVERRIDDEN_BY_SANDBOX` event is recorded whenever the two differ.
-- **An incomplete result must rest on an attempt.** A Result IR that declares requirements open, records the defect and carries no witness needs no witness, but only when a program actually ran in that attempt. With no program, the open requirement was never attempted: that is a verification error, not an honest limit.
-- **Claims of computation must come from computation.** A negative witness that reports an exhausted search (`basis: search`, or `search_exhausted` / `nodes_explored` under any basis) is accepted only when a program run by the host printed it. Otherwise it is a verification error, since no search happened. Proof-based negative witnesses (an argument, no search telemetry) remain first-class under GUARD-03.
-- **Model-asserted witnesses are provisional.** A witness that no sandbox run reproduced is labelled `provisional` in telemetry and in the deliverable card. It is never presented as verified.
-- **No scraping.** There is no label-regex scan of stdout, no embedded-object search, and no bypass keyed on words in the deliverable body or prompt text.
-- **Typed dispatch.** Domain checkers are selected only by a typed `witness.domain` field. An undeclared or unregistered domain goes to `FallbackChecker`, whose verdicts are always provisional. The verifier never infers the domain from problem text.
+| **Client interface** | A terminal REPL. Headless callers pipe text into stdin and read text and an exit code. Review gates are prose. `PDLtHost.handle()` is a clean per-turn API, but it is internal. | A versioned host contract: commands, a typed live event stream, a structured result envelope, review gates as approval objects that a human, a calling agent or a declared policy can answer, and an environment report. The REPL, a TUI, a JSONL headless mode and an agent-facing server are all clients of it. | 0023 |
+| **Observability** | Per-turn JSONL records written after the turn completes; in-turn progress goes to a log file; dev telemetry is printed text. | Live events for stage changes, model calls, sandbox and tool actions, pending approvals and verification verdicts, consumed by any presentation layer. | 0023 |
+| **Cost and latency** | Reasoning effort per model family is hardcoded (ADR-0022); model, reasoning and token caps are separate flags; repairs scale with the routed tier; each call has a deadline, the session has none. | Operation profiles that set reasoning depth, artifact length, verification depth and model routing as separate, declared axes; provider capability descriptors; session time and token budgets with an explicit unverified closure when a budget ends verification. | 0024 |
+| **System 1 dependency** | System 1 is OpenRouter's remote decisions endpoint. Without it, no boundary refusal runs and routing falls back to defaults. | System 1 is a declared capability like any other provider; each deployment states, and the session reports, what happens to boundary routing when it is absent. | 0024 |
+| **Agentic capability** | Programs compute and print inside a per-run directory that is deleted afterwards. Nothing is written to the user's project; the Result IR's `files` list is descriptive. No tools. | Effects as reviewed change sets: programs run against a copy-on-write view of a declared project root, the host turns their effect into a diff, the diff is reviewed like any artifact, and only the host applies it. Other tools run through a broker with declared, visible permissions. | 0025 |
+| **Agent workers** | `codex` runs the Codex CLI with its own sandbox setting (`--worker-sandbox`), separate from PDLt's sandbox. | Workers that are themselves agents are either constrained to model-only use or their tool use is routed through the same broker and review gates. | 0025 |
+| **Customization** | Contracts can be overridden by directory precedence, which replaces the whole set and checks structure only. Operation prompts are Python strings. No packaging for workflows. | A closed core, versioned and validated contracts, and workflow packs (research, coding, mathematics, writing, Q&A, general) that bundle a profile, capability grants, checkers and prompt fragments as data, can tighten but never loosen core guarantees, and pass a conformance kit. | 0026 |
 
 ---
 
-## 3. Discrete Decision Tree Across the Interaction Lifecycle
+## 4. Target structure
 
-Instead of monolithic reasoning or heuristic plan grading, the protocol executes a deterministic decision tree, with a discrete System 1 evaluation at each transition boundary:
-
-```mermaid
-flowchart TD
-    Start([Session Boot]) --> InitSandbox["Construct ExecutionSandbox<br/>(SessionEngine.__init__)<br/>Bind limits & containment once"]
-    InitSandbox --> Ingest["Receive User Request"]
-
-    Ingest --> S1_Activate{"S1: Activation Route"}
-    S1_Activate -- BLOCKED_BY_HIGHER_PRIORITY --> Refusal["Publish Boundary Refusal<br/>Exit Code 0 (closure=REFUSED)"]
-    S1_Activate -- BYPASS / PROTOCOL_DISCUSSION --> Direct["Direct Answer (no protocol instance)"]
-    S1_Activate -- APPLY_PROTOCOL --> S1_Class{"S1: Problem Class"}
-    S1_Class --> DraftPrompt["S2: DRAFT_PROMPT<br/>(Generate Prompt Pseudocode)"]
-
-    DraftPrompt --> PromptLint{"Grammar Lint<br/>(PDL-05/06/08, PLAN-10)"}
-    PromptLint -- Violations (once) --> DraftPrompt
-    PromptLint -- Clean --> PromptGate["PROMPT_REVIEW Gate<br/>Render Pseudocode to User / Runner"]
-    PromptGate --> S1_PromptIntent{"S1: Review Intent"}
-    S1_PromptIntent -- REVISE_TASK --> DraftPrompt
-    S1_PromptIntent -- CANCEL --> CancelPrompt["Exit Code 1 (CLOSED_CANCELLED)"]
-    S1_PromptIntent -- UNCONFIRMED --> StallPrompt["Exit Code 2 (UNCONFIRMED_GATE)"]
-    S1_PromptIntent -- CONFIRM --> DraftPlan["S2: DRAFT_PLAN<br/>(Generate Plan Pseudocode)"]
-
-    DraftPlan --> PlanLint{"Grammar Lint<br/>(PDL-05/06/08, PLAN-10)"}
-    PlanLint -- Violations (once, via operator correction) --> DraftPlan
-    PlanLint -- Clean --> PlanGate["PLAN_REVIEW Gate<br/>Render Response Plan"]
-
-    PlanGate --> S1_PlanIntent{"S1: Review Intent"}
-    S1_PlanIntent -- REVISE_APPROACH --> DraftPlan
-    S1_PlanIntent -- REVISE_TASK --> DraftPrompt
-    S1_PlanIntent -- CANCEL --> CancelPlan["Exit Code 1 (CLOSED_CANCELLED)"]
-    S1_PlanIntent -- UNCONFIRMED --> StallPlan["Exit Code 2 (UNCONFIRMED_GATE)"]
-    S1_PlanIntent -- CONFIRM --> Execute["S2: EXECUTE<br/>(Generate Deliverable)"]
-
-    Execute --> NeedsInput{"REQUEST_INPUT?"}
-    NeedsInput -- Yes --> Waiting["Exit Code 3 (WAITING_INPUT)"]
-    NeedsInput -- No --> HasCode{"Executable Python<br/>Present?"}
-
-    HasCode -- Yes --> DispatchSandbox["Run in Session Sandbox"]
-    DispatchSandbox --> CaptureStdout["Capture WITNESS line / stdout JSON"]
-    CaptureStdout --> VerifyContract{"Pydantic Output Verifier<br/>(ADR-0018 Contract Check)"}
-
-    HasCode -- No (Symbolic/Deductive) --> VerifyContract
-
-    VerifyContract -- Valid --> Success["Publish Deliverable<br/>Exit Code 0 (CLOSED_SUCCESS)"]
-    VerifyContract -- Invalid --> RetryOnce["Bounded Repair Loop<br/>(factual errors only; repairs per routed tier)"]
-    RetryOnce --> Execute
-    RetryOnce -- Still Invalid --> Failed["Exit Code 1 (CLOSED_CANCELLED)"]
+```
+┌──────────────────────────────── Clients ────────────────────────────────┐
+│  REPL (text)   TUI (future)   headless JSONL   agent server (e.g. MCP)  │
+└───────────────────────────────────┬─────────────────────────────────────┘
+                                    │  commands ↓   events, results ↑
+┌───────────────────────────────────▼─────────────────────────────────────┐
+│  Host contract (ADR-0023): sessions, commands, approvals, budgets,      │
+│  environment report. Presentation never owns protocol state.            │
+└───────────────────────────────────┬─────────────────────────────────────┘
+┌───────────────────────────────────▼─────────────────────────────────────┐
+│  Protocol core (closed): SessionEngine, MechanicalController, wire      │
+│  schemas, verifier, guardrails. Unchanged in kind.                      │
+└──────┬──────────────────────────────┬───────────────────────────┬───────┘
+       │                              │                           │
+┌──────▼──────────────┐   ┌───────────▼────────────┐   ┌──────────▼─────────┐
+│ Operation profiles  │   │ Capability boundary    │   │ Extension layer    │
+│ (ADR-0024): routing │   │ (ADR-0025): sandbox,   │   │ (ADR-0026):        │
+│ to providers by     │   │ reviewed change sets,  │   │ versioned contracts│
+│ capability; budgets │   │ tool broker            │   │ and workflow packs │
+└──────┬──────────────┘   └────────────────────────┘   └────────────────────┘
+       │
+┌──────▼──────────────────────────────────────────────────────────────────┐
+│  Providers with capability descriptors: System 1, System 2 (remote,     │
+│  local, subscription), recorded replay                                  │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Lifecycle Stage Specification
+### 4.1 Host contract (ADR-0023)
 
-| Phase | Input | Evaluation Mechanism | Permitted Outputs / Transitions |
+Every way of using PDLt goes through one contract. A session accepts a small set of commands (submit a request, answer an approval, supply requested input, ask for status, close), emits typed events while it works, and ends with a result envelope that states the stage, the closure, the deliverable, the witness and its verification status, and usage. Review gates become approval objects that carry what is being approved and who may approve it. The REPL becomes one renderer of this contract, so a TUI or an agent integration needs no change to protocol semantics.
+
+### 4.2 Operation profiles (ADR-0024)
+
+Four concerns that are entangled today become separate axes:
+
+- **Reasoning depth:** hidden reasoning a model spends per operation.
+- **Artifact length:** the visible Prompt, Plan, Result IR and witness the protocol requires.
+- **Verification depth:** whether a witness is required, and how many repairs are allowed.
+- **Model routing:** which provider and model serve each operation, chosen by declared capability (structured output, reasoning control, throughput, locality) rather than by name.
+
+A profile (for example fast, balanced or verified) sets these together, and a session budget bounds time and tokens, closing explicitly as unverified rather than repairing without end.
+
+### 4.3 Capability boundary (ADR-0025)
+
+The sandbox stays the place where untrusted code runs. What changes is that a run can have a reviewed effect: the run sees a copy-on-write view of a declared project root, the host computes the resulting change set, the change set is reviewed like the Prompt and the Plan, and the host alone applies it. Tools other than file changes run through a broker that grants declared permissions, shows them in the plan and the event stream, and records every use.
+
+### 4.4 Extension model (ADR-0026)
+
+Three tiers, each with its own change process:
+
+- **Core (closed):** controller, gates, wire schemas, confinement and the guardrails. Changed only by ADR.
+- **Contracts (versioned):** standards and contracts declare the core versions they support and are validated at load, with layered overrides rather than wholesale replacement.
+- **Workflow packs (open):** named, schema-validated bundles for a kind of work. A pack is user-originated content; packs shipped with PDLt pass the same integrity gate as the harness.
+
+---
+
+## 5. Evidence behind the direction
+
+**Output tokens and latency.** From 762 recorded catalogue sessions on `openai/gpt-oss-120b` (`catalogue-runs/`, 2026-10-02):
+
+| | Output tokens per session | Model time per session |
+|---|---|---|
+| Median | about 3.1k | about 8 s |
+| 90th percentile | about 11.7k | about 31 s |
+| Worst | about 138k | about 888 s |
+
+| EXECUTE calls in the session | Sessions | Median output | Median model time |
 |---|---|---|---|
-| **Phase 0: Activation** | Raw user request | System 1 `activation_route` over environment **recipe state** (policy scope, offline sandbox, knowledge cutoff). No keyword, pattern, or date matching. Runs first on every new request, including explicit `$confirm-with-pseudocode` invocations; a gated decision overrides the invocation, an ungated one leaves it standing | `APPLY_PROTOCOL` $\to$ Phase 1<br>`BLOCKED_BY_HIGHER_PRIORITY` $\to$ refusal published, Exit `0` (`closure=REFUSED`)<br>`BYPASS` / `PROTOCOL_DISCUSSION` $\to$ direct answer |
-| **Phase 1: Prompt Review** | Drafted prompt + user feedback or assent | Grammar lint, then fast-path commands (`/confirm`, `/revise`, `/stop`), then System 1 review intent | `CONFIRM` $\to$ Phase 2<br>`REVISE_TASK` $\to$ re-draft Prompt<br>`CANCEL` $\to$ Exit `1`<br>`UNCONFIRMED` $\to$ Exit `2` |
-| **Phase 2: Plan Lint** | Response Plan | Deterministic grammar lint (`plan_soundness.py`): PDL-05 no fielded prefixes, PDL-06 no code fences, PDL-08 no deferral/meta markers, PLAN-10 no placeholder steps, on first drafts and revisions. It is the only place these rules are enforced: a violation gets one redraft carrying the finding, never a wire failure, and the host never rewrites a body. **No algorithm or execution keywords.** | Clean $\to$ Plan Gate<br>Violation $\to$ one re-draft, feedback via **operator correction** (never via `CARRIED_APPROACH_SOURCES`) |
-| **Phase 3: Plan Review** | User feedback or assent | Fast-path commands, then System 1 review intent | `CONFIRM` $\to$ Phase 4<br>`REVISE_APPROACH` $\to$ re-draft Plan<br>`REVISE_TASK` $\to$ Phase 1<br>`CANCEL` $\to$ Exit `1` |
-| **Phase 4: Execution** | Confirmed Prompt & Plan | System 2 `EXECUTE` | `RESULT` $\to$ Phase 5<br>`REQUEST_INPUT` $\to$ Exit `3` |
-| **Phase 5: Verification** | Deliverable + Sandbox Stdout | Deterministic Pydantic schemas (`output_verifier.py`), with witness authority per §2.1. Result IR citation bookkeeping (verbatim quotes, section markers, one reconciliation per requirement) is recorded as `RESULT_IR_CITATION_FINDINGS`, never blocking: it describes the deliverable, it is not its correctness | Pass $\to$ Exit `0` (`CLOSED_SUCCESS`)<br>Contract failure $\to$ bounded repair (1 repair; 2 on `HEAVY_COMPUTE`) $\to$ Exit `1` |
+| 1 (no repair) | 581 | about 3.1k | about 8 s |
+| 2 | 87 | about 4.0k | about 26 s |
+| 3 or more | 26 | about 11.4k | about 66 s |
 
-### Headless Exit Codes (ADR-0019, amended)
+- 11% of sessions took more than 30 s of model time, and 56 of those 82 involved at least one verification repair: the slow tail comes from verification and repair, not from long answers.
+- The three pre-execution operations produce a median 62% of a session's output tokens. At the ADR-0022 default (high reasoning before execution), a trivial request spends about 3.6k output tokens before execution, 89% of them hidden reasoning.
+- `EXECUTE` itself is about 4% reasoning; its output is the deliverable.
 
-| Code | Stage | Meaning |
-|---|---|---|
-| `0` | `CLOSED_SUCCESS` | A verified deliverable was published, **or** a boundary refusal was published (`closure=REFUSED`). A refusal is a correct, complete answer, which is how the frozen manifest scores it. |
-| `1` | `CLOSED_CANCELLED` | Cancellation, verification failure after repair, or a fatal error. |
-| `2` | `UNCONFIRMED_GATE` | Halted at a review gate. |
-| `3` | `WAITING_INPUT` | Clean pause awaiting required external input. |
+This is why ADR-0024 treats cost as latency and capability fit (whether a fast provider is usable at all), not only as money, and why it separates verification depth from reasoning depth.
+
+**Deployment parity.** The engine has no terminal I/O and `PDLtHost.handle()` is already a per-turn API, so the host contract formalizes an existing seam rather than restructuring the engine. The gaps are on the outside: text-only results, prose review gates, no live events, no session budget, a remote-only System 1, and OpenRouter-specific provider routing.
 
 ---
 
-## 4. Session-Scoped Sandbox Architecture
+## 6. Sequencing
 
-### The Defect of Just-In-Time Sandboxing
-In prior versions (`v2.5.0`–`v2.6.0`), a new `ExecutionSandbox` was constructed inline at each witness-capture site in `_execute`, and the process environment was inherited wholesale. That created two problems:
-- Sandbox policy lived in several places.
-- Host secrets reached model-authored code.
+1. **ADR-0023 first.** Approval objects, events and the result envelope are prerequisites for the TUI, agent integrations, delegated review and the reviewed change sets of ADR-0025.
+2. **ADR-0024 and ADR-0025 next, in either order.** Tool-using operations need capability-aware routing, so ADR-0025's tool broker depends on ADR-0024's provider descriptors; its change-set review depends only on ADR-0023.
+3. **ADR-0026 last.** A workflow pack bundles a profile (ADR-0024), capability grants (ADR-0025) and presentation hints (ADR-0023), so those seams must exist first.
 
-### Target Session Lifecycle
-
-```
-Session Start (SessionEngine.__init__)
-  │
-  ├── 1. Construct ExecutionSandbox once (timeouts, memory ceiling, network policy, --sandbox mode)
-  ├── 2. probe(): is the selected backend available here? (cheap; no setup)
-  ├── 3. First run_code: build the session (root, owner.json, policy, backend state); sweep stale roots
-  ├── 4. Each run: a fresh empty work/run-NNNN-* directory, deleted afterwards
-  └── 5. close() (SessionEngine.close ← PDLtHost.close): delete the root, release the backend
-```
-
-1. **Session boot hook.** `SessionEngine` instantiates `ExecutionSandbox` in `__init__`. Every `_execute` witness-capture site uses `self.sandbox`.
-2. **Session root outside the referee's trees.** `<tempdir>/pdlt-sandboxes/<sid>/` holds `owner.json` and `work/`. The graders, runner and viewer search session and result trees for deliverables and evidence, so the program-writable directory never sits inside one. The root is recorded in a `SANDBOX_SESSION` workspace event.
-3. **Ephemeral runs.** Each run executes in a fresh, empty run directory under OS-native confinement and limits; nothing a run writes survives into the next.
-4. **Cleanup.** `close()` releases the session; a host killed before `close()` leaves a root whose owner pid is dead, and the next session's sweep removes it (with its AppContainer profile or container).
-5. **Agentic tool readiness.** A single session-owned sandbox is the insertion point for future host-gated tools such as bash, file edits and compilation.
-
-### 4.1 Sandbox Containment
-
-| Control | Mechanism |
-|---|---|
-| **Secret isolation** | The environment is rebuilt from an allowlist: `PATH`, `TEMP`, `TMP`, `TMPDIR`, and on Windows `SYSTEMROOT`, `WINDIR`, `SYSTEMDRIVE`, `COMSPEC`, `PATHEXT`. API keys never reach model-authored code. |
-| **OS-native confinement** (ADR-0021) | One `SandboxPolicy` per session: write only the session's `work/`; read it, the base interpreter's install and standard library, and the OS loader's files; execute only the base interpreter; no network; no new processes. Linux: Landlock (ruleset built once per session, applied in each child before `exec`; TCP denied on ABI 4+, signals and abstract sockets scoped on ABI 6+). macOS: `sandbox-exec` with a deny-by-default profile, paths passed as `-D` parameters. Windows: a per-session AppContainer with no capabilities, started inside the run's Job Object and unable to create child processes. `--sandbox container`: docker/podman, one container per session (no network, read-only root, no capabilities, process cap). |
-| **Fail closed** | When the selected backend cannot apply, nothing runs: `sandbox_unavailable:<reason>`, a registered `SANDBOX_UNAVAILABLE` finding (never repaired), truthful `describe()`/`decision_state()`, and a REPL warning. `--sandbox audit-only` (`PDLT_SANDBOX=audit-only`) is the explicit opt-out, announced loudly. |
-| **Audit hook (defense in depth)** | A `sys.addaudithook` prelude built from the policy raises `PermissionError` on native-code loading (`ctypes`, `_ctypes`, `cffi`, `_cffi_backend`, sqlite extensions), on file paths outside the run directory (writes) or the run directory and standard library (reads), on `os.kill`/`os.killpg`, and, as separate flags, on network (`socket.connect`, `socket.bind`, `socket.getaddrinfo`, `socket.gethostbyname`, `socket.sendto`, `socket.sendmsg`) and process creation (`subprocess.Popen`, `os.system`, `os.exec*`, `os.spawn*`, `os.posix_spawn`, `os.fork*`, `os.startfile`, `_winapi.CreateProcess`). |
-| **Resource limits** | Windows: a Job Object (memory, kill-on-close); the program starts suspended and runs only once it is inside the job. POSIX: `setrlimit(RLIMIT_AS)` and an `RLIMIT_CPU` backstop of twice the wall-clock limit (it stops a program whose host was killed), a session of its own, and a process-group kill on timeout. macOS does not enforce `RLIMIT_AS`, so there the memory limit is not enforced. The step budget, memory limit and wall-clock safety limit are the task's routed budget (§5, `ExecutionProfileRecipe`). |
-| **Interpreter isolation** | The base interpreter (`sys._base_executable`, never a venv shim) as `python -I -S -X utf8 -u` (`-I` ignores `PYTHON*` variables, so UTF-8 and unbuffered streams are set on the command line), run in the run's own empty directory. |
-
-**Honest boundary statement:** the OS-native layer holds without the audit hook (`tests/test_confinement.py` checks each backend with the hook switched off), but it is not a VM boundary: CPU and memory side channels and kernel exploits are out of scope. Landlock does not cover UDP or pathname UNIX sockets and cannot deny `fork` (the hook covers those; exec of anything but the interpreter is denied natively). macOS does not enforce `RLIMIT_AS`. The container mode is the stronger option; a microVM (ADR-0011) remains roadmap.
+Requirement ID prefixes reserved for `REQUIREMENTS.md`: `HOST-` (ADR-0023), `PROF-` (ADR-0024), `CAP-` (ADR-0025), `EXT-` (ADR-0026).
 
 ---
 
-## 5. System 1 Recipe Specification (Eliminating Qualitative Noise)
+## 7. Non-goals
 
-### The Category Error of Generic Recipes
-Generic recipes from `jev-recipes` are strictly prohibited in this protocol. Examples are `plan-completeness`, designed for grading student essays, and `choose-action`, designed for game checkers. As the `jev-recipes` specification states:
-> *"The rubric grades whether the plan covers the requirements the task states... It does not judge whether the planned steps would work, how long they would take... The recipe does not tell you which requirement is missing."*
+- PDLt does not become an autonomous agent that acts without review: every new capability is reviewed through the protocol.
+- A TUI is a presentation layer; it never changes REPL or protocol semantics.
+- No commitment to a specific virtualization technology. The microVM in ADR-0011 stays exploratory; ADR-0025 defines the boundary, not the mechanism.
+- No change to how the catalogue is scored.
 
-Applying qualitative essay rubrics to formal pseudocode causes non-deterministic gate stalls. It forces models to overfit to stylistic quirks, and it directly violates Goodhart's Law.
+## 8. Open questions
 
-### Protocol Recipe SSOT
-
-The harness implements these discrete, calibrated System 1 recipes (`src/pdl_taskmaster/providers/sys1/recipes/`). All of them share the tripartite confidence gate (`gating.py`): confidence $P \ge 0.85$, top-2 margin $\Delta p \ge 0.40$, and normalized entropy $H(p) \le 0.35$.
-
-#### 1. `ActivationRouteRecipe` (Physical Boundary Enforcement)
-- **Input:** raw user task string plus the environment state.
-- **Labels:** `APPLY_PROTOCOL | PROTOCOL_DISCUSSION | BYPASS | BLOCKED_BY_HIGHER_PRIORITY`.
-- **Recipe state, not prompt text:** the environment settings are System 1 recipe **state**: `policy_scope` (`PDLT_POLICY_SCOPE`), `sandbox_network` (`PDLT_SANDBOX_NETWORK`) and `knowledge_cutoff` (`PDLT_KNOWLEDGE_CUTOFF`). They are the first thing Jev routes. The recipe criterion for `BLOCKED_BY_HIGHER_PRIORITY` refers to those three fields, and the S1 model decides. There is no keyword, pattern or year matching anywhere, and **the environment settings never reach System 2**.
-- **Phase 0 always runs:** the engine invokes this route before any System 2 call, for explicit invocations too (`SessionEngine._s1_boundary_refusal`). A gated `BLOCKED_BY_HIGHER_PRIORITY` publishes the refusal (`closure=REFUSED`, exit 0). System 1 absent, uncertain or failing yields no refusal, never a guess.
-- **Execution environment is recipe state too:** the state carries `execution_environment` (from `ExecutionSandbox.decision_state`, e.g. standard library only). A request that depends on a package, SDK or service the environment does not provide is routed like a post-cutoff request: its existence and behaviour cannot be known or verified here.
-- **Not a refusal:** mathematical impossibility, unsatisfiability and contradictory requirements are **deliverables** under GUARD-03, not boundary refusals. The budget gate below refuses on the environment (no budget and no verifier can certify the result here), never on the mathematics.
-- **Invariant:** hardcoding benchmark entity names (e.g. `frostbitedb`) or prompt-specific tokens is banned.
-
-#### 2. `ProblemClassRecipe` (Verification Mode Routing)
-- **Input:** the substantive request.
-- **Labels:** `VERIFIED_EXECUTION | STANDARD_EXECUTION`.
-- **Function:** selects whether the Result IR must carry a witness. The criteria are generic: the existence of a discrete structure that satisfies stated constraints, or an exact solution with a checkable witness.
-- **Invariant:** S1 only, with **no keyword regex**. If S1 is unavailable or below the gate, the label defaults to `STANDARD_EXECUTION`.
-
-#### 3. Review Intent (`ConfirmationMatchRecipe` → `ReviewFacetsRecipe`)
-- **Input:** user review feedback at `PROMPT_REVIEW` or `PLAN_REVIEW`.
-- **Flow:** `ConfirmationMatch` (`agrees | rejects | unclear`) runs first. When that is unclear, `ReviewFacets` returns multi-label change dimensions. The fast-path commands `/confirm`, `/revise` and `/stop` bypass S1 entirely.
-- **Fallback:** below threshold, the input falls back to System 2 interpretation. The harness never assumes an intent.
-
-#### 4. `ExecutionProfileRecipe` (Step-Complexity Routing)
-- **Input (recipe state):** the substantive request **and the sandbox it would run in**: the execution environment (interpreter, standard library only, network access), the step definition, and the budget each label grants, all built from the same source the sandbox enforces (`ExecutionSandbox.decision_state`). System 1 routes sandbox conditions, so it must see them.
-- **Labels (predicted step complexity, ordered):** `WITHIN_100K_STEPS | WITHIN_10M_STEPS | WITHIN_100M_STEPS | BEYOND_100M_STEPS`. A step is one executed Python bytecode instruction of the program's own code (including code run through `exec` and functions passed to library calls); standard-library and built-in internals are not counted, so importing a module is not the task's complexity.
-- **Function:** the prediction selects a budget from one fixed table (`verification/sandbox.py` `EXECUTION_BUDGETS`):
-
-  | Prediction | Tier | Step budget | Memory | Wall-clock safety | Repairs |
-  |---|---|---|---|---|---|
-  | `WITHIN_100K_STEPS` | `MINIMAL` | 100,000 | 256 MB | 30 s | 1 |
-  | `WITHIN_10M_STEPS` | `STANDARD` | 10,000,000 | 256 MB | 30 s | 1 |
-  | `WITHIN_100M_STEPS` | `HEAVY_COMPUTE` | 100,000,000 | 512 MB | 120 s | 2 |
-  | `BEYOND_100M_STEPS` | `HEAVY_COMPUTE` | 100,000,000 | 512 MB | 120 s | 2 |
-
-- **Repairs scale with the routed tier, not the prompt:** harder tiers get one extra verification repair. The tier's repairs are for attempts the sandbox measured: one repair per execution that follows an attempt which ran no program at all does not count against them (`VERIFICATION_REPAIR.counted`, `EXECUTION_ATTEMPTS.unmeasured_repairs`); it is still a model call and is counted as one. Each EXECUTE attempt is exactly one model call: a response cut off at the output-token cap (`OUTPUT_LIMIT_REACHED`) or one that does not parse (`OUTPUT_MALFORMED`) is a counted failed attempt, never a hidden retry.
-- **Cost controls are penalties, not extra time:** every response is capped by `max_output_tokens` (`--max-output-tokens`, default 16,384, reasoning included); one model call has a 300 s deadline (`--api-call-deadline`); the runner kills a prompt's whole process tree at 600 s at every effort level. `--max-repairs N` overrides the tier's repairs, and `--max-repairs 0` stops at the first failed EXECUTE with no retry of any kind, so the user never pays for a repair they did not want. `--draft-execute` (A/B option) drafts one execution brief (DRAFT_EXECUTE, which sees the source data and the execution environment) before the first EXECUTE. `--api-providers A,B,C` pins the provider order with no fallbacks. Every repair carries only the latest factual host findings (operator correction), never hints. Each finding is an entry of the fixed error registry (`verification/error_registry.py`): a code, what the host observed (filled from the run's facts), the environment or contract rule, and what a valid next attempt must satisfy. The registry is closed and task-neutral: no entry belongs to a task or names a method, so it explains the environment the same way for every task. `VERIFICATION_REPAIR` and `VERIFICATION_FAILED` record the codes, and a cancelled run's published record lists each attempt's codes. Each result records its model calls (`model_calls`, counted from its events, wire retries included), and the scoreboard totals calls, EXECUTE calls and repairs, so a harness condition with more repairs is compared with a control at equal cost.
-- **Diffuse means uncertain:** a prediction is usable only when 85% of the mass lies within two adjacent magnitudes (a ~100x range). A flatter distribution is System 1 being uncertain and yields `STANDARD`, never the largest budget.
-- **Weighted, not argmax:** the labels are ordered, so the granted budget is the smallest one System 1 believes suffices with cumulative probability of at least 0.85. Probability split between neighbouring magnitudes resolves to the upper one rather than failing a confidence gate. The budget is deliberately as tight as the prediction justifies: an oversized budget would let work pass that the task's complexity does not warrant, a false positive by construction. The full distribution is recorded in `EXECUTION_PROFILE_ROUTED`.
-- **No zero tier:** the smallest budget (100,000 steps) still lets a deliverable check itself by execution; a zero budget would forbid code (method guidance, GUARD-04) and disable sandbox witness reproduction.
-- **Prediction routes, the counter decides:** the sandbox counts steps deterministically (an opcode trace installed before model code runs). On the first step past the budget the process exits (`step_budget_exceeded`); the program cannot catch it, and changing the tracer is denied by an audit hook. One-line loops, comprehensions, `exec`'d code, callbacks the program passes to library calls, and threads started through `threading` all count. Standard-library and built-in internals are not counted in steps; the wall-clock limit bounds them. Tracing slows pure-Python code by about 27x, which affects only the wall-clock, never the step budget.
-- **One source of truth:** the budget the sandbox enforces is the budget declared to System 2 in `AVAILABLE_EXECUTION_TOOLS`, so impossibility is a checkable fact relative to a known budget, as a control model knows its own compute. `EXECUTION_PROFILE_ROUTED` records the prediction and budget; `SANDBOX_RUN` records whether the budget was exceeded; graders re-run code under the same budget.
-- **Budget gate (policy refusal):** a task whose result must be certified (`VERIFIED_EXECUTION`) is refused before any System 2 call when no domain verifier is registered for it and System 1 puts more than 0.5 probability on `BEYOND_100M_STEPS` ("more likely than not" beyond the largest budget). Neither a sandbox reproduction nor a checker could certify its result here. The refusal states the budget and the missing verifier (`closure=REFUSED`, exit 0; event `BUDGET_REFUSAL`). The threshold is the a-priori majority point, not a value fitted to any prompt.
-- **Otherwise `BEYOND_100M_STEPS` is recorded, not refused:** the task gets the largest budget and the step counter decides. Comparing the recorded predictions with measured outcomes is how the prediction earns trust before it could ever gate a refusal; a prediction is not proof that no efficient method exists.
-- **Plan-time prediction (one-way):** after the plan is confirmed and before the first `EXECUTE`, the same recipe predicts the cost of the confirmed procedure (state: the confirmed Prompt as the request, the confirmed Plan as `procedure`, the same environment). A usable prediction may *raise* the tier routed from the request, never lower it; the raised budget is what the sandbox enforces and what `AVAILABLE_EXECUTION_TOOLS` declares. Nothing else about the prediction reaches System 2: no redraft, no finding, no mention (GUARD-01). `PLAN_PROFILE_ROUTED` records both tiers and whether the budget was raised; `SANDBOX_RUN` records `steps_used` (reported by the counter at exit and stripped from the program's stderr), so each prediction can be compared with the steps actually used. The plan-time prediction does not gate a refusal until that comparison shows it tracks measured cost.
-- **Resources only:** System 1 never decides the answer, the method, or whether code is written (there is no "symbolic only" label: declaring it would be method guidance, GUARD-04). System 1 absent, failing, or returning no usable distribution over the known labels yields `STANDARD`.
-
----
-
-## 6. Verification Integrity & The Referee Invariant
-
-### The 5 Normative Guardrails
-
-The target architecture treats the five guardrails in `docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md` as non-negotiable invariants:
-
-| Guardrail | Invariant | Concrete Architectural Rule |
-|---|---|---|
-| **`GUARD-01`** | **No Synthetic Approaches** | `session_engine._draft_plan` sends `CARRIED_APPROACH_SOURCES` only from user-originated sources. Lint and retry feedback travel only through the operator-correction channel. |
-| **`GUARD-02`** | **General Boundary Routing** | No harness file hardcodes benchmark tokens (`frostbitedb`), prompt-specific phrases, or problem-class vocabulary in classifiers or verifiers. |
-| **`GUARD-03`** | **Pydantic SSOT & First-Class Reasoning** | Verifiers never regex-scrape deliverable text. Mathematical proofs and analytical deductions are first-class deliverables without Python code. |
-| **`GUARD-04`** | **Zero Algorithmic Coaching** | Plan gates never require algorithmic or execution keywords (`MRV`, `DLX`, `backtracking`, `python`, `script`), and worker guidance never mandates code. |
-| **`GUARD-05`** | **Automated Integrity Gate** | Contract files match `CONTRACT_MANIFEST.json` SHA-256 hashes with LF normalization. `tests/test_harness_anti_overfitting.py` also scans the harness plane against tokens **derived from `prompts/CATALOGUE_MANIFEST.jsonl`**: every prompt-file stem, plus a fixed benchmark and algorithm vocabulary. |
-
-### Diagnostic Failure vs. Benchmark Gaming
-A core philosophy of the target architecture is **embracing diagnostic failure**:
-- Suppose a model (e.g. `gpt-oss-120b` at `reasoning: low`) fails a combinatorial prompt because of an algorithmic timeout or state-space explosion. **That failure is valid empirical signal.**
-- Injecting algorithmic coaching, or tuning review gates to accept incomplete outputs, compromises the harness's scientific validity.
-- The harness succeeds when it accurately measures model boundaries, and fails when it helps the model cheat.
-- **Passing the benchmark** means two things: every prompt reaches its manifest `expected_stage`, and **zero false positives** occur on the prompts graded against ground truth in the evaluation plane.
-
----
-
-## 7. Migration & Implementation Roadmap
-
-```mermaid
-timeline
-    title PDL Taskmaster v2.7.0 Lean Build Roadmap
-    section Phase 0 : Integrity & Containment
-      Port runtime into PDLt-Test (lean folder selection) : Lean Build
-      Remove coaching, benchmark tokens, witness scraping : Lean Build
-      Sandbox env allowlist & audit-hook containment : Lean Build
-      Extend GUARD-05 scan with manifest-derived tokens : Lean Build
-    section Phase 1 : Session Sandbox
-      Construct ExecutionSandbox in SessionEngine.__init__ : Lean Build
-      Session cleanup hooks : Lean Build
-      OS-native confinement, fail closed (ADR-0021) : Lean Build
-    section Phase 2 : Condition Routing
-      Knowledge cutoff via S1 state (no regex) : Lean Build
-      Deploy ExecutionProfileRecipe in sys1 : Lean Build
-    section Phase 3 : First-Class Deductions
-      Witness authority & provisional labelling : Lean Build
-      Formalize symbolic deliverables in output_verifier : Target v2.7.0-P3
-    section Phase 4 : Benchmark Validation
-      Ground-truth graders in evaluation plane : Lean Build
-      Run 105-prompt catalogue (single attempt, manifest order) : Lean Build
-      Publish un-gamed scoreboard with false-positive count : Lean Build
-```
-
-### Immediate Action Items
-1. **Integrity fixes.** Remove every GUARD violation identified in the v2.6.0 audit: coaching strings, keyword classifiers, witness scraping, and inherited sandbox environment.
-2. **Session sandbox.** Construct `ExecutionSandbox` in `SessionEngine.__init__` and reuse it in `_execute`.
-3. **Automated continuous gate.** Run `pytest tests/test_harness_anti_overfitting.py -v` before every catalogue run and on every commit.
-
----
-
-## 8. Known Limitations
-
-- **Evaluator notes live in the manifest.** Tester notes (13-02 to 13-07, 14-07) and the category 10 multi-turn scripts are manifest fields (`tester_note`, `multi_turn_script`), not prompt text. The runner sends only the prompt file to the harness and copies these fields into `result.json` for the human spot check. `tests/test_catalogue_integrity.py` fails if tester-facing text reappears in a prompt.
-- **Multi-turn category.** The category 10 prompts are run single-turn, as the manifest defines them. Their scripts are kept in `multi_turn_script` for a future multi-turn runner.
-- **Headless gate policy.** In headless runs the evaluator confirms review gates by piping `/confirm`. This is the existing protocol, and it is recorded in `RUN_META.json` as `gate_policy`. The benchmark therefore measures autonomous drafting under lint gates, not human review.
-- **Live runs need credentials.** Catalogue execution requires `OPENROUTER_API_KEY`. Offline tests cover the protocol, containment and graders.
+- Should boundary routing fail closed (refuse) or open (proceed without refusal) when System 1 is unavailable, and is that a per-deployment setting? (ADR-0024)
+- Which agent-facing transport comes first: an MCP server, a JSONL stdio protocol, or both? (ADR-0023)
+- How are reviewed change sets presented for large diffs, and can a policy pre-approve some kinds of change? (ADR-0023, ADR-0025)
+- How is a user-authored pack's methodological content recorded, so that it is clearly user-originated under `GUARD-01`? (ADR-0026)

@@ -61,3 +61,7 @@ A rejected alternative (Option B in `2026-09-29-request-clarification-routing-pa
 ## Amendment (lean build): boundary refusals close as REFUSED with exit 0
 
 A boundary refusal (policy scope, offline sandbox, post-cutoff knowledge) is a complete and correct answer, not a protocol failure. When activation or the semantic bootstrap refuses before any controller exists, the engine records `PROTOCOL_REFUSED`, publishes the refusal text, and the headless host exits `0` with `closure=REFUSED`. This replaces the previous accidental exit `0` (no controller, fall-through) with an explicit, testable branch, and matches the frozen catalogue manifest where `13-05` expects `CLOSED_SUCCESS`. Exit `1` remains for cancellation, verification failure and fatal errors; a refusal issued *after* a controller exists (during `EXECUTE`) still cancels.
+
+## Amendment (2.6.0rc1): harness errors and interrupts
+
+Two further exit codes exist and are part of the headless contract. `4` (`EXIT_HARNESS_ERROR`) means the harness or a provider failed before the protocol could reach a stage the codes above describe: for example a missing API key, a provider outage, or a schema the provider rejected. A structured `[harness-error]` record is printed to stderr. `130` means the user interrupted the run (Ctrl+C). A run that ends on `4` is not a protocol result and is never counted as a pass.

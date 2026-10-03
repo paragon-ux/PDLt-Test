@@ -1,4 +1,4 @@
-"""ExecutionProfile Sys1 Decision Recipe (TARGET_ARCHITECTURE §5).
+"""ExecutionProfile Sys1 Decision Recipe (ARCHITECTURE §6).
 
 System 1 predicts the step complexity of a request: the order of magnitude of
 Python bytecode steps that carrying it out exactly would take. The prediction

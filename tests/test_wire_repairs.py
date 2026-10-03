@@ -902,3 +902,30 @@ def test_unknown_provider_names_are_warned_never_refused(capsys) -> None:
     assert _api_run_settings(args)["provider_pinning"]["order"] == ["Cerebrus", "Groq"]  # used as given
     _warn_unknown_providers(Namespace(api_providers="Cerebras,Groq"))
     assert capsys.readouterr().out == ""
+
+
+def _failing_key_command() -> list[str]:
+    return [sys.executable, "-c", "import sys; sys.stderr.write('$v=lookup script noise'); sys.exit(1)"]
+
+
+def test_missing_key_from_the_builtin_lookup_names_the_variable() -> None:
+    """The built-in Windows lookup's stderr echoes its own script; the error names the variable instead."""
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+    from pdl_taskmaster.providers.base import TransportError
+
+    worker = ApiWorker(repo_root=ROOT, api_key_env="PDLT_TEST_MISSING_KEY")
+    worker.api_key_command = _failing_key_command()  # what the default lookup does when the key is absent
+    with pytest.raises(TransportError) as raised:
+        worker._resolve_api_key()
+    message = str(raised.value)
+    assert "PDLT_TEST_MISSING_KEY" in message and "Machine or User environment" in message
+    assert "lookup script noise" not in message
+
+
+def test_a_custom_key_command_keeps_its_own_error() -> None:
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+    from pdl_taskmaster.providers.base import TransportError
+
+    worker = ApiWorker(repo_root=ROOT, api_key_env="PDLT_TEST_MISSING_KEY", api_key_command=_failing_key_command())
+    with pytest.raises(TransportError, match="lookup script noise"):
+        worker._resolve_api_key()

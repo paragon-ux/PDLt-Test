@@ -13,7 +13,7 @@ authors = [
     { name = "PDL-Standard Contributors" },
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -32,11 +32,13 @@ dev = [
     "pytest>=8.0.0",
     "pytest-xdist>=3.5.0",
     "anyio>=4.0.0",
+    "jsonschema>=4.0.0",
 ]
 test = [
     "pytest>=8.0.0",
     "pytest-xdist>=3.5.0",
     "anyio>=4.0.0",
+    "jsonschema>=4.0.0",
 ]
 
 [project.scripts]
@@ -57,16 +59,30 @@ exclude = [
     "*.log",
 ]
 
+# Patterns are anchored with "/": an unanchored name such as "README.md" matches at any
+# depth, which pulled stray files (other tools' worktrees) into the sdist. The
+# evaluation plane is included because the shipped tests exercise it.
 [tool.hatch.build.targets.sdist]
 include = [
-    "src/pdl_taskmaster",
-    "contracts",
-    "tests",
-    "VERSION",
-    "NOTICE.md",
-    "LICENSE",
-    "README.md",
-    "pyproject.toml",
+    "/src/pdl_taskmaster",
+    "/contracts",
+    "/tests",
+    "/prompts",
+    "/viewer",
+    "/scripts",
+    "/docs",
+    "/graders.py",
+    "/run_catalogue.py",
+    "/VERSION",
+    "/NOTICE.md",
+    "/LICENSE",
+    "/README.md",
+    "/ARCHITECTURE.md",
+    "/TARGET_ARCHITECTURE.md",
+    "/GOAL.md",
+    "/REVIEWER.md",
+    "/AGENTS.md",
+    "/pyproject.toml",
 ]
 exclude = [
     "runs",

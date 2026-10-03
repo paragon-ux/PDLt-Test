@@ -1,4 +1,4 @@
-"""Verification error registry (TARGET_ARCHITECTURE §3, Phase 5 repair).
+"""Verification error registry (ARCHITECTURE §3, Phase 5 repair).
 
 Every finding the host returns to System 2 after a failed output is one entry of
 this fixed table. An entry states three things:

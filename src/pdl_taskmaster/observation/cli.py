@@ -22,8 +22,8 @@ def _show(path: Path) -> None:
             else:
                 parsed_summary = json.dumps(parsed, sort_keys=True, default=str)[:300]
             print(
-                f"  {call.get('operation')} prompt={call.get('prompt_sha256')[:12]} "
-                f"response={call.get('response_sha256')[:12]} parsed={parsed_summary}"
+                f"  {call.get('operation')} prompt={(call.get('prompt_sha256') or '-')[:12]} "
+                f"response={(call.get('response_sha256') or '-')[:12]} parsed={parsed_summary}"
             )
         event_kinds = [event.get("kind") for event in record.get("events", {}).get("new", [])]
         if event_kinds:
@@ -33,7 +33,7 @@ def _show(path: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="PDL-R2S observation viewer")
+    parser = argparse.ArgumentParser(description="PDLt observation record viewer")
     sub = parser.add_subparsers(dest="command", required=True)
     show = sub.add_parser("show", help="show recorded turns")
     show.add_argument("--session", required=True, type=Path, help="path to session JSONL")

@@ -591,7 +591,7 @@ class SessionEngine:
         return EngineResponse(text or presentation.cancelled(), traces, closed=True, refused=True)
 
     def _s1_activation(self, text: str) -> tuple[str, str | None] | None:
-        """Phase 0 (TARGET_ARCHITECTURE §3): System 1 routes the request against the
+        """Phase 0 (ARCHITECTURE §3): System 1 routes the request against the
         environment recipe state (policy scope, offline sandbox, knowledge cutoff).
 
         System 1 only: System 2 never sees the environment settings, and nothing here
@@ -819,7 +819,7 @@ class SessionEngine:
         return outcome
 
     def _budget_refusal(self) -> str | None:
-        """Policy gate (TARGET_ARCHITECTURE §5): a task that needs a certified result
+        """Policy gate (ARCHITECTURE §6): a task that needs a certified result
         is refused when no domain verifier is registered for it and System 1 judges
         it more likely than not to need more steps than the largest budget. Neither
         a sandbox reproduction nor a checker could then certify it here."""
@@ -849,7 +849,7 @@ class SessionEngine:
         )
 
     def _route_execution_profile(self, request: str) -> None:
-        """System 1 routes the task to a resource tier (TARGET_ARCHITECTURE §5).
+        """System 1 routes the task to a resource tier (ARCHITECTURE §6).
 
         The tier's fixed budget is what the sandbox enforces and what the solver is
         told. System 1 absent, uncertain or failing leaves the STANDARD budget.
@@ -894,7 +894,7 @@ class SessionEngine:
         return routed["prediction"], routed["tier"], result.passed_gating, dict(result.probabilities)
 
     def _route_plan_profile(self, prompt_body: str, plan_body: str) -> None:
-        """Plan-time routing (TARGET_ARCHITECTURE §5): System 1 predicts the step cost
+        """Plan-time routing (ARCHITECTURE §6): System 1 predicts the step cost
         of the confirmed procedure. One-way: nothing about the prediction reaches the
         solver except the environment it declares. A usable prediction may raise the
         budget tier routed from the request, never lower it."""
@@ -1308,7 +1308,7 @@ class SessionEngine:
         return EngineResponse(presentation.plan_artifact(body, host_note), traces)
 
     def _execute(self, transition: Transition, traces: list[CallTrace]) -> EngineResponse:
-        """Phases 4 and 5 (TARGET_ARCHITECTURE §3): one EXECUTE call, deterministic
+        """Phases 4 and 5 (ARCHITECTURE §3): one EXECUTE call, deterministic
         verification, at most one repair carrying factual findings, then close."""
         assert self.controller is not None and self.workspace is not None
         if not self.controller.can_execute():

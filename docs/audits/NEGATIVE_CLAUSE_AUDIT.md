@@ -1,5 +1,7 @@
 # Negative-Clause Audit (standards v2, harness at `767b606`)
 
+> **Historical snapshot.** This audit describes the harness at commit `767b606`. Function names, line numbers and document sections refer to that commit; several findings have since been fixed (for example, a gated `BYPASS` now produces a direct answer). The current design is in [`ARCHITECTURE.md`](../../ARCHITECTURE.md).
+
 **Question.** ADR-0016 found that a prohibition written in prose depends on the model obeying it. Where is each `MUST NOT` / `NEVER` / `not` clause in `contracts/standards/` actually enforced?
 
 **Method.** Every clause containing a prohibition was extracted from the 15 standards. The copies under `src/pdl_taskmaster/contracts/standards/` are byte-identical. Each clause was then traced to the code that enforces it, whether or not that code cites the clause ID. 43 clauses were found.

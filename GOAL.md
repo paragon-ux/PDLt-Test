@@ -1,4 +1,4 @@
-﻿# PDLt System 2 Prompt Catalogue — Test Execution Goal
+# PDLt System 2 Prompt Catalogue — Test Execution Goal
 
 ## MISSION
 
@@ -67,7 +67,7 @@ Open `catalogue-runs/<run-timestamp>/SCOREBOARD.md` and report:
 1. Overall pass rate
 2. Pass rate by category
 3. Pass rate by difficulty tier
-4. Any known regressions hit (REG-001 through REG-004)
+4. The result of each regression prompt (the `REG-*` ids in the manifest: REG-001, REG-003, REG-011 to REG-014)
 5. Which categories had 0% pass rate (ceiling not reached)
 6. Which categories had 100% pass rate (ceiling not tested)
 
@@ -117,7 +117,7 @@ PDLt-Test/catalogue-runs/
 A successful run produces a scoreboard with:
 - **Every prompt attempted** (105 results, 0 skipped)
 - **RUN_META.json confirms**: `retries_allowed: 0, do_overs_allowed: false`
-- **Known regressions (REG-001 to REG-004) not regressed**: these prompts should pass
+- **Regression prompts reported by id** (REG-001, REG-003, REG-011 to REG-014): a failure is reported, never tuned away
 - **Verified prompts spot-checked**: CLOSED_SUCCESS verdicts match ground truth
 - **0 false positives** in SCOREBOARD `false_positives` (graded prompts: 01-01..01-07, 13-01; the other 13 verified prompts are MANUAL)
 

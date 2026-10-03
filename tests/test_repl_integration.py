@@ -140,6 +140,16 @@ def test_repl_review_cancel_commands_close_cancelled(tmp_path: Path, command: st
     assert "[protocol closed]" in out
 
 
+def test_transcript_to_an_unusable_path_keeps_the_current_transcript(tmp_path: Path) -> None:
+    blocker = tmp_path / "not-a-directory"
+    blocker.write_text("", encoding="utf-8")
+    proc = _run_repl(tmp_path, [f"/transcript {blocker / 'transcript.log'}", "/status", "/quit"], "transcript_bad_path")
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 0, out[-3000:]
+    assert "cannot open transcript" in out
+    assert "Traceback" not in out
+
+
 def test_cli_keyboard_interrupt_clean_exit(monkeypatch, capsys) -> None:
     """CLI intercepts KeyboardInterrupt, prints user notice, and exits 130 cleanly without tracebacks."""
     from pdl_taskmaster.host import cli

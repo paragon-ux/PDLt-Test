@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-08-06
 - Parent decision: [ADR-0001](0001-controller-gated-pseudocode-protocol.md)
-- Related requirements: [TRD-0001 Sections 7 and 8](../trd/0001-controller-gated-pseudocode-protocol.md#7-states-and-transitions)
+- Related requirements: TRD-0001 Sections 7 and 8 (upstream document, not included in this repository)
 
 ## Context
 

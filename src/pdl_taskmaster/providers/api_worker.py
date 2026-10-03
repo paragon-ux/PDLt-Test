@@ -389,6 +389,7 @@ class ApiWorker:
         self.on_progress = on_progress
         self.progress_path = Path(progress_path) if progress_path else None
         self.worker_profile = "api"
+        self._default_key_lookup = api_key_command is None
         self.api_key_command = api_key_command or self._default_api_key_command(api_key_env)
         bootstrap_path = Path(__file__).resolve().parents[1] / "runtime" / "worker-bootstrap.txt"
         if not bootstrap_path.is_file():
@@ -442,6 +443,12 @@ class ApiWorker:
             raise TransportError(f"could not run api_key_command: {exc}") from exc
         key = (proc.stdout or "").strip()
         if proc.returncode != 0 or not key:
+            if getattr(self, "_default_key_lookup", False):
+                # The built-in Windows lookup's stderr echoes its whole script: name the variable instead.
+                raise TransportError(
+                    f"could not resolve {self.api_key_env}: it is not set in this process or in the "
+                    f"Machine or User environment; set {self.api_key_env} and restart the terminal"
+                )
             detail = (proc.stderr or "").strip() or "empty key"
             raise TransportError(f"could not resolve {self.api_key_env}: {detail}")
         return key

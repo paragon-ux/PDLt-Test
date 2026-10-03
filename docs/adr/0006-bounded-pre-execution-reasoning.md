@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-08-06
 - Parent decision: [ADR-0001](0001-controller-gated-pseudocode-protocol.md)
-- Related requirements: [TRD-0001 Sections 10.1 and 10.2](../trd/0001-controller-gated-pseudocode-protocol.md#101-prompt-pseudocode)
+- Related requirements: TRD-0001 Sections 10.1 and 10.2 (upstream document, not included in this repository)
 
 ## Context
 
@@ -103,7 +103,7 @@ mechanism; targeted clarification is reserved for materially blocking gaps.
 
 - Status: Ratified (Decision D25 / Milestone)
 - Date: 2026-09-16
-- Related specifications: [TRD-0002](../trd/0002-controller-gated-pseudocode-protocol.md)
+- Related specifications: TRD-0002 (upstream document, not included in this repository)
 
 ### 1. Context and Problem Statement
 

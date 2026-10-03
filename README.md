@@ -2,7 +2,7 @@
 
 A controller-gated REPL harness that has a model interpret your request as short, readable pseudocode and waits for confirmation before anything runs, plus the frozen **105-prompt catalogue** that measures it. Content quoted or pasted into a task stays passive data (semantic bootstrap containment).
 
-Target design: [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md). Guardrails: [`docs/guardrails/`](docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md). Decisions: [`docs/adr/`](docs/adr/).
+Current design: [`ARCHITECTURE.md`](ARCHITECTURE.md). Direction (not yet implemented): [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md). Guardrails: [`docs/guardrails/`](docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md). Decisions: [`docs/adr/`](docs/adr/).
 
 ## Two planes
 
@@ -32,7 +32,9 @@ python run_catalogue.py                 # full 105-prompt run, one attempt each
 python run_catalogue.py --regrade catalogue-runs/run-<ts>   # re-score a finished run, no model calls
 ```
 
-REPL fast path: `/confirm`, `/revise <feedback>`, `/stop`. `pdlt --help` lists the rest.
+REPL fast path: `/confirm`, `/revise <feedback>`, `/stop` or `/cancel`. `/help` in the REPL and `pdlt --help` list the rest.
+
+On Windows, set the key with `setx OPENROUTER_API_KEY ...` (or `$env:OPENROUTER_API_KEY = '...'` for the current PowerShell session) and open a new terminal.
 
 ### Viewer (local browser)
 
@@ -44,7 +46,7 @@ Read-only and localhost-only. Browse every `catalogue-runs/run-*` (scoreboard, p
 
 ### Environment routing (System 1)
 
-`PDLT_POLICY_SCOPE` (default `technical`), `PDLT_SANDBOX_NETWORK` (default `false`) and `PDLT_KNOWLEDGE_CUTOFF` (default `2024-06`) are **System 1 recipe state**. System 1 routes every new request against them before any System 2 call; they never appear in a System 2 prompt, and nothing matches keywords or dates.
+`PDLT_POLICY_SCOPE` (default `technical`), `PDLT_SANDBOX_NETWORK` (default `false`) and `PDLT_KNOWLEDGE_CUTOFF` (default `2024-06`) are **System 1 recipe state**. System 1 routes every new request against them before any System 2 call; they never appear in a System 2 prompt, and nothing matches keywords or dates. `PDLT_SANDBOX_NETWORK` only changes what System 1 is told: the sandbox never grants network access. System 1 is reached through OpenRouter; when it is unavailable, no boundary refusal is issued and the request goes ahead under the sandbox's limits.
 
 ## Exit codes (headless, ADR-0019 as amended)
 
@@ -54,6 +56,8 @@ Read-only and localhost-only. Browse every `catalogue-runs/run-*` (scoreboard, p
 | 1 | `CLOSED_CANCELLED`: cancel, verification failure after repair, or fatal error |
 | 2 | `UNCONFIRMED_GATE`: halted at a review gate |
 | 3 | `WAITING_INPUT`: paused for required input |
+| 4 | Harness or provider error (for example a missing API key or a provider outage); not a protocol result |
+| 130 | Interrupted (Ctrl+C) |
 
 ## Scoring
 

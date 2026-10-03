@@ -1,10 +1,10 @@
 # ADR-0011: Software-Defined In-Memory VFS and Ephemeral MicroVM Sandboxing
 
-- Status: Accepted
+- Status: Accepted in part. The in-memory VFS (decision 1) is implemented (`MemoryWorkspaceRun`). The microVM sandboxing and MCP capability clauses were never implemented: execution confinement is decided by [ADR-0021](0021-session-scoped-os-native-confinement.md), and the capability boundary is proposed in [ADR-0025](0025-agentic-capability-boundary.md), which would supersede those clauses.
 - Date: 2026-09-26
 - Parent decision: [ADR-0001](0001-controller-gated-pseudocode-protocol.md)
 - Related decisions: [ADR-0004](0004-confirmed-artifacts-as-execution-boundary.md), [ADR-0008](0008-context-and-session-management.md), [ADR-0010](0010-pydantic-wire-enforcement.md)
-- Related requirements: [TRD-0002](../trd/0002-controller-gated-pseudocode-protocol.md)
+- Related requirements: TRD-0002 (upstream document, not included in this repository)
 
 ## Context
 

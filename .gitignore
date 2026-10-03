@@ -9,3 +9,5 @@ runs/
 mlflow.db
 *.log
 .env
+dist/
+build/

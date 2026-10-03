@@ -14,6 +14,16 @@ raw model text
 The adapter knows nothing about PDL wire validity. `OperationBridge` remains
 the candidate-side authority for wire parsing.
 
+## Workers selected by `pdlt --worker`
+
+| Worker | Module | Use |
+|---|---|---|
+| `api` (default) | `api_worker.py` | System 2 over an OpenAI-compatible chat API; OpenRouter by default (`--api-base-url` changes the endpoint, `--api-providers` pins OpenRouter providers) |
+| `codex` | `codex_worker.py` | Drives the Codex CLI (see below) |
+| `recorded` | `recorded.py` | Replays recorded fixtures for offline tests |
+
+System 1 (`sys1/`) is not a worker: `Sys1Client` calls a decisions endpoint and the recipes turn its label distributions into routing decisions.
+
 ## Live demonstration worker
 
 `live_stub.py` is a deterministic non-recorded worker used for live-capability

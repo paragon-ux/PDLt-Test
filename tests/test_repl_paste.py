@@ -37,6 +37,19 @@ def test_multiline_bracketed_paste_confirmed():
         assert result == "def foo():\n    return 42"
 
 
+def test_confirm_at_the_paste_prompt_submits_without_joining_the_paste():
+    inputs = [f"{PASTE_START}def foo():", f"    return 42{PASTE_END}", "/confirm"]
+    with patch("builtins.input", side_effect=inputs):
+        assert _read_repl_input() == "def foo():\n    return 42"
+
+
+def test_console_burst_confirmed_with_slash_confirm_submits_the_paste():
+    platform, msvcrt, tty = _windows_console("step 2: verify something\r")
+    with platform, msvcrt, tty, \
+         patch("builtins.input", side_effect=["step 1: do something", "/confirm"]):
+        assert _read_repl_input() == "step 1: do something\nstep 2: verify something"
+
+
 def test_multiline_bracketed_paste_with_prefix_suffix():
     inputs = [
         f"Solve this: {PASTE_START}first line",

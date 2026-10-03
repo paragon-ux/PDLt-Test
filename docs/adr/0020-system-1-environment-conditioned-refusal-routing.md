@@ -1,7 +1,7 @@
 # ADR-0020: System 1 Environment-Conditioned Boundary Interception & Immediate Refusal Routing
 
 ## Status
-Accepted
+Accepted, amended. Decision 2 (deterministic pattern fast paths) is superseded: ADR-0018 and GUARD-02 forbid pattern matching in routing, and `tests/test_harness_anti_overfitting.py::test_routing_recipes_have_no_pattern_matching` asserts it is absent. Boundary routing is decided by System 1 alone; when System 1 is unavailable, unconfigured, failing or below its confidence gate, no refusal is published and the request proceeds (the sandbox's own limits still apply). The latency figures under Consequences describe the intended design and are not measured in this repository.
 
 ## Context
 In evaluation batteries across negative and impossible prompt categories (such as `PDLt-Test` Category 13: `13-05 out_of_scope_medical`, `13-07 stale_knowledge_cutoff`), generative reasoning models (System 2) frequently fail out-of-scope tasks by attempting to diagnose diseases, prescribe medication, or hallucinate web retrieval steps. 

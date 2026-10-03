@@ -1,4 +1,4 @@
-"""Phases 4 and 5 (TARGET_ARCHITECTURE §2.1, §3): execution, sandbox witness authority,
+"""Phases 4 and 5 (ARCHITECTURE §4, §3): execution, sandbox witness authority,
 and the single bounded repair."""
 from __future__ import annotations
 

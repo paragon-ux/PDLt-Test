@@ -13,12 +13,13 @@ Two planes. The **harness** (`src/pdl_taskmaster/`) is a deterministic protocol 
 | Concern | Path |
 |---|---|
 | Guardrails (GUARD-01..05) | `docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md` |
-| Target design | `TARGET_ARCHITECTURE.md` |
-| State machine, engine, witness authority | `src/pdl_taskmaster/runtime/session_engine.py` (`_draft_plan`, `_verify_witness`, `_refuse`) |
+| Current design | `ARCHITECTURE.md` |
+| Direction (not implemented) | `TARGET_ARCHITECTURE.md`, ADR-0023 to ADR-0026 |
+| State machine, engine, witness authority | `src/pdl_taskmaster/runtime/session_engine.py` (`_draft_plan`, `_parse_sandbox_witness`, `_refuse`) |
 | Result IR | `src/pdl_taskmaster/runtime/result_ir.py`, `wire_payloads.py` |
 | Grammar lint (PDL-05/06/08 only) | `src/pdl_taskmaster/verification/plan_soundness.py` |
 | Verifier + sandbox | `verification/output_verifier.py`, `verification/sandbox.py`, `verification/checkers/` |
-| System 1 | `providers/sys1/` (Phase 0 route runs first via `session_engine._s1_boundary_refusal`; `client.py`, `gating.py`, `recipes/activation_route.py`, `problem_class.py`, `confirmation_match.py`, `review_facets.py`) |
+| System 1 | `providers/sys1/` (Phase 0 route runs first via `session_engine._s1_activation`; `client.py`, `gating.py`, `recipes/activation_route.py`, `problem_class.py`, `confirmation_match.py`, `review_facets.py`) |
 | System 2 client | `providers/api_worker.py` |
 | Integrity gate | `tests/test_harness_anti_overfitting.py` |
 | Viewer (evaluation plane) | `viewer/server.py`, `viewer/index.html` |
