@@ -80,13 +80,43 @@ class ActivationDecisionPayload(WireModel):
         return self
 
 
+ENTITY_KINDS = ("identifier", "input_data", "literal", "parameter", "term")
+
+
+class TaskEntity(WireModel):
+    """One entity of the request: its exact surface form, its kind, and, for a term the
+    request defines, that definition (including what the request says is unknown)."""
+
+    model_config = ConfigDict(extra="forbid")
+    surface: str
+    kind: Literal["identifier", "input_data", "literal", "parameter", "term"]
+    definition: str | None = None
+
+    @model_validator(mode="after")
+    def validate_surface(self) -> TaskEntity:
+        if not self.surface.strip():
+            raise ValueError("bootstrap_task_entities: an entity surface must not be empty")
+        return self
+
+
 class BootstrapAnalysisData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["ANALYSIS"] = "ANALYSIS"
     task_summary: str
     approach_notes: str
     risk_notes: str
-    task_entities: list[str]
+    task_entities: list[TaskEntity]
+
+    @model_validator(mode="before")
+    @classmethod
+    def _legacy_entities(cls, data: Any) -> Any:
+        """Alias coercion (ADR-0018): an entity given as a bare string, the earlier wire
+        form, is an identifier with that surface."""
+        if isinstance(data, dict) and isinstance(data.get("task_entities"), list):
+            data = {**data, "task_entities": [
+                {"surface": e, "kind": "identifier"} if isinstance(e, str) else e for e in data["task_entities"]
+            ]}
+        return data
 
     @model_validator(mode="after")
     def validate_non_empty(self) -> BootstrapAnalysisData:

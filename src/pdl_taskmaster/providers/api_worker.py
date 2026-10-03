@@ -10,10 +10,12 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from collections import deque
 from pathlib import Path
 from typing import Any
 
 from pdl_taskmaster.providers.base import TransportError, WorkerResult
+from pdl_taskmaster.providers.call_trace import AttemptTrace, CallTrace, tracking
 
 _JSON_ONLY_SUFFIX = (
     "\n\nReturn only a JSON object. Do not include markdown fences, commentary, or extra text."
@@ -362,6 +364,26 @@ class OutputLimitError(ProviderError):
         self.output_limit = limit
 
 
+def _read_body(resp: Any, trace: AttemptTrace) -> bytes:
+    """The response body, in chunks so a partly received response is visible in the trace."""
+    read_chunk = getattr(resp, "read1", None)
+    if read_chunk is None:  # a response object without chunked reads
+        data = resp.read()
+        if data:
+            trace.mark("response_started")
+        trace.response_bytes = len(data or b"")
+        return data
+    chunks: list[bytes] = []
+    while True:
+        chunk = read_chunk(65536)
+        if not chunk:
+            return b"".join(chunks)
+        if not chunks:
+            trace.mark("response_started")
+        chunks.append(chunk)
+        trace.response_bytes += len(chunk)
+
+
 def _sleep_within(delay: float, deadline: float) -> None:
     """Back off, but never past the call's deadline."""
     time.sleep(max(0.0, min(delay, deadline - time.monotonic())))
@@ -437,6 +459,11 @@ class ApiWorker:
         self.safety_settings = safety_settings if safety_settings is not None else list(DEFAULT_SAFETY_SETTINGS)
         self.on_progress = on_progress
         self.progress_path = Path(progress_path) if progress_path else None
+        # Call lifecycle (providers/call_trace.py): the call in flight, the recent ones,
+        # and the session file every finished or interrupted call is appended to.
+        self.current_call: CallTrace | None = None
+        self.call_traces: deque[CallTrace] = deque(maxlen=64)
+        self.trace_path: Path | None = None
         self.worker_profile = "api"
         self._default_key_lookup = api_key_command is None
         self.api_key_command = api_key_command or self._default_api_key_command(api_key_env)
@@ -450,6 +477,7 @@ class ApiWorker:
         self._bootstrap_prefix = self._bootstrap.rstrip() + "\n\n"
         from pdl_taskmaster.providers.sys1.client import Sys1Client
         self.sys1_client = Sys1Client(api_key=self._resolve_api_key_safe())
+        self.sys1_client.tracer = self  # System 1 calls share this worker's call lifecycle record
 
     def _resolve_api_key_safe(self) -> str:
         try:
@@ -664,9 +692,16 @@ class ApiWorker:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise ProviderError("PROVIDER_UNAVAILABLE", f"call exceeded its {self.max_call_seconds:.0f}s deadline")
+            trace = self._attempt(req)
             try:
-                with urllib.request.urlopen(req, timeout=min(self.timeout, remaining)) as resp:
-                    raw = resp.read().decode("utf-8", errors="replace")
+                with tracking(trace):
+                    with urllib.request.urlopen(req, timeout=min(self.timeout, remaining)) as resp:
+                        # Status line and headers received: the API has the request.
+                        trace.mark("acknowledged")
+                        trace.status = getattr(resp, "status", None)
+                        raw = _read_body(resp, trace).decode("utf-8", errors="replace")
+                trace.mark("response_complete")
+                trace.outcome = "completed"
                 try:
                     parsed = json.loads(raw)
                     err = parsed.get("error") if isinstance(parsed, dict) else None
@@ -696,8 +731,14 @@ class ApiWorker:
                             continue
                     return parsed
                 except json.JSONDecodeError:
+                    trace.outcome = "unreadable"
                     break
+            except KeyboardInterrupt:
+                trace.outcome, trace.interrupted_by = "interrupted", "local"
+                raise
             except urllib.error.HTTPError as exc:
+                trace.mark("acknowledged")
+                trace.status, trace.outcome = exc.code, "http_error"
                 if (exc.code == 429 or 500 <= exc.code < 600) and attempt < 4:
                     delay = 0.5 * (2 ** attempt)
                     if exc.headers:
@@ -719,6 +760,7 @@ class ApiWorker:
                 self._report_failed_generation(rejected)
                 raise rejected from exc
             except urllib.error.URLError as exc:
+                trace.outcome, trace.error = "transport_error", str(exc.reason)
                 if attempt < 4:
                     delay = 0.5 * (2 ** attempt)
                     self._progress(
@@ -735,6 +777,10 @@ class ApiWorker:
                 http.client.RemoteDisconnected,
                 http.client.HTTPException,
             ) as exc:
+                timed_out = isinstance(exc, (TimeoutError, socket.timeout))
+                trace.outcome = "timeout" if timed_out else "transport_error"
+                trace.interrupted_by = None if timed_out else "remote"  # the server or network ended it
+                trace.error = f"{type(exc).__name__}: {exc}"
                 if isinstance(exc, (TimeoutError, socket.timeout)):
                     # A response that took the whole read timeout will likely take it
                     # again: retry a read timeout once, then give up.
@@ -757,14 +803,52 @@ class ApiWorker:
             raise ProviderError("PROVIDER_RESPONSE_UNREADABLE", f"non-JSON response: {raw[:500]}") from exc
 
     def call(self, request: Any) -> WorkerResult:
+        trace = self.begin_call(str(getattr(request, "operation", None) or "UNKNOWN"))
         try:
-            return self._call(request)
+            result = self._call(request)
+            trace.final = "completed"
+            return result
+        except KeyboardInterrupt:
+            trace.final = "interrupted"
+            raise
         except ProviderError as exc:
+            trace.final = "failed"
             exc.operation = exc.operation or getattr(request, "operation", None)
             unrouted = self._no_endpoint_error(exc, getattr(request, "operation", None))
             if unrouted is not None:
                 raise unrouted from exc
             raise
+        except BaseException:
+            trace.final = "failed"
+            raise
+        finally:
+            self.end_call(trace)
+
+    def begin_call(self, operation: str) -> CallTrace:
+        trace = CallTrace(operation)
+        self.current_call = trace
+        self.call_traces.append(trace)
+        return trace
+
+    def end_call(self, trace: CallTrace) -> None:
+        """Persist the call's lifecycle (also when it was interrupted)."""
+        if self.current_call is trace:
+            self.current_call = None
+        if self.trace_path is None:
+            return
+        try:
+            self.trace_path.parent.mkdir(parents=True, exist_ok=True)
+            with self.trace_path.open("a", encoding="utf-8", newline="\n") as handle:
+                record = {"at": time.strftime("%Y-%m-%dT%H:%M:%S"), **trace.to_dict()}
+                handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+        except OSError:
+            pass
+
+    def _attempt(self, req: urllib.request.Request) -> AttemptTrace:
+        """The HTTP attempt this request makes, on the call in flight (or its own)."""
+        trace = self.current_call or self.begin_call("UNTRACKED")
+        data = req.data if isinstance(req.data, (bytes, bytearray)) else None
+        return trace.new_attempt(data)
 
     def _no_endpoint_error(self, exc: ProviderError, operation: str | None) -> ProviderError | None:
         """OpenRouter's 404 "No endpoints found" while providers are configured,

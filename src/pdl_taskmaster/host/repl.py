@@ -44,8 +44,18 @@ def _default_session_base() -> Path:
         return _REPO_ROOT / "runs" / "live-sessions"
     return Path.home() / ".pdlt" / "runs" / "live-sessions"
 
+from pdl_taskmaster.fileio import replace_text
 from pdl_taskmaster.host.app import PDLtHost
-from pdl_taskmaster.host.console import color_scheme, paint, render_history
+from pdl_taskmaster.host.console import (
+    COLOR_NAMES,
+    THEME_NAMES,
+    color_enabled,
+    input_prompt,
+    paint,
+    render_history,
+    reset_input,
+    resolve_colors,
+)
 from pdl_taskmaster.providers.api_worker import ApiWorker, unknown_provider_warnings
 from pdl_taskmaster.providers.fixtures import build_recorded_fixture, build_recorded_fixture_from_vendored
 
@@ -174,10 +184,7 @@ class SessionRuntime:
             }
             if relpath:
                 payload["workspace_relpath"] = relpath
-            self.session_pointer.write_text(
-                json.dumps(payload, indent=2) + "\n",
-                encoding="utf-8",
-            )
+            replace_text(self.session_pointer, json.dumps(payload, indent=2) + "\n")
 
     def handle(self, user_message: str):
         """Dispatch a user turn, then refresh the durable session pointer.
@@ -251,9 +258,16 @@ def open_session(
         # The worker's progress lines (the API worker's provider rejections
         # included) go to this session's log, the path the REPL announces.
         worker.progress_path = session_dir / "worker-progress.log"
+    if hasattr(worker, "trace_path"):
+        # Every model call's lifecycle (sent, acknowledged, received), interrupted ones included.
+        worker.trace_path = session_dir / "call-trace.jsonl"
     pointer = session_dir / "session.json"
     if pointer.is_file() and restore_path is None:
-        data = json.loads(pointer.read_text(encoding="utf-8"))
+        try:
+            data = json.loads(pointer.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:  # e.g. a pointer cut short before replace-on-write
+            print(f"[warn] session pointer unreadable ({exc}); starting fresh protocol state", flush=True)
+            data = {}
         stored = data.get("workspace_path")
         if stored and Path(stored).is_dir():
             restore_path = Path(stored)
@@ -291,10 +305,7 @@ def open_session(
         }
         if relpath:
             payload["workspace_relpath"] = relpath
-        pointer.write_text(
-            json.dumps(payload, indent=2) + "\n",
-            encoding="utf-8",
-        )
+        replace_text(pointer, json.dumps(payload, indent=2) + "\n")
     transcript_path = args.transcript or session_dir / "transcript.log"
     transcript_path.parent.mkdir(parents=True, exist_ok=True)
     # A session's own transcript holds its conversation verbatim; a --transcript
@@ -328,7 +339,7 @@ _OPEN_GATES = {
 }
 
 
-def show_resumed_history(runtime: SessionRuntime, colors: dict[str, str] | None = None) -> None:
+def show_resumed_history(runtime: SessionRuntime, colors=None) -> None:
     """On resume, show the session's conversation so far and what waits on the user.
 
     The text is the session's transcript, one blank line between turns and each
@@ -1061,11 +1072,23 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Start REPL in Dev Mode (enables agentic introspection, telemetry, and live operational mutations)",
     )
     parser.add_argument(
-        "--color",
-        choices=["auto", "always", "never"],
+        "--theme",
+        choices=THEME_NAMES,
         default=None,
-        help="Color the conversation by speaker: auto (default; only on a terminal, off with NO_COLOR), always "
-        "or never. Also PDLT_COLOR; PDLT_COLORS sets each role, e.g. user=bright_cyan,assistant=green,note=none",
+        help="Color theme for the conversation (default: $PDLT_THEME, else default = teal user, white assistant). "
+        "In every theme the assistant has the lighter color. Colors show on a terminal; NO_COLOR turns them off",
+    )
+    parser.add_argument(
+        "--user-color",
+        choices=COLOR_NAMES,
+        default=None,
+        help="Color of your messages (default: $PDLT_USER_COLOR, else the theme's)",
+    )
+    parser.add_argument(
+        "--assistant-color",
+        choices=COLOR_NAMES,
+        default=None,
+        help="Color of the assistant's messages (default: $PDLT_ASSISTANT_COLOR, else the theme's)",
     )
     parser.add_argument(
         "--fast",
@@ -1178,9 +1201,15 @@ def main() -> int:
     dev_mode = bool(getattr(args, "dev", False))
     fast_mode = bool(getattr(args, "fast", False))
     try:
-        colors = color_scheme(getattr(args, "color", None))
+        theme_colors = resolve_colors(
+            getattr(args, "theme", None), getattr(args, "user_color", None), getattr(args, "assistant_color", None)
+        )
     except ValueError as exc:
         raise SystemExit(f"pdlt: {exc}")
+    if theme_colors.warning:
+        print(f"[color] {theme_colors.warning}", flush=True)
+    # The same colors for a new and a resumed session: resolved once, before any output.
+    colors = theme_colors if color_enabled() else None
 
     def _write_transcript(text: str) -> None:
         runtime.transcript.write(text + "\n")
@@ -1236,7 +1265,7 @@ def main() -> int:
                 from pdl_taskmaster.runtime.result_ir import format_friendly_deliverable
                 display_text = format_friendly_deliverable(turn.text)
             print("", flush=True)  # a blank line before each reply
-            print(display_text, flush=True)
+            print(paint(display_text, "assistant", colors), flush=True)
             _write_transcript("ASSISTANT> " + display_text)
         if dev_mode:
             engine = getattr(runtime.host, "engine", None)
@@ -1275,6 +1304,67 @@ def main() -> int:
         # piped review commands do not apply to it.
         return ctrl is not None and ctrl.state.stage.value == "WAITING_INPUT"
 
+    def _call_marker():
+        """The last traced model call before a turn starts (calls after it belong to the turn)."""
+        traces = getattr(worker, "call_traces", None)
+        return traces[-1] if traces else None
+
+    def _calls_since(marker) -> list:
+        traces = list(getattr(worker, "call_traces", None) or [])
+        if marker is None:
+            return traces
+        return traces[traces.index(marker) + 1:] if marker in traces else traces
+
+    def _report_calls(marker) -> None:
+        """Dev mode: a line for each call of the turn that retried or did not complete."""
+        if not dev_mode:
+            return
+        for trace in _calls_since(marker):
+            if trace.final != "completed" or len(trace.attempts) > 1:
+                print(f"[dev:call] {trace.summary()}", flush=True)
+
+    def _on_interrupt(marker) -> None:
+        """Ctrl+C during a turn: keep the session consistent and say what happened.
+
+        What was in flight comes from the call lifecycle (sent? acknowledged by the
+        API? partly received?); what was kept comes from the engine's own record."""
+        from pdl_taskmaster.providers.call_trace import describe_interruption
+
+        calls = _calls_since(marker)
+        where = describe_interruption(calls)
+        record = getattr(runtime.host, "record_interruption", None)
+        info = record(calls[-1].to_dict() if calls else None) if record else {}
+        try:
+            runtime._refresh_pointer()
+        except Exception:
+            pass
+        print(f"\n[operation interrupted by user] {where}. {info.get('action', '')}".rstrip(), flush=True)
+        _write_transcript("USER_INTERRUPTED")
+        if dev_mode:
+            for trace in calls:
+                print(f"[dev:call] {trace.summary()}", flush=True)
+            last = calls[-1] if calls else None
+            print(
+                "[dev:interrupt] "
+                + json.dumps({
+                    "interrupted_by": "local",
+                    "handled": True,
+                    "operation": last.operation if last else None,
+                    "sent": last.sent if last else False,
+                    "acknowledged": last.acknowledged if last else False,
+                    "response_started": last.to_dict()["response_started"] if last else False,
+                    "retries": max(len(last.attempts) - 1, 0) if last else 0,
+                    "call_final": last.final if last else None,
+                    "stage": info.get("stage"),
+                    "persisted_stage": info.get("persisted_stage"),
+                    "state_persisted": info.get("state_persisted"),
+                    "last_operation_output_recorded": info.get("last_operation_output_recorded"),
+                    "turn_status_before": info.get("turn_status_before"),
+                    "action": info.get("action"),
+                }),
+                flush=True,
+            )
+
     standing_confirmation = False  # fast mode: the last turn left a review without findings open
     try:
         while True:
@@ -1284,23 +1374,24 @@ def main() -> int:
                 print(paint("> /confirm  [fast mode: confirmed in advance]", "user", colors), flush=True)
                 _write_transcript("USER> /confirm  [fast mode: confirmed in advance]")
                 print("[working...]", flush=True)
+                marker = _call_marker()
                 try:
                     turn = runtime.confirm_on_standing_instruction()
                 except KeyboardInterrupt:
-                    print("\n[operation interrupted by user]", flush=True)
-                    _write_transcript("USER_INTERRUPTED")
+                    _on_interrupt(marker)
                     if not _is_interactive(args):
                         raise
                     continue
                 except Exception as exc:
                     message = f"{type(exc).__name__}: {exc}"
-                    print(f"[error] {_one_line_error(exc)}", flush=True)
+                    print(paint(f"[error] {_one_line_error(exc)}", "error", colors), flush=True)
                     _write_transcript("ERROR> " + message)
                     if not _is_interactive(args):
                         harness_error = message
                         harness_record = _harness_error_record(exc)
                         break
                     continue
+                _report_calls(marker)
                 standing_confirmation = _show_turn(turn)
                 if turn.closed and runtime.exit_on_close:
                     break
@@ -1312,7 +1403,10 @@ def main() -> int:
                 initial_prompt = None
             else:
                 try:
-                    line = _read_repl_input(paint("> ", "user", colors)).strip()
+                    try:
+                        line = _read_repl_input(input_prompt("> ", colors)).strip()
+                    finally:
+                        reset_input(colors)
                 except (EOFError, KeyboardInterrupt):
                     print("", flush=True)
                     _write_transcript("=== session closed (EOF/interrupted) ===")
@@ -1615,18 +1709,18 @@ def main() -> int:
                     continue
             print("[working...]", flush=True)
             print(f"[worker progress -> {runtime.session_dir / 'worker-progress.log'}]", flush=True)
+            marker = _call_marker()
             try:
                 turn = runtime.handle(line)
             except KeyboardInterrupt:
-                print("\n[operation interrupted by user]", flush=True)
-                _write_transcript("USER_INTERRUPTED")
+                _on_interrupt(marker)
                 if not _is_interactive(args):
                     # Headless: an interrupt ends the run; piped lines must not restart it.
                     raise
                 continue
             except Exception as exc:
                 message = f"{type(exc).__name__}: {exc}"
-                print(f"[error] {_one_line_error(exc)}", flush=True)
+                print(paint(f"[error] {_one_line_error(exc)}", "error", colors), flush=True)
                 _write_transcript("ERROR> " + message)
                 if not _is_interactive(args):
                     # Headless: a failed call ends the run. Feeding the remaining piped
@@ -1636,6 +1730,7 @@ def main() -> int:
                     harness_record = _harness_error_record(exc)
                     break
                 continue
+            _report_calls(marker)
             standing_confirmation = _show_turn(turn)
             if turn.closed and runtime.exit_on_close:
                 break

@@ -85,18 +85,47 @@ class Sys1Client:
             method="POST",
         )
 
+        # Call lifecycle (providers/call_trace.py), recorded by the owning worker when it has one.
+        from contextlib import nullcontext
+
+        from pdl_taskmaster.providers.call_trace import tracking
+
+        tracer = getattr(self, "tracer", None)
+        trace = tracer.begin_call("SYSTEM1:" + next(iter(request.questions), "decision")) if tracer else None
+        attempt = trace.new_attempt(req_data) if trace else None
         t0 = time.perf_counter()
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                elapsed_ms = (time.perf_counter() - t0) * 1000.0
-                body = json.loads(resp.read().decode("utf-8"))
-                return body, elapsed_ms
+            with tracking(attempt) if attempt else nullcontext():
+                with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                    elapsed_ms = (time.perf_counter() - t0) * 1000.0
+                    if attempt:
+                        attempt.mark("acknowledged")
+                        attempt.status = getattr(resp, "status", None)
+                    raw = resp.read()
+            if attempt:
+                attempt.mark("response_started")
+                attempt.mark("response_complete")
+                attempt.response_bytes, attempt.outcome = len(raw), "completed"
+                trace.final = "completed"
+            return json.loads(raw.decode("utf-8")), elapsed_ms
+        except KeyboardInterrupt:
+            if attempt:
+                attempt.outcome, attempt.interrupted_by, trace.final = "interrupted", "local", "interrupted"
+            raise
         except urllib.error.HTTPError as e:
             elapsed_ms = (time.perf_counter() - t0) * 1000.0
+            if attempt:
+                attempt.mark("acknowledged")
+                attempt.status, attempt.outcome, trace.final = e.code, "http_error", "failed"
             err_body = e.read().decode("utf-8", errors="replace")
             logger.warning("Sys1 backend returned HTTP %d: %s", e.code, err_body)
             raise RuntimeError(f"Sys1 HTTP {e.code}: {err_body}") from e
         except Exception as e:
             elapsed_ms = (time.perf_counter() - t0) * 1000.0
+            if attempt:
+                attempt.outcome, attempt.error, trace.final = "transport_error", f"{type(e).__name__}: {e}", "failed"
             logger.warning("Sys1 backend request failed after %.1fms: %s", elapsed_ms, e)
             raise
+        finally:
+            if tracer:
+                tracer.end_call(trace)

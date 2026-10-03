@@ -717,19 +717,29 @@ class SessionEngine:
             compiled, _meta = compile_bootstrap_output(raw_text, outcome["task_summary"])
 
 
-        # Mechanical entity containment: a task entity is forwarded downstream
-        # ONLY if it is a verbatim substring of the SANITIZED task summary.
-        # Hostile tokens (canaries, exploit directives) are replaced by the
-        # sanitizer, so a hostile entity can never pass this filter -- the
-        # verbatim-preservation channel inherits the compile tier's redaction.
-        raw_entities = outcome.get("task_entities") or []
-        entities = tuple(
+        # Mechanical entity containment: a task entity is forwarded downstream ONLY if
+        # its surface is a verbatim substring of the SANITIZED request or summary.
+        # Hostile tokens (canaries, exploit directives) are replaced by the sanitizer
+        # in both, so a hostile entity can never pass this filter; an entity copied
+        # exactly from the request is no longer lost because the summary paraphrased it.
+        sanitized_request = compile_bootstrap_output(raw_text, raw_text)[0]
+        raw_entities = [
+            {"surface": e, "kind": "identifier", "definition": None} if isinstance(e, str) else e
+            for e in outcome.get("task_entities") or []
+        ]
+        kept = [
             e for e in raw_entities
-            if isinstance(e, str) and e.strip() and e in compiled
-        )
-        dropped = [e for e in raw_entities if e not in entities]
+            if str(e.get("surface", "")).strip()
+            and (e["surface"] in sanitized_request or e["surface"] in compiled)
+        ]
+        dropped = len(raw_entities) - len(kept)
         if dropped and self.workspace is not None:
-            self.workspace.append_event("TASK_ENTITY_DROPPED_UNSAFE", {"count": len(dropped)})
+            self.workspace.append_event("TASK_ENTITY_DROPPED_UNSAFE", {"count": dropped})
+        # Coverage (the prompt body must spell these exactly) applies to the exact values the
+        # task depends on: identifiers, input data, literals and parameters. A term's
+        # meaning travels in the context below; its surface is not forced into the body
+        # (forcing defined terms, often whole requirement sentences, only caused redrafts).
+        entities = tuple(e["surface"] for e in kept if e.get("kind") != "term")
         self._task_entities_cache[cache_key] = entities
         # In Protocol v2 out-of-band field isolation: approach_notes carries TASK-02
         # procedural guidance for planning. risk_notes is quarantined threat data
@@ -743,12 +753,20 @@ class SessionEngine:
             f"TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):\n{compiled}\n"
             f"APPROACH/RISK NOTES:\n{notes}"
         )
-        if entities:
+        if kept:
+            lines = []
+            for entity in kept:
+                definition = entity.get("definition")
+                if definition:
+                    definition = compile_bootstrap_output(raw_text, definition)[0].strip()
+                lines.append(f"- {entity['surface']} ({entity.get('kind', 'identifier')})"
+                             + (f": {definition}" if definition else ""))
             document += (
-                "\nEXACT NAMES FROM THE REQUEST (copy each character-for-character into the task_entities "
-                "array; where the prompt body refers to one, it spells it exactly so; they add no step, list "
-                "or requirement of their own):\n"
-                + "\n".join(f"- {e}" for e in entities)
+                "\nTASK ENTITIES (from the request: each surface, its kind, and what the request says about it. "
+                "Copy each surface character-for-character into the task_entities array. Where the prompt body "
+                "refers to an entity it spells it exactly so and keeps what the request says about it, including "
+                "anything the request says is unknown; entities add no step, list or requirement of their own):\n"
+                + "\n".join(lines)
             )
         self._bootstrap_cache[cache_key] = document
         return document
@@ -1072,6 +1090,27 @@ class SessionEngine:
         self._publish_prompt()
         return EngineResponse(presentation.prompt_artifact(outcome.prompt_body, host_note), traces,
                               review="prompt", host_findings=bool(host_note))
+
+    def _republish_unpublished(self) -> bool:
+        """Durability: a review gate whose artifact never reached the workspace (Ctrl+C
+        between the controller commit and the publication, or a crash there) is
+        published from the controller state, which is the authority. An artifact the
+        user edited on disk keeps its edit: only a missing or different artifact counts."""
+        assert self.controller is not None and self.workspace is not None
+        state = self.controller.state
+        kind = {Stage.PROMPT_REVIEW: "prompt", Stage.PLAN_REVIEW: "plan"}.get(state.stage)
+        current = state.current_prompt if kind == "prompt" else state.current_plan if kind == "plan" else None
+        if current is None:
+            return False
+        try:
+            meta, _ = self.workspace.read_artifact(kind)
+            if meta.get("artifact_id") == current.artifact_id:
+                return False
+        except WorkspaceError:
+            pass
+        (self._publish_prompt if kind == "prompt" else self._publish_plan)()
+        self.workspace.append_event("ARTIFACT_REPUBLISHED", {"kind": kind, "artifact_id": current.artifact_id})
+        return True
 
     def _sync_review_edit(self) -> None:
         assert self.controller is not None and self.workspace is not None
@@ -1909,6 +1948,55 @@ class SessionEngine:
         pending = self.controller.state.pending_input
         return EngineResponse(presentation.waiting_input_guidance(pending.description if pending else None), traces)
 
+    def record_interruption(self, call: dict[str, Any] | None = None) -> dict[str, Any]:
+        """After a local interruption (Ctrl+C): leave the session consistent and record it.
+
+        A turn that never bound a protocol instance cannot be resumed, so it is marked
+        INTERRUPTED: not a closed status, so chaining never relabels it and follow-ups
+        never take it for the previous turn. A turn whose protocol is open keeps its
+        persisted stage; the next input re-drives it (ADR-0009 durability). Returns,
+        and records as TURN_INTERRUPTED, what was in flight and what was persisted."""
+        info: dict[str, Any] = {"call": call}
+        workspace = self.workspace
+        if workspace is None or workspace.turn_id is None:
+            info.update(turn=None, action="no workspace was opened; nothing to keep")
+            return info
+        stage = self.controller.state.stage.value if self.controller is not None else None
+        bound = stage is not None and stage not in {Stage.CLOSED_SUCCESS.value, Stage.CLOSED_CANCELLED.value}
+        status = workspace.read_turn_status(workspace.turn_id).get("status")
+        events = workspace.read_events()
+        started = [e["payload"] for e in events if e["kind"] == "OPERATION_MATERIALIZED"]
+        recorded = {e["payload"].get("invocation_id") for e in events if e["kind"] == "MODEL_OUTPUT_RECORDED"}
+        last = started[-1] if started else None
+        state_file = workspace.path / "turns" / workspace.turn_id / "state" / "controller-state.json"
+        persisted_stage = None
+        if state_file.is_file():
+            try:
+                persisted_stage = json.loads(state_file.read_text(encoding="utf-8")).get("stage")
+            except ValueError:
+                persisted_stage = "UNREADABLE"
+        if status == "ACTIVE" and not bound:
+            workspace.mark_turn_status("INTERRUPTED")
+            action = "turn marked INTERRUPTED: no protocol instance was bound, the next message starts afresh"
+        elif bound:
+            republished = self._republish_unpublished()
+            action = f"protocol state kept at {stage}: the next input continues from there" + (
+                "; the review artifact was republished from that state" if republished else "")
+        else:
+            action = "nothing to change"
+        info.update(
+            turn=workspace.turn_id,
+            turn_status_before=status,
+            stage=stage,
+            persisted_stage=persisted_stage,
+            state_persisted=persisted_stage == stage if stage is not None else persisted_stage is None,
+            last_operation=(last or {}).get("operation"),
+            last_operation_output_recorded=bool(last) and last.get("invocation_id") in recorded,
+            action=action,
+        )
+        workspace.append_event("TURN_INTERRUPTED", info)
+        return info
+
     def record_standing_confirmation(self) -> None:
         """Audit record for a confirmation the user gave in advance (fast mode): the
         artifact it accepts, before the same mechanical /confirm path applies it."""
@@ -1946,6 +2034,7 @@ class SessionEngine:
                 return self._waiting_input_guidance(traces)
             if intent == Intent.REVISE_APPROACH:
                 intent = Intent.REVISE_TASK
+        self._republish_unpublished()
         self._sync_review_edit()
         previous_stage = self.controller.state.stage
         decision = ReviewDecision(intent=intent)
@@ -1979,6 +2068,7 @@ class SessionEngine:
             return self._execute(Transition(NextAction.EXECUTE, {}), traces)
         if self.controller.state.stage not in {Stage.PROMPT_REVIEW, Stage.PLAN_REVIEW, Stage.WAITING_INPUT}:
             raise ControllerError("user_message_stage")
+        self._republish_unpublished()
 
         stripped = user_message.strip()
         waiting = self.controller.state.stage == Stage.WAITING_INPUT

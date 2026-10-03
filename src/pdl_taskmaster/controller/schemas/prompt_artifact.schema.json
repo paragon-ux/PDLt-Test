@@ -33,7 +33,7 @@
           "items": {
             "type": "string"
           },
-          "description": "The EXACT NAMES FROM THE REQUEST listed in the substantive request context, copied character-for-character into this array. prompt_body spells each one exactly so where it refers to it; the names add no step, list or requirement of their own. Omit entities only if the host context lists none."
+          "description": "The surfaces of the TASK ENTITIES listed in the substantive request context, copied character-for-character into this array. prompt_body spells each one exactly so where it refers to it and keeps what the request says about it; entities add no step, list or requirement of their own. Omit entities only if the host context lists none."
         }
       }
     },

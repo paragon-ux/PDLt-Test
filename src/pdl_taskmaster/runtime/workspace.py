@@ -594,9 +594,10 @@ class MemoryWorkspaceRun(WorkspaceRun):
         self._vfs: dict[Path, str] = {}
 
     def _write(self, path: Path, content: str) -> None:
+        from pdl_taskmaster.fileio import replace_text
+
         self._vfs[path] = content
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8", newline="\n")
+        replace_text(path, content)  # no fsync (ADR-0011), but never a partial file
 
     def _read(self, path: Path) -> str:
         if path in self._vfs:
@@ -613,7 +614,7 @@ class MemoryWorkspaceRun(WorkspaceRun):
 
     def mark_turn_status(self, status: str, *, deliverable_sha256: str | None = None) -> None:
         super().mark_turn_status(status, deliverable_sha256=deliverable_sha256)
-        if status in {"CLOSED_SUCCESS", "CLOSED_CANCELLED"}:
+        if status in {"CLOSED_SUCCESS", "CLOSED_CANCELLED", "INTERRUPTED"}:
             self.flush_turn_archive()
 
     def flush_turn_archive(self, turn_id: str | None = None) -> Path:

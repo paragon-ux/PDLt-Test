@@ -212,6 +212,15 @@ class PDLtHost:
             return user_message
         return "$confirm-with-pseudocode " + user_message
 
+    def record_interruption(self, call: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Keep the session consistent after a Ctrl+C and record what happened; never raises."""
+        try:
+            if self.engine is None:
+                return {"call": call, "turn": None, "action": "no session engine; nothing to keep"}
+            return self.engine.record_interruption(call)
+        except Exception as exc:  # the interruption must still be reported
+            return {"call": call, "action": f"could not record the interruption ({type(exc).__name__}: {exc})"}
+
     def status(self) -> dict[str, Any]:
         if self.engine is None:
             return {"active": False}

@@ -376,3 +376,70 @@ def test_fast_mode_stops_at_a_review_with_host_findings(monkeypatch, tmp_path: P
     assert repl.main() == 2  # halted at the unconfirmed review
     assert standing == []
     assert runtime.handled[0] == "solve it"
+
+
+def _colored_repl(monkeypatch, tmp_path: Path, extra: list[str], prior_transcript: str | None = None):
+    """An in-process REPL whose stdout counts as a terminal, recording the input prompts."""
+    from types import SimpleNamespace
+
+    turn = SimpleNamespace(text="Prompt Pseudocode\n\nEXPLAIN it\n\nConfirm or correct this interpretation.",
+                           closed=False, traces=[], review="prompt", host_findings=False)
+    repl, runtime = _headless_runtime(monkeypatch, tmp_path, lambda line: turn, "PROMPT_REVIEW")
+    runtime.prior_transcript = prior_transcript
+    runtime.transcript_path = tmp_path / "transcript.txt"
+    prompts: list[str] = []
+    lines = iter(["solve it"])
+
+    def read(prompt="> "):
+        prompts.append(prompt)
+        try:
+            return next(lines)
+        except StopIteration:
+            raise EOFError()
+
+    monkeypatch.setattr(repl, "_read_repl_input", read)
+    monkeypatch.setattr(repl, "color_enabled", lambda *a, **k: True)
+    monkeypatch.setattr(sys, "argv", sys.argv + extra)
+    for name in ("NO_COLOR", "PDLT_THEME", "PDLT_USER_COLOR", "PDLT_ASSISTANT_COLOR"):
+        monkeypatch.delenv(name, raising=False)
+    return repl, prompts
+
+
+def test_new_chat_shows_theme_colors(monkeypatch, capsys, tmp_path: Path) -> None:
+    """A new chat colors the reply and the user's input, not only a resumed history."""
+    from pdl_taskmaster.host.console import PALETTE
+
+    repl, prompts = _colored_repl(monkeypatch, tmp_path, [])
+    repl.main()
+    out = capsys.readouterr().out
+    assert prompts and prompts[0].startswith(f"\x1b[{PALETTE['teal'].ansi}m")  # user types in teal
+    assert f"\x1b[{PALETTE['white'].ansi}mPrompt Pseudocode" in out  # assistant reply in white
+
+
+def test_new_chat_honours_theme_and_overrides(monkeypatch, capsys, tmp_path: Path) -> None:
+    from pdl_taskmaster.host.console import PALETTE
+
+    repl, prompts = _colored_repl(monkeypatch, tmp_path, ["--theme", "bold", "--assistant-color", "yellow"])
+    repl.main()
+    out = capsys.readouterr().out
+    assert prompts[0].startswith(f"\x1b[{PALETTE['green'].ansi}m")  # bold theme's user color
+    assert f"\x1b[{PALETTE['yellow'].ansi}mPrompt Pseudocode" in out  # override beats the theme
+
+
+def test_resumed_chat_shows_the_same_colors(monkeypatch, capsys, tmp_path: Path) -> None:
+    from pdl_taskmaster.host.console import PALETTE
+
+    history = "USER> earlier question\nASSISTANT> earlier answer\n"
+    repl, prompts = _colored_repl(monkeypatch, tmp_path, ["--theme", "claude"], prior_transcript=history)
+    repl.main()
+    out = capsys.readouterr().out
+    assert f"\x1b[{PALETTE['orange'].ansi}mUSER> earlier question" in out
+    assert f"\x1b[{PALETTE['white'].ansi}mASSISTANT> earlier answer" in out
+    assert f"\x1b[{PALETTE['white'].ansi}mPrompt Pseudocode" in out  # the live reply matches
+    assert prompts[0].startswith(f"\x1b[{PALETTE['orange'].ansi}m")
+
+
+def test_custom_pair_breaking_the_invariant_warns(monkeypatch, capsys, tmp_path: Path) -> None:
+    repl, _ = _colored_repl(monkeypatch, tmp_path, ["--user-color", "white", "--assistant-color", "teal"])
+    repl.main()
+    assert "[color] the assistant color (teal) must be lighter than the user color (white)" in capsys.readouterr().out

@@ -333,7 +333,7 @@ class OperationBridge:
                 "task_summary": payload.task_summary,
                 "approach_notes": payload.approach_notes,
                 "risk_notes": payload.risk_notes,
-                "task_entities": list(payload.task_entities),
+                "task_entities": [entity.model_dump() for entity in payload.task_entities],
             }
         return {"kind": payload.kind, "response": payload.response.strip()}
 
