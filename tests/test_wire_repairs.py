@@ -276,9 +276,12 @@ def test_api_attempt_timeout_never_exceeds_the_remaining_deadline(monkeypatch) -
         return Response()
 
     monkeypatch.setattr(module.urllib.request, "urlopen", ok)
+    # A fixed clock: with a coarse monotonic clock (Windows, Python 3.10) the real
+    # (now + 30) - now can round to 30.00000000000003.
+    monkeypatch.setattr(module.time, "monotonic", lambda: 1000.0)
     worker = ApiWorker(model="m", repo_root=ROOT, timeout=600.0)
     worker._send_json_with_retries(urllib.request.Request("http://example.invalid", data=b"{}"),
-                                   deadline=module.time.monotonic() + 30)
+                                   deadline=1000.0 + 30)
     assert seen and seen[0] <= 30
 
 
