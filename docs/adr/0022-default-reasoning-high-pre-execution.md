@@ -1,23 +1,24 @@
-# ADR-0022: Default Reasoning for gpt-oss: High Before Execution, Low at EXECUTE
+# ADR-0022: One Effective Reasoning Configuration for Live Sessions and Catalogue Runs
 
 ## Status
-Accepted. Amends the model class matrix of [ADR-0006](0006-bounded-pre-execution-reasoning.md) (Amendment D25) for `openai/gpt-oss-120b`. ADR-0006's decision (no solving, researching or calculating before execution) is unchanged.
+Accepted. Amends the 2026-09-16 amendment to [ADR-0006](0006-bounded-pre-execution-reasoning.md) (Decision D25) for gpt-oss. ADR-0006's decision (no solving, researching or calculating before execution) is unchanged. Per-model values move to data under [ADR-0028](0028-model-capability-boundary.md). The values and evidence are in [IMPL-0004](impl/IMPL-0004-reasoning-allocation-per-model.md).
 
 ## Context
-A live REPL session and a catalogue run of the same request did not behave alike, because they did not run at the same reasoning effort:
+A live REPL session and a catalogue run of the same request did not behave alike, because they did not run at the same reasoning effort: each had its own default. The configuration the user had validated as working was not the default of either.
 
-- With no flags, `ApiWorker` used `get_proportional_reasoning_mapping`, which for gpt-oss mapped every operation to `low`. The catalogue runner's `--reasoning` also defaulted to `low`.
-- The configuration the user validated as working ran `--reasoning high --reasoning-op EXECUTE=low` with providers Cerebras and `--max-repairs 0` (run-20261001-221930): high everywhere, low at EXECUTE.
-- At all-low, live sessions produced plans that copied the prompt verbatim (identical prompt and plan bodies) and prompts that carried PDL-08 drafting meta-rules ("DO NOT perform the calculation"), which the deliverable then obeyed.
+Running every operation at the lowest effort also degraded the artifacts. Plans copied the prompt verbatim, and prompts carried drafting meta-rules that the deliverable then obeyed.
 
 ## Decision
-1. The gpt-oss mapping is `high` for every operation it lists (`BOOTSTRAP_ANALYSIS`, `DRAFT_PROMPT`, `REVISE_PROMPT`, `INTERPRET_PROMPT_REVIEW`, `DRAFT_PLAN`, `REVISE_PLAN`, `INTERPRET_PLAN_REVIEW`, `INTERPRET_EXECUTION_INPUT`, `DRAFT_EXECUTE`, `EMIT_RESULT_IR`) and `low` for `EXECUTE`. Operations it does not list (`ANSWER_PROTOCOL_DISCUSSION`, `BYPASS_ORDINARY`) use the worker default, `low`.
-2. `model_classification.resolve_reasoning` resolves the effective configuration in one place: per-operation flags win; an explicit effort applies to every other operation; with no effort, the model mapping is the default.
-3. `run_catalogue.py --reasoning` has no default of its own: without it the harness default applies, exactly as in a live session. Explicit flags keep working.
-4. The effective configuration is recorded: `RUN_META.json` carries `reasoning_effective` (default and per operation), and every REPL session writes a `REASONING:` transcript line (and a `[dev:telemetry]` line in dev mode).
+1. **The production model's default** (gpt-oss when decided) is deep reasoning for every operation before execution, and light reasoning at `EXECUTE`.
+2. **One resolution, in one place.**
+   - Per-operation settings win.
+   - An explicitly requested effort applies to every other operation.
+   - With no request, the model's default allocation applies.
+3. **The catalogue runner has no default of its own.** Without an explicit setting it uses the harness's, exactly as a live session does.
+4. **The effective configuration is recorded:** in run metadata, in every session transcript, and in dev telemetry.
 
 ## Consequences
-- Live sessions and catalogue runs share one default, so a catalogue result describes the REPL a user runs.
-- Pre-execution calls cost more output tokens and take longer. Each response is still capped by `max_output_tokens` and the per-call deadline.
-- High effort before execution makes it more tempting for the model to work the task out early. ADR-0006 still applies: the prompt and plan state the task and the procedure, never the answer. `PLAN_PROMPT_ECHO` records copied plans; answer leakage into artifacts is not linted.
-- Catalogue scores from runs at the old `low` default are not directly comparable with runs at the new default.
+- A catalogue result describes the REPL a user actually runs.
+- Pre-execution calls cost more output tokens and time. Each response is still capped by the output limit and the per-call deadline.
+- Deeper reasoning before execution makes it more tempting for the model to work the task out early. ADR-0006 still applies, and copied plans are recorded.
+- Scores from runs under different defaults are not directly comparable.

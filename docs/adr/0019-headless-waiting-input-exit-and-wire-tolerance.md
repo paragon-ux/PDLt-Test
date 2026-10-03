@@ -1,67 +1,51 @@
 # ADR-0019: Headless WAITING_INPUT Exit Code & Execution Wire Input Tolerance
 
-**Status:** Accepted  
-**Date:** 2026-09-29  
-**Deciders:** PDL-Standard Architecture Team  
-**Tracking Issue / Regression:** `REG-013` (Surfaced by `13-06 insufficient_information` in `catalogue-13-06-1790682691`)  
+**Status:** Accepted, amended (refusals 2026-09; harness errors and interrupts, 2.6.0rc1)
+**Date:** 2026-09-29
+**Implementation and evidence:** [IMPL-0011](impl/IMPL-0011-headless-exit-handling.md)
 
 ---
 
 ## Context
 
-When an interactive prompt intentionally lacks necessary domain parameters (e.g. prompt `13-06`: database engine, table names, schema, query text, and performance constraints), the semantically sound model response is to request clarification rather than hallucinate parameters.
+When a request lacks information the task cannot proceed without, the correct response is to ask for it rather than invent it. The protocol already supports this: execution can return a typed input request, and the controller moves to `WAITING_INPUT`. Two things turned correct behaviour into false failures:
+- **Over-strict wire validation.** The input request required a redundant field, so correct replies failed and were retried.
+- **An exit-code blind spot.** Headless runs treated any stage other than success as an unconfirmed review gate.
 
-In the PDLt runtime:
-1. The model properly completes `PROMPT_REVIEW` and `PLAN_REVIEW` indicating an intent to request missing details.
-2. At `EXECUTE`, the model emits the native wire outcome:
-   ```json
-   {"kind": "REQUEST_INPUT", "body": "Please provide details...", "expected_type": "string"}
-   ```
-3. Prior to this ADR, two points of friction caused false-negative failures:
-   * **Wire Schema Over-Constraining:** In `wire_payloads.py`, `ExecutionRequestInputData` strictly required a redundant `description` field with `extra="forbid"`. Omitting `description` triggered `WireError: missing_fields`, which on retry frequently produced malformed JSON.
-   * **Headless REPL Exit Blindness:** When `REQUEST_INPUT` succeeded, `session_engine.py` called `self.controller.request_execution_input()`, correctly placing the controller into `Stage.WAITING_INPUT`. In non-interactive / headless test runs (`--non-interactive --exit-on-close`), `repl.py` blindly categorized any non-`CLOSED_SUCCESS` stage as an unconfirmed review gate failure (exit code 2).
-
-A rejected alternative (Option B in `2026-09-29-request-clarification-routing-path.md`) proposed introducing a new controller stage `CLARIFICATION_REQUESTED`, bypassing `EXECUTE`, and classifying plan text using NLP action-verb parsers. That proposal was rejected because it violated multi-turn chaining (`session_engine.py` line 750), bypassed workspace turn archiving (ADR-0011 §2 in `workspace.py` line 577), violated the execution boundary (ADR-0004), and reintroduced heuristic NLP anti-patterns.
-
----
+A rejected alternative added a new controller stage, bypassed `EXECUTE`, and classified plan text with verb heuristics. It would have broken multi-turn chaining, turn archiving and the execution boundary (ADR-0004), and reintroduced heuristic parsing.
 
 ## Decision
 
-1. **Contracts and Controller State Machine Remain Frozen:**
-   * Normative contracts (`contracts/**/*`) remain positive-only and frozen.
-   * `MechanicalController` state enums (`Stage`, `NextAction`, `Intent`) remain unchanged. `Stage.WAITING_INPUT` already exists as the authoritative, contract-compliant state for input requests.
-2. **Pydantic Wire Tolerance for `REQUEST_INPUT`:**
-   * In `wire_payloads.py`, `description` in `ExecutionRequestInputData` is made optional (`description: Optional[str] = None`).
-   * When omitted or empty, an `after` model validator synthesizes a clean 1-line description from the first line of `body` (`body.strip().splitlines()[0][:120]`).
-3. **Headless REPL Exit Code 3 (`WAITING_INPUT`):**
-   * In `host/repl.py` (lines 1322–1341), if a non-interactive REPL session terminates with `final_stage == "WAITING_INPUT"`, the process prints:
-     `[headless halt] Session paused at stage 'WAITING_INPUT' (input requested). Exiting (code 3).`
-     and exits with code **`3`**.
-   * Interactive REPL sessions remain completely unchanged, seamlessly waiting for operator input.
-4. **Catalogue Scoring Realignment:**
-   * `run_catalogue.py` maps exit code `3` to `verdict = "WAITING_INPUT"`.
-   * For prompts where clarification is the ground truth (`13-06`), `CATALOGUE_MANIFEST.jsonl` specifies `"expected_stage": "WAITING_INPUT"`. When `verdict == expected_stage`, `run_catalogue.py` scores the run as a `PASS`.
+1. **Contracts and the controller's states are unchanged.** `WAITING_INPUT` is the authoritative state for an input request.
+2. **Tolerant input requests.** A missing description in an input request is derived from the request itself rather than rejected. Only redundant fields are relaxed; required content is not.
+3. **The headless exit contract:**
 
----
+| Code | Meaning |
+|---|---|
+| 0 | `CLOSED_SUCCESS`: a verified deliverable, **or** a published boundary refusal (`closure=REFUSED`) |
+| 1 | `CLOSED_CANCELLED`: cancellation, verification failure after repair, or a fatal error |
+| 2 | `UNCONFIRMED_GATE`: halted at a review gate |
+| 3 | `WAITING_INPUT`: paused for required input |
+| 4 | Harness or provider error (for example a missing key, an outage, a rejected schema); never a protocol result |
+| 130 | Interrupted by the user |
+
+   Interactive sessions are unaffected: they wait for the user.
+4. **Catalogue scoring follows the contract.** Where clarification is the ground truth, the expected stage is `WAITING_INPUT`, and reaching it scores as reaching the expected stage. A run that ends with code 4 is never a pass.
+
+### Amendment: boundary refusals close as REFUSED with exit 0
+A boundary refusal (policy scope, offline sandbox, post-cutoff knowledge) is a complete and correct answer. When activation or the bootstrap refuses before any controller exists, the engine records the refusal, publishes it, and a headless run exits 0 with `closure=REFUSED`. A refusal issued *after* a controller exists, during `EXECUTE`, still cancels.
+
+### Amendment (2.6.0rc1): harness errors and interrupts
+- **Exit 4:** the harness or a provider failed before the protocol could reach any of the stages above. A structured error record goes to stderr.
+- **Exit 130:** the user interrupted the run.
 
 ## Consequences
 
 ### Positive
-* **Zero Contract or Controller Mutations:** Zero risk of manifest hash divergence or state machine regressions.
-* **Preserves Multi-Turn Continuity:** Multi-turn chaining and review routing in `session_engine.py` continue functioning without bricking.
-* **Preserves Turn Archiving:** Conforms strictly to ADR-0011 §2 workspace lifecycle.
-* **Single Source of Truth (SSOT):** No heuristic NLP parsers or action-verb whitelists; the model's typed execution outcome at `EXECUTE` is authoritative.
-* **Accurate Benchmark Telemetry:** Clarification behavior is measured cleanly and distinguished from unconfirmed review gates.
+* No contract or state-machine changes.
+* Multi-turn chaining and turn archiving keep working.
+* The model's typed execution outcome is authoritative: no heuristic parsing.
+* Clarification is measured as clarification, not as a stuck gate.
 
-### Tradeoffs
-* Test harnesses and CI scripts inspecting REPL process return codes must recognize code `3` alongside `0`, `1`, and `2`.
-
----
-
-## Amendment (lean build): boundary refusals close as REFUSED with exit 0
-
-A boundary refusal (policy scope, offline sandbox, post-cutoff knowledge) is a complete and correct answer, not a protocol failure. When activation or the semantic bootstrap refuses before any controller exists, the engine records `PROTOCOL_REFUSED`, publishes the refusal text, and the headless host exits `0` with `closure=REFUSED`. This replaces the previous accidental exit `0` (no controller, fall-through) with an explicit, testable branch, and matches the frozen catalogue manifest where `13-05` expects `CLOSED_SUCCESS`. Exit `1` remains for cancellation, verification failure and fatal errors; a refusal issued *after* a controller exists (during `EXECUTE`) still cancels.
-
-## Amendment (2.6.0rc1): harness errors and interrupts
-
-Two further exit codes exist and are part of the headless contract. `4` (`EXIT_HARNESS_ERROR`) means the harness or a provider failed before the protocol could reach a stage the codes above describe: for example a missing API key, a provider outage, or a schema the provider rejected. A structured `[harness-error]` record is printed to stderr. `130` means the user interrupted the run (Ctrl+C). A run that ends on `4` is not a protocol result and is never counted as a pass.
+### Trade-offs
+* Scripts that read exit codes must handle 3, 4 and 130 alongside 0, 1 and 2.

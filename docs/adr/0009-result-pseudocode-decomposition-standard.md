@@ -1,98 +1,46 @@
 # ADR-0009: Require decomposed Result Pseudocode with cited execution evidence
 
-- Status: Accepted (prototype; feature-gated per TRD-0003 RS-10)
+- Status: Accepted (prototype; feature-gated per RS-10). Amended by the Result standard (`contracts/standards/RESULT_STANDARD.md`):
+  - mechanically derived requirement IDs and reconciliation of every requirement are retired (RS-02, RS-03);
+  - the previous turn's result record is no longer chained forward: a follow-up turn receives the previous request and result as labelled reference only (RS-09).
 - Date: 2026-09-18
 - Parent decision: [ADR-0005](0005-optional-result-pseudocode.md)
 - Related requirements: TRD-0003: Result Pseudocode Decomposition Standard (upstream document, not included in this repository)
-- Related decisions: [ADR-0003](0003-phase-projected-single-model-contexts.md), [ADR-0004](0004-confirmed-artifacts-as-execution-boundary.md), [ADR-0008](0008-context-and-session-management.md)
+- Related decisions: [ADR-0003](0003-phase-projected-single-model-contexts.md), [ADR-0004](0004-confirmed-artifacts-as-execution-boundary.md), [ADR-0008](0008-context-and-session-management.md), [ADR-0016](0016-pydantic-ssot-wire-and-deliverable-boundary-enforcement.md)
+- Implementation, clause status and evidence: [IMPL-0006](impl/IMPL-0006-result-ir-schema-and-validation.md)
 
 ## Context
 
-Live build orchestration (Distributed WAL storage engine, model z-ai/glm-4.7,
-sessions `runs/wal-build`, `runs/wal-exp2b`, `runs/wal-exp4`, 2026-09-17/18)
-demonstrated a structural continuity failure across task epochs:
-
-1. Phase projections launder source material out of the execution phase
-   (ADR-0003 inclusion lists). `REQUIRED_TASK_INPUTS` and
-   `SUPPLIED_EXECUTION_INPUT_SOURCE` were `null` in every observed EXECUTE
-   call; the executor conditioned only on confirmed pseudocode summaries.
-2. Consequence: revision epochs hallucinated parallel architectures
-   (`WALIndex(idx_path)`, `perform_recovery(wal_dir)`, invented record
-   formats) against preserved modules the executor had never seen.
-3. Controller-side byte-exact chaining of the prior confirmed deliverable
-   into `REQUIRED_TASK_INPUTS` eliminated API hallucination (diffs collapsed
-   from ~100% rewrites to 0–7 changed lines) but did not steer the work: with
-   full code visibility the executor still re-architected an unconstrained
-   component and fabricated test expectations (`expected_max = 3`) to force a
-   pass.
-4. Pseudocode summaries are the only representation with enough semantic
-   density (intent + approach) to survive projection boundaries, but a
-   self-contained summary re-states results from memory — the hallucination
-   surface itself.
+Multi-turn builds showed a continuity failure across task epochs.
+- **Execution never saw the source.** Phase projections had removed the source material, so execution conditioned only on pseudocode summaries, and revision turns invented interfaces for code they had never seen.
+- **Byte-exact chaining was not enough.** Passing the previous deliverable byte for byte stopped the invented interfaces, but did not stop goal drift or fabricated test expectations.
+- **Summaries are a weak link.** They are the only representation dense enough to survive phase boundaries, but a summary written from memory is itself where hallucination enters.
 
 ## Decision
 
-The EXECUTE operation SHALL emit, alongside the native deliverable, a
-**decomposed Result Pseudocode** (Result IR) that is:
+`EXECUTE` emits, alongside the native deliverable, a **structured result record** (Result IR) that is:
 
-- **co-referential** with the confirmed Prompt Pseudocode: requirement IDs are
-  derived mechanically from the confirmed prompt body and every ID SHALL be
-  reconciled exactly once with status `satisfied | partial | open`;
-- **evidence-cited**: every component, status, and open defect SHALL cite a
-  workspace-resolvable artifact path; every factual claim SHALL carry a
-  verbatim `observed` quote; invented paths, sections, quotes, and IDs are
-  mechanical validation failures;
-- **mechanically validated** by the controller (host-side, stdlib): schema
-  shape, coverage/uniqueness, path resolution, verbatim section/observation
-  checks; exactly one operator-correction retry on failure; persistent
-  failure published and scored, never masked;
-- **chained forward**: continuation epochs receive the prior validated Result
-  IR beside the byte-exact prior deliverable; reconciliation state is
-  authoritative across process restarts (restore included).
-
-Structured output is mandatory for citations: the IR is a schema-shaped JSON
-object whose evidence fields the controller validates against the filesystem.
-Free-text result narration alone is not a conforming result artifact under
-this decision.
+- **Evidence-cited.** Claims about files, status and open defects cite artifacts that resolve inside the workspace, and quoted observations must match them verbatim. Invented paths or quotes are mechanical findings.
+- **Mechanically validated by the host,** in shape and citations, before the result is published. Persistent failures are recorded and scored, never masked.
+- **Structured, not narrated.** The record is schema-shaped data, carried apart from the deliverable text. Free-text narration alone does not conform.
 
 ## Consequences
 
 ### Positive
-
-- Cross-turn continuity no longer depends on unmanaged summaries: intent
-  (dense IR) and existence (resolvable citations) travel together.
-- Hallucinated expectations and fabricated evidence become mechanically
-  invalid rather than merely implausible.
-- Revision epochs are steered by reconciliation state ("close D1") instead of
-  underspecified defect reports.
-- Validation is controller-owned and model-agnostic; containment invariants
-  are preserved (feature-gated; recorded paths byte-identical).
+- Evidence and existence travel together: fabricated evidence becomes mechanically invalid rather than merely implausible.
+- Validation is host-owned and independent of the model.
 
 ### Negative
-
-- Generation cost per epoch increases (decomposition + citations).
-- Requirement-ID derivation is mechanical and therefore approximate until the
-  prompt IR gains first-class requirement IDs (future contract revision).
-- Evidence citations multiply context size on large projects; resolution is
-  controller-side and cheap, but the injected union (IR + bytes) requires a
-  size policy.
+- Generation cost per turn increases.
+- Citations add context on large projects, so a size policy is needed.
 
 ## Alternatives considered
 
-### Byte-exact chaining only (implemented first)
-
-Shipped as the interim mechanism (`REQUIRED_TASK_INPUTS` chaining, restore
-re-population). Retained as the substrate under the IR: it removes API
-hallucination but not goal drift. Superseded as the sole mechanism.
+### Byte-exact chaining only
+Implemented first, and kept as the substrate. It removes invented interfaces but not goal drift.
 
 ### Free-text Result Pseudocode (ADR-0005 unmodified)
+Rejected. Prose decompositions cannot be audited.
 
-Rejected: prose decompositions are unauditable; the WAL sessions produced
-five hallucinated fix cycles under free-text steering.
-
-### Controller-side cumulative project merge
-
-Deferred: merging partial deliverables into a canonical project state is
-sound but heuristics-laden; the delivery policy "deliverables are full
-project states" plus per-epoch IR chaining achieves continuity without a
-merge heuristic.
+### Host-side cumulative project merge
+Deferred. Merging partial deliverables is sound but heuristic-laden.

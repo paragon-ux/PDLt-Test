@@ -1,43 +1,34 @@
 # ADR-0021: Session-Scoped OS-Native Confinement
 
 ## Status
-Accepted. Supersedes the filesystem clause of ADR-0013 P1 ("file writes strictly restricted to an ephemeral scratchpad directory"), which no code enforced.
+Accepted. Supersedes the filesystem clause of ADR-0013 P1 ("file writes strictly restricted to an ephemeral scratchpad directory"), which no code enforced. Backends, layout, budgets and platform notes: [IMPL-0010](impl/IMPL-0010-sandbox-backends-and-execution-budgets.md). User guide: [`docs/SANDBOX.md`](../SANDBOX.md).
 
 ## Context
-`ExecutionSandbox` ran model-authored code in a fresh `python -I -S` process with resource limits, an environment allowlist and an in-process audit hook that denied network and process creation. Nothing confined the filesystem: a program could read and write any file the user could, including `~/.ssh`, `.env` files, the repository and other sessions' workspaces. `ctypes` gets past any audit hook.
+Model-authored programs ran in a fresh interpreter, with resource limits, an environment allowlist and an in-process audit hook. Nothing confined the file system: a program could read and write any file the user could, including secrets, the repository and other sessions' workspaces. A native-code escape gets past any audit hook.
 
-Two facts constrain where the sandbox may write:
+Two facts constrain where a program may write:
+- **The referee reads by search.** It searches session and result trees for deliverables, events and evidence. A model-writable directory inside those trees could plant a deliverable or evidence.
+- **Workspaces are not stable anchors.** One session can span several workspaces.
 
-- The graders, the catalogue runner and the viewer search session and result trees recursively for `current.md`, `current.json`, `events.jsonl` and `controller-state.json`, and the newest file wins; `validate_result_ir` accepts any file under `W-*` as evidence. A model-writable directory inside a session or workspace could plant a deliverable or evidence.
-- One engine can span several `W-*` workspaces, so a workspace is not a stable anchor.
-
-ADR-0013 requires zero third-party dependencies.
+The harness also keeps its zero third-party dependency rule.
 
 ## Decision
-1. **One sandbox session per `SessionEngine`** (and per grader call), built lazily on the first program run: `<tempdir>/pdlt-sandboxes/<sid>/` with `owner.json` (pid, host, backend, and the profile or container to release) and `work/`. The root sits outside every tree the referee reads and is recorded in a `SANDBOX_SESSION` workspace event. `close()` releases it (`SessionEngine.close()` → `PDLtHost.close()`, reached from the REPL's every exit path). Roots whose owner process is dead are swept when the next session is built; `atexit` is not used.
-2. **A fresh, empty run directory per program** (`work/run-NNNN-*`, with `TMP`/`TEMP`/`TMPDIR` pointed at its `tmp/`). Everything under `work/` is deleted after each run, so no run sees an earlier one.
-3. **One policy per session** (`SandboxPolicy`): write only `work/`; read `work/`, the base interpreter's installation and standard library, and what the OS loader needs; execute only the base interpreter (and its ELF loader); no network; no new processes. Every backend launches `sys._base_executable`, never a virtual-environment shim.
-4. **OS-native backends, standard library and `ctypes` only:**
-
-   | Mode | Backend | Mechanism |
-   |---|---|---|
-   | `native` on Linux | Landlock | Raw syscalls (444/445/446) and `PR_SET_NO_NEW_PRIVS`. The ruleset handles every right the kernel's ABI knows and is built once per session; each child restricts itself after its rlimits and before `exec`. ABI 4+ denies TCP bind/connect; ABI 6+ scopes abstract UNIX sockets and signals. |
-   | `native` on macOS | Seatbelt | `/usr/bin/sandbox-exec` with a deny-by-default profile built once per session; paths are realpath'd and passed as `-D` parameters. |
-   | `native` on Windows | AppContainer | A per-session AppContainer profile with modify rights on `work/` only, started through a `ctypes` `CreateProcessW` launcher with no capabilities, inside the run's Job Object (created in it), and unable to create child processes. |
-   | `container` (opt-in) | docker / podman | One container per session: no network, read-only root, no capabilities, no privilege gain, a process cap, only `work/` mounted. |
-   | `audit-only` (opt-out) | none | Today's behaviour: the audit hook and resource limits only. |
-
-   `--sandbox {auto,native,container,audit-only}` (REPL and catalogue runner) selects the mode; `PDLT_SANDBOX` is the default and `auto` means `native`.
-5. **Fail closed.** When the selected backend cannot apply, no program runs: `run_code` returns `sandbox_unavailable:<reason>`, the engine records a registered `SANDBOX_UNAVAILABLE` finding and spends no repair on it, `describe()` and `decision_state()` state that no program runs, and the REPL says so at session start. `audit-only` is the only way to run without OS-native confinement, and the REPL warns loudly when it is chosen.
-6. **The audit hook stays, as defense in depth**, built from the same policy: it denies native-code imports (`ctypes`, `_ctypes`, `cffi`, `_cffi_backend`, sqlite extension loading), confines file paths by `realpath` and `commonpath`, denies signals, and keeps network and process denial as separate flags.
-7. **Model-facing text states capabilities only** (GUARD-01/02): each program runs in its own empty directory and may read and write only there; other files, network access and starting processes are denied.
+1. **One sandbox per session.** It is created on first use, outside every tree the referee reads, and recorded in the session's events. The host releases it on every exit path. Sandboxes left by dead processes are swept later, not on interpreter exit.
+2. **A fresh, empty directory per program.** Nothing from one run is visible to the next.
+3. **One policy per session:**
+   - write only the run directory;
+   - read only the run directory, the base interpreter's installation, and what the OS loader needs;
+   - execute only the base interpreter;
+   - no network, and no new processes.
+4. **OS-native confinement on every supported platform,** using only the standard library and the OS's own mechanisms.
+   - An opt-in container mode is offered for stronger isolation.
+   - An explicit opt-out (audit hook and limits only) exists, and the host warns loudly when it is used.
+5. **Fail closed.** If the selected confinement cannot apply, no program runs. The host says so, records a finding, and spends no repair on it.
+6. **The audit hook stays, as defense in depth.** It is built from the same policy.
+7. **Model-facing text states capabilities only** (GUARD-01/02): what a program may and may not do, never how to solve the task.
 
 ## Consequences
-- **Positive:** a program can no longer read the user's secrets or the repository, or write a deliverable, evidence or another session's files, even with the audit hook defeated. The escape suite (`tests/test_confinement.py`) checks each backend with the hook on and off.
-- **Positive:** each run already starts a fresh interpreter, so native confinement adds no measurable per-run cost on Linux (Landlock: setup ~3 ms per session, per-run medians within noise of `audit-only`). The container mode costs ~0.3–2 s per session and ~100–300 ms per run.
-- **Negative:** Landlock needs Linux 5.13+ with Landlock enabled; older kernels fail closed (the message names `--sandbox container` and `audit-only`). Landlock does not cover UDP or pathname UNIX sockets and cannot deny `fork`; the audit hook covers those, and exec of anything but the interpreter is denied natively.
-- **Negative:** `sandbox-exec` is deprecated by Apple but still supported (Codex CLI, Chromium and Bazel use it). macOS does not enforce `RLIMIT_AS`, so the memory limit is not enforced there.
-- **Negative:** on Windows, a per-user Python install is not readable by AppContainers; read and execute are granted to ALL APPLICATION PACKAGES on its prefix once (the Program Files default), with a notice and a marker under `~/.pdlt/`. The Microsoft Store Python cannot be used (it is already packaged) and fails closed.
-- **Neutral:** an AppContainer process cannot open the `NUL` device (`os.devnull`): its DACL grants Everyone but not ALL APPLICATION PACKAGES.
-- **Neutral:** stdlib modules that read system files outside the read set (`/etc/mime.types`, the system time-zone database through `zoneinfo`) fail with `PermissionError`.
-- **Neutral:** this is not a VM boundary: CPU and memory side channels and kernel exploits are out of scope; the container mode exists for stronger isolation, and a microVM (ADR-0011) remains roadmap.
+- **Positive:** a program cannot read the user's secrets or the repository, nor write deliverables, evidence or another session's files, even with the audit hook defeated. An escape suite checks every backend with the hook on and off.
+- **Positive:** native confinement adds no measurable cost per run on Linux. The container mode costs more per session and per run.
+- **Negative:** each platform mechanism has its own gaps and requirements (kernel versions, protocols not covered, interpreter installations that cannot be confined). Each fails closed and is documented in IMPL-0010.
+- **Neutral:** this is not a VM boundary. Side channels and kernel exploits are out of scope; the container mode exists for stronger isolation, and a microVM (ADR-0011) remains roadmap.

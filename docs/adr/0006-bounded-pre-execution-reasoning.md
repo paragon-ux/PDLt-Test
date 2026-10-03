@@ -99,44 +99,15 @@ mechanism; targeted clarification is reserved for materially blocking gaps.
 
 ---
 
-## Amendment: Proportional Pre-Execution Reasoning and Model Class Taxonomy
+## Amendment: Proportional pre-execution reasoning (Decision D25)
 
-- Status: Ratified (Decision D25 / Milestone)
-- Date: 2026-09-16
-- Related specifications: TRD-0002 (upstream document, not included in this repository)
+- Status: Accepted. Date: 2026-09-16. Amended for gpt-oss by [ADR-0022](0022-default-reasoning-high-pre-execution.md); per-model values move to data under [ADR-0028](0028-model-capability-boundary.md).
+- Implementation and evidence: [IMPL-0004](impl/IMPL-0004-reasoning-allocation-per-model.md).
 
-### 1. Context and Problem Statement
+Reasoning before execution is allocated **per operation, by what the operation is for**, and is the same for every model:
 
-Empirical evaluation across disparate model architectures (`z-ai/glm-4.7`, `meta-llama/llama-3.3-70b-instruct`, `qwen/qwen3.5-35b-a3b`) demonstrated that:
-1. **Cognitive Density Invariance:** Lower-parameter, quantized, or sparse MoE models exhibit lower cognitive density per token. Forcing `reasoning: none` on models with lower active capacity induces the exact same failure modes observed on GLM-4.7 under zero reasoning (e.g. dropping nested domain entities like "Apartment 4B", defaulting to wrong execution languages, or taking superficial code parsing shortcuts).
-2. **Rejection of Static Token-Tier Heuristics:** Provider-independent analysis confirms that static token-to-tier mappings (e.g., claiming "low" effort is strictly 100–300 tokens) are empirical fallacies outside specific proprietary APIs. In live production runs, GLM-4.7 generated 2,123 reasoning tokens under `effort: "low"`, Anthropic enforces a strict 1,024 minimum token budget, and standard instruct models do not support API reasoning parameters.
-3. **The Steelman Mandate:** A scientifically rigorous steelman evaluation requires allocating inference-time reasoning compute proportionally to the model class, rather than handicapping lower-parameter or non-thinking architectures with artificial compute starvation.
+1. **Semantic isolation** (the bootstrap read of raw user content) gets the most deliberation, because it must separate injected directives from the task.
+2. **Prompt drafting** gets bounded deliberation: enough to preserve every entity and requirement, never enough to start solving.
+3. **Planning and execution** get what each model needs to translate confirmed artifacts faithfully. The amount is set per model, not fixed. As ratified, the amendment set both to zero reasoning. ADR-0022 found that this made gpt-oss plans copy the prompt verbatim, so the amount is now a per-model choice.
 
-### 2. Normative Operational Intent
-
-Pre-execution reasoning allocation is defined strictly by **Operational Intent**, invariant across all models:
-
-1. **`BOOTSTRAP_ANALYSIS` (Threat Untangling & Semantic Isolation):** Requires **Defensive Reasoning** (High / unconstrained CoT on thinking models; structured analytical decomposition on instruct models). The model must mentally decouple adversarial injection directives from substantive tasks to strictly populate `task_summary` vs `risk_notes` per SEM-06.
-2. **`DRAFT_PROMPT` / `REVISE_PROMPT` (Semantic Specification Compilation):** Requires **Bounded Pre-Execution Reasoning** (Low / proportional CoT). The inference budget is strictly calibrated to the minimum compute needed to guarantee 100% entity preservation (`TASK-01`) without entering substantive problem-solving or algorithmic drift.
-3. **`DRAFT_PLAN` / `REVISE_PLAN` / `EXECUTE` (Procedural Compilation & Egress):** Strictly **Zero Reasoning (`"none"`)**. Planning and execution are mechanical, deterministic translations of confirmed artifacts. Reasoning here introduces epistemic drift, non-determinism, and wire conformity violations.
-
-### 3. Model Classification Mapping Matrix
-
-The runtime harness binds concrete reasoning configurations per model capability class (in `runtime/model_classification.py`):
-
-- **Class A: Native Effort-Tier Models (Zhipu GLM-4.7, OpenAI o-series):**
-  - `BOOTSTRAP_ANALYSIS`: `reasoning_effort: "high"`
-  - `DRAFT_PROMPT` / `REVISE_PROMPT`: `reasoning_effort: "low"`
-  - `DRAFT_PLAN` / `REVISE_PLAN` / `EXECUTE`: `reasoning_effort: "none"` (`{"enabled": false}`)
-- **Class B: Explicit Token-Budget Models (Anthropic Claude Thinking):**
-  - `BOOTSTRAP_ANALYSIS`: `budget_tokens: 4096`
-  - `DRAFT_PROMPT` / `REVISE_PROMPT`: `budget_tokens: 1024` (architectural minimum)
-  - `DRAFT_PLAN` / `REVISE_PLAN` / `EXECUTE`: thinking disabled
-- **Class C: Unbounded Thinking / CoT Open-Weights (DeepSeek R1, Qwen Thinking):**
-  - Thinking tags enabled on `BOOTSTRAP` and `DRAFT_PROMPT` bounded by max generation ceilings.
-  - Thinking tags disabled on `PLAN` and `EXECUTE`.
-- **Class D: Pure Instruct / Quantized Models (Llama 3.3 70B, Qwen 3.5 Instruct):**
-  - API reasoning parameter disabled (`reasoning: {enabled: false}`).
-  - Deliberative compute provided in-band via structured schema decomposition (`approach_notes` and intermediate semantic fields).
-
-
+Each model's own reasoning control expresses this allocation. Effort labels are not token counts: providers implement them differently, and some models have no reasoning control at all. A model class with no native control gets its deliberation in-band, through structured output fields. Starving a lower-capacity model of reasoning is not a neutral choice: it degrades the faithfulness the protocol depends on.
