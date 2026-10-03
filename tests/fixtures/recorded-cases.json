@@ -7,6 +7,7 @@
   ],
   "source_evidence": "re-recorded under protocol v2 semantic-bootstrap flow (docs/protocol-v2-semantic-bootstrap-spec.md)",
   "source_eval_root": "C:\\Users\\USER\\Desktop\\Frameworks\\PDL-Standard-DS-Split-C0-eval",
+  "recorded_python": "3.11",
   "entries": [
     {
       "operation": "BOOTSTRAP_ANALYSIS",

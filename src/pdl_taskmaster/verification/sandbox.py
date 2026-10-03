@@ -354,12 +354,14 @@ def _step_trace(frame, event, arg):
     frame.f_trace_lines = False
     frame.f_trace_opcodes = True
     return _count
-_sys.settrace(_step_trace)
+# The top frame asks for opcode events before settrace is installed: from Python
+# 3.12, settrace turns on opcode events only when a frame already asks for them.
 _top = _sys._getframe()  # the script's own top-level frame
 _top.f_trace_lines = False
 _top.f_trace_opcodes = True
 _top.f_trace = _count
 del _top
+_sys.settrace(_step_trace)
 _threading.settrace(_step_trace)
 def _step_guard(event, args):
     if event in ("sys.settrace", "sys.setprofile"):
@@ -402,6 +404,14 @@ EXECUTION_BUDGETS: dict[str, ExecutionBudget] = {
     "HEAVY_COMPUTE": ExecutionBudget("HEAVY_COMPUTE", 100_000_000, 120.0, 512 * _MB, repairs=2),
 }
 DEFAULT_BUDGET = EXECUTION_BUDGETS["STANDARD"]
+
+# The interpreter the sandbox runs programs with (the host's base interpreter).
+PYTHON_VERSION = ".".join(str(part) for part in sys.version_info[:2])
+
+
+def python_declaration(version: str = PYTHON_VERSION) -> str:
+    """How AVAILABLE_EXECUTION_TOOLS names the interpreter; replay re-keys recorded prompts by it."""
+    return f"Python {version} with the standard library only"
 
 
 @dataclass(frozen=True)
@@ -729,7 +739,7 @@ class ExecutionSandbox:
     def decision_state(self) -> dict[str, str]:
         """The sandbox as System 1 routing state: what the environment provides and
         what one step is, from the same source the sandbox enforces."""
-        version = ".".join(str(part) for part in sys.version_info[:2])
+        version = PYTHON_VERSION
         if not self.probe():
             return {
                 "execution_environment": (
@@ -758,7 +768,7 @@ class ExecutionSandbox:
         This is the AVAILABLE_EXECUTION_TOOLS declaration: factual capabilities of
         the session sandbox under the task's budget, never task guidance.
         """
-        version = ".".join(str(part) for part in sys.version_info[:2])
+        version = PYTHON_VERSION
         if not self.probe():
             return [
                 {
@@ -784,7 +794,7 @@ class ExecutionSandbox:
             {
                 "name": "python",
                 "description": (
-                    f"Python {version} with the standard library only; third-party packages are not installed. "
+                    f"{python_declaration(version)}; third-party packages are not installed. "
                     "The host runs the deliverable as a script when the whole deliverable is Python source; otherwise it "
                     "runs every ```python fenced block as a separate script, each in its own empty directory. A script "
                     "may read and write files only in that directory (it can also read the Python standard library); "

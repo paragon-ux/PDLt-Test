@@ -136,7 +136,15 @@ def build_recorded_fixture_from_vendored(
     recorded workspaces from an external evaluation repository. The standalone
     harness vendors the exact recorded calls (operation, prompt hash, response)
     so the published harness does not depend on that repository.
+
+    The sandbox declares the host's own interpreter version in EXECUTE prompts, so a
+    fixture recorded under another version (``recorded_python``) is replayed against
+    the prompt this host sends: the sandbox's interpreter declaration in the recorded
+    prompt text is swapped for this host's, and the entry is keyed by that prompt.
+    Every other byte of the prompt must still match.
     """
+    from pdl_taskmaster.verification.sandbox import PYTHON_VERSION, python_declaration
+
     _load_candidate(candidate_repo)
     value = json.loads(Path(fixture_file).read_text(encoding="utf-8"))
     entries = value.get("entries") or []
@@ -145,13 +153,27 @@ def build_recorded_fixture_from_vendored(
         entries = [e for e in entries if (e.get("source") or "").split(":")[0] in wanted]
     if not entries:
         raise SystemExit("no vendored fixture entries selected")
+    recorded_python = value.get("recorded_python")
     builder = RecordedFixtureBuilder()
     for entry in entries:
+        prompt_sha256 = entry["prompt_sha256"]
+        prompt_text = entry.get("prompt_text")
+        metadata = {"source": entry.get("source", "vendored")}
+        if (
+            recorded_python
+            and recorded_python != PYTHON_VERSION
+            and prompt_text is not None
+            and hashlib.sha256(prompt_text.encode("utf-8")).hexdigest() == prompt_sha256
+            and python_declaration(recorded_python) in prompt_text
+        ):
+            prompt_text = prompt_text.replace(python_declaration(recorded_python), python_declaration())
+            prompt_sha256 = hashlib.sha256(prompt_text.encode("utf-8")).hexdigest()
+            metadata["recorded_python"] = recorded_python
         builder.add(
             entry["operation"],
-            entry["prompt_sha256"],
+            prompt_sha256,
             entry["response"],
-            metadata={"source": entry.get("source", "vendored")},
-            prompt_text=entry.get("prompt_text"),
+            metadata=metadata,
+            prompt_text=prompt_text,
         )
     return builder.build()
