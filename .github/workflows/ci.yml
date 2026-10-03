@@ -21,13 +21,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-            python: "3.10"
-          - os: ubuntu-latest
-            python: "3.12"
-          - os: windows-latest
-            python: "3.12"
+        # Every supported interpreter (pyproject.toml classifiers), on Linux and Windows.
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     env:
       PYTHONUTF8: "1"
     steps:
@@ -45,13 +41,17 @@ jobs:
         run: python -m pytest -q -rs
 
   package:
-    name: build and check distributions
+    name: build and check distributions / py${{ matrix.python }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python }}
       - name: Build sdist and wheel
         run: |
           python -m pip install build
