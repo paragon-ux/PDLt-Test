@@ -1,0 +1,29 @@
+{
+  "ground_truth_status": "verified",
+  "verified_by": "exhaustive check of all 216 arrangements",
+  "expected_behavior": "solution",
+  "answer": {
+    "fish_owner": "Ben",
+    "houses": [
+      {
+        "house": 1,
+        "color": "red",
+        "owner": "Cleo",
+        "pet": "dog"
+      },
+      {
+        "house": 2,
+        "color": "green",
+        "owner": "Ana",
+        "pet": "cat"
+      },
+      {
+        "house": 3,
+        "color": "blue",
+        "owner": "Ben",
+        "pet": "fish"
+      }
+    ]
+  },
+  "what_would_be_wrong": "Any other fish owner"
+}

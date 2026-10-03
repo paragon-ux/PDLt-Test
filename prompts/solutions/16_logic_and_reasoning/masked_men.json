@@ -1,0 +1,7 @@
+{
+  "ground_truth_status": "verified",
+  "verified_by": "canonical riddle answer",
+  "expected_behavior": "explanation",
+  "answer": "The man is a baseball player running the bases after a home run; the masked men are the catcher and the umpire.",
+  "what_would_be_wrong": "Saying the masked men cannot be identified"
+}

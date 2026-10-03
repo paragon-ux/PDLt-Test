@@ -1,0 +1,293 @@
+{
+  "conditions": {
+    "script": "scripts/provider_probe.py",
+    "model": "openai/gpt-oss-120b",
+    "reasoning": "low",
+    "max_output_tokens": 4096,
+    "pinning": "order=[provider], allow_fallbacks=false",
+    "schema": "as shipped (2.6.0rc1)",
+    "date": "2026-10-02"
+  },
+  "results": [
+    {
+      "provider": "Baseten",
+      "operation": "BOOTSTRAP_ANALYSIS",
+      "verdict": "OK",
+      "seconds": 0.72,
+      "error": null
+    },
+    {
+      "provider": "Baseten",
+      "operation": "DRAFT_PLAN",
+      "verdict": "OK",
+      "seconds": 0.7,
+      "error": null
+    },
+    {
+      "provider": "Baseten",
+      "operation": "DRAFT_PROMPT",
+      "verdict": "OK",
+      "seconds": 1.22,
+      "error": null
+    },
+    {
+      "provider": "Baseten",
+      "operation": "EXECUTE",
+      "verdict": "OK",
+      "seconds": 0.56,
+      "error": null
+    },
+    {
+      "provider": "Baseten",
+      "operation": "EXECUTE_WITNESS",
+      "verdict": "ERROR",
+      "seconds": 4.43,
+      "error": "host rejected the reply: execution_body: Validation failed on field 'root': execution_body: body must not be empty"
+    },
+    {
+      "provider": "Cerebras",
+      "operation": "BOOTSTRAP_ANALYSIS",
+      "verdict": "OK",
+      "seconds": 0.34,
+      "error": null
+    },
+    {
+      "provider": "Cerebras",
+      "operation": "DRAFT_PLAN",
+      "verdict": "OK",
+      "seconds": 0.28,
+      "error": null
+    },
+    {
+      "provider": "Cerebras",
+      "operation": "DRAFT_PROMPT",
+      "verdict": "OK",
+      "seconds": 0.33,
+      "error": null
+    },
+    {
+      "provider": "Cerebras",
+      "operation": "EXECUTE",
+      "verdict": "OK",
+      "seconds": 0.4,
+      "error": null
+    },
+    {
+      "provider": "Cerebras",
+      "operation": "EXECUTE_WITNESS",
+      "verdict": "ERROR",
+      "seconds": 1.02,
+      "error": "host rejected the reply: execution_result_ir_witness: Validation failed on field 'result_ir.witness.negative.nodes_explored': Input should be greater than 0"
+    },
+    {
+      "provider": "Crusoe",
+      "operation": "BOOTSTRAP_ANALYSIS",
+      "verdict": "OK",
+      "seconds": 0.49,
+      "error": null
+    },
+    {
+      "provider": "Crusoe",
+      "operation": "DRAFT_PLAN",
+      "verdict": "OK",
+      "seconds": 0.55,
+      "error": null
+    },
+    {
+      "provider": "Crusoe",
+      "operation": "DRAFT_PROMPT",
+      "verdict": "OK",
+      "seconds": 0.83,
+      "error": null
+    },
+    {
+      "provider": "Crusoe",
+      "operation": "EXECUTE",
+      "verdict": "OK",
+      "seconds": 3.06,
+      "error": null
+    },
+    {
+      "provider": "Crusoe",
+      "operation": "EXECUTE_WITNESS",
+      "verdict": "ERROR",
+      "seconds": 4.04,
+      "error": "host rejected the reply: execution_body: Validation failed on field 'root': execution_body: body must not be empty"
+    },
+    {
+      "provider": "DeepInfra",
+      "operation": "BOOTSTRAP_ANALYSIS",
+      "verdict": "OK",
+      "seconds": 1.76,
+      "error": null
+    },
+    {
+      "provider": "DeepInfra",
+      "operation": "DRAFT_PLAN",
+      "verdict": "OK",
+      "seconds": 2.16,
+      "error": null
+    },
+    {
+      "provider": "DeepInfra",
+      "operation": "DRAFT_PROMPT",
+      "verdict": "OK",
+      "seconds": 5.35,
+      "error": null
+    },
+    {
+      "provider": "DeepInfra",
+      "operation": "EXECUTE",
+      "verdict": "ERROR",
+      "seconds": 91.72,
+      "error": "response reached the 4096 output-token limit before it finished"
+    },
+    {
+      "provider": "DeepInfra",
+      "operation": "EXECUTE_WITNESS",
+      "verdict": "ERROR",
+      "seconds": 91.29,
+      "error": "response reached the 4096 output-token limit before it finished"
+    },
+    {
+      "provider": "Groq",
+      "operation": "BOOTSTRAP_ANALYSIS",
+      "verdict": "OK",
+      "seconds": 0.42,
+      "error": null
+    },
+    {
+      "provider": "Groq",
+      "operation": "DRAFT_PLAN",
+      "verdict": "OK",
+      "seconds": 0.6,
+      "error": null
+    },
+    {
+      "provider": "Groq",
+      "operation": "DRAFT_PROMPT",
+      "verdict": "OK",
+      "seconds": 1.16,
+      "error": null
+    },
+    {
+      "provider": "Groq",
+      "operation": "EXECUTE",
+      "verdict": "ERROR",
+      "seconds": 0.27,
+      "error": "HTTP 400: Groq: invalid JSON schema for response_format: 'json_object': /properties/outcome/anyOf/1/properties/result_ir/anyOf/0/properties/witness/anyOf: anyOf object variant error: variant 0: properties must be present (or set additionalProperties:false)"
+    },
+    {
+      "provider": "Groq",
+      "operation": "EXECUTE_WITNESS",
+      "verdict": "ERROR",
+      "seconds": 0.33,
+      "error": "HTTP 400: Groq: invalid JSON schema for response_format: 'json_object': /properties/outcome/anyOf/1/properties/result_ir/anyOf/0/properties/witness/anyOf: anyOf object variant error: variant 0: properties must be present (or set additionalProperties:false)"
+    },
+    {
+      "provider": "Nebius",
+      "operation": "BOOTSTRAP_ANALYSIS",
+      "verdict": "OK",
+      "seconds": 0.64,
+      "error": null
+    },
+    {
+      "provider": "Nebius",
+      "operation": "DRAFT_PLAN",
+      "verdict": "OK",
+      "seconds": 0.97,
+      "error": null
+    },
+    {
+      "provider": "Nebius",
+      "operation": "DRAFT_PROMPT",
+      "verdict": "OK",
+      "seconds": 1.16,
+      "error": null
+    },
+    {
+      "provider": "Nebius",
+      "operation": "EXECUTE",
+      "verdict": "ERROR",
+      "seconds": 27.35,
+      "error": "response reached the 4096 output-token limit before it finished"
+    },
+    {
+      "provider": "Nebius",
+      "operation": "EXECUTE_WITNESS",
+      "verdict": "ERROR",
+      "seconds": 2.59,
+      "error": "host rejected the reply: execution_body: Validation failed on field 'root': execution_body: body must not be empty"
+    },
+    {
+      "provider": "SambaNova",
+      "operation": "BOOTSTRAP_ANALYSIS",
+      "verdict": "OK",
+      "seconds": 0.5,
+      "error": null
+    },
+    {
+      "provider": "SambaNova",
+      "operation": "DRAFT_PLAN",
+      "verdict": "ERROR",
+      "seconds": 0.11,
+      "error": "OpenRouter found no endpoint for openai/gpt-oss-120b at the configured providers (SambaNova): check the spelling of each name and that it serves this model"
+    },
+    {
+      "provider": "SambaNova",
+      "operation": "DRAFT_PROMPT",
+      "verdict": "ERROR",
+      "seconds": 0.17,
+      "error": "OpenRouter found no endpoint for openai/gpt-oss-120b at the configured providers (SambaNova): check the spelling of each name and that it serves this model"
+    },
+    {
+      "provider": "SambaNova",
+      "operation": "EXECUTE",
+      "verdict": "ERROR",
+      "seconds": 0.15,
+      "error": "OpenRouter found no endpoint for openai/gpt-oss-120b at the configured providers (SambaNova): check the spelling of each name and that it serves this model"
+    },
+    {
+      "provider": "SambaNova",
+      "operation": "EXECUTE_WITNESS",
+      "verdict": "ERROR",
+      "seconds": 0.16,
+      "error": "OpenRouter found no endpoint for openai/gpt-oss-120b at the configured providers (SambaNova): check the spelling of each name and that it serves this model"
+    },
+    {
+      "provider": "Together",
+      "operation": "BOOTSTRAP_ANALYSIS",
+      "verdict": "OK",
+      "seconds": 0.49,
+      "error": null
+    },
+    {
+      "provider": "Together",
+      "operation": "DRAFT_PLAN",
+      "verdict": "OK",
+      "seconds": 1.15,
+      "error": null
+    },
+    {
+      "provider": "Together",
+      "operation": "DRAFT_PROMPT",
+      "verdict": "OK",
+      "seconds": 0.92,
+      "error": null
+    },
+    {
+      "provider": "Together",
+      "operation": "EXECUTE",
+      "verdict": "OK",
+      "seconds": 7.66,
+      "error": null
+    },
+    {
+      "provider": "Together",
+      "operation": "EXECUTE_WITNESS",
+      "verdict": "ERROR",
+      "seconds": 4.24,
+      "error": "host rejected the reply: execution_kind: Validation failed on field 'root': Unable to extract tag using discriminator 'kind'"
+    }
+  ]
+}

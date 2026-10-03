@@ -1,0 +1,286 @@
+{
+  "conditions": {
+    "date": "2026-10-02",
+    "harness": "pdlt 2.6.0rc1 with EXECUTE and EMIT_RESULT_IR routed away from Groq",
+    "flags": "--dev --non-interactive --exit-on-close --new-session [--api-providers <list>]",
+    "model": "openai/gpt-oss-120b",
+    "served_by_source": "OpenRouter GET /api/v1/generation?id=<response_id> (provider_name)",
+    "default_order_now": "Baseten -> Crusoe, fallbacks allowed"
+  },
+  "sessions": [
+    {
+      "config": "DEFAULT (previous order: Groq -> Baseten -> Amazon Bedrock)",
+      "task": "product",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 14.3,
+      "model_s": 11.0,
+      "errors": [],
+      "calls": [
+        {
+          "operation": "BOOTSTRAP_ANALYSIS",
+          "served_by": "Groq",
+          "latency_ms": 4019.839,
+          "output_tokens": 1362
+        },
+        {
+          "operation": "DRAFT_PROMPT",
+          "served_by": "Groq",
+          "latency_ms": 2560.554,
+          "output_tokens": 1015
+        },
+        {
+          "operation": "DRAFT_PLAN",
+          "served_by": "Groq",
+          "latency_ms": 2338.233,
+          "output_tokens": 587
+        },
+        {
+          "operation": "EXECUTE",
+          "served_by": "BaseTen",
+          "latency_ms": 2073.179,
+          "output_tokens": 488
+        }
+      ]
+    },
+    {
+      "config": "DEFAULT (previous order: Groq -> Baseten -> Amazon Bedrock)",
+      "task": "factor360",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 18.1,
+      "model_s": 14.3,
+      "errors": [],
+      "calls": [
+        {
+          "operation": "BOOTSTRAP_ANALYSIS",
+          "served_by": "Groq",
+          "latency_ms": 3848.729,
+          "output_tokens": 1622
+        },
+        {
+          "operation": "DRAFT_PROMPT",
+          "served_by": "Groq",
+          "latency_ms": 3742.364,
+          "output_tokens": 1590
+        },
+        {
+          "operation": "DRAFT_PLAN",
+          "served_by": "Groq",
+          "latency_ms": 2720.717,
+          "output_tokens": 1120
+        },
+        {
+          "operation": "EXECUTE",
+          "served_by": "BaseTen",
+          "latency_ms": 3992.909,
+          "output_tokens": 673
+        }
+      ]
+    },
+    {
+      "config": "Groq,Baseten",
+      "task": "product",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 19.0,
+      "model_s": 15.2,
+      "errors": [],
+      "calls": [
+        {
+          "operation": "BOOTSTRAP_ANALYSIS",
+          "served_by": "Groq",
+          "latency_ms": 5796.212,
+          "output_tokens": 2374
+        },
+        {
+          "operation": "DRAFT_PROMPT",
+          "served_by": "Groq",
+          "latency_ms": 3792.58,
+          "output_tokens": 1066
+        },
+        {
+          "operation": "DRAFT_PLAN",
+          "served_by": "Groq",
+          "latency_ms": 2492.332,
+          "output_tokens": 1024
+        },
+        {
+          "operation": "EXECUTE",
+          "served_by": "BaseTen",
+          "latency_ms": 3156.946,
+          "output_tokens": 404
+        }
+      ]
+    },
+    {
+      "config": "Groq,Baseten",
+      "task": "factor360",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 15.1,
+      "model_s": 11.9,
+      "errors": [],
+      "calls": [
+        {
+          "operation": "BOOTSTRAP_ANALYSIS",
+          "served_by": "Groq",
+          "latency_ms": 2921.334,
+          "output_tokens": 1123
+        },
+        {
+          "operation": "DRAFT_PROMPT",
+          "served_by": "Groq",
+          "latency_ms": 4470.496,
+          "output_tokens": 1937
+        },
+        {
+          "operation": "DRAFT_PLAN",
+          "served_by": "Groq",
+          "latency_ms": 2977.504,
+          "output_tokens": 1255
+        },
+        {
+          "operation": "EXECUTE",
+          "served_by": "BaseTen",
+          "latency_ms": 1507.118,
+          "output_tokens": 171
+        }
+      ]
+    },
+    {
+      "config": "Groq",
+      "task": "product",
+      "exit": 4,
+      "final_stage": "PLAN_REVIEW",
+      "wall_s": 10.6,
+      "model_s": 7.8,
+      "errors": [
+        "[error] PROVIDER_REJECTED_REQUEST at EXECUTE: EXECUTE cannot be routed to the configured providers (Groq): Groq rejects its output schema; add another provider to --api-providers or run with --no-structured-output",
+        "[headless halt] Harness error (PROVIDER_REJECTED_REQUEST at EXECUTE): ProviderError: EXECUTE cannot be routed to the configured providers (Groq): Groq rejects its output schema; add another provider to --api-providers or run with --no-structured-output. Exiting (code 4)."
+      ],
+      "calls": [
+        {
+          "operation": "BOOTSTRAP_ANALYSIS",
+          "served_by": "Groq",
+          "latency_ms": 2304.815,
+          "output_tokens": 939
+        },
+        {
+          "operation": "DRAFT_PROMPT",
+          "served_by": "Groq",
+          "latency_ms": 3428.85,
+          "output_tokens": 1379
+        },
+        {
+          "operation": "DRAFT_PLAN",
+          "served_by": "Groq",
+          "latency_ms": 2104.269,
+          "output_tokens": 585
+        }
+      ]
+    },
+    {
+      "config": "Groq",
+      "task": "factor360",
+      "exit": 4,
+      "final_stage": "PLAN_REVIEW",
+      "wall_s": 11.9,
+      "model_s": 9.1,
+      "errors": [
+        "[error] PROVIDER_REJECTED_REQUEST at EXECUTE: EXECUTE cannot be routed to the configured providers (Groq): Groq rejects its output schema; add another provider to --api-providers or run with --no-structured-output",
+        "[headless halt] Harness error (PROVIDER_REJECTED_REQUEST at EXECUTE): ProviderError: EXECUTE cannot be routed to the configured providers (Groq): Groq rejects its output schema; add another provider to --api-providers or run with --no-structured-output. Exiting (code 4)."
+      ],
+      "calls": [
+        {
+          "operation": "BOOTSTRAP_ANALYSIS",
+          "served_by": "Groq",
+          "latency_ms": 3194.624,
+          "output_tokens": 1116
+        },
+        {
+          "operation": "DRAFT_PROMPT",
+          "served_by": "Groq",
+          "latency_ms": 3616.754,
+          "output_tokens": 1446
+        },
+        {
+          "operation": "DRAFT_PLAN",
+          "served_by": "Groq",
+          "latency_ms": 2295.699,
+          "output_tokens": 892
+        }
+      ]
+    },
+    {
+      "config": "DEFAULT (Baseten -> Crusoe)",
+      "task": "product",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 22.5,
+      "model_s": 19.0,
+      "errors": [],
+      "calls": [
+        {
+          "operation": "BOOTSTRAP_ANALYSIS",
+          "served_by": "BaseTen",
+          "latency_ms": 6590.282,
+          "output_tokens": 1804
+        },
+        {
+          "operation": "DRAFT_PROMPT",
+          "served_by": "BaseTen",
+          "latency_ms": 6283.092,
+          "output_tokens": 1603
+        },
+        {
+          "operation": "DRAFT_PLAN",
+          "served_by": "BaseTen",
+          "latency_ms": 3502.82,
+          "output_tokens": 623
+        },
+        {
+          "operation": "EXECUTE",
+          "served_by": "BaseTen",
+          "latency_ms": 2659.597,
+          "output_tokens": 330
+        }
+      ]
+    },
+    {
+      "config": "DEFAULT (Baseten -> Crusoe)",
+      "task": "factor360",
+      "exit": 0,
+      "final_stage": "CLOSED_SUCCESS",
+      "wall_s": 27.9,
+      "model_s": 24.6,
+      "errors": [],
+      "calls": [
+        {
+          "operation": "BOOTSTRAP_ANALYSIS",
+          "served_by": "BaseTen",
+          "latency_ms": 7981.341,
+          "output_tokens": 1877
+        },
+        {
+          "operation": "DRAFT_PROMPT",
+          "served_by": "BaseTen",
+          "latency_ms": 7905.44,
+          "output_tokens": 1865
+        },
+        {
+          "operation": "DRAFT_PLAN",
+          "served_by": "BaseTen",
+          "latency_ms": 7559.225,
+          "output_tokens": 1468
+        },
+        {
+          "operation": "EXECUTE",
+          "served_by": "BaseTen",
+          "latency_ms": 1131.279,
+          "output_tokens": 173
+        }
+      ]
+    }
+  ]
+}

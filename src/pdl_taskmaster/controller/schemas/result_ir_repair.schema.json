@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020/12/schema",
+  "title": "ResultIrRepair",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "result_ir"
+  ],
+  "properties": {
+    "result_ir": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "files",
+        "reconciliation",
+        "open_defects"
+      ],
+      "properties": {
+        "witness": {
+          "type": "object",
+          "description": "Witness certifying substantive execution correctness (ADR-0013 / ADR-0015).",
+          "properties": {
+            "polarity": { "type": "string", "enum": ["positive", "negative"] },
+            "evidence": {
+              "type": "object",
+              "properties": {
+                "path": { "type": "string" },
+                "section": { "type": "string" },
+                "observed": { "type": "string" }
+              },
+              "required": ["path"]
+            },
+            "data": { "type": "object" },
+            "search_exhausted": { "type": "boolean" },
+            "nodes_explored": { "type": "integer" },
+            "method": { "type": "string" }
+          },
+          "required": ["polarity"]
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "filename",
+              "satisfies",
+              "evidence"
+            ],
+            "properties": {
+              "filename": {
+                "type": "string"
+              },
+              "satisfies": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "evidence": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "path"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "section": {
+                    "type": "string"
+                  },
+                  "observed": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "reconciliation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "requirement",
+              "status",
+              "evidence"
+            ],
+            "properties": {
+              "requirement": {
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "satisfied",
+                  "partial",
+                  "open"
+                ]
+              },
+              "evidence": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "path"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "section": {
+                    "type": "string"
+                  },
+                  "observed": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "open_defects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "description",
+              "evidence"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "path"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "observed": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

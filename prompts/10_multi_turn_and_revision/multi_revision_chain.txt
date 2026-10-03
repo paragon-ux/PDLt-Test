@@ -1,7 +1,1 @@
 ﻿Write a Python function that validates email addresses using regex.
-
-(Multi-turn test: This prompt should be revised 3+ times in sequence:
-  Revision 1: "Also validate that the domain has at least one dot"
-  Revision 2: "Add support for plus-addressing (user+tag@domain.com)"
-  Revision 3: "Return a structured result with {valid: bool, local_part: str, domain: str, tag: str|None}"
-Verify state is not corrupted across revisions.)

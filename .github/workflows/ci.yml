@@ -1,0 +1,65 @@
+# Offline test suite and integrity gate on every push and pull request.
+#
+# The anti-overfitting suite (GUARD-01..05) runs as its own step so a failure there is
+# visible on its own. Backend-specific confinement legs (Seatbelt, AppContainer, the
+# container backend) run in sandbox.yml.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: tests / ${{ matrix.os }} / py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every supported interpreter (pyproject.toml classifiers), on Linux and Windows.
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: python -m pip install -e ".[test]"
+      - name: Integrity gate (GUARD-01..05)
+        run: python -m pytest tests/test_harness_anti_overfitting.py -v
+      - name: Catalogue manifest
+        run: python run_catalogue.py --dry-run
+      - name: Offline test suite
+        run: python -m pytest -q -rs
+
+  package:
+    name: build and check distributions / py${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install build
+          python -m build
+      - name: Smoke-test the wheel outside the repository
+        run: |
+          python -m venv /tmp/wheel-venv
+          /tmp/wheel-venv/bin/pip install dist/*.whl
+          cd /tmp
+          /tmp/wheel-venv/bin/pdlt version
+          printf '/quit\n' | /tmp/wheel-venv/bin/pdlt --non-interactive --new-session --workspace-root /tmp/pdlt-ws
