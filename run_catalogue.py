@@ -900,7 +900,10 @@ def main():
         print(f"\nVERIFIED = verified ground truth ({n_verified} prompts)")
         sys.exit(0)
 
-    run_id = f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{args.route}"
+    route_tag = args.route
+    if args.draft_execute:
+        route_tag += "-draft-execute"
+    run_id = f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{route_tag}"
     run_dir = RUNS_DIR / run_id
     (run_dir / "results").mkdir(parents=True)
 
