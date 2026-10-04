@@ -288,6 +288,7 @@ def open_session(
         observation_dir=observation_dir,
         render_compact=bool(getattr(args, "render_compact", False)),
         sandbox_mode=getattr(args, "sandbox", None),
+        no_review=bool(getattr(args, "no_review", False)),
     ).start()
     if getattr(host, "restore_notice", None):
         print(f"[warn] {host.restore_notice}", flush=True)
@@ -1098,6 +1099,14 @@ def _build_parser() -> argparse.ArgumentParser:
         "with findings stops for you as usual. Toggle in the REPL with /fast [on|off]",
     )
     parser.add_argument(
+        "--no-review",
+        "--ultrafast",
+        dest="no_review",
+        action="store_true",
+        help="No-review mode: run through the governor in 2 task-model calls without review gates (ADR-0029). "
+        "Review is off and the interpretation is presented as unconfirmed. Toggle in the REPL with /no-review [on|off]",
+    )
+    parser.add_argument(
         "--exit-on-close",
         action="store_true",
         help="Exit REPL when protocol reaches a closed state (CLOSED_SUCCESS or CLOSED_CANCELLED)",
@@ -1200,6 +1209,7 @@ def main() -> int:
     runtime = open_session(args, session_base, worker, session_id, restore_path=args.restore)
     dev_mode = bool(getattr(args, "dev", False))
     fast_mode = bool(getattr(args, "fast", False))
+    no_review = bool(getattr(args, "no_review", False))
     try:
         theme_colors = resolve_colors(
             getattr(args, "theme", None), getattr(args, "user_color", None), getattr(args, "assistant_color", None)
@@ -1225,6 +1235,8 @@ def main() -> int:
     if fast_mode:
         print("[fast] Fast mode: ON (reviews without host findings are accepted on your advance "
               "confirmation; /fast off to review each one)", flush=True)
+    if no_review:
+        print("[no-review] No-review mode: ON (review gates disabled; interpretation and approach are unconfirmed working notes; /no-review off to enable review)", flush=True)
     show_resumed_history(runtime, colors)  # a session picked at startup resumes like /resume
     if args.allow_bypass:
         print(
@@ -1235,6 +1247,8 @@ def main() -> int:
     _write_transcript("WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION")
     if fast_mode:
         _write_transcript("FAST MODE: ON")
+    if no_review:
+        _write_transcript("NO-REVIEW MODE: ON (ADR-0029 ultrafast route)")
     reasoning = _reasoning_record(worker)
     if reasoning:
         # The effective effort per operation, so drift from the catalogue's
@@ -1426,6 +1440,7 @@ def main() -> int:
                     "/status -> read-only host state\n"
                     "/session -> current session directory\n"
                     "/fast [on|off] -> fast mode: accept reviews without findings on your advance confirmation\n"
+                    "/no-review [on|off] -> no-review mode: execute without confirmation gates (ADR-0029)\n"
                     "/tokens [on|off] -> toggle token telemetry\n"
                     "/timeout [seconds] -> show/set worker timeout\n"
                     "/model [name] -> show/set worker model\n"
@@ -1568,6 +1583,20 @@ def main() -> int:
                         fast_mode = not fast_mode
                     _write_transcript(f"FAST MODE: {'ON' if fast_mode else 'OFF'}")
                     print(f"fast mode: {'on' if fast_mode else 'off'}", flush=True)
+                elif cmd in {"/no-review", "/ultrafast"}:
+                    if arg in {"on", "off"}:
+                        no_review = arg == "on"
+                    elif arg:
+                        print("usage: /no-review [on|off]", flush=True)
+                        continue
+                    else:
+                        no_review = not no_review
+                    if hasattr(runtime.host, "engine") and runtime.host.engine:
+                        runtime.host.engine.no_review = no_review
+                    if hasattr(runtime.host, "no_review"):
+                        runtime.host.no_review = no_review
+                    _write_transcript(f"NO-REVIEW MODE: {'ON' if no_review else 'OFF'}")
+                    print(f"no-review mode: {'on' if no_review else 'off'}", flush=True)
                 elif cmd == "/tokens":
                     if arg in {"on", "off"}:
                         worker.capture_tokens = arg == "on"

@@ -154,6 +154,8 @@ class _FailedExecution:
     kind = "RESULT"
     body = ""
     result_ir = None
+    interpretation = ""
+    approach = ""
 
 
 # Repairs per execution that do not count against the tier: after an attempt that
@@ -352,6 +354,7 @@ class SessionEngine:
         render_compact: bool = False,
         sys1_client: Any = None,
         sandbox_mode: str | None = None,
+        no_review: bool = False,
     ):
         self.repo_root = Path(repo_root)
         self.model_call = model_call
@@ -378,12 +381,14 @@ class SessionEngine:
         # builds a network client from ambient environment variables, so an engine
         # constructed without one is fully offline.
         self.sys1_client = sys1_client
+        self.no_review = no_review
         # Protocol v2: semantic-bootstrap containment (structural, non-optional).
         # Raw untrusted content is read by BOOTSTRAP_ANALYSIS only; every compile
         # operation receives the sanitized compiled analysis. Cache is keyed on
         # the raw source so repeated sources bootstrap once per session.
         self._bootstrap_cache: dict[tuple[str, str | None], str] = {}
         self._task_entities_cache: dict[tuple[str, str | None], tuple[str, ...]] = {}
+        self._typed_task_entities_cache: dict[tuple[str, str | None], list[dict[str, Any]]] = {}
         # S4: confirmed deliverable carried from the prior turn (chaining);
         # None for first turns and legacy single-turn workspaces.
         self._previous_deliverable: str | None = None
@@ -417,6 +422,7 @@ class SessionEngine:
         render_compact: bool = False,
         sys1_client: Any = None,
         sandbox_mode: str | None = None,
+        no_review: bool = False,
     ) -> "SessionEngine":
         workspace_path = Path(workspace_path)
         engine = cls(
@@ -428,6 +434,7 @@ class SessionEngine:
             render_compact=render_compact,
             sys1_client=sys1_client,
             sandbox_mode=sandbox_mode,
+            no_review=no_review,
         )
         workspace = MemoryWorkspaceRun.open(repo_root, workspace_path)
         # Pointer may sit on a turn whose controller never committed (e.g. a
@@ -529,8 +536,8 @@ class SessionEngine:
         # Legacy flat workspaces remain supported for direct WorkspaceRun.create callers.
         return MemoryWorkspaceRun.create(self.repo_root, self.workspace_root, turn_id="turn_001")
 
-    def _bind_new_controller(self, workspace: WorkspaceRun) -> MechanicalController:
-        state = ProtocolState.new()
+    def _bind_new_controller(self, workspace: WorkspaceRun, instance_kind: str = "CONFIRMATION") -> MechanicalController:
+        state = ProtocolState.new(instance_kind=instance_kind)
         workspace.bind_protocol(state.instance_id)
         store = (
             MemoryAtomicJsonStore(workspace.controller_state_path)
@@ -781,6 +788,17 @@ class SessionEngine:
         # (forcing defined terms, often whole requirement sentences, only caused redrafts).
         entities = tuple(e["surface"] for e in kept if e.get("kind") != "term")
         self._task_entities_cache[cache_key] = entities
+        typed_entities = []
+        for e in kept:
+            d = e.get("definition")
+            if d:
+                d = compile_bootstrap_output(raw_text, d)[0].strip()
+            typed_entities.append({
+                "surface": e["surface"],
+                "kind": e.get("kind", "identifier"),
+                "definition": d or None,
+            })
+        self._typed_task_entities_cache[cache_key] = typed_entities
         # In Protocol v2 out-of-band field isolation: approach_notes carries TASK-02
         # procedural guidance for planning. risk_notes is quarantined threat data
         # retained in telemetry/traces, not leaked into compile contexts.
@@ -1134,6 +1152,71 @@ class SessionEngine:
         return EngineResponse(presentation.prompt_artifact(outcome.prompt_body, host_note), traces,
                               review="prompt", host_findings=bool(host_note))
 
+    def _run_unconfirmed(
+        self,
+        substantive_request: str,
+        traces: list[CallTrace],
+    ) -> EngineResponse:
+        assert self.workspace is not None
+        previous_request = (getattr(self, "_previous_turn", None) or {}).get("request")
+        if previous_request and self._is_follow_up(previous_request, substantive_request):
+            substantive_request = (
+                f"{previous_request}\n\nFollow-up from the user, referring to the request above:\n"
+                f"{substantive_request}"
+            )
+        elif previous_request:
+            self._previous_deliverable = None
+        self._source_request = substantive_request
+        self.workspace.write_turn_source(substantive_request)
+
+        from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
+        from pdl_taskmaster.verification.checkers.base import ProblemDomain
+        requires_verified = False
+        classification: dict[str, Any] = {"verdict": None, "confidence": None, "passed_gating": False}
+        if self.sys1_client and self.sys1_client.is_configured:
+            try:
+                recipe = ProblemClassRecipe()
+                sys1_req = recipe.build_request({"request": substantive_request})
+                resp_body, dur_ms = self.sys1_client.call(sys1_req)
+                res = recipe.parse_response(resp_body, duration_ms=dur_ms)
+                classification = {
+                    "verdict": res.verdict, "confidence": round(res.confidence, 4),
+                    "passed_gating": res.passed_gating, "margin": round(res.margin, 4),
+                    "entropy": round(res.entropy, 4),
+                    "distribution": {k: round(v, 4) for k, v in res.probabilities.items()},
+                }
+                if res.passed_gating:
+                    requires_verified = (res.verdict == "VERIFIED_EXECUTION")
+            except Exception:
+                pass
+        self._requires_verified_execution = requires_verified
+        self._route_execution_profile(substantive_request)
+        self._problem_domain = ProblemDomain.GENERAL if requires_verified else None
+        self._record_routing()
+
+        if self.workspace is not None:
+            self.workspace.append_event(
+                "PROBLEM_CLASS_CLASSIFIED",
+                {
+                    "requires_verified_execution": self._requires_verified_execution,
+                    "domain": self._problem_domain.value if self._problem_domain else None,
+                    **classification,
+                },
+            )
+        budget_refusal = self._budget_refusal()
+        if budget_refusal is not None:
+            return self._refuse(budget_refusal, traces, "budget")
+
+        compiled = self._semantic_read(substantive_request, traces)
+        if compiled is None:
+            self.workspace.append_event("PROTOCOL_BLOCKED", {"phase": "bootstrap"})
+            return self._refuse(getattr(self, "_blocked_response", None), traces, "bootstrap")
+        entities = self._task_entities_cache.get((substantive_request, self._previous_deliverable), ())
+        self._active_task_entities = entities
+
+        self.controller = self._bind_new_controller(self.workspace, instance_kind="UNCONFIRMED")
+        return self._execute_unconfirmed(substantive_request, traces)
+
     def _republish_unpublished(self) -> bool:
         """Durability: a review gate whose artifact never reached the workspace (Ctrl+C
         between the controller commit and the publication, or a crash there) is
@@ -1232,6 +1315,17 @@ class SessionEngine:
                 traces,
                 protocol_state="ACTIVE_BY_EXPLICIT_INVOCATION",
             )
+        if self.no_review:
+            routed = self._s1_activation(user_message.strip())
+            if routed is not None:
+                route, refusal = routed
+                if route == "BLOCKED_BY_HIGHER_PRIORITY":
+                    return self._refuse(refusal, traces, "activation")
+                self.workspace.append_event("DIRECT_ANSWER_ROUTED", {"route": route})
+                if route == "PROTOCOL_DISCUSSION":
+                    return self._discuss_protocol(user_message.strip(), traces)
+                return EngineResponse(None, traces, bypass=True)
+            return self._run_unconfirmed(user_message.strip(), traces)
         decision = self._call(
             "INTERPRET_ACTIVATION", {"RAW_USER_MESSAGE": user_message}, traces,
             parser=self.bridge.parse_activation,
@@ -1684,6 +1778,204 @@ class SessionEngine:
         errors, final_body = self._verify_result(outcome, prompt_body, plan_body, requirements, result_ir_mode)
         return outcome, errors, final_body, getattr(self, "_last_programs_run", 0) > 0
 
+    def _execute_unconfirmed(
+        self,
+        substantive_request: str,
+        traces: list[CallTrace],
+        transition: Transition | None = None,
+    ) -> EngineResponse:
+        assert self.controller is not None and self.workspace is not None
+        if not self.controller.can_execute():
+            raise ControllerError("execute_gate")
+
+        from pdl_taskmaster.runtime.result_ir import render_instructions
+
+        if transition and transition.payload.get("task_change"):
+            change = transition.payload.get("execution_input_source", "")
+            substantive_request = f"{substantive_request}\n\nTask change from the user:\n{change}"
+            self._source_request = substantive_request
+            self.workspace.write_turn_source(substantive_request)
+
+        sanitized = compile_bootstrap_output(substantive_request, substantive_request)[0].strip()
+        typed_entities = list(self._typed_task_entities_cache.get(
+            (substantive_request, self._previous_deliverable), []
+        ))
+        verified = self._requires_verified_execution
+        result_ir_mode = verified or os.environ.get("PDLT_RESULT_IR") == "1"
+        requirements: list[str] = []
+        task_inputs: list[str] = []
+        if self._previous_deliverable:
+            task_inputs.append(self._previous_deliverable)
+        if transition and transition.payload.get("execution_input_source") and not transition.payload.get("task_change"):
+            supplied_input = transition.payload["execution_input_source"]
+            sanitized_input = compile_bootstrap_output(supplied_input, supplied_input)[0].strip()
+            task_inputs.append(f"SUPPLIED INPUT: {sanitized_input}")
+        if result_ir_mode:
+            evidence_paths = ["execution://body"] + (["execution://witness"] if verified else [])
+            channel = render_instructions(
+                requirements,
+                repo_root=self.repo_root,
+                evidence_paths=evidence_paths,
+                requires_verified_execution=verified,
+            )
+            task_inputs.append(channel)
+
+        execute_context = {
+            "SOURCE_REQUEST": sanitized,
+            "TASK_ENTITIES": typed_entities,
+            "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
+        }
+        if task_inputs:
+            execute_context["REQUIRED_TASK_INPUTS"] = "\n\n".join(task_inputs)
+
+        stop_on_failure = self.max_repairs == 0
+        repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
+        repairs_used = 0
+        unmeasured_repairs = 0
+
+        outcome, errors, final_body, ran_program = self._execute_unconfirmed_attempt(
+            execute_context, traces, sanitized, requirements, result_ir_mode,
+        )
+
+        if outcome.kind == "RESULT" and getattr(outcome, "approach", None):
+            self._route_plan_profile(sanitized, outcome.approach)
+            execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools
+
+        attempt_findings = [list(errors)]
+        while outcome.kind == "RESULT" and errors and not stop_on_failure and (
+            "SANDBOX_UNAVAILABLE" not in finding_codes(errors)
+        ) and (
+            repairs_used < repairs_allowed or (not ran_program and unmeasured_repairs < UNMEASURED_REPAIRS)
+        ):
+            counted = ran_program or unmeasured_repairs >= UNMEASURED_REPAIRS
+            if counted:
+                repairs_used += 1
+            else:
+                unmeasured_repairs += 1
+            correction = "OPERATOR CORRECTION: " + "; ".join(errors)
+            outcome, errors, final_body, ran_program = self._execute_unconfirmed_attempt(
+                execute_context, traces, sanitized, requirements, result_ir_mode,
+                correction=correction,
+            )
+            if outcome.kind == "RESULT" and getattr(outcome, "approach", None):
+                self._route_plan_profile(sanitized, outcome.approach)
+                execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools
+            attempt_findings.append(list(errors))
+
+        if outcome.kind == "BLOCKED_BY_HIGHER_PRIORITY":
+            self.controller.cancel()
+            return self._refuse(outcome.body, traces, "execute_unconfirmed")
+
+        if outcome.kind == "REQUEST_INPUT":
+            assert outcome.expected_type and outcome.description
+            self.controller.request_execution_input(outcome.expected_type, outcome.description)
+            if self.workspace.turn_id is not None:
+                self.workspace.mark_turn_status("WAITING_INPUT")
+            self.workspace.publish_execution_outcome(
+                outcome.kind,
+                final_body,
+                {
+                    "expected_type": outcome.expected_type,
+                    "description": outcome.description,
+                    "interpretation": getattr(outcome, "interpretation", None),
+                    "approach": getattr(outcome, "approach", None),
+                },
+            )
+            return EngineResponse(final_body, traces)
+
+        if errors:
+            self.controller.cancel()
+            if self.workspace.turn_id is not None:
+                self.workspace.mark_turn_status("CLOSED_CANCELLED")
+            self.workspace.publish_execution_outcome(
+                "VERIFICATION_FAILED", final_body, {
+                    "errors": errors, "codes": finding_codes(errors),
+                    "interpretation": getattr(outcome, "interpretation", None),
+                    "approach": getattr(outcome, "approach", None),
+                }
+            )
+            return EngineResponse(final_body, traces, closed=True)
+
+        result_body_hash = hashlib.sha256(final_body.encode("utf-8")).hexdigest()
+        self.controller.complete_success(result_body_hash)
+        if self.workspace.turn_id is not None:
+            self.workspace.mark_turn_status("CLOSED_SUCCESS", deliverable_sha256=result_body_hash)
+        self.workspace.publish_execution_outcome(
+            outcome.kind,
+            final_body,
+            {
+                "source_prompt_id": None,
+                "source_plan_id": None,
+                "result_body_hash": result_body_hash,
+                "interpretation": getattr(outcome, "interpretation", None),
+                "approach": getattr(outcome, "approach", None),
+            },
+        )
+        notes = presentation.unconfirmed_working_notes(
+            getattr(outcome, "interpretation", None),
+            getattr(outcome, "approach", None),
+        )
+        published_text = f"{final_body}\n\n{notes}" if notes else final_body
+        return EngineResponse(published_text, traces, closed=True)
+
+    def _execute_unconfirmed_attempt(
+        self,
+        execute_context: dict[str, Any],
+        traces: list[CallTrace],
+        sanitized_source: str,
+        requirements: list[str],
+        result_ir_mode: bool,
+        *,
+        correction: str | None = None,
+    ) -> tuple[Any, list[str], str, bool]:
+        try:
+            modes = frozenset({RESULT_IR_MODE}) if result_ir_mode else frozenset()
+            outcome = self.bridge.parse_unconfirmed_execution(
+                self._call("EXECUTE_UNCONFIRMED", execute_context, traces,
+                           operator_correction=correction, modes=modes)
+            )
+        except Exception as exc:
+            limit = getattr(exc, "output_limit", None)
+            if limit is None and not _is_wire_failure(exc):
+                raise
+            assert self.workspace is not None
+            if limit is not None:
+                self.workspace.append_event("OUTPUT_LIMIT_REACHED", {
+                    "limit": limit, "whitespace_stall": bool(getattr(exc, "whitespace_stall", False))})
+                finding = Finding("OUTPUT_LIMIT_REACHED", limit=limit)
+            else:
+                failure = {"reason": str(exc)}
+                if getattr(exc, "failed_generation", None):
+                    failure["failed_generation"] = str(exc.failed_generation)[:4000]
+                self.workspace.append_event("EXECUTE_WIRE_FAILURE", failure)
+                finding = Finding("OUTPUT_MALFORMED", reason=str(exc))
+            return _FailedExecution(), [finding], "", True
+
+        if outcome.kind != "RESULT":
+            return outcome, [], outcome.body, False
+
+        missing_entities = self._entity_coverage_missing(outcome.interpretation or "", self._active_task_entities)
+        if missing_entities and self.workspace is not None:
+            self.workspace.append_event(
+                "TASK_ENTITY_COVERAGE_MISSING",
+                {"entities": list(missing_entities), "phase": "execute_unconfirmed_interpretation"},
+            )
+
+        from pdl_taskmaster.verification.plan_soundness import validate_plan_soundness
+        for note_name, note_body in (("interpretation", outcome.interpretation), ("approach", outcome.approach)):
+            if note_body:
+                note_lint = validate_plan_soundness(note_body)
+                if not note_lint.valid and self.workspace is not None:
+                    self.workspace.append_event(
+                        f"UNCONFIRMED_{note_name.upper()}_LINT_FINDING",
+                        {"violations": note_lint.violations},
+                    )
+
+        errors, final_body = self._verify_result(
+            outcome, sanitized_source, outcome.approach, requirements, result_ir_mode
+        )
+        return outcome, errors, final_body, getattr(self, "_last_programs_run", 0) > 0
+
     def _run_deliverable_code(self, body: str) -> tuple[dict[str, Any] | None, list[str]]:
         """Run every declared Python block in the session sandbox.
 
@@ -1955,6 +2247,8 @@ class SessionEngine:
         if transition.action == NextAction.REVISE_PLAN:
             return self._revise_plan(transition, traces)
         if transition.action == NextAction.EXECUTE:
+            if self.controller is not None and self.controller.state.instance_kind == "UNCONFIRMED":
+                return self._execute_unconfirmed(self._source_request or "", traces, transition=transition)
             return self._execute(transition, traces)
         if transition.action == NextAction.ANSWER_PROTOCOL:
             return self._answer_protocol(user_message, traces)
@@ -1981,6 +2275,8 @@ class SessionEngine:
             self.workspace.append_event("PROTOCOL_CLOSED", {"reason": "new_task"})
             self.workspace = self._new_workspace()
             self.controller = None
+            if self.no_review and not new_task.startswith("$confirm-with-pseudocode"):
+                return self._run_unconfirmed(new_task, traces)
             return self._draft_initial_prompt(
                 new_task,
                 traces,

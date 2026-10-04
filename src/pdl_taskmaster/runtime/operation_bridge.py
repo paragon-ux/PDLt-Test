@@ -35,6 +35,8 @@ from pdl_taskmaster.runtime.wire_payloads import (
     ReviewFactsData,
     SYSTEM1_CONFIDENCE_FLOOR,
     TaskChangeDimension,
+    UnconfirmedExecutionOutcomePayload,
+    UnconfirmedExecutionRequestInputData,
     WireError,
     format_validation_feedback,
     map_validation_error_to_wire_reason,
@@ -61,6 +63,17 @@ class PromptDraftOutcome:
 class ExecutionOutcome:
     kind: str
     body: str
+    expected_type: str | None = None
+    description: str | None = None
+    result_ir: dict | None = None
+
+
+@dataclass(frozen=True)
+class UnconfirmedExecutionOutcome:
+    kind: str
+    body: str
+    interpretation: str
+    approach: str
     expected_type: str | None = None
     description: str | None = None
     result_ir: dict | None = None
@@ -405,4 +418,32 @@ class OperationBridge:
             None,
             ir_dict,
         )
+
+    def parse_unconfirmed_execution(self, model_text: str) -> UnconfirmedExecutionOutcome:
+        payload: UnconfirmedExecutionOutcomePayload = self._validate(
+            "EXECUTE_UNCONFIRMED", UnconfirmedExecutionOutcomePayload, model_text
+        )
+        interpretation = _normalize_body_newlines(payload.interpretation.strip())
+        approach = _normalize_body_newlines(payload.approach.strip())
+        if isinstance(payload, UnconfirmedExecutionRequestInputData):
+            return UnconfirmedExecutionOutcome(
+                payload.kind,
+                _normalize_body_newlines(payload.body.strip()),
+                interpretation,
+                approach,
+                payload.expected_type.strip(),
+                payload.description.strip(),
+                None,
+            )
+        ir_dict = payload.result_ir.model_dump() if payload.result_ir is not None else None
+        return UnconfirmedExecutionOutcome(
+            payload.kind,
+            _normalize_body_newlines(payload.body.strip()),
+            interpretation,
+            approach,
+            None,
+            None,
+            ir_dict,
+        )
+
 

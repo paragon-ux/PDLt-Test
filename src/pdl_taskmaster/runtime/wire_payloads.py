@@ -641,6 +641,63 @@ ExecutionOutcomePayload = Annotated[
 ]
 
 
+class UnconfirmedExecutionResultData(WireModel):
+    model_config = ConfigDict(extra="forbid", json_schema_extra=contract(description=(
+            'Deliverable completing the unconfirmed task (e.g. source code, implementation, written response, '
+            'or analysis artifact). When the task requests writing, creating, or implementing code '
+            'or functions, emit the complete deliverable implementation in body.'
+        ), required=['interpretation', 'approach', 'kind', 'body', 'result_ir']))
+    interpretation: str = Field(json_schema_extra=contract(description='Your working understanding of the task, in PDL pseudocode notation.'))
+    approach: str = Field(json_schema_extra=contract(description='Your working plan for producing the deliverable, in PDL pseudocode notation; any method is your choice.'))
+    kind: Literal["RESULT", "BLOCKED_BY_HIGHER_PRIORITY"]
+    body: str = Field(json_schema_extra=contract(description='The complete deliverable content (e.g. full source code, written answer, or output artifact).', minLength=1))
+    result_ir: Optional[ResultIRData] = Field(
+        default=None, json_schema_extra=contract(description=(
+                'Result Pseudocode decomposition IR (TRD-0003): reconciled against the prompt '
+                'requirements, with evidence citations. Presence is wire-enforced; citation content is validated '
+                'host-side.'
+            ), when=RESULT_IR_MODE))
+
+    @model_validator(mode="after")
+    def validate_fields(self) -> UnconfirmedExecutionResultData:
+        if not self.body.strip():
+            raise ValueError("execution_body: body must not be empty")
+        return self
+
+
+class UnconfirmedExecutionRequestInputData(WireModel):
+    model_config = ConfigDict(extra="forbid", json_schema_extra=contract(description=(
+            'Request missing input ONLY when an external tool execution or runtime environment is blocked '
+            'without live runtime variables. When the task is to write, implement, create, or define code, '
+            'functions, classes, scripts, or documents, the deliverable is the source text itself: DO NOT '
+            'request mocks, callers, or argument implementations. Emit the complete source code implementation '
+            'directly in RESULT. People or events described in the task are part of the task, not a source of input.'
+        ), required=['interpretation', 'approach', 'kind', 'body', 'expected_type']))
+    interpretation: str = Field(json_schema_extra=contract(description='Your working understanding of the task, in PDL pseudocode notation.'))
+    approach: str = Field(json_schema_extra=contract(description='Your working plan for producing the deliverable, in PDL pseudocode notation; any method is your choice.'))
+    kind: Literal["REQUEST_INPUT"] = "REQUEST_INPUT"
+    body: str = Field(json_schema_extra=contract(minLength=1))
+    expected_type: str = Field(json_schema_extra=contract(minLength=1))
+    description: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_fields(self) -> UnconfirmedExecutionRequestInputData:
+        if not self.body.strip():
+            raise ValueError("execution_body: body must not be empty")
+        if not self.expected_type.strip():
+            raise ValueError("execution_expected_type: expected_type must not be empty")
+        if not self.description or not self.description.strip():
+            first_line = self.body.strip().splitlines()[0]
+            self.description = first_line[:120]
+        return self
+
+
+UnconfirmedExecutionOutcomePayload = Annotated[
+    Union[UnconfirmedExecutionResultData, UnconfirmedExecutionRequestInputData],
+    Field(discriminator="kind"),
+]
+
+
 OPERATION_PAYLOAD_MODELS: dict[str, Any] = {
     "INTERPRET_ACTIVATION": ActivationDecisionPayload,
     "BOOTSTRAP_ANALYSIS": BootstrapAnalysisPayload,
@@ -656,6 +713,7 @@ OPERATION_PAYLOAD_MODELS: dict[str, Any] = {
     "DRAFT_EXECUTION": ExecutionDraftPayload,
     "EMIT_RESULT_IR": ResultIRRepairPayload,
     "EXECUTE": ExecutionOutcomePayload,
+    "EXECUTE_UNCONFIRMED": UnconfirmedExecutionOutcomePayload,
 }
 
 

@@ -89,6 +89,27 @@
     "Result Pseudocode decomposition IR (TRD-0003): reconciled against the confirmed prompt requirements, with evidence citations. Presence is wire-enforced; citation content is validated host-side."
    ]
   },
+  "EXECUTE_UNCONFIRMED": {
+   "$": [
+    "Deliverable completing the unconfirmed task (e.g. source code, implementation, written response, or analysis artifact). When the task requests writing, creating, or implementing code or functions, emit the complete deliverable implementation in body.",
+    "Request missing input ONLY when an external tool execution or runtime environment is blocked without live runtime variables. When the task is to write, implement, create, or define code, functions, classes, scripts, or documents, the deliverable is the source text itself: DO NOT request mocks, callers, or argument implementations. Emit the complete source code implementation directly in RESULT. People or events described in the task are part of the task, not a source of input."
+   ],
+   "$.approach": [
+    "Your working plan for producing the deliverable, in PDL pseudocode notation; any method is your choice."
+   ],
+   "$.body": [
+    "The complete deliverable content (e.g. full source code, written answer, or output artifact)."
+   ],
+   "$.interpretation": [
+    "Your working understanding of the task, in PDL pseudocode notation."
+   ],
+   "$.result_ir": [
+    "Result Pseudocode decomposition IR (TRD-0003): reconciled against the prompt requirements, with evidence citations. Presence is wire-enforced; citation content is validated host-side."
+   ],
+   "$.result_ir.witness": [
+    "Witness certifying substantive execution correctness (ADR-0013 / ADR-0015)."
+   ]
+  },
   "INTERPRET_ACTIVATION": {
    "$": [
     "Used only when the host did not observe explicit protocol invocation."

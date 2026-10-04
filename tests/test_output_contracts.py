@@ -175,7 +175,7 @@ def test_every_shown_description_survives_verbatim() -> None:
     """The descriptions steer the model (showing the grammar without them moved
     5/8 EXECUTE replies to REQUEST_INPUT): generated schemas keep each one."""
     snapshot = json.loads((FIXTURES / "prompt_schema_descriptions.json").read_text(encoding="utf-8"))["operations"]
-    assert sum(len(texts) for paths in snapshot.values() for texts in paths.values()) == 39
+    assert sum(len(texts) for paths in snapshot.values() for texts in paths.values()) == 46
     lost = []
     for operation, paths in snapshot.items():
         unwrapped = descriptions(shown_schema(operation, ContractForm(grammar="json"), ALL_MODES))

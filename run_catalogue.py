@@ -327,6 +327,8 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
         setting_args.append("--draft-execute")
     if settings.get("sandbox"):
         setting_args += ["--sandbox", settings["sandbox"]]
+    if settings.get("route") == "unconfirmed":
+        setting_args.append("--no-review")
     cmd = [
         sys.executable, "-m", "pdl_taskmaster.host.cli",
         "--non-interactive",
@@ -640,6 +642,7 @@ def generate_scoreboard(results, run_dir, run_meta):
     scoreboard = {
         "run_id": run_meta["run_id"],
         "timestamp": run_meta["start_time"],
+        "route": run_meta.get("route", "confirmed"),
         "model": run_meta["model"],
         "reasoning_effort": run_meta["reasoning_effort"],
         "total_prompts": total,
@@ -678,6 +681,7 @@ def generate_scoreboard(results, run_dir, run_meta):
         f"**Model:** `{scoreboard['model']}`  ",
         f"**Reasoning Effort:** `{scoreboard['reasoning_effort']}`  ",
         f"**Timestamp:** {scoreboard['timestamp']}  ",
+        f"**Route:** `{scoreboard.get('route', 'confirmed')}`  ",
         f"**Total Time:** {scoreboard['total_elapsed_seconds']:.1f}s  ",
         "",
         "---",
@@ -842,6 +846,8 @@ def main():
                         help=f"memory cap for one prompt's harness process tree (default: {HARNESS_MEMORY_MB})")
     parser.add_argument("--repeat", type=int, default=1, metavar="N",
                         help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
+    parser.add_argument("--route", choices=["confirmed", "unconfirmed"], default="confirmed",
+                        help="execution route: 'confirmed' (default, multi-stage with review) or 'unconfirmed' (--no-review / ultrafast)")
     parser.add_argument("--regrade", metavar="RUN_DIR", default=None,
                         help="re-grade a finished run with the current graders and rewrite its scoreboard")
     args = parser.parse_args()
@@ -859,7 +865,8 @@ def main():
         parser.error("--repeat must be at least 1")
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
-                    "providers": args.providers, "draft_execute": args.draft_execute, "sandbox": args.sandbox}
+                    "providers": args.providers, "draft_execute": args.draft_execute, "sandbox": args.sandbox,
+                    "route": args.route}
     if args.sandbox:
         # The graders run deliverable code in this process: the same confinement.
         os.environ["PDLT_SANDBOX"] = args.sandbox
@@ -900,6 +907,7 @@ def main():
         "run_id": run_id,
         "start_time": datetime.now(timezone.utc).isoformat(),
         "model": args.model,
+        "route": args.route,
         "reasoning_effort": args.reasoning or "harness-default",
         "reasoning_by_operation": args.reasoning_op,
         "reasoning_effective": reasoning_effective,

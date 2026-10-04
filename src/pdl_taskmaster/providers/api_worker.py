@@ -135,7 +135,7 @@ _SCHEMA_REJECTED_OPERATIONS: dict[str, frozenset[str]] = {
 # Operations sent in JSON mode (no schema) whatever the provider: under the EXECUTE
 # schema Nemotron stalled in whitespace before closing result_ir (IMPL-0001); without
 # it the same request completed 14/14. Moves to the per-stage profile (IMPL-0003).
-JSON_MODE_OPERATIONS = frozenset({"EXECUTE"})
+JSON_MODE_OPERATIONS = frozenset({"EXECUTE", "EXECUTE_UNCONFIRMED"})
 
 
 def _order_keys(pinning: Any) -> set[str]:
@@ -920,6 +920,15 @@ class ApiWorker:
                 "- Deliver the result the confirmed prompt asks for, following the confirmed plan. Do not substitute a description of how the result could be obtained.\n"
                 "- AVAILABLE_EXECUTION_TOOLS describes the execution environment exactly. Work within it. REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (EXEC-01); an environment capability is never user input.\n"
                 "- SUPPLIED_EXECUTION_INPUT_SOURCE, when present, is the user's original source text: use its data, and let the confirmed prompt govern where they differ (AUTH-04).\n"
+                "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"
+                "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
+            )
+        elif operation_name == "EXECUTE_UNCONFIRMED":
+            extra_guidance = (
+                "\n\nNORMATIVE GUIDELINES FOR EXECUTE_UNCONFIRMED (UNC-01, UNC-02, UNC-03, UNC-04, GUARD-03):\n"
+                "- Write your working understanding in `interpretation` and your working plan in `approach`, using PDL notation.\n"
+                "- Deliver the substantive result in `body`. Work within AVAILABLE_EXECUTION_TOOLS.\n"
+                "- REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (UNC-04, EXEC-01); people or events described in the task are part of the task, not a source of input.\n"
                 "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"
                 "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
             )

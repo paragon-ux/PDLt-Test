@@ -75,6 +75,7 @@ class PDLtHost:
         render_compact: bool = False,
         higher_priority_constraints: str | None = None,
         sandbox_mode: str | None = None,
+        no_review: bool = False,
     ):
         self.candidate_repo = Path(candidate_repo).resolve()
         self.worker = worker
@@ -87,6 +88,7 @@ class PDLtHost:
         self.render_compact = render_compact
         self.higher_priority_constraints = higher_priority_constraints or DEFAULT_HIGHER_PRIORITY_CONSTRAINTS
         self.sandbox_mode = sandbox_mode  # None: $PDLT_SANDBOX, else auto (native confinement)
+        self.no_review = no_review
         self.engine: Any = None
         self.observed: ObservedSession | None = None
         self.sink: JsonlSink | None = None
@@ -113,6 +115,7 @@ class PDLtHost:
                     render_compact=self.render_compact,
                     sys1_client=getattr(self.worker, "sys1_client", None),
                     sandbox_mode=self.sandbox_mode,
+                    no_review=self.no_review,
                 )
             except Exception as exc:
                 # Graceful degradation: a session with no committed protocol
@@ -130,6 +133,7 @@ class PDLtHost:
                 render_compact=self.render_compact,
                 sys1_client=getattr(self.worker, "sys1_client", None),
                 sandbox_mode=self.sandbox_mode,
+                no_review=self.no_review,
             )
         self.engine = engine
         # Show each operation's output schema in the form the worker will enforce it.
@@ -194,7 +198,7 @@ class PDLtHost:
             environment = sandbox.decision_state()["execution_environment"]
         except Exception:
             return None
-        return (f"{environment} Programs run only in the execution stage of a confirmed task, "
+        return (f"{environment} Programs run only when a task is executed, "
                 "not during a direct reply.")
 
     def _at_protocol_entry(self) -> bool:
@@ -205,6 +209,8 @@ class PDLtHost:
 
     def _ensure_protocol_entry(self, user_message: str) -> str:
         if self._at_protocol_entry():
+            if self.no_review or getattr(self.engine, "no_review", False):
+                return user_message
             return self._with_invocation(user_message)
         return user_message
 

@@ -92,3 +92,16 @@ def literal_witness_note() -> str:
 
 def cancelled() -> str:
     return "Cancelled."
+
+
+def unconfirmed_working_notes(interpretation: str | None, approach: str | None) -> str:
+    """Working notes from unconfirmed execution (UNC-03, decision U3)."""
+    parts = []
+    if interpretation and interpretation.strip():
+        parts.append(f"Interpretation:\n{interpretation.strip()}")
+    if approach and approach.strip():
+        parts.append(f"Approach:\n{approach.strip()}")
+    if not parts:
+        return ""
+    body = "\n\n".join(parts)
+    return f"[unconfirmed interpretation and approach]\n{body}"
