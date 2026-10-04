@@ -1612,7 +1612,7 @@ class SessionEngine:
 
         self._route_plan_profile(prompt_body, plan_body)
         execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools
-        if self.draft_execute:
+        if self.draft_execute and self._requires_verified_execution:
             brief = self._draft_execution_brief(execute_context, traces)
             if brief:
                 # The model's own draft (GUARD-01: no harness feedback), drafted once.
@@ -1846,7 +1846,7 @@ class SessionEngine:
         if task_inputs:
             execute_context["REQUIRED_TASK_INPUTS"] = "\n\n".join(task_inputs)
 
-        if self.draft_execute:
+        if self.draft_execute and self._requires_verified_execution:
             brief = self._draft_execution_brief(execute_context, traces)
             if brief:
                 execute_context["REQUIRED_TASK_INPUTS"] = (

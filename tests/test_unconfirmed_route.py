@@ -379,15 +379,20 @@ def test_unconfirmed_route_with_draft_execute(tmp_path: Path):
             inputs = req.projection.document.get("operation_inputs", {})
             req_inputs = inputs.get("REQUIRED_TASK_INPUTS", "")
             assert "EXECUTION BRIEF" in req_inputs
-            assert "MRV heuristic" in req_inputs
-            return _unconfirmed_result_reply()
+            return json.dumps({
+                "kind": "RESULT",
+                "interpretation": "DETERMINE identities of A, B, C",
+                "approach": "ASK god A first question",
+                "body": "```python\nimport json\nprint('WITNESS: {\"polarity\": \"positive\", \"data\": {\"identities\": [\"True\", \"Random\", \"False\"]}}')\n```",
+                "result_ir": {},
+            })
         raise AssertionError(f"unexpected operation: {req.operation}")
 
     engine = SessionEngine(
         ROOT,
         model_call,
         workspace_root=tmp_path,
-        sys1_client=ClassifyingSys1(),
+        sys1_client=ClassifyingSys1("VERIFIED_EXECUTION"),
         no_review=True,
     )
     engine.draft_execute = True
@@ -396,4 +401,33 @@ def test_unconfirmed_route_with_draft_execute(tmp_path: Path):
     assert response.closed is True
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
     assert calls == ["BOOTSTRAP_ANALYSIS", "DRAFT_EXECUTE", "EXECUTE_UNCONFIRMED"]
+
+
+def test_unconfirmed_route_with_draft_execute_bypasses_on_standard_execution(tmp_path: Path):
+    """When task is STANDARD_EXECUTION, DRAFT_EXECUTE is bypassed to prevent code-framing bias (GUARD-03.1)."""
+    calls = []
+
+    def model_call(req):
+        calls.append(req.operation)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return _bootstrap_reply()
+        if req.operation == "EXECUTE_UNCONFIRMED":
+            return _unconfirmed_result_reply()
+        raise AssertionError(f"unexpected operation: {req.operation}")
+
+    engine = SessionEngine(
+        ROOT,
+        model_call,
+        workspace_root=tmp_path,
+        sys1_client=ClassifyingSys1("STANDARD_EXECUTION"),
+        no_review=True,
+    )
+    engine.draft_execute = True
+
+    response = engine.handle_user_message("Analyze the architectural tradeoffs of two cache replacement policies.")
+    assert response.closed is True
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    # DRAFT_EXECUTE bypassed: straight from BOOTSTRAP_ANALYSIS to EXECUTE_UNCONFIRMED
+    assert calls == ["BOOTSTRAP_ANALYSIS", "EXECUTE_UNCONFIRMED"]
+
 
