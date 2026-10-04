@@ -127,7 +127,10 @@ def score_protocol(item: grading.Item, run: dict[str, Any], result_dir: Path) ->
         {"grade": graders.FAIL, "reason": first["status"]}
     primary = to_score(stage_ok, final["grade"])
     stopped = grading.headless_stop(result_dir)
+    usage = run_catalogue.call_accounting(result_dir)
     return {
+        "cost": {"calls": usage["total"], "input_tokens": sum(usage["input_tokens"].values()),
+                 "output_tokens": sum(usage["output_tokens"].values())},
         "verdict": verdict, "exit_code": run["exit_code"], "published_kind": kind, "bypassed": bypassed,
         "grade": final, "first_attempt": {"status": first["status"], "grade": first_grade},
         "headless_stop": stopped, "system1": grading.system1_verdicts(result_dir),
@@ -205,7 +208,9 @@ def run_block(config, block: Block, items: dict[str, grading.Item], ledger: Ledg
     done = ledger.done_units(block.block_id)
     stratum = config["_strata"].get(block.item_id, "SMOKE")
     common = {"block_id": block.block_id, "attempt": attempt, "model": block.model, "item_id": block.item_id,
-              "stratum": stratum, "rep": block.rep}
+              "stratum": stratum, "rep": block.rep,
+              # Generated items from one template are one analysis unit (design §8.3, LEDGER L19).
+              "cluster": config.get("_clusters", {}).get(block.item_id, block.item_id)}
     snapshot = None
     for arm in block.arms:
         spec: ArmSpec = config["arms"][arm]
@@ -229,8 +234,11 @@ def run_block(config, block: Block, items: dict[str, grading.Item], ledger: Ledg
             unit_dir.mkdir(parents=True, exist_ok=True)
             (unit_dir / "reply.json").write_text(json.dumps({**result.as_dict(), "text": result.text}, indent=2,
                                                             ensure_ascii=False), encoding="utf-8")
+            usage = result.usage or {}
             ledger.append({**common, "arm": arm, "branch": None, "status": "done", "control": result.as_dict(),
-                           "system1_snapshot": snapshot, "grade": grade,
+                           "system1_snapshot": snapshot, "grade": grade, "elapsed_s": result.latency_s,
+                           "cost": {"calls": 1, "input_tokens": usage.get("input_tokens") or 0,
+                                    "output_tokens": usage.get("output_tokens") or 0},
                            "scores": {"primary": to_score(True, grade["grade"])}})
             continue
         if spec.kind == "branched":
@@ -264,6 +272,7 @@ def _schedule(config, smoke: bool) -> tuple[list[Block], dict[str, grading.Item]
     else:
         locked = gate_items(config["strata"])
         config["_strata"] = {i["id"]: i["stratum"] for i in locked}
+        config["_clusters"] = {i["id"]: f"{i['set']}-{i['family']}" for i in locked if i.get("family")}
         catalogue = {**grading.catalogue_items(), **grading.generated_items("gate")}
         items = {i["id"]: catalogue[i["id"]] for i in locked}
         ids = [i["id"] for i in locked]

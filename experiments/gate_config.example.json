@@ -5,7 +5,8 @@
     "P_old: the commit after PR 2 and PR 3. P_new: PR 4b's head. P_unc: PR 5's head (drop the arm if PR 5 is not merged by Day 1; never add it mid-run).",
     "The seed is fixed now; changing it after the lock is a new pre-registration.",
     "Models: gpt-oss only (2026-10-04: Nemotron dropped from the experiments; about 14 tokens/s). A second model is added only if it passes the criteria fixed in the design (§7, D15), with its reasoning profile set before any run.",
-    "Judges (T5): two blinded judges from different labs grade the judged group; calibrate first with python -m experiments.judge calibrate --config <this file>. Slugs checked on OpenRouter /models on 2026-10-04; the user confirms the choice before any judge call."
+    "Judges (T5, decided 2026-10-04): Claude as an in-session subagent on Sonnet (never the model that wrote the rubrics), working only on the blinded export; Gemini 3.8 Flash over the API. Two labs, so their errors are independent. The API path (python -m experiments.judge calibrate) serves any judge given as a slug; the subagent path uses export-calibration and report-calibration.",
+    "prices: dollars per million tokens per model name, for cost per correct answer (§8.1, G5). Update from OpenRouter on Day 1 and freeze with the lock."
   ],
   "run_id": "gate",
   "out_dir": "gate-runs/gate",
@@ -73,11 +74,19 @@
   "judges": [
     {
       "name": "claude",
-      "model": "anthropic/claude-sonnet-5.5"
+      "mode": "subagent",
+      "model": "sonnet"
     },
     {
       "name": "gemini",
-      "model": "google/gemini-3.1-pro-preview"
+      "model": "google/gemini-3.8-flash"
     }
-  ]
+  ],
+  "prices": {
+    "gpt-oss": {
+      "input_per_m": 0.05,
+      "output_per_m": 0.25,
+      "_source": "Crusoe via OpenRouter, PROVIDERS.md §4 (2026-10-04)"
+    }
+  }
 }

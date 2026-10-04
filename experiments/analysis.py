@@ -1,7 +1,9 @@
 """The pre-registered analysis of the acceptance gate (design §8), in plain Python.
 
-- **Unit of analysis:** the prompt. A prompt's score in an arm is the mean over
-  its repetitions.
+- **Unit of analysis:** the prompt, or for generated items their template
+  (``row["cluster"]``). Items made from one template are correlated, so they
+  count as one unit: their scores are averaged per item, then per template
+  (LEDGER L19). A unit's score in an arm is that mean over its repetitions.
 - **Comparison:** the mean of the per-prompt differences d_i, with a BCa
   bootstrap confidence interval over prompts and a two-sided sign-flip
   permutation test. The test is exact when at most 16 prompts disagree,
@@ -11,7 +13,8 @@
   arm (P_unc). G3 is each fix's mechanism check; its results are passed in as
   facts.
 - **Rows** come from the runner's ledger:
-  ``{model, item_id, stratum, rep, arm, scores: {name: 1 | 0 | None}}``.
+  ``{model, item_id, cluster, stratum, rep, arm, scores: {name: 1 | 0 | None},
+  cost: {calls, input_tokens, output_tokens}, elapsed_s}``.
   None means pending adjudication. A comparison refuses to run while any of its
   rows is still pending.
 """
@@ -26,6 +29,11 @@ from typing import Any, Iterable
 
 TASK_STRATA = ("T", "G")
 SAFETY_STRATA = ("S", "I")
+INTERACTION_STRATA = {"A": "ambiguity", "M": "multi-turn"}
+
+
+def unit_of(row: dict[str, Any]) -> str:
+    return row.get("cluster") or row["item_id"]
 
 
 class PendingAdjudication(RuntimeError):
@@ -50,8 +58,11 @@ class Comparison:
 
 def per_item(rows: Iterable[dict[str, Any]], model: str, arm: str, score: str,
              strata: tuple[str, ...]) -> dict[str, float]:
-    """Mean score per prompt for one arm. Raises PendingAdjudication on a None score."""
+    """Mean score per analysis unit (prompt or template) for one arm: the mean over
+    repetitions per item, then over the items of a template. Raises
+    PendingAdjudication on a None score."""
     sums: dict[str, list[float]] = {}
+    units: dict[str, str] = {}
     for row in rows:
         if row["model"] != model or row["arm"] != arm or row["stratum"] not in strata:
             continue
@@ -59,7 +70,11 @@ def per_item(rows: Iterable[dict[str, Any]], model: str, arm: str, score: str,
         if value is None:
             raise PendingAdjudication(f"{model} {arm} {row['item_id']} r{row['rep']}: {score} is pending")
         sums.setdefault(row["item_id"], []).append(float(value))
-    return {item: sum(v) / len(v) for item, v in sums.items()}
+        units[row["item_id"]] = unit_of(row)
+    by_unit: dict[str, list[float]] = {}
+    for item, values in sums.items():
+        by_unit.setdefault(units[item], []).append(sum(values) / len(values))
+    return {unit: sum(v) / len(v) for unit, v in by_unit.items()}
 
 
 def paired_differences(rows: list[dict[str, Any]], model: str, arm_a: str, arm_b: str, score: str,
@@ -184,3 +199,71 @@ def ultrafast_decision(rows: list[dict[str, Any]], model: str, *, mechanism_chec
     return {"model": model, "U1_safety_regressions": [f"{i} r{r}" for i, r in u1], "U2": u2,
             "U3_failed_checks": u3_failed,
             "decision": "accept" if not u1 and not u2["loss_detected"] and not u3_failed else "reject"}
+
+
+# --------------------------------------------------------------------------- cost and default selection (§8.1, G5)
+
+def run_cost(row: dict[str, Any], prices: dict[str, dict[str, float]]) -> float:
+    """Dollars for one run, from its tokens and the model's price per million tokens."""
+    price = prices[row["model"]]
+    cost = row.get("cost") or {}
+    return (cost.get("input_tokens", 0) * price["input_per_m"] + cost.get("output_tokens", 0) * price["output_per_m"]) / 1e6
+
+
+def cost_per_correct(rows: list[dict[str, Any]], model: str, arm: str, prices: dict[str, dict[str, float]], *,
+                     score: str = "audited", strata: tuple[str, ...] = TASK_STRATA, n_boot: int = 10_000,
+                     seed: int = 0) -> dict[str, Any]:
+    """Total dollars (and wall time) over the number of PASS outcomes, with a 95%
+    percentile interval from resampling analysis units (a ratio estimator)."""
+    units: dict[str, list[tuple[float, float, float]]] = {}
+    for row in rows:
+        if row["model"] != model or row["arm"] != arm or row["stratum"] not in strata:
+            continue
+        value = (row.get("scores") or {}).get(score)
+        if value is None:
+            raise PendingAdjudication(f"{model} {arm} {row['item_id']} r{row['rep']}: {score} is pending")
+        units.setdefault(unit_of(row), []).append((run_cost(row, prices), float(row.get("elapsed_s") or 0.0),
+                                                   float(value)))
+    if not units:
+        return {"arm": arm, "n_units": 0, "usd_per_correct": math.nan, "ci95": [math.nan, math.nan]}
+    totals = [(sum(c for c, _, _ in v), sum(t for _, t, _ in v), sum(p for _, _, p in v)) for v in units.values()]
+
+    def ratio(sample: list[tuple[float, float, float]], idx: int) -> float:
+        passes = sum(x[2] for x in sample)
+        return sum(x[idx] for x in sample) / passes if passes else math.inf
+
+    rng = random.Random(seed)
+    boots = sorted(ratio([rng.choice(totals) for _ in totals], 0) for _ in range(n_boot))
+    lo, hi = boots[int(0.025 * (n_boot - 1))], boots[int(0.975 * (n_boot - 1))]
+    return {"arm": arm, "n_units": len(totals), "passes": sum(x[2] for x in totals),
+            "usd_total": round(sum(x[0] for x in totals), 6), "usd_per_correct": ratio(totals, 0),
+            "ci95": [lo, hi], "seconds_per_correct": ratio(totals, 1)}
+
+
+def default_selection(eligible: dict[str, bool], costs: dict[str, dict[str, Any]], *,
+                      confirmation_route: str = "P_new") -> dict[str, Any]:
+    """G5: among the eligible routes, the cheapest per correct answer becomes the
+    default. A tie (cost intervals overlapping by more than half the narrower one)
+    keeps the confirmation route as the default and offers the other as a mode. No
+    eligible route keeps the shipped default."""
+    candidates = [r for r, ok in eligible.items() if ok and r in costs and math.isfinite(costs[r]["usd_per_correct"])]
+    if not candidates:
+        return {"default": "shipped", "reason": "no eligible route"}
+    ranked = sorted(candidates, key=lambda r: costs[r]["usd_per_correct"])
+    best = ranked[0]
+    if len(ranked) > 1 and confirmation_route in ranked and best != confirmation_route:
+        a, b = costs[best]["ci95"], costs[confirmation_route]["ci95"]
+        overlap = max(0.0, min(a[1], b[1]) - max(a[0], b[0]))
+        narrower = min(a[1] - a[0], b[1] - b[0])
+        if narrower > 0 and overlap > 0.5 * narrower:
+            return {"default": confirmation_route, "offered_mode": best, "reason": "tie on cost per correct"}
+    return {"default": best, "ranking": ranked}
+
+
+def interaction_report(rows: list[dict[str, Any]], model: str, stratum: str, arm: str, others: list[str], *,
+                       score: str = "audited", seed: int = 0) -> dict[str, Any]:
+    """A1 / M1 (reported, never deciding): arm against each other arm on one
+    interaction stratum ("A" ambiguity, "M" multi-turn)."""
+    return {"stratum": INTERACTION_STRATA.get(stratum, stratum),
+            "comparisons": [compare(rows, model, arm, other, score=score, strata=(stratum,), seed=seed).as_dict()
+                            for other in others]}

@@ -517,6 +517,7 @@ def token_usage(result_dir: Path) -> dict:
     are the effort a run actually got, whatever the requested label."""
     reasoning: dict[str, int] = {}
     output: dict[str, int] = {}
+    inputs: dict[str, int] = {}
     for path in Path(result_dir).rglob("observations/*.jsonl"):
         for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
             if '"reasoning_tokens"' not in line:
@@ -528,10 +529,10 @@ def token_usage(result_dir: Path) -> dict:
             operation, usage = _first(record, "operation"), _first(record, "usage")
             if not isinstance(operation, str) or not isinstance(usage, dict):
                 continue
-            for totals, key in ((reasoning, "reasoning_tokens"), (output, "output_tokens")):
+            for totals, key in ((reasoning, "reasoning_tokens"), (output, "output_tokens"), (inputs, "input_tokens")):
                 if isinstance(usage.get(key), (int, float)):
                     totals[operation] = totals.get(operation, 0) + int(usage[key])
-    return {"reasoning_tokens": reasoning, "output_tokens": output}
+    return {"reasoning_tokens": reasoning, "output_tokens": output, "input_tokens": inputs}
 
 
 def stage_pass(r):

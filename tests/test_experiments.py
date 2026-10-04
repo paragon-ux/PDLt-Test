@@ -407,3 +407,45 @@ def test_a_branch_resumed_from_plan_review_sends_the_unbranched_execute_request(
     for trunk_request, branch_request in zip(trunk_executes, branch_executes):  # repairs included
         assert branch_request.projection.document == trunk_request.projection.document
         assert branch_request.prompt == trunk_request.prompt
+
+
+def _cost_row(item, arm, value, *, cluster=None, stratum="T", rep=1, tokens=(1000, 500), elapsed=10.0):
+    return {"model": "m", "item_id": item, "cluster": cluster or item, "stratum": stratum, "rep": rep, "arm": arm,
+            "scores": {"audited": value, "primary": value},
+            "cost": {"calls": 1, "input_tokens": tokens[0], "output_tokens": tokens[1]}, "elapsed_s": elapsed}
+
+
+def test_generated_items_from_one_template_are_one_unit():
+    rows = [_cost_row("G-SS-01", "A", 1, cluster="gate-SS", stratum="G"), _cost_row("G-SS-02", "A", 0, cluster="gate-SS", stratum="G"),
+            _cost_row("G-SS-03", "A", 1, cluster="gate-SS", stratum="G"), _cost_row("01-01", "A", 1)]
+    units = analysis.per_item(rows, "m", "A", "audited", analysis.TASK_STRATA)
+    assert units == {"gate-SS": pytest.approx(2 / 3), "01-01": 1.0}
+
+
+def test_cost_per_correct_and_default_selection():
+    prices = {"m": {"input_per_m": 1.0, "output_per_m": 2.0}}  # each run: 0.001 + 0.001 = $0.002
+    cheap = [_cost_row(f"t{i}", "P_unc", 1 if i % 4 else 0, tokens=(1000, 500)) for i in range(20)]
+    dear = [_cost_row(f"t{i}", "P_new", 1 if i % 4 else 0, tokens=(5000, 2500)) for i in range(20)]
+    c_unc = analysis.cost_per_correct(cheap, "m", "P_unc", prices)
+    c_new = analysis.cost_per_correct(dear, "m", "P_new", prices)
+    assert c_unc["passes"] == 15 and c_unc["usd_per_correct"] == pytest.approx(0.04 / 15)
+    assert c_new["usd_per_correct"] == pytest.approx(5 * c_unc["usd_per_correct"])
+    pick = analysis.default_selection({"P_new": True, "P_unc": True}, {"P_new": c_new, "P_unc": c_unc})
+    assert pick["default"] == "P_unc"
+    assert analysis.default_selection({"P_new": True, "P_unc": False}, {"P_new": c_new, "P_unc": c_unc})["default"] == "P_new"
+    assert analysis.default_selection({"P_new": False, "P_unc": False}, {})["default"] == "shipped"
+
+
+def test_default_selection_tie_keeps_the_confirmation_route():
+    near = {"usd_per_correct": 0.010, "ci95": [0.008, 0.012]}
+    close = {"usd_per_correct": 0.0095, "ci95": [0.0075, 0.0115]}
+    pick = analysis.default_selection({"P_new": True, "P_unc": True}, {"P_new": near, "P_unc": close})
+    assert pick == {"default": "P_new", "offered_mode": "P_unc", "reason": "tie on cost per correct"}
+
+
+def test_interaction_report_compares_on_its_own_stratum_only():
+    rows = [_cost_row(f"a{i}", "P_rev", 1, stratum="A") for i in range(6)] + \
+           [_cost_row(f"a{i}", "C0", 0, stratum="A") for i in range(6)] + [_cost_row("t1", "C0", 1)]
+    report = analysis.interaction_report(rows, "m", "A", "P_rev", ["C0"])
+    assert report["stratum"] == "ambiguity"
+    assert report["comparisons"][0]["n"] == 6 and report["comparisons"][0]["mean_diff"] == 1.0

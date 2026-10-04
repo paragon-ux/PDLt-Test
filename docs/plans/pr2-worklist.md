@@ -104,8 +104,15 @@ The design is written in the gate doc (§6.6, §8.4 G5/A1/M1, §3.2/§4 +FB1). B
 
 ## T7. Analysis
 
-- [ ] Per-template cluster analysis for generated items in `analysis.py`, with per-template reporting.
-- [ ] G5 (cost per correct answer, with a bootstrap CI) and A1/M1 in `analysis.py`.
+- [x] Per-template clusters:
+  - each runner row carries `cluster` (generated items: `<set>-<family>`; catalogue items: their id);
+  - `analysis.per_item` averages per item, then per template, so one template is one unit.
+- [x] Cost:
+  - runner rows carry `cost` (calls, input and output tokens) and `elapsed_s`;
+  - `run_catalogue.token_usage` now sums input tokens too.
+- [x] `analysis.cost_per_correct` (a ratio with a cluster-bootstrap CI), `default_selection` (G5, including its tie rule), and `interaction_report` (A1/M1).
+- [x] The example config carries `prices` per model.
+- [x] Tests in `tests/test_experiments.py`.
 
 ## T8. Lock, strata and docs
 

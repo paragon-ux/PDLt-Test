@@ -65,7 +65,8 @@ class Rubric:
 
 
 def rubric_ids() -> list[str]:
-    return sorted(p.stem for p in RUBRICS.glob("*.json"))
+    """Catalogue ids with a rubric (CALIBRATION.json and other reports are not rubrics)."""
+    return sorted(p.stem for p in RUBRICS.glob("[0-9][0-9]-[0-9][0-9].json"))
 
 
 def load_rubric(rubric_id: str) -> Rubric:
@@ -220,21 +221,32 @@ def calibrate(rubric_ids_: list[str], prompts: dict[str, str], judges: list[Judg
             verdicts = judge(rubric, prompts[rid], text, judges, send)
             rows.append({"rubric": rid, "answer": name, "label": label,
                          **{j.name: verdicts[j.name].get("verdict") for j in judges}})
+    return calibration_report(rows, [j.name for j in judges])
+
+
+def calibration_report(rows: list[dict[str, Any]], names: list[str]) -> dict[str, Any]:
+    """Accuracy per rubric and judge, and kappa between the judges and against the labels.
+
+    Each row: {"rubric", "answer", "label", <judge name>: "PASS" | "FAIL" | None}. It is
+    shared by live calibration and by verdicts collected by hand or by an in-session agent."""
     report: dict[str, Any] = {"rows": rows, "kappa_floor": KAPPA_FLOOR, "rubrics": {}}
-    names = [j.name for j in judges]
-    for rid in rubric_ids_:
-        mine = [r for r in rows if r["rubric"] == rid and all(r[n] for n in names)]
+    for rid in sorted({r["rubric"] for r in rows}):
+        mine = [r for r in rows if r["rubric"] == rid and all(r.get(n) for n in names)]
         entry: dict[str, Any] = {"answers": len(mine)}
         for n in names:
             entry[f"{n}_accuracy"] = (sum(r[n] == r["label"] for r in mine) / len(mine)) if mine else None
+        if len(names) == 2:
+            entry["judges_agree"] = sum(r[names[0]] == r[names[1]] for r in mine)
         report["rubrics"][rid] = entry
-    complete = [r for r in rows if all(r[n] for n in names)]
+    complete = [r for r in rows if all(r.get(n) for n in names)]
+    report["complete_rows"] = len(complete)
     if len(names) == 2 and complete:
         report["kappa_between_judges"] = cohen_kappa([r[names[0]] for r in complete], [r[names[1]] for r in complete])
     for n in names:
         if complete:
             report[f"kappa_{n}_vs_label"] = cohen_kappa([r[n] for r in complete], [r["label"] for r in complete])
-    report["usable"] = all(report.get(k, 0.0) >= KAPPA_FLOOR for k in report if k.startswith("kappa_"))
+    kappas = [v for k, v in report.items() if k.startswith("kappa_") and k != "kappa_floor"]
+    report["usable"] = bool(kappas) and len(complete) == len(rows) and all(v >= KAPPA_FLOOR for v in kappas)
     return report
 
 
@@ -295,6 +307,9 @@ def main(argv: list[str] | None = None) -> int:
     cal.add_argument("--rubrics", nargs="*")
     exp = sub.add_parser("export-calibration", help="write the calibration judge prompts for manual judging")
     exp.add_argument("--out", required=True)
+    rep = sub.add_parser("report-calibration", help="kappa from collected replies (manual or in-session judges)")
+    rep.add_argument("--export", required=True, help="the export-calibration directory (holds index.json)")
+    rep.add_argument("--judge", action="append", required=True, metavar="NAME=REPLIES_DIR")
     args = parser.parse_args(argv)
 
     prompts = _catalogue_prompts()
@@ -314,6 +329,23 @@ def main(argv: list[str] | None = None) -> int:
         # Keep the key away from whoever judges by hand.
         (out_dir.parent / f"{out_dir.name}.KEY.json").write_text(json.dumps(key, indent=2), encoding="utf-8")
         return 0
+    if args.command == "report-calibration":
+        export_dir = Path(args.export)
+        key = json.loads((export_dir.parent / f"{export_dir.name}.KEY.json").read_text(encoding="utf-8"))
+        names, verdicts = [], {}
+        for spec in args.judge:
+            name, _, replies = spec.partition("=")
+            names.append(name)
+            verdicts[name] = import_verdicts(export_dir / "index.json", Path(replies))
+        rows = [{"rubric": k["rubric"], "answer": k["answer"], "label": k["label"], "key": cal,
+                 **{n: (verdicts[n].get(cal) or {}).get("verdict") for n in names}} for cal, k in sorted(key.items())]
+        report = calibration_report(rows, names)
+        report["judges"] = names
+        out = RUBRICS / "CALIBRATION.json"
+        out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8", newline="\n")
+        print(json.dumps({k: v for k, v in report.items() if k.startswith("kappa") or k in ("usable", "complete_rows")},
+                         indent=2))
+        return 0 if report["usable"] else 1
     config = json.loads(Path(args.config).read_text(encoding="utf-8"))
     judges = [JudgeSpec(j["name"], j["model"], list(j.get("providers", [])), j.get("effort"))
               for j in config.get("judges", [])]
