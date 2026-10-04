@@ -547,9 +547,26 @@ def gt_grade(r):
 
 
 def is_prompt_pass(r):
-    """Expected stage AND no ground-truth failure. A stage match with a wrong
-    answer is a false positive, never a pass; MANUAL is reported separately."""
-    return stage_pass(r) and gt_grade(r) not in {graders.FAIL, "ERROR"}
+    """Expected stage AND a ground truth that passed or does not apply (N/A).
+    A stage match with a wrong answer is a false positive, never a pass. MANUAL
+    is not a pass either: it awaits the GOAL.md Step 5 human check (pending)."""
+    return stage_pass(r) and gt_grade(r) in {graders.PASS, graders.NA}
+
+
+def is_prompt_pending(r):
+    """Expected stage with a MANUAL ground truth: neither passed nor failed until a
+    human checks it."""
+    return stage_pass(r) and gt_grade(r) == graders.MANUAL
+
+
+def is_prompt_fail(r):
+    """Every outcome that is neither a pass nor pending: a missed stage, a FAIL or a
+    grader ERROR. Fail-fast, known regressions and the failure list read this."""
+    return not is_prompt_pass(r) and not is_prompt_pending(r)
+
+
+def outcome_label(r):
+    return "PASS" if is_prompt_pass(r) else "PENDING" if is_prompt_pending(r) else "FAIL"
 
 
 def generate_scoreboard(results, run_dir, run_meta):
@@ -565,13 +582,10 @@ def generate_scoreboard(results, run_dir, run_meta):
 
         cat = r["category"]
         if cat not in by_category:
-            by_category[cat] = {"total": 0, "pass": 0, "fail": 0}
+            by_category[cat] = {"total": 0, "pass": 0, "fail": 0, "pending": 0}
         by_category[cat]["total"] += 1
         is_pass = is_prompt_pass(r)
-        if is_pass:
-            by_category[cat]["pass"] += 1
-        else:
-            by_category[cat]["fail"] += 1
+        by_category[cat][outcome_label(r).lower()] += 1
 
         d = r["difficulty"]
         if d not in by_difficulty:
@@ -580,13 +594,16 @@ def generate_scoreboard(results, run_dir, run_meta):
         if is_pass:
             by_difficulty[d]["pass"] += 1
 
-        if r.get("regression_ref") and not is_pass:
+        if r.get("regression_ref") and is_prompt_fail(r):
             regressions_hit.append({
                 "id": r["id"], "regression_ref": r["regression_ref"], "verdict": v,
             })
 
     passed = sum(1 for r in results if is_prompt_pass(r))
+    pending = sum(1 for r in results if is_prompt_pending(r))
+    failed = sum(1 for r in results if is_prompt_fail(r))
     pass_rate = (passed / total * 100) if total > 0 else 0
+    decided = passed + failed
     grades = [(r, (r.get("ground_truth_grade") or {}).get("grade", graders.NA)) for r in results]
     ground_truth = {
         g: sum(1 for _, x in grades if x == g)
@@ -626,10 +643,12 @@ def generate_scoreboard(results, run_dir, run_meta):
         "reasoning_effort": run_meta["reasoning_effort"],
         "total_prompts": total,
         "passed": passed,
-        "failed": total - passed,
+        "failed": failed,
+        "pending_human_check": pending,
         "stage_passed": sum(1 for r in results if stage_pass(r)),
         "manual_spot_check": manual,
         "pass_rate_pct": round(pass_rate, 1),
+        "decided_pass_rate_pct": round(passed / decided * 100, 1) if decided else 0.0,
         "total_elapsed_seconds": round(total_time, 1),
         "model_calls": model_calls,
         "plan_echo": plan_echo,
@@ -643,7 +662,7 @@ def generate_scoreboard(results, run_dir, run_meta):
         "failures": [
             {"id": r["id"], "category": r["category"], "verdict": r["verdict"],
              "elapsed": r["elapsed_seconds"]}
-            for r in results if not is_prompt_pass(r)
+            for r in results if is_prompt_fail(r)
         ],
     }
 
@@ -669,7 +688,9 @@ def generate_scoreboard(results, run_dir, run_meta):
         f"| Total Prompts | {scoreboard['total_prompts']} |",
         f"| Passed | {scoreboard['passed']} |",
         f"| Failed | {scoreboard['failed']} |",
+        f"| Awaiting human check (MANUAL; not a pass) | {scoreboard['pending_human_check']} |",
         f"| **Pass Rate** | **{scoreboard['pass_rate_pct']}%** |",
+        f"| Pass rate over decided prompts (excluding MANUAL) | {scoreboard['decided_pass_rate_pct']}% |",
         f"| Model calls (total / EXECUTE / repairs) | {scoreboard['model_calls']['total']} / "
         f"{scoreboard['model_calls']['execute']} / {scoreboard['model_calls']['repairs']} |",
         f"| EXECUTE output tokens / provider-reported reasoning (all prompts) | "
@@ -688,13 +709,13 @@ def generate_scoreboard(results, run_dir, run_meta):
         "",
         "## By Category",
         "",
-        "| Category | Total | Pass | Fail | Rate |",
-        "|----------|-------|------|------|------|",
+        "| Category | Total | Pass | Fail | Pending | Rate |",
+        "|----------|-------|------|------|---------|------|",
     ]
     for cat in sorted(scoreboard["by_category"].keys()):
         c = scoreboard["by_category"][cat]
         rate = (c["pass"] / c["total"] * 100) if c["total"] > 0 else 0
-        lines.append(f"| {cat} | {c['total']} | {c['pass']} | {c['fail']} | {rate:.0f}% |")
+        lines.append(f"| {cat} | {c['total']} | {c['pass']} | {c['fail']} | {c.get('pending', 0)} | {rate:.0f}% |")
 
     lines += ["", "---", "", "## Ground Truth (evaluation-plane graders)", "",
               "| Grade | Count |", "|-------|-------|"]
@@ -731,7 +752,7 @@ def generate_scoreboard(results, run_dir, run_meta):
               "| ID | Category | Difficulty | Verdict | Ground truth | Model calls | Time (s) |",
               "|----|----------|-----------|---------|--------------|-------------|----------|"]
     for r in results:
-        icon = "PASS" if is_prompt_pass(r) else "FAIL"
+        icon = outcome_label(r)
         lines.append(
             f"| {icon} {r['id']} | {r['category']} | {r['difficulty']} "
             f"| {r['verdict']} | {gt_grade(r)} | {(r.get('model_calls') or {}).get('total', '')} | {r['elapsed_seconds']:.1f} |"
@@ -758,10 +779,11 @@ def regrade_run(run_dir: Path) -> int:
     run_meta = json.loads((run_dir / "RUN_META.json").read_text(encoding="utf-8"))
     scoreboard = generate_scoreboard(results, run_dir, run_meta)
     for r in results:
-        icon = "PASS" if is_prompt_pass(r) else "FAIL"
+        icon = outcome_label(r)
         grade = r["ground_truth_grade"]
         print(f"{icon} {r['id']:6s} {r['verdict']:16s} gt={gt_grade(r):7s} {grade.get('reason', '')}")
-    print(f"Pass Rate: {scoreboard['pass_rate_pct']}% ({scoreboard['passed']}/{scoreboard['total_prompts']}); "
+    print(f"Pass Rate: {scoreboard['pass_rate_pct']}% ({scoreboard['passed']}/{scoreboard['total_prompts']}; "
+          f"{scoreboard['pending_human_check']} awaiting a human check); "
           f"stage only {scoreboard['stage_passed']}/{scoreboard['total_prompts']}; "
           f"false_positives={len(scoreboard['false_positives'])}")
     return 1 if scoreboard["false_positives"] else 0
@@ -911,12 +933,12 @@ def main():
         result = run_single_prompt(entry, run_dir, args.model, args.reasoning, args.timeout, repeat_index,
                                    args.reasoning_op, run_settings, memory_mb=args.harness_memory_mb)
         results.append(result)
-        icon = "PASS" if is_prompt_pass(result) else "FAIL"
+        icon = outcome_label(result)
         peak = result.get("harness_peak_memory_mb")
         memory = f", {peak:.0f} MB" if peak is not None else ""
         print(f"{icon} {result['verdict']:20s} gt={gt_grade(result):7s} ({result['elapsed_seconds']:.1f}s{memory})")
 
-        if args.fail_fast and not is_prompt_pass(result):
+        if args.fail_fast and is_prompt_fail(result):
             print(f"\n[FAIL-FAST] Stopping execution immediately after failure on {prompt_id} ({result['verdict']}).")
             break
 
@@ -924,7 +946,8 @@ def main():
     print(f"{'=' * 50}")
     scoreboard = generate_scoreboard(results, run_dir, run_meta)
     print(f"Pass Rate: {scoreboard['pass_rate_pct']}% "
-          f"({scoreboard['passed']}/{scoreboard['total_prompts']})")
+          f"({scoreboard['passed']}/{scoreboard['total_prompts']}; "
+          f"{scoreboard['pending_human_check']} awaiting a human check, not counted as passes)")
     print(f"Total Time: {scoreboard['total_elapsed_seconds']:.1f}s")
     print(f"Results: {run_dir}")
     print(f"Scoreboard: {run_dir / 'SCOREBOARD.md'}")
