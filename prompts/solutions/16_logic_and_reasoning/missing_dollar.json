@@ -1,0 +1,7 @@
+{
+  "ground_truth_status": "verified",
+  "verified_by": "arithmetic",
+  "expected_behavior": "explanation",
+  "answer": "No dollar is missing. The guests paid $27 in total, of which $25 went to the hotel and $2 to the bellhop. Adding the bellhop's $2 to the $27 counts it twice; the $30 is $25 (hotel) + $2 (bellhop) + $3 (returned to the guests).",
+  "what_would_be_wrong": "Treating $27 + $2 = $29 as a meaningful total, or claiming a dollar was lost"
+}

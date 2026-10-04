@@ -1,62 +1,46 @@
-# Reviewer Navigation Guide: PDLt-Test
+# Reviewer Navigation Guide: PDL Taskmaster (lean build) + PDLt catalogue
 
-> **For LLM Reviewers & Auditors**: Read this file first. It is an index of where critical benchmark fixtures live and what files to **ignore** to save context tokens.
+> **For LLM Reviewers & Auditors**: Read this file first. It indexes where critical logic lives and what to **ignore**.
 
----
+## 1. System in 30 seconds
 
-## 1. System in 30 Seconds
+Two planes. The **harness** (`src/pdl_taskmaster/`) is a deterministic protocol referee: S1 routes (`providers/sys1/`), S2 drafts and executes (`providers/api_worker.py`), the verifier checks schemas and runs code in a sandbox. The **evaluation plane** (`run_catalogue.py`, `graders.py`, `prompts/`) drives the 112-prompt catalogue and grades answers.
 
-`PDLt-Test` is the empirical evaluation testbed for the [PDL Standard REPL Harness (`pdl-taskmaster`)](https://github.com/paragon-ux/PDL-Standard-REPL-Harness).
+**Golden invariant:** the harness is a referee, never a solver. No algorithmic coaching, no keyword gates, no benchmark vocabulary in `src/`, no fabricated witnesses.
 
-It executes the frozen **105-prompt System 2 Catalogue** through the live `pdlt` REPL in headless mode (`--non-interactive --exit-on-close`) to measure genuine model capability boundaries under deterministic protocol governance.
+## 2. Read these
 
-**Core Invariant**: Benchmark prompts are immutable inputs. If a model fails a prompt, that is valid diagnostic data. The harness must never be modified to inject hints or bypass gates.
-
----
-
-## 2. File Map: What Matters (Read These)
-
-| Path | Description |
+| Concern | Path |
 |---|---|
-| `prompts/CATALOGUE_MANIFEST.jsonl` | **SSOT Manifest**: Index of all 105 prompts with category, difficulty, expected routing, and rules stressed. |
-| `prompts/<category>/*.txt` | **105 Raw Benchmark Prompts**: Read-only problem descriptions across 15 categories (7 prompts per category). |
-| `prompts/solutions/*.json` | **Ground-Truth Witnesses**: Mathematical solutions for verifiable categories (Schur triples, exact cover, etc.). |
-| `run_catalogue.py` | **Test Runner Engine**: Spawns `pdlt` subprocesses, enforces timeouts, captures transcripts, and computes scoreboards. |
-| `GOAL.md` | **Testing Contract**: Non-negotiable execution rules (no retries, no cherry-picking, single model). |
+| Guardrails (GUARD-01..05) | `docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md` |
+| Current design | `ARCHITECTURE.md` |
+| Direction (not implemented) | `TARGET_ARCHITECTURE.md`, ADR-0023 to ADR-0026 |
+| State machine, engine, witness authority | `src/pdl_taskmaster/runtime/session_engine.py` (`_draft_plan`, `_parse_sandbox_witness`, `_refuse`) |
+| Result IR | `src/pdl_taskmaster/runtime/result_ir.py`, `wire_payloads.py` |
+| Grammar lint (PDL-05/06/08 only) | `src/pdl_taskmaster/verification/plan_soundness.py` |
+| Verifier + sandbox | `verification/output_verifier.py`, `verification/sandbox.py`, `verification/checkers/` |
+| System 1 | `providers/sys1/` (Phase 0 route runs first via `session_engine._s1_activation`; `client.py`, `gating.py`, `recipes/activation_route.py`, `problem_class.py`, `confirmation_match.py`, `review_facets.py`) |
+| System 2 client | `providers/api_worker.py` |
+| Integrity gate | `tests/test_harness_anti_overfitting.py` |
+| Viewer (evaluation plane) | `viewer/server.py`, `viewer/index.html` |
+| Runner, graders, contract | `run_catalogue.py`, `graders.py`, `GOAL.md`, `prompts/CATALOGUE_MANIFEST.jsonl` |
+| Agent rules | `AGENTS.md` |
 
----
+## 3. Ignore
 
-## 3. What to Ignore (Skip - Do Not Waste Context)
+`catalogue-runs/` (run logs; load only to diagnose one run), `docs/adr/` (frozen history; the guardrail wins on conflict), `contracts/` and `src/pdl_taskmaster/contracts/` (hash-pinned data), `__pycache__/`, `.venv/`.
 
-| Path | Reason to Skip |
-|---|---|
-| `catalogue-runs/` | **Massive historical log dumps**. Contains timestamped runs (`transcript.txt`, `stderr.txt`, etc.). Do NOT load these into context unless diagnosing a specific historical run. |
-| `STEP5_SPOT_CHECK_REPORT.md` | Historical spot-check notes from earlier development phases. |
+## 4. Invariants
 
----
+- Retry feedback travels only via operator correction; `CARRIED_APPROACH_SOURCES` is user-originated only (`GUARD-01`).
+- No benchmark IDs, prompt stems or problem vocabulary in `src/`; verifier never infers domain from text (`GUARD-02`).
+- Sandbox witness is authoritative; unreproduced witnesses are provisional; no stdout scraping (`GUARD-03`).
+- `is_prompt_pass` is unchanged; ground truth is graded separately (`graders.py`).
 
-## 4. Exit Codes & Protocol Semantics
+## 5. Quick checks
 
-`run_catalogue.py` evaluates headless `pdlt` exit codes (ADR-0019):
-
-| Exit Code | Stage Name | Interpretation |
-|---|---|---|
-| **0** | `CLOSED_SUCCESS` | Deliverable verified, contracts satisfied, clean closure. |
-| **1** | `CLOSED_CANCELLED` | Intentional refusal or fail-closed boundary enforcement. |
-| **2** | `UNCONFIRMED_GATE` | Stalled at review gate (model failed to confirm or revise). |
-| **3** | `WAITING_INPUT` | Paused awaiting external input. |
-
----
-
-## 5. Quick Verification Commands
-
-```powershell
-# 1. Manifest dry run (<1s)
-python run_catalogue.py --dry-run
-
-# 2. Fast check of Negative & Impossible boundary refusals (~30s)
-python run_catalogue.py --category 13 --fail-fast
-
-# 3. Fast check of Combinatorial Search (~3m)
-python run_catalogue.py --category 01 --fail-fast
+```bash
+pytest tests/test_harness_anti_overfitting.py -v   # integrity gate (<1s)
+pytest -q                                           # offline suite
+python run_catalogue.py --dry-run                   # manifest: 112 prompts, 28 verified
 ```

@@ -1,0 +1,1791 @@
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, TextIO
+import sys
+
+
+def _resolve_repo_root() -> Path | None:
+    """Resolve the repository root when running from a dev/editable install.
+
+    Returns None when running from a wheel-installed site-packages layout
+    where the repo root cannot be meaningfully derived from __file__.
+    """
+    candidate = Path(__file__).resolve().parents[3]
+    # A dev-install lives under the repo; site-packages does not.
+    if (candidate / "pyproject.toml").is_file() or (candidate / "setup.py").is_file():
+        return candidate
+    return None
+
+
+_REPO_ROOT = _resolve_repo_root()
+
+# Dev-install sys.path shim — harmless no-op for wheel installs.
+if _REPO_ROOT is not None and str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+
+def _default_session_base() -> Path:
+    """Default live-session storage root.
+
+    Dev-install: <repo>/runs/live-sessions  (preserves existing sessions)
+    Wheel-install: ~/.pdlt/runs/live-sessions  (user-writable, consistent
+    with NormativeStore.user_dir())
+    """
+    if _REPO_ROOT is not None:
+        return _REPO_ROOT / "runs" / "live-sessions"
+    return Path.home() / ".pdlt" / "runs" / "live-sessions"
+
+from pdl_taskmaster.fileio import replace_text
+from pdl_taskmaster.host.app import PDLtHost
+from pdl_taskmaster.host.console import (
+    COLOR_NAMES,
+    THEME_NAMES,
+    color_enabled,
+    input_prompt,
+    paint,
+    render_history,
+    reset_input,
+    resolve_colors,
+)
+from pdl_taskmaster.providers.api_worker import ApiWorker, unknown_provider_warnings
+from pdl_taskmaster.providers.fixtures import build_recorded_fixture, build_recorded_fixture_from_vendored
+
+
+def _create_codex_worker(
+    args,
+    session_dir: Path,
+    session_base: Path,
+    existing_worker: Any = None,
+) -> Any:
+    """Instantiate CodexWorker on demand with CLI preflight check."""
+    if not shutil.which("codex"):
+        raise RuntimeError("codex CLI not found on PATH. Install codex or use default --worker api.")
+    from pdl_taskmaster.providers.codex_worker import CodexWorker
+
+    workdir = getattr(args, "workdir", None) or session_dir
+    config_overrides = getattr(existing_worker, "config_overrides", getattr(args, "config_override", None))
+    sandbox_mode = getattr(existing_worker, "sandbox_mode", getattr(args, "worker_sandbox", "read-only"))
+    allow_bypass = getattr(existing_worker, "allow_bypass", getattr(args, "allow_bypass", False))
+    capture_tokens = getattr(existing_worker, "capture_tokens", not getattr(args, "no_token_telemetry", False))
+
+    return CodexWorker(
+        model=args.model,
+        workdir=workdir,
+        timeout=args.worker_timeout,
+        progress_path=session_dir / "worker-progress.log",
+        on_progress=lambda line: print(f"[codex] {line}", flush=True) if line.strip() else None,
+        capture_tokens=capture_tokens,
+        allowed_workdir_root=session_base,
+        config_overrides=config_overrides,
+        sandbox_mode=sandbox_mode,
+        allow_bypass=allow_bypass,
+    )
+
+
+def _new_session_name() -> str:
+    return datetime.now().strftime("session-%Y%m%d-%H%M%S")
+
+
+_SESSION_NAME_RE = re.compile(r"[A-Za-z0-9._-]+")
+# Device names Windows reserves in every directory, with or without an extension.
+_WINDOWS_RESERVED_NAMES = frozenset(
+    {"CON", "PRN", "AUX", "NUL"} | {f"{dev}{n}" for dev in ("COM", "LPT") for n in range(1, 10)}
+)
+
+
+def sanitize_session_name(name: str) -> str:
+    """Validate and normalize a user-supplied session identifier.
+
+    Rejects empty/whitespace values, path separators, drive-qualified or
+    absolute paths, traversal components, invalid Windows filename
+    characters, control characters, and any name that could escape the
+    session root.
+    """
+    value = (name or "").strip()
+    if not value:
+        raise ValueError("session name is empty")
+    if len(value) > 120:
+        raise ValueError("session name exceeds 120 characters")
+    if value.startswith("."):
+        raise ValueError("session name must not start with '.'")
+    if value in {".", ".."}:
+        raise ValueError("session name is a path component, not an identifier")
+    if any(ch in value for ch in '<>:"|?*/\\'):
+        raise ValueError("session name contains invalid path characters")
+    if any(ord(ch) < 32 for ch in value):
+        raise ValueError("session name contains control characters")
+    if not _SESSION_NAME_RE.fullmatch(value):
+        raise ValueError("session name may only contain letters, digits, '.', '_', '-'")
+    if value.endswith("."):
+        raise ValueError("session name must not end with '.' (Windows drops it from directory names)")
+    if value.split(".", 1)[0].upper() in _WINDOWS_RESERVED_NAMES:
+        raise ValueError("session name is a reserved Windows device name")
+    return value
+
+
+def resolve_session_dir(session_base: Path, session_id: str) -> Path:
+    """Resolve a session directory and reject any path escaping the root."""
+    safe = sanitize_session_name(session_id)
+    base = session_base.resolve()
+    candidate = (base / safe).resolve()
+    if candidate != base and not candidate.is_relative_to(base):
+        raise ValueError(f"session path escapes session root: {candidate}")
+    return candidate
+
+
+@dataclass
+class SessionRuntime:
+    """REPL bookkeeping only; never a parallel protocol state machine.
+
+    Protocol authority remains SessionEngine + WorkspaceRun. This structure
+    holds host/session lifetime bookkeeping so /new, /resume, and /worker
+    cannot accidentally reselect a stale session.
+    """
+
+    session_id: str
+    session_dir: Path
+    host: PDLtHost
+    session_pointer: Path
+    transcript: TextIO
+    transcript_path: Path
+    workspace_root: Path
+    observation_dir: Path
+    exit_on_close: bool = False
+    prior_transcript: str | None = None  # the session's conversation before this open (a resume)
+
+    def close(self) -> None:
+        try:
+            self.transcript.write("=== PDLt session ended ===\n")
+            self.transcript.flush()
+        finally:
+            self.transcript.close()
+            self.host.close()
+
+    def _refresh_pointer(self) -> None:
+        workspace_path = self.host.status().get("workspace_path")
+        if workspace_path:
+            relpath = None
+            try:
+                relpath = Path(workspace_path).relative_to(self.session_dir).as_posix()
+            except ValueError:
+                relpath = None
+            payload: dict[str, Any] = {
+                "session_id": self.session_id,
+                "workspace_path": str(workspace_path),
+            }
+            if relpath:
+                payload["workspace_relpath"] = relpath
+            replace_text(self.session_pointer, json.dumps(payload, indent=2) + "\n")
+
+    def handle(self, user_message: str):
+        """Dispatch a user turn, then refresh the durable session pointer.
+
+        The workspace only materializes on the first protocol turn, so the
+        pointer is written lazily after that workspace exists. This is
+        bookkeeping only; protocol authority stays in SessionEngine/Workspace.
+        """
+        result = self.host.handle(user_message)
+        self._refresh_pointer()
+        return result
+
+    def confirm_on_standing_instruction(self):
+        """Fast mode: accept the open review on the user's advance confirmation."""
+        result = self.host.confirm_on_standing_instruction()
+        self._refresh_pointer()
+        return result
+
+
+def _is_interactive(args) -> bool:
+    if getattr(args, "non_interactive", False):
+        return False
+    return sys.stdin.isatty()
+
+
+def _select_session(session_base: Path, args) -> str:
+    if args.session_id:
+        return sanitize_session_name(args.session_id)
+    if args.new_session or not _is_interactive(args):
+        return _new_session_name()
+    # Ensure session root exists on first run (e.g. fresh wheel install).
+    session_base.mkdir(parents=True, exist_ok=True)
+    sessions = sorted(
+        (path for path in session_base.iterdir() if path.is_dir()),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    displayed = sessions[:10]
+    if displayed:
+        print("Existing sessions (10 most recent):", flush=True)
+        for index, path in enumerate(displayed, 1):
+            print(f"  {index}) {path.name}", flush=True)
+        print("  n) Start a new session", flush=True)
+    else:
+        print("No existing sessions.", flush=True)
+    try:
+        choice = input("Select session: ").strip()
+    except EOFError:
+        return _new_session_name()
+    if choice.isdigit() and 1 <= int(choice) <= len(displayed):
+        return displayed[int(choice) - 1].name
+    if choice.lower() == "n" or not choice:
+        return _new_session_name()
+    return sanitize_session_name(choice)
+
+
+def open_session(
+    args,
+    session_base: Path,
+    worker,
+    session_id: str,
+    restore_path: Path | None = None,
+) -> SessionRuntime:
+    session_dir = resolve_session_dir(session_base, session_id)
+    session_dir.mkdir(parents=True, exist_ok=True)
+    workspace_root = args.workspace_root or session_dir / "workspaces"
+    observation_dir = args.observation_dir or session_dir / "observations"
+    if hasattr(worker, "workdir"):
+        worker.workdir = str(args.workdir or session_dir)
+    if hasattr(worker, "progress_path"):
+        # The worker's progress lines (the API worker's provider rejections
+        # included) go to this session's log, the path the REPL announces.
+        worker.progress_path = session_dir / "worker-progress.log"
+    if hasattr(worker, "trace_path"):
+        # Every model call's lifecycle (sent, acknowledged, received), interrupted ones included.
+        worker.trace_path = session_dir / "call-trace.jsonl"
+    pointer = session_dir / "session.json"
+    if pointer.is_file() and restore_path is None:
+        try:
+            data = json.loads(pointer.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:  # e.g. a pointer cut short before replace-on-write
+            print(f"[warn] session pointer unreadable ({exc}); starting fresh protocol state", flush=True)
+            data = {}
+        stored = data.get("workspace_path")
+        if stored and Path(stored).is_dir():
+            restore_path = Path(stored)
+        elif data.get("workspace_relpath"):
+            cand = (session_dir / data["workspace_relpath"]).resolve()
+            if cand.is_dir():
+                restore_path = cand
+        elif stored:
+            cand = (session_dir / "workspaces" / Path(stored).name).resolve()
+            if cand.is_dir():
+                restore_path = cand
+    host = PDLtHost(
+        args.candidate_repo,
+        worker=worker,
+        workspace_root=workspace_root,
+        restore_path=restore_path,
+        run_id=args.run_id,
+        observation_dir=observation_dir,
+        render_compact=bool(getattr(args, "render_compact", False)),
+        sandbox_mode=getattr(args, "sandbox", None),
+    ).start()
+    if getattr(host, "restore_notice", None):
+        print(f"[warn] {host.restore_notice}", flush=True)
+    _announce_sandbox(host)
+    if host.status().get("workspace_path"):
+        wp = host.status()["workspace_path"]
+        relpath = None
+        try:
+            relpath = Path(wp).relative_to(session_dir).as_posix()
+        except ValueError:
+            relpath = None
+        payload: dict[str, Any] = {
+            "session_id": session_id,
+            "workspace_path": str(wp),
+        }
+        if relpath:
+            payload["workspace_relpath"] = relpath
+        replace_text(pointer, json.dumps(payload, indent=2) + "\n")
+    transcript_path = args.transcript or session_dir / "transcript.log"
+    transcript_path.parent.mkdir(parents=True, exist_ok=True)
+    # A session's own transcript holds its conversation verbatim; a --transcript
+    # file may be shared by several sessions, so it is not replayed.
+    prior_transcript = None
+    if args.transcript is None and transcript_path.is_file():
+        prior_transcript = transcript_path.read_text(encoding="utf-8") or None
+    transcript = transcript_path.open("a", encoding="utf-8", newline="\n")
+    if prior_transcript:
+        transcript.write("=== PDLt session resumed ===\n")
+        transcript.flush()
+    return SessionRuntime(
+        session_id=session_id,
+        session_dir=session_dir,
+        host=host,
+        session_pointer=pointer,
+        transcript=transcript,
+        transcript_path=transcript_path,
+        workspace_root=workspace_root,
+        observation_dir=observation_dir,
+        exit_on_close=bool(getattr(args, "exit_on_close", False)),
+        prior_transcript=prior_transcript,
+    )
+
+
+_HISTORY_LINE_LIMIT = 400
+_OPEN_GATES = {
+    "PROMPT_REVIEW": "The prompt pseudocode above is awaiting review: /confirm, /revise <feedback>, /stop or /cancel.",
+    "PLAN_REVIEW": "The response plan above is awaiting review: /confirm, /revise <feedback>, /stop or /cancel.",
+    "WAITING_INPUT": "The execution is waiting for the input it asked for above: reply with it, /revise or /stop.",
+}
+
+
+def show_resumed_history(runtime: SessionRuntime, colors=None) -> None:
+    """On resume, show the session's conversation so far and what waits on the user.
+
+    The text is the session's transcript, one blank line between turns and each
+    speaker in its color; the open gate comes from the restored controller state,
+    not from the text."""
+    history = getattr(runtime, "prior_transcript", None)
+    if not history:
+        return
+    lines = history.rstrip("\n").splitlines()
+    print(paint(f"--- conversation history ({runtime.transcript_path}) ---", "note", colors), flush=True)
+    if len(lines) > _HISTORY_LINE_LIMIT:
+        print(f"[{len(lines) - _HISTORY_LINE_LIMIT} earlier lines are in the transcript]", flush=True)
+        lines = lines[-_HISTORY_LINE_LIMIT:]
+    print("\n".join(render_history("\n".join(lines), colors)), flush=True)
+    print("", flush=True)
+    print(paint("--- end of history ---", "note", colors), flush=True)
+    stage = (runtime.host.status().get("controller_state") or {}).get("stage")
+    if stage in _OPEN_GATES:
+        print(_OPEN_GATES[stage], flush=True)
+
+
+def _announce_sandbox(host: PDLtHost) -> None:
+    """Say at session start when programs will not run confined: the audit-only
+    opt-out, or a native backend that cannot apply here (then nothing runs)."""
+    sandbox = getattr(getattr(host, "engine", None), "sandbox", None)
+    if sandbox is None:
+        return
+    if not sandbox.confined:
+        print(
+            "WARNING: --sandbox audit-only: model-authored programs run WITHOUT OS-native confinement "
+            "(in-process audit hook and resource limits only). They can read files this user can read.",
+            flush=True,
+        )
+    elif not sandbox.probe():
+        print(
+            f"[warn] code execution unavailable: {sandbox.unavailable_reason}. Programs in deliverables will not "
+            "run; use --sandbox container, or --sandbox audit-only to run them without OS-native confinement.",
+            flush=True,
+        )
+
+
+def switch_session(
+    runtime: SessionRuntime,
+    args,
+    session_base: Path,
+    worker,
+    session_id: str,
+) -> SessionRuntime:
+    """Close the active host and open another session in one operation."""
+    runtime.close()
+    return open_session(args, session_base, worker, session_id)
+
+
+def _worker_profile(worker: Any) -> str:
+    """Worker identity for MLflow telemetry (best-effort; default api)."""
+    profile = getattr(worker, "worker_profile", None)
+    return str(profile) if profile else "api"
+
+
+def _api_run_settings(args) -> dict:
+    """Cost and latency settings for the API worker, from CLI flags."""
+    settings: dict = {
+        "max_output_tokens": getattr(args, "max_output_tokens", 16384),
+        "max_call_seconds": getattr(args, "api_call_deadline", 300.0),
+        "max_repairs": getattr(args, "max_repairs", None),
+        "draft_execute": bool(getattr(args, "draft_execute", False)),
+    }
+    providers = [p.strip() for p in (getattr(args, "api_providers", None) or "").split(",") if p.strip()]
+    if providers:
+        settings["provider_pinning"] = {"order": providers, "allow_fallbacks": False}
+    return settings
+
+
+def _warn_unknown_providers(args) -> None:
+    """Warn, never refuse, for an --api-providers name that is not a known
+    provider: a misspelling ("Cerebrus") otherwise surfaced as an opaque 404."""
+    providers = [p.strip() for p in (getattr(args, "api_providers", None) or "").split(",") if p.strip()]
+    for warning in unknown_provider_warnings(providers):
+        print(f"[warn] {warning}", flush=True)
+
+
+def _reasoning_record(worker: Any) -> str | None:
+    """One line stating the worker's effective reasoning: the default effort and
+    the per-operation efforts. None for a worker without reasoning settings."""
+    if not hasattr(worker, "reasoning_by_operation"):
+        return None
+    default = getattr(worker, "reasoning_effort", None)
+    per_operation = json.dumps(getattr(worker, "reasoning_by_operation", None) or {}, sort_keys=True)
+    return f"default={default} per_operation={per_operation}"
+
+
+def _parse_reasoning_operations(pairs: list[str] | None) -> dict[str, str | int]:
+    """Parse repeatable --api-reasoning-operation OP=EFFORT flags into a dict."""
+    mapping: dict[str, str | int] = {}
+    for pair in pairs or []:
+        if "=" not in pair:
+            raise SystemExit(f"invalid --api-reasoning-operation {pair!r}: expected OP=EFFORT")
+        key, _, value = pair.partition("=")
+        key = key.strip()
+        value = value.strip().lower()
+        if not key:
+            raise SystemExit(f"invalid --api-reasoning-operation {pair!r}: empty operation")
+        if value not in {"none", "low", "medium", "high"} and not value.isdigit():
+            raise SystemExit(
+                f"invalid --api-reasoning-operation {pair!r}: effort must be none/low/medium/high or integer token budget"
+            )
+        mapping[key] = int(value) if value.isdigit() else value
+    return mapping
+
+
+def _parse_model_operations(pairs: list[str] | None) -> dict[str, str]:
+    """Parse repeatable --api-model-operation OP=MODEL flags into a dict."""
+    mapping: dict[str, str] = {}
+    for pair in pairs or []:
+        if "=" not in pair:
+            raise SystemExit(f"invalid --api-model-operation {pair!r}: expected OP=MODEL")
+        key, _, value = pair.partition("=")
+        key = key.strip()
+        value = value.strip()
+        if not key:
+            raise SystemExit(f"invalid --api-model-operation {pair!r}: empty operation")
+        if not value:
+            raise SystemExit(f"invalid --api-model-operation {pair!r}: empty model")
+        mapping[key] = value
+    return mapping
+
+
+def _resolve_render_compact(args) -> bool:
+    """Compact render default: on for the live api worker, opt-in otherwise.
+
+    Recorded-fixture replay hashes the full rendered prompt, so the recorded
+    worker always stays pretty; codex worker rendering is decided upstream by
+    the engine defaults (pretty).
+    """
+    if getattr(args, "render_compact", None) is not None:
+        return bool(args.render_compact)
+    return args.worker == "api"
+
+
+# Headless exit code for a run that ended on a harness/provider error (not a model outcome).
+EXIT_HARNESS_ERROR = 4
+
+
+def _harness_error_record(exc: BaseException) -> dict:
+    """What failed, precisely: a ProviderError carries category, operation, HTTP
+    status and each provider's own message; a reply that did not parse is
+    OUTPUT_MALFORMED; anything else is reported with its type."""
+    if hasattr(exc, "as_record"):
+        return exc.as_record()
+    from pdl_taskmaster.runtime.wire_payloads import WireError
+
+    if isinstance(exc, WireError):
+        return {"category": "OUTPUT_MALFORMED", "operation": None, "status": None, "attempts": [],
+                "message": f"{getattr(exc, 'reason', '')}: {exc}"[:2000]}
+    return {"category": "HARNESS_EXCEPTION", "operation": None, "status": None, "attempts": [],
+            "message": f"{type(exc).__name__}: {exc}"[:2000]}
+
+def _one_line_error(exc: BaseException, limit: int = 240) -> str:
+    """A failed call as one short line for the console: category, operation and
+    the first part of the message. The full record stays in the transcript and,
+    headless, in the [harness-error] record."""
+    record = _harness_error_record(exc)
+    message = " ".join(str(record.get("message") or exc).split())
+    operation = record.get("operation")
+    line = f"{record['category']}" + (f" at {operation}" if operation else "") + f": {message}"
+    return line if len(line) <= limit else line[: limit - 3] + "..."
+
+
+PASTE_START = "\x1b[200~"
+PASTE_END = "\x1b[201~"
+
+
+def _enable_bracketed_paste() -> None:
+    if sys.stdin.isatty() and sys.stdout.isatty():
+        try:
+            sys.stdout.write("\x1b[?2004h")
+            sys.stdout.flush()
+        except Exception:
+            pass
+
+
+def _disable_bracketed_paste() -> None:
+    if sys.stdin.isatty() and sys.stdout.isatty():
+        try:
+            sys.stdout.write("\x1b[?2004l")
+            sys.stdout.flush()
+        except Exception:
+            pass
+
+
+# Review commands handed to SessionEngine.handle_user_message; every other slash
+# command is host-side. Must match the engine's review vocabulary.
+REVIEW_COMMANDS = frozenset({"/confirm", "/revise", "/stop", "/cancel"})
+
+
+def _drain_console_burst_win32() -> list[str]:
+    """Read what is already buffered in the Windows console, without blocking.
+
+    msvcrt.kbhit() is true for any pending key, but input() blocks until Enter:
+    typed-ahead text or a paste without a trailing newline hung the REPL. Read
+    characters instead; a trailing partial line is returned as the last line.
+    """
+    import msvcrt
+    import time
+
+    lines: list[str] = []
+    current: list[str] = []
+    previous = ""
+    while msvcrt.kbhit():
+        while msvcrt.kbhit():
+            ch = msvcrt.getwch()
+            if ch == "\x00":
+                msvcrt.getwch()  # function key: discard its scan code
+            elif ch == "\n" and previous == "\r":
+                pass  # CRLF already ended the line
+            elif ch in {"\r", "\n"}:
+                lines.append("".join(current))
+                current = []
+            elif ch == "\x08":
+                if current:
+                    current.pop()
+            else:
+                current.append(ch)
+            previous = ch
+        time.sleep(0.02)
+    if current:
+        lines.append("".join(current))
+    if lines:
+        # getwch does not echo; show what was captured as input() would have.
+        print("\n".join(lines), flush=True)
+    return lines
+
+
+def _read_repl_input(prompt: str = "> ") -> str:
+    """Read a line or multi-line pasted block from user input.
+
+    Prevents pasted multi-line text from auto-submitting on every line break.
+    All lines in a paste bracket or burst are assembled into a single submission,
+    and the user presses Enter to confirm.
+    """
+    raw = input(prompt).strip()
+
+    # 1. Bracketed paste handling (Windows Terminal, VS Code, iTerm, xterm)
+    if PASTE_START in raw:
+        prefix, start_part = raw.split(PASTE_START, 1)
+        chunks = []
+        if PASTE_END in start_part:
+            chunk, suffix = start_part.split(PASTE_END, 1)
+            chunks.append(prefix + chunk + suffix)
+        else:
+            chunks.append(prefix + start_part)
+            while True:
+                try:
+                    sub = input()
+                except (EOFError, KeyboardInterrupt):
+                    break
+                if PASTE_END in sub:
+                    chunk, suffix = sub.split(PASTE_END, 1)
+                    chunks.append(chunk + suffix)
+                    break
+                chunks.append(sub)
+        pasted = "\n".join(chunks).replace("\r", "").strip()
+        if "\n" in pasted:
+            line_count = len(pasted.splitlines())
+            print(f"\n[Pasted {line_count} lines. Press Enter to submit, or type /cancel to discard]")
+            try:
+                confirm = input("> ").strip()
+            except (EOFError, KeyboardInterrupt):
+                return ""
+            if confirm == "/cancel":
+                print("[paste discarded]", flush=True)
+                return ""
+            if confirm and confirm != "/confirm":  # /confirm submits, like Enter
+                pasted = pasted + "\n" + confirm
+        return pasted
+
+    # 2. Console burst detection (when bracketed paste is not active)
+    lines = [raw]
+    if sys.stdin.isatty():
+        try:
+            if sys.platform == "win32":
+                lines.extend(_drain_console_burst_win32())
+            else:
+                import select
+                r, _, _ = select.select([sys.stdin], [], [], 0.0)
+                while r:
+                    lines.append(input())
+                    r, _, _ = select.select([sys.stdin], [], [], 0.02)
+        except Exception:
+            pass
+
+    content = "\n".join(lines).replace("\r", "").strip().splitlines()
+    if len(lines) > 1 and len(content) <= 1:
+        # Blank lines plus one typed line is typing, not a paste: Enter on an empty
+        # prompt, then "/confirm" typed ahead, was held as "[Pasted 1 lines ...]".
+        raw = content[0].strip() if content else ""
+    elif len(lines) > 1:
+        pasted = "\n".join(content)
+        line_count = len(content)
+        print(f"\n[Pasted {line_count} lines. Press Enter to submit, or type /cancel to discard]")
+        try:
+            confirm = input("> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            return ""
+        if confirm == "/cancel":
+            print("[paste discarded]", flush=True)
+            return ""
+        if confirm and confirm != "/confirm":  # /confirm submits, like Enter
+            pasted = pasted + "\n" + confirm
+        return pasted
+
+    # 3. Explicit multi-line mode (e.g. """ or /paste)
+    if raw in {"/paste", '"""'} or (raw.startswith('"""') and not (raw.endswith('"""') and len(raw) > 5)):
+        lines_buf = []
+        if raw.startswith('"""') and raw != '"""':
+            lines_buf.append(raw[3:])
+        prompt_msg = "Multi-line input (type '\"\"\"' on a new line to finish):" if raw.startswith('"""') else "Paste mode (enter text, then type 'EOF' on a new line to finish):"
+        print(prompt_msg, flush=True)
+        while True:
+            try:
+                sub = input("... " if raw.startswith('"""') else "")
+            except (EOFError, KeyboardInterrupt):
+                break
+            if raw.startswith('"""') and sub.strip().endswith('"""'):
+                lines_buf.append(sub.strip()[:-3])
+                break
+            # Only an explicit marker ends /paste: blank lines are content (paragraph
+            # breaks, code), and ending on one silently dropped the rest of the paste.
+            if not raw.startswith('"""') and sub.strip() in {"EOF", "eof", '"""'}:
+                break
+            lines_buf.append(sub)
+        return "\n".join(lines_buf).strip()
+
+    # 4. Trailing backslash line continuation
+    if raw.endswith("\\"):
+        lines_buf = [raw[:-1].rstrip()]
+        while True:
+            try:
+                sub = input("... ").strip()
+            except (EOFError, KeyboardInterrupt):
+                break
+            if sub.endswith("\\"):
+                lines_buf.append(sub[:-1].rstrip())
+            else:
+                lines_buf.append(sub)
+                break
+        return "\n".join(lines_buf).strip()
+
+    return raw
+
+
+def _handle_dev_command(
+    line: str,
+    dev_mode: bool,
+    runtime: SessionRuntime,
+    worker: Any,
+    session_base: Path,
+) -> tuple[bool, bool]:
+    parts = line.split(maxsplit=2)
+    sub = parts[1].lower() if len(parts) > 1 else ""
+    arg = parts[2].strip() if len(parts) > 2 else ""
+
+    if sub in {"", "help"}:
+        print(
+            "Dev Mode (Agentic Diagnostic & Control Plane):\n"
+            "  /dev [on|off]              - Toggle verbose developer telemetry\n"
+            "  /dev exit-on-close [on|off]- Toggle auto-exit on protocol closure (CLOSED_SUCCESS/CANCELLED)\n"
+            "  /dev status                - Full JSON snapshot of host, engine, controller, worker\n"
+            "  /dev diagnose              - Run self-diagnostic checks (repo, standards, providers, API key)\n"
+            "  /dev set <key> <val...>    - Mutate operational parameters on the fly:\n"
+            "                                provider <p1,p2,...>  (e.g. groq,baseten,amazon-bedrock)\n"
+            "                                fallbacks <true|false>\n"
+            "                                model <op> <name>     (e.g. EXECUTE deepseek/deepseek-r1)\n"
+            "                                reasoning <op> <effort>\n"
+            "                                timeout <seconds>\n"
+            "                                max_tokens <int>\n"
+            "  /dev get [key]             - Inspect configuration parameter or dump all dev settings",
+            flush=True,
+        )
+        return True, dev_mode
+
+    if sub in {"on", "off"}:
+        new_dev = (sub == "on")
+        print(f"[dev] mode: {'on' if new_dev else 'off'}", flush=True)
+        return True, new_dev
+
+    if sub in {"exit-on-close", "exit_on_close"}:
+        if arg in {"on", "off"}:
+            runtime.exit_on_close = (arg == "on")
+            print(f"[dev] exit-on-close: {arg}", flush=True)
+        else:
+            print(f"[dev] exit-on-close is currently: {'on' if runtime.exit_on_close else 'off'}", flush=True)
+        return True, dev_mode
+
+    if sub == "status":
+        engine = getattr(runtime.host, "engine", None)
+        ctrl = getattr(engine, "controller", None) if engine else None
+        if ctrl and hasattr(ctrl, "state") and hasattr(ctrl.state, "to_dict"):
+            ctrl_state = ctrl.state.to_dict()
+        else:
+            ctrl_state = runtime.host.status().get("controller_state") or {}
+        status_data = {
+            "dev_mode": dev_mode,
+            "exit_on_close": getattr(runtime, "exit_on_close", False),
+            "session_id": runtime.session_id,
+            "session_dir": str(runtime.session_dir),
+            "workspace_path": runtime.host.status().get("workspace_path"),
+            "controller_stage": ctrl_state.get("stage") if isinstance(ctrl_state, dict) else None,
+            "controller_instance_id": ctrl_state.get("instance_id") if isinstance(ctrl_state, dict) else None,
+            "worker_profile": _worker_profile(worker),
+            "worker_model": getattr(worker, "model", None),
+            "worker_timeout": getattr(worker, "timeout", None),
+            "provider_pinning": getattr(worker, "provider_pinning", None),
+            "model_by_operation": getattr(worker, "model_by_operation", None),
+            "reasoning_by_operation": getattr(worker, "reasoning_by_operation", None),
+            "source_request_bound": bool(getattr(engine, "_source_request", None)) if engine else False,
+        }
+        print(json.dumps(status_data, indent=2, default=str), flush=True)
+        return True, dev_mode
+
+    if sub == "diagnose":
+        print("[dev:diagnose] Running PDLt system self-test...", flush=True)
+        repo_root = getattr(runtime.host, "candidate_repo", Path.cwd())
+        from pdl_taskmaster.runtime.normative_store import NormativeStore
+        standards_root = NormativeStore.resolve_standards_root(repo_root)
+        std_ok = standards_root.is_dir()
+        contract_ok = NormativeStore.resolve_contract(repo_root, "EXECUTION_CONTRACT.json").is_file()
+        print(f"  [1/4] Standards Store: {'PASS' if std_ok and contract_ok else 'FAIL'} ({standards_root})", flush=True)
+
+        profile = _worker_profile(worker)
+        api_key_set = bool(os.environ.get(getattr(worker, "api_key_env", "OPENROUTER_API_KEY"))) if profile == "api" else True
+        print(f"  [2/4] Worker Transport: {'PASS' if api_key_set else 'WARN (no API key in env)'} ({profile})", flush=True)
+
+        pinning = getattr(worker, "provider_pinning", None)
+        if pinning:
+            order = pinning.get("order", [])
+            fb = pinning.get("allow_fallbacks", False)
+            print(f"  [3/4] Provider Pinning: PASS (order={order}, allow_fallbacks={fb})", flush=True)
+        else:
+            print("  [3/4] Provider Pinning: N/A (worker has no provider pinning)", flush=True)
+
+        engine = getattr(runtime.host, "engine", None)
+        engine_ok = engine is not None
+        print(f"  [4/4] SessionEngine: {'PASS' if engine_ok else 'FAIL'}", flush=True)
+        print("[dev:diagnose] Diagnostics complete.", flush=True)
+        return True, dev_mode
+
+    if sub == "set":
+        if not arg:
+            print("usage: /dev set <key> <value...>", flush=True)
+            return True, dev_mode
+        set_parts = arg.split(maxsplit=1)
+        k = set_parts[0].lower()
+        v = set_parts[1].strip() if len(set_parts) > 1 else ""
+        if not v:
+            print(f"usage: /dev set {k} <value>", flush=True)
+            return True, dev_mode
+
+        if k in {"provider", "providers"}:
+            names = [p.strip() for p in v.split(",") if p.strip()]
+            mapping = {
+                "groq": "Groq",
+                "baseten": "Baseten",
+                "baseten/fp4": "Baseten",
+                "amazon-bedrock": "Amazon Bedrock",
+                "bedrock": "Amazon Bedrock",
+                "cerebras": "Cerebras",
+                "sambanova": "SambaNova",
+            }
+            resolved = [mapping.get(p.lower(), p) for p in names]
+            for warning in unknown_provider_warnings(resolved):
+                print(f"[warn] {warning}", flush=True)
+            if hasattr(worker, "provider_pinning") and isinstance(worker.provider_pinning, dict):
+                worker.provider_pinning["order"] = resolved
+                print(f"[dev] provider pinning order set to: {resolved}", flush=True)
+            else:
+                print("[dev] current worker does not support provider pinning", flush=True)
+        elif k in {"fallback", "fallbacks"}:
+            val_bool = v.lower() in ("true", "1", "yes", "on")
+            if hasattr(worker, "provider_pinning") and isinstance(worker.provider_pinning, dict):
+                worker.provider_pinning["allow_fallbacks"] = val_bool
+                print(f"[dev] provider allow_fallbacks set to: {val_bool}", flush=True)
+            else:
+                print("[dev] current worker does not support provider pinning", flush=True)
+        elif k == "model":
+            model_parts = v.split(maxsplit=1)
+            if len(model_parts) == 1:
+                worker.model = model_parts[0]
+                print(f"[dev] default worker model set to: {worker.model}", flush=True)
+            else:
+                op_name, m_name = model_parts[0].upper(), model_parts[1]
+                if hasattr(worker, "model_by_operation"):
+                    if worker.model_by_operation is None:
+                        worker.model_by_operation = {}
+                    worker.model_by_operation[op_name] = m_name
+                    print(f"[dev] model for {op_name} set to: {m_name}", flush=True)
+                else:
+                    print("[dev] current worker does not support per-operation models", flush=True)
+        elif k == "reasoning":
+            reasoning_parts = v.split(maxsplit=1)
+            if len(reasoning_parts) == 1:
+                worker.reasoning_effort = reasoning_parts[0]
+                print(f"[dev] default reasoning effort set to: {worker.reasoning_effort}", flush=True)
+            else:
+                op_name, effort = reasoning_parts[0].upper(), reasoning_parts[1]
+                if hasattr(worker, "reasoning_by_operation"):
+                    if worker.reasoning_by_operation is None:
+                        worker.reasoning_by_operation = {}
+                    worker.reasoning_by_operation[op_name] = effort
+                    print(f"[dev] reasoning for {op_name} set to: {effort}", flush=True)
+                else:
+                    print("[dev] current worker does not support per-operation reasoning", flush=True)
+        elif k == "timeout":
+            try:
+                worker.timeout = float(v)
+                print(f"[dev] worker timeout set to: {worker.timeout}s", flush=True)
+            except (AttributeError, ValueError) as exc:
+                print(f"[dev] cannot set timeout: {exc}", flush=True)
+        elif k == "max_tokens":
+            try:
+                worker.max_output_tokens = int(v)
+                print(f"[dev] worker output-token cap set to: {worker.max_output_tokens}", flush=True)
+            except (AttributeError, ValueError) as exc:
+                print(f"[dev] cannot set max_tokens: {exc}", flush=True)
+        else:
+            print(f"[dev] unknown setting: {k} (supported: provider, fallbacks, model, reasoning, timeout, max_tokens)", flush=True)
+        return True, dev_mode
+
+    if sub == "get":
+        if arg:
+            k = arg.lower()
+            if k in {"provider", "providers"}:
+                print(getattr(worker, "provider_pinning", None), flush=True)
+            elif k == "model":
+                print(f"default: {getattr(worker, 'model', None)}, per_operation: {getattr(worker, 'model_by_operation', None)}", flush=True)
+            elif k == "reasoning":
+                print(f"default: {getattr(worker, 'reasoning_effort', None)}, per_operation: {getattr(worker, 'reasoning_by_operation', None)}", flush=True)
+            elif k == "timeout":
+                print(getattr(worker, "timeout", None), flush=True)
+            elif k == "max_tokens":
+                print(getattr(worker, "max_output_tokens", None), flush=True)
+            else:
+                print(f"[dev] unknown key '{arg}'", flush=True)
+        else:
+            dev_config = {
+                "dev_mode": dev_mode,
+                "provider_pinning": getattr(worker, "provider_pinning", None),
+                "default_model": getattr(worker, "model", None),
+                "model_by_operation": getattr(worker, "model_by_operation", None),
+                "reasoning_effort": getattr(worker, "reasoning_effort", None),
+                "reasoning_by_operation": getattr(worker, "reasoning_by_operation", None),
+                "timeout": getattr(worker, "timeout", None),
+                "max_tokens": getattr(worker, "max_output_tokens", None),
+            }
+            print(json.dumps(dev_config, indent=2), flush=True)
+        return True, dev_mode
+
+    print(f"[dev] unknown dev subcommand: '{sub}' (see /dev help)", flush=True)
+    return True, dev_mode
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    """The REPL's command line (help strings are %-formatted by argparse)."""
+    parser = argparse.ArgumentParser(description="PDLt terminal REPL")
+    parser.add_argument(
+        "--candidate-repo",
+        type=Path,
+        default=Path.cwd(),
+        help="path to candidate repository (default: current working directory)",
+    )
+    parser.add_argument("--workspace-root", type=Path, default=None)
+    parser.add_argument("--restore", type=Path, default=None)
+    parser.add_argument("--run-id", default="repl")
+    parser.add_argument("--observation-dir", type=Path, default=None)
+    parser.add_argument(
+        "--max-output-tokens",
+        "--api-max-output-tokens",
+        "--max-tokens",
+        "--api-max-tokens",
+        dest="max_output_tokens",
+        type=int,
+        default=16384,
+        help="output-token cap per API call, reasoning included (default: 16384); a response cut off at the cap "
+        "is a failed attempt",
+    )
+    parser.add_argument(
+        "--api-call-deadline",
+        type=float,
+        default=300.0,
+        help="wall-clock seconds one API call may take, retries included (default: 300)",
+    )
+    parser.add_argument(
+        "--max-repairs",
+        type=int,
+        default=None,
+        help="EXECUTE repairs after a failed verification (default: the routed tier's); 0 stops at the first "
+        "failure with no retry of any kind",
+    )
+    parser.add_argument(
+        "--draft-execute",
+        action="store_true",
+        help="draft an execution brief (DRAFT_EXECUTE) before EXECUTE; one extra call per execution (A/B option)",
+    )
+    parser.add_argument(
+        "--api-providers",
+        default=None,
+        help="comma-separated provider order for the API worker (e.g. Cerebras,Groq,SambaNova); only these "
+        "providers are used",
+    )
+    parser.add_argument(
+        "--worker",
+        choices=["recorded", "codex", "api"],
+        default="api",
+        help="semantic worker to execute protocol operations (default: api)",
+    )
+    parser.add_argument(
+        "--model",
+        default="nvidia/nemotron-3-super-120b-a12b:free",
+        help="model name to request from the worker (default: nvidia/nemotron-3-super-120b-a12b:free)",
+    )
+    parser.add_argument("--eval-root", type=Path, default=None)
+    parser.add_argument("--evidence", type=Path, default=None)
+    parser.add_argument("--case-ids", default=None)
+    parser.add_argument("--session-id", default=None, help="reuse a named session workspace across invocations")
+    parser.add_argument("--new-session", action="store_true", help="skip the session selector and start a new session")
+    parser.add_argument(
+        "--non-interactive",
+        action="store_true",
+        help="suppress all interactive prompts (session selection, MLflow, etc.); "
+             "suitable for SSH relays and piped input",
+    )
+    parser.add_argument("--transcript", type=Path, default=None, help="session-scoped transcript output file")
+    parser.add_argument("--workdir", type=Path, default=None, help="writable session directory for the live worker")
+    parser.add_argument("--worker-timeout", type=float, default=600.0, help="worker timeout in seconds")
+    parser.add_argument(
+        "--config-override",
+        action="append",
+        default=None,
+        help="Codex CLI config override (key=value), repeatable; forwards to `codex exec -c` (codex worker only)",
+    )
+    parser.add_argument("--no-token-telemetry", action="store_true", help="disable worker token telemetry")
+    parser.add_argument(
+        "--api-base-url",
+        default="https://openrouter.ai/api/v1",
+        help="base URL for --worker api (an OpenAI-compatible Responses API host)",
+    )
+    parser.add_argument(
+        "--api-key-env",
+        default="OPENROUTER_API_KEY",
+        help="environment variable name holding the --worker api key",
+    )
+    parser.add_argument(
+        "--api-reasoning-effort",
+        default=None,
+        help="reasoning effort ('none'/'low'/'medium'/'high') for every operation of --worker api; "
+        "default: the model's per-operation mapping",
+    )
+    parser.add_argument(
+        "--api-reasoning-operation",
+        action="append",
+        default=None,
+        metavar="OP=EFFORT",
+        help="per-operation reasoning override, repeatable (e.g. INTERPRET_PROMPT_REVIEW=none); "
+        "EFFORT is 'none' or low/medium/high; overrides --api-reasoning-effort for that operation",
+    )
+    parser.add_argument(
+        "--api-model-operation",
+        action="append",
+        default=None,
+        metavar="OP=MODEL",
+        help="per-operation model override, repeatable (e.g. INTERPRET_PROMPT_REVIEW=gpt-4o-mini); "
+             "overrides --model for that operation",
+    )
+    parser.add_argument(
+        "--render-compact",
+        action="store_true",
+        help="serialize operation projections as compact JSON (~23%% smaller; "
+        "identical semantics; recorded-fixture replay requires the default pretty render)",
+    )
+    parser.add_argument(
+        "--render-pretty",
+        dest="render_compact",
+        action="store_false",
+        help="force the default pretty-rendered projections",
+    )
+    parser.set_defaults(render_compact=None)
+    parser.add_argument(
+        "--cache-order-render",
+        action="store_true",
+        help="api worker only: reorder projection keys on the wire (schema/clauses "
+        "first, volatile binds and operation id last) so same-shape calls share a "
+        "byte-identical prompt prefix for provider prefix caching; parsed content "
+        "is identical",
+    )
+    parser.add_argument(
+        "--api-structured-output",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="api worker only: pass the compiled output schema as a real JSON-schema "
+             "decoding constraint (default ON; use --no-api-structured-output or --no-structured-output to disable)",
+    )
+    parser.add_argument(
+        "--no-structured-output",
+        action="store_false",
+        dest="api_structured_output",
+        help="api worker only: disable JSON-schema decoding constraints (alias for --no-api-structured-output)",
+    )
+    parser.add_argument(
+        "--worker-sandbox",
+        choices=["read-only", "workspace-write"],
+        default="read-only",
+        help="Codex worker sandbox mode (default read-only; codex worker only)",
+    )
+    parser.add_argument(
+        "--allow-bypass",
+        action="store_true",
+        help="OPT-IN ONLY: use --dangerously-bypass-approvals-and-sandbox (codex worker only). Requires a hardened/disposable execution environment; not part of the Phase 0-5 seal.",
+    )
+    parser.add_argument(
+        "--sandbox",
+        choices=["auto", "native", "container", "audit-only"],
+        default=None,
+        help="confinement for model-authored programs (default: $PDLT_SANDBOX, else auto = native: Landlock, "
+        "Seatbelt or AppContainer); container = docker/podman; audit-only = no OS-native confinement (opt-out). "
+        "When the chosen confinement cannot apply, programs do not run",
+    )
+    parser.add_argument(
+        "--dev",
+        action="store_true",
+        help="Start REPL in Dev Mode (enables agentic introspection, telemetry, and live operational mutations)",
+    )
+    parser.add_argument(
+        "--theme",
+        choices=THEME_NAMES,
+        default=None,
+        help="Color theme for the conversation (default: $PDLT_THEME, else default = teal user, white assistant). "
+        "In every theme the assistant has the lighter color. Colors show on a terminal; NO_COLOR turns them off",
+    )
+    parser.add_argument(
+        "--user-color",
+        choices=COLOR_NAMES,
+        default=None,
+        help="Color of your messages (default: $PDLT_USER_COLOR, else the theme's)",
+    )
+    parser.add_argument(
+        "--assistant-color",
+        choices=COLOR_NAMES,
+        default=None,
+        help="Color of the assistant's messages (default: $PDLT_ASSISTANT_COLOR, else the theme's)",
+    )
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Fast mode: confirm in advance. Every phase still runs and both pseudocode artifacts are shown; "
+        "a review whose artifact has no host findings is accepted without waiting for /confirm, and one "
+        "with findings stops for you as usual. Toggle in the REPL with /fast [on|off]",
+    )
+    parser.add_argument(
+        "--exit-on-close",
+        action="store_true",
+        help="Exit REPL when protocol reaches a closed state (CLOSED_SUCCESS or CLOSED_CANCELLED)",
+    )
+    parser.add_argument(
+        "--prompt-file",
+        type=Path,
+        default=None,
+        help="path to file containing initial prompt to execute",
+    )
+    parser.add_argument(
+        "--prompt",
+        default=None,
+        help="initial prompt string to execute",
+    )
+    return parser
+
+
+def main() -> int:
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+    args = _build_parser().parse_args()
+
+    if args.worker != "codex":
+        if args.config_override:
+            print(f"[note: --config-override is specific to the codex worker and is ignored for worker '{args.worker}']", flush=True)
+        if args.worker_sandbox != "read-only":
+            print(f"[note: --worker-sandbox is specific to the codex worker and is ignored for worker '{args.worker}']", flush=True)
+        if args.allow_bypass:
+            print(f"[note: --allow-bypass is specific to the codex worker and is ignored for worker '{args.worker}']", flush=True)
+
+    session_base = args.workspace_root or _default_session_base()
+    try:
+        session_id = _select_session(session_base, args)
+    except ValueError as exc:
+        print(f"[invalid session name] {exc}", flush=True)
+        session_id = _new_session_name()
+    session_dir = resolve_session_dir(session_base, session_id)
+
+    if args.worker == "recorded":
+        if not args.eval_root and _is_interactive(args):
+            args.eval_root = Path(input("eval-root: ").strip())
+        if not args.evidence and _is_interactive(args):
+            args.evidence = Path(input("evidence: ").strip())
+        if not args.case_ids and _is_interactive(args):
+            args.case_ids = input("case-ids (comma separated, optional): ").strip() or None
+        if not args.evidence:
+            raise SystemExit("--evidence is required for recorded worker")
+        case_ids = [item.strip() for item in args.case_ids.split(",") if item.strip()] if args.case_ids else None
+        if args.evidence.name == "recorded-cases.json":
+            worker = build_recorded_fixture_from_vendored(
+                args.candidate_repo,
+                args.evidence,
+                case_ids=case_ids,
+            )
+        else:
+            if not args.eval_root:
+                raise SystemExit("--eval-root is required for non-vendored recorded evidence")
+            worker = build_recorded_fixture(
+                args.candidate_repo,
+                args.eval_root,
+                args.evidence,
+                case_ids=case_ids,
+            )
+    elif args.worker == "codex":
+        try:
+            worker = _create_codex_worker(args, session_dir, session_base)
+        except RuntimeError as exc:
+            raise SystemExit(str(exc))
+    elif args.worker == "api":
+        _warn_unknown_providers(args)
+        worker = ApiWorker(
+            model=args.model,
+            repo_root=args.candidate_repo,
+            base_url=args.api_base_url,
+            api_key_env=args.api_key_env,
+            timeout=args.worker_timeout,
+            capture_tokens=not args.no_token_telemetry,
+            reasoning_effort=args.api_reasoning_effort,
+            reasoning_by_operation=_parse_reasoning_operations(args.api_reasoning_operation),
+            model_by_operation=_parse_model_operations(args.api_model_operation),
+            reorder_keys_for_cache=bool(getattr(args, "cache_order_render", False)),
+            structured_output=bool(getattr(args, "api_structured_output", True)),
+            **_api_run_settings(args),
+            on_progress=lambda line: print(f"[api] {line}", flush=True) if line.strip() else None,
+        )
+    else:
+        raise SystemExit(f"unsupported worker: {args.worker}")
+
+    if args.worker == "recorded" and args.render_compact:
+        raise SystemExit(
+            "--render-compact is incompatible with --worker recorded: recorded-fixture "
+            "replay hashes the full pretty-rendered prompt"
+        )
+    args.render_compact = _resolve_render_compact(args)
+    runtime = open_session(args, session_base, worker, session_id, restore_path=args.restore)
+    dev_mode = bool(getattr(args, "dev", False))
+    fast_mode = bool(getattr(args, "fast", False))
+    try:
+        theme_colors = resolve_colors(
+            getattr(args, "theme", None), getattr(args, "user_color", None), getattr(args, "assistant_color", None)
+        )
+    except ValueError as exc:
+        raise SystemExit(f"pdlt: {exc}")
+    if theme_colors.warning:
+        print(f"[color] {theme_colors.warning}", flush=True)
+    # The same colors for a new and a resumed session: resolved once, before any output.
+    colors = theme_colors if color_enabled() else None
+
+    def _write_transcript(text: str) -> None:
+        runtime.transcript.write(text + "\n")
+        runtime.transcript.flush()
+
+    _write_transcript("=== PDLt session started ===")
+    from pdl_taskmaster import __version__
+    print(f"PDLt REPL started (v{__version__}).", flush=True)
+    print("Send input to the SessionEngine. Review gates accept /confirm, /revise <feedback>, /stop or /cancel.", flush=True)
+    print("Commands: /help (full roster), /paste (multi-line), /status, /quit", flush=True)
+    if dev_mode:
+        print("[dev] Dev Mode: ON (agentic diagnostic and mutation plane active)", flush=True)
+    if fast_mode:
+        print("[fast] Fast mode: ON (reviews without host findings are accepted on your advance "
+              "confirmation; /fast off to review each one)", flush=True)
+    show_resumed_history(runtime, colors)  # a session picked at startup resumes like /resume
+    if args.allow_bypass:
+        print(
+            "WARNING: dangerous bypass mode is ON. This condition requires an externally "
+            "hardened/disposable environment and is NOT part of the Phase 0-5 seal.",
+            flush=True,
+        )
+    _write_transcript("WORKER: DEVELOPMENT / LIVE DEMONSTRATION; NOT A QUALIFIED R2S MEASUREMENT CONDITION")
+    if fast_mode:
+        _write_transcript("FAST MODE: ON")
+    reasoning = _reasoning_record(worker)
+    if reasoning:
+        # The effective effort per operation, so drift from the catalogue's
+        # configuration is visible in every session record (ADR-0022).
+        _write_transcript("REASONING: " + reasoning)
+        if dev_mode:
+            print(f"[dev:telemetry] reasoning: {reasoning}", flush=True)
+    _enable_bracketed_paste()
+    harness_error: str | None = None  # headless: the call failure that ended the run
+    harness_record: dict = {}
+    initial_prompt = None
+    if getattr(args, "prompt", None):
+        initial_prompt = args.prompt.strip()
+    elif getattr(args, "prompt_file", None):
+        p_file = Path(args.prompt_file)
+        if p_file.is_file():
+            try:
+                initial_prompt = p_file.read_text(encoding="utf-8-sig").strip()
+            except Exception as e:
+                print(f"[warning: failed to read --prompt-file: {e}]", flush=True)
+
+    def _show_turn(turn) -> bool:
+        """Print a turn's output; True when fast mode accepts the review it left open."""
+        if turn.text:
+            if dev_mode:
+                display_text = turn.text
+            else:
+                from pdl_taskmaster.runtime.result_ir import format_friendly_deliverable
+                display_text = format_friendly_deliverable(turn.text)
+            print("", flush=True)  # a blank line before each reply
+            print(paint(display_text, "assistant", colors), flush=True)
+            _write_transcript("ASSISTANT> " + display_text)
+        if dev_mode:
+            engine = getattr(runtime.host, "engine", None)
+            ctrl = getattr(engine, "controller", None)
+            stage = ctrl.state.stage.value if ctrl else "no_controller"
+            print(f"[dev:telemetry] controller stage: {stage}", flush=True)
+            traces = getattr(turn, "traces", [])
+            if traces:
+                for idx, tr in enumerate(traces, 1):
+                    op = getattr(tr, "operation", "unknown")
+                    txt = getattr(tr, "model_text", "")
+                    print(f"[dev:telemetry] call #{idx}: {op} ({len(txt)} chars output)", flush=True)
+        if turn.closed:
+            print("[protocol closed]", flush=True)
+            _write_transcript("PROTOCOL_CLOSED")
+            return False
+        if not getattr(turn, "review", None):
+            return False
+        if getattr(turn, "host_findings", False):
+            if fast_mode:
+                print("[fast] The host has findings on this artifact: review it (/confirm, /revise, /stop).",
+                      flush=True)
+            return False
+        return fast_mode
+
+    def _headless_pause(turn) -> bool:
+        """Headless runs stop reading piped lines where they no longer apply."""
+        if _is_interactive(args):
+            return False
+        engine = getattr(runtime.host, "engine", None)
+        ctrl = getattr(engine, "controller", None)
+        if ctrl is None and getattr(turn, "bypass", False):
+            # A direct answer opens no instance; piped review commands do not apply.
+            return True
+        # ADR-0019: headless runs pause cleanly at an input request; remaining
+        # piped review commands do not apply to it.
+        return ctrl is not None and ctrl.state.stage.value == "WAITING_INPUT"
+
+    def _call_marker():
+        """The last traced model call before a turn starts (calls after it belong to the turn)."""
+        traces = getattr(worker, "call_traces", None)
+        return traces[-1] if traces else None
+
+    def _calls_since(marker) -> list:
+        traces = list(getattr(worker, "call_traces", None) or [])
+        if marker is None:
+            return traces
+        return traces[traces.index(marker) + 1:] if marker in traces else traces
+
+    def _report_calls(marker) -> None:
+        """Dev mode: a line for each call of the turn that retried or did not complete."""
+        if not dev_mode:
+            return
+        for trace in _calls_since(marker):
+            if trace.final != "completed" or len(trace.attempts) > 1:
+                print(f"[dev:call] {trace.summary()}", flush=True)
+
+    def _on_interrupt(marker) -> None:
+        """Ctrl+C during a turn: keep the session consistent and say what happened.
+
+        What was in flight comes from the call lifecycle (sent? acknowledged by the
+        API? partly received?); what was kept comes from the engine's own record."""
+        from pdl_taskmaster.providers.call_trace import describe_interruption
+
+        calls = _calls_since(marker)
+        where = describe_interruption(calls)
+        record = getattr(runtime.host, "record_interruption", None)
+        info = record(calls[-1].to_dict() if calls else None) if record else {}
+        try:
+            runtime._refresh_pointer()
+        except Exception:
+            pass
+        print(f"\n[operation interrupted by user] {where}. {info.get('action', '')}".rstrip(), flush=True)
+        _write_transcript("USER_INTERRUPTED")
+        if dev_mode:
+            for trace in calls:
+                print(f"[dev:call] {trace.summary()}", flush=True)
+            last = calls[-1] if calls else None
+            print(
+                "[dev:interrupt] "
+                + json.dumps({
+                    "interrupted_by": "local",
+                    "handled": True,
+                    "operation": last.operation if last else None,
+                    "sent": last.sent if last else False,
+                    "acknowledged": last.acknowledged if last else False,
+                    "response_started": last.to_dict()["response_started"] if last else False,
+                    "retries": max(len(last.attempts) - 1, 0) if last else 0,
+                    "call_final": last.final if last else None,
+                    "stage": info.get("stage"),
+                    "persisted_stage": info.get("persisted_stage"),
+                    "state_persisted": info.get("state_persisted"),
+                    "last_operation_output_recorded": info.get("last_operation_output_recorded"),
+                    "turn_status_before": info.get("turn_status_before"),
+                    "action": info.get("action"),
+                }),
+                flush=True,
+            )
+
+    standing_confirmation = False  # fast mode: the last turn left a review without findings open
+    try:
+        while True:
+            sys.stdout.flush()
+            if standing_confirmation:
+                standing_confirmation = False
+                print(paint("> /confirm  [fast mode: confirmed in advance]", "user", colors), flush=True)
+                _write_transcript("USER> /confirm  [fast mode: confirmed in advance]")
+                print("[working...]", flush=True)
+                marker = _call_marker()
+                try:
+                    turn = runtime.confirm_on_standing_instruction()
+                except KeyboardInterrupt:
+                    _on_interrupt(marker)
+                    if not _is_interactive(args):
+                        raise
+                    continue
+                except Exception as exc:
+                    message = f"{type(exc).__name__}: {exc}"
+                    print(paint(f"[error] {_one_line_error(exc)}", "error", colors), flush=True)
+                    _write_transcript("ERROR> " + message)
+                    if not _is_interactive(args):
+                        harness_error = message
+                        harness_record = _harness_error_record(exc)
+                        break
+                    continue
+                _report_calls(marker)
+                standing_confirmation = _show_turn(turn)
+                if turn.closed and runtime.exit_on_close:
+                    break
+                if _headless_pause(turn):
+                    break
+                continue
+            if initial_prompt is not None:
+                line = initial_prompt
+                initial_prompt = None
+            else:
+                try:
+                    try:
+                        line = _read_repl_input(input_prompt("> ", colors)).strip()
+                    finally:
+                        reset_input(colors)
+                except (EOFError, KeyboardInterrupt):
+                    print("", flush=True)
+                    _write_transcript("=== session closed (EOF/interrupted) ===")
+                    break
+            if not line:
+                continue
+            _write_transcript("USER> " + line)
+            if line == "/quit":
+                break
+            if line == "/help":
+                print(
+                    "normal text -> SessionEngine\n"
+                    "/confirm -> accept review artifact immediately (fast-path)\n"
+                    "/revise <feedback> -> request revision on review artifact (fast-path)\n"
+                    "/stop | /cancel -> cancel current session (fast-path)\n"
+                    "/paste -> enter multi-line paste mode (or use \"\"\" ... \"\"\")\n"
+                    "/status -> read-only host state\n"
+                    "/session -> current session directory\n"
+                    "/fast [on|off] -> fast mode: accept reviews without findings on your advance confirmation\n"
+                    "/tokens [on|off] -> toggle token telemetry\n"
+                    "/timeout [seconds] -> show/set worker timeout\n"
+                    "/model [name] -> show/set worker model\n"
+                    "/config -> show/set Codex config overrides (codex worker only)\n"
+                    "/sessions [prune <days>] -> list sessions; prune older than N days\n"
+                    "/worker [codex|recorded|api] -> switch worker\n"
+                    "/sandbox [read-only|workspace-write] -> show/set worker sandbox mode (codex worker only)\n"
+                    "/workdir [path] -> show/set worker workdir\n"
+                    "/transcript [path] -> show/set transcript file\n"
+                    "/dev [on|off|status|diagnose|set|get] -> Dev Mode diagnostic and mutation control plane\n"
+                    "/new -> start a new session\n"
+                    "/resume <session-id> -> resume a session\n"
+                    "/quit -> exit",
+                    flush=True,
+                )
+                continue
+            if line == "/status":
+                print(runtime.host.status(), flush=True)
+                continue
+            if line.startswith("/"):
+                parts = line.split(maxsplit=1)
+                cmd = parts[0].lower()
+                arg = parts[1].strip() if len(parts) > 1 else ""
+                if cmd == "/dev":
+                    handled, dev_mode = _handle_dev_command(line, dev_mode, runtime, worker, session_base)
+                    continue
+                elif cmd == "/timeout":
+                    if not arg:
+                        timeout = getattr(worker, "timeout", None)
+                        print(f"worker timeout: {timeout}s" if timeout is not None else "worker timeout: n/a for this worker", flush=True)
+                    else:
+                        try:
+                            worker.timeout = float(arg)
+                            print(f"worker timeout set to {worker.timeout}s", flush=True)
+                        except (AttributeError, ValueError) as exc:
+                            print(f"cannot set timeout: {exc}", flush=True)
+                elif cmd == "/model":
+                    if not arg:
+                        model = getattr(worker, "model", None)
+                        observed = getattr(worker, "effective_model", None) or getattr(worker, "observed_model", None)
+                        if model is not None:
+                            print(f"model: {model}", flush=True)
+                        elif observed:
+                            from_src = "(from ~/.codex/config.toml)" if getattr(worker, "worker_profile", None) == "codex" else "(unconfigured)"
+                            print(f"model: {model or from_src} | observed: {observed}", flush=True)
+                        else:
+                            print("model: not resolved (no --model, no config.toml found)", flush=True)
+                    else:
+                        try:
+                            worker.model = arg
+                            print(f"model set to {worker.model}", flush=True)
+                        except (AttributeError, ValueError) as exc:
+                            print(f"cannot set model: {exc}", flush=True)
+                elif cmd == "/config":
+                    if getattr(worker, "worker_profile", None) != "codex":
+                        print(f"command /config is only available when using the codex worker (current worker: {getattr(worker, 'worker_profile', 'unknown')})", flush=True)
+                        continue
+                    overrides = getattr(worker, "config_overrides", None)
+                    if not arg:
+                        if overrides:
+                            for item in overrides:
+                                print(f"config override: {item}", flush=True)
+                        else:
+                            print("config overrides: none (inherits ~/.codex/config.toml)", flush=True)
+                    elif arg == "clear":
+                        try:
+                            worker.config_overrides = []
+                            print("config overrides cleared", flush=True)
+                        except AttributeError:
+                            print("config overrides not supported for this worker", flush=True)
+                    elif "=" not in arg:
+                        print("usage: /config [key=value | clear]", flush=True)
+                    else:
+                        try:
+                            current = list(getattr(worker, "config_overrides", []) or [])
+                            key = arg.split("=", 1)[0]
+                            current = [item for item in current if not item.split("=", 1)[0] == key]
+                            current.append(arg)
+                            worker.config_overrides = current
+                            print(f"config override set: {arg}", flush=True)
+                        except AttributeError:
+                            print("config overrides not supported for this worker", flush=True)
+                elif cmd == "/sandbox":
+                    if getattr(worker, "worker_profile", None) != "codex":
+                        print(f"command /sandbox is only available when using the codex worker (current worker: {getattr(worker, 'worker_profile', 'unknown')})", flush=True)
+                        continue
+                    if not arg:
+                        sandbox = getattr(worker, "sandbox_mode", None)
+                        print(f"sandbox mode: {sandbox}" if sandbox is not None else "sandbox mode: n/a for this worker", flush=True)
+                    elif arg in {"read-only", "workspace-write"}:
+                        try:
+                            worker.sandbox_mode = arg
+                            print(f"sandbox mode set to {worker.sandbox_mode}", flush=True)
+                        except (AttributeError, ValueError) as exc:
+                            print(f"cannot set sandbox mode: {exc}", flush=True)
+                    else:
+                        print("usage: /sandbox [read-only|workspace-write]", flush=True)
+                elif cmd == "/workdir":
+                    if not arg:
+                        workdir = getattr(worker, "workdir", None)
+                        print(f"workdir: {workdir}" if workdir is not None else "workdir: n/a for this worker", flush=True)
+                    else:
+                        try:
+                            target = Path(arg).resolve()
+                            allowed = session_base.resolve()
+                            if target != allowed and not target.is_relative_to(allowed):
+                                print(f"workdir must stay inside {allowed}", flush=True)
+                            else:
+                                worker.workdir = str(target)
+                                print(f"workdir set to {worker.workdir}", flush=True)
+                        except (AttributeError, ValueError) as exc:
+                            print(f"cannot set workdir: {exc}", flush=True)
+                elif cmd == "/transcript":
+                    if arg:
+                        transcript_path = Path(arg)
+                        # Open the new file before closing the current one: a bad path keeps
+                        # the session's transcript working instead of leaving a closed handle.
+                        try:
+                            transcript_path.parent.mkdir(parents=True, exist_ok=True)
+                            new_transcript = transcript_path.open("a", encoding="utf-8", newline="\n")
+                        except OSError as exc:
+                            print(f"cannot open transcript {transcript_path}: {exc}; "
+                                  f"still writing to {runtime.transcript_path}", flush=True)
+                            continue
+                        runtime.transcript.close()
+                        runtime.transcript = new_transcript
+                        runtime.transcript_path = transcript_path
+                        print(f"transcript set to {transcript_path}", flush=True)
+                    else:
+                        print(f"transcript: {runtime.transcript_path}", flush=True)
+                elif cmd == "/session":
+                    print(f"session: {runtime.session_dir}", flush=True)
+                elif cmd == "/fast":
+                    if arg in {"on", "off"}:
+                        fast_mode = arg == "on"
+                    elif arg:
+                        print("usage: /fast [on|off]", flush=True)
+                        continue
+                    else:
+                        fast_mode = not fast_mode
+                    _write_transcript(f"FAST MODE: {'ON' if fast_mode else 'OFF'}")
+                    print(f"fast mode: {'on' if fast_mode else 'off'}", flush=True)
+                elif cmd == "/tokens":
+                    if arg in {"on", "off"}:
+                        worker.capture_tokens = arg == "on"
+                    else:
+                        worker.capture_tokens = not getattr(worker, "capture_tokens", False)
+                    print(f"token telemetry: {'on' if getattr(worker, 'capture_tokens', False) else 'off'}", flush=True)
+                elif cmd == "/worker":
+                    target = arg or "api"
+                    if target == "codex":
+                        try:
+                            new_worker = _create_codex_worker(
+                                args,
+                                runtime.session_dir,
+                                session_base,
+                                existing_worker=worker,
+                            )
+                        except RuntimeError as exc:
+                            print(f"[worker error] {exc}", flush=True)
+                            continue
+                    elif target == "recorded":
+                        if not args.evidence:
+                            if not _is_interactive(args):
+                                print("recorded worker requires --evidence in non-interactive mode", flush=True)
+                                continue
+                            evidence = input("evidence: ").strip()
+                        else:
+                            evidence = str(args.evidence)
+                        case_ids = args.case_ids
+                        if not case_ids and _is_interactive(args):
+                            case_ids = input("case-ids (comma separated, optional): ").strip() or None
+                        case_ids_list = [item.strip() for item in case_ids.split(",") if item.strip()] if case_ids else None
+                        if Path(evidence).name == "recorded-cases.json":
+                            new_worker = build_recorded_fixture_from_vendored(
+                                args.candidate_repo,
+                                Path(evidence),
+                                case_ids=case_ids_list,
+                            )
+                        else:
+                            if not args.eval_root:
+                                if not _is_interactive(args):
+                                    print("recorded worker requires --eval-root for non-vendored evidence in non-interactive mode", flush=True)
+                                    continue
+                                eval_root = input("eval-root: ").strip()
+                            else:
+                                eval_root = str(args.eval_root)
+                            new_worker = build_recorded_fixture(
+                                args.candidate_repo,
+                                Path(eval_root),
+                                Path(evidence),
+                                case_ids=case_ids_list,
+                            )
+                    elif target == "api":
+                        new_worker = ApiWorker(
+                            model=args.model,
+                            repo_root=args.candidate_repo,
+                            base_url=args.api_base_url,
+                            api_key_env=args.api_key_env,
+                            timeout=args.worker_timeout,
+                            capture_tokens=getattr(worker, "capture_tokens", True),
+                            reasoning_effort=args.api_reasoning_effort,
+                            reasoning_by_operation=_parse_reasoning_operations(args.api_reasoning_operation),
+                            model_by_operation=_parse_model_operations(args.api_model_operation),
+                            structured_output=bool(getattr(args, "api_structured_output", True)),
+                            **_api_run_settings(args),
+                            on_progress=lambda line: print(f"[api] {line}", flush=True) if line.strip() else None,
+                        )
+                    else:
+                        print(f"unknown worker: {target}", flush=True)
+                        continue
+                    runtime = switch_session(
+                        runtime, args, session_base, new_worker, runtime.session_id
+                    )
+                    worker = new_worker
+                    print(f"worker switched to {target}", flush=True)
+                elif cmd == "/new":
+                    runtime = switch_session(
+                        runtime, args, session_base, worker, _new_session_name()
+                    )
+                    print(f"new session: {runtime.session_dir}", flush=True)
+                    continue
+                elif cmd == "/resume":
+                    if not arg:
+                        print("usage: /resume <session-id>", flush=True)
+                        continue
+                    try:
+                        safe_id = sanitize_session_name(arg)
+                    except ValueError as exc:
+                        print(f"invalid session name: {exc}", flush=True)
+                        continue
+                    runtime = switch_session(runtime, args, session_base, worker, safe_id)
+                    print(f"resumed session: {runtime.session_dir}", flush=True)
+                    show_resumed_history(runtime, colors)
+                    continue
+                elif cmd == "/sessions":
+                    parts = arg.split() if arg else []
+                    if parts and parts[0] == "prune":
+                        if len(parts) != 2 or not parts[1].isdigit():
+                            print("usage: /sessions prune <days>", flush=True)
+                            continue
+                        days = int(parts[1])
+                        cutoff = datetime.now().timestamp() - days * 86400
+                        sessions = [p for p in session_base.iterdir() if p.is_dir()]
+                        removed = 0
+                        for path in sessions:
+                            if path.resolve() == runtime.session_dir.resolve():
+                                continue  # the active session: its transcript is open
+                            if path.stat().st_mtime < cutoff:
+                                try:
+                                    shutil.rmtree(path)
+                                except OSError as exc:  # e.g. a file held open on Windows
+                                    print(f"could not remove {path.name}: {exc}", flush=True)
+                                    continue
+                                removed += 1
+                        print(f"pruned {removed} session(s) older than {days} day(s)", flush=True)
+                    elif parts:
+                        print("usage: /sessions [prune <days>]", flush=True)
+                    else:
+                        sessions = sorted(
+                            (path for path in session_base.iterdir() if path.is_dir()),
+                            key=lambda path: path.stat().st_mtime,
+                            reverse=True,
+                        )
+                        if not sessions:
+                            print("no sessions", flush=True)
+                        else:
+                            print("Sessions (newest first):", flush=True)
+                            for path in sessions:
+                                age_days = (datetime.now().timestamp() - path.stat().st_mtime) / 86400
+                                print(f"  {path.name}  ({age_days:.1f}d ago)", flush=True)
+                elif cmd in REVIEW_COMMANDS:
+                    pass
+                else:
+                    print(f"unknown command: {cmd}", flush=True)
+                    continue
+                if cmd not in REVIEW_COMMANDS:
+                    # REPL commands are never requests: before this guard /worker,
+                    # /sessions and others fell through and reached the engine as a
+                    # follow-up ("Follow-up from the user ...: /worker recorded").
+                    continue
+            print("[working...]", flush=True)
+            print(f"[worker progress -> {runtime.session_dir / 'worker-progress.log'}]", flush=True)
+            marker = _call_marker()
+            try:
+                turn = runtime.handle(line)
+            except KeyboardInterrupt:
+                _on_interrupt(marker)
+                if not _is_interactive(args):
+                    # Headless: an interrupt ends the run; piped lines must not restart it.
+                    raise
+                continue
+            except Exception as exc:
+                message = f"{type(exc).__name__}: {exc}"
+                print(paint(f"[error] {_one_line_error(exc)}", "error", colors), flush=True)
+                _write_transcript("ERROR> " + message)
+                if not _is_interactive(args):
+                    # Headless: a failed call ends the run. Feeding the remaining piped
+                    # lines on would start a new request from "/confirm" (run 132344:
+                    # a provider schema error became a "successful" refusal, exit 0).
+                    harness_error = message
+                    harness_record = _harness_error_record(exc)
+                    break
+                continue
+            _report_calls(marker)
+            standing_confirmation = _show_turn(turn)
+            if turn.closed and runtime.exit_on_close:
+                break
+            if _headless_pause(turn):
+                break
+    finally:
+        _disable_bracketed_paste()
+        try:
+            runtime.close()
+        except KeyboardInterrupt:
+            pass
+    # Headless fail-closed invariant (ADR-0012):
+    # In non-interactive mode, if execution terminates while sitting at an unconfirmed
+    # review gate or non-terminal stage, exit with code 2 rather than falsely signalling success.
+    if not _is_interactive(args) and harness_error is not None:
+        print("[harness-error] " + json.dumps(harness_record, ensure_ascii=False), file=sys.stderr, flush=True)
+        print(f"[headless halt] Harness error ({harness_record['category']} at {harness_record.get('operation')}): "
+              f"{harness_error[:500]}. Exiting (code {EXIT_HARNESS_ERROR}).", file=sys.stderr, flush=True)
+        return EXIT_HARNESS_ERROR
+    if not _is_interactive(args):
+        status = runtime.host.status()
+        ctrl = status.get("controller_state")
+        if ctrl is None and status.get("refused"):
+            # ADR-0019 amendment: a published boundary refusal is a complete answer.
+            print("[headless close] Session closed with a published refusal (closure=REFUSED, code 0).", file=sys.stderr, flush=True)
+            return 0
+        if ctrl is not None:
+            final_stage = ctrl.get("stage")
+            if final_stage == "CLOSED_CANCELLED":
+                print(
+                    f"[headless halt] Session ended with stage '{final_stage}'. Exiting fail-closed (code 1).",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                return 1
+            if final_stage == "WAITING_INPUT":
+                print(
+                    f"[headless halt] Session paused at stage 'WAITING_INPUT' (input requested). Exiting (code 3).",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                return 3
+            if final_stage != "CLOSED_SUCCESS":
+                print(
+                    f"[headless halt] Session ended at non-terminal stage '{final_stage}'. Exiting fail-closed (code 2).",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                return 2
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except KeyboardInterrupt:
+        print("\n[session terminated by user]", file=sys.stderr, flush=True)
+        raise SystemExit(130)

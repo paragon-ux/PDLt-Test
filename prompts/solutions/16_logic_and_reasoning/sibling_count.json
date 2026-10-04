@@ -1,0 +1,7 @@
+{
+  "ground_truth_status": "verified",
+  "verified_by": "counting",
+  "expected_behavior": "solution",
+  "answer": "S + 1: each brother's sisters are Maya's S sisters and Maya herself.",
+  "what_would_be_wrong": "S (forgetting Maya)"
+}

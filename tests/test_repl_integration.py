@@ -1,0 +1,445 @@
+from __future__ import annotations
+
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+ROOT = Path(__file__).resolve().parents[1]
+
+# Recorded fixtures are externalized (repo-restructure-plan §3.1):
+# PDLT_FIXTURES_PATH env override -> repo-relative vendored location -> sibling PDL-Standard-Archive.
+def _resolve_fixture_file() -> Path:
+    env = os.environ.get("PDLT_FIXTURES_PATH", "").strip()
+    if env:
+        return Path(env) / "recorded-cases.json"
+    local = ROOT / "tests" / "fixtures" / "recorded-cases.json"
+    if local.is_file():
+        return local
+    archive = ROOT.parent / "PDL-Standard-Archive" / "fixtures-r4-recorded-worker" / "recorded-cases.json"
+    if archive.is_file():
+        return archive
+    return local
+
+FIXTURE = _resolve_fixture_file()
+
+
+
+def _g06_turns() -> list[str]:
+    fixture = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    return fixture["case_turns"]["G06"]
+
+
+def _run_repl(tmp_path: Path, lines: list[str], session_id: str, extra: list[str] | None = None) -> subprocess.CompletedProcess:
+    cmd = [
+        sys.executable,
+        "-m",
+        "pdl_taskmaster.host.repl",
+        "--candidate-repo",
+        str(ROOT),
+        "--worker",
+        "recorded",
+        "--evidence",
+        str(FIXTURE),
+        "--case-ids",
+        "G06",
+        "--workspace-root",
+        str(tmp_path / "sessions"),
+        "--session-id",
+        session_id,
+        *(extra or []),
+    ]
+    return subprocess.run(
+        cmd,
+        cwd=ROOT,
+        input="\n".join(lines) + "\n",
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=300,
+    )
+
+
+def test_repl_command_loop_full_deterministic_session(tmp_path: Path) -> None:
+    turns = _g06_turns()
+    lines = (
+        turns
+        + ["/status", "/help", "/session", "/worker recorded", "/new"]
+        + turns
+        + ["/status", "/resume repltest", "/status", "/quit"]
+    )
+    proc = _run_repl(tmp_path, lines, "repltest")
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 0, out[-3000:]
+    assert "PDLt REPL started" in out
+    assert "/status -> read-only host state" in out
+    assert "worker switched to recorded" in out
+    assert "new session:" in out
+    assert "resumed session:" in out
+    assert out.count("[protocol closed]") >= 2
+    assert out.count("CLOSED_SUCCESS") >= 3
+    assert "No such file" not in out
+    assert "Traceback" not in out
+    assert "[error]" not in out  # REPL commands never reach the engine; replay misses never hide
+    # First session completed -> durable session pointer exists.
+    assert (tmp_path / "sessions" / "repltest" / "session.json").is_file()
+
+
+def test_new_session_is_lazy_no_fabricated_workspace(tmp_path: Path) -> None:
+    proc = _run_repl(tmp_path, ["/new", "/quit"], "lazytest")
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 0, out[-2000:]
+    match = re.search(r"new session: (\S+)", out)
+    assert match is not None, out
+    new_dir = Path(match.group(1))
+    assert new_dir.is_dir()
+    assert not (new_dir / "session.json").exists(), "pointer must be written lazily after first turn"
+    assert not list(new_dir.glob("workspaces/W-*")), "no workspace should be fabricated before a turn"
+
+
+def test_repl_headless_exit_fail_closed_on_unconfirmed_stage(tmp_path: Path) -> None:
+    """ADR-0012 / Kimi pushback: non-interactive runs halting at an unconfirmed stage must exit code 2."""
+    turns = _g06_turns()
+    # Sending only turn 1 halts at PROMPT_REVIEW_WAIT (unconfirmed review gate)
+    proc = _run_repl(tmp_path, turns[:1], "headless_unconfirmed")
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 2, out[-2000:]
+    assert "[headless halt] Session ended at non-terminal stage" in proc.stderr
+
+
+def test_headless_review_commands_after_closure_do_not_restart_the_task(tmp_path: Path) -> None:
+    """Piped /confirm lines left over after CLOSED_SUCCESS are not a new request (FINDING-19)."""
+    proc = _run_repl(tmp_path, _g06_turns() + ["/confirm", "/confirm"], "headless_leftover")
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 0, out[-3000:]
+    assert out.count("[protocol closed]") == 1
+    assert out.count("No review is open") == 2
+    assert "[headless halt]" not in out
+    assert "[error]" not in out
+
+
+def test_resumed_session_shows_its_history_and_keeps_its_record(tmp_path: Path) -> None:
+    """A session stopped at the prompt review and resumed in a new process shows the
+    conversation so far and the open review, and its turn record spans the resume."""
+    turns = _g06_turns()
+    first = _run_repl(tmp_path, turns[:1], "resumable")
+    assert first.returncode == 2, (first.stdout + first.stderr)[-2000:]  # halted at the prompt review
+
+    second = _run_repl(tmp_path, turns[1:] + ["/quit"], "resumable")
+    out = second.stdout + second.stderr
+    assert second.returncode == 0, out[-3000:]
+    history = out[out.index("--- conversation history"):out.index("--- end of history ---")]
+    assert "USER> " + turns[0].splitlines()[0] in history
+    assert "\n\nASSISTANT> Prompt Pseudocode" in history  # a blank line between turns
+    assert "\x1b[" not in out  # piped output is never colored
+    assert "The prompt pseudocode above is awaiting review" in out
+    assert out.count("[protocol closed]") == 1
+
+    session = tmp_path / "sessions" / "resumable"
+    workspace = Path(json.loads((session / "session.json").read_text(encoding="utf-8"))["workspace_path"])
+    archive = json.loads((workspace / "turns" / "turn_001" / "turn_archive.json").read_text(encoding="utf-8"))
+    kinds = [event["kind"] for event in archive["events"]]
+    assert kinds[0] == "WORKSPACE_CREATED" and "SESSION_RESTORED" in kinds  # events before the resume are kept
+    log = (workspace / "turns" / "turn_001" / "events" / "events.jsonl").read_text(encoding="utf-8").splitlines()
+    # The archive is flushed when the turn closes: the whole log up to that point.
+    assert archive["events"] == [json.loads(line) for line in log[:len(archive["events"])]]
+    assert archive["events"][-1]["kind"] == "TURN_STATUS"
+
+    records = [
+        json.loads(line)
+        for line in (session / "observations" / "repl-session.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert records and all(record["events"]["new"] for record in records)  # each turn records its events
+    transcript = (session / "transcript.log").read_text(encoding="utf-8")
+    assert "=== PDLt session resumed ===" in transcript
+
+
+def test_review_command_before_any_task_is_not_a_request(tmp_path: Path) -> None:
+    proc = _run_repl(tmp_path, ["/confirm", "/quit"], "no_task_confirm")
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 0, out[-3000:]
+    assert "No review is open" in out
+    assert "[error]" not in out
+
+
+@pytest.mark.parametrize("command", ["/stop", "/cancel"])
+def test_repl_review_cancel_commands_close_cancelled(tmp_path: Path, command: str) -> None:
+    """/cancel is engine review vocabulary; the REPL rejected it as an unknown command."""
+    turns = _g06_turns()
+    proc = _run_repl(tmp_path, turns[:1] + [command], "headless_cancel")
+    out = proc.stdout + proc.stderr
+    assert "unknown command" not in out
+    assert proc.returncode == 1, out[-2000:]  # ADR-0019: CLOSED_CANCELLED
+    assert "[protocol closed]" in out
+
+
+def test_transcript_to_an_unusable_path_keeps_the_current_transcript(tmp_path: Path) -> None:
+    blocker = tmp_path / "not-a-directory"
+    blocker.write_text("", encoding="utf-8")
+    proc = _run_repl(tmp_path, [f"/transcript {blocker / 'transcript.log'}", "/status", "/quit"], "transcript_bad_path")
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 0, out[-3000:]
+    assert "cannot open transcript" in out
+    assert "Traceback" not in out
+
+
+def test_cli_keyboard_interrupt_clean_exit(monkeypatch, capsys) -> None:
+    """CLI intercepts KeyboardInterrupt, prints user notice, and exits 130 cleanly without tracebacks."""
+    from pdl_taskmaster.host import cli
+
+    def mock_raise(*args, **kwargs):
+        raise KeyboardInterrupt()
+
+    monkeypatch.setattr(cli, "_main_impl", mock_raise)
+    code = cli.main([])
+    assert code == 130
+    captured = capsys.readouterr()
+    assert "[session terminated by user]" in captured.err
+
+
+def test_repl_headless_exit_waiting_input_code_3(monkeypatch, capsys, tmp_path: Path) -> None:
+    """Non-interactive runs halting at WAITING_INPUT must exit code 3 (REG-013 / ADR-0019)."""
+    from pdl_taskmaster.host import repl
+
+    class MockHost:
+        def status(self):
+            return {"controller_state": {"stage": "WAITING_INPUT"}}
+
+    class MockRuntime:
+        def __init__(self, session_dir):
+            self.host = MockHost()
+            self.session_dir = session_dir
+            self.exit_on_close = True
+            transcript_file = session_dir / "transcript.txt"
+            self.transcript = transcript_file.open("w", encoding="utf-8")
+        def close(self):
+            self.transcript.close()
+
+    monkeypatch.setattr(repl, "open_session", lambda *args, **kwargs: MockRuntime(tmp_path))
+    def mock_eof(prompt="> "):
+        raise EOFError()
+    monkeypatch.setattr(repl, "_read_repl_input", mock_eof)
+    monkeypatch.setattr(repl, "_disable_bracketed_paste", lambda: None)
+
+    monkeypatch.setattr(sys, "argv", [
+        "pdlt",
+        "--non-interactive",
+        "--candidate-repo", str(ROOT),
+        "--evidence", str(FIXTURE),
+        "--worker", "recorded",
+        "--session-id", "mock-waiting-input",
+    ])
+    code = repl.main()
+    assert code == 3
+    captured = capsys.readouterr()
+    assert "[headless halt] Session paused at stage 'WAITING_INPUT' (input requested). Exiting (code 3)." in captured.err
+
+
+
+
+def _headless_runtime(monkeypatch, tmp_path: Path, handle, stage: str):
+    from types import SimpleNamespace
+
+    from pdl_taskmaster.host import repl
+
+    class MockHost:
+        def __init__(self):
+            self.engine = SimpleNamespace(
+                controller=SimpleNamespace(state=SimpleNamespace(stage=SimpleNamespace(value=stage)))
+            )
+
+        def status(self):
+            return {"controller_state": {"stage": stage}}
+
+    class MockRuntime:
+        def __init__(self, session_dir):
+            self.host = MockHost()
+            self.session_dir = session_dir
+            self.exit_on_close = True
+            self.transcript = (session_dir / "transcript.txt").open("w", encoding="utf-8")
+            self.handled: list[str] = []
+
+        def handle(self, line):
+            self.handled.append(line)
+            return handle(line)
+
+        def close(self):
+            self.transcript.close()
+
+    runtime = MockRuntime(tmp_path)
+    lines = iter(["solve it", "/confirm", "/confirm", "/confirm"])
+
+    def read(prompt="> "):
+        try:
+            return next(lines)
+        except StopIteration:
+            raise EOFError()
+
+    monkeypatch.setattr(repl, "open_session", lambda *args, **kwargs: runtime)
+    monkeypatch.setattr(repl, "_read_repl_input", read)
+    monkeypatch.setattr(repl, "_disable_bracketed_paste", lambda: None)
+    monkeypatch.setattr(sys, "argv", [
+        "pdlt", "--non-interactive", "--candidate-repo", str(ROOT), "--evidence", str(FIXTURE),
+        "--worker", "recorded", "--session-id", "mock-headless",
+    ])
+    return repl, runtime
+
+
+def test_headless_interrupt_ends_the_run(monkeypatch, tmp_path: Path) -> None:
+    """A Ctrl+C in a headless run must not be swallowed while piped lines restart the task."""
+    def interrupted(line):
+        raise KeyboardInterrupt()
+
+    repl, runtime = _headless_runtime(monkeypatch, tmp_path, interrupted, "PROMPT_REVIEW")
+    with pytest.raises(KeyboardInterrupt):
+        repl.main()
+    assert runtime.handled == ["solve it"]
+
+
+def test_headless_stops_reading_at_waiting_input(monkeypatch, tmp_path: Path) -> None:
+    from types import SimpleNamespace
+
+    turn = SimpleNamespace(text="Which file?", closed=False, traces=[])
+    repl, runtime = _headless_runtime(monkeypatch, tmp_path, lambda line: turn, "WAITING_INPUT")
+    assert repl.main() == 3
+    assert runtime.handled == ["solve it"]
+
+
+def test_sessions_prune_keeps_the_active_session(tmp_path: Path) -> None:
+    """The active session's transcript is open: deleting it fails on Windows (and
+    crashed the REPL) and silently removed the live session elsewhere."""
+    old = tmp_path / "sessions" / "old-session"
+    old.mkdir(parents=True)
+    os.utime(old, (1_000_000_000, 1_000_000_000))
+    proc = _run_repl(tmp_path, ["/sessions prune 0", "/quit"], "active-session")
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 0, out[-3000:]
+    assert "pruned 1 session(s)" in out
+    assert not old.exists()
+    assert (tmp_path / "sessions" / "active-session").is_dir()
+
+
+@pytest.mark.parametrize("name", ["CON", "nul", "com1.log", "Lpt9", "session."])
+def test_session_names_reserved_on_windows_are_rejected(name: str) -> None:
+    from pdl_taskmaster.host.repl import sanitize_session_name
+
+    with pytest.raises(ValueError):
+        sanitize_session_name(name)
+
+
+def test_ordinary_session_names_are_accepted() -> None:
+    from pdl_taskmaster.host.repl import sanitize_session_name
+
+    for name in ("session-20261001-120000", "console", "com10", "my.session"):
+        assert sanitize_session_name(name) == name
+
+
+def test_fast_mode_runs_every_phase_from_one_request(tmp_path: Path) -> None:
+    """Fast mode: the request alone runs prompt drafting, planning and execution; both
+    reviews are accepted on the user's advance confirmation and recorded as such."""
+    turns = _g06_turns()
+    proc = _run_repl(tmp_path, turns[:1], "fast", extra=["--fast"])
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 0, out[-3000:]
+    assert "Prompt Pseudocode" in out and "Response Plan Pseudocode" in out
+    assert out.count("[fast mode: confirmed in advance]") == 2
+    assert out.count("[protocol closed]") == 1
+
+    session = tmp_path / "sessions" / "fast"
+    workspace = Path(json.loads((session / "session.json").read_text(encoding="utf-8"))["workspace_path"])
+    events = [
+        json.loads(line)
+        for line in (workspace / "turns" / "turn_001" / "events" / "events.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    standing = [e["payload"]["kind"] for e in events if e["kind"] == "STANDING_CONFIRMATION"]
+    confirmed = [e["payload"]["kind"] for e in events if e["kind"] == "ARTIFACT_CONFIRMED"]
+    operations = [e["payload"]["operation"] for e in events if e["kind"] == "OPERATION_MATERIALIZED"]
+    assert standing == ["prompt", "plan"] and confirmed == ["prompt", "plan"]
+    assert {"DRAFT_PROMPT", "DRAFT_PLAN", "EXECUTE"} <= set(operations)
+    assert "FAST MODE: ON" in (session / "transcript.log").read_text(encoding="utf-8")
+
+
+def test_fast_mode_stops_at_a_review_with_host_findings(monkeypatch, tmp_path: Path) -> None:
+    """An artifact the host has findings on is never accepted in advance."""
+    from types import SimpleNamespace
+
+    turn = SimpleNamespace(text="Prompt Pseudocode\n\n...\n\n[host] PDL-02: line 1", closed=False, traces=[],
+                           review="prompt", host_findings=True)
+    repl, runtime = _headless_runtime(monkeypatch, tmp_path, lambda line: turn, "PROMPT_REVIEW")
+    standing: list[str] = []
+    runtime.confirm_on_standing_instruction = lambda: standing.append("called")
+    monkeypatch.setattr(sys, "argv", sys.argv + ["--fast"])
+    assert repl.main() == 2  # halted at the unconfirmed review
+    assert standing == []
+    assert runtime.handled[0] == "solve it"
+
+
+def _colored_repl(monkeypatch, tmp_path: Path, extra: list[str], prior_transcript: str | None = None):
+    """An in-process REPL whose stdout counts as a terminal, recording the input prompts."""
+    from types import SimpleNamespace
+
+    turn = SimpleNamespace(text="Prompt Pseudocode\n\nEXPLAIN it\n\nConfirm or correct this interpretation.",
+                           closed=False, traces=[], review="prompt", host_findings=False)
+    repl, runtime = _headless_runtime(monkeypatch, tmp_path, lambda line: turn, "PROMPT_REVIEW")
+    runtime.prior_transcript = prior_transcript
+    runtime.transcript_path = tmp_path / "transcript.txt"
+    prompts: list[str] = []
+    lines = iter(["solve it"])
+
+    def read(prompt="> "):
+        prompts.append(prompt)
+        try:
+            return next(lines)
+        except StopIteration:
+            raise EOFError()
+
+    monkeypatch.setattr(repl, "_read_repl_input", read)
+    monkeypatch.setattr(repl, "color_enabled", lambda *a, **k: True)
+    monkeypatch.setattr(sys, "argv", sys.argv + extra)
+    for name in ("NO_COLOR", "PDLT_THEME", "PDLT_USER_COLOR", "PDLT_ASSISTANT_COLOR"):
+        monkeypatch.delenv(name, raising=False)
+    return repl, prompts
+
+
+def test_new_chat_shows_theme_colors(monkeypatch, capsys, tmp_path: Path) -> None:
+    """A new chat colors the reply and the user's input, not only a resumed history."""
+    from pdl_taskmaster.host.console import PALETTE
+
+    repl, prompts = _colored_repl(monkeypatch, tmp_path, [])
+    repl.main()
+    out = capsys.readouterr().out
+    assert prompts and prompts[0].startswith(f"\x1b[{PALETTE['teal'].ansi}m")  # user types in teal
+    assert f"\x1b[{PALETTE['white'].ansi}mPrompt Pseudocode" in out  # assistant reply in white
+
+
+def test_new_chat_honours_theme_and_overrides(monkeypatch, capsys, tmp_path: Path) -> None:
+    from pdl_taskmaster.host.console import PALETTE
+
+    repl, prompts = _colored_repl(monkeypatch, tmp_path, ["--theme", "bold", "--assistant-color", "yellow"])
+    repl.main()
+    out = capsys.readouterr().out
+    assert prompts[0].startswith(f"\x1b[{PALETTE['green'].ansi}m")  # bold theme's user color
+    assert f"\x1b[{PALETTE['yellow'].ansi}mPrompt Pseudocode" in out  # override beats the theme
+
+
+def test_resumed_chat_shows_the_same_colors(monkeypatch, capsys, tmp_path: Path) -> None:
+    from pdl_taskmaster.host.console import PALETTE
+
+    history = "USER> earlier question\nASSISTANT> earlier answer\n"
+    repl, prompts = _colored_repl(monkeypatch, tmp_path, ["--theme", "claude"], prior_transcript=history)
+    repl.main()
+    out = capsys.readouterr().out
+    assert f"\x1b[{PALETTE['orange'].ansi}mUSER> earlier question" in out
+    assert f"\x1b[{PALETTE['white'].ansi}mASSISTANT> earlier answer" in out
+    assert f"\x1b[{PALETTE['white'].ansi}mPrompt Pseudocode" in out  # the live reply matches
+    assert prompts[0].startswith(f"\x1b[{PALETTE['orange'].ansi}m")
+
+
+def test_custom_pair_breaking_the_invariant_warns(monkeypatch, capsys, tmp_path: Path) -> None:
+    repl, _ = _colored_repl(monkeypatch, tmp_path, ["--user-color", "white", "--assistant-color", "teal"])
+    repl.main()
+    assert "[color] the assistant color (teal) must be lighter than the user color (white)" in capsys.readouterr().out

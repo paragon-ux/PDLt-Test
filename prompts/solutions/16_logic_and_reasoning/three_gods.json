@@ -1,0 +1,7 @@
+{
+  "ground_truth_status": "verified",
+  "verified_by": "Boolos (1996), 'The Hardest Logic Puzzle Ever'",
+  "expected_behavior": "solution",
+  "answer": "Embed every question: ask 'If I asked you Q, would you say ja?'. True or False answers ja exactly when Q is true, whatever ja means. Q1 to A: 'Is B Random?' (embedded). ja means C is not Random; da means B is not Random. Q2 to that non-Random god: 'Are you False?' (embedded) identifies it as True or False. Q3 to the same god: 'Is A Random?' (embedded) identifies Random among the other two; the last identity follows by elimination.",
+  "what_would_be_wrong": "Declaring the puzzle unsolvable, or questions whose answers depend on the unknown meaning of da and ja or on whether the god lies"
+}

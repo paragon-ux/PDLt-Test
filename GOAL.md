@@ -1,10 +1,10 @@
-﻿# PDLt System 2 Prompt Catalogue — Test Execution Goal
+# PDLt System 2 Prompt Catalogue — Test Execution Goal
 
 ## MISSION
 
 Execute the complete 105-prompt PDLt System 2 Prompt Catalogue through the live pdlt REPL
-to produce a definitive scoreboard measuring protocol fidelity on `gpt-oss-120b` at low
-reasoning effort. Results are written to `PDLt-Test/catalogue-runs/<run-timestamp>/`.
+to produce a definitive scoreboard measuring protocol fidelity on `gpt-oss-120b` at the
+harness's default reasoning (high before execution, low at EXECUTE; ADR-0022). Results are written to `catalogue-runs/<run-timestamp>/`.
 
 ---
 
@@ -25,15 +25,18 @@ before feeding it to pdlt. The whole point is testing the model's ability to int
 user input under protocol governance.
 
 ### 4. No Manual Intervention in the Protocol
-The runner uses `--non-interactive` and `--exit-on-close`. You must not manually confirm,
-revise, or override any review gate. The model must produce correct Prompt Pseudocode and
-Response Plan Pseudocode autonomously.
+The runner uses `--non-interactive` and `--exit-on-close` and confirms every review gate by
+piping `/confirm` (recorded in RUN_META as `gate_policy: evaluator_confirms_via_stdin`). No human
+may confirm, revise, edit, or override any gate. The model must produce Prompt Pseudocode and
+Response Plan Pseudocode autonomously; the harness's grammar lint is the only gate on them.
 
 ### 5. Full Transcript Capture
 Every session must produce a transcript file. Sessions without transcripts are invalid.
 
 ### 6. Single Model, Single Configuration
-The entire run uses one model (`openai/gpt-oss-120b`) at one reasoning effort (`low`).
+The entire run uses one model (`openai/gpt-oss-120b`) at one reasoning configuration: the
+harness default (high before execution, low at EXECUTE; ADR-0022), which is also what a live
+session runs at. `RUN_META.json` records the effective effort per operation (`reasoning_effective`).
 No switching models mid-run. No escalating reasoning effort for hard prompts.
 
 ---
@@ -42,21 +45,20 @@ No switching models mid-run. No escalating reasoning effort for hard prompts.
 
 ### Step 1: Dry Run (Verify Setup)
 ```powershell
-cd C:\Users\USER\Desktop\Frameworks\PDLt-Test
-python catalogue-runs\run_catalogue.py --dry-run
+python run_catalogue.py --dry-run
 ```
-Verify: 105 prompts listed, 20 marked VERIFIED (ground truth), manifest parses cleanly.
+Verify: 105 prompts listed, 21 marked VERIFIED (ground truth), manifest parses cleanly.
 
 ### Step 2: Single-Prompt Smoke Test
 ```powershell
-python catalogue-runs\run_catalogue.py --prompt-id 06-04 --timeout 120
+python run_catalogue.py --prompt-id 06-04 --timeout 120
 ```
 Run the easiest prompt first (race condition counter, difficulty: easy) to confirm the
 harness pipeline works end-to-end. Check the generated result.json and transcript.
 
 ### Step 3: Full Run
 ```powershell
-python catalogue-runs\run_catalogue.py --model openai/gpt-oss-120b --reasoning low --timeout 180
+python run_catalogue.py --model openai/gpt-oss-120b --timeout 180
 ```
 This will take approximately 30-60 minutes depending on API latency.
 
@@ -65,7 +67,7 @@ Open `catalogue-runs/<run-timestamp>/SCOREBOARD.md` and report:
 1. Overall pass rate
 2. Pass rate by category
 3. Pass rate by difficulty tier
-4. Any known regressions hit (REG-001 through REG-004)
+4. The result of each regression prompt (the `REG-*` ids in the manifest: REG-001, REG-003, REG-011 to REG-014)
 5. Which categories had 0% pass rate (ceiling not reached)
 6. Which categories had 100% pass rate (ceiling not tested)
 
@@ -115,8 +117,9 @@ PDLt-Test/catalogue-runs/
 A successful run produces a scoreboard with:
 - **Every prompt attempted** (105 results, 0 skipped)
 - **RUN_META.json confirms**: `retries_allowed: 0, do_overs_allowed: false`
-- **Known regressions (REG-001 to REG-004) not regressed**: these prompts should pass
+- **Regression prompts reported by id** (REG-001, REG-003, REG-011 to REG-014): a failure is reported, never tuned away
 - **Verified prompts spot-checked**: CLOSED_SUCCESS verdicts match ground truth
+- **0 false positives** in SCOREBOARD `false_positives` (graded prompts: 01-01..01-07, 13-01; the other 13 verified prompts are MANUAL)
 
 The pass rate itself is the empirical measurement. We expect it won't be 100% — the whole
 point is finding where the ceiling is. But every failure must be a real failure, not an

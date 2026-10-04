@@ -1,0 +1,1 @@
+Maya has B brothers and S sisters, where B is at least 1. Every brother and sister shares both parents with Maya. How many sisters does each of Maya's brothers have? Give the answer as an expression in B and S and explain why.

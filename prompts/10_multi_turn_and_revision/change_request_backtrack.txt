@@ -1,3 +1,1 @@
 ﻿Build a REST API client for the JSONPlaceholder API that supports listing, creating, and deleting posts.
-
-(Multi-turn test: After confirming the prompt and seeing the plan, the tester should use "change request" to go back to prompt review and change the requirement to: "Actually, build a CLI tool that wraps the JSONPlaceholder API instead of a library.")

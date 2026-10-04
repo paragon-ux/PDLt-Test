@@ -1,134 +1,89 @@
-# PDLt Test Suite & System 2 Prompt Catalogue
+# PDL Taskmaster (lean build) and the PDLt System 2 Catalogue
 
-Empirical benchmark testbed and protocol compliance suite for the [PDL Standard REPL Harness (`pdl-taskmaster`)](https://github.com/paragon-ux/PDL-Standard-REPL-Harness).
+A controller-gated REPL harness that has a model interpret your request as short, readable pseudocode and waits for confirmation before anything runs, plus the **112-prompt catalogue** (16 categories) that measures it. Content quoted or pasted into a task stays passive data (semantic bootstrap containment).
 
-This repository houses the frozen **105-Prompt System 2 Catalogue**, designed to evaluate reasoning models under deterministic protocol governance without human intervention, algorithmic coaching, or prompt cheating.
+Current design: [`ARCHITECTURE.md`](ARCHITECTURE.md). Provider baseline and known provider issues: [`PROVIDERS.md`](PROVIDERS.md). Direction (not yet implemented): [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md). Guardrails: [`docs/guardrails/`](docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md). Decisions: [`docs/adr/`](docs/adr/).
 
----
+## Two planes
 
-## Mission & Purpose
-
-The primary mission of `PDLt-Test` is to measure genuine model capability boundaries and protocol adherence:
-1. **Protocol Fidelity**: Does the model adhere to the Prompt Pseudocode specification (`PDL-01` through `PDL-08`) across all review stages?
-2. **Autonomous Execution**: Can the model produce executable solver scripts or analytical proofs that satisfy deterministic contract verifiers without prompt injections or harness crutches?
-3. **Boundary Refusal**: Does the runtime correctly intercept and fail-closed out-of-scope, network-dependent, or contradictory tasks?
-
----
-
-## Catalogue Taxonomy (15 Categories, 105 Prompts)
-
-The suite is partitioned into 15 categories with 7 prompts each (105 total). 21 prompts have mathematically verified ground-truth solutions.
-
-| # | Category | Focus Areas | Ground Truth Status |
-|---|---|---|---|
-| **01** | `combinatorial_search` | Schur triples, exact cover (DLX), graph coloring, subset sum, Latin square | Verified (20+ solutions) |
-| **02** | `data_structures` | LFU cache O(1), persistent RB-tree, concurrent LRU, B+ tree | Not required |
-| **03** | `systems_programming` | Async rate limiter, append-only WAL, lock-free SPSC queue, memory pools | Not required |
-| **04** | `parsers_and_compilers` | Recursive descent calculator, streaming JSON, regex-to-NFA, LL(1) tables | Not required |
-| **05** | `algorithm_design` | Interval merging, Kahn cycle detection, LCS reconstruction, A* grid search | Not required |
-| **06** | `debugging_and_repair` | Off-by-one binary search, two-lock deadlocks, memory leaks, silent corruption | Not required |
-| **07** | `refactoring_and_design`| God class decomposition, callback-to-async, inheritance-to-composition | Not required |
-| **08** | `specification_extraction`| Vague CRM requirements, contradictory API specs, implicit ETL constraints | Not required |
-| **09** | `adversarial_and_injection`| Fielded schema injection, system prompt overrides, nested fence escapes | Not required |
-| **10** | `multi_turn_and_revision`| Scope revision, approach backtracking, cumulative ledger carry | Not required |
-| **11** | `cross_domain_composition`| Log parsing & repair, schema migration & backfill, spec & implement | Not required |
-| **12** | `domain_knowledge` | DNS resolution trace, git rebase conflicts, SQL indexing, OAuth2 PKCE | Not required |
-| **13** | `negative_and_impossible`| Unsatisfiable constraints, NP-hard exact search, out-of-scope, stale cutoff | Verified |
-| **14** | `formal_verification` | Loop invariants, type soundness, deadlock freedom, termination proofs | Verified |
-| **15** | `performance_and_scale` | Eviction policies, DB sharding keys, stream vs batch, GC throughput tuning | Not required |
-
----
-
-## Manifest Schema (`prompts/CATALOGUE_MANIFEST.jsonl`)
-
-Every benchmark prompt is tracked in `prompts/CATALOGUE_MANIFEST.jsonl` with the following schema:
-
-```json
-{
-  "id": "01-01",
-  "category": "combinatorial_search",
-  "file": "01_combinatorial_search/schur_triples_n15.txt",
-  "difficulty": "hard",
-  "expected_routing": "VERIFIED_EXECUTION",
-  "expected_stage": "CLOSED_SUCCESS",
-  "ground_truth_status": "verified",
-  "solution_file": "solutions/01_combinatorial_search/schur_triples_n15.json",
-  "pdl_rules_stressed": ["PDL-02", "PDL-07", "PDL-08"],
-  "regression_ref": "REG-003",
-  "tags": ["backtracking", "witness", "partition"]
-}
-```
-
----
-
-## Test Execution & CLI Runner
-
-The test runner `run_catalogue.py` orchestrates non-interactive, headless REPL runs.
-
-### Quick Start: Dry Run
-Verify that the 105 prompts, manifest, and solution references are valid:
-```powershell
-python run_catalogue.py --dry-run
-```
-
-### Running a Specific Category
-Run only Category 13 (Negative & Impossible Tasks) or Category 01 (Combinatorial Search):
-```powershell
-python run_catalogue.py --category 13
-python run_catalogue.py --category 01 --fail-fast
-```
-
-### Full Catalogue Benchmark Run
-Execute all 105 prompts against a target model configuration:
-```powershell
-python run_catalogue.py --model openai/gpt-oss-120b --reasoning low
-```
-
-### CLI Options
-- `--dry-run`: Validate manifest entries without executing `pdlt`.
-- `--category <CAT>`: Run only prompts in specific categories (e.g. `01`, `01,02`, or `combinatorial_search`).
-- `--fail-fast`: Immediately halt the test run on the first failure.
-- `--timeout <SECS>`: Per-prompt execution timeout (default: 300 seconds).
-- `--model <ID>`: Target model identifier (default: `openai/gpt-oss-120b`).
-- `--reasoning <EFFORT>`: Reasoning effort level (`low`, `medium`, `high`).
-
----
-
-## Exit Codes & Protocol Semantics
-
-When running in headless mode (`--non-interactive --exit-on-close`), `pdlt` exits with standardized status codes (ADR-0019):
-
-| Exit Code | Stage Name | Description |
+| Plane | Where | Knows the benchmark? |
 |---|---|---|
-| **0** | `CLOSED_SUCCESS` | Deliverable verified, contracts satisfied, clean protocol closure. |
-| **1** | `CLOSED_CANCELLED` | Fail-closed error, intentional user cancellation, or boundary refusal. |
-| **2** | `UNCONFIRMED_GATE` | Stalled at a review gate (Prompt Review or Plan Review). |
-| **3** | `WAITING_INPUT` | Legitimate execution pause awaiting external user input. |
+| Harness | `src/pdl_taskmaster/` | **Never**: enforced by `tests/test_harness_anti_overfitting.py` |
+| Evaluation | `run_catalogue.py`, `graders.py`, `prompts/` | Yes: drives runs and grades answers against `prompts/solutions/` |
 
----
+The harness is a referee, never a solver: no algorithm hints, no keyword gates, no fabricated witnesses. A failed prompt is diagnostic data; a gamed pass is an integrity defect.
 
-## Output Structure (`catalogue-runs/`)
+## Install and test (offline)
 
-Every execution run produces an isolated timestamped directory under `catalogue-runs/`:
-
-```
-catalogue-runs/run-<YYYYMMDD-HHMMSS>/
-├── RUN_META.json           # Environment, model flags, and git commit
-├── SCOREBOARD.json         # Raw aggregate statistics (pass/fail/stall)
-├── SCOREBOARD.md           # Markdown scoreboard table
-└── results/
-    ├── 01-01_schur_triples_n15/
-    │   ├── transcript.txt  # Full interactive REPL session output
-    │   ├── stderr.txt      # Stderr capture
-    │   └── result.json     # Exit code, stage transitions, duration
-    └── ...
+```bash
+python -m pip install --upgrade pip   # for Python 3.10, upgrade pip first
+pip install -e ".[test]"   # Python 3.10-3.14, pydantic v2
+pytest -q                   # offline suite, includes the integrity gate
 ```
 
----
+## Run
 
-## Anti-Overfitting & Non-Negotiable Rules
+```bash
+export OPENROUTER_API_KEY=...          # System 2 (default nvidia/nemotron-3-super-120b-a12b:free) and System 1
+pdlt --new-session --dev                # interactive REPL
+python run_catalogue.py --dry-run       # validate manifest, list prompts
+python run_catalogue.py --prompt-id 06-04
+python run_catalogue.py --category 13 --fail-fast
+python run_catalogue.py                 # full 112-prompt run, one attempt each
+python run_plan_gate.py                 # PLAN-02 gate vs. supplied good and restating plans (live System 1)
+python run_entity_check.py              # entity channel: identifiers kept, narrative figures not forced (live)
+python run_extraction_probe.py --label x # extraction fidelity on every catalogue prompt, up to the prompt review (live)
+python run_catalogue.py --regrade catalogue-runs/run-<ts>   # re-score a finished run, no model calls
+python scripts/model_compare.py --models A,B --prompts 16-01,01-03   # graded runs per model, with TTFT, tokens, finish and provider per call (live)
+```
 
-1. **No Retries / No Cherry-Picking**: Prompts receive exactly one execution attempt. Manifest order is preserved.
-2. **Immutable Prompts**: Benchmark prompt files are read-only inputs.
-3. **The Referee Invariant**: The test harness is strictly an objective evaluator. It must never inject algorithmic advice, coach the model, or fabricate witnesses.
-4. **Diagnostic Integrity**: A failed test is diagnostic of authentic model capability boundaries; gamed passes are critical integrity breaches.
+REPL fast path: `/confirm`, `/revise <feedback>`, `/stop` or `/cancel`. `/help` in the REPL and `pdlt --help` list the rest.
+
+Fast mode (`pdlt --fast`, or `/fast on|off` in the REPL) confirms in advance: every phase still runs and both pseudocode artifacts are shown, but a review whose artifact has no host findings is accepted without waiting for `/confirm`. Each such acceptance is recorded in the session (`STANDING_CONFIRMATION`). A review with host findings (lint notes) still stops for you.
+
+Resuming a session (`/resume <session-id>`, or picking one at startup) shows its conversation so far, one blank line between turns, and says which review, if any, is waiting on you.
+
+Speakers are color-coded, in new and resumed chats alike. Pick a theme with `--theme` (or `PDLT_THEME`), or set each side with `--user-color` / `--assistant-color` (or `PDLT_USER_COLOR` / `PDLT_ASSISTANT_COLOR`), from `white, teal, green, blue, purple, yellow, orange`. Individual colors override the theme. In every theme the assistant has the lighter, more prominent color and the user the darker one; a theme that breaks this cannot be defined (`host/console.py`), and a custom pair that breaks it gets a warning. Output to a pipe or file stays plain, and `NO_COLOR` turns colors off.
+
+| Theme | User | Assistant |
+|---|---|---|
+| `default` | teal | white |
+| `bright` | teal | yellow |
+| `classic` | green | white |
+| `bold` | green | purple |
+| `claude` | orange | white |
+
+On Windows, set the key with `setx OPENROUTER_API_KEY ...` (or `$env:OPENROUTER_API_KEY = '...'` for the current PowerShell session) and open a new terminal.
+
+### Viewer (local browser)
+
+```bash
+python -m viewer                # http://127.0.0.1:8090, opens your browser; --no-open, --port N
+```
+
+Read-only and localhost-only. Browse every `catalogue-runs/run-*` (scoreboard, per-prompt verdict and ground-truth grade, transcript, deliverable, code, witness), follow the newest live session, and read the 112 catalogue prompts. It lives in the evaluation plane and imports nothing from the harness.
+
+### Environment routing (System 1)
+
+`PDLT_POLICY_SCOPE` (default `technical`), `PDLT_SANDBOX_NETWORK` (default `false`) and `PDLT_KNOWLEDGE_CUTOFF` (default `2024-06`) are **System 1 recipe state**. System 1 routes every new request against them before any System 2 call; they never appear in a System 2 prompt, and nothing matches keywords or dates. `PDLT_SANDBOX_NETWORK` only changes what System 1 is told: the sandbox never grants network access. System 1 is reached through OpenRouter; when it is unavailable, no boundary refusal is issued and the request goes ahead under the sandbox's limits.
+
+## Exit codes (headless, ADR-0019 as amended)
+
+| Code | Meaning |
+|---|---|
+| 0 | `CLOSED_SUCCESS`: verified deliverable, **or** a published boundary refusal (`closure=REFUSED`) |
+| 1 | `CLOSED_CANCELLED`: cancel, verification failure after repair, or fatal error |
+| 2 | `UNCONFIRMED_GATE`: halted at a review gate |
+| 3 | `WAITING_INPUT`: paused for required input |
+| 4 | Harness or provider error (for example a missing API key or a provider outage); not a protocol result |
+| 130 | Interrupted (Ctrl+C) |
+
+## Scoring
+
+`run_catalogue.py` writes `catalogue-runs/run-<ts>/` with `RUN_META.json`, `SCOREBOARD.{json,md}` and per-prompt `result.json` + transcript. A prompt passes (`is_prompt_pass`) when it reaches its manifest stage **and** its ground-truth grade is not FAIL. `graders.py` grades answers (PASS / FAIL / MANUAL / N/A); a stage match with a FAIL grade is a **false positive**, reported by id and never counted as a pass. MANUAL prompts are listed for the human spot check. See [`GOAL.md`](GOAL.md) for the execution contract.
+
+## Sandbox
+
+Model-authored code runs in a session-scoped sandbox ([ADR-0021](docs/adr/0021-session-scoped-os-native-confinement.md)). Each program gets a fresh, empty directory under the system temp directory and may read and write only there; it can also read the base Python install. Other files, network access and starting processes are denied by the OS: Landlock on Linux, Seatbelt on macOS, an AppContainer on Windows, or a docker/podman container with `--sandbox container`. Programs also get an environment allowlist (no API keys), CPU and memory limits, and an in-process audit hook as defense in depth.
+
+If the native confinement cannot apply (for example, Linux before 5.13), no program runs and the REPL says so. `--sandbox audit-only` (or `PDLT_SANDBOX=audit-only`) is the explicit opt-out: programs then run under the audit hook and limits only. This is not a VM boundary. See the [sandbox guide](docs/SANDBOX.md) for how it works and how to check it.
