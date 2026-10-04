@@ -74,39 +74,41 @@
 | 29 | 2 | hit | {1:6, 2:6, 3:2, 9:1, 10:1} |
 | 30 | 3 | hit | {1:6, 2:6, 3:3, 9:1, 10:1} |
 
-**ARC (T1 recency list, T2 frequency list, each least recent first; p = target size of T1)**
+**ARC (cache = T1 + T2; ghost lists B1, B2 hold evicted keys; each list least recent first; p = adaptive target size of T1)**
 
 | # | Access | Hit | Cache after |
 |---|---|---|---|
-| 1 | 1 | miss | T1 [1] T2 [] p=0 |
-| 2 | 2 | miss | T1 [1, 2] T2 [] p=0 |
-| 3 | 3 | miss | T1 [1, 2, 3] T2 [] p=0 |
-| 4 | 4 | miss | T1 [1, 2, 3, 4] T2 [] p=0 |
-| 5 | 5 | miss | T1 [1, 2, 3, 4, 5] T2 [] p=0 |
-| 6 | 1 | hit | T1 [2, 3, 4, 5] T2 [1] p=0 |
-| 7 | 2 | hit | T1 [3, 4, 5] T2 [1, 2] p=0 |
-| 8 | 6 | miss | T1 [4, 5, 6] T2 [1, 2] p=0 |
-| 9 | 7 | miss | T1 [5, 6, 7] T2 [1, 2] p=0 |
-| 10 | 8 | miss | T1 [6, 7, 8] T2 [1, 2] p=0 |
-| 11 | 1 | hit | T1 [6, 7, 8] T2 [2, 1] p=0 |
-| 12 | 2 | hit | T1 [6, 7, 8] T2 [1, 2] p=0 |
-| 13 | 3 | miss | T1 [7, 8, 3] T2 [1, 2] p=0 |
-| 14 | 9 | miss | T1 [8, 3, 9] T2 [1, 2] p=0 |
-| 15 | 10 | miss | T1 [3, 9, 10] T2 [1, 2] p=0 |
-| 16 | 1 | hit | T1 [3, 9, 10] T2 [2, 1] p=0 |
-| 17 | 2 | hit | T1 [3, 9, 10] T2 [1, 2] p=0 |
-| 18 | 3 | hit | T1 [9, 10] T2 [1, 2, 3] p=0 |
-| 19 | 4 | miss | T1 [10, 4] T2 [1, 2, 3] p=0 |
-| 20 | 5 | miss | T1 [4, 5] T2 [1, 2, 3] p=0 |
-| 21 | 6 | miss | T1 [5, 6] T2 [1, 2, 3] p=0 |
-| 22 | 7 | miss | T1 [6, 7] T2 [1, 2, 3] p=0 |
-| 23 | 1 | hit | T1 [6, 7] T2 [2, 3, 1] p=0 |
-| 24 | 2 | hit | T1 [6, 7] T2 [3, 1, 2] p=0 |
-| 25 | 8 | miss | T1 [7, 8] T2 [3, 1, 2] p=0 |
-| 26 | 9 | miss | T1 [8, 9] T2 [3, 1, 2] p=0 |
-| 27 | 10 | miss | T1 [9, 10] T2 [3, 1, 2] p=0 |
-| 28 | 1 | hit | T1 [9, 10] T2 [3, 2, 1] p=0 |
-| 29 | 2 | hit | T1 [9, 10] T2 [3, 1, 2] p=0 |
-| 30 | 3 | hit | T1 [9, 10] T2 [1, 2, 3] p=0 |
+| 1 | 1 | miss | T1 [1] T2 [] B1 [] B2 [] p=0 |
+| 2 | 2 | miss | T1 [1, 2] T2 [] B1 [] B2 [] p=0 |
+| 3 | 3 | miss | T1 [1, 2, 3] T2 [] B1 [] B2 [] p=0 |
+| 4 | 4 | miss | T1 [1, 2, 3, 4] T2 [] B1 [] B2 [] p=0 |
+| 5 | 5 | miss | T1 [1, 2, 3, 4, 5] T2 [] B1 [] B2 [] p=0 |
+| 6 | 1 | hit | T1 [2, 3, 4, 5] T2 [1] B1 [] B2 [] p=0 |
+| 7 | 2 | hit | T1 [3, 4, 5] T2 [1, 2] B1 [] B2 [] p=0 |
+| 8 | 6 | miss | T1 [4, 5, 6] T2 [1, 2] B1 [3] B2 [] p=0 |
+| 9 | 7 | miss | T1 [5, 6, 7] T2 [1, 2] B1 [3, 4] B2 [] p=0 |
+| 10 | 8 | miss | T1 [6, 7, 8] T2 [1, 2] B1 [4, 5] B2 [] p=0 |
+| 11 | 1 | hit | T1 [6, 7, 8] T2 [2, 1] B1 [4, 5] B2 [] p=0 |
+| 12 | 2 | hit | T1 [6, 7, 8] T2 [1, 2] B1 [4, 5] B2 [] p=0 |
+| 13 | 3 | miss | T1 [7, 8, 3] T2 [1, 2] B1 [5, 6] B2 [] p=0 |
+| 14 | 9 | miss | T1 [8, 3, 9] T2 [1, 2] B1 [6, 7] B2 [] p=0 |
+| 15 | 10 | miss | T1 [3, 9, 10] T2 [1, 2] B1 [7, 8] B2 [] p=0 |
+| 16 | 1 | hit | T1 [3, 9, 10] T2 [2, 1] B1 [7, 8] B2 [] p=0 |
+| 17 | 2 | hit | T1 [3, 9, 10] T2 [1, 2] B1 [7, 8] B2 [] p=0 |
+| 18 | 3 | hit | T1 [9, 10] T2 [1, 2, 3] B1 [7, 8] B2 [] p=0 |
+| 19 | 4 | miss | T1 [10, 4] T2 [1, 2, 3] B1 [7, 8, 9] B2 [] p=0 |
+| 20 | 5 | miss | T1 [4, 5] T2 [1, 2, 3] B1 [8, 9, 10] B2 [] p=0 |
+| 21 | 6 | miss | T1 [5, 6] T2 [1, 2, 3] B1 [9, 10, 4] B2 [] p=0 |
+| 22 | 7 | miss | T1 [6, 7] T2 [1, 2, 3] B1 [10, 4, 5] B2 [] p=0 |
+| 23 | 1 | hit | T1 [6, 7] T2 [2, 3, 1] B1 [10, 4, 5] B2 [] p=0 |
+| 24 | 2 | hit | T1 [6, 7] T2 [3, 1, 2] B1 [10, 4, 5] B2 [] p=0 |
+| 25 | 8 | miss | T1 [7, 8] T2 [3, 1, 2] B1 [4, 5, 6] B2 [] p=0 |
+| 26 | 9 | miss | T1 [8, 9] T2 [3, 1, 2] B1 [5, 6, 7] B2 [] p=0 |
+| 27 | 10 | miss | T1 [9, 10] T2 [3, 1, 2] B1 [6, 7, 8] B2 [] p=0 |
+| 28 | 1 | hit | T1 [9, 10] T2 [3, 2, 1] B1 [6, 7, 8] B2 [] p=0 |
+| 29 | 2 | hit | T1 [9, 10] T2 [3, 1, 2] B1 [6, 7, 8] B2 [] p=0 |
+| 30 | 3 | hit | T1 [9, 10] T2 [1, 2, 3] B1 [6, 7, 8] B2 [] p=0 |
+
+No access on this trace hits a ghost list (B1 or B2): each ghost entry is discarded before its key comes back, so ARC's target p never adapts and stays 0.
 
 **Winner.** LFU and ARC tie at 12 hits; both beat LRU (9). Items 1, 2 and 3 recur throughout the trace, but LRU evicts them whenever a run of one-off items (6, 7, 8; 9, 10; 4-7) passes through. LFU keeps them because their counts grow. ARC moves them to T2 on their second access and keeps the one-off items churning through T1.
