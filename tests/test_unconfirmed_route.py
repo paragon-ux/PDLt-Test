@@ -359,3 +359,41 @@ def test_host_app_no_review_wiring(tmp_path: Path):
     # But an explicit review invocation is preserved
     explicit = host._ensure_protocol_entry("$confirm-with-pseudocode Deduce identities.")
     assert explicit == "$confirm-with-pseudocode Deduce identities."
+
+
+def test_unconfirmed_route_with_draft_execute(tmp_path: Path):
+    """When draft_execute is enabled on unconfirmed route, DRAFT_EXECUTE runs between BOOTSTRAP and EXECUTE."""
+    calls = []
+
+    def model_call(req):
+        calls.append(req.operation)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return _bootstrap_reply()
+        if req.operation == "DRAFT_EXECUTE":
+            return json.dumps({
+                "kind": "RESULT",
+                "brief_body": "Use backtracking with MRV heuristic under 10M step budget.",
+                "execution_entities": [],
+            })
+        if req.operation == "EXECUTE_UNCONFIRMED":
+            inputs = req.projection.document.get("operation_inputs", {})
+            req_inputs = inputs.get("REQUIRED_TASK_INPUTS", "")
+            assert "EXECUTION BRIEF" in req_inputs
+            assert "MRV heuristic" in req_inputs
+            return _unconfirmed_result_reply()
+        raise AssertionError(f"unexpected operation: {req.operation}")
+
+    engine = SessionEngine(
+        ROOT,
+        model_call,
+        workspace_root=tmp_path,
+        sys1_client=ClassifyingSys1(),
+        no_review=True,
+    )
+    engine.draft_execute = True
+
+    response = engine.handle_user_message("Deduce identities of three gods A, B, and C.")
+    assert response.closed is True
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert calls == ["BOOTSTRAP_ANALYSIS", "DRAFT_EXECUTE", "EXECUTE_UNCONFIRMED"]
+

@@ -1718,10 +1718,17 @@ class SessionEngine:
         the confirmed prompt and plan within the stated environment. A draft that
         fails to parse is skipped, never retried into EXECUTE."""
         assert self.workspace is not None
-        values = {key: execute_context.get(key) for key in (
-            "CONFIRMED_PROMPT_BODY", "CONFIRMED_PLAN_BODY", "REQUIRED_TASK_INPUTS",
-            "AVAILABLE_EXECUTION_TOOLS", "SUPPLIED_EXECUTION_INPUT_SOURCE",
-        )}
+        prompt_body = execute_context.get("CONFIRMED_PROMPT_BODY") or execute_context.get("SOURCE_REQUEST")
+        plan_body = execute_context.get("CONFIRMED_PLAN_BODY") or "Implement the deliverable to satisfy all requirements and constraints of the task."
+        supplied_source = execute_context.get("SUPPLIED_EXECUTION_INPUT_SOURCE") or execute_context.get("SOURCE_REQUEST")
+        values = {
+            "CONFIRMED_PROMPT_BODY": prompt_body,
+            "CONFIRMED_PLAN_BODY": plan_body,
+            "AVAILABLE_EXECUTION_TOOLS": execute_context.get("AVAILABLE_EXECUTION_TOOLS"),
+            "SUPPLIED_EXECUTION_INPUT_SOURCE": supplied_source,
+        }
+        if execute_context.get("REQUIRED_TASK_INPUTS"):
+            values["REQUIRED_TASK_INPUTS"] = execute_context["REQUIRED_TASK_INPUTS"]
         values["HOST_PROTOCOL_STATE"] = "EXECUTION_DRAFT"
         try:
             draft = self._call("DRAFT_EXECUTE", values, traces, parser=self.bridge.parse_execution_draft)
@@ -1827,6 +1834,14 @@ class SessionEngine:
         }
         if task_inputs:
             execute_context["REQUIRED_TASK_INPUTS"] = "\n\n".join(task_inputs)
+
+        if self.draft_execute:
+            brief = self._draft_execution_brief(execute_context, traces)
+            if brief:
+                execute_context["REQUIRED_TASK_INPUTS"] = (
+                    (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context.get("REQUIRED_TASK_INPUTS") else "")
+                    + "EXECUTION BRIEF (your own draft for this task, written before this call):\n" + brief
+                )
 
         stop_on_failure = self.max_repairs == 0
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
