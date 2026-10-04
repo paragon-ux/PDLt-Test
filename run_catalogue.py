@@ -860,7 +860,8 @@ def main():
 
     entries = load_manifest(category_filter=args.category)
     if args.prompt_id:
-        entries = [e for e in entries if e["id"] == args.prompt_id]
+        target_pids = {p.strip() for p in args.prompt_id.split(",") if p.strip()}
+        entries = [e for e in entries if e["id"] in target_pids]
     if args.repeat < 1:
         parser.error("--repeat must be at least 1")
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
