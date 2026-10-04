@@ -3,16 +3,43 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 import json
 import os
 import re
 import tempfile
 import uuid
 
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+
+from pdl_taskmaster.verification.checkers.base import ProblemDomain
+
 
 class WorkspaceError(RuntimeError):
     pass
+
+
+class TurnRouting(BaseModel):
+    """System 1's routing of a turn (ARCHITECTURE §6): whether execution must be
+    verified, the verification domain, the resource tier and the step distribution
+    the budget gate reads. Kept with the turn so a restored session executes as
+    the turn was routed, not under the engine's defaults."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    requires_verified_execution: bool
+    problem_domain: Optional[ProblemDomain] = None
+    execution_tier: str
+    profile_distribution: dict[str, float] = Field(default_factory=dict)
+
+    @field_validator("execution_tier")
+    @classmethod
+    def _known_tier(cls, tier: str) -> str:
+        from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS
+
+        if tier not in EXECUTION_BUDGETS:
+            raise ValueError(f"unknown execution tier {tier!r}")
+        return tier
 
 
 @dataclass(frozen=True)
@@ -234,6 +261,20 @@ class WorkspaceRun:
         base = self.path / "turns" / turn_id if turn_id else self._turn_base()
         path = base / "source_request.md"
         return self._read(path).rstrip("\n") if path.is_file() else None
+
+    def write_turn_routing(self, routing: TurnRouting) -> None:
+        """The turn's System 1 routing, rewritten whenever the routing changes."""
+        self._write(self._turn_base() / "routing.json", routing.model_dump_json(indent=2) + "\n")
+
+    def turn_routing(self) -> TurnRouting | None:
+        """The active turn's routing; None for a turn routed before routing was kept."""
+        path = self._turn_base() / "routing.json"
+        if not path.is_file():
+            return None
+        try:
+            return TurnRouting.model_validate_json(self._read(path))
+        except ValidationError as exc:
+            raise WorkspaceError("turn_routing_file") from exc
 
     def previous_turn(self) -> dict[str, Any] | None:
         """The most recent closed turn, as a follow-up needs it: its request and its

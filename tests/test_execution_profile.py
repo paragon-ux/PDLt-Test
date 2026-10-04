@@ -7,7 +7,9 @@ from pathlib import Path
 
 import pytest
 
+from pdl_taskmaster.controller.mechanical_controller import Stage
 from pdl_taskmaster.providers.sys1.recipes.execution_profile import ExecutionProfileRecipe
+from pdl_taskmaster.runtime.result_ir import render_instructions
 from pdl_taskmaster.runtime.session_engine import SessionEngine
 from pdl_taskmaster.verification import sandbox as sandbox_module
 from pdl_taskmaster.verification.sandbox import ExecutionBudget, ExecutionSandbox
@@ -304,10 +306,9 @@ def test_activation_route_sees_the_execution_environment(tmp_path):
     assert "execution_environment does not provide" in sys1.criteria["BLOCKED_BY_HIGHER_PRIORITY"]
 
 
-def _verified_session(tmp_path, prediction: str, execute_replies: list[dict]):
-    """A verified-execution session whose EXECUTE replies are scripted."""
+def _scripted_model(execute_replies: list[dict], executes: list):
+    """A model whose drafts are fixed and whose EXECUTE replies are scripted."""
     replies = list(execute_replies)
-    executes: list = []
 
     def model_call(req):
         if req.operation == "BOOTSTRAP_ANALYSIS":
@@ -320,6 +321,13 @@ def _verified_session(tmp_path, prediction: str, execute_replies: list[dict]):
         executes.append(req)
         return json.dumps(replies.pop(0))
 
+    return model_call
+
+
+def _verified_session(tmp_path, prediction: str, execute_replies: list[dict]):
+    """A verified-execution session whose EXECUTE replies are scripted."""
+    executes: list = []
+    model_call = _scripted_model(execute_replies, executes)
     dist = {prediction: 0.97, "WITHIN_10M_STEPS" if prediction != "WITHIN_10M_STEPS" else "WITHIN_100K_STEPS": 0.03}
     engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=VerifiedPredictingSys1(dist))
     for message in ("$confirm-with-pseudocode compute it", "/confirm", "/confirm"):
@@ -381,3 +389,43 @@ def test_repair_budgets_are_per_tier_and_fixed():
     assert {t: b.repairs for t, b in sandbox_module.EXECUTION_BUDGETS.items()} == {
         "MINIMAL": 1, "STANDARD": 1, "HEAVY_COMPUTE": 2,
     }
+
+
+def _routed_to_plan_review(tmp_path, executes: list):
+    """A verified-execution task routed to the MINIMAL tier, stopped at the plan review."""
+    sys1 = VerifiedPredictingSys1({"WITHIN_100K_STEPS": 0.97, "WITHIN_10M_STEPS": 0.03})
+    model_call = _scripted_model([_GOOD], executes)
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=sys1)
+    for message in ("$confirm-with-pseudocode compute it", "/confirm"):
+        engine.handle_user_message(message)
+    assert engine.controller.state.stage == Stage.PLAN_REVIEW and not executes
+    return engine.workspace.path, model_call, sys1
+
+
+def test_restored_session_executes_as_system1_routed_it(tmp_path):
+    """/confirm at the plan review in a later process: the restored engine executed in
+    standard mode under the STANDARD budget, skipping the Result IR contract, witness
+    verification and the repair loop System 1 had routed the task to."""
+    executes: list = []
+    workspace_path, model_call, sys1 = _routed_to_plan_review(tmp_path, executes)
+
+    resumed = SessionEngine.restore(ROOT, model_call, workspace_path, sys1_client=sys1)
+    resumed.handle_user_message("/confirm")
+    (execute,) = executes
+    inputs = execute.projection.document["operation_inputs"]
+    assert [r for r in execute.manifest["requirement_ids"] if r.startswith("RS-")]  # Result IR mode
+    verified_channel = render_instructions(repo_root=ROOT, requires_verified_execution=True)
+    assert verified_channel in inputs["REQUIRED_TASK_INPUTS"]  # with the witness instructions
+    minimal = sandbox_module.EXECUTION_BUDGETS["MINIMAL"]
+    assert inputs["AVAILABLE_EXECUTION_TOOLS"] == resumed.sandbox.describe(minimal)
+    assert "at most 100,000 steps" in inputs["AVAILABLE_EXECUTION_TOOLS"][0]["description"]
+
+
+def test_restored_session_keeps_host_declared_tools(tmp_path):
+    executes: list = []
+    workspace_path, model_call, sys1 = _routed_to_plan_review(tmp_path, executes)
+    declared = [{"name": "custom", "description": "host-provided"}]
+    resumed = SessionEngine.restore(ROOT, model_call, workspace_path, sys1_client=sys1,
+                                    available_execution_tools=declared)
+    assert resumed._execution_budget.tier == "MINIMAL"
+    assert resumed.available_execution_tools == declared

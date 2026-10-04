@@ -279,7 +279,7 @@ def _attach_result_ir(body: str, ir_dict: dict[str, Any]) -> str:
     return body.rstrip() + f"\n\n```json\n{ir_json_str}\n```"
 
 
-from pdl_taskmaster.runtime.workspace import MemoryWorkspaceRun, WorkspaceError, WorkspaceRun
+from pdl_taskmaster.runtime.workspace import MemoryWorkspaceRun, TurnRouting, WorkspaceError, WorkspaceRun
 from pdl_taskmaster.runtime import presentation
 
 
@@ -492,8 +492,36 @@ class SessionEngine:
         engine._previous_turn = workspace.previous_turn()
         engine._previous_deliverable = _previous_turn_reference(engine._previous_turn)
         engine._source_request = workspace.turn_source()
-        workspace.append_event("SESSION_RESTORED", {"instance_id": state.instance_id})
+        # System 1 routed this turn in an earlier epoch: execute it in the routed
+        # mode and under the routed budget, not the engine's defaults.
+        routing = workspace.turn_routing()
+        if routing is not None:
+            engine._apply_routing(routing)
+        workspace.append_event(
+            "SESSION_RESTORED",
+            {"instance_id": state.instance_id,
+             "routing": routing.model_dump(mode="json") if routing is not None else None},
+        )
         return engine
+
+    def _apply_routing(self, routing: TurnRouting) -> None:
+        from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS
+
+        self._requires_verified_execution = routing.requires_verified_execution
+        self._problem_domain = routing.problem_domain
+        self._profile_distribution = dict(routing.profile_distribution)
+        self._execution_budget = EXECUTION_BUDGETS[routing.execution_tier]
+        if self._host_execution_tools is None:
+            self.available_execution_tools = self.sandbox.describe(self._execution_budget)
+
+    def _record_routing(self) -> None:
+        assert self.workspace is not None
+        self.workspace.write_turn_routing(TurnRouting(
+            requires_verified_execution=self._requires_verified_execution,
+            problem_domain=self._problem_domain,
+            execution_tier=self._execution_budget.tier,
+            profile_distribution=self._profile_distribution,
+        ))
 
     def _new_workspace(self) -> WorkspaceRun:
         # ADR-0011 / ADR-0008: software-defined in-memory VFS workspace run.
@@ -939,11 +967,13 @@ class SessionEngine:
         order = list(EXECUTION_BUDGETS)
         before = self._execution_budget
         raised = passed and tier in EXECUTION_BUDGETS and order.index(tier) > order.index(before.tier)
+        assert self.workspace is not None
         if raised:
             self._execution_budget = EXECUTION_BUDGETS[tier]
             if self._host_execution_tools is None:
                 self.available_execution_tools = self.sandbox.describe(self._execution_budget)
-        assert self.workspace is not None
+            # A resume at WAITING_INPUT re-executes from the raised tier, as in-process.
+            self._record_routing()
         self.workspace.append_event(
             "PLAN_PROFILE_ROUTED",
             {
@@ -1033,6 +1063,7 @@ class SessionEngine:
         # GUARD-02: the harness never infers a problem domain from request text.
         # The domain stays GENERAL unless the witness itself declares a typed domain.
         self._problem_domain = ProblemDomain.GENERAL if requires_verified else None
+        self._record_routing()
 
         if self.workspace is not None:
             self.workspace.append_event(
