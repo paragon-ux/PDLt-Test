@@ -1,12 +1,19 @@
-def insert_interval(intervals, new_interval):
-    result, i, n = [], 0, len(intervals)
-    lo, hi = new_interval
-    while i < n and intervals[i][1] < lo:
-        result.append(list(intervals[i]))
-        i += 1
-    while i < n and intervals[i][0] <= hi:
-        lo, hi = min(lo, intervals[i][0]), max(hi, intervals[i][1])
-        i += 1
-    result.append([lo, hi])
-    result.extend(list(x) for x in intervals[i:])
-    return result
+def lcs(s1, s2):
+    n, m = len(s1), len(s2)
+    dp = [[0] * (m + 1) for _ in range(n + 1)]
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            if s1[i - 1] == s2[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1] + 1
+            else:
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+    out, i, j = [], n, m
+    while i and j:
+        if s1[i - 1] == s2[j - 1]:
+            out.append(s1[i - 1])
+            i, j = i - 1, j - 1
+        elif dp[i - 1][j] >= dp[i][j - 1]:
+            i -= 1
+        else:
+            j -= 1
+    return dp[n][m], "".join(reversed(out))

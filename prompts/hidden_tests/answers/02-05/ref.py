@@ -1,49 +1,103 @@
-from collections import OrderedDict, defaultdict
+import bisect
+import pickle
 
 
-class LFUCache:
-    def __init__(self, capacity):
-        self.capacity = capacity
-        self.values = {}
-        self.freq = {}
-        self.buckets = defaultdict(OrderedDict)
-        self.min_freq = 0
-
-    def _touch(self, key):
-        f = self.freq[key]
-        del self.buckets[f][key]
-        if not self.buckets[f]:
-            del self.buckets[f]
-            if self.min_freq == f:
-                self.min_freq = f + 1
-        self.freq[key] = f + 1
-        self.buckets[f + 1][key] = None
-
-    def get(self, key):
-        if key not in self.values:
-            return -1
-        self._touch(key)
-        return self.values[key]
-
-    def put(self, key, value):
-        if self.capacity <= 0:
-            return
-        if key in self.values:
-            self.values[key] = value
-            self._touch(key)
-            return
-        if len(self.values) >= self.capacity:
-            victim, _ = self.buckets[self.min_freq].popitem(last=False)
-            if not self.buckets[self.min_freq]:
-                del self.buckets[self.min_freq]
-            del self.values[victim], self.freq[victim]
-        self.values[key] = value
-        self.freq[key] = 1
-        self.buckets[1][key] = None
-        self.min_freq = 1
+class Leaf:
+    def __init__(self):
+        self.keys, self.values = [], []
+        self.prev = self.next = None
 
 
-if __name__ == "__main__":
-    cache = LFUCache(2)
-    cache.put(1, 1)
-    print(cache.get(1))
+class Internal:
+    def __init__(self):
+        self.keys, self.children = [], []
+
+
+class BPlusTree:
+    def __init__(self, order=4):
+        self.order = order
+        self.root = Leaf()
+
+    def _leaf(self, key):
+        node = self.root
+        while isinstance(node, Internal):
+            node = node.children[bisect.bisect_right(node.keys, key)]
+        return node
+
+    def search(self, key):
+        leaf = self._leaf(key)
+        i = bisect.bisect_left(leaf.keys, key)
+        return leaf.values[i] if i < len(leaf.keys) and leaf.keys[i] == key else None
+
+    def insert(self, key, value):
+        split = self._insert(self.root, key, value)
+        if split:
+            sep, right = split
+            root = Internal()
+            root.keys, root.children = [sep], [self.root, right]
+            self.root = root
+
+    def _insert(self, node, key, value):
+        if isinstance(node, Leaf):
+            i = bisect.bisect_left(node.keys, key)
+            if i < len(node.keys) and node.keys[i] == key:
+                node.values[i] = value
+                return None
+            node.keys.insert(i, key)
+            node.values.insert(i, value)
+            if len(node.keys) < self.order:
+                return None
+            mid = len(node.keys) // 2
+            right = Leaf()
+            right.keys, right.values = node.keys[mid:], node.values[mid:]
+            node.keys, node.values = node.keys[:mid], node.values[:mid]
+            right.next, right.prev = node.next, node
+            if node.next:
+                node.next.prev = right
+            node.next = right
+            return right.keys[0], right
+        i = bisect.bisect_right(node.keys, key)
+        split = self._insert(node.children[i], key, value)
+        if not split:
+            return None
+        sep, right_child = split
+        node.keys.insert(i, sep)
+        node.children.insert(i + 1, right_child)
+        if len(node.children) <= self.order:
+            return None
+        mid = len(node.keys) // 2
+        right = Internal()
+        up = node.keys[mid]
+        right.keys, right.children = node.keys[mid + 1:], node.children[mid + 1:]
+        node.keys, node.children = node.keys[:mid], node.children[:mid + 1]
+        return up, right
+
+    def range_scan(self, lo, hi):
+        leaf, out = self._leaf(lo), []
+        while leaf:
+            for k, v in zip(leaf.keys, leaf.values):
+                if k > hi:
+                    return out
+                if k >= lo:
+                    out.append((k, v))
+            leaf = leaf.next
+        return out
+
+    def _items(self):
+        node = self.root
+        while isinstance(node, Internal):
+            node = node.children[0]
+        while node:
+            yield from zip(node.keys, node.values)
+            node = node.next
+
+    def serialize(self):
+        return pickle.dumps({"order": self.order, "items": list(self._items())})
+
+    @classmethod
+    def deserialize(cls, data):
+        state = pickle.loads(data)
+        tree = cls(state["order"])
+        for k, v in state["items"]:
+            tree.insert(k, v)
+        return tree

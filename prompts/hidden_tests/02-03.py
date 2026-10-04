@@ -1,99 +1,103 @@
-"""Hidden tests for 02-03: a thread-safe sharded LRU cache.
+"""Hidden tests for 02-03: a persistent red-black tree with path copying.
 
-From the prompt:
-- N shards (default 16), each with its own lock and capacity;
-- hash(key) % N routing;
-- independent LRU order per shard;
-- get() and put().
+The prompt names three functions:
+- insert(tree, key) -> new_tree;
+- lookup(tree, key) -> bool;
+- to_sorted_list(tree) -> list.
 
-The constructor's names are open: shard count and capacity are matched by name.
-With a single shard the cache must behave as one LRU of the stated capacity,
-whether that capacity is per shard or total.
+Two shapes are accepted:
+- **module functions** over an empty tree (None, or the deliverable's own empty
+  value or class);
+- **an immutable tree class** whose methods take the key and return new trees.
+
+Balance is checked by behaviour, not by inspecting nodes: 2,000 ascending
+inserts must neither exhaust recursion nor take quadratic time.
 """
 TEST_SECONDS = 30
 
 
+class _Functions:
+    __name__ = "module functions"
+
+    def __init__(self, insert, lookup, to_list, empty):
+        self.insert, self.lookup, self.to_list, self.empty = insert, lookup, to_list, empty
+
+
+class _Methods:
+    def __init__(self, cls):
+        self.__name__ = cls.__name__
+        self.empty = construct(cls)
+
+    def insert(self, tree, key):
+        return tree.insert(key)
+
+    def lookup(self, tree, key):
+        return tree.lookup(key)
+
+    def to_list(self, tree):
+        return tree.to_sorted_list()
+
+
+def _empties():
+    yield None
+    for name in ("EMPTY", "Empty", "EMPTY_TREE", "NIL", "LEAF", "empty", "empty_tree"):
+        value = NS.get(name)
+        if value is not None:
+            yield value() if callable(value) and not isinstance(value, type) else value
+
+
 def CANDIDATES():
-    return classes_with("get", "put")
-
-
-def _make(C, shards, capacity):
-    import inspect
-
-    try:
-        params = [p for p in inspect.signature(C).parameters.values() if p.name != "self"]
-    except (TypeError, ValueError):
-        params = []
-    kwargs = {}
-    for p in params:
-        name = p.name.lower()
-        # Capacity words first: "capacity_per_shard" names a capacity, not a shard count.
-        if any(t in name for t in ("capacity", "size", "max", "limit")):
-            kwargs[p.name] = capacity
-        elif "shard" in name or name in ("n", "partitions"):
-            kwargs[p.name] = shards
-    return C(**kwargs)
-
-
-def _absent(cache, key):
-    try:
-        value = cache.get(key)
-    except KeyError:
-        return True
-    return missing(value)
-
-
-def test_get_put_round_trip(C):
-    c = _make(C, 16, 1000)
-    for i in range(200):
-        c.put(f"k{i}", i)
-    assert all(c.get(f"k{i}") == i for i in range(200))
-    assert _absent(c, "nope")
-
-
-def test_single_shard_is_an_lru(C):
-    c = _make(C, 1, 3)
-    for k in "abc":
-        c.put(k, k.upper())
-    assert c.get("a") == "A"      # a is now most recent
-    c.put("d", "D")               # evicts b, the least recent
-    assert _absent(c, "b")
-    assert c.get("a") == "A" and c.get("c") == "C" and c.get("d") == "D"
-
-
-def test_capacity_is_bounded(C):
-    c = _make(C, 4, 5)
-    for i in range(500):
-        c.put(i, i)
-    present = sum(1 for i in range(500) if not _absent(c, i))
-    assert 0 < present <= 4 * 5, present
-
-
-def test_concurrent_writers_and_readers(C):
-    import threading
-
-    c = _make(C, 16, 4096)
-    errors = []
-
-    def worker(tid):
+    insert, lookup, to_list = NS.get("insert"), NS.get("lookup"), NS.get("to_sorted_list")
+    found = []
+    if callable(insert) and callable(lookup) and callable(to_list):
+        for empty in _empties():
+            try:
+                tree = insert(empty, 1)
+                if lookup(tree, 1) and list(to_list(tree)) == [1]:
+                    found.append(_Functions(insert, lookup, to_list, empty))
+                    break
+            except Exception:  # noqa: BLE001 - this empty value does not fit
+                continue
+    for cls in classes_with("insert", "lookup", "to_sorted_list"):
         try:
-            for i in range(300):
-                key = (tid, i)
-                c.put(key, tid * 10_000 + i)
-                got = c.get(key)
-                if got != tid * 10_000 + i:
-                    errors.append((key, got))
-        except Exception as exc:  # noqa: BLE001
-            errors.append(repr(exc))
-
-    threads = [threading.Thread(target=worker, args=(t,)) for t in range(8)]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join(20)
-    assert not errors, errors[:3]
-    assert all(c.get((t, i)) == t * 10_000 + i for t in range(8) for i in range(0, 300, 37))
+            found.append(_Methods(cls))
+        except Exception:  # noqa: BLE001
+            continue
+    return found
 
 
-TESTS = [test_get_put_round_trip, test_single_shard_is_an_lru, test_capacity_is_bounded,
-         test_concurrent_writers_and_readers]
+def _build(api, keys):
+    tree = api.empty
+    for k in keys:
+        tree = api.insert(tree, k)
+    return tree
+
+
+def test_membership_and_order(api):
+    import random
+
+    keys = list(range(0, 400, 3))
+    random.Random(2).shuffle(keys)
+    tree = _build(api, keys)
+    assert list(api.to_list(tree)) == sorted(keys)
+    assert all(api.lookup(tree, k) for k in keys)
+    assert not any(api.lookup(tree, k) for k in (1, 2, 400, -3))
+
+
+def test_persistence(api):
+    t1 = _build(api, [10, 5, 15, 3, 7])
+    snapshot = list(api.to_list(t1))
+    t2 = api.insert(t1, 8)
+    t3 = api.insert(t2, 1)
+    assert list(api.to_list(t1)) == snapshot and not api.lookup(t1, 8)
+    assert api.lookup(t2, 8) and not api.lookup(t2, 1)
+    assert list(api.to_list(t3)) == [1, 3, 5, 7, 8, 10, 15]
+
+
+def test_ascending_inserts_stay_balanced(api):
+    tree = _build(api, range(2000))
+    assert list(api.to_list(tree))[:5] == [0, 1, 2, 3, 4]
+    assert api.lookup(tree, 1999) and api.lookup(tree, 0)
+
+
+TESTS = [test_membership_and_order, test_persistence, test_ascending_inserts_stay_balanced]

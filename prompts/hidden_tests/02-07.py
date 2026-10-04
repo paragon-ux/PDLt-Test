@@ -1,75 +1,77 @@
-"""Hidden tests for 02-07: a skip-list ordered map.
+"""Hidden tests for 02-07: a counting Bloom filter.
 
 From the prompt:
-- insert(key, value) inserts or updates;
-- search(key) returns the value, or None;
-- delete(key) removes the key;
-- range_query(lo, hi) returns all key-value pairs with lo <= key <= hi.
+- add(item), remove(item), might_contain(item);
+- m and k derived from the expected count n and the false-positive rate p;
+- no false negatives;
+- a false-positive rate within 2x of the theoretical bound.
 
-A list of pairs is checked for ascending order; a dict is accepted too.
+The constructor's parameter names are open, so n and p are matched by name,
+falling back to position.
 """
-TEST_SECONDS = 15
+TEST_SECONDS = 30
+N, P = 1500, 0.01
 
 
 def CANDIDATES():
-    return classes_with("insert", "search", "delete", "range_query")
+    return classes_with("add", "remove", "might_contain")
 
 
-def _pairs(result):
-    if isinstance(result, dict):
-        return sorted(result.items())
-    pairs = [tuple(p) for p in result]
-    assert all(len(p) == 2 for p in pairs), pairs[:3]
-    assert [k for k, _ in pairs] == sorted(k for k, _ in pairs), "range_query must be in key order"
-    return pairs
+def _make(C):
+    import inspect
+
+    try:
+        params = [p for p in inspect.signature(C).parameters.values() if p.name != "self"]
+    except (TypeError, ValueError):
+        params = []
+    kwargs = {}
+    for p in params:
+        name = p.name.lower()
+        if any(t in name for t in ("rate", "prob", "error", "fp", "epsilon")) or name == "p":
+            kwargs[p.name] = P
+        elif any(t in name for t in ("expected", "capacity", "count", "items", "elements", "size")) or name == "n":
+            kwargs[p.name] = N
+    if len(kwargs) == 2:
+        return C(**kwargs)
+    return C(N, P)
 
 
-def test_insert_search_update(C):
-    s = construct(C)
-    for k in [5, 1, 9, 3, 7]:
-        s.insert(k, f"v{k}")
-    assert s.search(3) == "v3" and s.search(9) == "v9"
-    assert s.search(4) is None
-    s.insert(3, "new")
-    assert s.search(3) == "new"
+def test_no_false_negatives(C):
+    f = _make(C)
+    items = [f"member-{i}" for i in range(N)]
+    for item in items:
+        f.add(item)
+    assert all(f.might_contain(item) for item in items)
 
 
-def test_delete(C):
-    s = construct(C)
-    for k in range(20):
-        s.insert(k, k * k)
-    for k in range(0, 20, 2):
-        s.delete(k)
-    assert all(s.search(k) is None for k in range(0, 20, 2))
-    assert all(s.search(k) == k * k for k in range(1, 20, 2))
+def test_false_positive_rate_within_twice_the_bound(C):
+    f = _make(C)
+    for i in range(N):
+        f.add(f"member-{i}")
+    trials = 3000
+    false_positives = sum(1 for i in range(trials) if f.might_contain(f"stranger-{i}"))
+    assert false_positives / trials <= 2 * P + 0.01, false_positives / trials
 
 
-def test_range_query_inclusive(C):
-    s = construct(C)
-    for k in range(0, 100, 5):
-        s.insert(k, -k)
-    assert _pairs(s.range_query(10, 30)) == [(10, -10), (15, -15), (20, -20), (25, -25), (30, -30)]
-    assert _pairs(s.range_query(31, 34)) == []
-    assert _pairs(s.range_query(-5, 4)) == [(0, 0)]
+def test_remove_keeps_other_members(C):
+    f = _make(C)
+    members = [f"m{i}" for i in range(600)]
+    for item in members:
+        f.add(item)
+    for item in members[:300]:
+        f.remove(item)
+    assert all(f.might_contain(item) for item in members[300:]), "a remove caused a false negative"
+    still = sum(1 for item in members[:300] if f.might_contain(item))
+    assert still / 300 <= 4 * P + 0.02, still
 
 
-def test_random_against_a_dict(C):
-    import random
-
-    rng = random.Random(11)
-    s, model = construct(C), {}
-    for _ in range(1500):
-        op, key = rng.random(), rng.randrange(300)
-        if op < 0.5:
-            s.insert(key, key + 1)
-            model[key] = key + 1
-        elif op < 0.7:
-            s.delete(key)
-            model.pop(key, None)
-        else:
-            assert s.search(key) == model.get(key)
-    lo, hi = 50, 200
-    assert _pairs(s.range_query(lo, hi)) == sorted((k, v) for k, v in model.items() if lo <= k <= hi)
+def test_counts_survive_duplicates(C):
+    f = _make(C)
+    f.add("twice")
+    f.add("twice")
+    f.remove("twice")
+    assert f.might_contain("twice"), "one remove of a twice-added item must keep it"
 
 
-TESTS = [test_insert_search_update, test_delete, test_range_query_inclusive, test_random_against_a_dict]
+TESTS = [test_no_false_negatives, test_false_positive_rate_within_twice_the_bound, test_remove_keeps_other_members,
+         test_counts_survive_duplicates]

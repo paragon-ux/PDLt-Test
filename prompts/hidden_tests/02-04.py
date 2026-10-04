@@ -1,82 +1,99 @@
-"""Hidden tests for 02-04: union-find with union-by-rank and save()/restore() rollback.
+"""Hidden tests for 02-04: a thread-safe sharded LRU cache.
 
 From the prompt:
-- make_set(x), find(x) and union(x, y);
-- save() captures the state; restore() reverts to the last saved state;
-- nested save/restore sequences, so saved states nest like a stack.
+- N shards (default 16), each with its own lock and capacity;
+- hash(key) % N routing;
+- independent LRU order per shard;
+- get() and put().
+
+The constructor's names are open: shard count and capacity are matched by name.
+With a single shard the cache must behave as one LRU of the stated capacity,
+whether that capacity is per shard or total.
 """
-TEST_SECONDS = 15
+TEST_SECONDS = 30
 
 
 def CANDIDATES():
-    return classes_with("make_set", "find", "union", "save", "restore")
+    return classes_with("get", "put")
 
 
-def _same(d, a, b):
-    return d.find(a) == d.find(b)
+def _make(C, shards, capacity):
+    import inspect
+
+    try:
+        params = [p for p in inspect.signature(C).parameters.values() if p.name != "self"]
+    except (TypeError, ValueError):
+        params = []
+    kwargs = {}
+    for p in params:
+        name = p.name.lower()
+        # Capacity words first: "capacity_per_shard" names a capacity, not a shard count.
+        if any(t in name for t in ("capacity", "size", "max", "limit")):
+            kwargs[p.name] = capacity
+        elif "shard" in name or name in ("n", "partitions"):
+            kwargs[p.name] = shards
+    return C(**kwargs)
 
 
-def _sets(n, C):
-    d = construct(C)
-    for x in range(n):
-        d.make_set(x)
-    return d
+def _absent(cache, key):
+    try:
+        value = cache.get(key)
+    except KeyError:
+        return True
+    return missing(value)
 
 
-def test_basic_connectivity(C):
-    d = _sets(8, C)
-    d.union(0, 1)
-    d.union(2, 3)
-    d.union(1, 3)
-    assert _same(d, 0, 2) and _same(d, 1, 3)
-    assert not _same(d, 0, 4) and not _same(d, 5, 6)
+def test_get_put_round_trip(C):
+    c = _make(C, 16, 1000)
+    for i in range(200):
+        c.put(f"k{i}", i)
+    assert all(c.get(f"k{i}") == i for i in range(200))
+    assert _absent(c, "nope")
 
 
-def test_restore_undoes_unions_since_save(C):
-    d = _sets(6, C)
-    d.union(0, 1)
-    d.save()
-    d.union(1, 2)
-    d.union(3, 4)
-    assert _same(d, 0, 2) and _same(d, 3, 4)
-    d.restore()
-    assert _same(d, 0, 1)
-    assert not _same(d, 0, 2) and not _same(d, 3, 4)
+def test_single_shard_is_an_lru(C):
+    c = _make(C, 1, 3)
+    for k in "abc":
+        c.put(k, k.upper())
+    assert c.get("a") == "A"      # a is now most recent
+    c.put("d", "D")               # evicts b, the least recent
+    assert _absent(c, "b")
+    assert c.get("a") == "A" and c.get("c") == "C" and c.get("d") == "D"
 
 
-def test_nested_save_restore(C):
-    d = _sets(6, C)
-    d.save()              # level 1: all separate
-    d.union(0, 1)
-    d.save()              # level 2: {0,1}
-    d.union(2, 3)
-    d.union(1, 2)
-    assert _same(d, 0, 3)
-    d.restore()           # back to {0,1}
-    assert _same(d, 0, 1) and not _same(d, 0, 2) and not _same(d, 2, 3)
-    d.union(4, 5)
-    d.restore()           # back to all separate
-    assert not _same(d, 0, 1) and not _same(d, 4, 5)
+def test_capacity_is_bounded(C):
+    c = _make(C, 4, 5)
+    for i in range(500):
+        c.put(i, i)
+    present = sum(1 for i in range(500) if not _absent(c, i))
+    assert 0 < present <= 4 * 5, present
 
 
-def test_many_unions_then_rollback(C):
-    import random
+def test_concurrent_writers_and_readers(C):
+    import threading
 
-    rng = random.Random(3)
-    d = _sets(200, C)
-    pairs = [(rng.randrange(200), rng.randrange(200)) for _ in range(150)]
-    for a, b in pairs[:75]:
-        d.union(a, b)
-    before = [d.find(x) for x in range(200)]
-    groups_before = {(x, y) for x in range(0, 200, 7) for y in range(0, 200, 11) if before[x] == before[y]}
-    d.save()
-    for a, b in pairs[75:]:
-        d.union(a, b)
-    d.restore()
-    after = [d.find(x) for x in range(200)]
-    groups_after = {(x, y) for x in range(0, 200, 7) for y in range(0, 200, 11) if after[x] == after[y]}
-    assert groups_before == groups_after
+    c = _make(C, 16, 4096)
+    errors = []
+
+    def worker(tid):
+        try:
+            for i in range(300):
+                key = (tid, i)
+                c.put(key, tid * 10_000 + i)
+                got = c.get(key)
+                if got != tid * 10_000 + i:
+                    errors.append((key, got))
+        except Exception as exc:  # noqa: BLE001
+            errors.append(repr(exc))
+
+    threads = [threading.Thread(target=worker, args=(t,)) for t in range(8)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(20)
+    assert not errors, errors[:3]
+    assert all(c.get((t, i)) == t * 10_000 + i for t in range(8) for i in range(0, 300, 37))
 
 
-TESTS = [test_basic_connectivity, test_restore_undoes_unions_since_save, test_nested_save_restore,
-         test_many_unions_then_rollback]
+TESTS = [test_get_put_round_trip, test_single_shard_is_an_lru, test_capacity_is_bounded,
+         test_concurrent_writers_and_readers]

@@ -1,44 +1,33 @@
-class DisjointSet:
-    """Union by rank, no path compression, rollback through an operation log."""
+import threading
+from collections import OrderedDict
 
-    def __init__(self):
-        self.parent, self.rank = {}, {}
-        self.log, self.marks = [], []
 
-    def make_set(self, x):
-        if x not in self.parent:
-            self.parent[x], self.rank[x] = x, 0
-            self.log.append(("make", x))
+class _Shard:
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.lock = threading.Lock()
+        self.data = OrderedDict()
 
-    def find(self, x):
-        while self.parent[x] != x:
-            x = self.parent[x]
-        return x
 
-    def union(self, x, y):
-        rx, ry = self.find(x), self.find(y)
-        if rx == ry:
-            return False
-        if self.rank[rx] < self.rank[ry]:
-            rx, ry = ry, rx
-        self.parent[ry] = rx
-        bumped = self.rank[rx] == self.rank[ry]
-        if bumped:
-            self.rank[rx] += 1
-        self.log.append(("union", ry, rx, bumped))
-        return True
+class ShardedLRUCache:
+    def __init__(self, capacity_per_shard=128, num_shards=16):
+        self.shards = [_Shard(capacity_per_shard) for _ in range(num_shards)]
 
-    def save(self):
-        self.marks.append(len(self.log))
+    def _shard(self, key):
+        return self.shards[hash(key) % len(self.shards)]
 
-    def restore(self):
-        mark = self.marks.pop()
-        while len(self.log) > mark:
-            entry = self.log.pop()
-            if entry[0] == "make":
-                del self.parent[entry[1]], self.rank[entry[1]]
-            else:
-                _, child, root, bumped = entry
-                self.parent[child] = child
-                if bumped:
-                    self.rank[root] -= 1
+    def get(self, key, default=None):
+        shard = self._shard(key)
+        with shard.lock:
+            if key not in shard.data:
+                return default
+            shard.data.move_to_end(key)
+            return shard.data[key]
+
+    def put(self, key, value):
+        shard = self._shard(key)
+        with shard.lock:
+            shard.data[key] = value
+            shard.data.move_to_end(key)
+            while len(shard.data) > shard.capacity:
+                shard.data.popitem(last=False)

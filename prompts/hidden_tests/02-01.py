@@ -1,102 +1,98 @@
-"""Hidden tests for 02-01: a B+ tree with insert, search, range_scan and byte serialization.
+"""Hidden tests for 02-01: an O(1) LFU cache with get(key) and put(key, value).
 
-The prompt names:
-- insert(key, value), search(key), range_scan(lo, hi);
-- serializing "the entire tree to bytes" and deserializing it back.
+From the prompt:
+- evict the least frequently used key when capacity is exceeded;
+- among equal frequencies, evict the least recently used;
+- get() and put() of an existing key both increment its frequency.
 
-What the prompt leaves open, and how it is handled:
-- **range_scan:** its result shape (pairs, values or keys) and the inclusivity of
-  its bounds. The bounds tested are absent keys, so inclusivity cannot matter.
-- **Serialization:** it may be a method, a classmethod or module functions;
-  every route is tried.
+The prompt leaves the "absent" result open, so None, -1 or KeyError all count.
 """
-TEST_SECONDS = 20
+TEST_SECONDS = 15
+_ABSENT = object()
 
 
 def CANDIDATES():
-    return classes_with("insert", "search", "range_scan")
+    return classes_with("get", "put")
 
 
-def _tree(C):
-    return construct(C, 4)
-
-
-def _absent(tree, key):
+def _get(cache, key):
     try:
-        return tree.search(key) is None
+        value = cache.get(key)
     except KeyError:
-        return True
+        return _ABSENT
+    return _ABSENT if missing(value) else value
 
 
-def _scan_keys(result, values_to_keys):
-    items = list(result)
-    if items and isinstance(items[0], (tuple, list)) and len(items[0]) == 2:
-        return [k for k, _ in items]
-    return [values_to_keys.get(v, v) for v in items]
+def test_frequency_beats_recency(C):
+    c = construct(C, 2)
+    c.put(1, 10)
+    c.put(2, 20)
+    assert _get(c, 1) == 10
+    c.put(3, 30)  # key 2 has the lowest frequency
+    assert _get(c, 2) is _ABSENT
+    assert _get(c, 3) == 30 and _get(c, 1) == 10
 
 
-def test_insert_and_search_with_splits(C):
+def test_least_recent_among_equal_frequency(C):
+    c = construct(C, 2)
+    c.put(1, 10)
+    c.put(2, 20)
+    c.put(3, 30)  # 1 and 2 both used once; 1 is older
+    assert _get(c, 1) is _ABSENT
+    assert _get(c, 2) == 20 and _get(c, 3) == 30
+
+
+def test_update_increments_frequency(C):
+    c = construct(C, 2)
+    c.put(1, 10)
+    c.put(2, 20)
+    c.put(1, 11)  # key 1 now used twice
+    c.put(3, 30)
+    assert _get(c, 1) == 11 and _get(c, 2) is _ABSENT
+
+
+def test_reference_sequence(C):
+    c = construct(C, 2)
+    c.put(1, 1)
+    c.put(2, 2)
+    assert _get(c, 1) == 1
+    c.put(3, 3)
+    assert _get(c, 2) is _ABSENT and _get(c, 3) == 3
+    c.put(4, 4)
+    assert _get(c, 1) is _ABSENT and _get(c, 3) == 3 and _get(c, 4) == 4
+
+
+def test_random_operations_against_a_model(C):
     import random
 
-    t = _tree(C)
-    keys = list(range(0, 600, 3))
-    random.Random(5).shuffle(keys)
-    for k in keys:
-        t.insert(k, f"v{k}")
-    assert all(t.search(k) == f"v{k}" for k in keys)
-    assert _absent(t, 1) and _absent(t, 10_000)
+    rng = random.Random(7)
+    cap = 5
+    c = construct(C, cap)
+    model, freq, last, clock = {}, {}, {}, 0
+    for _ in range(600):
+        key = rng.randrange(12)
+        clock += 1
+        if rng.random() < 0.5:
+            got = _get(c, key)
+            if key in model:
+                freq[key] += 1
+                last[key] = clock
+                assert got == model[key], (key, got, model[key])
+            else:
+                assert got is _ABSENT, (key, got)
+        else:
+            value = rng.randrange(1000, 9999)
+            if key in model:
+                freq[key] += 1
+            else:
+                if len(model) >= cap:
+                    victim = min(model, key=lambda k: (freq[k], last[k]))
+                    del model[victim], freq[victim], last[victim]
+                freq[key] = 1
+            model[key] = value
+            last[key] = clock
+            c.put(key, value)
 
 
-def test_range_scan_in_order(C):
-    t = _tree(C)
-    for k in range(0, 300, 2):
-        t.insert(k, f"v{k}")
-    to_keys = {f"v{k}": k for k in range(0, 300, 2)}
-    assert _scan_keys(t.range_scan(51, 99), to_keys) == list(range(52, 99, 2))
-    assert _scan_keys(t.range_scan(301, 400), to_keys) == []
-
-
-def _serialize(t):
-    for name in ("serialize", "to_bytes", "dumps", "dump"):
-        fn = getattr(t, name, None)
-        if callable(fn):
-            return fn()
-    fn = NS.get("serialize")
-    if callable(fn):
-        return fn(t)
-    raise AssertionError("no serialize operation found")
-
-
-def _deserialize(C, data):
-    for name in ("deserialize", "from_bytes", "loads", "load"):
-        fn = getattr(C, name, None)
-        if callable(fn):
-            try:
-                result = fn(data)
-            except TypeError:
-                result = None
-            if result is not None:
-                return result
-            instance = _tree(C)
-            got = getattr(instance, name)(data)
-            return got if got is not None else instance
-    fn = NS.get("deserialize")
-    if callable(fn):
-        return fn(data)
-    raise AssertionError("no deserialize operation found")
-
-
-def test_serialize_round_trip(C):
-    t = _tree(C)
-    for k in range(200):
-        t.insert(k * 7 % 211, k)
-    data = _serialize(t)
-    assert isinstance(data, (bytes, bytearray)), type(data)
-    restored = _deserialize(C, bytes(data))
-    assert all(restored.search(k * 7 % 211) == k for k in range(200))
-    to_keys = {k: k * 7 % 211 for k in range(200)}
-    original = _scan_keys(t.range_scan(-1, 1000), to_keys)
-    assert _scan_keys(restored.range_scan(-1, 1000), to_keys) == original == sorted(original)
-
-
-TESTS = [test_insert_and_search_with_splits, test_range_scan_in_order, test_serialize_round_trip]
+TESTS = [test_frequency_beats_recency, test_least_recent_among_equal_frequency, test_update_increments_frequency,
+         test_reference_sequence, test_random_operations_against_a_model]

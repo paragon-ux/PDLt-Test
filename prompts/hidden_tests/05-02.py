@@ -1,90 +1,155 @@
-"""Hidden tests for 05-02: a gift-wrapping convex hull, counter-clockwise, with
-every point on the hull boundary included.
+"""Hidden tests for 05-02: Kahn's topological sort, reporting an actual cycle.
 
-From the prompt:
-- the input is a list of (x, y) tuples;
-- the output is the hull in counter-clockwise order;
-- collinear boundary points are included;
-- the cases are collinear edges, all points collinear, and duplicates.
+The input is an adjacency list over nodes 0..7: a dict {node: [successors]},
+or a list of lists when the candidate only accepts that (decided on the DAG
+case and then used for every case).
+- **A DAG:** some node sequence in the result must be an ordering that
+  respects every edge (a bare list, or one inside a returned tuple or dict).
+- **A cyclic graph:** the report must contain an actual cycle, a node sequence
+  whose consecutive edges, closing edge included, all exist.
+  - It is accepted from an exception (its ``cycle``/``nodes``/``path``
+    attribute, args or message) or from the return value.
+  - A structured sequence must be exactly the cycle (a repeated closing node is
+    allowed).
+  - A message may carry other numbers, so any run of its integers that forms a
+    cycle counts.
+  - A bare "cycle exists" fails.
 
-Any rotation of the expected cycle is accepted. For all points collinear, the
-boundary is the segment itself, so every distinct point must be present, in any
-order.
+The cyclic graphs put each cycle out of sorted order and give it downstream
+nodes, so listing the nodes left with in-degree > 0 does not happen to be a
+cycle.
 """
 TEST_SECONDS = 20
 
 
 def CANDIDATES():
-    return functions_named("convex_hull", "gift_wrap", "gift_wrapping", "jarvis_march", "jarvis",
-                           "gift_wrapping_hull", "hull", params=1)
+    return functions_named("topological_sort", "kahn", "kahns_algorithm", "topo_sort", "kahn_topological_sort",
+                           "kahn_sort", "topological_order", "kahn_toposort", "kahn_topo_sort", params=1)
 
 
-def _cross(o, a, b):
-    return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+DAG = {0: [1, 2], 1: [3], 2: [3, 4], 3: [5], 4: [5, 6], 5: [7], 6: [7], 7: []}
+CYCLIC = {0: [1], 1: [4], 2: [1, 3], 3: [5], 4: [2], 5: [6], 6: [7], 7: []}
+MORE_CYCLIC = [
+    {0: [0], 1: []},
+    {0: [1], 1: [0], 2: [0]},
+    {0: [1], 1: [2], 2: [4], 3: [5], 4: [3], 5: [2], 6: [], 7: [0]},
+]
 
 
-def _reference(points):
-    pts = sorted(set(map(tuple, points)))
-    if len(pts) <= 2:
-        return pts
-    lower, upper = [], []
-    for p in pts:
-        while len(lower) >= 2 and _cross(lower[-2], lower[-1], p) < 0:
-            lower.pop()
-        lower.append(p)
-    for p in reversed(pts):
-        while len(upper) >= 2 and _cross(upper[-2], upper[-1], p) < 0:
-            upper.pop()
-        upper.append(p)
-    return lower[:-1] + upper[:-1]
+def _as_list(graph):
+    return [list(graph[n]) for n in range(len(graph))]
 
 
-def _same_cycle(got, expected):
-    if len(got) != len(expected):
-        return False
-    if not expected:
-        return True
+def _caller(f):
+    """Call with a dict, unless only the list form gives a valid DAG ordering."""
     try:
-        start = got.index(expected[0])
-    except ValueError:
+        if any(_valid_order(seq, DAG) for seq in _sequences(f({k: list(v) for k, v in DAG.items()}))):
+            return lambda g: f({k: list(v) for k, v in g.items()})
+    except Exception:  # noqa: BLE001 - try the list form
+        pass
+    return lambda g: f(_as_list(g))
+
+
+def _call(f, graph):
+    try:
+        return _caller(f)(graph)
+    except Exception as exc:  # noqa: BLE001 - raising is an accepted report
+        return exc
+
+
+def _node(value):
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value)
+    return None
+
+
+def _valid_order(order, graph):
+    pos = {n: i for i, n in enumerate(order)}
+    return len(pos) == len(order) == len(graph) and set(order) == set(graph) and \
+        all(pos[u] < pos[v] for u, vs in graph.items() for v in vs)
+
+
+def _is_cycle(seq, graph):
+    seq = list(seq)
+    if len(seq) >= 2 and seq[0] == seq[-1]:
+        seq = seq[:-1]
+    if not seq or len(set(seq)) != len(seq):
         return False
-    return got[start:] + got[:start] == expected
+    return all(b in graph.get(a, ()) for a, b in zip(seq, seq[1:] + seq[:1]))
 
 
-def _hull(f, points):
-    return [tuple(p) for p in f(list(points))]
+def _sequences(value, depth=0):
+    """Every structured node sequence inside a returned value or a raised exception."""
+    if depth > 4:
+        return
+    if isinstance(value, BaseException):
+        for attr in ("cycle", "nodes", "path"):
+            if hasattr(value, attr):
+                yield from _sequences(getattr(value, attr), depth + 1)
+        for arg in value.args:
+            yield from _sequences(arg, depth + 1)
+    elif isinstance(value, dict):
+        for v in value.values():
+            yield from _sequences(v, depth + 1)
+    elif isinstance(value, (list, tuple)):
+        nodes = [_node(v) for v in value]
+        if nodes and None not in nodes:
+            yield nodes
+        for v in value:
+            if isinstance(v, (list, tuple, dict)):
+                yield from _sequences(v, depth + 1)
 
 
-def test_square_with_interior_points(f):
-    pts = [(0, 0), (4, 0), (4, 4), (0, 4), (1, 1), (2, 3), (3, 2)]
-    assert _same_cycle(_hull(f, pts), _reference(pts))
+def _messages(value):
+    if isinstance(value, BaseException):
+        yield str(value)
+        for arg in value.args:
+            if isinstance(arg, str):
+                yield arg
+    elif isinstance(value, str):
+        yield value
+    elif isinstance(value, (list, tuple)):
+        for v in value:
+            if isinstance(v, str):
+                yield v
+    elif isinstance(value, dict):
+        for v in value.values():
+            if isinstance(v, str):
+                yield v
 
 
-def test_collinear_edge_points_included(f):
-    pts = [(0, 0), (2, 0), (4, 0), (4, 2), (4, 4), (2, 4), (0, 4), (0, 2), (2, 2), (1, 3)]
-    assert _same_cycle(_hull(f, pts), _reference(pts))
+def _reports_cycle(result, graph):
+    import re
+
+    if any(_is_cycle(seq, graph) for seq in _sequences(result)):
+        return True
+    for message in _messages(result):
+        tokens = [int(t) for t in re.findall(r"(?<![\w.])\d+(?![\w.])", message)]
+        for i in range(len(tokens)):
+            for j in range(i + 1, len(tokens) + 1):
+                if _is_cycle(tokens[i:j], graph):
+                    return True
+    return False
 
 
-def test_random_points(f):
-    import random
-
-    rng = random.Random(9)
-    for _ in range(5):
-        pts = [(rng.randint(-20, 20), rng.randint(-20, 20)) for _ in range(40)]
-        assert _same_cycle(_hull(f, pts), _reference(pts)), "hull differs on a random set"
+def test_dag_ordering(f):
+    result = _caller(f)(DAG)
+    assert any(_valid_order(seq, DAG) for seq in _sequences(result)), repr(result)[:200]
 
 
-def test_all_collinear(f):
-    pts = [(0, 0), (1, 1), (2, 2), (3, 3), (5, 5)]
-    assert set(_hull(f, pts)) == set(pts)
+def test_reports_an_actual_cycle(f):
+    result = _call(f, CYCLIC)
+    assert _reports_cycle(result, CYCLIC), f"no valid cycle in {result!r}"[:300]
 
 
-def test_duplicates_appear_once(f):
-    pts = [(0, 0), (0, 0), (3, 0), (3, 0), (3, 3), (0, 3), (0, 3), (1, 1)]
-    got = _hull(f, pts)
-    assert len(got) == len(set(got)), "a duplicate point appears twice"
-    assert _same_cycle(got, _reference(pts))
+def test_more_cycles(f):
+    for graph in MORE_CYCLIC:
+        result = _call(f, graph)
+        assert _reports_cycle(result, graph), (graph, repr(result)[:200])
 
 
-TESTS = [test_square_with_interior_points, test_collinear_edge_points_included, test_random_points,
-         test_all_collinear, test_duplicates_appear_once]
+TESTS = [test_dag_ordering, test_reports_an_actual_cycle, test_more_cycles]

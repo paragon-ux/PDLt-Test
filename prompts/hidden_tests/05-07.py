@@ -1,155 +1,68 @@
-"""Hidden tests for 05-07: Kahn's topological sort, reporting an actual cycle.
+"""Hidden tests for 05-07: KMP search returning every match index.
 
-The input is an adjacency list over nodes 0..7: a dict {node: [successors]},
-or a list of lists when the candidate only accepts that (decided on the DAG
-case and then used for every case).
-- **A DAG:** some node sequence in the result must be an ordering that
-  respects every edge (a bare list, or one inside a returned tuple or dict).
-- **A cyclic graph:** the report must contain an actual cycle, a node sequence
-  whose consecutive edges, closing edge included, all exist.
-  - It is accepted from an exception (its ``cycle``/``nodes``/``path``
-    attribute, args or message) or from the return value.
-  - A structured sequence must be exactly the cycle (a repeated closing node is
-    allowed).
-  - A message may carry other numbers, so any run of its integers that forms a
-    cycle counts.
-  - A bare "cycle exists" fails.
-
-The cyclic graphs put each cycle out of sorted order and give it downstream
-nodes, so listing the nodes left with in-degree > 0 does not happen to be a
-cycle.
+The search may take (text, pattern) or (pattern, text): whichever order gives
+the prompt example's answer is used for every case. A failure-function builder,
+if the deliverable exposes one, must give the partial-match table
+[0,0,1,2,0,1,2,3,4] for "ABABCABAB" (or the same table in the shifted "next"
+convention, [-1,0,0,1,2,0,1,2,3]).
 """
 TEST_SECONDS = 20
 
 
 def CANDIDATES():
-    return functions_named("topological_sort", "kahn", "kahns_algorithm", "topo_sort", "kahn_topological_sort",
-                           "kahn_sort", "topological_order", "kahn_toposort", "kahn_topo_sort", params=1)
+    return functions_named("kmp_search", "kmp", "search", "find_all", "kmp_find", "kmp_find_all", "find_occurrences",
+                           "kmp_match", "kmp_find_all_occurrences", params=2)
 
 
-DAG = {0: [1, 2], 1: [3], 2: [3, 4], 3: [5], 4: [5, 6], 5: [7], 6: [7], 7: []}
-CYCLIC = {0: [1], 1: [4], 2: [1, 3], 3: [5], 4: [2], 5: [6], 6: [7], 7: []}
-MORE_CYCLIC = [
-    {0: [0], 1: []},
-    {0: [1], 1: [0], 2: [0]},
-    {0: [1], 1: [2], 2: [4], 3: [5], 4: [3], 5: [2], 6: [], 7: [0]},
-]
+def _naive(text, pattern):
+    return [i for i in range(len(text) - len(pattern) + 1) if text[i:i + len(pattern)] == pattern]
 
 
-def _as_list(graph):
-    return [list(graph[n]) for n in range(len(graph))]
-
-
-def _caller(f):
-    """Call with a dict, unless only the list form gives a valid DAG ordering."""
+def _order(f):
+    text, pattern = "ABABDAABABCABABABABCABAB", "ABABCABAB"
+    expected = _naive(text, pattern)
     try:
-        if any(_valid_order(seq, DAG) for seq in _sequences(f({k: list(v) for k, v in DAG.items()}))):
-            return lambda g: f({k: list(v) for k, v in g.items()})
-    except Exception:  # noqa: BLE001 - try the list form
+        if list(f(text, pattern)) == expected:
+            return lambda t, p: list(f(t, p))
+    except Exception:  # noqa: BLE001 - try the other order
         pass
-    return lambda g: f(_as_list(g))
+    return lambda t, p: list(f(p, t))
 
 
-def _call(f, graph):
-    try:
-        return _caller(f)(graph)
-    except Exception as exc:  # noqa: BLE001 - raising is an accepted report
-        return exc
+def test_prompt_example(f):
+    search = _order(f)
+    assert search("ABABDAABABCABABABABCABAB", "ABABCABAB") == _naive("ABABDAABABCABABABABCABAB", "ABABCABAB")
 
 
-def _node(value):
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, int):
-        return value
-    if isinstance(value, str) and value.strip().isdigit():
-        return int(value)
-    return None
+def test_overlapping_and_edge_matches(f):
+    search = _order(f)
+    assert search("AAAAA", "AA") == [0, 1, 2, 3]
+    assert search("ABCABCABC", "ABC") == [0, 3, 6]
+    assert search("ABC", "D") == []
+    assert search("ABC", "ABCD") == []
 
 
-def _valid_order(order, graph):
-    pos = {n: i for i, n in enumerate(order)}
-    return len(pos) == len(order) == len(graph) and set(order) == set(graph) and \
-        all(pos[u] < pos[v] for u, vs in graph.items() for v in vs)
+def test_random_against_naive(f):
+    import random
+
+    rng = random.Random(12)
+    search = _order(f)
+    for _ in range(150):
+        text = "".join(rng.choice("AB") for _ in range(rng.randint(0, 60)))
+        pattern = "".join(rng.choice("AB") for _ in range(rng.randint(1, 5)))
+        assert search(text, pattern) == _naive(text, pattern), (text, pattern)
 
 
-def _is_cycle(seq, graph):
-    seq = list(seq)
-    if len(seq) >= 2 and seq[0] == seq[-1]:
-        seq = seq[:-1]
-    if not seq or len(set(seq)) != len(seq):
-        return False
-    return all(b in graph.get(a, ()) for a, b in zip(seq, seq[1:] + seq[:1]))
-
-
-def _sequences(value, depth=0):
-    """Every structured node sequence inside a returned value or a raised exception."""
-    if depth > 4:
+def test_failure_function_if_exposed(f):
+    builders = functions_named("build_failure", "failure_function", "build_failure_function", "compute_lps",
+                               "prefix_function", "build_lps", "lps", "compute_prefix_function",
+                               "partial_match_table", "build_partial_match_table")
+    if not builders:
         return
-    if isinstance(value, BaseException):
-        for attr in ("cycle", "nodes", "path"):
-            if hasattr(value, attr):
-                yield from _sequences(getattr(value, attr), depth + 1)
-        for arg in value.args:
-            yield from _sequences(arg, depth + 1)
-    elif isinstance(value, dict):
-        for v in value.values():
-            yield from _sequences(v, depth + 1)
-    elif isinstance(value, (list, tuple)):
-        nodes = [_node(v) for v in value]
-        if nodes and None not in nodes:
-            yield nodes
-        for v in value:
-            if isinstance(v, (list, tuple, dict)):
-                yield from _sequences(v, depth + 1)
+    table = [0, 0, 1, 2, 0, 1, 2, 3, 4]
+    # The textbook "next" convention shifts the same table right with a leading -1.
+    assert list(builders[0]("ABABCABAB")) in (table, [-1] + table[:-1])
 
 
-def _messages(value):
-    if isinstance(value, BaseException):
-        yield str(value)
-        for arg in value.args:
-            if isinstance(arg, str):
-                yield arg
-    elif isinstance(value, str):
-        yield value
-    elif isinstance(value, (list, tuple)):
-        for v in value:
-            if isinstance(v, str):
-                yield v
-    elif isinstance(value, dict):
-        for v in value.values():
-            if isinstance(v, str):
-                yield v
-
-
-def _reports_cycle(result, graph):
-    import re
-
-    if any(_is_cycle(seq, graph) for seq in _sequences(result)):
-        return True
-    for message in _messages(result):
-        tokens = [int(t) for t in re.findall(r"(?<![\w.])\d+(?![\w.])", message)]
-        for i in range(len(tokens)):
-            for j in range(i + 1, len(tokens) + 1):
-                if _is_cycle(tokens[i:j], graph):
-                    return True
-    return False
-
-
-def test_dag_ordering(f):
-    result = _caller(f)(DAG)
-    assert any(_valid_order(seq, DAG) for seq in _sequences(result)), repr(result)[:200]
-
-
-def test_reports_an_actual_cycle(f):
-    result = _call(f, CYCLIC)
-    assert _reports_cycle(result, CYCLIC), f"no valid cycle in {result!r}"[:300]
-
-
-def test_more_cycles(f):
-    for graph in MORE_CYCLIC:
-        result = _call(f, graph)
-        assert _reports_cycle(result, graph), (graph, repr(result)[:200])
-
-
-TESTS = [test_dag_ordering, test_reports_an_actual_cycle, test_more_cycles]
+TESTS = [test_prompt_example, test_overlapping_and_edge_matches, test_random_against_naive,
+         test_failure_function_if_exposed]

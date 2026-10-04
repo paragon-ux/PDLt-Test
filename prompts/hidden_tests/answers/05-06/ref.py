@@ -1,24 +1,20 @@
-def build_failure(pattern):
-    fail, k = [0] * len(pattern), 0
-    for i in range(1, len(pattern)):
-        while k and pattern[i] != pattern[k]:
-            k = fail[k - 1]
-        if pattern[i] == pattern[k]:
-            k += 1
-        fail[i] = k
-    return fail
-
-
-def kmp_search(text, pattern):
-    if not pattern:
-        return []
-    fail, matches, k = build_failure(pattern), [], 0
-    for i, ch in enumerate(text):
-        while k and ch != pattern[k]:
-            k = fail[k - 1]
-        if ch == pattern[k]:
-            k += 1
-        if k == len(pattern):
-            matches.append(i - k + 1)
-            k = fail[k - 1]
-    return matches
+def find_median_sorted_arrays(nums1, nums2):
+    a, b = (nums1, nums2) if len(nums1) <= len(nums2) else (nums2, nums1)
+    m, n = len(a), len(b)
+    lo, hi, half = 0, m, (m + n + 1) // 2
+    while lo <= hi:
+        i = (lo + hi) // 2
+        j = half - i
+        a_left = a[i - 1] if i > 0 else float("-inf")
+        a_right = a[i] if i < m else float("inf")
+        b_left = b[j - 1] if j > 0 else float("-inf")
+        b_right = b[j] if j < n else float("inf")
+        if a_left <= b_right and b_left <= a_right:
+            if (m + n) % 2:
+                return float(max(a_left, b_left))
+            return (max(a_left, b_left) + min(a_right, b_right)) / 2
+        if a_left > b_right:
+            hi = i - 1
+        else:
+            lo = i + 1
+    raise ValueError("input arrays are not sorted")

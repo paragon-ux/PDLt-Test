@@ -1,111 +1,72 @@
-"""Hidden tests for 05-01: A* on a weighted 4-directional grid.
+"""Hidden tests for 05-01: insert an interval into sorted non-overlapping intervals and merge.
 
 From the prompt:
-- cost -1 is impassable;
-- moving into a cell costs its value;
-- return the shortest path as (row, col) coordinates plus its total cost.
+- the example: [[1,3],[6,9],[12,15],[18,20]] + [5,13] -> [[1,3],[5,15],[18,20]];
+- insertion at the beginning, end and middle;
+- an interval that merges everything; one that overlaps nothing;
+- an empty list.
 
-The call is taken as (grid, start, goal). The result may be (path, cost),
-(cost, path) or a dict; "no path" may be None, an empty path, an infinite or -1
-cost, or an exception.
+No test uses intervals that only touch at an endpoint, which the prompt leaves
+open.
 """
-TEST_SECONDS = 30
+TEST_SECONDS = 15
 
 
 def CANDIDATES():
-    return functions_named("a_star", "astar", "a_star_search", "astar_search", "find_path", "shortest_path",
-                           "a_star_path", params=3)
+    return functions_named("insert", "insert_interval", "merge_insert", "insert_and_merge", "insert_intervals",
+                           params=2)
 
 
-def _split(result):
-    if isinstance(result, dict):
-        path = result.get("path")
-        cost = result.get("cost", result.get("total_cost"))
-        return path, cost
-    if isinstance(result, (tuple, list)) and len(result) == 2:
-        a, b = result
-        if (a is None or isinstance(a, (list, tuple))) and not isinstance(b, (list, tuple)):
-            return a, b
-        if (b is None or isinstance(b, (list, tuple))) and not isinstance(a, (list, tuple)):
-            return b, a
-    raise AssertionError(f"unrecognised result shape: {type(result).__name__}")
+def _norm(result):
+    return [tuple(i) for i in result]
 
 
-def _dijkstra(grid, start, goal):
-    import heapq
-
-    rows, cols = len(grid), len(grid[0])
-    best = {start: 0}
-    heap = [(0, start)]
-    while heap:
-        d, (r, c) = heapq.heappop(heap)
-        if (r, c) == goal:
-            return d
-        if d > best.get((r, c), float("inf")):
-            continue
-        for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):
-            if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] >= 0:
-                nd = d + grid[nr][nc]
-                if nd < best.get((nr, nc), float("inf")):
-                    best[(nr, nc)] = nd
-                    heapq.heappush(heap, (nd, (nr, nc)))
-    return None
+def _reference(intervals, new):
+    out, (lo, hi) = [], new
+    placed = False
+    for a, b in intervals:
+        if b < lo:
+            out.append((a, b))
+        elif a > hi:
+            if not placed:
+                out.append((lo, hi))
+                placed = True
+            out.append((a, b))
+        else:
+            lo, hi = min(lo, a), max(hi, b)
+    if not placed:
+        out.append((lo, hi))
+    return out
 
 
-def _grid(seed, size=10, walls=0.2):
+def test_prompt_example(f):
+    assert _norm(f([[1, 3], [6, 9], [12, 15], [18, 20]], [5, 13])) == [(1, 3), (5, 15), (18, 20)]
+
+
+def test_positions(f):
+    base = [[3, 5], [8, 10], [14, 16]]
+    assert _norm(f([list(i) for i in base], [0, 1])) == [(0, 1), (3, 5), (8, 10), (14, 16)]
+    assert _norm(f([list(i) for i in base], [20, 22])) == [(3, 5), (8, 10), (14, 16), (20, 22)]
+    assert _norm(f([list(i) for i in base], [11, 12])) == [(3, 5), (8, 10), (11, 12), (14, 16)]
+
+
+def test_merges_all_and_empty(f):
+    assert _norm(f([[2, 4], [6, 8], [10, 12]], [1, 13])) == [(1, 13)]
+    assert _norm(f([], [4, 7])) == [(4, 7)]
+    assert _norm(f([[1, 2], [7, 9]], [3, 5])) == [(1, 2), (3, 5), (7, 9)]
+
+
+def test_random_against_reference(f):
     import random
 
-    rng = random.Random(seed)
-    grid = [[rng.randint(1, 9) if rng.random() > walls else -1 for _ in range(size)] for _ in range(size)]
-    grid[0][0] = grid[size - 1][size - 1] = 1
-    return grid
+    rng = random.Random(4)
+    for _ in range(200):
+        points = sorted(rng.sample(range(0, 200, 2), 8))
+        intervals = [[points[i], points[i + 1] - 1 if points[i + 1] - 1 > points[i] else points[i]]
+                     for i in range(0, 8, 2)]
+        lo = rng.randrange(-5, 205) * 2 + 1
+        new = [lo, lo + rng.randrange(1, 40) * 2]
+        assert _norm(f([list(i) for i in intervals], list(new))) == _reference([tuple(i) for i in intervals], new)
 
 
-def _check(f, grid, start, goal):
-    expected = _dijkstra(grid, start, goal)
-    path, cost = _split(f(grid, start, goal))
-    path = [tuple(p) for p in path]
-    assert path[0] == tuple(start) and path[-1] == tuple(goal), (path[:2], path[-2:])
-    walked = 0
-    for (r1, c1), (r2, c2) in zip(path, path[1:]):
-        assert abs(r1 - r2) + abs(c1 - c2) == 1, "not a 4-directional step"
-        assert grid[r2][c2] >= 0, "path enters an impassable cell"
-        walked += grid[r2][c2]
-    assert walked == expected, (walked, expected)
-    assert float(cost) == float(expected), (cost, expected)
-
-
-def test_optimal_on_random_grids(f):
-    for seed in range(8):
-        grid = _grid(seed)
-        if _dijkstra(grid, (0, 0), (9, 9)) is not None:
-            _check(f, grid, (0, 0), (9, 9))
-
-
-def test_cheap_detour_beats_short_expensive_route(f):
-    grid = [[1, 9, 9, 9, 1],
-            [1, 9, -1, 9, 1],
-            [1, 1, 1, 1, 1]]
-    _check(f, grid, (0, 0), (0, 4))
-
-
-def test_start_equals_goal(f):
-    grid = [[1, 2], [3, 4]]
-    path, cost = _split(f(grid, (1, 1), (1, 1)))
-    assert [tuple(p) for p in path] == [(1, 1)] and float(cost) == 0
-
-
-def test_unreachable_goal(f):
-    grid = [[1, -1, 1], [1, -1, 1], [1, -1, 1]]
-    try:
-        result = f(grid, (0, 0), (0, 2))
-    except Exception:  # noqa: BLE001 - raising is an accepted way to say "no path"
-        return
-    if result is None:
-        return
-    path, cost = _split(result)
-    assert not path or cost in (None, -1) or cost == float("inf"), (path, cost)
-
-
-TESTS = [test_optimal_on_random_grids, test_cheap_detour_beats_short_expensive_route, test_start_equals_goal,
-         test_unreachable_goal]
+TESTS = [test_prompt_example, test_positions, test_merges_all_and_empty, test_random_against_reference]
