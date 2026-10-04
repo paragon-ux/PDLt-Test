@@ -8,9 +8,9 @@
 
 **RS-01 —** The EXECUTE operation SHALL carry its Result IR in the structured `result_ir` field of its output, never in the deliverable text. The host reads two fields: `witness`, present only when the deliverable claims a result, and `open_defects`, a list of objects with a `description`, present only when a requested result was not obtained. `files` and `reconciliation` MAY be empty lists.
 
-**RS-02 —** Retired. Requirement IDs are not derived or rendered; per-line requirements included control-flow lines and asked for bookkeeping the verdict did not use.
+RS-02 is retired: requirement IDs are not derived or rendered; per-line requirements included control-flow lines and asked for bookkeeping the verdict did not use.
 
-**RS-03 —** Retired with RS-02: reconciliation of every requirement is not required.
+RS-03 is retired with RS-02: reconciliation of every requirement is not required.
 
 **RS-04 —** Every evidence path SHALL resolve to an existing file inside the workspace boundary, OR SHALL be the reserved self-reference `execution://body` resolved by the controller to the current execution body (the just-produced deliverable, which is not yet on disk at validation time). Escaping paths are invalid.
 

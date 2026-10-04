@@ -21,6 +21,7 @@ from pdl_taskmaster.runtime.output_contracts import (
     ContractForm,
     contract_schema,
     grammar_schema,
+    grammar_view,
     is_union_wrapped,
 )
 
@@ -943,12 +944,14 @@ class ApiWorker:
         if self.safety_settings:
             body["safety_settings"] = self.safety_settings
 
-        # The output constraint for this call, in the same form the projection showed
-        # the model (contract_form; ADR-0028 rules 1 and 5).
+        # The output constraint for this call: the schema the projection showed the
+        # model, in the same form (contract_form; ADR-0028 rules 1 and 5), so it holds
+        # in the host's modes for this call too.
         union_wrapped = False
         if form.grammar == "schema":
             output_kind = (getattr(request, "manifest", None) or {}).get("output_kind", "json_object")
-            sent_schema = grammar_schema(operation_name, form)
+            shown = (getattr(getattr(request, "projection", None), "document", None) or {}).get("output_schema")
+            sent_schema = grammar_view(shown) if shown is not None else grammar_schema(operation_name, form)
             union_wrapped = is_union_wrapped(sent_schema)
             body["text"] = {"format": {"type": "json_schema", "name": output_kind, "schema": sent_schema}}
         elif form.grammar == "json":

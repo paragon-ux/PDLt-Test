@@ -15,6 +15,10 @@ What the model is shown beyond Pydantic's structure is declared in the models wi
 ``contract(...)`` (the ``x-contract`` key): descriptions, advisory keywords, and
 required or closed overrides where the host is deliberately more lenient than the
 contract. Pydantic's own titles, defaults and docstring descriptions are never shown.
+
+A property declared ``contract(when=<mode>)`` exists in the contract only while the
+host runs that mode (``modes``): the host does not read it otherwise, so it is not
+shown, required or enforced (RESULT_IR_MODE: RS-10).
 """
 from __future__ import annotations
 
@@ -23,6 +27,9 @@ from typing import Any
 
 CONTRACT_KEY = "x-contract"
 UNION_WRAPPER = "outcome"
+# The host reads the Result IR only in this mode (RESULT_STANDARD RS-10).
+RESULT_IR_MODE = "result_ir"
+_NO_MODES: frozenset[str] = frozenset()
 
 # Keywords a decoding engine does not take; the grammar view drops them (the prompt
 # view keeps the advisory ones, e.g. minLength).
@@ -59,11 +66,11 @@ class ContractForm:
 DEFAULT_FORM = ContractForm()
 
 
-def contract_schema(operation: str) -> dict[str, Any] | None:
-    """The operation's contract: its Pydantic model's schema with ``$ref`` inlined,
-    discriminator tags required in every variant, objects closed unless declared
-    open, and the ``x-contract`` annotations applied. None for an operation with no
-    payload model."""
+def contract_schema(operation: str, modes: frozenset[str] = _NO_MODES) -> dict[str, Any] | None:
+    """The operation's contract in the host's active ``modes``: its Pydantic model's
+    schema with ``$ref`` inlined, discriminator tags required in every variant,
+    objects closed unless declared open, and the ``x-contract`` annotations applied.
+    None for an operation with no payload model."""
     from pydantic import TypeAdapter
 
     from pdl_taskmaster.runtime.wire_payloads import OPERATION_PAYLOAD_MODELS
@@ -72,12 +79,12 @@ def contract_schema(operation: str) -> dict[str, Any] | None:
     if model is None:
         return None
     raw = TypeAdapter(model).json_schema()
-    return _normalize(raw, raw.get("$defs") or {})
+    return _normalize(raw, raw.get("$defs") or {}, modes)
 
 
-def _normalize(node: Any, defs: dict[str, Any]) -> Any:
+def _normalize(node: Any, defs: dict[str, Any], modes: frozenset[str]) -> Any:
     if isinstance(node, list):
-        return [_normalize(item, defs) for item in node]
+        return [_normalize(item, defs, modes) for item in node]
     if not isinstance(node, dict):
         return node
     ref = node.get("$ref")
@@ -86,29 +93,39 @@ def _normalize(node: Any, defs: dict[str, Any]) -> Any:
         if CONTRACT_KEY in node and CONTRACT_KEY in defs[ref.rsplit("/", 1)[-1]]:
             # Field-level annotations refine the model's own.
             merged[CONTRACT_KEY] = {**defs[ref.rsplit("/", 1)[-1]][CONTRACT_KEY], **node[CONTRACT_KEY]}
-        return _normalize(merged, defs)
+        return _normalize(merged, defs, modes)
     result: dict[str, Any] = {}
     for key, value in node.items():
         if key in ("$defs", "title", "description", "default", "discriminator", CONTRACT_KEY):
             continue
         if key == "properties" and isinstance(value, dict):
             # Property names are data: a field called "description" survives.
-            result[key] = {name: _normalize(spec, defs) for name, spec in value.items()}
+            result[key] = {name: _normalize(spec, defs, modes) for name, spec in value.items()
+                           if _active(spec, modes)}
         else:
-            result[key] = _normalize(value, defs)
+            result[key] = _normalize(value, defs, modes)
     tag = (node.get("discriminator") or {}).get("propertyName")
     for branch in (result.get("oneOf") or result.get("anyOf") or []) if tag else []:
         if isinstance(branch, dict) and tag in (branch.get("properties") or {}):
             branch["required"] = list(dict.fromkeys([*(branch.get("required") or []), tag]))
     if isinstance(result.get("properties"), dict) and result["properties"]:
         result.setdefault("additionalProperties", False)
-    result.update(node.get(CONTRACT_KEY) or {})
+    result.update({k: v for k, v in (node.get(CONTRACT_KEY) or {}).items() if k != "when"})
+    if isinstance(result.get("properties"), dict) and isinstance(result.get("required"), list):
+        # A required override names only the properties present in these modes.
+        result["required"] = [name for name in result["required"] if name in result["properties"]]
     return result
 
 
-def prompt_schema(operation: str, form: ContractForm = DEFAULT_FORM) -> dict[str, Any] | None:
+def _active(spec: Any, modes: frozenset[str]) -> bool:
+    when = ((spec or {}).get(CONTRACT_KEY) or {}).get("when") if isinstance(spec, dict) else None
+    return when is None or when in modes
+
+
+def prompt_schema(operation: str, form: ContractForm = DEFAULT_FORM,
+                  modes: frozenset[str] = _NO_MODES) -> dict[str, Any] | None:
     """The output_schema the model reads, in the structural form of this call."""
-    schema = contract_schema(operation)
+    schema = contract_schema(operation, modes)
     if schema is None or form.grammar != "schema":
         return schema
     schema = _wrap_top_level_union(schema)
@@ -117,13 +134,21 @@ def prompt_schema(operation: str, form: ContractForm = DEFAULT_FORM) -> dict[str
     return schema
 
 
-def grammar_schema(operation: str, form: ContractForm = DEFAULT_FORM) -> dict[str, Any] | None:
+def grammar_schema(operation: str, form: ContractForm = DEFAULT_FORM,
+                   modes: frozenset[str] = _NO_MODES) -> dict[str, Any] | None:
     """The decoding constraint for this call: the prompt schema without what decoding
     engines reject. None unless the form sends a schema."""
     if form.grammar != "schema":
         return None
-    schema = prompt_schema(operation, form)
-    return None if schema is None else _grammar_view(schema)
+    schema = prompt_schema(operation, form, modes)
+    return None if schema is None else grammar_view(schema)
+
+
+def grammar_view(shown_schema: dict[str, Any]) -> dict[str, Any]:
+    """The decoding constraint for a schema already shown to the model (the
+    projection's output_schema): the same structure, without what decoding engines
+    reject."""
+    return _grammar_view(shown_schema)
 
 
 def is_union_wrapped(schema: Any) -> bool:

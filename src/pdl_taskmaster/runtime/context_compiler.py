@@ -54,9 +54,12 @@ class ContextCompiler:
         *,
         higher_priority_constraints: Any = None,
         contract_form: ContractForm | None = None,
+        modes: frozenset[str] = frozenset(),
     ) -> CompiledProjection:
         """``contract_form`` is how the worker will constrain this operation's output;
-        the output_schema shown is generated in that same form (ADR-0028 rule 1)."""
+        the output_schema shown is generated in that same form (ADR-0028 rule 1).
+        ``modes`` are the host modes active for this call (output_contracts.RESULT_IR_MODE):
+        a clause or output field that applies only in a mode is shown only in it."""
         operations = self.execution_contract["operations"]
         if operation not in operations:
             raise ValueError(f"operation:{operation}")
@@ -76,7 +79,12 @@ class ContextCompiler:
         if extra:
             raise ValueError(f"extra_symbols:{sorted(extra)}")
 
-        clauses = self.registry.select(spec["requirements"])
+        requirement_ids = list(spec["requirements"]) + [
+            requirement_id
+            for mode, ids in (spec.get("mode_requirements") or {}).items() if mode in modes
+            for requirement_id in ids
+        ]
+        clauses = self.registry.select(requirement_ids)
         clause_values = [
             {"requirement_id": clause.requirement_id, "clause": clause.text}
             for clause in clauses
@@ -96,7 +104,7 @@ class ContextCompiler:
                 ordered_inputs[symbol] = values[symbol]
 
         # One output contract per operation (IMPL-0001): generated from the payload model.
-        output_schema = prompt_schema(operation, contract_form or DEFAULT_FORM)
+        output_schema = prompt_schema(operation, contract_form or DEFAULT_FORM, modes)
         if output_schema is None:
             raise ValueError(f"output_contract_missing:{operation}")
         schema_text = json.dumps(output_schema, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
@@ -118,13 +126,15 @@ class ContextCompiler:
             "operation": operation,
             "included_symbols": list(include),
             "excluded_symbols": list(spec.get("exclude", [])),
-            "requirement_ids": list(spec["requirements"]),
+            "requirement_ids": requirement_ids,
             "clause_sha256": clause_digests,
             "output_kind": spec["output_kind"],
             "output_fields": list(spec.get("output_fields", [])),
             "output_schema": f"wire_payloads:{operation}",
             "output_schema_sha256": sha256(schema_text.encode("utf-8")).hexdigest(),
         }
+        if modes:
+            manifest["modes"] = sorted(modes)
         manifest["projection_sha256"] = sha256(
             json.dumps(document, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
         ).hexdigest()

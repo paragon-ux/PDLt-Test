@@ -107,8 +107,6 @@
     "TASK-02": "contracts/standards/TASK_SEMANTICS_STANDARD.md",
     "TASK-03": "contracts/standards/TASK_SEMANTICS_STANDARD.md",
     "RS-01": "contracts/standards/RESULT_STANDARD.md",
-    "RS-02": "contracts/standards/RESULT_STANDARD.md",
-    "RS-03": "contracts/standards/RESULT_STANDARD.md",
     "RS-04": "contracts/standards/RESULT_STANDARD.md",
     "RS-05": "contracts/standards/RESULT_STANDARD.md",
     "RS-06": "contracts/standards/RESULT_STANDARD.md",
@@ -146,7 +144,7 @@
     },
     {
       "path": "contracts/EXECUTION_CONTRACT.json",
-      "sha256": "d6fcb8a367b1e52e770c035543cf66f99026da97cfbbb4113b878a803039547e"
+      "sha256": "6387e2780c90550cf1c7670eb9d7aca8a4ae113dc74fa4bc7b7eff367f1011d6"
     },
     {
       "path": "contracts/IMPLEMENTATION_BOUNDARY.json",

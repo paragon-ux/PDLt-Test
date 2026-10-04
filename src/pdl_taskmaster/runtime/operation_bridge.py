@@ -137,6 +137,7 @@ class OperationBridge:
         workspace: WorkspaceRun,
         higher_priority_constraints: Any = None,
         operator_correction: str | None = None,
+        modes: frozenset[str] = frozenset(),
     ) -> ModelRequest:
         invocation = workspace.materialize_operation(
             operation, values, higher_priority_constraints=higher_priority_constraints
@@ -148,6 +149,7 @@ class OperationBridge:
             materialized_values,
             higher_priority_constraints=materialized_higher_priority,
             contract_form=form,
+            modes=modes,
         )
         workspace.record_projection(invocation, projection.manifest, projection.document)
         prompt = projection.render(self.bootstrap, compact=self.render_compact)

@@ -33,6 +33,9 @@
 - **Recall without redrafts.** On the 35 prompts C did not redraft, recall was 0.603 (A: 0.557).
 - **Why the redrafts happened.** 34% of C's first drafts summarized input data instead of copying it. Excluding `term` from coverage would cut redrafts on the same first drafts from 62 to 43. That is the adopted scope; it is unmeasured on new drafts.
 - **Kind assignment.** It is unreliable: the three-gods `da`/`ja` were typed `literal`, with no definition.
+- **The definition, whatever the kind (2026-10-04).** What was lost was the definition, not the kind: retyping `da`/`ja` as `term` would also drop them from coverage. The `definition` description now says it holds what the request says about the entity "whatever its kind", and to leave it out "only" when the request says nothing more.
+  - Measured on the three-gods request, Nemotron `:free` on Nvidia, 10 runs each: `da`/`ja` defined in 5/10 before, 10/10 after.
+  - Side effect: typed `term` in 1/10 before, 5/10 after. Every confirmed prompt still contained `da` and `ja` (20/20).
 - **End to end.** The run was cut short by the API key's limit. On the 10 prompts both A and B completed, A passed 9/10 and B 6/10; C was not run.
 
 ## Verification

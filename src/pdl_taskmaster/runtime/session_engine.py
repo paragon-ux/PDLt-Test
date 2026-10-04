@@ -22,6 +22,7 @@ from pdl_taskmaster.controller.mechanical_controller import (
     Transition,
 )
 from pdl_taskmaster.runtime.operation_bridge import ActivationRoute, ModelRequest, OperationBridge, WireError
+from pdl_taskmaster.runtime.output_contracts import RESULT_IR_MODE
 from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output
 from pdl_taskmaster.verification.sandbox import ExecutionSandbox
 
@@ -541,6 +542,7 @@ class SessionEngine:
         traces: list[CallTrace],
         parser: Callable[[str], Any] | None = None,
         operator_correction: str | None = None,
+        modes: frozenset[str] = frozenset(),
     ) -> Any:
         """Invoke one operation. With a parser, retry ONCE on WireError with an
         operator correction so a sampling glitch (invalid JSON, dropped field)
@@ -555,6 +557,7 @@ class SessionEngine:
             workspace=self.workspace,
             higher_priority_constraints=self.higher_priority_constraints,
             operator_correction=operator_correction,
+            modes=modes,
         )
         try:
             model_text = self._invoke(request, traces)
@@ -584,6 +587,7 @@ class SessionEngine:
                 workspace=self.workspace,
                 higher_priority_constraints=self.higher_priority_constraints,
                 operator_correction=correction,
+                modes=modes,
             )
             try:
                 return parser(self._invoke(retry_request, traces))
@@ -1624,8 +1628,9 @@ class SessionEngine:
         with a registry finding, never a hidden retry (each attempt cost up to two
         calls before, so a repair could cost four)."""
         try:
+            modes = frozenset({RESULT_IR_MODE}) if result_ir_mode else frozenset()
             outcome = self.bridge.parse_execution(self._call("EXECUTE", execute_context, traces,
-                                                             operator_correction=correction))
+                                                             operator_correction=correction, modes=modes))
         except Exception as exc:
             limit = getattr(exc, "output_limit", None)
             if limit is None and not _is_wire_failure(exc):

@@ -83,13 +83,35 @@ All from 2026-10-03, on `nvidia/nemotron-3-super-120b-a12b`, through OpenRouter.
 - **Dropped.** The REVIEW_FACTS "at least one change or a progression" rule (`minItems` plus `anyOf`) is no longer shown. Neither the host nor the grammar ever enforced it.
 - **Variant order kept.** Order is what the model reads first; parsing is by `kind`.
   - Unions keep the order the model has always seen: RESULT before REQUEST_INPUT (EXECUTE), RESULT before BLOCKED (DRAFT_EXECUTE).
-  - In the first live run, with REQUEST_INPUT listed first, Nemotron returned an input request. With the order restored, it returned a RESULT. One run each, so not attributable to the order alone.
+  - In the first live run, with REQUEST_INPUT listed first, Nemotron returned an input request. With the order restored, it returned a RESULT. One run each, so not attributable to the order alone. Session 20261004-025445 later asked for input with RESULT listed first, so the order does not explain it.
 
 ### Live verification (2026-10-03, dev-mode REPL, three-gods prompt, `--fast`)
 | Model, providers | `EXECUTE` | Outcome |
 |---|---|---|
 | Nemotron 3 Super `:free`, `--api-providers Nvidia` | `json_object`, 6.8 s, 1,589 output tokens (840 reasoning) | `CLOSED_SUCCESS`; complete `result_ir` including `witness`; the answer is essentially the canonical solution |
 | gpt-oss-120b, default (Baseten, Crusoe) | `json_object`, 1.7 s, 383 output tokens | `CLOSED_SUCCESS`; the default-form schemas for prompt and plan drafting were accepted; the answer is wrong (fixed questions), as before |
+
+### Host modes (2026-10-04)
+- **The contract follows the host's mode.** The host reads `result_ir` only in Result IR mode (verified execution or `PDLT_RESULT_IR=1`, RS-10). Outside it, EXECUTE showed `result_ir` as required and ten RS clauses, and the host discarded the field.
+  - A property declared `contract(when=RESULT_IR_MODE)` exists only in that mode: not shown, required or enforced otherwise.
+  - The contract's `mode_requirements` lists the clauses that apply only in a mode (EXECUTE: RS-01, RS-04 to RS-10).
+  - The engine passes the modes per call (`_call(modes=...)`, `OperationBridge.request`, `ContextCompiler.compile`); the manifest records them.
+- **The grammar is the schema the projection showed.** The worker builds it from the projection's `output_schema` (`grammar_view`), so it holds in every mode as well as every form. A request without a projection falls back to the operation's default.
+- **Retired clauses removed.** RS-02 and RS-03 were still listed and shown; they are off the requirement lists and the registry index. The standard keeps them as prose, like PLAN-09.
+- **Empty inputs not shown.** `REQUIRED_TASK_INPUTS` moved to `optional_include` (EXECUTE, DRAFT_EXECUTE). It was shown as `null`, which reads as required inputs that are missing.
+
+### REQUEST_INPUT probe (2026-10-04, Nemotron `:free`, Nvidia only, dev + fast, 10 runs per arm)
+Session 20261004-025445 asked for "the gods' responses" at EXECUTE. Same model and code as 20261004-021028, which answered. The probe uses that session's exact request, without the line asking for the questions.
+
+| Arm | Reached EXECUTE | First EXECUTE asked for input | Stopped at plan review (PLAN-02 finding) |
+|---|---|---|---|
+| A: host modes applied | 7/10 | 0/7 | 3/10 |
+| B: A plus the REQUEST_INPUT sentence and the entity-definition wording | 6/10 | 0/6 | 4/10 |
+
+- **No measurable effect on input requests.** The rate was 0 before the wording change. 0/7 bounds it only loosely (the 95% upper bound is about 40%).
+- **Interactive plans did not cause it.** In arm A, 3 of the 7 plans had interactive steps (pose, receive, observe), and all 3 answered.
+- **The wording change:** REQUEST_INPUT adds "People or events described in the task are part of the task, not a source of input." Kept as a protocol statement (GUARD-03), not solving advice.
+- **The plan-review stops** are the host's PLAN-02 restatement finding; under fast mode a finding needs a review, and with stdin closed the run exits 2. They are unrelated to these changes.
 
 ## Consequences
 - **What the model sees changes.** It now sees `witness`, `confidence` and `evidence.section` as optional keys. Behaviour is checked on both named models before acceptance.

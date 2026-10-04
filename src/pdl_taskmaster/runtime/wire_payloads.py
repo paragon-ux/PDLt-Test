@@ -14,7 +14,7 @@ from pydantic import (
 )
 from pydantic.json_schema import SkipJsonSchema
 
-from pdl_taskmaster.runtime.output_contracts import contract
+from pdl_taskmaster.runtime.output_contracts import RESULT_IR_MODE, contract
 
 
 class WireModel(BaseModel):
@@ -88,8 +88,8 @@ ENTITY_KINDS = ("identifier", "input_data", "literal", "parameter", "term")
 
 
 class TaskEntity(WireModel):
-    """One entity of the request: its exact surface form, its kind, and, for a term the
-    request defines, that definition (including what the request says is unknown)."""
+    """One entity of the request: its exact surface form, its kind, and what the request
+    says about it, whatever its kind (including what the request says is unknown)."""
 
     model_config = ConfigDict(extra="forbid")
     surface: str = Field(json_schema_extra=contract(description='The exact text the request uses for this entity.', minLength=1))
@@ -105,9 +105,9 @@ class TaskEntity(WireModel):
             )))
     definition: str | None = Field(
         default=None, json_schema_extra=contract(description=(
-                "What the request itself says this entity means, does or is constrained by, in the request's "
-                'terms, including anything the request says is unknown, random, ambiguous or in some order. Leave '
-                'it out when the request says nothing more about the entity.'
+                "What the request itself says about this entity, whatever its kind: what it means, does or is "
+                "constrained by, in the request's terms, including anything the request says is unknown, random, "
+                'ambiguous or in some order. Leave it out only when the request says nothing more about the entity.'
             )))
 
     @model_validator(mode="after")
@@ -591,7 +591,8 @@ class ExecutionRequestInputData(WireModel):
             'without live runtime variables. When the task is to write, implement, create, or define code, '
             'functions, classes, scripts, or documents, the deliverable is the source text itself: DO NOT '
             'request mocks, callers, or argument implementations (e.g. callback functions, test harnesses, or '
-            'parameter values). Emit the complete source code implementation directly in RESULT.'
+            'parameter values). Emit the complete source code implementation directly in RESULT. People or '
+            'events described in the task are part of the task, not a source of input.'
         )))
     kind: Literal["REQUEST_INPUT"] = "REQUEST_INPUT"
     body: str = Field(json_schema_extra=contract(minLength=1))
@@ -623,7 +624,7 @@ class ExecutionResultData(WireModel):
                 'Result Pseudocode decomposition IR (TRD-0003): reconciled against the confirmed prompt '
                 'requirements, with evidence citations. Presence is wire-enforced; citation content is validated '
                 'host-side.'
-            )))
+            ), when=RESULT_IR_MODE))
 
     @model_validator(mode="after")
     def validate_fields(self) -> ExecutionResultData:

@@ -466,7 +466,10 @@ def test_flattened_schema_still_validates_exactly_host_side() -> None:
         BRIDGE.parse_prompt_body('{"prompt_body": "X", "approach_handoff": "NONE"}')
 
 
-from pdl_taskmaster.runtime.output_contracts import ContractForm, grammar_schema  # noqa: E402
+from pdl_taskmaster.runtime.output_contracts import RESULT_IR_MODE, ContractForm, grammar_schema  # noqa: E402
+
+# EXECUTE in its fullest form: the Result IR is part of it only in Result IR mode.
+_RESULT_IR = frozenset({RESULT_IR_MODE})
 
 def _variant(variants: list, kind: str) -> dict:
     """The union variant whose `kind` admits this value (variant order is presentation)."""
@@ -512,12 +515,12 @@ def test_provider_schema_meets_strict_structured_output_rules(operation) -> None
     """Runs 135851/135951: Groq ("required ... must include every key in properties:
     observed, section") and Cerebras ("additionalProperties ... set to false")
     rejected every EXECUTE request at result_ir."""
-    schema = grammar_schema(operation, _STRICT_CLOSED)
+    schema = grammar_schema(operation, _STRICT_CLOSED, _RESULT_IR)
     assert _strict_violations(schema) == []
 
 
 def test_property_names_are_never_stripped_as_keywords() -> None:
-    schema = grammar_schema("EXECUTE", _STRICT_CLOSED)
+    schema = grammar_schema("EXECUTE", _STRICT_CLOSED, _RESULT_IR)
     variants = schema["properties"]["outcome"]["anyOf"]
     asked = _variant(variants, "REQUEST_INPUT")
     result = _variant(variants, "RESULT")
@@ -789,7 +792,7 @@ def _provider_schema(operation: str, providers: list[str]) -> dict:
     from pdl_taskmaster.providers.api_worker import ApiWorker
 
     worker = ApiWorker(model="m", repo_root=ROOT, provider_pinning={"order": providers, "allow_fallbacks": False})
-    return grammar_schema(operation, dataclasses.replace(worker.contract_form(operation), grammar="schema"))
+    return grammar_schema(operation, dataclasses.replace(worker.contract_form(operation), grammar="schema"), _RESULT_IR)
 
 
 def test_free_form_objects_are_sent_unless_a_provider_requires_closed_objects() -> None:
