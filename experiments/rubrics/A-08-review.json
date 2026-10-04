@@ -1,0 +1,13 @@
+{
+  "id": "A-08-review",
+  "task": "A drafted interpretation of the request (pseudocode or a plan), judged on which reading of the request it commits to.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The artifact commits to this reading: The average over all 40 students: (10 x 80 + 30 x 60) / 40 = 65.",
+      "required": true
+    }
+  ],
+  "reference": "Other readings, which do not meet c1: The average of the two class averages: 70.",
+  "notes": "Mark c1 not_met if the artifact commits to another reading, or leaves the choice open."
+}

@@ -1,0 +1,11 @@
+{
+  "id": "A-05",
+  "intended": "Break ties by first appearance in the sentence: the, and, cat.",
+  "others": [
+    "Include every word tied at third place: the, and, cat, dog, bird.",
+    "Break ties alphabetically: the, and, bird."
+  ],
+  "answer": "the, and, cat",
+  "correction": "When words tie, prefer the one that appears first in the sentence, and list exactly three.",
+  "file": "A-05.txt"
+}

@@ -40,7 +40,10 @@ class Block:
 
 
 def build_schedule(models: list[str], item_ids: list[str], *, reps: int, arms: list[str],
-                   branches: dict[str, list[str]] | None = None, seed: int) -> list[Block]:
+                   branches: dict[str, list[str]] | None = None, seed: int,
+                   arms_by_item: dict[str, list[str]] | None = None) -> list[Block]:
+    """Blocks in a seeded random order. ``arms_by_item`` gives an item its own arms
+    (the interaction groups run different arms); others run ``arms``."""
     rng = random.Random(seed)
     per_model: dict[str, list[Block]] = {}
     for model in models:
@@ -49,7 +52,7 @@ def build_schedule(models: list[str], item_ids: list[str], *, reps: int, arms: l
             order = list(item_ids)
             rng.shuffle(order)
             for item_id in order:
-                arm_order = list(arms)
+                arm_order = list((arms_by_item or {}).get(item_id, arms))
                 rng.shuffle(arm_order)
                 branch_order = {}
                 for arm, names in (branches or {}).items():

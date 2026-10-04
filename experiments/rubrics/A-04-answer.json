@@ -1,0 +1,18 @@
+{
+  "id": "A-04-answer",
+  "task": "The final answer to the request, judged under the intended reading.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The final answer is Adam, bob, Carl, zoe (Alphabetical regardless of case: Adam, bob, Carl, zoe.)",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "The answer commits to that result (a response offering several results for different readings without choosing does not meet this).",
+      "required": true
+    }
+  ],
+  "reference": "Other readings give: Case-sensitive (ASCII) order: Adam, Carl, bob, zoe.",
+  "notes": "Judge the final stated result, not the working."
+}

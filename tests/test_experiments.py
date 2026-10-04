@@ -449,3 +449,105 @@ def test_interaction_report_compares_on_its_own_stratum_only():
     report = analysis.interaction_report(rows, "m", "A", "P_rev", ["C0"])
     assert report["stratum"] == "ambiguity"
     assert report["comparisons"][0]["n"] == 6 and report["comparisons"][0]["mean_diff"] == 1.0
+
+
+# --------------------------------------------------------------------------- interaction groups in the runner
+
+
+def test_interaction_strata_run_their_own_arms():
+    config = runner.load_config(ROOT / "experiments" / "gate_config.example.json")
+    core = runner.arms_for(config, "T")
+    assert "P_rev" not in core and "C0F" not in core and "P_M" not in core
+    assert set(runner.arms_for(config, "A")) == {"P_rev", "C0", "C0F"}
+    assert set(runner.arms_for(config, "M")) == {"P_M", "C0F"}
+    blocks = schedule.build_schedule(["m"], ["01-01", "A-01"], reps=1, arms=core, seed=1,
+                                     arms_by_item={"A-01": runner.arms_for(config, "A")})
+    by_item = {b.item_id: set(b.arms) for b in blocks}
+    assert by_item["A-01"] == {"P_rev", "C0", "C0F"} and by_item["01-01"] == set(core)
+
+
+def test_old_protocol_branches_into_the_fb1_arm():
+    config = runner.load_config(ROOT / "experiments" / "gate_config.example.json")
+    p_old = config["arms"]["P_old"]
+    assert p_old.kind == "branched" and set(p_old.branches) == {"P_old", "FB1"}
+    assert p_old.branches["FB1"] == ("--api-reasoning-operation", "EXECUTE=medium")
+
+
+def _judge_says(verdict):
+    def send(spec, prompt):
+        return json.dumps({"criteria": {"c1": "met" if verdict == "PASS" else "not_met",
+                                        "c2": "met" if verdict == "PASS" else "not_met"}})
+    return send
+
+
+def test_scripted_reviewer_drives_the_protocol_through_its_gates(monkeypatch, tmp_path):
+    from experiments import interaction, judge
+
+    stages = iter(["PROMPT_REVIEW", "PROMPT_REVIEW", "PLAN_REVIEW", None])
+    calls = []
+
+    def fake_run_cli(spec, model, out, *, prompt_file, restore, stdin, extra_args, timeout, exit_on_close=True):
+        calls.append(stdin)
+        (out / "session" / "W-x").mkdir(parents=True, exist_ok=True)
+        return {"exit_code": 2 if len(calls) < 4 else 0, "timed_out": False, "stderr": "", "harness_fault": None,
+                "elapsed_s": 1.0}
+
+    monkeypatch.setattr(runner, "run_cli", fake_run_cli)
+    monkeypatch.setattr(runner, "controller_stage", lambda session: next(stages))
+    monkeypatch.setattr(runner, "artifact_under_review", lambda session, stage: "COMPUTE the mean")
+    item = interaction.ambiguity_items()["A-01"]
+    specs = [judge.JudgeSpec("a", "m"), judge.JudgeSpec("b", "m")]
+    spec = runner.ArmSpec("P_rev", "reviewed")
+    run, log = runner.run_reviewed(spec, {"model": "m", "providers": []}, tmp_path, tmp_path / "p.txt", 60, item,
+                                   specs, _judge_says("FAIL"))
+    # Gate 1: the reading is wrong -> the correction; gate 2: still wrong -> confirmed (one revision per run).
+    assert calls == ["", f"/revise {item.correction}\n", "/confirm\n", "/confirm\n"]
+    assert [entry["reply"] for entry in log] == ["/revise", "/confirm", "/confirm"]
+    assert run["exit_code"] == 0
+
+
+class _FakeControls:
+    def __init__(self, answers):
+        self.answers, self.sent = list(answers), []
+
+    def _reply(self, arm):
+        from experiments.controls import ControlResult
+
+        return ControlResult(arm, "reply", kind="RESULT", text=self.answers.pop(0), usage={"input_tokens": 10,
+                                                                                            "output_tokens": 5})
+
+    def run(self, arm, request, effort=None, **_):
+        self.sent.append(request)
+        return self._reply(arm)
+
+    def run_conversation(self, arm, messages, effort=None):
+        self.sent.append(messages)
+        return self._reply(arm)
+
+
+def test_plain_call_gets_the_correction_only_when_the_reading_was_wrong():
+    from experiments import interaction, judge
+
+    item = interaction.ambiguity_items()["A-08"]
+    specs = [judge.JudgeSpec("a", "m"), judge.JudgeSpec("b", "m")]
+    spec = runner.ArmSpec("C0F", "control_followup")
+    right = _FakeControls(["65"])
+    result, log = runner.run_control_followup(right, "C0F", spec, item.request, ambiguity_item=item,
+                                              judge_specs=specs, send=_judge_says("PASS"))
+    assert result.text == "65" and len(right.sent) == 1 and len(log) == 1
+    wrong = _FakeControls(["70", "65"])
+    result, log = runner.run_control_followup(wrong, "C0F", spec, item.request, ambiguity_item=item,
+                                              judge_specs=specs, send=_judge_says("FAIL"))
+    assert result.text == "65" and len(log) == 2
+    assert wrong.sent[1][-1] == {"role": "user", "content": item.correction}
+
+
+def test_multi_turn_plain_call_sends_every_scripted_followup():
+    from experiments import interaction
+
+    script = interaction.MULTI_TURN["10-04"]
+    controls = _FakeControls(["v1", "v2", "v3", "v4"])
+    result, log = runner.run_control_followup(controls, "C0F", runner.ArmSpec("C0F", "control_followup"),
+                                              "Write an email validator.", script=script)
+    assert result.text == "v4" and len(log) == 4
+    assert [m["content"] for m in controls.sent[-1] if m["role"] == "user"][1:] == list(script.followups)

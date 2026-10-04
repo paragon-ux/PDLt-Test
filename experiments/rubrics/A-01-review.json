@@ -1,0 +1,13 @@
+{
+  "id": "A-01-review",
+  "task": "A drafted interpretation of the request (pseudocode or a plan), judged on which reading of the request it commits to.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The artifact commits to this reading: When there are two middle values, report the lower one (an actual observed day), so the median is 9.",
+      "required": true
+    }
+  ],
+  "reference": "Other readings, which do not meet c1: The mean of the two middle values: 10.5.",
+  "notes": "Mark c1 not_met if the artifact commits to another reading, or leaves the choice open."
+}

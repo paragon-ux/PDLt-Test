@@ -119,3 +119,66 @@ def test_manual_mode_round_trip(tmp_path):
     assert (tmp_path / "r1.txt").is_file()
     (tmp_path / "r1.reply.txt").write_text('{"criteria": {"c1": "met", "c2": "met", "c3": "met"}}', encoding="utf-8")
     assert judge.import_verdicts(index, tmp_path)["r1"]["verdict"] == "PASS"
+
+
+# --------------------------------------------------------------------------- interaction groups (design §6.6)
+
+from experiments import interaction  # noqa: E402
+
+
+def test_every_ambiguity_item_has_review_and_answer_rubrics_with_labelled_answers():
+    items = interaction.ambiguity_items()
+    assert len(items) >= 8
+    for item in items.values():
+        for rid in (item.review_rubric, item.answer_rubric):
+            rubric = judge.load_rubric(rid)
+            assert rubric.criteria and any(c.required for c in rubric.criteria)
+            labels = {label for _, label, _ in judge.stress_answers(rid)}
+            assert labels == {"PASS", "FAIL"}, rid
+        assert item.correction and item.intended and item.request
+
+
+def _fixed(verdict):
+    def send(spec, prompt):
+        rubric_c = ["c1", "c2"]
+        mark = "met" if verdict == "PASS" else "not_met"
+        return json.dumps({"criteria": {c: mark for c in rubric_c}})
+    return send
+
+
+def test_scripted_reviewer_revises_once_then_confirms():
+    item = interaction.ambiguity_items()["A-01"]
+    specs = [judge.JudgeSpec("a", "m"), judge.JudgeSpec("b", "m")]
+    reply, _ = interaction.review_reply(item, "COMPUTE the mean of the middle values.", specs, _fixed("FAIL"), revised=False)
+    assert reply == f"/revise {item.correction}"
+    reply, verdicts = interaction.review_reply(item, "still the mean", specs, _fixed("FAIL"), revised=True)
+    assert reply == "/confirm" and verdicts["a"]["verdict"] == "FAIL"  # judged for the record, then confirmed
+    assert interaction.review_reply(item, "lower middle", specs, _fixed("PASS"), revised=False)[0] == "/confirm"
+
+
+def test_followup_is_sent_unless_both_judges_pass():
+    item = interaction.ambiguity_items()["A-08"]
+    specs = [judge.JudgeSpec("a", "m"), judge.JudgeSpec("b", "m")]
+    assert interaction.needs_followup(item, "65", specs, _fixed("PASS"))[0] is False
+    assert interaction.needs_followup(item, "70", specs, _fixed("FAIL"))[0] is True
+
+    def split(spec, prompt):
+        return json.dumps({"criteria": {"c1": "met", "c2": "met" if spec.name == "a" else "not_met"}})
+    assert interaction.needs_followup(item, "65 or 70", specs, split)[0] is True
+
+
+def test_multi_turn_scripts_cover_category_10():
+    assert set(interaction.MULTI_TURN) == {f"10-0{i}" for i in range(1, 8)}
+    for sid, script in interaction.MULTI_TURN.items():
+        lines = script.protocol_stdin.splitlines()
+        assert lines and all(lines)
+        if script.compared:
+            assert script.followups and judge.load_rubric(sid)
+    assert not interaction.MULTI_TURN["10-06"].compared
+    assert interaction.MULTI_TURN["10-05"].exit_on_close is False
+
+
+def test_conversation_alternates_answers_and_followups():
+    msgs = interaction.conversation("Q", [("A1", "F1"), ("A2", "F2")])
+    assert [m["role"] for m in msgs] == ["user", "assistant", "user", "assistant", "user"]
+    assert msgs[-1]["content"] == "F2"

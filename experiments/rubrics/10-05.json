@@ -1,0 +1,18 @@
+{
+  "id": "10-05",
+  "task": "The final deliverable after the conversation's revisions (the last turn's answer), judged against the request as revised. Request: first a Caesar cipher; that task was stopped and replaced by 'Implement a ROT13 encoder.'",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Implements a correct ROT13 encoder (letters rotated by 13, case kept, other characters unchanged; 'Hello' -> 'Uryyb').",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "The deliverable is about ROT13 only: no leftover general Caesar cipher with an arbitrary shift, and no decoder or other work from the abandoned task presented as part of it (noting that ROT13 is a Caesar shift of 13, or that it is its own inverse, is fine).",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": "Judge only the final answer. Earlier turns are context: a requirement added by a revision must be present in the final answer."
+}

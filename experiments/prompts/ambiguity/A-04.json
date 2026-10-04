@@ -1,0 +1,10 @@
+{
+  "id": "A-04",
+  "intended": "Alphabetical regardless of case: Adam, bob, Carl, zoe.",
+  "others": [
+    "Case-sensitive (ASCII) order: Adam, Carl, bob, zoe."
+  ],
+  "answer": "Adam, bob, Carl, zoe",
+  "correction": "Ignore upper and lower case when sorting.",
+  "file": "A-04.txt"
+}

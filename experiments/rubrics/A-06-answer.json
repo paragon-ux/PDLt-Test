@@ -1,0 +1,18 @@
+{
+  "id": "A-06-answer",
+  "task": "The final answer to the request, judged under the intended reading.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The final answer is $40.50 (The second 10% applies to the already-reduced price: 50 x 0.9 x 0.9 = $40.50.)",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "The answer commits to that result (a response offering several results for different readings without choosing does not meet this).",
+      "required": true
+    }
+  ],
+  "reference": "Other readings give: A combined 20% off: $40.00.",
+  "notes": "Judge the final stated result, not the working."
+}

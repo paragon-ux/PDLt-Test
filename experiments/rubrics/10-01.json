@@ -1,0 +1,23 @@
+{
+  "id": "10-01",
+  "task": "The final deliverable after the conversation's revisions (the last turn's answer), judged against the request as revised. Request: a Sieve of Eratosthenes; revised to primes up to 100 only, plus the count of twin primes found.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Uses the Sieve of Eratosthenes (marking multiples), not trial division.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Finds the primes up to 100 (fixed at 100, or a limit parameter used with 100).",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Also returns the count of twin primes found, which is 8 pairs below 100: (3,5), (5,7), (11,13), (17,19), (29,31), (41,43), (59,61), (71,73).",
+      "required": true
+    }
+  ],
+  "reference": "25 primes up to 100; 8 twin-prime pairs.",
+  "notes": "Judge only the final answer. Earlier turns are context: a requirement added by a revision must be present in the final answer."
+}

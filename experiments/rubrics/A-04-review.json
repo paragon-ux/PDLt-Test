@@ -1,0 +1,13 @@
+{
+  "id": "A-04-review",
+  "task": "A drafted interpretation of the request (pseudocode or a plan), judged on which reading of the request it commits to.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The artifact commits to this reading: Alphabetical regardless of case: Adam, bob, Carl, zoe.",
+      "required": true
+    }
+  ],
+  "reference": "Other readings, which do not meet c1: Case-sensitive (ASCII) order: Adam, Carl, bob, zoe.",
+  "notes": "Mark c1 not_met if the artifact commits to another reading, or leaves the choice open."
+}

@@ -229,6 +229,17 @@ class Controls:
         result.kind, result.text = "RESULT", text
         return result
 
+    def run_conversation(self, arm: str, messages: list[dict[str, str]], *, effort: str | None = None) -> ControlResult:
+        """A plain call whose input is a conversation (the interaction groups' follow-ups)."""
+        body = {**self._base_body(), "input": messages}
+        if effort is not None:
+            body["reasoning"] = {"effort": effort}
+        data, result = self._send(arm, body)
+        if data is None or result.status != "reply":
+            return result
+        result.kind, result.text = "RESULT", ApiWorker._extract_output_text(data)
+        return result
+
     def _run_c3(self, request_text: str, *, tier: str, verified: bool) -> ControlResult:
         request = self.execute_request(request_text, tier=tier, verified=verified)
         started = time.perf_counter()

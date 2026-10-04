@@ -1,0 +1,13 @@
+{
+  "id": "A-03-review",
+  "task": "A drafted interpretation of the request (pseudocode or a plan), judged on which reading of the request it commits to.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The artifact commits to this reading: Round halves up, as on a receipt: 3 + 4 + 5 = 12.",
+      "required": true
+    }
+  ],
+  "reference": "Other readings, which do not meet c1: Round half to even (banker's rounding, Python's round()): 2 + 4 + 4 = 10.",
+  "notes": "Mark c1 not_met if the artifact commits to another reading, or leaves the choice open."
+}

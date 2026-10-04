@@ -48,11 +48,15 @@ SMOKE_TEXT = "Compute the product of 7 and 8."
 @dataclass(frozen=True)
 class ArmSpec:
     name: str
-    kind: str  # "control", "protocol" or "branched"
+    # "control", "protocol", "branched"; the interaction groups (design §6.6):
+    # "reviewed" (A: the scripted reviewer), "scripted" (M: category 10's script),
+    # "control_followup" (A and M: a plain call, then follow-ups).
+    kind: str
     effort: str | None = None
     worktree: Path | None = None
     args: tuple[str, ...] = ()
     branches: dict[str, tuple[str, ...]] | None = None  # branched: branch name -> extra args (the scoring branch is the arm's name)
+    strata: tuple[str, ...] | None = None  # the strata the arm runs on; None: every stratum but A and M
 
     def units(self, block: Block) -> list[tuple[str, str | None]]:
         if self.kind == "branched":
@@ -66,10 +70,20 @@ def load_config(path: Path) -> dict[str, Any]:
         name: ArmSpec(name, spec["kind"], spec.get("effort"),
                       Path(spec["worktree"]).resolve() if spec.get("worktree") else None,
                       tuple(spec.get("args", ())),
-                      {b: tuple(a) for b, a in spec.get("branches", {}).items()} or None)
+                      {b: tuple(a) for b, a in spec.get("branches", {}).items()} or None,
+                      tuple(spec["strata"]) if spec.get("strata") else None)
         for name, spec in config["arms"].items()
     }
     return config
+
+
+INTERACTION_STRATA = ("A", "M")
+
+
+def arms_for(config, stratum: str) -> list[str]:
+    """The arms an item of this stratum runs."""
+    return [name for name, spec in config["arms"].items()
+            if (stratum in spec.strata if spec.strata else stratum not in INTERACTION_STRATA)]
 
 
 def gate_items(strata: list[str]) -> list[dict[str, Any]]:
@@ -143,11 +157,12 @@ def score_protocol(item: grading.Item, run: dict[str, Any], result_dir: Path) ->
 # --------------------------------------------------------------------------- running units
 
 def run_cli(spec: ArmSpec, model: dict[str, Any], out: Path, *, prompt_file: Path | None, restore: Path | None,
-            stdin: str, extra_args: tuple[str, ...], timeout: float) -> dict[str, Any]:
+            stdin: str, extra_args: tuple[str, ...], timeout: float, exit_on_close: bool = True) -> dict[str, Any]:
     out.mkdir(parents=True, exist_ok=True)
     session_dir = out / "session"
     session_dir.mkdir(exist_ok=True)
-    cmd = [sys.executable, "-m", "pdl_taskmaster.host.cli", "--non-interactive", "--exit-on-close", "--dev",
+    cmd = [sys.executable, "-m", "pdl_taskmaster.host.cli", "--non-interactive", *(["--exit-on-close"] if exit_on_close else []),
+           "--dev",
            "--new-session", "--session-id", f"gate-{uuid.uuid4().hex[:10]}", "--transcript", str(out / "transcript.txt"),
            "--workspace-root", str(session_dir), "--workdir", str(session_dir),
            "--candidate-repo", str(spec.worktree), "--model", model["model"],
@@ -196,6 +211,86 @@ def run_branched(spec: ArmSpec, model, item, out: Path, prompt_file: Path, branc
     return results
 
 
+# --------------------------------------------------------------------------- interaction groups (design §6.6)
+
+REVIEW_STAGES = {"PROMPT_REVIEW": "10_prompt", "PLAN_REVIEW": "30_plan"}
+MAX_REVIEW_GATES = 6
+
+
+def artifact_under_review(session_dir: Path, stage: str) -> str:
+    """The newest turn's artifact at a review gate (the pseudocode or the plan)."""
+    files = sorted(Path(session_dir).rglob(f"stages/{REVIEW_STAGES[stage]}/output/current.md"),
+                   key=lambda p: p.stat().st_mtime)
+    return files[-1].read_text(encoding="utf-8", errors="replace") if files else ""
+
+
+def _keep_logs(out: Path, step: int) -> None:
+    for name in ("stdout.txt", "stderr.txt", "command.json", "transcript.txt"):
+        path = out / name
+        if path.is_file():
+            path.replace(out / f"{path.stem}.step{step}{path.suffix}")
+
+
+def run_reviewed(spec: ArmSpec, model, out: Path, prompt_file: Path, timeout, item, judge_specs, send) \
+        -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """A: the protocol with the scripted reviewer. The run halts at each review gate
+    (no piped input), the judges read the artifact, and the run resumes from the same
+    workspace with the reviewer's reply."""
+    from experiments import interaction
+
+    log: list[dict[str, Any]] = []
+    run = run_cli(spec, model, out, prompt_file=prompt_file, restore=None, stdin="", extra_args=(), timeout=timeout)
+    revised = False
+    for step in range(1, MAX_REVIEW_GATES + 1):
+        stage = controller_stage(out / "session")
+        if run["exit_code"] != 2 or stage not in REVIEW_STAGES or classify_protocol_failure(run):
+            break
+        reply, verdicts = interaction.review_reply(item, artifact_under_review(out / "session", stage),
+                                                   judge_specs, send, revised=revised)
+        revised = revised or reply.startswith("/revise")
+        log.append({"step": step, "stage": stage, "reply": reply.split(" ", 1)[0],
+                    "verdicts": {k: v.get("verdict") for k, v in verdicts.items()}})
+        _keep_logs(out, step)
+        workspace = next((out / "session").glob("W-*"))
+        run = run_cli(spec, model, out, prompt_file=None, restore=workspace, stdin=reply + "\n", extra_args=(),
+                      timeout=timeout)
+    return run, log
+
+
+def run_scripted(spec: ArmSpec, model, out: Path, prompt_file: Path, timeout, script) -> dict[str, Any]:
+    """M: the protocol with category 10's own piped script."""
+    return run_cli(spec, model, out, prompt_file=prompt_file, restore=None, stdin=script.protocol_stdin,
+                   extra_args=(), timeout=timeout, exit_on_close=script.exit_on_close)
+
+
+def run_control_followup(controls, arm: str, spec: ArmSpec, request: str, *, ambiguity_item=None, script=None,
+                         judge_specs=None, send=None) -> tuple[Any, list[dict[str, Any]]]:
+    """A and M: a plain call, then follow-ups as further turns of the same conversation.
+    M sends every scripted follow-up. A sends the correction only when the judges
+    say the answer took another reading."""
+    from experiments import interaction
+
+    first = controls.run(arm, request, effort=spec.effort)
+    log: list[dict[str, Any]] = [{"turn": 1, "status": first.status}]
+    if first.status != "reply":
+        return first, log
+    if ambiguity_item is not None:
+        needed, verdicts = interaction.needs_followup(ambiguity_item, first.text or "", judge_specs, send)
+        log[0]["verdicts"] = {k: v.get("verdict") for k, v in verdicts.items()}
+        followups = [ambiguity_item.correction] if needed else []
+    else:
+        followups = list(script.followups)
+    exchanges: list[tuple[str, str]] = []
+    result = first
+    for n, message in enumerate(followups, 2):
+        exchanges.append((result.text or "", message))
+        result = controls.run_conversation(arm, interaction.conversation(request, exchanges), effort=spec.effort)
+        log.append({"turn": n, "status": result.status})
+        if result.status != "reply":
+            break
+    return result, log
+
+
 def run_block(config, block: Block, items: dict[str, grading.Item], ledger: Ledger, controls_by_model) -> bool:
     """Run a block's unfinished units. False when an outage voided the block."""
     model = next(m for m in config["models"] if m["name"] == block.model)
@@ -216,6 +311,46 @@ def run_block(config, block: Block, items: dict[str, grading.Item], ledger: Ledg
         spec: ArmSpec = config["arms"][arm]
         units = [u for u in spec.units(block) if u not in done]
         if not units:
+            continue
+        if spec.kind in ("reviewed", "scripted", "control_followup"):
+            from experiments import interaction
+
+            ambiguity = interaction.ambiguity_items().get(block.item_id)
+            script = interaction.MULTI_TURN.get(block.item_id)
+            judge_specs, send = config.get("_inrun_judges"), config.get("_inrun_send")
+            if spec.kind == "control_followup":
+                result, log = run_control_followup(controls_by_model[block.model], arm, spec, item.prompt_text.strip(),
+                                                   ambiguity_item=ambiguity, script=script, judge_specs=judge_specs,
+                                                   send=send)
+                if result.status == "outage":
+                    ledger.void_block(block.block_id, f"{arm}: {result.error}")
+                    return False
+                unit_dir = base / arm
+                unit_dir.mkdir(parents=True, exist_ok=True)
+                (unit_dir / "reply.json").write_text(json.dumps({**result.as_dict(), "text": result.text, "turns": log},
+                                                                indent=2, ensure_ascii=False), encoding="utf-8")
+                usage = result.usage or {}
+                ledger.append({**common, "arm": arm, "branch": None, "status": "done", "control": result.as_dict(),
+                               "turns": log, "grade": {"grade": graders.NA, "reason": "judged group"},
+                               "elapsed_s": result.latency_s,
+                               "cost": {"calls": len(log), "input_tokens": usage.get("input_tokens") or 0,
+                                        "output_tokens": usage.get("output_tokens") or 0},
+                               "scores": {"primary": None}})
+                continue
+            if spec.kind == "reviewed":
+                run, log = run_reviewed(spec, model, base / arm, prompt_file, config["prompt_timeout_s"], ambiguity,
+                                        judge_specs, send)
+            else:
+                run, log = run_scripted(spec, model, base / arm, prompt_file, config["prompt_timeout_s"], script), []
+            if classify_protocol_failure(run) == "outage":
+                ledger.void_block(block.block_id, f"{arm}: outage")
+                return False
+            scored = score_protocol(item, run, base / arm)
+            # Judged after the run (experiments.judge); until then a run that reached its stage is pending.
+            if scored["scores"]["primary"] != 0:
+                scored["scores"]["primary"] = None
+            ledger.append({**common, "arm": arm, "branch": None, "status": "done", "elapsed_s": run["elapsed_s"],
+                           "review_log": log, **scored})
             continue
         if spec.kind == "control":
             controls = controls_by_model[block.model]
@@ -273,12 +408,14 @@ def _schedule(config, smoke: bool) -> tuple[list[Block], dict[str, grading.Item]
         locked = gate_items(config["strata"])
         config["_strata"] = {i["id"]: i["stratum"] for i in locked}
         config["_clusters"] = {i["id"]: f"{i['set']}-{i['family']}" for i in locked if i.get("family")}
-        catalogue = {**grading.catalogue_items(), **grading.generated_items("gate")}
+        catalogue = {**grading.catalogue_items(), **grading.generated_items("gate"), **grading.ambiguity_items()}
         items = {i["id"]: catalogue[i["id"]] for i in locked}
         ids = [i["id"] for i in locked]
     branches = {name: list(spec.branches) for name, spec in config["arms"].items() if spec.kind == "branched"}
+    arms_by_item = {i: arms_for(config, config["_strata"].get(i, "SMOKE")) for i in ids}
     blocks = build_schedule([m["name"] for m in config["models"]], ids, reps=1 if smoke else config["reps"],
-                            arms=list(config["arms"]), branches=branches, seed=config["seed"])
+                            arms=arms_for(config, "T"), branches=branches, seed=config["seed"],
+                            arms_by_item=arms_by_item)
     return blocks, items
 
 
@@ -299,6 +436,13 @@ def cmd_run(config, args) -> int:
     config["out_dir"] = str(out)
     ledger = Ledger(out / "ledger.jsonl")
     blocks, items = _schedule(config, args.smoke)
+    if config.get("inrun_judges"):
+        from experiments import judge
+
+        # The scripted reviewer's and the follow-up decisions are made during the run, by API judges.
+        config["_inrun_judges"] = [judge.JudgeSpec(j["name"], j["model"], list(j.get("providers", [])), j.get("effort"))
+                                   for j in config["inrun_judges"]]
+        config["_inrun_send"] = judge.openrouter_sender(ROOT)
     controls_by_model = {m["name"]: Controls(ROOT, model=m["model"], providers=m["providers"],
                                              sampling=m.get("sampling"),
                                              trace_path=out / m["name"] / "controls-call-trace.jsonl")

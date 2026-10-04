@@ -1,0 +1,18 @@
+{
+  "id": "A-07-answer",
+  "task": "The final answer to the request, judged under the intended reading.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The final answer is ISO week 53 of 2026 (ISO-8601 week numbering: January 1, 2027 (a Friday) is in week 53 of ISO year 2026.)",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "The answer commits to that result (a response offering several results for different readings without choosing does not meet this).",
+      "required": true
+    }
+  ],
+  "reference": "Other readings give: Week 1 of 2027 (counting the week containing January 1 as week 1).",
+  "notes": "Judge the final stated result, not the working."
+}

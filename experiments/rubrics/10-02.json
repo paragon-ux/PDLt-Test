@@ -1,0 +1,23 @@
+{
+  "id": "10-02",
+  "task": "The final deliverable after the conversation's revisions (the last turn's answer), judged against the request as revised. Request: extract all links from a given HTML page; revised to use only the standard library's html.parser (no requests, no BeautifulSoup).",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Extracts the href of every <a> tag in the page (all links, in document order or as a list/set).",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Parses with the standard library's html.parser (an HTMLParser subclass or equivalent), and neither imports nor uses requests or BeautifulSoup.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Gets the page with the standard library (for example urllib.request) when it fetches one, or accepts HTML text.",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": "Judge only the final answer. Earlier turns are context: a requirement added by a revision must be present in the final answer."
+}

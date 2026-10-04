@@ -108,6 +108,13 @@ def generated_items(name: str) -> dict[str, Item]:
     return items
 
 
+def ambiguity_items() -> dict[str, Item]:
+    """The ambiguity group A (design §6.6): judged after the run, never machine-graded."""
+    from experiments import interaction
+
+    return {i.id: Item(i.id, "ambiguity", i.request, None) for i in interaction.ambiguity_items().values()}
+
+
 def all_items() -> dict[str, Item]:
     return {**catalogue_items(), **generated_items("gate"), **generated_items("dev")}
 

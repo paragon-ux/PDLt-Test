@@ -1,0 +1,10 @@
+{
+  "id": "A-07",
+  "intended": "ISO-8601 week numbering: January 1, 2027 (a Friday) is in week 53 of ISO year 2026.",
+  "others": [
+    "Week 1 of 2027 (counting the week containing January 1 as week 1)."
+  ],
+  "answer": "ISO week 53 of 2026",
+  "correction": "Use ISO-8601 week numbering.",
+  "file": "A-07.txt"
+}

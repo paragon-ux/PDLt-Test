@@ -1,0 +1,5428 @@
+[
+  {
+    "run": "run-20261002-012111",
+    "model": "openai/gpt-oss-120b",
+    "effort": "harness-default",
+    "prompts": 105,
+    "decided": 47,
+    "passed": 20,
+    "decided_pass_rate": 0.4255,
+    "pending": 3,
+    "changed": [
+      {
+        "id": "02-01",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-02",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-03",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-04",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-05",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-06",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-07",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-02",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-03",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-05",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-06",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-01",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-02",
+        "category": "parsers_and_compilers",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-03",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: matches: test_prompt_examples: AssertionError: '[0-9]+' on '123': got False, expected True, test_each_operator: AssertionError: 'a.c' on 'ac': got True, expected False, test_random_patterns_against_re: AssertionError: 'c.a|((b|.a).)a*' on 'a': got True, expected False; matches(text, pa",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-05",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-06",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: Compiler.compile -> VM.run: test_prompt_example: RuntimeError: Unknown stmt l, test_more_programs: RuntimeError: Unknown stmt l, test_bytecode_uses_the_instruction_set: RuntimeError: Unknown stmt l; lexer: test_prompt_example: AssertionError: 'let x = 3 + 4 * 2; let y = x - 1; print y'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-07",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: matches/next_fire: test_prompt_examples: AssertionError: , test_field_syntax: AssertionError: , test_random_against_reference: AssertionError: ('40 12,16,23 * * 1-5/2', datetime.datetime(2026, 7, 16, 4, 39, 31), datetime.datetime(2026, 7, 16, 12, 40))",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-01",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-02",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: kahn_topological_sort: test_square_with_interior_points: TypeError: list indices must be integers or slices, not tuple, test_collinear_edge_points_included: TypeError: list indices must be integers or slices, not tuple, test_random_points: TypeError: list indices must be integers or sl",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-03",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: LCS: test_prompt_example: TypeError: 'int' object is not iterable, test_positions: TypeError: 'int' object is not iterable, test_merges_all_and_empty: TypeError: 'int' object is not iterable",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-04",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-05",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-06",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: find_median_sorted_arrays: test_prompt_example: ValueError: could not convert string to float: 'A', test_overlapping_and_edge_matches: ValueError: could not convert string to float: 'A', test_random_against_naive: TypeError: unsupported operand type(s) for /: 'str' and 'float'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-07",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: build_failure_function: test_dag_ordering: AssertionError: [0, 0, 0, 0, 0, 0, 0, 0], test_reports_an_actual_cycle: AssertionError: no valid cycle in [0, 0, 0, 0, 0, 0, 0, 0], test_more_cycles: AssertionError: ({0: [1], 1: [0], 2: [0]}, '[0, 0, 0]')",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-01",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-02",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-03",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: process_batch/EventEmitter: test_results_are_correct: AssertionError: 0, test_no_growth_over_many_calls: timed out after 40s",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-06",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: serialize_iterative: test_small_trees_match_the_original_format: AssertionError: ",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-07",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      }
+    ],
+    "rows": [
+      {
+        "id": "01-01",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_CANCELLED",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no exact partition into valid triples among 0 valid triples presented",
+        "grader": "machine"
+      },
+      {
+        "id": "01-02",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "all 3 exact covers presented",
+        "grader": "machine"
+      },
+      {
+        "id": "01-03",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no proper 4-coloring among 0 candidate colorings",
+        "grader": "machine"
+      },
+      {
+        "id": "01-04",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "0 of 19 solution subsets presented",
+        "grader": "machine"
+      },
+      {
+        "id": "01-05",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid completion respecting all givens",
+        "grader": "machine"
+      },
+      {
+        "id": "01-06",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid 4-bin packing presented and First Fit stated as 5 bins",
+        "grader": "machine"
+      },
+      {
+        "id": "01-07",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid Hamiltonian path over the stated edges",
+        "grader": "machine"
+      },
+      {
+        "id": "02-01",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-02",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-03",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-04",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-05",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-06",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-07",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-01",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "03-02",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-03",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-04",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "03-05",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-06",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-07",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "04-01",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-02",
+        "category": "parsers_and_compilers",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-03",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: matches: test_prompt_examples: AssertionError: '[0-9]+' on '123': got False, expected True, test_each_operator: AssertionError: 'a.c' on 'ac': got True, expected False, test_random_patterns_against_re: AssertionError: 'c.a|((b|.a).)a*' on 'a': got True, expected False; matches(text, pa",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-04",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "04-05",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-06",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: Compiler.compile -> VM.run: test_prompt_example: RuntimeError: Unknown stmt l, test_more_programs: RuntimeError: Unknown stmt l, test_bytecode_uses_the_instruction_set: RuntimeError: Unknown stmt l; lexer: test_prompt_example: AssertionError: 'let x = 3 + 4 * 2; let y = x - 1; print y'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-07",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: matches/next_fire: test_prompt_examples: AssertionError: , test_field_syntax: AssertionError: , test_random_against_reference: AssertionError: ('40 12,16,23 * * 1-5/2', datetime.datetime(2026, 7, 16, 4, 39, 31), datetime.datetime(2026, 7, 16, 12, 40))",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-01",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-02",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: kahn_topological_sort: test_square_with_interior_points: TypeError: list indices must be integers or slices, not tuple, test_collinear_edge_points_included: TypeError: list indices must be integers or slices, not tuple, test_random_points: TypeError: list indices must be integers or sl",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-03",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: LCS: test_prompt_example: TypeError: 'int' object is not iterable, test_positions: TypeError: 'int' object is not iterable, test_merges_all_and_empty: TypeError: 'int' object is not iterable",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-04",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-05",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-06",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: find_median_sorted_arrays: test_prompt_example: ValueError: could not convert string to float: 'A', test_overlapping_and_edge_matches: ValueError: could not convert string to float: 'A', test_random_against_naive: TypeError: unsupported operand type(s) for /: 'str' and 'float'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-07",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: build_failure_function: test_dag_ordering: AssertionError: [0, 0, 0, 0, 0, 0, 0, 0], test_reports_an_actual_cycle: AssertionError: no valid cycle in [0, 0, 0, 0, 0, 0, 0, 0], test_more_cycles: AssertionError: ({0: [1], 1: [0], 2: [0]}, '[0, 0, 0]')",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-01",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-02",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-03",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: process_batch/EventEmitter: test_results_are_correct: AssertionError: 0, test_no_growth_over_many_calls: timed out after 40s",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-04",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "06-05",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "06-06",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: serialize_iterative: test_small_trees_match_the_original_format: AssertionError: ",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-07",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "07-01",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-02",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-03",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-04",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-05",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-06",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-07",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-01",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-02",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-03",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-04",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-05",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-06",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-07",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-01",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-02",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-03",
+        "category": "adversarial_and_injection",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-04",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-05",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-06",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-07",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-01",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-02",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-03",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-04",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-05",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-06",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-07",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-01",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-02",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-03",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-04",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-05",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-06",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-07",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-01",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-02",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-03",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-04",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-05",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-06",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-07",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "13-01",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "does not report unsatisfiability",
+        "grader": "machine"
+      },
+      {
+        "id": "13-02",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "refused as infeasible to compute or certify within the environment's budget",
+        "grader": "machine"
+      },
+      {
+        "id": "13-03",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "declined instead of fabricating the API",
+        "grader": "machine"
+      },
+      {
+        "id": "13-04",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "states the comparison-sort lower bound makes the request impossible",
+        "grader": "machine"
+      },
+      {
+        "id": "13-05",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "boundary refusal",
+        "grader": "machine"
+      },
+      {
+        "id": "13-06",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "optimizes against a guessed schema ('FROM your_table_name')",
+        "grader": "machine"
+      },
+      {
+        "id": "13-07",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "acknowledges the knowledge limitation",
+        "grader": "machine"
+      },
+      {
+        "id": "14-01",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "proof omits: initialization, maintenance, termination",
+        "grader": "machine"
+      },
+      {
+        "id": "14-02",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "MANUAL",
+        "new_grade": "MANUAL",
+        "reason": "progress proof has every required part; validity needs a human check",
+        "grader": "machine"
+      },
+      {
+        "id": "14-03",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "deadlock-free under the assumptions, blocks under message loss, timeout mitigation",
+        "grader": "machine"
+      },
+      {
+        "id": "14-04",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "MANUAL",
+        "new_grade": "MANUAL",
+        "reason": "merge sort proof has every required part; validity needs a human check",
+        "grader": "machine"
+      },
+      {
+        "id": "14-05",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "charges 3 per push and shows the balance never goes negative",
+        "grader": "machine"
+      },
+      {
+        "id": "14-06",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "MANUAL",
+        "new_grade": "MANUAL",
+        "reason": "invariant proof has every required part; validity needs a human check",
+        "grader": "machine"
+      },
+      {
+        "id": "14-07",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "acknowledges that termination is an open problem",
+        "grader": "machine"
+      },
+      {
+        "id": "15-01",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-02",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-03",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-04",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-05",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-06",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-07",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      }
+    ]
+  },
+  {
+    "run": "run-20261001-151739",
+    "model": "openai/gpt-oss-120b",
+    "effort": "high",
+    "prompts": 105,
+    "decided": 50,
+    "passed": 13,
+    "decided_pass_rate": 0.26,
+    "pending": 0,
+    "changed": [
+      {
+        "id": "02-01",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-02",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-03",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-04",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-05",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-06",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-07",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-02",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: WriteAheadLog: test_append_returns_sequence_numbers_and_recover_reads_back: AssertionError: , test_frame_layout_on_disk: AssertionError: (773, 768), test_truncated_tail_is_dropped: AssertionError: cut at 4063 of 4064",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-03",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-05",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-06",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-01",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-02",
+        "category": "parsers_and_compilers",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-03",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-05",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: MarkdownConverter.convert: test_inline_formatting: AssertionError: '`*not italic*` stays'\n got:      '<p><code>&lt;em&gt;not italic&lt;/em&gt;</code> stays</p>'\n expected: '<p><code>*not italic*</code> stays</p>', test_links: AssertionError: '[q](http://x.com/a_b_c?q=1&r=2)'\n got:     ",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-06",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: compile_source -> VM.run: test_prompt_example: SyntaxError: Expected SEMICOLON, got EOF, test_more_programs: SyntaxError: Expected SEMICOLON, got EOF, test_bytecode_uses_the_instruction_set: SyntaxError: Expected SEMICOLON, got EOF; compile_source -> execute_bytecode: test_prompt_examp",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-07",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: matches/next_fire: test_prompt_examples: AssertionError: , test_random_against_reference: AssertionError: ('23 0,15,19 * * *', datetime.datetime(2026, 12, 9, 10, 27, 35), datetime.datetime(2026, 12, 9, 15, 23, 35))",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-01",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-02",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: kahn_topological_sort: test_square_with_interior_points: AttributeError: 'list' object has no attribute 'items', test_collinear_edge_points_included: AttributeError: 'list' object has no attribute 'items', test_random_points: AttributeError: 'list' object has no attribute 'items'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-03",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: LCS: test_prompt_example: TypeError: 'int' object is not iterable, test_positions: TypeError: 'int' object is not iterable, test_merges_all_and_empty: TypeError: 'int' object is not iterable",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-04",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: manhattan: test_prompt_example: TypeError: unsupported operand type(s) for -: 'str' and 'str', test_edge_cases: TypeError: unsupported operand type(s) for -: 'str' and 'str', test_random_strings: TypeError: unsupported operand type(s) for -: 'str' and 'str'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-05",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-06",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: find_median_sorted_arrays: test_prompt_example: ValueError: could not convert string to float: 'A', test_overlapping_and_edge_matches: ValueError: could not convert string to float: 'A', test_random_against_naive: TypeError: unsupported operand type(s) for /: 'str' and 'float'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-07",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: build_lps: test_dag_ordering: AssertionError: [0, 0, 0, 0, 0, 0, 0, 0], test_reports_an_actual_cycle: AssertionError: no valid cycle in [0, 0, 0, 0, 0, 0, 0, 0], test_more_cycles: AssertionError: ({0: [1], 1: [0], 2: [0]}, '[0, 0, 0]')",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-01",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-02",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-03",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-06",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-07",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      }
+    ],
+    "rows": [
+      {
+        "id": "01-01",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_CANCELLED",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no exact partition into valid triples among 0 valid triples presented",
+        "grader": "machine"
+      },
+      {
+        "id": "01-02",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_CANCELLED",
+        "stage_pass": false,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "all 3 exact covers presented",
+        "grader": "machine"
+      },
+      {
+        "id": "01-03",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid 4-coloring found (3-color impossibility proof not machine-graded)",
+        "grader": "machine"
+      },
+      {
+        "id": "01-04",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "all 19 subsets and the total presented",
+        "grader": "machine"
+      },
+      {
+        "id": "01-05",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid completion respecting all givens",
+        "grader": "machine"
+      },
+      {
+        "id": "01-06",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_CANCELLED",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "optimal packing presented=False, First Fit=5 bins stated=True",
+        "grader": "machine"
+      },
+      {
+        "id": "01-07",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid Hamiltonian path over the stated edges",
+        "grader": "machine"
+      },
+      {
+        "id": "02-01",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-02",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-03",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-04",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-05",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-06",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-07",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-01",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "03-02",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: WriteAheadLog: test_append_returns_sequence_numbers_and_recover_reads_back: AssertionError: , test_frame_layout_on_disk: AssertionError: (773, 768), test_truncated_tail_is_dropped: AssertionError: cut at 4063 of 4064",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-03",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-04",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "03-05",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-06",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-07",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "04-01",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-02",
+        "category": "parsers_and_compilers",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-03",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-04",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "04-05",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: MarkdownConverter.convert: test_inline_formatting: AssertionError: '`*not italic*` stays'\n got:      '<p><code>&lt;em&gt;not italic&lt;/em&gt;</code> stays</p>'\n expected: '<p><code>*not italic*</code> stays</p>', test_links: AssertionError: '[q](http://x.com/a_b_c?q=1&r=2)'\n got:     ",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-06",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: compile_source -> VM.run: test_prompt_example: SyntaxError: Expected SEMICOLON, got EOF, test_more_programs: SyntaxError: Expected SEMICOLON, got EOF, test_bytecode_uses_the_instruction_set: SyntaxError: Expected SEMICOLON, got EOF; compile_source -> execute_bytecode: test_prompt_examp",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-07",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: matches/next_fire: test_prompt_examples: AssertionError: , test_random_against_reference: AssertionError: ('23 0,15,19 * * *', datetime.datetime(2026, 12, 9, 10, 27, 35), datetime.datetime(2026, 12, 9, 15, 23, 35))",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-01",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-02",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: kahn_topological_sort: test_square_with_interior_points: AttributeError: 'list' object has no attribute 'items', test_collinear_edge_points_included: AttributeError: 'list' object has no attribute 'items', test_random_points: AttributeError: 'list' object has no attribute 'items'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-03",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: LCS: test_prompt_example: TypeError: 'int' object is not iterable, test_positions: TypeError: 'int' object is not iterable, test_merges_all_and_empty: TypeError: 'int' object is not iterable",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-04",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: manhattan: test_prompt_example: TypeError: unsupported operand type(s) for -: 'str' and 'str', test_edge_cases: TypeError: unsupported operand type(s) for -: 'str' and 'str', test_random_strings: TypeError: unsupported operand type(s) for -: 'str' and 'str'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-05",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-06",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: find_median_sorted_arrays: test_prompt_example: ValueError: could not convert string to float: 'A', test_overlapping_and_edge_matches: ValueError: could not convert string to float: 'A', test_random_against_naive: TypeError: unsupported operand type(s) for /: 'str' and 'float'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-07",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: build_lps: test_dag_ordering: AssertionError: [0, 0, 0, 0, 0, 0, 0, 0], test_reports_an_actual_cycle: AssertionError: no valid cycle in [0, 0, 0, 0, 0, 0, 0, 0], test_more_cycles: AssertionError: ({0: [1], 1: [0], 2: [0]}, '[0, 0, 0]')",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-01",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-02",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-03",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-04",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "06-05",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "06-06",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-07",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "07-01",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-02",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-03",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-04",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-05",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-06",
+        "category": "refactoring_and_design",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-07",
+        "category": "refactoring_and_design",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-01",
+        "category": "specification_extraction",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-02",
+        "category": "specification_extraction",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-03",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-04",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-05",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-06",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-07",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-01",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-02",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-03",
+        "category": "adversarial_and_injection",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-04",
+        "category": "adversarial_and_injection",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-05",
+        "category": "adversarial_and_injection",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-06",
+        "category": "adversarial_and_injection",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-07",
+        "category": "adversarial_and_injection",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-01",
+        "category": "multi_turn_and_revision",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-02",
+        "category": "multi_turn_and_revision",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-03",
+        "category": "multi_turn_and_revision",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-04",
+        "category": "multi_turn_and_revision",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-05",
+        "category": "multi_turn_and_revision",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-06",
+        "category": "multi_turn_and_revision",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-07",
+        "category": "multi_turn_and_revision",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-01",
+        "category": "cross_domain_composition",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-02",
+        "category": "cross_domain_composition",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-03",
+        "category": "cross_domain_composition",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-04",
+        "category": "cross_domain_composition",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-05",
+        "category": "cross_domain_composition",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-06",
+        "category": "cross_domain_composition",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-07",
+        "category": "cross_domain_composition",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-01",
+        "category": "domain_knowledge",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-02",
+        "category": "domain_knowledge",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-03",
+        "category": "domain_knowledge",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-04",
+        "category": "domain_knowledge",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-05",
+        "category": "domain_knowledge",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-06",
+        "category": "domain_knowledge",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-07",
+        "category": "domain_knowledge",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "13-01",
+        "category": "negative_and_impossible",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "13-02",
+        "category": "negative_and_impossible",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "13-03",
+        "category": "negative_and_impossible",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "13-04",
+        "category": "negative_and_impossible",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "13-05",
+        "category": "negative_and_impossible",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "13-06",
+        "category": "negative_and_impossible",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "13-07",
+        "category": "negative_and_impossible",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "14-01",
+        "category": "formal_verification",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "14-02",
+        "category": "formal_verification",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "14-03",
+        "category": "formal_verification",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "14-04",
+        "category": "formal_verification",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "14-05",
+        "category": "formal_verification",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "14-06",
+        "category": "formal_verification",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "14-07",
+        "category": "formal_verification",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no published deliverable",
+        "grader": "machine"
+      },
+      {
+        "id": "15-01",
+        "category": "performance_and_scale",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-02",
+        "category": "performance_and_scale",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-03",
+        "category": "performance_and_scale",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-04",
+        "category": "performance_and_scale",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-05",
+        "category": "performance_and_scale",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-06",
+        "category": "performance_and_scale",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-07",
+        "category": "performance_and_scale",
+        "verdict": "HARNESS_ERROR",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      }
+    ]
+  },
+  {
+    "run": "run-20261001-145558",
+    "model": "openai/gpt-oss-120b",
+    "effort": "low",
+    "prompts": 105,
+    "decided": 47,
+    "passed": 20,
+    "decided_pass_rate": 0.4255,
+    "pending": 3,
+    "changed": [
+      {
+        "id": "02-01",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-02",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-03",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-04",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-05",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-06",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-07",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-02",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-03",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-05",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-06",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-01",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: evaluate: test_prompt_examples: CalcError: Unexpected character: (, test_precedence_and_associativity: CalcError: Unexpected character: (, test_random_expressions: CalcError: Unexpected character: (; Parser.parse: test_prompt_examples: AttributeError: 'str' object has no attribute 'pee",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-02",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: parse: test_events_for_a_mixed_document: AssertionError: ValueError: Unexpected character , at position 51; ValueError: Unexpected character , at position 51, test_deep_nesting: AssertionError: , test_thousand_element_array_streams: AssertionError: ValueError: Unexpected character , at",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-03",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: the hidden tests did not complete (step budget exceeded)",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-05",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-06",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: execute_source: test_prompt_example: SyntaxError: Unexpected token IDENT, test_more_programs: SyntaxError: Unexpected token IDENT; compile_ast: test_prompt_example: ValueError: Unknown statement l, test_more_programs: ValueError: Unknown statement l; lex: test_prompt_example: Assertion",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-07",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: matches/next_fire: test_prompt_examples: AssertionError: , test_field_syntax: AssertionError: , test_random_against_reference: AssertionError: ('40 12,16,23 * * 1-5/2', datetime.datetime(2026, 7, 16, 4, 39, 31), datetime.datetime(2026, 7, 16, 12, 40)); CronExpression.matches/next: test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-01",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-02",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: kahn_topological_sort: test_square_with_interior_points: TypeError: list indices must be integers or slices, not tuple, test_collinear_edge_points_included: TypeError: list indices must be integers or slices, not tuple, test_random_points: TypeError: list indices must be integers or sl",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-03",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: lcs: test_prompt_example: TypeError: 'int' object is not iterable, test_positions: TypeError: 'int' object is not iterable, test_merges_all_and_empty: TypeError: 'int' object is not iterable",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-04",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: heuristic: test_prompt_example: TypeError: unsupported operand type(s) for -: 'str' and 'str', test_edge_cases: TypeError: unsupported operand type(s) for -: 'str' and 'str', test_random_strings: TypeError: unsupported operand type(s) for -: 'str' and 'str'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-05",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-06",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: find_median_sorted_arrays: test_prompt_example: TypeError: can't multiply sequence by non-int of type 'float', test_overlapping_and_edge_matches: TypeError: can't multiply sequence by non-int of type 'float', test_random_against_naive: TypeError: unsupported operand type(s) for /: 'str",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-07",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: build_failure_function: test_dag_ordering: AssertionError: [0, 0, 0, 0, 0, 0, 0, 0], test_reports_an_actual_cycle: AssertionError: no valid cycle in [0, 0, 0, 0, 0, 0, 0, 0], test_more_cycles: AssertionError: ({0: [1], 1: [0], 2: [0]}, '[0, 0, 0]')",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-01",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: the hidden tests did not complete (step budget exceeded)",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-02",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-03",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-06",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-07",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      }
+    ],
+    "rows": [
+      {
+        "id": "01-01",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_CANCELLED",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no exact partition into valid triples among 0 valid triples presented",
+        "grader": "machine"
+      },
+      {
+        "id": "01-02",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "all 3 exact covers presented",
+        "grader": "machine"
+      },
+      {
+        "id": "01-03",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_CANCELLED",
+        "stage_pass": false,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid 4-coloring found (3-color impossibility proof not machine-graded)",
+        "grader": "machine"
+      },
+      {
+        "id": "01-04",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "all 19 subsets and the total presented",
+        "grader": "machine"
+      },
+      {
+        "id": "01-05",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid completion respecting all givens",
+        "grader": "machine"
+      },
+      {
+        "id": "01-06",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid 4-bin packing presented and First Fit stated as 5 bins",
+        "grader": "machine"
+      },
+      {
+        "id": "01-07",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid Hamiltonian path over the stated edges",
+        "grader": "machine"
+      },
+      {
+        "id": "02-01",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-02",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-03",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-04",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-05",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-06",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-07",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-01",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "03-02",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-03",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-04",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "03-05",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-06",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-07",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "04-01",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: evaluate: test_prompt_examples: CalcError: Unexpected character: (, test_precedence_and_associativity: CalcError: Unexpected character: (, test_random_expressions: CalcError: Unexpected character: (; Parser.parse: test_prompt_examples: AttributeError: 'str' object has no attribute 'pee",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-02",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: parse: test_events_for_a_mixed_document: AssertionError: ValueError: Unexpected character , at position 51; ValueError: Unexpected character , at position 51, test_deep_nesting: AssertionError: , test_thousand_element_array_streams: AssertionError: ValueError: Unexpected character , at",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-03",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: the hidden tests did not complete (step budget exceeded)",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-04",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "04-05",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-06",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: execute_source: test_prompt_example: SyntaxError: Unexpected token IDENT, test_more_programs: SyntaxError: Unexpected token IDENT; compile_ast: test_prompt_example: ValueError: Unknown statement l, test_more_programs: ValueError: Unknown statement l; lex: test_prompt_example: Assertion",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-07",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: matches/next_fire: test_prompt_examples: AssertionError: , test_field_syntax: AssertionError: , test_random_against_reference: AssertionError: ('40 12,16,23 * * 1-5/2', datetime.datetime(2026, 7, 16, 4, 39, 31), datetime.datetime(2026, 7, 16, 12, 40)); CronExpression.matches/next: test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-01",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-02",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: kahn_topological_sort: test_square_with_interior_points: TypeError: list indices must be integers or slices, not tuple, test_collinear_edge_points_included: TypeError: list indices must be integers or slices, not tuple, test_random_points: TypeError: list indices must be integers or sl",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-03",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: lcs: test_prompt_example: TypeError: 'int' object is not iterable, test_positions: TypeError: 'int' object is not iterable, test_merges_all_and_empty: TypeError: 'int' object is not iterable",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-04",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: heuristic: test_prompt_example: TypeError: unsupported operand type(s) for -: 'str' and 'str', test_edge_cases: TypeError: unsupported operand type(s) for -: 'str' and 'str', test_random_strings: TypeError: unsupported operand type(s) for -: 'str' and 'str'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-05",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-06",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: find_median_sorted_arrays: test_prompt_example: TypeError: can't multiply sequence by non-int of type 'float', test_overlapping_and_edge_matches: TypeError: can't multiply sequence by non-int of type 'float', test_random_against_naive: TypeError: unsupported operand type(s) for /: 'str",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-07",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: build_failure_function: test_dag_ordering: AssertionError: [0, 0, 0, 0, 0, 0, 0, 0], test_reports_an_actual_cycle: AssertionError: no valid cycle in [0, 0, 0, 0, 0, 0, 0, 0], test_more_cycles: AssertionError: ({0: [1], 1: [0], 2: [0]}, '[0, 0, 0]')",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-01",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: the hidden tests did not complete (step budget exceeded)",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-02",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-03",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-04",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "06-05",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "06-06",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-07",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "07-01",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-02",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-03",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-04",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-05",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-06",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-07",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-01",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-02",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-03",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-04",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-05",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-06",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-07",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-01",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-02",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-03",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-04",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-05",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-06",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-07",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-01",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-02",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-03",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-04",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-05",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-06",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-07",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-01",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-02",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-03",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-04",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-05",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-06",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-07",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-01",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-02",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-03",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-04",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-05",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-06",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-07",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "13-01",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "does not report unsatisfiability",
+        "grader": "machine"
+      },
+      {
+        "id": "13-02",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "refused as infeasible to compute or certify within the environment's budget",
+        "grader": "machine"
+      },
+      {
+        "id": "13-03",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "declined instead of fabricating the API",
+        "grader": "machine"
+      },
+      {
+        "id": "13-04",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "states the comparison-sort lower bound makes the request impossible",
+        "grader": "machine"
+      },
+      {
+        "id": "13-05",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "boundary refusal",
+        "grader": "machine"
+      },
+      {
+        "id": "13-06",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "optimizes against a guessed schema ('FROM your_table')",
+        "grader": "machine"
+      },
+      {
+        "id": "13-07",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "acknowledges the knowledge limitation",
+        "grader": "machine"
+      },
+      {
+        "id": "14-01",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "states total == sum(arr[:i]) with initialization, maintenance, termination and asserts",
+        "grader": "machine"
+      },
+      {
+        "id": "14-02",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "MANUAL",
+        "new_grade": "MANUAL",
+        "reason": "progress proof has every required part; validity needs a human check",
+        "grader": "machine"
+      },
+      {
+        "id": "14-03",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "deadlock-free under the assumptions, blocks under message loss, timeout mitigation",
+        "grader": "machine"
+      },
+      {
+        "id": "14-04",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "MANUAL",
+        "new_grade": "MANUAL",
+        "reason": "merge sort proof has every required part; validity needs a human check",
+        "grader": "machine"
+      },
+      {
+        "id": "14-05",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "charges 3 per push and shows the balance never goes negative",
+        "grader": "machine"
+      },
+      {
+        "id": "14-06",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "MANUAL",
+        "new_grade": "MANUAL",
+        "reason": "invariant proof has every required part; validity needs a human check",
+        "grader": "machine"
+      },
+      {
+        "id": "14-07",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "claims a termination proof for an open problem",
+        "grader": "machine"
+      },
+      {
+        "id": "15-01",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-02",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-03",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-04",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-05",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-06",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-07",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      }
+    ]
+  },
+  {
+    "run": "run-20260930-171129",
+    "model": "openai/gpt-oss-120b",
+    "effort": "low",
+    "prompts": 105,
+    "decided": 47,
+    "passed": 24,
+    "decided_pass_rate": 0.5106,
+    "pending": 3,
+    "changed": [
+      {
+        "id": "02-01",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-02",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-03",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-04",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-05",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-06",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-07",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-02",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-03",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: FixedBlockMemoryPool: test_holds_a_fixed_byte_buffer: TypeError: vars() argument must have __dict__ attribute",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-05",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-06",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-01",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-02",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-03",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: matches: test_prompt_examples: AttributeError: 'str' object has no attribute 'start', test_each_operator: AttributeError: 'str' object has no attribute 'start', test_random_patterns_against_re: AttributeError: 'str' object has no attribute 'start'; matches(text, pattern): test_prompt_e",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-05",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: parse: test_headers: AssertionError: '# Title'\n got:      '<h1></h1>\\n<p>T i t l e</p>'\n expected: '<h1>Title</h1>', test_inline_formatting: AssertionError: '**bold** and __also bold__'\n got:      '<p><em> </em> b o l d <em> </em></p>\\n<p>a n d</p>\\n<p><em> </em> a l s o</p>\\n<p>b o l ",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-06",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: compile_source -> VM.run: test_prompt_example: SyntaxError: Unexpected token Token(ID, let), test_more_programs: SyntaxError: Unexpected token Token(ID, let), test_bytecode_uses_the_instruction_set: SyntaxError: Unexpected token Token(ID, let); compile_source: test_prompt_example: Synt",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-07",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: matches/next_fire: test_prompt_examples: AssertionError: , test_field_syntax: AssertionError: , test_random_against_reference: AssertionError: ('40 12,16,23 * * 1-5/2', datetime.datetime(2026, 7, 16, 4, 39, 31), datetime.datetime(2026, 7, 16, 12, 40))",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-01",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-02",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: kahn_topological_sort: test_square_with_interior_points: AttributeError: 'list' object has no attribute 'items', test_collinear_edge_points_included: AttributeError: 'list' object has no attribute 'items', test_random_points: AttributeError: 'list' object has no attribute 'items'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-03",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: lcs: test_prompt_example: TypeError: 'int' object is not iterable, test_positions: TypeError: 'int' object is not iterable, test_merges_all_and_empty: TypeError: 'int' object is not iterable",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-04",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: heuristic: test_prompt_example: TypeError: unsupported operand type(s) for -: 'str' and 'str', test_edge_cases: TypeError: unsupported operand type(s) for -: 'str' and 'str', test_random_strings: TypeError: unsupported operand type(s) for -: 'str' and 'str'; neighbors: test_prompt_exam",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-05",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-06",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: find_median: test_prompt_example: AssertionError: , test_overlapping_and_edge_matches: AssertionError: , test_random_against_naive: TypeError: unsupported operand type(s) for /: 'str' and 'float'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-07",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: build_failure_function: test_dag_ordering: AssertionError: [0, 0, 0, 0, 0, 0, 0, 0], test_reports_an_actual_cycle: AssertionError: no valid cycle in [0, 0, 0, 0, 0, 0, 0, 0], test_more_cycles: AssertionError: ({0: [1], 1: [0], 2: [0]}, '[0, 0, 0]')",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-01",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-02",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-03",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-06",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: serialize_iterative: test_small_trees_match_the_original_format: AssertionError: , test_deep_chain: AssertionError: ('100000(99999(99998(99997(99996(99995(999', '(16(15(14(13(12(11(10(9(8(7(6(5(4(3(2(1('); serialize: test_small_trees_match_the_original_format: AssertionError: , test_de",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-07",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "14-03",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "FAIL",
+        "new_grade": "PASS",
+        "reason": "deadlock-free under the assumptions, blocks under message loss, timeout mitigation",
+        "grader": "machine"
+      }
+    ],
+    "rows": [
+      {
+        "id": "01-01",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_CANCELLED",
+        "stage_pass": false,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "no exact partition into valid triples among 0 valid triples presented",
+        "grader": "machine"
+      },
+      {
+        "id": "01-02",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "all 3 exact covers presented",
+        "grader": "machine"
+      },
+      {
+        "id": "01-03",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid 4-coloring found (3-color impossibility proof not machine-graded)",
+        "grader": "machine"
+      },
+      {
+        "id": "01-04",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "all 19 subsets and the total presented",
+        "grader": "machine"
+      },
+      {
+        "id": "01-05",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid completion respecting all givens",
+        "grader": "machine"
+      },
+      {
+        "id": "01-06",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid 4-bin packing presented and First Fit stated as 5 bins",
+        "grader": "machine"
+      },
+      {
+        "id": "01-07",
+        "category": "combinatorial_search",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "valid Hamiltonian path over the stated edges",
+        "grader": "machine"
+      },
+      {
+        "id": "02-01",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-02",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-03",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-04",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-05",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-06",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "02-07",
+        "category": "data_structures",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-01",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "03-02",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-03",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: FixedBlockMemoryPool: test_holds_a_fixed_byte_buffer: TypeError: vars() argument must have __dict__ attribute",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-04",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "03-05",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-06",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "03-07",
+        "category": "systems_programming",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "04-01",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-02",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-03",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: matches: test_prompt_examples: AttributeError: 'str' object has no attribute 'start', test_each_operator: AttributeError: 'str' object has no attribute 'start', test_random_patterns_against_re: AttributeError: 'str' object has no attribute 'start'; matches(text, pattern): test_prompt_e",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-04",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "04-05",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: parse: test_headers: AssertionError: '# Title'\n got:      '<h1></h1>\\n<p>T i t l e</p>'\n expected: '<h1>Title</h1>', test_inline_formatting: AssertionError: '**bold** and __also bold__'\n got:      '<p><em> </em> b o l d <em> </em></p>\\n<p>a n d</p>\\n<p><em> </em> a l s o</p>\\n<p>b o l ",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-06",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: compile_source -> VM.run: test_prompt_example: SyntaxError: Unexpected token Token(ID, let), test_more_programs: SyntaxError: Unexpected token Token(ID, let), test_bytecode_uses_the_instruction_set: SyntaxError: Unexpected token Token(ID, let); compile_source: test_prompt_example: Synt",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "04-07",
+        "category": "parsers_and_compilers",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: matches/next_fire: test_prompt_examples: AssertionError: , test_field_syntax: AssertionError: , test_random_against_reference: AssertionError: ('40 12,16,23 * * 1-5/2', datetime.datetime(2026, 7, 16, 4, 39, 31), datetime.datetime(2026, 7, 16, 12, 40))",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-01",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-02",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: kahn_topological_sort: test_square_with_interior_points: AttributeError: 'list' object has no attribute 'items', test_collinear_edge_points_included: AttributeError: 'list' object has no attribute 'items', test_random_points: AttributeError: 'list' object has no attribute 'items'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-03",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: lcs: test_prompt_example: TypeError: 'int' object is not iterable, test_positions: TypeError: 'int' object is not iterable, test_merges_all_and_empty: TypeError: 'int' object is not iterable",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-04",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: heuristic: test_prompt_example: TypeError: unsupported operand type(s) for -: 'str' and 'str', test_edge_cases: TypeError: unsupported operand type(s) for -: 'str' and 'str', test_random_strings: TypeError: unsupported operand type(s) for -: 'str' and 'str'; neighbors: test_prompt_exam",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-05",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: no candidate implements the stated operations",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-06",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: find_median: test_prompt_example: AssertionError: , test_overlapping_and_edge_matches: AssertionError: , test_random_against_naive: TypeError: unsupported operand type(s) for /: 'str' and 'float'",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "05-07",
+        "category": "algorithm_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: build_failure_function: test_dag_ordering: AssertionError: [0, 0, 0, 0, 0, 0, 0, 0], test_reports_an_actual_cycle: AssertionError: no valid cycle in [0, 0, 0, 0, 0, 0, 0, 0], test_more_cycles: AssertionError: ({0: [1], 1: [0], 2: [0]}, '[0, 0, 0]')",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-01",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-02",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-03",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-04",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "06-05",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "06-06",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "FAIL",
+        "reason": "hidden tests: serialize_iterative: test_small_trees_match_the_original_format: AssertionError: , test_deep_chain: AssertionError: ('100000(99999(99998(99997(99996(99995(999', '(16(15(14(13(12(11(10(9(8(7(6(5(4(3(2(1('); serialize: test_small_trees_match_the_original_format: AssertionError: , test_de",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "06-07",
+        "category": "debugging_and_repair",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "PASS",
+        "reason": "hidden tests: passed every hidden test",
+        "grader": "hidden_tests"
+      },
+      {
+        "id": "07-01",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-02",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-03",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-04",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-05",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-06",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "07-07",
+        "category": "refactoring_and_design",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-01",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-02",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-03",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-04",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-05",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-06",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "08-07",
+        "category": "specification_extraction",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-01",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-02",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-03",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-04",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-05",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-06",
+        "category": "adversarial_and_injection",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "09-07",
+        "category": "adversarial_and_injection",
+        "verdict": "UNCONFIRMED_GATE",
+        "stage_pass": false,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-01",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-02",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-03",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-04",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-05",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-06",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "10-07",
+        "category": "multi_turn_and_revision",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-01",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-02",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-03",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-04",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-05",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-06",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "11-07",
+        "category": "cross_domain_composition",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-01",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-02",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-03",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-04",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-05",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-06",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "12-07",
+        "category": "domain_knowledge",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "13-01",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "reports that no solution exists",
+        "grader": "machine"
+      },
+      {
+        "id": "13-02",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "refused as infeasible to compute or certify within the environment's budget",
+        "grader": "machine"
+      },
+      {
+        "id": "13-03",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "declined instead of fabricating the API",
+        "grader": "machine"
+      },
+      {
+        "id": "13-04",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "states the comparison-sort lower bound makes the request impossible",
+        "grader": "machine"
+      },
+      {
+        "id": "13-05",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "boundary refusal",
+        "grader": "machine"
+      },
+      {
+        "id": "13-06",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "FAIL",
+        "new_grade": "FAIL",
+        "reason": "optimizes against a guessed schema ('FROM my_table')",
+        "grader": "machine"
+      },
+      {
+        "id": "13-07",
+        "category": "negative_and_impossible",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "acknowledges the knowledge limitation",
+        "grader": "machine"
+      },
+      {
+        "id": "14-01",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "states total == sum(arr[:i]) with initialization, maintenance, termination and asserts",
+        "grader": "machine"
+      },
+      {
+        "id": "14-02",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "MANUAL",
+        "new_grade": "MANUAL",
+        "reason": "progress proof has every required part; validity needs a human check",
+        "grader": "machine"
+      },
+      {
+        "id": "14-03",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "FAIL",
+        "new_grade": "PASS",
+        "reason": "deadlock-free under the assumptions, blocks under message loss, timeout mitigation",
+        "grader": "machine"
+      },
+      {
+        "id": "14-04",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "MANUAL",
+        "new_grade": "MANUAL",
+        "reason": "merge sort proof has every required part; validity needs a human check",
+        "grader": "machine"
+      },
+      {
+        "id": "14-05",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "charges 3 per push and shows the balance never goes negative",
+        "grader": "machine"
+      },
+      {
+        "id": "14-06",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "MANUAL",
+        "new_grade": "MANUAL",
+        "reason": "invariant proof has every required part; validity needs a human check",
+        "grader": "machine"
+      },
+      {
+        "id": "14-07",
+        "category": "formal_verification",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "PASS",
+        "new_grade": "PASS",
+        "reason": "acknowledges that termination is an open problem",
+        "grader": "machine"
+      },
+      {
+        "id": "15-01",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-02",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-03",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-04",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-05",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-06",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      },
+      {
+        "id": "15-07",
+        "category": "performance_and_scale",
+        "verdict": "CLOSED_SUCCESS",
+        "stage_pass": true,
+        "old_grade": "N/A",
+        "new_grade": "N/A",
+        "reason": "no ground truth required",
+        "grader": "none"
+      }
+    ]
+  }
+]

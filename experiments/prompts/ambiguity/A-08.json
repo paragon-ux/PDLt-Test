@@ -1,0 +1,10 @@
+{
+  "id": "A-08",
+  "intended": "The average over all 40 students: (10 x 80 + 30 x 60) / 40 = 65.",
+  "others": [
+    "The average of the two class averages: 70."
+  ],
+  "answer": "65",
+  "correction": "I mean the average over all 40 students.",
+  "file": "A-08.txt"
+}
