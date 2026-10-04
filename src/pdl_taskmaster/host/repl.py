@@ -407,6 +407,7 @@ def _api_run_settings(args) -> dict:
         "max_call_seconds": getattr(args, "api_call_deadline", 300.0),
         "max_repairs": getattr(args, "max_repairs", None),
         "draft_execute": bool(getattr(args, "draft_execute", False)),
+        "tier_d1": bool(getattr(args, "tier_d1", False)),
     }
     providers = [p.strip() for p in (getattr(args, "api_providers", None) or "").split(",") if p.strip()]
     if providers:
@@ -943,6 +944,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--draft-execute",
         action="store_true",
         help="draft an execution brief (DRAFT_EXECUTE) before EXECUTE; one extra call per execution (A/B option)",
+    )
+    parser.add_argument(
+        "--tier-d1",
+        action="store_true",
+        help="enable Tier D1: feed sandbox execution failures back as repair findings in standard mode",
     )
     parser.add_argument(
         "--api-providers",

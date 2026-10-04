@@ -325,6 +325,8 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
             setting_args += [flag, str(settings[key])]
     if settings.get("draft_execute"):
         setting_args.append("--draft-execute")
+    if settings.get("tier_d1"):
+        setting_args.append("--tier-d1")
     if settings.get("sandbox"):
         setting_args += ["--sandbox", settings["sandbox"]]
     if settings.get("route") == "unconfirmed":
@@ -839,6 +841,8 @@ def main():
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
     parser.add_argument("--draft-execute", action="store_true",
                         help="run DRAFT_EXECUTE before EXECUTE (A/B option)")
+    parser.add_argument("--tier-d1", action="store_true",
+                        help="enable Tier D1 in standard execution (feed sandbox failures back as repairs)")
     parser.add_argument("--sandbox", choices=["auto", "native", "container", "audit-only"], default=None,
                         help="confinement for model-authored programs, in the harness and the graders (default: "
                              "$PDLT_SANDBOX, else auto = native); audit-only opts out of OS-native confinement")
@@ -866,8 +870,8 @@ def main():
         parser.error("--repeat must be at least 1")
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
-                    "providers": args.providers, "draft_execute": args.draft_execute, "sandbox": args.sandbox,
-                    "route": args.route}
+                    "providers": args.providers, "draft_execute": args.draft_execute, "tier_d1": args.tier_d1,
+                    "sandbox": args.sandbox, "route": args.route}
     if args.sandbox:
         # The graders run deliverable code in this process: the same confinement.
         os.environ["PDLT_SANDBOX"] = args.sandbox
@@ -903,6 +907,8 @@ def main():
     route_tag = args.route
     if args.draft_execute:
         route_tag += "-draft-execute"
+    if args.tier_d1:
+        route_tag += "-tier-d1"
     run_id = f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{route_tag}"
     run_dir = RUNS_DIR / run_id
     (run_dir / "results").mkdir(parents=True)

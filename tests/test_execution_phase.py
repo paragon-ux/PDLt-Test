@@ -108,6 +108,69 @@ def test_standard_execution_runs_code_as_telemetry_only(tmp_path):
     assert run["payload"]["exit_code"] == 3
 
 
+def test_tier_d1_standard_execution_triggers_repair_on_program_failure(tmp_path):
+    """Tier D1 (advantage mechanism): standard execution feeds genuine program failures
+    back as repair findings with operator correction, allowing the model to fix bugs."""
+    body_broken = "```python\nraise ValueError('something broken')\n```"
+    body_fixed = "```python\nprint('fixed')\n```"
+    calls = []
+
+    def model_call(req):
+        calls.append(req)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({"kind": "ANALYSIS", "task_summary": "Task", "approach_notes": "", "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
+        if req.operation == "DRAFT_PLAN":
+            return json.dumps({"neutral_plan_body": PLAN})
+        if req.operation == "EXECUTE":
+            exec_count = len([c for c in calls if c.operation == "EXECUTE"])
+            if exec_count == 1:
+                return json.dumps({"kind": "RESULT", "body": body_broken})
+            assert "PROGRAM_FAILED" in req.prompt
+            assert "ValueError: something broken" in req.prompt
+            return json.dumps({"kind": "RESULT", "body": body_fixed})
+        raise AssertionError(f"unexpected operation {req.operation}")
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path,
+                           sys1_client=ClassifyingSys1("STANDARD_EXECUTION"))
+    engine.tier_d1 = True
+    engine.handle_user_message("$confirm-with-pseudocode Solve task")
+    engine.handle_user_message("/confirm")
+    response = engine.handle_user_message("/confirm")
+    assert response.closed is True
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert len([c for c in calls if c.operation == "EXECUTE"]) == 2
+
+
+def test_tier_d1_discards_environment_denial_as_telemetry(tmp_path):
+    """Tier D1: environment denials (e.g. uninstalled package import) are not contract failures."""
+    body_import = "```python\nimport non_existent_package_12345\n```"
+    calls = []
+
+    def model_call(req):
+        calls.append(req)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({"kind": "ANALYSIS", "task_summary": "Task", "approach_notes": "", "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
+        if req.operation == "DRAFT_PLAN":
+            return json.dumps({"neutral_plan_body": PLAN})
+        if req.operation == "EXECUTE":
+            return json.dumps({"kind": "RESULT", "body": body_import})
+        raise AssertionError(f"unexpected operation {req.operation}")
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path,
+                           sys1_client=ClassifyingSys1("STANDARD_EXECUTION"))
+    engine.tier_d1 = True
+    engine.handle_user_message("$confirm-with-pseudocode Solve task")
+    engine.handle_user_message("/confirm")
+    response = engine.handle_user_message("/confirm")
+    assert response.closed is True
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert len([c for c in calls if c.operation == "EXECUTE"]) == 1
+
+
 def test_sandbox_witness_is_authoritative(tmp_path):
     # The program computes its value: a value it only states is not reproduced.
     code = 'import json\nprint("WITNESS: " + json.dumps({"answer": 3 + 4}))'

@@ -32,13 +32,13 @@ ARMS = [
     },
     {
         "name": "confirmed-draft-execute",
-        "label": "Arm 3: Confirmed + DRAFT-EXECUTE (--route confirmed --draft-execute)",
-        "args": ["--route", "confirmed", "--draft-execute"],
+        "label": "Arm 3: Confirmed + DRAFT-EXECUTE (--route confirmed --draft-execute --tier-d1)",
+        "args": ["--route", "confirmed", "--draft-execute", "--tier-d1"],
     },
     {
         "name": "unconfirmed-draft-execute",
-        "label": "Arm 4: Unconfirmed + DRAFT-EXECUTE (--route unconfirmed --draft-execute)",
-        "args": ["--route", "unconfirmed", "--draft-execute"],
+        "label": "Arm 4: Unconfirmed + DRAFT-EXECUTE (--route unconfirmed --draft-execute --tier-d1)",
+        "args": ["--route", "unconfirmed", "--draft-execute", "--tier-d1"],
     },
 ]
 
@@ -69,20 +69,35 @@ def summarize_results():
     runs_dir = ROOT / "catalogue-runs"
     # Find newest run directories for each arm
     arm_runs = {}
-    for arm in ARMS:
-        name = arm["name"]
-        matching = sorted(runs_dir.glob(f"run-*-{name}"), key=lambda p: p.stat().st_mtime, reverse=True)
-        # Filter for runs that tested 16 prompts
-        for m in matching:
-            sb_path = m / "SCOREBOARD.json"
-            if sb_path.exists():
-                try:
-                    data = json.loads(sb_path.read_text(encoding="utf-8"))
-                    if data.get("total_prompts") == 16:
-                        arm_runs[name] = m
-                        break
-                except Exception:
-                    pass
+    for candidate in sorted(runs_dir.glob("run-*"), key=lambda p: p.stat().st_mtime, reverse=True):
+        if not candidate.is_dir():
+            continue
+        sb_path = candidate / "SCOREBOARD.json"
+        if not sb_path.exists():
+            continue
+        try:
+            data = json.loads(sb_path.read_text(encoding="utf-8"))
+            if data.get("total_prompts") != 16:
+                continue
+        except Exception:
+            continue
+
+        cname = candidate.name
+        parts = cname.split("-", 3)
+        tag = parts[3] if len(parts) >= 4 else ""
+        if tag.startswith("unconfirmed-draft-execute"):
+            arm_name = "unconfirmed-draft-execute"
+        elif tag.startswith("confirmed-draft-execute"):
+            arm_name = "confirmed-draft-execute"
+        elif tag.startswith("unconfirmed"):
+            arm_name = "unconfirmed"
+        elif tag.startswith("confirmed"):
+            arm_name = "confirmed"
+        else:
+            continue
+
+        if arm_name not in arm_runs:
+            arm_runs[arm_name] = candidate
 
     # Load results per prompt
     results_map = {}  # arm_name -> pid -> result_dict
@@ -128,17 +143,24 @@ def summarize_results():
 
     print("-" * len(header))
     summary_row = f"{'TOTALS':<6}"
+    adjudicated_row = f"{'ADJUD':<6}"
     for arm in ARMS:
         sb = scoreboards.get(arm["name"])
         if sb:
             rate = sb.get("pass_rate_pct", 0)
+            passed = sb.get("passed", 0)
             elapsed = sb.get("total_elapsed_seconds", 0)
             calls = sb.get("model_calls", {}).get("total", 0)
             summary_row += f" | {rate:.1f}% ({calls}c, {elapsed:.0f}s)"
+            adj_rate = (passed / 16.0) * 100.0
+            adjudicated_row += f" | {adj_rate:.1f}% ({passed}/16)"
         else:
             summary_row += " | N/A"
+            adjudicated_row += " | N/A"
     print(summary_row)
-    print("#" * 90 + "\n")
+    print(adjudicated_row)
+    print("#" * 90)
+    print("*(ADJUD: Adjudicated pass rate across all 16 categories with 16-01 judged against rubric)*\n")
 
 
 def main():

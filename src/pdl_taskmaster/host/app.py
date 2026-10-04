@@ -140,6 +140,7 @@ class PDLtHost:
         engine.bridge.contract_form = getattr(self.worker, "contract_form", None)
         engine.max_repairs = getattr(self.worker, "max_repairs", None)
         engine.draft_execute = bool(getattr(self.worker, "draft_execute", False))
+        engine.tier_d1 = bool(getattr(self.worker, "tier_d1", False))
         if self.observation_dir is not None:
             session_id = f"{self.run_id}-{self.case_id or 'session'}"
             self.sink = JsonlSink(self.observation_dir, session_id)

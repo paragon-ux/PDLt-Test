@@ -397,6 +397,7 @@ class SessionEngine:
         # 0 = stop at the first failed EXECUTE (no repair, no retry of any kind).
         self.max_repairs: int | None = None
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
+        self.tier_d1 = False  # Tier D1 (advantage mechanism): feed back model's own test failures in standard mode
         self._active_task_entities: tuple[str, ...] = ()
         # AUTH-04: the user's original request is source data for execution; the
         # confirmed prompt governs task semantics where the two differ.
@@ -2056,7 +2057,10 @@ class SessionEngine:
                                             memory_mb=budget.memory_limit_bytes // (1024 * 1024)))
                 else:
                     stderr = _stderr_summary(run.stderr)
-                    failures.append(Finding("PROGRAM_FAILED", block=index, exit_code=run.exit_code, stderr=stderr))
+                    finding = Finding("PROGRAM_FAILED", block=index, exit_code=run.exit_code, stderr=stderr)
+                    if getattr(run, "denial", None):
+                        finding.is_environment_denial = True
+                    failures.append(finding)
                 continue
             candidate = _parse_sandbox_witness(run.stdout)
             if candidate is not None:
@@ -2116,8 +2120,17 @@ class SessionEngine:
         sandbox_witness, run_failures = self._run_deliverable_code(body)
         payload_findings = self._payload_token_findings(body)
         if not result_ir_mode:
-            # Standard execution: code runs are telemetry; code that needs an
-            # unavailable capability is not a contract failure.
+            if self.tier_d1:
+                # Tier D1 (advantage mechanism): feed back genuine program failures
+                # (syntax errors, uncaught exceptions, failing self-tests), but discard
+                # environment denials (unavailable capabilities, network, uninstalled imports)
+                # and demonstration step-budget overruns.
+                genuine_failures = [
+                    f for f in run_failures
+                    if not getattr(f, "is_environment_denial", False) and getattr(f, "code", "") == "PROGRAM_FAILED"
+                ]
+                if genuine_failures:
+                    return payload_findings + genuine_failures, body
             return payload_findings, body
 
         errors: list[str] = list(payload_findings)
