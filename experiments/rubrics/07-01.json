@@ -1,0 +1,38 @@
+{
+  "id": "07-01",
+  "task": "A decomposition of the UserManager god class into at least three cohesive classes that preserves every behaviour, with tests.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "At least three classes, each with one clear responsibility (for example persistence of users, password hashing/authentication, sessions, the email queue), with UserManager's state split among them.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Account rules preserved: create_user rejects an existing username, an email without '@' and a password shorter than 8; it hashes sha256(salt + password) with salt = username[:4], stores email, password, salt and active=True, saves, and queues a 'welcome' email.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Login and sessions preserved: login returns None for an unknown user or a wrong password and otherwise a new uuid4 session id with the creation time; logout, get_user and cleanup_sessions(max_age=3600) behave as before.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Deactivation, listing and email preserved: deactivate_user sets active False, saves and queues a 'deactivation' email; list_active_users returns active usernames; send_emails prints each queued email and clears the queue.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Persistence format unchanged: the same JSON file at db_path with the same user record fields, so existing data still loads.",
+      "required": true
+    },
+    {
+      "id": "c6",
+      "text": "Tests exercise the original behaviours after the refactor (creation and its three validation errors, login success and failure, logout, deactivation, session cleanup, the email queue).",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": "Judge behaviour by reading the code: a criterion about preserved behaviour is met only if the refactored code visibly does the same thing (same checks, same values, same side effects) for every original operation."
+}

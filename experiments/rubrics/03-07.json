@@ -1,0 +1,33 @@
+{
+  "id": "03-07",
+  "task": "A process supervisor with restart-on-crash, exponential backoff, crash-loop detection and graceful stop, and its test.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "register(name, cmd) and start_all() launch the registered commands as child processes.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "A child exiting with a non-zero code is restarted after an exponential backoff of 1 s, 2 s, 4 s, ... capped at 30 s; a child exiting with code 0 is not restarted.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "A child that crashes 5 times within 60 seconds is marked failed and no longer restarted (crashes are counted in a 60-second window).",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "stop_all() sends SIGTERM (terminate), waits up to 5 s, then SIGKILL (kill) for children still running.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "The test uses a child script that crashes 3 times then succeeds (keeping its count outside the process, e.g. in a file), and verifies the restarts and the backoff delays (real or scaled time).",
+      "required": true
+    }
+  ],
+  "reference": "Backoff delay for the k-th consecutive crash: min(30, 2**(k-1)) s. Crash-loop: 5 crashes whose timestamps fall in a 60 s window -> failed. Stop: terminate(), wait(5), kill().",
+  "notes": ""
+}

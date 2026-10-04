@@ -1,0 +1,33 @@
+{
+  "id": "07-03",
+  "task": "A composition-based redesign of the animal hierarchy with explicit interfaces, no multiple inheritance, and parity tests.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "No multiple inheritance anywhere, and no FlyingSwimmingAnimal-style combined base class.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Capabilities are separate components with explicit interfaces (typing.Protocol or abc.ABC): at least flying (wingspan), swimming (max_depth) and diving (dive_speed).",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "An animal is composed of an identity (name, weight) plus any set of capabilities; a Duck is built from flying + swimming without a combined base class, and a diving bird adds diving.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Behavioural parity: fly(), swim() and dive() return exactly the original strings ('{name} flies with {wingspan}m wingspan', '{name} swims to {max_depth}m', '{name} dives at {dive_speed}m/s').",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Tests prove parity against the original strings, including a duck and a diving bird.",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": ""
+}

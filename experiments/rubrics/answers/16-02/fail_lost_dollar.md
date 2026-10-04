@@ -1,0 +1,1 @@
+The missing dollar is the rounding loss. Since $5 could not be split evenly among three guests, $1 effectively disappeared when the bellhop kept $2 instead of $1.67 each. The guests paid $27, the bellhop has $2, and the remaining $1 was lost in the uneven division.

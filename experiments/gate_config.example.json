@@ -4,25 +4,80 @@
     "Launch the runner from P_new's worktree: the plain-call arms run in-process under that worktree's code.",
     "P_old: the commit after PR 2 and PR 3. P_new: PR 4b's head. P_unc: PR 5's head (drop the arm if PR 5 is not merged by Day 1; never add it mid-run).",
     "The seed is fixed now; changing it after the lock is a new pre-registration.",
-    "Models: gpt-oss only (2026-10-04: Nemotron dropped from the experiments; about 14 tokens/s). A second model is added only if it passes the criteria fixed in the design (§7, D15), with its reasoning profile set before any run."
+    "Models: gpt-oss only (2026-10-04: Nemotron dropped from the experiments; about 14 tokens/s). A second model is added only if it passes the criteria fixed in the design (§7, D15), with its reasoning profile set before any run.",
+    "Judges (T5): two blinded judges from different labs grade the judged group; calibrate first with python -m experiments.judge calibrate --config <this file>. Slugs checked on OpenRouter /models on 2026-10-04; the user confirms the choice before any judge call."
   ],
   "run_id": "gate",
   "out_dir": "gate-runs/gate",
   "seed": 20261101,
   "reps": 2,
-  "strata": ["T", "G", "S", "I", "Q"],
+  "strata": [
+    "T",
+    "G",
+    "S",
+    "I",
+    "Q"
+  ],
   "prompt_timeout_s": 3600,
   "models": [
-    {"name": "gpt-oss", "model": "openai/gpt-oss-120b", "providers": ["Crusoe"], "sampling": {}}
+    {
+      "name": "gpt-oss",
+      "model": "openai/gpt-oss-120b",
+      "providers": [
+        "Crusoe"
+      ],
+      "sampling": {}
+    }
   ],
   "arms": {
-    "C0": {"kind": "control"},
-    "C1": {"kind": "control", "effort": "medium"},
-    "C2": {"kind": "control", "effort": "medium"},
-    "C3": {"kind": "control"},
-    "P_old": {"kind": "protocol", "worktree": "../worktrees/p-old"},
-    "P_new": {"kind": "branched", "worktree": "../worktrees/p-new",
-              "branches": {"P_new": [], "EXEC_HI": ["--api-reasoning-operation", "EXECUTE=high"], "DE": ["--draft-execute"]}},
-    "P_unc": {"kind": "protocol", "worktree": "../worktrees/p-unc", "args": ["--ultrafast"]}
-  }
+    "C0": {
+      "kind": "control"
+    },
+    "C1": {
+      "kind": "control",
+      "effort": "medium"
+    },
+    "C2": {
+      "kind": "control",
+      "effort": "medium"
+    },
+    "C3": {
+      "kind": "control"
+    },
+    "P_old": {
+      "kind": "protocol",
+      "worktree": "../worktrees/p-old"
+    },
+    "P_new": {
+      "kind": "branched",
+      "worktree": "../worktrees/p-new",
+      "branches": {
+        "P_new": [],
+        "EXEC_HI": [
+          "--api-reasoning-operation",
+          "EXECUTE=high"
+        ],
+        "DE": [
+          "--draft-execute"
+        ]
+      }
+    },
+    "P_unc": {
+      "kind": "protocol",
+      "worktree": "../worktrees/p-unc",
+      "args": [
+        "--no-review"
+      ]
+    }
+  },
+  "judges": [
+    {
+      "name": "claude",
+      "model": "anthropic/claude-sonnet-5.5"
+    },
+    {
+      "name": "gemini",
+      "model": "google/gemini-3.1-pro-preview"
+    }
+  ]
 }

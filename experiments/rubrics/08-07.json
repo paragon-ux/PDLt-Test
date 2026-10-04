@@ -1,0 +1,38 @@
+{
+  "id": "08-07",
+  "task": "Monitoring rules with alerting thresholds for each SLA commitment, with Prometheus-style rules.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "A rule for each of the four quantitative commitments (monthly uptime, read p95, write p95, error rate), each with the metric, the threshold, the measurement window and a rule.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Uptime: 99.9% per month excluding planned maintenance; relates it to an error budget (about 43 minutes per 30-day month) or burn-rate alerting, and excludes maintenance windows from the measurement.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Latency: histogram_quantile(0.95, ...) over a request-duration histogram, separated by read and write (labels or routes), with thresholds 0.2 s and 0.5 s.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Error rate: errors over total requests > 0.001 over a stated window.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "The PromQL is plausible (rate() over counters, sum by le for histograms, valid comparison operators), and alerts have a 'for' duration or an equivalent guard against flapping.",
+      "required": true
+    },
+    {
+      "id": "c6",
+      "text": "The 48-hour maintenance notification is handled as a process check or calendar rule rather than a metric (or noted as not monitorable by metrics).",
+      "required": false
+    }
+  ],
+  "reference": "",
+  "notes": ""
+}

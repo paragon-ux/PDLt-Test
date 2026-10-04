@@ -1,0 +1,33 @@
+{
+  "id": "04-04",
+  "task": "FIRST and FOLLOW sets, the LL(1) parse table, and a parse trace of \"id + id * id\" for the given expression grammar.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "All FIRST sets are correct (see reference); ε appears exactly in FIRST(E') and FIRST(T').",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "All FOLLOW sets are correct (see reference), including $ in FOLLOW(E) and FOLLOW(E').",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "The parse table has exactly the reference's entries: each production in the right cell, ε-productions under FOLLOW symbols, no extra or missing entries, no conflicts.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "The trace shows the stack and remaining input at each step, every expansion uses the table entry for (top, lookahead), terminals are matched, and it ends in acceptance with stack $ and input $.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "The table is displayed as a formatted matrix (non-terminals by terminals).",
+      "required": false
+    }
+  ],
+  "reference": "FIRST(E) = FIRST(T) = FIRST(F) = { (, id }; FIRST(E') = { +, ε }; FIRST(T') = { *, ε }.\nFOLLOW(E) = FOLLOW(E') = { ), $ }; FOLLOW(T) = FOLLOW(T') = { +, ), $ }; FOLLOW(F) = { +, *, ), $ }.\nTable (13 entries, no conflicts):\nE:  id -> T E'   ( -> T E'\nE': +  -> + T E'   ) -> ε   $ -> ε\nT:  id -> F T'   ( -> F T'\nT': +  -> ε   * -> * F T'   ) -> ε   $ -> ε\nF:  id -> id   ( -> ( E )\nParsing \"id + id * id $\" with stack \"E $\" succeeds; every step pops the top, matches a terminal or expands by the table entry for (top, lookahead).",
+  "notes": "Writing 'eps' or 'λ' for ε, or listing the table as rows of (non-terminal, terminal, production), is equivalent."
+}

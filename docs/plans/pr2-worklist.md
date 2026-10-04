@@ -79,15 +79,24 @@ The design is written in the gate doc (§6.6, §8.4 G5/A1/M1, §3.2/§4 +FB1). B
 
 ## T5. Judged group
 
-- [ ] Frozen rubrics for:
-  - 14-02, 14-04, 14-06;
-  - 16-01, 16-02, 16-04;
-  - 07-xx and 08-xx;
-  - 04-04, 06-04, 06-05;
-  - 03-01, 03-04 and 03-07, if kept;
-  - 15-01 to 15-07, all judged (LEDGER L17). 15-01 carries exact reference hit counts.
-- [ ] A judge tool: Claude and Gemini, blinded. The same tool serves the scripted reviewer of group A.
-- [ ] κ calibration on stress answers (threshold 0.7; report separately below it).
+- [x] Frozen rubrics (`experiments/rubrics/<id>.json`): 33 in all.
+  - 14-02, 14-04, 14-06, 16-01, 16-02, 16-04 (the Q stratum);
+  - 07-01 to 07-07, 08-01 to 08-07;
+  - 04-04, 06-04, 06-05, 03-01, 03-04, 03-07;
+  - 15-01 to 15-07.
+
+  Each rubric has labelled stress answers (`answers/<id>/pass_*.md`, `fail_*.md`; 78 in all), written from the prompt and a reference only.
+- [x] Stress-answer checks:
+  - the runnable pass answers were executed: 03-01, 03-04, 03-07, 07-03, 07-07;
+  - 15-01's traces are generated and cross-checked by two ARC implementations.
+- [x] `experiments/judge.py`:
+  - blinded judge prompts; the verdict is computed from the required criteria, never the judge's own verdict;
+  - two judges; disagreements go to the user;
+  - Cohen's κ;
+  - `calibrate` (live, writes `rubrics/CALIBRATION.json`), and `export-calibration` (manual mode, opaque shuffled keys, key file kept apart).
+  - Tests: `tests/test_judge.py`.
+- [ ] **Run κ calibration** (threshold 0.7; below it, report separately). It needs the user's go-ahead on the judge models and spend (LEDGER L31).
+- [ ] Group A's scripted-reviewer rubric type (T11).
 
 ## T6. Stress answers for the existing graders
 

@@ -1,0 +1,33 @@
+{
+  "id": "08-02",
+  "task": "Identification and resolution of each contradiction in the API specification.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Identifies that statements 1 and 2 contradict: 201 Created vs 200 OK for POST /users.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Identifies that 3 and 4 contradict: 409 Conflict vs silently merging duplicate emails.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Identifies that 5 and 6 contradict: every endpoint requires a Bearer token vs POST /users being public registration.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Identifies that 7 and 8 contradict: server-assigned auto-increment integer IDs vs client-generated UUIDs in the body.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Proposes a resolution for each, with a reason. For example: 201 with a Location header; 409 (a silent merge enables account takeover and data leakage); exempt POST /users from authentication explicitly; server-generated IDs (a single type, never client-supplied).",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": "Any well-argued resolution meets c5 (for example UUIDs generated server-side); a resolution that keeps the silent merge must address its security risk."
+}

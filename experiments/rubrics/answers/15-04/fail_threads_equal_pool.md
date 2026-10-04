@@ -1,0 +1,1 @@
+The optimal pool size equals the number of application threads, 200, so that every thread always has a connection and never waits. Little's Law: 200 threads × 50 ms = 10. Too small causes waiting; too large has no real downside since idle connections are cheap.

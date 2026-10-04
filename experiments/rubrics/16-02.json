@@ -1,0 +1,23 @@
+{
+  "id": "16-02",
+  "task": "An explanation of the 'missing dollar' riddle.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Says that no dollar is missing.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Gives the correct accounting: the guests paid $27 in total, of which $25 is with the hotel and $2 with the bellhop (equivalently, $30 = $25 + $2 + $3 returned).",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Identifies the error: adding the bellhop's $2 to the $27 counts it twice (it is part of the $27); the $2 should be subtracted, or the $3 returned added.",
+      "required": true
+    }
+  ],
+  "reference": "No dollar is missing: $27 = $25 (hotel) + $2 (bellhop); $30 = $25 + $2 + $3. $27 + $2 double-counts the bellhop's $2.",
+  "notes": "Treating $27 + $2 = $29 as a meaningful total, or saying a dollar was lost, fails."
+}

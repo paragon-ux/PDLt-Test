@@ -1,0 +1,33 @@
+{
+  "id": "14-04",
+  "task": "A correctness proof of merge sort: termination, sortedness and permutation, with the merge subroutine proved separately.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Merge lemma, sortedness: merging two sorted lists gives a sorted list, proved by induction (for example on the total length), using that the smaller head is no larger than every remaining element.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Merge lemma, permutation: the merged list's multiset of elements equals the union of the two inputs' multisets (no element created, lost or duplicated).",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Termination: for a list of length n >= 2 both recursive calls get strictly shorter lists (lengths floor(n/2) and ceil(n/2), both < n), length is a well-founded measure, and the base cases (length 0 and 1) return immediately.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Sortedness of merge sort: by (strong) induction on length, the recursive results are sorted, so the merge lemma makes the output sorted; base cases are trivially sorted.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Permutation of merge sort: splitting partitions the input's multiset, the recursive results are permutations of the halves, and the merge lemma gives a permutation of the input.",
+      "required": true
+    }
+  ],
+  "reference": "Termination: each recursive call is on a strictly shorter list (n >= 2 implies both halves < n). Sorted: merge takes the smaller head at each step; induction. Permutation: split and merge preserve the multiset.",
+  "notes": "Duplicates must be handled: arguments that silently assume distinct elements, or use sets instead of multisets, do not meet c2/c5."
+}

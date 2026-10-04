@@ -1,0 +1,33 @@
+{
+  "id": "08-01",
+  "task": "A concrete CRM specification extracted from 'Build a CRM.'",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "At least 5 core entities (for example Contact, Account/Company, Lead, Opportunity/Deal, Activity, User), each with concrete attributes.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "At least 8 business rules or constraints that are specific and checkable (for example a lead converts into a contact and opportunity; an opportunity has exactly one owner; stage transitions are ordered; closed deals are immutable), not generic statements.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "At least 5 edge cases the stakeholder probably hasn't considered (duplicates/merging, ownership transfer when a user leaves, deletion and data retention, currency and timezones, concurrent edits, bulk import).",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "At least 3 clarifying questions whose answers change the implementation (scale/users, integrations such as email or calendar, sales process stages, compliance requirements).",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "The items are CRM-specific and consistent with each other (the rules and edge cases refer to the listed entities).",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": ""
+}

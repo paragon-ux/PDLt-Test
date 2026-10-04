@@ -1,0 +1,38 @@
+{
+  "id": "15-02",
+  "task": "A shard key per table for the social application, justified by which queries become single-shard or scatter-gather, with tradeoffs.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "A shard key for each of the four tables, with a reason tied to the query workload (for example users by user id; posts by author_id; likes by post_id; follows by follower_id, possibly duplicated by following_id).",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "For each of the four queries, a correct statement of whether it is single-shard or scatter-gather under the chosen keys.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Recognizes that the timeline (posts of followed users) is cross-shard under author sharding, and proposes a mitigation: fan-out on write into precomputed timelines, a timeline cache, or a hybrid for high-follower accounts.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Follower count: a denormalized counter, or follows also indexed by following_id, rather than scatter-gather counting.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Full-text search goes to a separate search index (Elasticsearch, OpenSearch or similar), not a scatter-gather LIKE across database shards.",
+      "required": true
+    },
+    {
+      "id": "c6",
+      "text": "Names tradeoffs: hot spots (celebrity accounts or viral posts), resharding cost, cross-shard consistency or transactions, write amplification from fan-out or duplicated follows.",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": ""
+}

@@ -1,0 +1,33 @@
+{
+  "id": "03-04",
+  "task": "A select-based TCP echo server (no asyncio, no threading in the server) with a connection limit, and its test.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The server uses select (or selectors) over a listening socket and client sockets, with no asyncio and no threads in the server, on a configurable port, and serves several clients concurrently.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Echoes every complete line back to the client that sent it, newline included, buffering partial lines per client until the newline arrives.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "On disconnect (recv returns b'' or a connection error) the socket is removed from the select sets, its buffer dropped and the socket closed.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "At most 64 simultaneous clients: a 65th connection gets a rejection message and is closed.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "The test starts the server (in a thread or process; the test may use them), connects 3 clients concurrently, sends different messages, checks each echo, disconnects them and checks the server cleaned up.",
+      "required": true
+    }
+  ],
+  "reference": "Classic select loop: readable = select(inputs, [], []); accept on the listener (reject when 64 clients); recv per client into a buffer; send back each full line; on b'' remove and close.",
+  "notes": ""
+}

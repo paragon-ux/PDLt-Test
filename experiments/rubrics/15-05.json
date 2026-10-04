@@ -1,0 +1,33 @@
+{
+  "id": "15-05",
+  "task": "A diagnosis of the Python GC log: why generation-2 collections slow down, what the growth indicates, three causing patterns, and tuning.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Generation-2 (full) collections get slower because their cost grows with the number of tracked objects in generation 2 (287,634 → 303,892 → 342,109), and the pause grows with it (0.083 s → 0.102 s → 0.146 s).",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "The growing generation-2 count means long-lived objects keep accumulating (a leak or unbounded cache). The rising unreachable counts (15,234 → 23,451) show reference cycles being created and only freed by full collections.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Three concrete code patterns, for example: reference cycles (parent/child links, closures or bound methods capturing self, exceptions holding tracebacks); unbounded caches, memoization or global lists; listeners or callbacks never removed; many small container objects created per request.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Tuning recommendations: gc.freeze() after startup to move long-lived objects out of the collector's view; raising thresholds with gc.set_threshold to collect generation 2 less often; gc.disable() around latency-critical sections with gc.collect() at safe points; and fixing the cause (break cycles, weakref, bounded caches).",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Describes CPython's generational collector correctly (three generations plus a permanent generation; default thresholds 700/10/10; it only collects cycles, reference counting frees the rest).",
+      "required": false
+    }
+  ],
+  "reference": "",
+  "notes": ""
+}

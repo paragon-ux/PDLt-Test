@@ -1,0 +1,28 @@
+{
+  "id": "07-05",
+  "task": "An enum-based refactor of the order state machine with exhaustive handling, and a test of the original bug.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "OrderStatus and PaymentStatus are enum.Enum types covering every value the code uses (order: pending, confirmed, shipped, delivered, returned, cancelled; payment: received, failed, plus any pending state).",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Every OrderStatus value is handled explicitly, including RETURNED (terminal) and CANCELLED (terminal); an unhandled value raises instead of falling through silently (a match default that raises, assert_never, or an explicit check over all members).",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Transitions preserved: pending+received -> confirmed; pending+failed -> cancelled; confirmed and shipped -> shipped; shipped and delivered -> delivered; delivered and returned -> returned; no change otherwise.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "A test triggers the original bug (a status the old code did not handle, such as 'returned' or an unknown string, passing through silently) and shows the refactored version handles or rejects it.",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": "Judge behaviour by reading the code: a criterion about preserved behaviour is met only if the refactored code visibly does the same thing (same checks, same values, same side effects) for every original operation."
+}

@@ -1,0 +1,1 @@
+Nothing is missing; the riddle adds numbers that shouldn't be added. The guests paid $27 in total. Of that, $25 is in the hotel's till and $2 is in the bellhop's pocket: 25 + 2 = 27. Adding the bellhop's $2 to the $27 counts those $2 twice. The original $30 is accounted for as $25 (hotel) + $2 (bellhop) + $3 (given back to the guests).

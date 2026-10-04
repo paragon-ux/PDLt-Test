@@ -1,0 +1,33 @@
+{
+  "id": "15-03",
+  "task": "An analysis of batch vs stream processing for the clickstream pipeline: latency, cost, complexity, and a justified recommendation.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Latency: batch data is up to about 24 h 45 min old (a day's window plus the 45-minute job) vs seconds for streaming; notes that the dashboards refresh once a day, so the extra freshness has no consumer today.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Cost: works from the given volumes (50M events × 500 B ≈ 25 GB/day; about 600/s average, 3,000/s peak ≈ 1.5 MB/s) and compares one 45-minute daily job with always-on infrastructure sized for the peak.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Complexity: streaming needs exactly-once or idempotent processing, watermarks and late-data handling, state management and always-on operations, while batch needs only a simple rerun or retry.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "A recommendation consistent with the facts (for example keep batch, or micro-batch, while dashboards are daily; move to streaming only if a real-time consumer appears), justified with the numbers above.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "The arithmetic is correct.",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": ""
+}

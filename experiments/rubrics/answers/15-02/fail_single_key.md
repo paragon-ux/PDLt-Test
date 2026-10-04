@@ -1,0 +1,1 @@
+Shard every table by created_at (time-range sharding), so recent data is together and old shards can be archived. All four queries then run against the recent shard, so they are fast. Full-text search can use LIKE on the posts table.

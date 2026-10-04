@@ -1,0 +1,38 @@
+{
+  "id": "15-06",
+  "task": "A recommended PostgreSQL index set for the query workload, with exact CREATE INDEX statements, the queries each serves, and space estimates.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Q1: a composite B-tree index on (user_id, created_at), with DESC or a note that a backward index scan serves ORDER BY created_at DESC LIMIT 50.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Q2: a partial index on (event_type, created_at) WHERE processed = false (or equivalent), serving the filter and ORDER BY created_at ASC LIMIT 100.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Q3: an index for the created_at range (a B-tree on created_at, possibly covering user_id, or a BRIN index if rows arrive in time order), with a reason.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Q4: a GIN index on payload (jsonb_path_ops or the default jsonb_ops) for the @> containment query.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Q5: served by the existing primary key; no new index.",
+      "required": true
+    },
+    {
+      "id": "c6",
+      "text": "The statements are valid PostgreSQL (CREATE INDEX [CONCURRENTLY] ... ON events ...), and space estimates are of the right order for 50 million rows (about 1-2 GB for a two-column B-tree; a partial index proportional to the unprocessed fraction; BRIN in kilobytes to megabytes; GIN depending on payload size).",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": ""
+}

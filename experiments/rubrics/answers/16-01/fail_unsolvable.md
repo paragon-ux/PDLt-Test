@@ -1,0 +1,1 @@
+This puzzle cannot be solved with three questions. Random's answers carry no information, and since we do not know whether da means yes or no, a single answer from any god cannot be interpreted. At least four questions are needed: one to learn the language, one to find a non-random god, and two more to identify the rest.

@@ -1,0 +1,33 @@
+{
+  "id": "06-05",
+  "task": "A diagnosis of the struct packing problem and a fix with explicit padding control.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Explains native alignment: with no prefix, struct uses native ('@') mode, which pads after the 1-byte bool so the double starts on an 8-byte boundary; the record is 4 + 1 + 3 (padding) + 8 = 16 bytes on common platforms, not 13.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Explains when values read incorrectly: data written with one layout (another platform, another compiler, or a packed 13-byte format) and read with another, which misaligns the fields or fails (struct.error on a length mismatch). A round trip on the same machine with the same format works.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "The fix specifies the layout explicitly: a standard-size prefix with a byte order ('<', '>', '!' or '=') giving 13 bytes, or explicit pad bytes such as '<I?3xd' giving 16 bytes; pack and unpack use the same format.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Shows the fixed version round-trips the record and reports the size it now has (13, or 16 with explicit padding).",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Mentions byte order (endianness) as part of portability.",
+      "required": false
+    }
+  ],
+  "reference": "'I?d' native: I at 0 (4), ? at 4 (1), 3 pad bytes, d at 8 (8): calcsize = 16. '<I?d': 13 bytes, no padding, little-endian. '<I?3xd': 16 bytes, explicit padding.",
+  "notes": "Saying the native round trip on one machine 'corrupts values' without the cross-layout condition does not meet c2."
+}

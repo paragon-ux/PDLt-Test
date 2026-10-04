@@ -1,0 +1,33 @@
+{
+  "id": "15-01",
+  "task": "A simulation of LRU, LFU and ARC on the given trace with capacity 5: hits, misses, hit rates, the cache state after each access, and which policy wins and why.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "LRU: 9 hits and 21 misses out of 30 (hit rate 30%).",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "LFU: 12 hits and 18 misses (40%), with its tie-breaking rule stated. 12 holds for LRU, FIFO or smallest-id tie-breaking, with or without retained frequency history.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "ARC simulated with its four lists (T1, T2, B1, B2) and the adaptive target p: 12 hits and 18 misses (40%).",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Shows the cache state after each access for each policy (a table or list of 30 steps per policy).",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "The conclusion matches the counts (LFU and ARC tie at 12 and both beat LRU at 9), explained by the frequently re-referenced items (1, 2, 3) being evicted by LRU during the runs of one-off items, while frequency (LFU) and the frequency list T2 (ARC) protect them.",
+      "required": true
+    }
+  ],
+  "reference": "Trace of 30 accesses. Reference counts from two independent implementations: LRU 9/30; LFU 12/30 under every common tie-break; ARC (Megiddo-Modha) 12/30.",
+  "notes": ""
+}

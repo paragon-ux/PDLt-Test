@@ -1,0 +1,23 @@
+{
+  "id": "16-04",
+  "task": "An explanation of the elevator riddle.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The man cannot reach the elevator buttons above the 7th floor (he is too short, or equivalently cannot reach the higher buttons).",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "On rainy days he has an umbrella (or similar object he carries only then) and uses it to press the 10th-floor button.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Does not blame the elevator, which the riddle says works perfectly.",
+      "required": true
+    }
+  ],
+  "reference": "He is too short to reach buttons above 7; on rainy days he carries an umbrella and uses it to press 10.",
+  "notes": "Health or exercise explanations do not explain the rain exception and fail c1/c2."
+}

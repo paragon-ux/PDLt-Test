@@ -1,0 +1,33 @@
+{
+  "id": "14-06",
+  "task": "An induction proof that the two-direction traffic-light invariant is preserved, with the required assumptions identified.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "States the invariant precisely: it is never the case that both directions are non-RED (at least one of A, B is RED).",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Base case: the initial state satisfies the invariant (B starts RED).",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Inductive step covers every transition kind for both directions: moving into RED trivially preserves it; GREEN to YELLOW keeps the other direction RED by the hypothesis; RED to GREEN is the only critical transition.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Identifies what makes direction A's RED to GREEN safe, since the stated rule only constrains B: either a matching guard (A turns GREEN only while B is RED, i.e. a controller enforcing mutual exclusion), or a timing argument (B's GREEN + YELLOW = 50 s < A's 60 s RED) with its own assumptions stated (B leaves RED exactly when A enters RED, timers exact).",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "States the execution assumption: transitions are atomic and happen one at a time (or are otherwise serialized), so no two transitions interleave mid-step.",
+      "required": false
+    }
+  ],
+  "reference": "Invariant: A = RED or B = RED. Base: B starts RED. Step: into-RED and GREEN->YELLOW preserve it; RED->GREEN needs the other direction RED. The prompt guards only B, so the proof must add a guard for A (mutual exclusion at the controller) or argue from timing with explicit assumptions.",
+  "notes": "A proof that never notices A's RED->GREEN is unguarded does not meet c4, even if everything else is right."
+}
