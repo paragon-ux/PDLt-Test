@@ -909,10 +909,11 @@ class ApiWorker:
             )
         elif operation_name == "DRAFT_EXECUTE":
             extra_guidance = (
-                "\n\nDRAFT_EXECUTE: write an execution brief in plain text (brief_body): how the deliverable will "
-                "satisfy the confirmed prompt and plan within the execution environment in AVAILABLE_EXECUTION_TOOLS, "
-                "including, for any program, its estimated step count against the step budget. The brief is passed "
-                "to the EXECUTE call that follows; do not write the deliverable here."
+                "\n\nDRAFT_EXECUTE: write an execution brief in plain text (brief_body): algorithmic choice, "
+                "data structures, and estimated step count against the step budget in AVAILABLE_EXECUTION_TOOLS. "
+                "Do not draft witness payloads, delivery markers, or hypothetical outcome branches; focus strictly "
+                "on computational feasibility. The brief is passed to the EXECUTE call that follows; do not write the "
+                "deliverable here."
             )
         elif operation_name == "EXECUTE":
             extra_guidance = (

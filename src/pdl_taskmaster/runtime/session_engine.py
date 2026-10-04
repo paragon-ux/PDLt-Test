@@ -1727,8 +1727,17 @@ class SessionEngine:
             "AVAILABLE_EXECUTION_TOOLS": execute_context.get("AVAILABLE_EXECUTION_TOOLS"),
             "SUPPLIED_EXECUTION_INPUT_SOURCE": supplied_source,
         }
-        if execute_context.get("REQUIRED_TASK_INPUTS"):
-            values["REQUIRED_TASK_INPUTS"] = execute_context["REQUIRED_TASK_INPUTS"]
+        inputs = execute_context.get("REQUIRED_TASK_INPUTS")
+        if inputs:
+            # DRAFT_EXECUTE plans algorithmic feasibility against tools and inputs;
+            # strip the Result IR / witness channel so the brief does not anchor on
+            # hypothetical witness formatting or outcome contingencies.
+            non_ir_inputs = [
+                part for part in inputs.split("\n\n")
+                if not part.startswith("RESULT IR:") and not part.startswith("WITNESS:")
+            ]
+            if non_ir_inputs:
+                values["REQUIRED_TASK_INPUTS"] = "\n\n".join(non_ir_inputs)
         values["HOST_PROTOCOL_STATE"] = "EXECUTION_DRAFT"
         try:
             draft = self._call("DRAFT_EXECUTE", values, traces, parser=self.bridge.parse_execution_draft)
@@ -1778,7 +1787,9 @@ class SessionEngine:
                     # What the provider rejected, for diagnosis; never sent back to the model.
                     failure["failed_generation"] = str(exc.failed_generation)[:4000]
                 self.workspace.append_event("EXECUTE_WIRE_FAILURE", failure)
-                finding = Finding("OUTPUT_MALFORMED", reason=str(exc))
+                feedback = getattr(exc, "operator_feedback", None)
+                reason_text = f"{exc} ({feedback})" if feedback else str(exc)
+                finding = Finding("OUTPUT_MALFORMED", reason=reason_text)
             return _FailedExecution(), [finding], "", True
         if outcome.kind != "RESULT":
             return outcome, [], outcome.body, False
@@ -1963,7 +1974,9 @@ class SessionEngine:
                 if getattr(exc, "failed_generation", None):
                     failure["failed_generation"] = str(exc.failed_generation)[:4000]
                 self.workspace.append_event("EXECUTE_WIRE_FAILURE", failure)
-                finding = Finding("OUTPUT_MALFORMED", reason=str(exc))
+                feedback = getattr(exc, "operator_feedback", None)
+                reason_text = f"{exc} ({feedback})" if feedback else str(exc)
+                finding = Finding("OUTPUT_MALFORMED", reason=reason_text)
             return _FailedExecution(), [finding], "", True
 
         if outcome.kind != "RESULT":

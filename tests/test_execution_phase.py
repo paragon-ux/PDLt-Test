@@ -704,3 +704,77 @@ def test_positive_witness_with_search_provenance_is_not_a_search_claim(tmp_path)
     assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
     passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
     assert passed["provisional"] and not passed["sandbox_reproduced"]
+
+
+def test_draft_execute_omits_witness_instructions_from_its_inputs(tmp_path):
+    """DRAFT_EXECUTE plans algorithmic feasibility against tools and inputs; it must
+    not receive Result IR / WITNESS channel instructions that prime witness anchoring."""
+    calls: list = []
+    good = {"kind": "RESULT", "body": "```python\nimport json\nprint('WITNESS: {\"polarity\": \"positive\", \"data\": {\"ans\": 1}}')\n```",
+            "result_ir": {}}
+
+    def model_call(req):
+        calls.append(req)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({"kind": "ANALYSIS", "task_summary": "Solve task.",
+                               "approach_notes": "", "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
+        if req.operation == "DRAFT_PLAN":
+            return json.dumps({"neutral_plan_body": PLAN})
+        if req.operation == "DRAFT_EXECUTE":
+            return json.dumps({"kind": "RESULT", "brief_body": "Use DFS with pruning under 100k steps.",
+                               "execution_entities": []})
+        return json.dumps(good)
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=ClassifyingSys1("VERIFIED_EXECUTION"))
+    engine.draft_execute = True
+    for message in ("$confirm-with-pseudocode Solve the stated task with 1, 2, 3.", "/confirm", "/confirm"):
+        engine.handle_user_message(message)
+
+    drafts = [c for c in calls if c.operation == "DRAFT_EXECUTE"]
+    executes = [c for c in calls if c.operation == "EXECUTE"]
+    assert len(drafts) == 1 and len(executes) == 1
+    # DRAFT_EXECUTE prompt must NOT include the Result IR or WITNESS channel instructions
+    assert "RESULT IR:" not in drafts[0].prompt
+    assert "WITNESS:" not in drafts[0].prompt
+    # But EXECUTE prompt MUST include both
+    assert "RESULT IR:" in executes[0].prompt
+    assert "WITNESS:" in executes[0].prompt
+
+
+def test_execute_wire_failure_includes_operator_feedback_in_finding(tmp_path):
+    """When EXECUTE wire response fails schema validation, the operator feedback
+    carrying field-level Pydantic error details must appear in the repair prompt."""
+    bad_wire = {
+        "kind": "RESULT",
+        "body": "No valid partition exists.",
+        "result_ir": {
+            "files": [],
+            "reconciliation": [],
+            "open_defects": [],
+            "witness": {
+                "polarity": "negative",
+                "basis": "search",
+                "search_exhausted": True,
+                "nodes_explored": 0,  # Fails PositiveInt validation!
+                "method": "backtrack",
+            },
+        },
+    }
+    good = {
+        "kind": "RESULT",
+        "body": "```python\nimport json\nprint('WITNESS: {\"polarity\": \"positive\", \"data\": {\"found\": true}}')\n```",
+        "result_ir": {},
+    }
+    engine, _, executes, events = _run(
+        tmp_path, [bad_wire, good], problem_class="VERIFIED_EXECUTION"
+    )
+    assert len(executes) == 2
+    repair_prompt = executes[1].prompt
+    assert "[OUTPUT_MALFORMED]" in repair_prompt
+    assert "execution_result_ir_witness" in repair_prompt
+    # Field-level Pydantic error from operator_feedback must be present
+    assert "Validation failed on field 'result_ir.witness.negative.nodes_explored'" in repair_prompt
+    assert "Input should be greater than 0" in repair_prompt
+
