@@ -142,16 +142,32 @@ def summarize_results():
 
 
 def main():
-    if "--summary-only" in sys.argv:
+    import argparse
+    parser = argparse.ArgumentParser(description="Sequential Four-Arm Parity Runner")
+    parser.add_argument("--summary-only", action="store_true", help="Print summary matrix from newest runs")
+    parser.add_argument("--arms", default="1,2,3,4", help="Comma-separated list of arms to run (e.g. '3,4' or '1,2,3,4')")
+    parser.add_argument("--arm4-only", action="store_true", help="Run only Arm 4")
+    parser.add_argument("--arm3-only", action="store_true", help="Run only Arm 3")
+    args = parser.parse_args()
+
+    if args.summary_only:
         summarize_results()
         return
-    # If run without arguments or specifying an arm, run Arm 4 or all
-    if len(sys.argv) > 1 and sys.argv[1] == "--arm4-only":
+
+    if args.arm3_only:
+        run_arm(ARMS[2])
+        summarize_results()
+        return
+
+    if args.arm4_only:
         run_arm(ARMS[3])
         summarize_results()
         return
-    for arm in ARMS:
-        run_arm(arm)
+
+    target_arm_indices = [int(x.strip()) - 1 for x in args.arms.split(",") if x.strip()]
+    for idx in target_arm_indices:
+        if 0 <= idx < len(ARMS):
+            run_arm(ARMS[idx])
     summarize_results()
 
 
