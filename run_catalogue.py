@@ -814,7 +814,7 @@ def main():
     parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b:free",
                         help="Model to test (default: nvidia/nemotron-3-super-120b-a12b:free)")
     parser.add_argument("--reasoning", default=None,
-                        choices=["low", "medium", "high"],
+                        choices=["none", "low", "medium", "high"],
                         help="reasoning effort for every operation (default: the harness's per-model default, "
                              "for gpt-oss high with EXECUTE=low, the same as a live session)")
     parser.add_argument("--category", default=None,
@@ -899,7 +899,7 @@ def main():
         print(f"\nVERIFIED = verified ground truth ({n_verified} prompts)")
         sys.exit(0)
 
-    run_id = datetime.now().strftime("run-%Y%m%d-%H%M%S")
+    run_id = f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{args.route}"
     run_dir = RUNS_DIR / run_id
     (run_dir / "results").mkdir(parents=True)
 
