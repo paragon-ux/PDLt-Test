@@ -1,0 +1,1 @@
+{"criteria": {"c1": "not_met", "c2": "not_met", "c3": "not_met", "c4": "not_met"}, "note": "Declares the puzzle unsolvable in three questions and gives no questions or answer mapping; it is solvable with the embedded-question construction."}

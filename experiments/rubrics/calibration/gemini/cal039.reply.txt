@@ -1,0 +1,12 @@
+```json
+{
+  "criteria": {
+    "c1": "not_met",
+    "c2": "not_met",
+    "c3": "not_met",
+    "c4": "not_met",
+    "c5": "not_met"
+  },
+  "note": "fetch_user and fetch_org return None instead of raising exceptions on error. get_user_context gathers user and org concurrently rather than sequentially chaining user['org_id'], lacks error handling, and the response does not include tests controlling randomness or testing error propagation."
+}
+```

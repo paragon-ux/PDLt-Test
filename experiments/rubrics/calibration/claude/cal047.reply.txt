@@ -1,0 +1,1 @@
+{"criteria": {"c1": "met", "c2": "not_met", "c3": "met", "c4": "not_met", "c5": "not_met"}, "note": "The server echoes each recv chunk immediately with no per-client line buffering; there is no 64-client limit or rejection message; the test is only a one-sentence description (no code) and does not check disconnect cleanup."}

@@ -1,0 +1,12 @@
+```json
+{
+  "criteria": {
+    "c1": "met",
+    "c2": "not_met",
+    "c3": "not_met",
+    "c4": "not_met",
+    "c5": "not_met"
+  },
+  "note": "The implementation polls using a fixed-interval `await asyncio.sleep(0.01)` instead of using an asyncio synchronization primitive (c2) and does not enforce FIFO ordering among waiters (c3). Additionally, the bucket starts full with 5 tokens at 5 tokens/s, finishing in approximately 1 second rather than the asserted 2 seconds (c4), and requests exceeding capacity are unhandled (c5)."
+}
+```

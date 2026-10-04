@@ -26,9 +26,8 @@ class SessionStore:
         return sid
     def remove(self, sid):
         self.sessions.pop(sid, None)
-    def user_of(self, sid):
-        s = self.sessions.get(sid)
-        return s['user'] if s else None
+    def get(self, sid):
+        return self.sessions.get(sid)
     def cleanup(self, max_age=3600):
         now = time.time()
         for sid in [k for k, s in self.sessions.items() if now - s['created'] > max_age]:
@@ -69,8 +68,10 @@ class UserManager:
 
     def logout(self, session_id): self.sessions_store.remove(session_id)
     def get_user(self, session_id):
-        name = self.sessions_store.user_of(session_id)
-        return self.repo.users.get(name) if name else None
+        session = self.sessions_store.get(session_id)
+        if not session:
+            return None
+        return self.repo.users.get(session['user'])
     def send_emails(self): self.mail.send_all()
     def deactivate_user(self, username):
         if username in self.repo.users:

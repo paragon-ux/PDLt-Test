@@ -1,0 +1,3 @@
+```json
+{"criteria": {"c1": "met", "c2": "met", "c3": "met"}, "note": ""}
+```

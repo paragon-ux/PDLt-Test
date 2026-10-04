@@ -26,7 +26,7 @@ def validate_row(row, rules):
             errors.append(f"{field} not numeric: {val}")
         elif rule == 'date':
             try: datetime.strptime(val, '%Y-%m-%d')
-            except ValueError: errors.append(f"{field} bad date: {val}")
+            except (TypeError, ValueError): errors.append(f"{field} bad date: {val}")
     return errors
 ```
 `mypackage/transform.py`
@@ -66,4 +66,4 @@ def test_report(tmp_path):
     assert summarize([], ["v"])["v"]["count"] == 0
     write_report(s, tmp_path / "r.json"); assert json.loads((tmp_path / "r.json").read_text()) == s
 ```
-(The bare `except:` is narrowed to `ValueError`, the exception strptime raises; behaviour for bad dates is unchanged.)
+(The bare `except:` is narrowed to `(TypeError, ValueError)`: strptime raises ValueError for a malformed string and TypeError for a missing value (None from a short CSV row), so every input the original caught is still caught.)

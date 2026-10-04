@@ -1,0 +1,3 @@
+```json
+{"criteria": {"c1": "met", "c2": "not_met", "c3": "not_met", "c4": "not_met", "c5": "not_met", "c6": "not_met"}, "note": "The refactored code drops almost all original functionality including validations, salting, session management methods (logout, get_user, cleanup_sessions), user deactivation, and listing active users. Additionally, no actual test code was provided."}
+```

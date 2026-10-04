@@ -1,0 +1,1 @@
+{"criteria": {"c1": "met", "c2": "not_met", "c3": "not_met", "c4": "not_met", "c5": "not_met"}, "note": "Never explains when values would read incorrectly (layout mismatch across platforms or formats); the 'fix' only changes the expected-size print to struct.calcsize and does not make the layout explicit with a prefix or pad bytes, and no round-trip is shown."}

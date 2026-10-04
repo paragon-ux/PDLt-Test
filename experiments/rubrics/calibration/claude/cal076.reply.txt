@@ -1,0 +1,1 @@
+{"criteria": {"c1": "not_met", "c2": "not_met", "c3": "not_met", "c4": "not_met", "c5": "not_met"}, "note": "Six of the seven items merely restate the given spec, and the seventh ('passwords should be strong') is vague; no token expiry/revocation, rate limiting, slow salted hashing, or any of the listed gaps are covered."}

@@ -1,0 +1,12 @@
+```json
+{
+  "criteria": {
+    "c1": "not_met",
+    "c2": "not_met",
+    "c3": "not_met",
+    "c4": "not_met",
+    "c5": "not_met"
+  },
+  "note": "The response misidentifies the saturation point, bottlenecks, causes of degradation, safe concurrency limit, and scaling strategies across all criteria (incorrectly blaming memory instead of CPU and DB connection pooling)."
+}
+```

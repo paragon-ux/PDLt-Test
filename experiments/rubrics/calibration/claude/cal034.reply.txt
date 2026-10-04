@@ -1,0 +1,1 @@
+{"criteria": {"c1": "met", "c2": "not_met", "c3": "not_met", "c4": "not_met", "c5": "not_met"}, "note": "FOLLOW(T) and FOLLOW(T') omit ')' and FOLLOW(F) omits '+' and ')'; the table therefore lacks the ')' epsilon entries for E' and T'; the trace does not show the remaining input at each step; the table is given as a list, not a matrix."}

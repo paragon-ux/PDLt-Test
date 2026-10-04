@@ -1,0 +1,10 @@
+```json
+{
+  "criteria": {
+    "c1": "not_met",
+    "c2": "not_met",
+    "c3": "met"
+  },
+  "note": "The response suggests an exercise explanation instead of the man being unable to reach the buttons (c1) and does not mention an umbrella used to push the button on rainy days (c2)."
+}
+```

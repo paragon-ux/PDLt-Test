@@ -1,0 +1,1 @@
+{"criteria": {"c1": "met", "c2": "not_met", "c3": "not_met", "c4": "not_met"}, "note": "The first question to A does not identify a non-Random god (A may be Random or False); the questions are direct and assume da means yes and the god tells the truth, with no embedded-question device; the answer patterns are not mapped to identities."}

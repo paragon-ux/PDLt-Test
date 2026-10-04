@@ -1,0 +1,12 @@
+```json
+{
+  "criteria": {
+    "c1": "not_met",
+    "c2": "not_met",
+    "c3": "not_met",
+    "c4": "not_met",
+    "c5": "not_met"
+  },
+  "note": "The response does not explain native mode ('@') or why values read incorrectly across different layouts. It also fails to provide a struct format fix using explicit padding or standard-size prefixes, merely changing the print statement instead."
+}
+```

@@ -1,0 +1,12 @@
+```json
+{
+  "criteria": {
+    "c1": "met",
+    "c2": "not_met",
+    "c3": "not_met",
+    "c4": "not_met",
+    "c5": "not_met"
+  },
+  "note": "The server does not buffer partial lines per client or handle line-by-line echoing, lacks connection error handling and buffer cleanup, enforces no 64-client limit, and provides only a one-sentence description rather than an implemented test."
+}
+```

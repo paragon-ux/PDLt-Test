@@ -1,0 +1,3 @@
+```json
+{"criteria": {"c1": "met", "c2": "met", "c3": "not_met", "c4": "not_met", "c5": "not_met"}, "note": "c3 is not met because item totals are not rounded to 2 decimal places. c4 is not met because sorting by region alters the original insertion order and sums unrounded amounts, and c5 is not met because no executable test code comparing both versions on the required cases was provided."}
+```

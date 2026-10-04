@@ -1,0 +1,1 @@
+{"criteria": {"c1": "not_met", "c2": "not_met", "c3": "met", "c4": "not_met", "c5": "not_met"}, "note": "Does not explain the non-atomic load-add-store of counter += 1 or show any lost-update demonstration; fix (b) relies on time.sleep(0), which does not synchronize; the claim that both versions print 400000 is unverified and no tests are shown."}

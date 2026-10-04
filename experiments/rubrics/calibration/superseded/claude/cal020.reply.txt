@@ -1,0 +1,1 @@
+{"criteria": {"c1": "met", "c2": "met", "c3": "met", "c4": "not_met", "c5": "met"}, "note": "The bare 'except:' in validate_row was narrowed to 'except ValueError', which changes behaviour: a None value (e.g. from a short CSV row via DictReader) makes strptime raise TypeError, which the original caught and reported as 'bad date' but the new code lets propagate."}

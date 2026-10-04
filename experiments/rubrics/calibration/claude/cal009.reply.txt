@@ -1,0 +1,1 @@
+{"criteria": {"c1": "met", "c2": "not_met", "c3": "not_met"}, "note": "States only that no dollar is missing; gives no correct accounting ($27 = $25 + $2) and does not identify the double-counting of the bellhop's $2."}

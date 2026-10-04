@@ -1,0 +1,10 @@
+```json
+{
+  "criteria": {
+    "c1": "met",
+    "c2": "not_met",
+    "c3": "met"
+  },
+  "note": "Criterion c2 is not met because the response claims other passengers press the button for him on rainy days rather than explaining that he uses an umbrella to reach the 10th-floor button."
+}
+```

@@ -1,0 +1,3 @@
+```json
+{"criteria": {"c1": "met", "c2": "not_met", "c3": "not_met", "c4": "not_met"}, "note": "The response fails to handle Random (c2), does not use the embedded question or equivalent device to overcome unknown language and lying (c3), and does not map out the possible answer patterns to assignments (c4)."}
+```

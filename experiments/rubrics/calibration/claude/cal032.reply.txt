@@ -1,0 +1,1 @@
+{"criteria": {"c1": "met", "c2": "met", "c3": "not_met", "c4": "met", "c5": "met"}, "note": "There is no termination argument: it never says that both recursive calls receive strictly shorter lists, that length is a well-founded measure, or covers the length 0/1 base cases as immediate returns."}

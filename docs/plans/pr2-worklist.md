@@ -95,7 +95,11 @@ The design is written in the gate doc (§6.6, §8.4 G5/A1/M1, §3.2/§4 +FB1). B
   - Cohen's κ;
   - `calibrate` (live, writes `rubrics/CALIBRATION.json`), and `export-calibration` (manual mode, opaque shuffled keys, key file kept apart).
   - Tests: `tests/test_judge.py`.
-- [ ] **Run κ calibration** (threshold 0.7; below it, report separately). It needs the user's go-ahead on the judge models and spend (LEDGER L31).
+- [x] **κ calibration** (`rubrics/CALIBRATION.json`), with Claude as a Sonnet subagent on the blinded export and Gemini 3.8 Flash on the API.
+  - **Initial:** κ between the judges 0.947; each judge against the labels 0.974.
+  - **Corrections:** two disagreements were real defects in *stress answers* (15-01 pass, 07-06 pass), plus one edge case a judge noted (07-01). All three were fixed and re-judged; no rubric changed.
+  - **After the corrections:** κ is 1.0. It is partly circular, so the initial figure is the one to cite.
+  - Raw replies are kept in `rubrics/calibration/`. Every rubric is usable as a grader.
 - [ ] Group A's scripted-reviewer rubric type (T11).
 
 ## T6. Stress answers for the existing graders

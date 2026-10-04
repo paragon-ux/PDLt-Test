@@ -1,0 +1,3 @@
+```json
+{"criteria": {"c1": "not_met", "c2": "not_met", "c3": "not_met"}, "note": "The response incorrectly claims that a dollar was actually lost due to rounding/uneven division, failing to explain that no dollar is missing, provide the correct accounting ($25 with the hotel + $2 with the bellhop = $27), or identify the error of adding the bellhop's tip to the total paid."}
+```

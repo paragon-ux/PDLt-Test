@@ -1,0 +1,1 @@
+{"criteria": {"c1": "met", "c2": "not_met", "c3": "met"}, "note": "Explains the rainy-day exception by someone else pressing 10, not by an umbrella the man carries and uses to press the 10th-floor button."}

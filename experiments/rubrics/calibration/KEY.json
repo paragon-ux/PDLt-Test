@@ -1,0 +1,392 @@
+{
+  "cal001": {
+    "rubric": "08-06",
+    "answer": "fail_wrong_articles.md",
+    "label": "FAIL"
+  },
+  "cal002": {
+    "rubric": "15-07",
+    "answer": "fail_memory_bottleneck.md",
+    "label": "FAIL"
+  },
+  "cal003": {
+    "rubric": "08-06",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal004": {
+    "rubric": "03-01",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal005": {
+    "rubric": "08-01",
+    "answer": "fail_generic.md",
+    "label": "FAIL"
+  },
+  "cal006": {
+    "rubric": "07-07",
+    "answer": "fail_rounding_changed.md",
+    "label": "FAIL"
+  },
+  "cal007": {
+    "rubric": "15-01",
+    "answer": "pass_summary.md",
+    "label": "PASS"
+  },
+  "cal008": {
+    "rubric": "07-06",
+    "answer": "fail_wrong_layout.md",
+    "label": "FAIL"
+  },
+  "cal009": {
+    "rubric": "16-02",
+    "answer": "fail_no_accounting.md",
+    "label": "FAIL"
+  },
+  "cal010": {
+    "rubric": "03-07",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal011": {
+    "rubric": "07-01",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal012": {
+    "rubric": "14-06",
+    "answer": "pass_guard.md",
+    "label": "PASS"
+  },
+  "cal013": {
+    "rubric": "03-04",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal014": {
+    "rubric": "06-04",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal015": {
+    "rubric": "08-01",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal016": {
+    "rubric": "15-02",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal017": {
+    "rubric": "14-06",
+    "answer": "pass_timing.md",
+    "label": "PASS"
+  },
+  "cal018": {
+    "rubric": "04-04",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal019": {
+    "rubric": "08-03",
+    "answer": "fail_linear.md",
+    "label": "FAIL"
+  },
+  "cal020": {
+    "rubric": "07-06",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal021": {
+    "rubric": "03-01",
+    "answer": "fail_polling.md",
+    "label": "FAIL"
+  },
+  "cal022": {
+    "rubric": "07-07",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal023": {
+    "rubric": "08-05",
+    "answer": "fail_one_story.md",
+    "label": "FAIL"
+  },
+  "cal024": {
+    "rubric": "16-04",
+    "answer": "pass_canonical.md",
+    "label": "PASS"
+  },
+  "cal025": {
+    "rubric": "08-07",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal026": {
+    "rubric": "14-04",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal027": {
+    "rubric": "08-04",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal028": {
+    "rubric": "08-02",
+    "answer": "fail_misses_two.md",
+    "label": "FAIL"
+  },
+  "cal029": {
+    "rubric": "14-06",
+    "answer": "fail_misses_a_guard.md",
+    "label": "FAIL"
+  },
+  "cal030": {
+    "rubric": "16-04",
+    "answer": "fail_short_only.md",
+    "label": "FAIL"
+  },
+  "cal031": {
+    "rubric": "16-02",
+    "answer": "fail_lost_dollar.md",
+    "label": "FAIL"
+  },
+  "cal032": {
+    "rubric": "14-04",
+    "answer": "fail_missing_termination.md",
+    "label": "FAIL"
+  },
+  "cal033": {
+    "rubric": "15-07",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal034": {
+    "rubric": "04-04",
+    "answer": "fail_follow_wrong.md",
+    "label": "FAIL"
+  },
+  "cal035": {
+    "rubric": "16-01",
+    "answer": "fail_language_dependent.md",
+    "label": "FAIL"
+  },
+  "cal036": {
+    "rubric": "07-02",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal037": {
+    "rubric": "08-03",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal038": {
+    "rubric": "03-01",
+    "answer": "fail_test_wrong_timing.md",
+    "label": "FAIL"
+  },
+  "cal039": {
+    "rubric": "07-02",
+    "answer": "fail_swallows_errors.md",
+    "label": "FAIL"
+  },
+  "cal040": {
+    "rubric": "16-04",
+    "answer": "fail_exercise.md",
+    "label": "FAIL"
+  },
+  "cal041": {
+    "rubric": "08-07",
+    "answer": "fail_no_rules.md",
+    "label": "FAIL"
+  },
+  "cal042": {
+    "rubric": "15-02",
+    "answer": "fail_single_key.md",
+    "label": "FAIL"
+  },
+  "cal043": {
+    "rubric": "14-02",
+    "answer": "fail_wrong_theorem.md",
+    "label": "FAIL"
+  },
+  "cal044": {
+    "rubric": "16-01",
+    "answer": "pass_boolos.md",
+    "label": "PASS"
+  },
+  "cal045": {
+    "rubric": "15-03",
+    "answer": "fail_always_stream.md",
+    "label": "FAIL"
+  },
+  "cal046": {
+    "rubric": "14-02",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal047": {
+    "rubric": "03-04",
+    "answer": "fail_no_line_buffering.md",
+    "label": "FAIL"
+  },
+  "cal048": {
+    "rubric": "07-03",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal049": {
+    "rubric": "06-05",
+    "answer": "fail_blames_float.md",
+    "label": "FAIL"
+  },
+  "cal050": {
+    "rubric": "15-05",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal051": {
+    "rubric": "15-06",
+    "answer": "fail_single_column_everything.md",
+    "label": "FAIL"
+  },
+  "cal052": {
+    "rubric": "15-01",
+    "answer": "fail_wrong_counts.md",
+    "label": "FAIL"
+  },
+  "cal053": {
+    "rubric": "03-04",
+    "answer": "fail_threads.md",
+    "label": "FAIL"
+  },
+  "cal054": {
+    "rubric": "15-04",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal055": {
+    "rubric": "08-05",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal056": {
+    "rubric": "04-04",
+    "answer": "fail_no_trace.md",
+    "label": "FAIL"
+  },
+  "cal057": {
+    "rubric": "15-05",
+    "answer": "fail_jvm_answer.md",
+    "label": "FAIL"
+  },
+  "cal058": {
+    "rubric": "16-01",
+    "answer": "fail_unsolvable.md",
+    "label": "FAIL"
+  },
+  "cal059": {
+    "rubric": "07-04",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal060": {
+    "rubric": "07-01",
+    "answer": "fail_drops_validation.md",
+    "label": "FAIL"
+  },
+  "cal061": {
+    "rubric": "06-04",
+    "answer": "fail_gil_is_enough.md",
+    "label": "FAIL"
+  },
+  "cal062": {
+    "rubric": "15-04",
+    "answer": "fail_threads_equal_pool.md",
+    "label": "FAIL"
+  },
+  "cal063": {
+    "rubric": "06-05",
+    "answer": "fail_no_explicit_fix.md",
+    "label": "FAIL"
+  },
+  "cal064": {
+    "rubric": "06-04",
+    "answer": "fail_sleep_fix.md",
+    "label": "FAIL"
+  },
+  "cal065": {
+    "rubric": "07-05",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal066": {
+    "rubric": "07-05",
+    "answer": "fail_silent_default.md",
+    "label": "FAIL"
+  },
+  "cal067": {
+    "rubric": "14-02",
+    "answer": "fail_no_canonical_forms.md",
+    "label": "FAIL"
+  },
+  "cal068": {
+    "rubric": "16-02",
+    "answer": "pass_explanation.md",
+    "label": "PASS"
+  },
+  "cal069": {
+    "rubric": "07-01",
+    "answer": "fail_two_classes.md",
+    "label": "FAIL"
+  },
+  "cal070": {
+    "rubric": "15-03",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal071": {
+    "rubric": "06-05",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal072": {
+    "rubric": "07-04",
+    "answer": "fail_still_global.md",
+    "label": "FAIL"
+  },
+  "cal073": {
+    "rubric": "15-06",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal074": {
+    "rubric": "08-02",
+    "answer": "pass_full.md",
+    "label": "PASS"
+  },
+  "cal075": {
+    "rubric": "14-04",
+    "answer": "fail_sets_not_multisets.md",
+    "label": "FAIL"
+  },
+  "cal076": {
+    "rubric": "08-04",
+    "answer": "fail_restates.md",
+    "label": "FAIL"
+  },
+  "cal077": {
+    "rubric": "03-07",
+    "answer": "fail_no_backoff_no_window.md",
+    "label": "FAIL"
+  },
+  "cal078": {
+    "rubric": "07-03",
+    "answer": "fail_still_multiple_inheritance.md",
+    "label": "FAIL"
+  }
+}

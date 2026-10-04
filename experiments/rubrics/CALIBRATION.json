@@ -1,0 +1,908 @@
+{
+  "rows": [
+    {
+      "rubric": "08-06",
+      "answer": "fail_wrong_articles.md",
+      "label": "FAIL",
+      "key": "cal001",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "15-07",
+      "answer": "fail_memory_bottleneck.md",
+      "label": "FAIL",
+      "key": "cal002",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "08-06",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal003",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "03-01",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal004",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "08-01",
+      "answer": "fail_generic.md",
+      "label": "FAIL",
+      "key": "cal005",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "07-07",
+      "answer": "fail_rounding_changed.md",
+      "label": "FAIL",
+      "key": "cal006",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "15-01",
+      "answer": "pass_summary.md",
+      "label": "PASS",
+      "key": "cal007",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "07-06",
+      "answer": "fail_wrong_layout.md",
+      "label": "FAIL",
+      "key": "cal008",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "16-02",
+      "answer": "fail_no_accounting.md",
+      "label": "FAIL",
+      "key": "cal009",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "03-07",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal010",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "07-01",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal011",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "14-06",
+      "answer": "pass_guard.md",
+      "label": "PASS",
+      "key": "cal012",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "03-04",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal013",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "06-04",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal014",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "08-01",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal015",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "15-02",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal016",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "14-06",
+      "answer": "pass_timing.md",
+      "label": "PASS",
+      "key": "cal017",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "04-04",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal018",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "08-03",
+      "answer": "fail_linear.md",
+      "label": "FAIL",
+      "key": "cal019",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "07-06",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal020",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "03-01",
+      "answer": "fail_polling.md",
+      "label": "FAIL",
+      "key": "cal021",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "07-07",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal022",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "08-05",
+      "answer": "fail_one_story.md",
+      "label": "FAIL",
+      "key": "cal023",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "16-04",
+      "answer": "pass_canonical.md",
+      "label": "PASS",
+      "key": "cal024",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "08-07",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal025",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "14-04",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal026",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "08-04",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal027",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "08-02",
+      "answer": "fail_misses_two.md",
+      "label": "FAIL",
+      "key": "cal028",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "14-06",
+      "answer": "fail_misses_a_guard.md",
+      "label": "FAIL",
+      "key": "cal029",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "16-04",
+      "answer": "fail_short_only.md",
+      "label": "FAIL",
+      "key": "cal030",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "16-02",
+      "answer": "fail_lost_dollar.md",
+      "label": "FAIL",
+      "key": "cal031",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "14-04",
+      "answer": "fail_missing_termination.md",
+      "label": "FAIL",
+      "key": "cal032",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "15-07",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal033",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "04-04",
+      "answer": "fail_follow_wrong.md",
+      "label": "FAIL",
+      "key": "cal034",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "16-01",
+      "answer": "fail_language_dependent.md",
+      "label": "FAIL",
+      "key": "cal035",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "07-02",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal036",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "08-03",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal037",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "03-01",
+      "answer": "fail_test_wrong_timing.md",
+      "label": "FAIL",
+      "key": "cal038",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "07-02",
+      "answer": "fail_swallows_errors.md",
+      "label": "FAIL",
+      "key": "cal039",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "16-04",
+      "answer": "fail_exercise.md",
+      "label": "FAIL",
+      "key": "cal040",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "08-07",
+      "answer": "fail_no_rules.md",
+      "label": "FAIL",
+      "key": "cal041",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "15-02",
+      "answer": "fail_single_key.md",
+      "label": "FAIL",
+      "key": "cal042",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "14-02",
+      "answer": "fail_wrong_theorem.md",
+      "label": "FAIL",
+      "key": "cal043",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "16-01",
+      "answer": "pass_boolos.md",
+      "label": "PASS",
+      "key": "cal044",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "15-03",
+      "answer": "fail_always_stream.md",
+      "label": "FAIL",
+      "key": "cal045",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "14-02",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal046",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "03-04",
+      "answer": "fail_no_line_buffering.md",
+      "label": "FAIL",
+      "key": "cal047",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "07-03",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal048",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "06-05",
+      "answer": "fail_blames_float.md",
+      "label": "FAIL",
+      "key": "cal049",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "15-05",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal050",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "15-06",
+      "answer": "fail_single_column_everything.md",
+      "label": "FAIL",
+      "key": "cal051",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "15-01",
+      "answer": "fail_wrong_counts.md",
+      "label": "FAIL",
+      "key": "cal052",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "03-04",
+      "answer": "fail_threads.md",
+      "label": "FAIL",
+      "key": "cal053",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "15-04",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal054",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "08-05",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal055",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "04-04",
+      "answer": "fail_no_trace.md",
+      "label": "FAIL",
+      "key": "cal056",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "15-05",
+      "answer": "fail_jvm_answer.md",
+      "label": "FAIL",
+      "key": "cal057",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "16-01",
+      "answer": "fail_unsolvable.md",
+      "label": "FAIL",
+      "key": "cal058",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "07-04",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal059",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "07-01",
+      "answer": "fail_drops_validation.md",
+      "label": "FAIL",
+      "key": "cal060",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "06-04",
+      "answer": "fail_gil_is_enough.md",
+      "label": "FAIL",
+      "key": "cal061",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "15-04",
+      "answer": "fail_threads_equal_pool.md",
+      "label": "FAIL",
+      "key": "cal062",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "06-05",
+      "answer": "fail_no_explicit_fix.md",
+      "label": "FAIL",
+      "key": "cal063",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "06-04",
+      "answer": "fail_sleep_fix.md",
+      "label": "FAIL",
+      "key": "cal064",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "07-05",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal065",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "07-05",
+      "answer": "fail_silent_default.md",
+      "label": "FAIL",
+      "key": "cal066",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "14-02",
+      "answer": "fail_no_canonical_forms.md",
+      "label": "FAIL",
+      "key": "cal067",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "16-02",
+      "answer": "pass_explanation.md",
+      "label": "PASS",
+      "key": "cal068",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "07-01",
+      "answer": "fail_two_classes.md",
+      "label": "FAIL",
+      "key": "cal069",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "15-03",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal070",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "06-05",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal071",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "07-04",
+      "answer": "fail_still_global.md",
+      "label": "FAIL",
+      "key": "cal072",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "15-06",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal073",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "08-02",
+      "answer": "pass_full.md",
+      "label": "PASS",
+      "key": "cal074",
+      "claude": "PASS",
+      "gemini": "PASS"
+    },
+    {
+      "rubric": "14-04",
+      "answer": "fail_sets_not_multisets.md",
+      "label": "FAIL",
+      "key": "cal075",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "08-04",
+      "answer": "fail_restates.md",
+      "label": "FAIL",
+      "key": "cal076",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "03-07",
+      "answer": "fail_no_backoff_no_window.md",
+      "label": "FAIL",
+      "key": "cal077",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    },
+    {
+      "rubric": "07-03",
+      "answer": "fail_still_multiple_inheritance.md",
+      "label": "FAIL",
+      "key": "cal078",
+      "claude": "FAIL",
+      "gemini": "FAIL"
+    }
+  ],
+  "kappa_floor": 0.7,
+  "rubrics": {
+    "03-01": {
+      "answers": 3,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 3
+    },
+    "03-04": {
+      "answers": 3,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 3
+    },
+    "03-07": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "04-04": {
+      "answers": 3,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 3
+    },
+    "06-04": {
+      "answers": 3,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 3
+    },
+    "06-05": {
+      "answers": 3,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 3
+    },
+    "07-01": {
+      "answers": 3,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 3
+    },
+    "07-02": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "07-03": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "07-04": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "07-05": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "07-06": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "07-07": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "08-01": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "08-02": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "08-03": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "08-04": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "08-05": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "08-06": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "08-07": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "14-02": {
+      "answers": 3,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 3
+    },
+    "14-04": {
+      "answers": 3,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 3
+    },
+    "14-06": {
+      "answers": 3,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 3
+    },
+    "15-01": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "15-02": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "15-03": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "15-04": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "15-05": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "15-06": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "15-07": {
+      "answers": 2,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 2
+    },
+    "16-01": {
+      "answers": 3,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 3
+    },
+    "16-02": {
+      "answers": 3,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 3
+    },
+    "16-04": {
+      "answers": 3,
+      "claude_accuracy": 1.0,
+      "gemini_accuracy": 1.0,
+      "judges_agree": 3
+    }
+  },
+  "complete_rows": 78,
+  "kappa_between_judges": 1.0,
+  "kappa_claude_vs_label": 1.0,
+  "kappa_gemini_vs_label": 1.0,
+  "usable": true,
+  "judges": [
+    "claude",
+    "gemini"
+  ],
+  "record": {
+    "date": "2026-10-04",
+    "judges": {
+      "claude": "in-session subagent, model sonnet (not the rubric author's model), blinded export only",
+      "gemini": "google/gemini-3.8-flash via OpenRouter /responses"
+    },
+    "headline": "Initial calibration (before any correction) is the figure to cite: it is the only one not shaped by the judges' own feedback.",
+    "initial": {
+      "kappa_floor": 0.7,
+      "complete_rows": 78,
+      "kappa_between_judges": 0.9474747474747475,
+      "kappa_claude_vs_label": 0.9738430583501007,
+      "kappa_gemini_vs_label": 0.9738430583501007,
+      "usable": true,
+      "disagreements": [
+        {
+          "key": "cal007",
+          "rubric": "15-01",
+          "answer": "pass_summary.md",
+          "label": "PASS",
+          "claude": "PASS",
+          "gemini": "FAIL"
+        },
+        {
+          "key": "cal020",
+          "rubric": "07-06",
+          "answer": "pass_full.md",
+          "label": "PASS",
+          "claude": "FAIL",
+          "gemini": "PASS"
+        }
+      ]
+    },
+    "corrections": [
+      {
+        "key": "cal007",
+        "rubric": "15-01",
+        "answer": "pass_summary.md",
+        "flagged_by": "gemini (FAIL)",
+        "defect": "the ARC trace showed only T1/T2, while c3 requires all four lists (T1, T2, B1, B2) and p",
+        "fix": "trace regenerated with B1/B2; added the verified fact that no access hits a ghost list, so p stays 0"
+      },
+      {
+        "key": "cal020",
+        "rubric": "07-06",
+        "answer": "pass_full.md",
+        "flagged_by": "claude (FAIL)",
+        "defect": "narrowing the bare except to ValueError changed behaviour (strptime raises TypeError on None from a short CSV row)",
+        "fix": "except (TypeError, ValueError), with the reason stated"
+      },
+      {
+        "key": "cal011",
+        "rubric": "07-01",
+        "answer": "pass_full.md",
+        "flagged_by": "claude (ambiguity note; both judges PASS)",
+        "defect": "get_user returned None for a session whose username is the empty string",
+        "fix": "get_user follows the original exactly (session lookup, then users.get)"
+      }
+    ],
+    "rubrics_changed": false,
+    "after_corrections": {
+      "kappa_floor": 0.7,
+      "complete_rows": 78,
+      "kappa_between_judges": 1.0,
+      "kappa_claude_vs_label": 1.0,
+      "kappa_gemini_vs_label": 1.0,
+      "usable": true
+    },
+    "raw_replies": "experiments/rubrics/calibration/{claude,gemini}/calNNN.reply.txt; replaced replies in calibration/superseded/; key in calibration/KEY.json"
+  }
+}

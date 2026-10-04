@@ -1,0 +1,1 @@
+{"criteria": {"c1": "met", "c2": "not_met", "c3": "met", "c4": "not_met", "c5": "not_met"}, "note": "Misses the 409-vs-silent-merge contradiction (3 vs 4) and the integer-ID vs client-UUID contradiction (7 vs 8), and asserts the rest of the spec is consistent; resolutions are given only for two of the four contradictions, with minimal reasoning."}

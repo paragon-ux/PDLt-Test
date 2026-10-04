@@ -1,0 +1,1 @@
+{"criteria": {"c1": "met", "c2": "met", "c3": "met", "c4": "not_met", "c5": "not_met"}, "note": "The proof only justifies B's RED to GREEN (guarded by A entering RED) and never notices that A's RED to GREEN is unguarded, then states no further assumptions are needed; it also does not state the atomic/serialized transition assumption."}
