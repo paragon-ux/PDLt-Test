@@ -37,10 +37,19 @@ Two planes. The **harness** (`src/pdl_taskmaster/`) is a deterministic protocol 
 - Sandbox witness is authoritative; unreproduced witnesses are provisional; no stdout scraping (`GUARD-03`).
 - `is_prompt_pass` is unchanged; ground truth is graded separately (`graders.py`).
 
-## 5. Quick checks
+## 5. Order of evidence
+
+1. **Code first.** Cite `file:line`.
+2. **Recorded artifacts.** Those in `catalogue-runs/` and session folders (`call-trace.jsonl`, `events.jsonl`, `compiled-projection.json`, `model-response.txt`).
+3. **Offline tests.** These include recorded replays (`--worker recorded`).
+4. **A live run.** Only for model, provider or System 1 behaviour that the above cannot settle.
+
+A static conclusion about runtime behaviour stays a hypothesis until an artifact confirms it. See `AGENTS.md`, "Diagnosis and Verification Rule".
+
+## 6. Quick checks
 
 ```bash
 pytest tests/test_harness_anti_overfitting.py -v   # integrity gate (<1s)
 pytest -q                                           # offline suite
-python run_catalogue.py --dry-run                   # manifest: 112 prompts, 28 verified
+python run_catalogue.py --dry-run                   # manifest: 112 prompts, 57 verified (29 by hidden tests)
 ```

@@ -59,6 +59,7 @@ class Item:
     source: str  # "catalogue", "gate" or "dev"
     prompt_text: str
     grade_corpus: Callable[[str], tuple[str, str]] | None  # corpus -> (grade, reason); None: no grader
+    hidden_tests: bool = False  # graded by the prompt's hidden tests on the published text (no corpus)
 
     def grade(self, corpus: str) -> tuple[str, str]:
         if self.grade_corpus is None:
@@ -77,7 +78,11 @@ def catalogue_items() -> dict[str, Item]:
             continue
         entry = json.loads(line)
         text = _read(CATALOGUE / entry["file"])
-        fn = graders.GRADERS.get(entry["id"]) if entry.get("ground_truth_status") == "verified" else None
+        verified = entry.get("ground_truth_status") == "verified"
+        if verified and entry.get("hidden_tests"):
+            items[entry["id"]] = Item(entry["id"], "catalogue", text, None, hidden_tests=True)
+            continue
+        fn = graders.GRADERS.get(entry["id"]) if verified else None
         grade = (lambda corpus, fn=fn, text=text: fn(corpus, text)) if fn else None
         items[entry["id"]] = Item(entry["id"], "catalogue", text, grade)
     return items
@@ -136,8 +141,13 @@ def corpus(kind: str, text: str | None, *, run_code: bool = True, tier: str = CO
 
 def grade_text(item: Item, kind: str, text: str | None, *, run_code: bool = True,
                tier: str = COMMON_TIER) -> dict[str, str]:
-    """Grade one published text. Never raises: a grader bug is an ERROR, never a pass."""
+    """Grade one published text. Never raises: a grader bug is an ERROR, never a pass.
+
+    A prompt with hidden tests is graded by them, on the published text, at their
+    own fixed budget (hidden_tests.TIER) for every arm."""
     try:
+        if item.hidden_tests:
+            return graders.grade_hidden(item.id, kind, text, run_code=run_code)
         built = corpus(kind, text, run_code=run_code, tier=tier)
         if built is None:
             return {"grade": graders.FAIL, "reason": "no published deliverable"}

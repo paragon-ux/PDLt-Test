@@ -189,13 +189,48 @@ The earlier design's Experiment 3 (original-request-first) is **replaced by FB5*
 
 ---
 
+## Tier D: advantage mechanisms (after the gate; their own PR and their own gate)
+
+Tiers A–C can at best show the protocol is **not much worse** than a plain call. Tier D is where the protocol can **beat** one. It uses evidence only the governed route has, and it is measured as its own question:
+- a separate PR, after the acceptance gate;
+- judged by a second gate on a **freshly generated** item set, as the re-gate rule (companion §8.4) already requires;
+- never bundled with Tier B, so parity fixes and advantage mechanisms are never judged together.
+
+| # | Mechanism | Why it is allowed | Design constraints | Measured as |
+|---|---|---|---|---|
+| D1 | **Standard mode stops discarding its own evidence.** In standard mode the host runs the deliverable's code, but `_verify_result` returns only payload findings: "code runs are telemetry" (`session_engine.py:1796-1801`). That covers 102 of 112 catalogue prompts, and every coding prompt asks for the model's own tests. When those tests fail in the sandbox, the host already knows. | A repair carrying "your own tests failed: exit 1, AssertionError in test_x" states a fact about the model's own program, not a hint (GUARD-01). It costs a call only when something actually failed. | **Environment, not task.** A failure the environment caused (a non-stdlib import, blocked network, a denied process) must be told apart from a genuine failure. That comes from the sandbox's **structured result** (denial category, exit code, step or time budget), never from parsing stderr (ADR-0018); this is probably why the runs were made telemetry. **Never the hidden tests.** The evaluation plane's hidden tests never feed back; that would be teaching to the test. | Repair rate; P-first vs P-final on standard coding prompts; both directions: wrong→right and right→wrong. |
+| D2 | **Best-of-k in verified mode.** Sample k EXECUTE candidates, run each, and keep one whose witness the host reproduces and checks. | The host selects by fact (sandbox reproduction plus the witness's structural check), which a plain call can't do. | k is fixed per run, not adaptive to the task. The selection uses only host checks, never a grader. | Accuracy against cost as k grows (k = 1, 2, 4), on verified-mode prompts. |
+| D3 | **A post-answer check against the request.** One call compares the deliverable with the request; findings go back through operator correction. | The findings are about the request's stated requirements, not a method. | Its findings must be factual and checkable against the request text. It may not introduce new requirements. | **Both directions:** wrong→right **and** right→wrong. Catching some errors isn't enough if it breaks correct answers. Net effect with a CI. |
+
+The one automatic revision after a host finding already exists: one redraft per lint or PLAN-02 finding before any stop. FB4 targets the stops that remain after it.
+
+---
+
 ## Sequencing (PRs)
 
 1. **PR #1: merged** as `4ebf7c59` (`f8029231` + FA5 `8ea73cc7`). Integrity suite 15/15; full suite 734 passed; 35/35 CI checks; live REPL checks passed. The catalogue gate was waived by your decision: `--fail-fast` stopped at 01-01, the known REG-003 limit.
-2. **PR 2, measurement only; no protocol behaviour changes.** The `experiments/` tooling (§9 of the companion), the generated gate and dev sets, the grader stress test, FA2 (MANUAL is not a pass), and the plan documents. It provides the fixed commit everything is pre-registered against.
+2. **PR 2, measurement only; no protocol behaviour changes.** It provides the fixed commit everything is pre-registered against. Its living task list is [pr2-worklist.md](pr2-worklist.md). It contains:
+   - the `experiments/` tooling (§9 of the companion);
+   - the generated gate and dev sets;
+   - the grader stress test;
+   - FA2 (MANUAL is not a pass);
+   - the plan documents.
+
+   **The catalogue is fixed first**, because the gate needs a baseline it can test against:
+   - hidden-test graders for the coding categories (02–06, where the sandbox can run them);
+   - a judged group with frozen rubrics and two blinded judges;
+   - per-template clustering of generated items;
+   - a regrade of past runs.
+
+   **Added on 2026-10-04:**
+   - the ambiguity group with a scripted reviewer;
+   - category 10 (multi-turn) in the population;
+   - cost per correct answer as an outcome, with a default-selection rule;
+   - the FB1-only branch.
+   See the companion's §6.6 and §8.4.
 3. **PR 3, defect fixes:** FA1, FA3, FA4, FA6, FA8 (+ FA7). Tests only; nothing the model sees changes in a default run. FA8 changes what you see.
 4. **PR 4a, ADR-0028 Phases 2–4** (already approved): profiles with per-operation effort and `max_output_tokens`, the effort clamp (FB2), and the removal of the hardcoding. IMPL-0003's Nemotron EXECUTE row is revised per FB1 before it lands.
-5. **Your decision on FB5,** then **PR 4b, the principle fixes FB1, FB3–FB6**, with the ADR amendments (ADR-0022 for FB1, ADR-0004 for FB5). Gates: the offline suite, the integrity suite (all pass, no skips), CI on 3.10–3.14, and one live dev-mode REPL turn per model.
+5. **Your decision on FB5,** then **PR 4b, the principle fixes FB1, FB3–FB6**, with the ADR amendments (ADR-0022 for FB1, ADR-0004 for FB5). Gates: the offline suite, the integrity suite (all pass, no skips), CI on 3.10–3.14, and one live dev-mode REPL turn per model only when the AGENTS.md trigger applies (a replay miss, or a change to the provider-layer request); otherwise the offline suite and recorded replays are the check. FB1, FB3, FB5 and FB6 change what the model receives, so this PR does trigger it.
 6. **PR 5, the ultrafast route (ADR-0029),** on top of 4a, which it depends on. It is independent of 4b. See [ultrafast-route-design.md](ultrafast-route-design.md).
 7. **Freeze the gate set and the dev set** (they were committed in PR 2, before any task-model call).
 8. **Run the gate once:**
@@ -205,7 +240,8 @@ The earlier design's Experiment 3 (original-request-first) is **replaced by FB5*
    - the exploratory Q9 arms, branched from P_new's plan.
    About 4 days of Nemotron quota, and about $2.5–5.5 for gpt-oss.
 9. **Accept or reject by the pre-registered rules:** PR 4b by companion §8.4, ultrafast by its own U1–U3. Q9 results are exploratory: adopting DRAFT_EXECUTE or a higher EXECUTE effort needs a dev-set confirmation and its own PR. Any loss that remains against the plain call goes to Tier C, on the dev set only.
-10. **After acceptance:** P_new becomes the default, ultrafast becomes available as a mode, and the results are recorded in an IMPL record.
+10. **After acceptance:** the default route is chosen by the pre-stated rule G5 (companion §8.4): among the routes that pass safety with no detected loss, the cheapest per correct answer. Ultrafast becomes available as a mode, and the results are recorded in an IMPL record.
+11. **PR 6, Tier D (advantage mechanisms),** judged by a second gate on a freshly generated set.
 
 ## What this plan deliberately does not do
 

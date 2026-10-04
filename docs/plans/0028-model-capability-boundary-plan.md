@@ -10,7 +10,7 @@ Project decision: [ADR-0028](../adr/0028-model-capability-boundary.md). Implemen
   - the offline suite;
   - `pytest tests/test_harness_anti_overfitting.py`, which must show 15/15, no skips;
   - CI on Python 3.10–3.14;
-  - one live dev-mode REPL turn (AGENTS.md).
+  - one live dev-mode REPL turn, only when the AGENTS.md trigger applies (a replay miss, or a change to the provider-layer request); otherwise the offline suite and recorded replays are the check (AGENTS.md, Diagnosis and Verification Rule).
 - **No model-facing wording changes.** Descriptions move verbatim, and a test asserts it.
 
 ## Phase 0: The defining tests (red)
@@ -177,7 +177,7 @@ The worker's constructor keeps its arguments, so the CLI surface is unchanged. T
      - the adjustments are exactly the expected ones;
      - gpt-oss's `EXECUTE` latency and tokens are within today's range (3.0–3.7 s, 372–770 tokens);
      - there are no whitespace stalls.
-   - One live dev-mode REPL turn per model (AGENTS.md).
+   - One live dev-mode REPL turn per model. This phase changes the provider-layer request, so the AGENTS.md trigger applies.
 3. **Per-stage measurement on Nvidia's endpoint only.**
    - For Nemotron, record per stage: reasoning and output tokens, latency, finish reason, adjustments, and whether the reply passed validation.
    - Try the IMPL-0003 values first. Change a stage's values only with evidence from that endpoint.

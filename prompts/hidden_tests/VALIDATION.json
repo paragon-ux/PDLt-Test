@@ -1,0 +1,949 @@
+{
+  "prompts": {
+    "02-01": {
+      "tests_sha256": "2073f5aa9494120095d393aec07403534942feeb3122acf0fd8777cae4ef4a04",
+      "answers": {
+        "alt_values_and_functions.py": {
+          "sha256": "85da9c3a16404453bc3dd5eb7e8ba1ee3d1e81096ef37e9262440c2a05d133f4",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_lost_split_keys.py": {
+          "sha256": "1d696b78a750a29a8db3d7441d3674da7d6a249a44ac6a57378716d169591274",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "BPlusTree: test_insert_and_search_with_splits: AssertionError: , test_range_scan_in_order: AssertionError: , test_serialize_round_trip: AssertionError: "
+        },
+        "bug_no_serialization.py": {
+          "sha256": "44868598fc71fb0c4060f77433003644b62e2c43555fc99b8c0d60247e3a3b39",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "BPlusTree: test_serialize_round_trip: AssertionError: no serialize operation found"
+        },
+        "ref.py": {
+          "sha256": "f953cecb2b6987b35ec47e6e545bfd73be9fafddeecc5a16cf2cdcbff068902e",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "02-02": {
+      "tests_sha256": "8ec101dbeaf7c526adeb41ab6d61b589c386f55d2c9f511c75dd3157994b4692",
+      "answers": {
+        "alt_positional_murmur.py": {
+          "sha256": "08c820de33f4f71cad1a43cbdad3595403add1fa5e41be74d9968788453f7e7c",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_bits_not_counts.py": {
+          "sha256": "eb71f6646811fa3cf71a63bf260a1a4446625d1beac85e74e7bfbc3121fd2750",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "CountingBloomFilter: test_remove_keeps_other_members: AssertionError: a remove caused a false negative, test_counts_survive_duplicates: AssertionError: one remove of a twice-added item must keep it"
+        },
+        "bug_too_small.py": {
+          "sha256": "3d01b79cd6f95df98288335b34b4bb6efabc19e00eee59c13c2377a83fa63ec1",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "CountingBloomFilter: test_false_positive_rate_within_twice_the_bound: AssertionError: 0.869, test_remove_keeps_other_members: AssertionError: 51"
+        },
+        "ref.py": {
+          "sha256": "b2e632cec821aaf9a95e5adb3d72d1732b72ae92dbb27ea5d0a5afbc96e75802",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "02-03": {
+      "tests_sha256": "21f18e335d6daf4f96bb38ab8dcad3734bcb35b4a3f96e89aefb7341ae939e2b",
+      "answers": {
+        "alt_total_capacity.py": {
+          "sha256": "f1cfd8a08aea4bb3b381ac2699feca4afa0ddb015ae5d446d072a82edb9c0f8b",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_fifo_eviction.py": {
+          "sha256": "9bb53c02a68a4739f4cb58b2fed8a15e782fbcb6865edbef6970d21e17f5aa4a",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "ShardedLRUCache: test_single_shard_is_an_lru: AssertionError: "
+        },
+        "bug_unbounded.py": {
+          "sha256": "e6d7cb00601dee6fb393a0978c4aeae7472fdac19dcaa9712bcb304f9962a1db",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "ShardedLRUCache: test_single_shard_is_an_lru: AssertionError: , test_capacity_is_bounded: AssertionError: 500"
+        },
+        "ref.py": {
+          "sha256": "d32c36eb6cf67eb0966ce50b38af83025e61a4ad0260898a74c750f3b81bc2c5",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "02-04": {
+      "tests_sha256": "55cf83f087e0c6c23ba693f5fd83bda1e605a50c3e98b99925a8b7d32526cfa8",
+      "answers": {
+        "alt_snapshot_copies.py": {
+          "sha256": "7ecc28a1304d20cb9a2637fda4a9c6522eb63dbd39dd13ef9cb779dedfe5b560",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_restore_shallow.py": {
+          "sha256": "0fef3de04a2be3494e0baaa7873f61dc73e8f28e061239260a0a6dbe542f49fd",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "DisjointSet: test_restore_undoes_unions_since_save: AssertionError: , test_nested_save_restore: AssertionError: , test_many_unions_then_rollback: AssertionError: "
+        },
+        "bug_single_snapshot.py": {
+          "sha256": "5fda46aa8f89b0d2673c95f6ee37399eff80040bfcdd290a25a742d7895775bd",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "DSU: test_nested_save_restore: AssertionError: "
+        },
+        "ref.py": {
+          "sha256": "f61a8d38a05e88a6d256da4b5d76b0e41780c059d7419a530b0967b283b6790d",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "02-05": {
+      "tests_sha256": "a39ae7e4531b46531d0cc9f25cb83ba62b64ffb7c6e6663f62596b41874c470f",
+      "answers": {
+        "alt_none_and_keyword.py": {
+          "sha256": "0feda137fcabe2550e368e2452f35e49c55127aec1008e3754cd21095afc76cd",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_plain_lru.py": {
+          "sha256": "9cdc8bd383ef87c6276ef87b04a5dae19bfca43b66b698d2964acce786a462be",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "LFUCache: test_random_operations_against_a_model: AssertionError: (10, 6146)"
+        },
+        "bug_wrong_tiebreak.py": {
+          "sha256": "5b3c043a31128a57f936a201b6e811f1f4fa0531235afa7cba21d85fa22c4792",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "LFUCache: test_least_recent_among_equal_frequency: AssertionError: , test_reference_sequence: AssertionError: , test_random_operations_against_a_model: AssertionError: (5, 7468)"
+        },
+        "ref.py": {
+          "sha256": "15fe6a1c7828f5221c9340ec918db0bcd7ebb14788c68ce4fa552479c46f20e1",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "02-06": {
+      "tests_sha256": "10f83362c2168ae2f27898a1daa21c5187e688ba8b04bafd8a4b84795540607e",
+      "answers": {
+        "alt_class_api.py": {
+          "sha256": "9f882d9df20946fddd986a16b5233c404fc095e94e6e305036ab332613180daf",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_mutates_in_place.py": {
+          "sha256": "11060d9b0f7c6727fe8953d8bcf593332bfc447495f225441d0b157fbfa499a7",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "module functions: test_persistence: AssertionError: "
+        },
+        "bug_unbalanced.py": {
+          "sha256": "76c03031543a4f5a415c66ab81d92feee571143ce5cf76df92e8063884d7e1a3",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "module functions: test_ascending_inserts_stay_balanced: RecursionError: maximum recursion depth exceeded while calling a Python object"
+        },
+        "ref.py": {
+          "sha256": "9d4803cd1f3886b918cdcd03e32535aedd1abc24f62f6839b5227dff1d87ff0d",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "02-07": {
+      "tests_sha256": "901e35d492c9c6019d3ccf95c78a36e5a1385395afc1e8880049739c4a169eb0",
+      "answers": {
+        "alt_dict_range.py": {
+          "sha256": "3aa7ad91cc8f1ae814f352149b0bc8cf529323de844f3d68aaa1d31995354d09",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_exclusive_hi.py": {
+          "sha256": "0ef3a464b17a4b36a8c48006304a4118a3213b66eb6435fd52818eef4bade81d",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "SkipList: test_range_query_inclusive: AssertionError: , test_random_against_a_dict: AssertionError: "
+        },
+        "ref.py": {
+          "sha256": "63f86d9ce5689fc47b620bd394c3ac1ce10f29df056dba6021a0190def77f960",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "03-02": {
+      "tests_sha256": "d00a4bb875edade17a86af9c01c91b3113cb888e00ccf218d6e1d70b4157dbb8",
+      "answers": {
+        "alt_big_endian_kw.py": {
+          "sha256": "ab99c4f43d55e239cda310e243550682fa5152307c40a6ccc523b0e12a28bdba",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_no_crc_check.py": {
+          "sha256": "a2f60243b3d4053e2d57082226bee2b4a125b490204b5b84d05e3421567d1369",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "WAL: test_corrupt_record_stops_recovery: AssertionError: "
+        },
+        "bug_returns_partial_tail.py": {
+          "sha256": "0dc981eb542f4694aa4fe3052e94768876e77bc44e07e6d9c3caaf9c6ce03ab4",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "WAL: test_truncated_tail_is_dropped: AssertionError: cut at 4053 of 4054"
+        },
+        "ref.py": {
+          "sha256": "569a9822ab87db269622b7757ca019e88cf96049f4c492440d7fad3a7eba7232",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "03-03": {
+      "tests_sha256": "0ebde61f62d3413258d893193638232dd2d4253217b90e4c07175e812326beff",
+      "answers": {
+        "alt_index_memoryview.py": {
+          "sha256": "590eff10e18c41e796c549fbc6c8fce4ac9fc6db19dbbddb6624e854a03261ec",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_no_double_free_check.py": {
+          "sha256": "ae288933adb0934d0b7fb7c296a5e508c7d0a8fd06ae2411c8cd4e60a542cb5a",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "MemoryPool: test_double_free_is_detected: AssertionError: freeing the same block twice was accepted"
+        },
+        "bug_python_list.py": {
+          "sha256": "2e0619a5aa2f57cb912f1e8c673d3b902068aa55ad7645bf718d534ea4cb23b8",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "Pool: test_allocates_every_block_then_exhausts: AssertionError: raised IndexError, not PoolExhausted, test_holds_a_fixed_byte_buffer: AssertionError: no buffer of 128 bytes among [], test_other_sizes: AssertionError: "
+        },
+        "ref.py": {
+          "sha256": "2c388d88c9ca9f8da7d3d71959f7152446cd135f6a23fcc989af7e2104122aa1",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "03-05": {
+      "tests_sha256": "de750fa65d8e4f8477088932aa1648f5fd13d489422edb7eccff6e59fb51fe91",
+      "answers": {
+        "alt_one_empty_slot.py": {
+          "sha256": "21168a2ca9056ccad3f12152443f12cdf173a4b52ec40ded9bf925c39987fa36",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_locked_deque.py": {
+          "sha256": "154712bcda3fe3cc85a237f5255df523b9eed49b8cbce046e03b73e368b1aaca",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "SPSCQueue: test_no_locks: AssertionError: lock-like attributes: ['lock']"
+        },
+        "bug_overwrites_when_full.py": {
+          "sha256": "57c785f24758351d474a3536f681ca0bd89036309a68946207fa0241ccc799c1",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "SPSCQueue: test_empty_full_and_fifo: AssertionError: push never reports full, test_wraparound_single_thread: AssertionError: 54, test_two_threads_in_order: AssertionError: items lost, duplicated or out of order"
+        },
+        "ref.py": {
+          "sha256": "fb2a9fcd5dd41f04443351f51e7e75d9deb6340fb019ae1fd752a7201e3eadfe",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "03-06": {
+      "tests_sha256": "3304956e8ef0f573a57813c716fef71b00f86371ec2eda61ed1edcfedca022d6",
+      "answers": {
+        "alt_class_enum_relative.py": {
+          "sha256": "e9b5ffcd318e94bf4feb0644480197662a7158f0175cdb6a6814c84a46938c02",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_no_mtime_check.py": {
+          "sha256": "44638d4a4ac0d9c76c64919d831e689a72df47f1fc8d0b489b79815c61678a3c",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "watch: test_detects_create_modify_delete_and_subdirectories: AssertionError: no modified edit.txt event; saw [('created', 'c:\\\\users\\\\user\\\\appdata\\\\local\\\\temp\\\\pdlt-sandboxes\\\\hidden-tests-pv4iqv3p\\\\work\\\\run-0001-7dac47\\\\hidden_watch_2056\\\\new.txt')]"
+        },
+        "bug_top_level_only.py": {
+          "sha256": "4d5350e3da497d00ac6d713b2a3ac34a9631ce6c9051840179a4eb418a232601",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "watch: test_detects_create_modify_delete_and_subdirectories: AssertionError: no created sub/ or sub/inner.txt event; saw [('created', 'c:\\\\users\\\\user\\\\appdata\\\\local\\\\temp\\\\pdlt-sandboxes\\\\hidden-tests-e_g7sdxo\\\\work\\\\run-0001-8ddba9\\\\hidden_watch_17572\\\\new.txt'), ('modified', 'c:\\\\users\\\\user\\\\ap"
+        },
+        "ref.py": {
+          "sha256": "2a57008ae0359ade0f312b2a5bf1d0cb3a40766ace076882f44f6ac141406699",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "04-01": {
+      "tests_sha256": "d93e055a0daa5705c9d0190fb19319c307cfe42646f0fe32007ba1a40b8907bd",
+      "answers": {
+        "alt_calculator_class.py": {
+          "sha256": "23692af414dfd097d1eadecdc2cca03bb86c42a5abf5b4c753348a3405da2fbf",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_ignores_trailing.py": {
+          "sha256": "6e55893011cc39a091b0703247cc5bceb9659a2f8d929896b74ecb69badfba20",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "calculate: test_malformed_expressions_raise: AssertionError: '1 + 2)' returned 3 instead of raising"
+        },
+        "bug_right_assoc.py": {
+          "sha256": "8260c9ea4fa9d9d1339c1818e2ef36be58f232cff442823b8423759bcdaa7941",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "evaluate: test_precedence_and_associativity: AssertionError: ('8 - 3 - 2', 7, 3), test_random_expressions: AssertionError: 1 - 3 + 5 * 1 + -(4 + 6) * 2 + 6 + 3 - 1"
+        },
+        "ref.py": {
+          "sha256": "af7cdc19ad3dfc34c5a4eb16fa01f04708b165f23d439482561aed88dafc5e7c",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "04-02": {
+      "tests_sha256": "cf3b4e462ca484a687c9ccf9dc861a2bff8a720a812db76ed15d852a7bec79e0",
+      "answers": {
+        "alt_class_value_only.py": {
+          "sha256": "843ecf705a43e490ed4616249329602b9716eee19ae632f74915b92816497aa1",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_raw_unicode_escape.py": {
+          "sha256": "4e2bbc211a74d64d3770f776e12a1a599638a835ac723c79a5f5ba90dea356a1",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "parse: test_events_for_a_mixed_document: AssertionError: [('on_object_start', None), ('on_key', 'name'), ('on_value', 'stream'), ('on_string', 'stream'), ('on_key', 'values'), ('on_array_start', None), ('on_value', 1), ('on_number', 1), ('on_value', -2.5), ('on_number', -2.5), ('on_value', 300.0), ("
+        },
+        "bug_reads_everything.py": {
+          "sha256": "b8984a5e82115a1132e0cda85a0b1444860f6c97b0264363b2171e594b999a14",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "parse: test_thousand_element_array_streams: AssertionError: the parser asked the stream for all of its contents at once"
+        },
+        "ref.py": {
+          "sha256": "ce3ae2ae8d897a7a4054254ee48c012e1ac7ba9743f6b5ad9278e82920e46645",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "04-03": {
+      "tests_sha256": "233c1b7f780ace99875d75fb69e28b3be15ab11c94aab17310839013e9ba80b2",
+      "answers": {
+        "alt_postfix_class.py": {
+          "sha256": "3d8340ece964c102039064b520b9454237b5085be3f9d795585c58f53fda0647",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_backtracking.py": {
+          "sha256": "50a5262f15cfa5590473efed1c2608ecab7219e33f2483ee4b6ab26de286d0e6",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "match: test_long_input_does_not_backtrack: timed out after 40s"
+        },
+        "bug_plus_allows_empty.py": {
+          "sha256": "f952030474a4d0890056e87ca487e2dac9f6cb2aab94aa4bb1a3e570ca00975c",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "nfa_match: test_each_operator: AssertionError: 'a+' on '': got True, expected False, test_random_patterns_against_re: AssertionError: '.+|a' on '': got True, expected False"
+        },
+        "ref.py": {
+          "sha256": "3a5d4b234fbcf2e22df8ee17cc3e47d44db4736f5e5e67940cf5f6cdd43e80f5",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "04-05": {
+      "tests_sha256": "aaf1dd558a015baceae797a82c2535fa21f74c74a975d8e2d5aae81808e6be97",
+      "answers": {
+        "alt_class_regex.py": {
+          "sha256": "c678d60906a1ab56c5f3b77e78752be9ad4270f0aa923da9c0ef165b3902fd9a",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_italic_first.py": {
+          "sha256": "79fe74e68e30555b8112a756b3f0db0e5bfdffd690be2bf49faa02afcf23d750",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "MarkdownConverter.render: test_headers: AssertionError: '## Mixed **bold** here'\n got:      '<h2>Mixed <i>*bold</i>* here</h2>\\n'\n expected: '<h2>Mixed <strong>bold</strong> here</h2>', test_inline_formatting: AssertionError: '**bold** and __also bold__'\n got:      '<p><i>*bold</i>* and <i>_also bol"
+        },
+        "bug_url_emphasis.py": {
+          "sha256": "da3707d32b596fc8f1e482fa5d5ce1c6e49f6343b8b8fd504a416e99e3e2cf0f",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "MarkdownConverter.render: test_links: AssertionError: '[q](http://x.com/a_b_c?q=1&r=2)'\n got:      '<p><a href=\"http://x.com/a<i>b</i>c?q=1&amp;r=2\">q</a></p>\\n'\n expected: '<p><a href=\"http://x.com/a_b_c?q=1&amp;r=2\">q</a></p>'"
+        },
+        "ref.py": {
+          "sha256": "400dcdc4af2327d1668aca2841780501afb8b2c64700aee0954352da152e56e6",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "04-06": {
+      "tests_sha256": "14781c9be15e69f92ee62496504ec82963ebdb1735903820116d25cd7f3f3a6a",
+      "answers": {
+        "alt_enum_functions.py": {
+          "sha256": "0d2490c456a5ff288c2c5f4c2380331b871ff80acc19acb1b2b0a2c5daa81565",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_operand_order.py": {
+          "sha256": "dddb634280588a3a48cec492f73d0e0f45c0216d1914c4087fd273b9c9b0ef51",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "Compiler.compile -> VM.run: test_prompt_example: AssertionError: 'let x = 3 + 4 * 2; let y = x - 1; print y': expected [10], saw [['-10']], test_more_programs: AssertionError: 'let n = 10; let m = n - 3 * 2 + 1; print m': expected [5], saw [['-3']]; tokenize: test_prompt_example: AssertionError: 'le"
+        },
+        "bug_prints_name.py": {
+          "sha256": "e7bf323a4ba0d7d21872e733cc31e63e5fb812d7f646e5601ef112b66a8fe117",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "run: test_prompt_example: AssertionError: 'let x = 3 + 4 * 2; let y = x - 1; print y': expected [10], saw [['y']], test_more_programs: AssertionError: 'let a = 2; let b = a * a * a; print b; print a': expected [8, 2], saw [['b', 'a']]"
+        },
+        "ref.py": {
+          "sha256": "8545ae2e16b56cdcbfd70f4f6b6ccb15bc390de98311a7a5d7599ce1e7de0aa4",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "04-07": {
+      "tests_sha256": "192e4aba3ab88fc0f1212a3e25525356f89d25b3c26984c298cd22ea9406c2c0",
+      "answers": {
+        "alt_class_minute_scan.py": {
+          "sha256": "dfc50ce685ee5a5be4cf73459db77bafbb2f2bbedc19a59e5a8f0a7ff0586880",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_python_weekday.py": {
+          "sha256": "1ba6f9d6aaecbcab201f5b544cec8fa3caa5b2efcf56de0120d86752ee3e9df1",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "matches/next_fire: test_prompt_examples: AssertionError: , test_field_syntax: AssertionError: , test_random_against_reference: AssertionError: ('40 12,16,23 * * 1-5/2', datetime.datetime(2026, 7, 16, 4, 39, 31), datetime.datetime(2026, 7, 16, 12, 40))"
+        },
+        "bug_step_from_zero.py": {
+          "sha256": "7c85106fe0ae4d8733393b6b1cb423885641735511ea5ee16b5923c4279cc11e",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "matches/next_fire: test_field_syntax: AssertionError: , test_random_against_reference: AssertionError: ('40 12,16,23 * * 1-5/2', datetime.datetime(2026, 7, 16, 4, 39, 31), datetime.datetime(2026, 7, 16, 12, 40))"
+        },
+        "ref.py": {
+          "sha256": "6e1af5c31b8893d92e5e99b0211668d2e66cdce4e5469fc834db33c92000d4e8",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "05-01": {
+      "tests_sha256": "add2156f8c3985c8933aa3194c8f7ef15c05dbf18c258c4b8aacd3bbddd0df83",
+      "answers": {
+        "alt_dict_result.py": {
+          "sha256": "febed006b5c01e61f572899bdd3dbbec17916fa3a10754c84696338fb5f24d86",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_inadmissible.py": {
+          "sha256": "73c77339e5832a2521c15c57c77bf8520c9814ce8726dd77b739547e373cb30c",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "a_star: test_optimal_on_random_grids: AssertionError: (93, 51), test_cheap_detour_beats_short_expensive_route: AssertionError: (28, 8)"
+        },
+        "ref.py": {
+          "sha256": "589c2bae8ea7eec2d294518fa377a4baead0359cfdb90975448051073ae8f4a4",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "05-02": {
+      "tests_sha256": "cd096fc263c0ab5294f2b2b83b9531191739ae5af28d180a9226c176395c5015",
+      "answers": {
+        "alt_monotone_chain.py": {
+          "sha256": "dc44127ec9f57fe422c3b66224082d7f3716bc13357dc9deb59d2c76bb659abe",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_clockwise.py": {
+          "sha256": "d1d8a502ff7f0c911121c54b493f0e8da03ec3b9a0c804e88d574ca1a83d1cf1",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "convex_hull: test_square_with_interior_points: AssertionError: , test_collinear_edge_points_included: AssertionError: , test_random_points: AssertionError: hull differs on a random set"
+        },
+        "bug_drops_collinear.py": {
+          "sha256": "0f8d98aa1be28d783b68af10477773a40fc12e41eccc262eb3fd267f3f52bf8a",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "convex_hull: test_collinear_edge_points_included: AssertionError: , test_random_points: AssertionError: hull differs on a random set, test_all_collinear: AssertionError: "
+        },
+        "ref.py": {
+          "sha256": "1421b4a099a4fc4cda3aa9e5688a63fee90cd217317dd5ace4bc5c9e68a02b3f",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "05-03": {
+      "tests_sha256": "8928b2c0d996c2498c4861b2ecb1dacc409c0fc48352b4a345a39cb0dd7eb40a",
+      "answers": {
+        "alt_tuples.py": {
+          "sha256": "1b61f9f7bccc60131a6e7fb4f80b43c9b54da09d619e4013be9f4ea5ef27702b",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_appends_at_end.py": {
+          "sha256": "2aab22fce116ee077b95a7bee0cf2073f5b803a2d83f82b20f72e697a4b7e851",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "insert_interval: test_prompt_example: AssertionError: , test_positions: AssertionError: , test_merges_all_and_empty: AssertionError: "
+        },
+        "ref.py": {
+          "sha256": "0acaae3a47232972a5cd8e193c30d41892e4bae0b6545f896bc51e917b72d00c",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "05-04": {
+      "tests_sha256": "facbbaa9f177723cd25d8dad0b3841af060c0bbcd71d1eadaa7ea35e1216c1f0",
+      "answers": {
+        "alt_dict.py": {
+          "sha256": "fd03444f3ab0cca08aae5418bdbec189f2a29647d9bafb367dd1edd05fbcf27c",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_substring.py": {
+          "sha256": "0d4862f46a91c1008562017b871b36a3f00851c959a3594f45bdaa1b68e6dd6b",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "lcs: test_prompt_example: AssertionError: , test_random_strings: AssertionError: (1, 'T', 2)"
+        },
+        "ref.py": {
+          "sha256": "e6f94e83e134c99e9f9d9d821316ec3d5ed68fc65ad5fe5334130a954b417739",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "05-05": {
+      "tests_sha256": "099232ba5bc33993872a3dd4a32ce4ef915e59d25eb0a0552672cc0588847511",
+      "answers": {
+        "alt_named_median.py": {
+          "sha256": "ffb36028ee7162d7f8fa14c19839e708f501c1d2f98bae14c4daa248d2fe614a",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_even_uses_upper.py": {
+          "sha256": "968387fdc35cd0c3774bcac8657af29fac493e8dca6072b3b893c9af00940b98",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "find_median_sorted_arrays: test_prompt_examples: AssertionError: , test_random: AssertionError: ([-50, -48, -46, -40, -32, -17, -16, -10, -3, 10, 12, 12, 25, 34, 44, 47, 47, 48], [-38, 2, 18, 19, 37, 43])"
+        },
+        "ref.py": {
+          "sha256": "52cc10cd6b90c360cc8b0d5529da36ddf6355bec466bb051dfaa4705759d203a",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "05-06": {
+      "tests_sha256": "d7e55a3e7ab2c9bbc3691106a2d1450d8c52a44d99fbb9bd44b90998705ac490",
+      "answers": {
+        "alt_pattern_first.py": {
+          "sha256": "81941af8987ef9e796236c22407a4d6ad7ef0c75fa13369cced84731c36e8f48",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_no_overlaps.py": {
+          "sha256": "378030c29d1fccd2d87e20879b13fdd10d317f9cee0486837cc3e506517244b9",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "kmp_search: test_overlapping_and_edge_matches: AssertionError: , test_random_against_naive: AssertionError: ('AAAABAABBAABBBBBABBABBBABBAAAABBAAABBABABBABABBBAA', 'AA')"
+        },
+        "ref.py": {
+          "sha256": "04c55fbdbead06416a76dadf71e22db2ed7a63322f626dbc9dadebe71eab72f0",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "05-07": {
+      "tests_sha256": "e4ef75af1b522b89fbb09ba40ca5e74f4841efcdfdda8433212248a8e1580d14",
+      "answers": {
+        "alt_returns_tuple.py": {
+          "sha256": "5dd89386db2da8f58824e6544645e058316ab41c49ca62b12b60c8547a2a6e2f",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_reports_all_remaining.py": {
+          "sha256": "82ce0939b087b3649d879e4bcd7f83d31f807cd2357bb564849e98503ca51cb1",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "topological_sort: test_reports_an_actual_cycle: AssertionError: no valid cycle in ValueError('cycle among: [1, 2, 3, 4, 5, 6, 7]'), test_more_cycles: AssertionError: ({0: [1], 1: [2], 2: [4], 3: [5], 4: [3], 5: [2], 6: [], 7: [0]}, \"ValueError('cycle among: [2, 3, 4, 5]')\")"
+        },
+        "ref.py": {
+          "sha256": "47dcfa1e0f9524016cd5747e92ec5051b3cdd007430a4f60dafee318cda64b97",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "06-01": {
+      "tests_sha256": "584ed34e79af09418e9a21370ac2b269ff3ff7d9f27bb69ac4c7dce0984e7eea",
+      "answers": {
+        "alt_kept_original.py": {
+          "sha256": "b4375b0f6bd71fc24f79e55a29756fbd7e876457b11eb68051c76fdd38cd78d9",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_misses_last.py": {
+          "sha256": "06227955a8f80f3b52b00f5b7f5beac8a51d7ef0324a519b0e20e4eb2e8b0dee",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "binary_search: test_prompt_example: AssertionError: ([1, 3, 5, 7, 9, 11, 13], 13, -1), test_every_position_and_gap: AssertionError: ([1], 1, -1), test_random_arrays: AssertionError: ([-13, 21, 22], 22, -1)"
+        },
+        "bug_original.py": {
+          "sha256": "8bae4882899c11b1d5c2a4e27c05886e9b03e43e6edec169356e7c75f439c4d7",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "binary_search: test_prompt_example: timed out after 15s"
+        },
+        "ref.py": {
+          "sha256": "eb43df04d8d1942f8c796f32e9367d6593febee770f3a5561b6bb5fdec20c06a",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "06-02": {
+      "tests_sha256": "0941daa07ef25ee8fa26f1a681cc30768a7ae1b4cf14ca4a1d84c45c800d5289",
+      "answers": {
+        "alt_backoff_and_original.py": {
+          "sha256": "7e863becc4da89792e50b4c325cdd0ddf14c5a14bf7c9c0af25cb881d83025f8",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "alt_single_lock.py": {
+          "sha256": "0592b0f72f1c58db0e339b20b0ce704268a726c00322b1058df3674dc22e165c",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_original.py": {
+          "sha256": "b5a7291a44ae3072426de4cba2fcd238baaf7cec285c331f3ecc677d7ae9e73a",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "transfer_ab/transfer_ba: test_forced_interleaving_finishes: AssertionError: deadlocked under the a-then-b / b-then-a interleaving, test_stress_finishes_and_records: timed out after 20s"
+        },
+        "bug_try_lock_drops.py": {
+          "sha256": "657b1c511a99dd92fd9d3859826102af61dc39dbda9f86f6dae87e7925c84ea0",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "transfer_ab/transfer_ba: test_forced_interleaving_finishes: AssertionError: 0 of 2 transfers recorded"
+        },
+        "ref.py": {
+          "sha256": "72762b130a71be5dca79f08a5006ead89ef751da9790a9b463139016c80a4e6a",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "06-03": {
+      "tests_sha256": "cc1c1a2eebe0d11a4b79c1df6c73bdee5b24765c299cca39dfdf6720f40fc0a4",
+      "answers": {
+        "alt_weak_methods.py": {
+          "sha256": "a4d63025715f08240039de5664751f8cd886c28e55dbc2a969e02489269d1318",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_dead_refs_accumulate.py": {
+          "sha256": "1f688e6f8217ab32fa5370e7626309f7858c9661310ec35aceb1cda94482bcf2",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "process_batch/EventEmitter: test_no_growth_over_many_calls: AssertionError: emitter storage grew by 2000 entries after 2,000 calls"
+        },
+        "bug_original.py": {
+          "sha256": "ff60c0bb911f76a40e3c1bea3dc890eb0c95f815fec735d89796f19b071ea780",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "process_batch/EventEmitter: test_no_growth_over_many_calls: timed out after 40s"
+        },
+        "ref.py": {
+          "sha256": "44d44c6a768b91a3de10a71d540746cc00fbc4c58566a0702929e979a3a240df",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "06-06": {
+      "tests_sha256": "671c5f9a35e590db1703621e40df6c904f06d6c7e140a5a0268ae27867abc776",
+      "answers": {
+        "alt_two_pass_kept_original.py": {
+          "sha256": "42a2b32ebecd0afed6c4a1ef3b9436ed864803499db7adf37812a299f8c349d1",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_original.py": {
+          "sha256": "a1428bcb2c973a5e3d1e5efc8a2afe002da11abac77da31b01d86bd80df98a05",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "serialize: test_deep_chain: RecursionError: maximum recursion depth exceeded while calling a Python object"
+        },
+        "bug_reversed_children.py": {
+          "sha256": "989cabd4a52e97ff5fde84e21c31a57ce978e782b405667fae9e8a20e0bd7949",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "serialize: test_small_trees_match_the_original_format: AssertionError: "
+        },
+        "ref.py": {
+          "sha256": "8728db52e605129983d51621e0577d69f3f1789df1996d64cb9737507b52a8f5",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    },
+    "06-07": {
+      "tests_sha256": "85dadb90fd993169a2fbf39b8f4c65aa83c4b7125d43e6a1a3e9016456243665",
+      "answers": {
+        "alt_bytes_kept_original.py": {
+          "sha256": "2db273d406b507c4ff38425e3ec455364279e0adfa0d4a5709ffd3aa9605ce28",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        },
+        "bug_original.py": {
+          "sha256": "a182bd8d364e63c9d6178f540c82e83222da6ac4e32f0f5f949f299da9eb6200",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "save_to_file/load_from_file: test_round_trip: UnicodeDecodeError: 'utf-8' codec can't decode byte 0xe9 in position 3: invalid continuation byte"
+        },
+        "bug_replace_errors.py": {
+          "sha256": "6d30f4efe28cb9c9625563fcf9bdd07cf52ac2ef5713b5b3cbddb84720c9f24a",
+          "passed": false,
+          "expected": false,
+          "ok": true,
+          "reason": "save_to_file/load_from_file: test_round_trip: AssertionError: ('\u6771\u4eac \u5317\u4eac \uc11c\uc6b8 \u4e2d\u6587\u5b57\u7b26', '?? ?? ?? ????')"
+        },
+        "ref.py": {
+          "sha256": "2aee5e634d7ba3a5a33bff23020941ffe1c84afdba9f5e4dbfda1b958bb2320d",
+          "passed": true,
+          "expected": true,
+          "ok": true,
+          "reason": "passed every hidden test"
+        }
+      },
+      "ok": true
+    }
+  },
+  "ok": true
+}

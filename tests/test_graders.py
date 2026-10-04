@@ -36,9 +36,40 @@ def _grade(entry_id: str, tmp_path: Path, deliverable: str | None) -> str:
 
 def test_every_verified_entry_has_a_grader_or_manual_marker():
     verified = [e for e in MANIFEST.values() if e["ground_truth_status"] == "verified"]
-    assert len(verified) == 28
-    machine = [e["id"] for e in verified if e["id"] in graders.GRADERS]
+    assert len(verified) == 57
+    hidden = [e["id"] for e in verified if e.get("hidden_tests")]
+    assert len(hidden) == 29
+    for entry_id in hidden:
+        assert (PROMPTS / MANIFEST[entry_id]["hidden_tests"]).is_file(), entry_id
+        assert entry_id not in graders.GRADERS  # one grader per prompt
+    machine = [e["id"] for e in verified if e["id"] in graders.GRADERS or e.get("hidden_tests")]
     assert machine == [e["id"] for e in verified]  # every verified prompt has a grader
+
+
+def test_hidden_tests_cover_exactly_the_marked_entries():
+    import hidden_tests
+
+    files = {p.stem for p in hidden_tests.TESTS_DIR.glob("*.py")}
+    assert files == {i for i, e in MANIFEST.items() if e.get("hidden_tests")}
+
+
+def test_hidden_test_validation_is_current():
+    """Tests and their reference/alternative/bug answers are validated together;
+    any edit to either needs `python hidden_tests.py --validate` again."""
+    import hidden_tests
+
+    assert hidden_tests.stale() == []
+
+
+def test_hidden_tests_without_code_runs_are_pending(tmp_path):
+    entry = MANIFEST["05-03"]
+    assert _grade("05-03", tmp_path, "```python\ndef insert(a, b):\n    return a\n```") == graders.MANUAL
+    assert graders.grade(entry, tmp_path / "none", PROMPTS)["grade"] == graders.FAIL
+
+
+def test_hidden_tests_fail_a_published_non_result():
+    assert graders.grade_hidden("05-03", "REQUEST_INPUT", "Which intervals?")["grade"] == graders.FAIL
+    assert graders.grade_hidden("05-03", "RESULT", None)["grade"] == graders.FAIL
 
 
 def test_non_verified_entries_are_not_applicable(tmp_path):

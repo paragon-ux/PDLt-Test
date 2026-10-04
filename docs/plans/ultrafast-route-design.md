@@ -241,7 +241,7 @@ The BYPASS environment sentence (`host/app.py`, `_bypass_environment`) changes f
 | Use | How | Cost |
 |---|---|---|
 | **An arm in the acceptance gate** | `P_unc` in every block, alongside C0–C3, P_old and P_new. **Acceptance rules for the route:**<br>U1: safety not worse than P_old on the S stratum (blocking).<br>U2: no detected loss against C0 on T+G (blocking for making it a recommended mode).<br>U3: mechanism checks: never claims confirmation; exit codes correct; 13-06 asks for input; 09-xx injected directives not acted on. | Per block, ≈ +2.3 Nemotron requests and ≈ +$0.003 gpt-oss. The gate goes from ≈ 17.6 to ≈ 20 requests per block. |
-| **My live checks (AGENTS.md)** | **Your decision:** it relaxes the directive you call the most important. A possible amendment: a pass that changes **only** System 1 recipes, Bootstrap, the sandbox, or verification and witness handling may verify with an ultrafast turn. Anything else still needs a confirmation-route turn, including EXECUTE's contracts, providers and request construction. An ultrafast turn makes no schema-constrained call (Bootstrap is free text, Call 2 is JSON mode). But the schema-constrained calls (DRAFT_PROMPT, DRAFT_PLAN) are where provider failures have appeared: Nemotron whitespace stalls, Groq HTTP 400s. | ≈ 2–3 calls instead of 4–9 per check, for the changes the amendment covers |
+| **My live checks (AGENTS.md)** | **Superseded by the AGENTS.md "Diagnosis and Verification Rule" (U5).** The original proposal follows for the record. A possible amendment: a pass that changes **only** System 1 recipes, Bootstrap, the sandbox, or verification and witness handling may verify with an ultrafast turn. Anything else still needs a confirmation-route turn, including EXECUTE's contracts, providers and request construction. An ultrafast turn makes no schema-constrained call (Bootstrap is free text, Call 2 is JSON mode). But the schema-constrained calls (DRAFT_PROMPT, DRAFT_PLAN) are where provider failures have appeared: Nemotron whitespace stalls, Groq HTTP 400s. | ≈ 2–3 calls instead of 4–9 per check, for the changes the amendment covers |
 | **The catalogue** | `run_catalogue.py --route unconfirmed`: a full 112-prompt run is about 260 requests (against about 560) and 2–3× faster. It validates System 1, Bootstrap, the sandbox, verification and the route itself. It makes no schema-constrained call, so **it does not replace** the confirmation-route catalogue for changes to that route, to EXECUTE's contracts or to providers. | ≈ ½ the quota |
 | **End users** | `--ultrafast` for tasks where reviewing before execution isn't worth it; correction afterwards by follow-up. `--fast` stays for "show me, but don't wait". The confirmation protocol is unchanged for everything else. | 2 calls |
 
@@ -251,15 +251,15 @@ It **does not** make the confirmation-protocol experiment cheaper: P_old and P_n
 
 ## 8. Decisions for you
 
-**Decided 2026-10-04:** U1, U3, U4, U5 (strict for now) and U6, as recommended. **Open:** U2 (the flag name).
+**Decided 2026-10-04:** U1, U3, U4 and U6, as recommended; U2: in conflict, to confirm (LEDGER L6); U5 superseded by the AGENTS.md "Diagnosis and Verification Rule" (below).
 
 | # | Decision | Recommendation |
 |---|---|---|
 | U1 | O4 (two calls) now, and O5 (one call) only after 09/13 non-regression | Yes |
-| U2 | Name: `--ultrafast` describes speed, but the real difference is "no confirmation". | `--unconfirmed` as the canonical flag, with `--ultrafast` as an alias, so the user sees what they opt out of. Your call. |
+| U2 | Name: `--ultrafast` describes speed, but the real difference is "no confirmation". | **Conflict, to confirm (LEDGER L6).** Main chat, 2026-10-04: "Ultrafast = --ultrafast". Side chat: `--no-review` as the canonical flag, `--ultrafast` as an alias, plus a startup banner. The docs use `--ultrafast` until you choose. Either way, the published output labels the interpretation unconfirmed. |
 | U3 | Show the working notes by default, after the deliverable | Yes; they let the user catch a misreading after the fact. |
 | U4 | Effort for `EXECUTE_UNCONFIRMED` | At least the model's default (`medium`), per FB1. Bootstrap's effort clamped to the supported levels (FB2), so never `high` on Nemotron. |
-| U5 | The AGENTS.md amendment for live checks (§7) | **Decided 2026-10-04:** keep the rule strict until ultrafast has its own record of passing live checks; then adopt the narrowed version. |
+| U5 | The AGENTS.md amendment for live checks (§7) | **Superseded 2026-10-04** by the AGENTS.md "Diagnosis and Verification Rule": static first, offline before live, live only on the trigger. Under it, a live check is about what the model or provider receives, not about which route runs. **A change to ultrafast's own request** (`EXECUTE_UNCONFIRMED` guidance, effort or format) needs one ultrafast turn. **A change to the confirmation route's schema-constrained calls** (DRAFT_PROMPT, DRAFT_PLAN) needs a confirmation-route turn, because ultrafast never makes those calls and so cannot stand in for them. **A change that leaves every request unchanged** (a replay hit with no provider-layer diff) needs no live turn. |
 | U6 | Where it lands | Its own PR **after ADR-0028 Phases 2–3**, which it depends on (§4.10). Suggested order: PR 2 measurement → PR 3 defect fixes → PR 4a ADR-0028 Phases 2–4 → PR 4b principle fixes and PR 5 ultrafast, in either order → one gate run that includes `P_unc`. |
 
 ---

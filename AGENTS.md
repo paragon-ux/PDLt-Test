@@ -1,9 +1,28 @@
 # Agent Rules & Guidelines
 
-## Live Session REPL Verification Rule (CRITICAL / MANDATORY)
-- Every completed pass (not necessarily mid-pass), you MUST test using the live session REPL from the repository root (this repo) in dev mode to confirm green. If `OPENROUTER_API_KEY` is unavailable, say so explicitly instead of claiming a live pass.
-- Run the REPL with `--dev` or `/dev on` to inspect telemetry, stage transitions, and deliverable correctness.
-- This is the most important directive.
+## Continuity (read first, every session and after every context compaction)
+- **`docs/plans/LEDGER.md` is the canonical record** of cross-cutting decisions and open items: each with its source (main chat, side chat, the user), status and link.
+- **Read it before starting work.** Then read the current PR's work list it points to (for example `docs/plans/pr2-worklist.md`).
+- **Update it in the same change** that settles, changes or completes an item.
+- **A side-chat decision is not settled until it has a ledger row.** When two recorded decisions disagree, mark the row `conflict` and ask the user; never pick one silently.
+- **Within one turn, a built-in task list is fine for progress.** The ledger and the work list are what survive compaction. An external tracker may mirror them, never replace them.
+
+## Diagnosis and Verification Rule (CRITICAL / MANDATORY)
+- **Static first.** Diagnose from the code: trace the path and cite `file:line`. Read the artifacts existing runs already recorded (`call-trace.jsonl`, `events.jsonl`, `compiled-projection.json`, `model-response.txt`). If the code determines the answer, do not reproduce it live.
+- **Offline before live.** Verify host logic with the offline suite and recorded replays (`--worker recorded`). Controller transitions, exit codes, routing plumbing, grading, telemetry, docs and refactors need no API call.
+- **Live only when the answer depends on what code cannot determine:**
+  - what a model returns for a request, when no recorded output answers it;
+  - provider behaviour: schema acceptance, routing, stalls, token reporting, latency;
+  - a System 1 decision on an input it has not seen;
+  - a change to what the model or provider receives, checked once before merge (trigger below).
+- **The trigger for "receives".** Either of these:
+  - a recorded replay misses, because the rendered prompt's hash changed (`RecordedWorker` keys on the operation plus the prompt's SHA-256 and raises `ReplayMissError`);
+  - the provider-layer request changed (`providers/api_worker.py`: guidance text, effort, response format, caps, provider pinning).
+
+  Replay alone does not cover the second: those parts are added after the prompt is hashed.
+- **A static conclusion about runtime behaviour is a hypothesis.** Code can be read confidently and still not be what runs: environment variables, provider defaults, a stale install. A static claim about model or provider behaviour stays a hypothesis until a recorded artifact confirms it. Only when none exists does it justify a live run.
+- **A live run answers a stated question.** Before running, write what you expect and what would falsify it. Use the smallest run that answers it, in dev mode (`--dev`), from the repository root. No generic smoke runs.
+- **Label the evidence.** Every claim says how it was established: static (`file:line`), offline test, recorded artifact, or live run. Never report a static or offline result as "verified live". If a required live check can't run because `OPENROUTER_API_KEY` is unavailable, say so.
 
 ## PDL Standard Adherence
 - Prompt Pseudocode MUST strictly conform to `PDL-01` through `PDL-08`.
@@ -25,7 +44,7 @@
   - `3`: `WAITING_INPUT` (legitimate pause awaiting external input).
   - `4`: harness or provider error (`EXIT_HARNESS_ERROR`); never a protocol result.
   - `130`: interrupted by the user.
-- **Catalogue Verification**: From the repository root, use `python run_catalogue.py --fail-fast` to ensure zero regressions across all 16 categories. Never loosen `is_prompt_pass` or `graders.py` to obtain a green result.
+- **Catalogue Verification**: Before merging a PR that changes behaviour (what the model receives, routing, stage logic, verification or grading), run `python run_catalogue.py --fail-fast` from the repository root to check for regressions across all 16 categories. It is not a per-pass check. Never loosen `is_prompt_pass` or `graders.py` to obtain a green result.
 
 ## Post-Implementation Anti-Overfitting & Integrity Gate (MANDATORY / SSOT)
 - **The Referee Invariant (GUARD-01, GUARD-04)**: The harness is strictly an objective protocol referee and governor—NEVER an AI task solver. The harness MUST NEVER:
