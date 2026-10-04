@@ -51,7 +51,7 @@ The sandbox probe (2026-10-04) found sockets, subprocesses and asyncio denied. T
 - [x] ADR-0015: amendment note (decision 3 superseded).
 - [x] `REVIEWER.md`: order of evidence (§5).
 - [x] `protocol-fixes-plan.md` and the 0028 plan: a live turn only on the trigger.
-- [x] `ultrafast-route-design.md`: U5 redone under the new rule. U2 is in conflict (LEDGER L6).
+- [x] `ultrafast-route-design.md`: U5 redone under the new rule; U2 decided: `--no-review`, alias `--ultrafast`, startup banner (LEDGER L6).
 - [x] The two live model-selection sessions are kept in the experiment design (provider behaviour).
 
 ### b. Experiment design additions
@@ -102,7 +102,7 @@ The design is written in the gate doc (§6.6, §8.4 G5/A1/M1, §3.2/§4 +FB1). B
 
 - [ ] Update the `prompt_set` strata and lock, including A and M.
 - [ ] Update the docs: about 46 machine-graded prompts, about 170 blocks plus A/M, and the gpt-oss cost.
-- [ ] U2: the flag name is in conflict (LEDGER L6); record the user's choice.
+- [x] U2 recorded: `--no-review` with `--ultrafast` as an alias, plus a startup banner (LEDGER L6).
 
 ## T9. Regrade and baseline
 

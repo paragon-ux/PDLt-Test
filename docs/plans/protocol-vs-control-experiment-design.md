@@ -47,7 +47,7 @@ Its probe arms answer the questions principle can't settle (fix plan, Tier C).
   - a frozen **gate set**: 42 task prompts (18 catalogue + 24 generated), 11 safety prompts, 6 qualitative prompts;
   - a separate **dev set**: 24 generated items with a different seed, for any later calibration. It is never used to accept or reject.
 - **Models: gpt-oss only** (Nemotron dropped from the experiments, 2026-10-04: about 14 tokens/s). Conclusions are single-model unless a second model passes the pre-fixed criteria (§7, D15).
-- **Budget:** 118 blocks. About $2.5 expected and $5.5 at worst, including the ultrafast arm; about 6–12 hours of sequential runs. **Top up and raise this key's $5 cap first.**
+- **Budget:** 118 blocks. About $2.5 expected and $5.5 at worst, including the ultrafast arm; about 6–12 hours of sequential runs. **The key's limit was raised to $10 (done 2026-10-04).**
 - **Power:** 0.87–0.98 to detect a 20-point difference; 0.31–0.49 for 10 points. **The gate catches large regressions only. Passing it means "no large regression detected", not "parity established".**
 - **The usable graded set is small:** 22 of the 112 catalogue prompts have a grader that can return both PASS and FAIL (§6.5). The generated items exist to reach 42 task prompts.
 
@@ -454,7 +454,7 @@ Follow-up correction is how ultrafast gets fixed, so M is its natural test. The 
 | Worst case | ≈ $5.5 |
 | **Schedule** | about 6–12 hours of sequential runs (Crusoe is about 185 tokens/s, and there is no daily request cap); it may be split over days, with the day recorded |
 
-**Before Day 1 (decision D6):** raise this key's cap and top up credits by at least $10, so an HTTP 402 can't cut the gate short.
+**Before Day 1 (decision D6): done 2026-10-04.** The key's limit is now $10, so an HTTP 402 can't cut the gate short. With the ultrafast arm the expected spend sits well under it.
 
 **An optional second model (decision D15).** It adds only generality: whether the effects hold beyond one model. Its criteria are fixed now, before any harness result is seen:
 
@@ -723,7 +723,7 @@ These are I3, I4 and I5. For prompts with protocol-only PASS paths, the free-tex
 | D2 | Generated gate and dev sets | Yes. Without them n = 18, and power for a 20-point loss is about 0.45. |
 | D3 | k = 2 | Yes: prompt supply is exhausted, and Q4 and H1 need within-prompt variation. |
 | D4 | Pin gpt-oss to Crusoe | Yes: measurable reasoning tokens, half the cost, bf16. It is not the shipped default. |
-| D6 | Raise the key's cap and top up at least $10 | Yes, before Day 1. |
+| D6 | Raise the key's cap and top up at least $10 | **Done 2026-10-04:** limit raised to $10. |
 | D7 | Force-confirmed as the primary P score | Yes. The headless score comes from the same runs. |
 | D8 | FB5: who governs, the user's words or the pseudocode | **Decided 2026-10-04:** the user's words govern (FB5 adopted). |
 | D9 | The `graders.py` `_run_budget` correctness fix | **Approved 2026-10-04:** grade the published code under the tier it ran under (its `SANDBOX_RUN` events). |

@@ -3,8 +3,12 @@
 ## Continuity (read first, every session and after every context compaction)
 - **`docs/plans/LEDGER.md` is the canonical record** of cross-cutting decisions and open items: each with its source (main chat, side chat, the user), status and link.
 - **Read it before starting work.** Then read the current PR's work list it points to (for example `docs/plans/pr2-worklist.md`).
-- **Update it in the same change** that settles, changes or completes an item.
-- **A side-chat decision is not settled until it has a ledger row.** When two recorded decisions disagree, mark the row `conflict` and ask the user; never pick one silently.
+- **Update it in the same change** that settles, changes or completes an item. Mark items `done` as they land, citing the commit.
+- **A side-chat decision is not settled until it has a ledger row.**
+- **When two recorded decisions disagree:**
+  - a **minor** conflict: the side chat's decision wins; record it, noting the conflict in the row;
+  - a **major** one: mark the row `conflict` and ask the user.
+  Never pick silently.
 - **Within one turn, a built-in task list is fine for progress.** The ledger and the work list are what survive compaction. An external tracker may mirror them, never replace them.
 
 ## Diagnosis and Verification Rule (CRITICAL / MANDATORY)
