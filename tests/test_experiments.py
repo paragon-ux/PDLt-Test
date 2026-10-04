@@ -23,6 +23,13 @@ def test_prompt_set_lock_matches_every_file():
     assert prompt_set.check_lock() == []
 
 
+def test_lock_hash_ignores_line_endings(tmp_path):
+    lf, crlf = tmp_path / "lf.txt", tmp_path / "crlf.txt"
+    lf.write_bytes(b"line one\nline two\n")
+    crlf.write_bytes(b"line one\r\nline two\r\n")
+    assert prompt_set._sha256(lf) == prompt_set._sha256(crlf)
+
+
 def test_lock_strata_follow_the_selection_rule():
     lock = json.loads(prompt_set.LOCK_PATH.read_text(encoding="utf-8"))
     counts = lock["counts"]

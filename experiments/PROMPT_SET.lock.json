@@ -31,7 +31,7 @@
       "stratum": "T",
       "tier": "N",
       "file": "prompts/01_combinatorial_search/schur_triples_n15.txt",
-      "sha256": "5faf1b6a82a234c840fb475bca3f4237df433fb13946d0e3420bc906628c5f31"
+      "sha256": "eff0b0fed4038d53c1e605779077796c2a742f5f4844763876bc305513291592"
     },
     {
       "id": "01-02",
@@ -39,7 +39,7 @@
       "stratum": "T",
       "tier": "N",
       "file": "prompts/01_combinatorial_search/exact_cover_dlx.txt",
-      "sha256": "62bc022aa1b6340fab3275e0c87a2c592f689a94755180382532809f0171f2c9"
+      "sha256": "c6a6e1c19f7fa69d0a3bd000c8ed7895490a1810ac9393fe9408329bb9f3de21"
     },
     {
       "id": "01-03",
@@ -47,7 +47,7 @@
       "stratum": "T",
       "tier": "N",
       "file": "prompts/01_combinatorial_search/graph_coloring_k4.txt",
-      "sha256": "3212a4acd7c5d13f02e4cbd15fcf3226ebba2649e245a079ed4ae4106becf559"
+      "sha256": "b78dfb18f1fdc453e688ddd2aba0a7d8e4c2d696160b305241190faa56922730"
     },
     {
       "id": "01-04",
@@ -55,7 +55,7 @@
       "stratum": "T",
       "tier": "N",
       "file": "prompts/01_combinatorial_search/subset_sum_target.txt",
-      "sha256": "8d184d236021ea6631df233d0d71772703ec93bcf2433e786bfb88212d068d2f"
+      "sha256": "fc53d68eba4f490c154b65c8caf3764a8e6979807a26224bde1ccc1f369978ad"
     },
     {
       "id": "01-05",
@@ -63,7 +63,7 @@
       "stratum": "T",
       "tier": "N",
       "file": "prompts/01_combinatorial_search/latin_square_completion.txt",
-      "sha256": "9e05b66710f471e5773ff36e2abb12d6716a3b26723aff1fb8d8d935388458be"
+      "sha256": "3f031b29072d86dd0c5baee77987e41eea08bb4ee6292900588bbdc2f952bafa"
     },
     {
       "id": "01-06",
@@ -71,7 +71,7 @@
       "stratum": "T",
       "tier": "N",
       "file": "prompts/01_combinatorial_search/bin_packing_first_fit.txt",
-      "sha256": "908e712eec6f428bf6880e39e32684bb044fda19b742c3ab6bf05f7ed80ba77d"
+      "sha256": "7e2ac5c52a8c8acaa82c427369bc6f2178eb90268a3e2903b42be0c48a267af7"
     },
     {
       "id": "01-07",
@@ -79,7 +79,7 @@
       "stratum": "T",
       "tier": "N",
       "file": "prompts/01_combinatorial_search/hamiltonian_path_sparse.txt",
-      "sha256": "a663343e9131a9ca4c7e75bfe2def311486ea92911e84723595fcf8373f476db"
+      "sha256": "b9a8db14edb9871a39d3916208fec805778ca3f2d487ccdc670851eb61f76e0b"
     },
     {
       "id": "13-01",
@@ -87,7 +87,7 @@
       "stratum": "T",
       "tier": "R",
       "file": "prompts/13_negative_and_impossible/unsatisfiable_constraints.txt",
-      "sha256": "46c5033f9728c561202156db624be8b6075d79c60f92ac93ebd5b580dfe1f41c"
+      "sha256": "84cc30aea552004c09a42877fdc7921d05b6039bf3840bd446110b52dd4bae58"
     },
     {
       "id": "13-02",
@@ -95,7 +95,7 @@
       "stratum": "T",
       "tier": "R",
       "file": "prompts/13_negative_and_impossible/np_hard_exact_large.txt",
-      "sha256": "aff9312654974112f5d7b4a0a89257d2c49dfbe300efd33a34da28cceeb9da9e"
+      "sha256": "708f73bfcd45c12e0797a3213ba44c38ff010b351e45dc4942cafa6514810865"
     },
     {
       "id": "13-04",
@@ -103,7 +103,7 @@
       "stratum": "T",
       "tier": "F",
       "file": "prompts/13_negative_and_impossible/contradictory_requirements.txt",
-      "sha256": "f0bb39c1d63ecd46f97b4ab4e8008f651f50b27961311a84194d97a16c63931b"
+      "sha256": "af5788db728cfc36569c031e374fe94d7ec7a3d63839e6308440b8632e30dbae"
     },
     {
       "id": "14-01",
@@ -111,7 +111,7 @@
       "stratum": "T",
       "tier": "R",
       "file": "prompts/14_formal_verification/loop_invariant_proof.txt",
-      "sha256": "5502bddc00dd6b07453172709f1b7192bf9b79b37680c1f0faa4fbd297301efb"
+      "sha256": "af0ef332f4213f1585b671b4d9099e98ad2f8b72e255775ab4e2326bff9b4227"
     },
     {
       "id": "14-03",
@@ -119,7 +119,7 @@
       "stratum": "T",
       "tier": "R",
       "file": "prompts/14_formal_verification/protocol_deadlock_free.txt",
-      "sha256": "ef15b519fd39585c87dea6e811ddc89121971bdfb201314711642ab7faf9c7db"
+      "sha256": "cb45ef5040df2acfdd81aeb9fcf11df23ba0b2b65f728848ef5e796e3f056aa6"
     },
     {
       "id": "14-05",
@@ -127,7 +127,7 @@
       "stratum": "T",
       "tier": "R",
       "file": "prompts/14_formal_verification/amortized_analysis.txt",
-      "sha256": "5aeac47cd0f855c5d48db95021b29abf34cbea52698f48c603df911b83fed7dd"
+      "sha256": "75c874ba5b08a19c539fa9bd72faac7da205f43f9f26be6ad4142244800454c1"
     },
     {
       "id": "14-07",
@@ -135,7 +135,7 @@
       "stratum": "T",
       "tier": "F",
       "file": "prompts/14_formal_verification/termination_argument.txt",
-      "sha256": "97f42b7865d6b0f8617d75747478a9bc7bba8f74e9d99220046b2852687a0ed5"
+      "sha256": "3081d5aeed6a9247dc1bdc1ba3714f997e62a580477508ee92ea08337945c261"
     },
     {
       "id": "16-03",
@@ -175,7 +175,7 @@
       "stratum": "S",
       "tier": "N",
       "file": "prompts/13_negative_and_impossible/hallucination_trap_api.txt",
-      "sha256": "af9298ac8e39d38210b17d88cc72e41e098fc6b832d151963cd29baf6959bb2a"
+      "sha256": "23e7f81f3066a5ef1daf8b3b19cf08d815ea05465ad1f286a80fb876157e1828"
     },
     {
       "id": "13-05",
@@ -183,7 +183,7 @@
       "stratum": "S",
       "tier": "N",
       "file": "prompts/13_negative_and_impossible/out_of_scope_medical.txt",
-      "sha256": "bc527d59b987e2188883b899d1506ee77cde1aa5a70758b90614ba43d0aa3096"
+      "sha256": "7242d43b1ee5114c1674c197b0934a86bd3fcadd8ea81e88251adf1c15011c2b"
     },
     {
       "id": "13-06",
@@ -191,7 +191,7 @@
       "stratum": "S",
       "tier": "N",
       "file": "prompts/13_negative_and_impossible/insufficient_information.txt",
-      "sha256": "a4e70a22457306798cbca4c358a491433b2c652fcff422f0d2c65a9bcb32a271"
+      "sha256": "cb2f10aeb3d1d0cd061ae6c368f682fe8cefda0ab7b194ba50eb53e1bdf294d2"
     },
     {
       "id": "13-07",
@@ -199,7 +199,7 @@
       "stratum": "S",
       "tier": "N",
       "file": "prompts/13_negative_and_impossible/stale_knowledge_cutoff.txt",
-      "sha256": "74b1cc1c22b679b23d1d1b496b8e4733b677e3e0ae1ec2b071eecf95a6449747"
+      "sha256": "1e4100882e8e88f0adff7cad2f38918f41802b04fa5272a199974d87f942cd94"
     },
     {
       "id": "09-01",
@@ -207,7 +207,7 @@
       "stratum": "I",
       "tier": "N",
       "file": "prompts/09_adversarial_and_injection/fielded_schema_injection.txt",
-      "sha256": "a4af47b71c1625427d73b4fb4058693540c7b56e11acf8e12970c040e1c70818"
+      "sha256": "997a0937b7e7f62aad0eade2301ed5c3229c4a099b156d8c0f6d474b8a8d5e42"
     },
     {
       "id": "09-02",
@@ -215,7 +215,7 @@
       "stratum": "I",
       "tier": "N",
       "file": "prompts/09_adversarial_and_injection/system_prompt_override.txt",
-      "sha256": "5fd3f91c6bff79b86d8ff3c379012ad48200075c43de9f85f4f87d3f5df4333b"
+      "sha256": "3607c9295cd9e96140a261d6d9907afefb33320ac6b334ba79e538e8833c4e61"
     },
     {
       "id": "09-03",
@@ -223,7 +223,7 @@
       "stratum": "I",
       "tier": "N",
       "file": "prompts/09_adversarial_and_injection/nested_code_fence_escape.txt",
-      "sha256": "654ffa1d538af38ffae6cb9906728bc5b81ea603dfb5cb3d590e78401b0f726b"
+      "sha256": "dfc3f712d3489f53efbac762bc1a1786c0125d3960dafc165ca4ef943bd9bd73"
     },
     {
       "id": "09-04",
@@ -231,7 +231,7 @@
       "stratum": "I",
       "tier": "N",
       "file": "prompts/09_adversarial_and_injection/json_payload_pollution.txt",
-      "sha256": "6411c0b2cf2a288c2c85c361df942437c913fd4d35c438d65f0ac406d12c90c6"
+      "sha256": "5757c5eed28601e1ff62fcfb4ffb4d4733e175c5da638fe6f0e4c512900dcfbd"
     },
     {
       "id": "09-05",
@@ -239,7 +239,7 @@
       "stratum": "I",
       "tier": "N",
       "file": "prompts/09_adversarial_and_injection/unicode_homoglyph_ids.txt",
-      "sha256": "7beefa1c8ebe4ebeecfdd651387f55fcaedc8891d1ad6b7e29e76a395f8e346e"
+      "sha256": "17b9a7522e522cca30383938a9357fe1df88a8ca23a6e0d1462da230b0fcc359"
     },
     {
       "id": "09-06",
@@ -247,7 +247,7 @@
       "stratum": "I",
       "tier": "N",
       "file": "prompts/09_adversarial_and_injection/recursive_self_reference.txt",
-      "sha256": "e06f579b9e7eb1dfb7381146ccd27f3d90ebc647b155f863345e8a07428bc937"
+      "sha256": "bba7f22885faf1fb6b1774bbaf3b1d878fd765ce5c8bb477eee46d7ff19f3d31"
     },
     {
       "id": "09-07",
@@ -255,7 +255,7 @@
       "stratum": "I",
       "tier": "N",
       "file": "prompts/09_adversarial_and_injection/token_exhaustion_bomb.txt",
-      "sha256": "7d4cad363319cd23d753bf6649750bd7a882ef231d7a6407c86daaa0b4aff0ce"
+      "sha256": "d9a103e018f5c3d4caf78fdf53fc69bc80be1f8b4414595e29ea4436bd21b1bd"
     },
     {
       "id": "14-02",
@@ -263,7 +263,7 @@
       "stratum": "Q",
       "tier": "N",
       "file": "prompts/14_formal_verification/type_system_soundness.txt",
-      "sha256": "a015f71131b54b801bfb2db98279bda98eeb5f66c8471c5ce630cb99e3f97fd2"
+      "sha256": "d3f4f8e58533bf7a5f9411c49fda0437514b76217fcaab5acf99803c9f1577c5"
     },
     {
       "id": "14-04",
@@ -271,7 +271,7 @@
       "stratum": "Q",
       "tier": "N",
       "file": "prompts/14_formal_verification/sorting_correctness.txt",
-      "sha256": "0d370675bcf617f15ae2a71047da7a60f1ec8219fcf81e8a6efbd53936285a55"
+      "sha256": "36ada948b8c8d9e8bed3f86e8c0375a48aedf17a02cb0ac163c9ffdd29da2530"
     },
     {
       "id": "14-06",
@@ -279,7 +279,7 @@
       "stratum": "Q",
       "tier": "N",
       "file": "prompts/14_formal_verification/invariant_preservation.txt",
-      "sha256": "02914a4ca45d274f28c9d46243476797828a4099b723147029ee43ecb94895ce"
+      "sha256": "09e7292c1f155547ad5ceacf9a681b59cb9ddd5e5232ff7771f3623b122ab698"
     },
     {
       "id": "16-01",

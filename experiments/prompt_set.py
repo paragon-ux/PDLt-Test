@@ -43,7 +43,10 @@ FAMOUS_TIERS: dict[str, list[str]] = {
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    """The file's content hash, independent of line endings: `* text=auto` checks
+    .txt files out with CRLF on Windows and LF elsewhere, and the lock must hold
+    on every checkout."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def _catalogue_files() -> dict[str, str]:
