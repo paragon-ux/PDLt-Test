@@ -44,8 +44,8 @@ This file is the **single source of truth** for cross-cutting decisions and open
 | L2 | PR #1 (resume fix FA5) merged before any experiment PR | user, 2026-10-04 | done | Merged as `4ebf7c59`; the catalogue gate was waived (REG-003). | fix plan, Sequencing 1 |
 | L3 | FB5: the user's words govern; the pseudocode is the reviewed interpretation | user, 2026-10-04 | decided (PR 4b) | Adopted. | fix plan FB5; gate D8 |
 | L4 | The grader budget is the tier the published code ran under | user, 2026-10-04 | done (`257fdcc8`) | `graders._run_budget` reads the last `SANDBOX_RUN` tier. | gate D9; `graders.py` |
-| L5 | Ultrafast decisions U1, U3, U4, U6 | user (confirming side), 2026-10-04 | decided (PR 5) | As recommended. | ultrafast §8 |
-| L6 | **U2, the flag name** | user, 2026-10-04 (confirming side) | decided (PR 5) | **`--no-review` is the canonical flag, `--ultrafast` an alias, plus a startup banner** saying review is off. This settled a conflict with an earlier main-chat "Ultrafast = --ultrafast". | ultrafast §8 U2, §4.1 |
+| L5 | Ultrafast decisions U1, U3, U4, U6 | user (confirming side), 2026-10-04 | done (`0a730167`) | Built on `feat/ultrafast-route`. | ultrafast §8 |
+| L6 | **U2, the flag name** | user, 2026-10-04 (confirming side) | done (`0a730167`) | **`--no-review` is the canonical flag, `--ultrafast` an alias, plus a startup banner** saying review is off. This settled a conflict with an earlier main-chat "Ultrafast = --ultrafast". | ultrafast §8 U2, §4.1 |
 | L7 | U5, live checks for ultrafast | side, 2026-10-04 | done (`95e5ec95`) | Superseded by L8. | ultrafast §8 U5 |
 | L8 | **Static-first verification:** static analysis, then offline tests, then live only on the trigger | side → user, 2026-10-04 | done (`95e5ec95`) | AGENTS.md "Diagnosis and Verification Rule"; the ADR-0015 amendment; REVIEWER.md §5; the plan-doc edits (fix plan, 0028 plan, ultrafast U5). | `AGENTS.md`; ADR-0015; `REVIEWER.md` |
 | L9 | **Nemotron is out of the experiments** (about 14 tokens/s); gpt-oss only, single-model | user + side, 2026-10-04 | decided | The conclusions are labelled single-model. | gate §7, D14 |
