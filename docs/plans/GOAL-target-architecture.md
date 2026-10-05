@@ -161,7 +161,7 @@ Done when: the replay suite passes, and the fixture diff changes keys only, neve
 One test per invariant I-1 to I-12 in `TARGET_ARCHITECTURE.md` (`tests/test_architecture_invariants.py`). Where today's code breaks a rule that a later phase fixes, the case goes in the checked-in exceptions list instead of weakening the test. A separate test fails if the list gains an entry compared with the commit that introduced it. ADR-0030 is drafted (Proposed).
 Done when: every rule has a test; each exception names the phase that removes it; adding a dummy exception makes the ratchet test fail.
 
-**T1.5. Phase 1 live gate: tiers a, b and c.** Status: `todo`
+**T1.5. Phase 1 live gate: tiers a, b and c.** Status: `done` (this commit; L76)
 Tier c here is the first full-catalogue run at the new settings; its per-prompt results become the reference for the final gate. Classification follows AD-1 to AD-4.
 Done when: all three tiers pass; the ledger row lists pass, pre-existing failure, false hold and ungraded counts per tier, every baseline rerun, and the cost.
 
