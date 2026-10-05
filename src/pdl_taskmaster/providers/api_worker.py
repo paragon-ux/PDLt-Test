@@ -894,7 +894,14 @@ class ApiWorker:
                 "   RETURN the total sales for each region\n"
                 "2. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n"
                 "3. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n"
-                "4. Purpose-Complete Target: Prompt Pseudocode defines the substantive requirements to be solved upon execution (PROMPT-01). DO NOT insert internal meta-rules, drafting instructions, or negative execution prohibitions (PROMPT-02, PDL-08)."
+                "4. Purpose-Complete Target: Prompt Pseudocode defines the substantive requirements to be solved upon execution (PROMPT-01). DO NOT insert internal meta-rules, drafting instructions, or negative execution prohibitions (PROMPT-02, PDL-08).\n"
+                + ("5. Source of task semantics (PROMPT-01): SOURCE_REQUEST is the user's request in their own words "
+                   "(sanitized). Represent its semantics; the compiled analysis in SUBSTANTIVE_REQUEST is an aid, not a "
+                   "substitute (SEM-01, SEM-02)."
+                   if operation_name == "DRAFT_PROMPT" else
+                   "5. Source of the change (PROMPT-05): SOURCE_TASK_CHANGE is the user's change message in their own "
+                   "words (sanitized). Apply its semantics; the compiled analysis in TASK_CHANGE_SOURCE is an aid, not a "
+                   "substitute (SEM-01, SEM-02).")
             )
         elif operation_name in ("DRAFT_PLAN", "REVISE_PLAN"):
             extra_guidance = (
@@ -920,9 +927,9 @@ class ApiWorker:
         elif operation_name == "EXECUTE":
             extra_guidance = (
                 "\n\nNORMATIVE GUIDELINES FOR EXECUTE (EXEC-01, AUTH-03, AUTH-04, GUARD-03):\n"
-                "- Deliver the result the confirmed prompt asks for, following the confirmed plan. Do not substitute a description of how the result could be obtained.\n"
+                "- Deliver the result the user's request asks for, as amended by their review messages, reading the confirmed prompt as its reviewed interpretation and following the confirmed plan. Do not substitute a description of how the result could be obtained.\n"
                 "- AVAILABLE_EXECUTION_TOOLS describes the execution environment exactly. Work within it. REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (EXEC-01); an environment capability is never user input.\n"
-                "- SUPPLIED_EXECUTION_INPUT_SOURCE, when present, is the user's original source text: use its data, and let the confirmed prompt govern where they differ (AUTH-04).\n"
+                "- SUPPLIED_EXECUTION_INPUT_SOURCE is the user's original request and SUPPLIED_TASK_CHANGES the changes they made at review: together they govern task semantics where the confirmed prompt differs (AUTH-04).\n"
                 "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"
                 "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
             )

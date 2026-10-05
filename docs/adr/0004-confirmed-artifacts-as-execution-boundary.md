@@ -59,6 +59,40 @@ instruction competition, and response-plan anchoring. It is not a complete
 security boundary and does not neutralize prompt injection contained in source
 documents, websites, or tool results.
 
+## Amendment (2026-10-04): the user's words govern (FB5; LEDGER L3, L50)
+
+The authority paragraph above is replaced. Its premise, that a confirmation
+transfers authority, fails when nobody reads the pseudocode (fast and headless
+runs), and a pure confirmation adds no task change (REVIEW-01). So a difference
+between the pseudocode and the request was not introduced by the user.
+
+- **Authority.** The user's original request, as amended by the user's own review
+  messages, defines authoritative task semantics. The confirmed Prompt Pseudocode
+  is the reviewed interpretation of that request; the confirmed Response Plan
+  Pseudocode defines the approved high-level approach (AUTH-03). Where the
+  pseudocode omits, adds, weakens, strengthens or changes a requirement of the
+  request, the request governs, except for a requirement the user changed in a
+  review message, which that message governs (AUTH-04).
+- **Execution projection.** The boundary stands; only its contents change. In order:
+  the sanitized request (`SUPPLIED_EXECUTION_INPUT_SOURCE`); the user's review
+  messages that changed the task, sanitized and in order (`SUPPLIED_TASK_CHANGES`,
+  shown only when there are any); the confirmed pseudocode; the confirmed plan; the
+  rest unchanged. Those messages are user statements of the task, not "correction and
+  confirmation conversation": confirmations, approach discussion, rejected drafts and
+  model output stay excluded.
+- **Prompt drafting (FB3).** DRAFT_PROMPT also reads the sanitized request
+  (`SOURCE_REQUEST`), and REVISE_PROMPT the sanitized change message
+  (`SOURCE_TASK_CHANGE`). The bootstrap still reads the raw request first, and its
+  summary stays as an aid.
+- **Consequence.** A bare `/confirm` no longer narrows a request silently. To change
+  the task, the user says so at review. The negative consequence "a user-confirmed
+  omission becomes authoritative" no longer holds for omissions the user did not make.
+- **Safety.** Instruction-like text in the request is classified by its operative
+  function (SEM-01); represented instruction text remains task data (SEM-02).
+  Sanitization is unchanged. Revert conditions: an injected directive becoming an
+  operative requirement in the confirmed pseudocode (FB3), any safety-stratum
+  regression, or a review change failing to govern (FB5).
+
 ## Consequences
 
 ### Positive

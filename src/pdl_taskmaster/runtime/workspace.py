@@ -42,6 +42,18 @@ class TurnRouting(BaseModel):
         return tier
 
 
+class TurnTaskChanges(BaseModel):
+    """The user's review messages that changed the task (TASK-01), in the order they
+    were applied (AUTH-03′/AUTH-04′): with the original request, they govern task
+    semantics at execution. Kept raw, like the turn's source request; execution
+    receives them through the same sanitizer. Kept with the turn so a restored
+    session executes under the same changes."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    messages: tuple[str, ...] = ()
+
+
 @dataclass(frozen=True)
 class WorkspaceInvocation:
     operation: str
@@ -275,6 +287,20 @@ class WorkspaceRun:
             return TurnRouting.model_validate_json(self._read(path))
         except ValidationError as exc:
             raise WorkspaceError("turn_routing_file") from exc
+
+    def write_turn_task_changes(self, changes: TurnTaskChanges) -> None:
+        """The turn's review-time task changes, rewritten whenever one is applied."""
+        self._write(self._turn_base() / "task_changes.json", changes.model_dump_json(indent=2) + "\n")
+
+    def turn_task_changes(self) -> TurnTaskChanges:
+        """The active turn's review-time task changes; none when the file is absent."""
+        path = self._turn_base() / "task_changes.json"
+        if not path.is_file():
+            return TurnTaskChanges()
+        try:
+            return TurnTaskChanges.model_validate_json(self._read(path))
+        except ValidationError as exc:
+            raise WorkspaceError("turn_task_changes_file") from exc
 
     def previous_turn(self) -> dict[str, Any] | None:
         """The most recent closed turn, as a follow-up needs it: its request and its

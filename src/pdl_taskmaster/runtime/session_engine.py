@@ -282,7 +282,7 @@ def _attach_result_ir(body: str, ir_dict: dict[str, Any]) -> str:
     return body.rstrip() + f"\n\n```json\n{ir_json_str}\n```"
 
 
-from pdl_taskmaster.runtime.workspace import MemoryWorkspaceRun, TurnRouting, WorkspaceError, WorkspaceRun
+from pdl_taskmaster.runtime.workspace import MemoryWorkspaceRun, TurnRouting, TurnTaskChanges, WorkspaceError, WorkspaceRun
 from pdl_taskmaster.runtime import presentation
 
 
@@ -400,9 +400,11 @@ class SessionEngine:
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
         self.tier_d1 = False  # Tier D1 (advantage mechanism): feed back model's own test failures in standard mode
         self._active_task_entities: tuple[str, ...] = ()
-        # AUTH-04: the user's original request is source data for execution; the
-        # confirmed prompt governs task semantics where the two differ.
+        # AUTH-03′/AUTH-04′: the user's original request, as amended by their own
+        # review messages, governs task semantics; the confirmed prompt is its
+        # reviewed interpretation.
         self._source_request: str | None = None
+        self._task_changes: tuple[str, ...] = ()
         self._requires_verified_execution: bool = False
         self._problem_domain: Any = None
         self.refused: bool = False
@@ -501,6 +503,7 @@ class SessionEngine:
         engine._previous_turn = workspace.previous_turn()
         engine._previous_deliverable = _previous_turn_reference(engine._previous_turn)
         engine._source_request = workspace.turn_source()
+        engine._task_changes = workspace.turn_task_changes().messages
         # System 1 routed this turn in an earlier epoch: execute it in the routed
         # mode and under the routed budget, not the engine's defaults.
         routing = workspace.turn_routing()
@@ -1071,6 +1074,8 @@ class SessionEngine:
             self._previous_deliverable = None
         self._source_request = substantive_request
         self.workspace.write_turn_source(substantive_request)
+        self._task_changes = ()
+        self.workspace.write_turn_task_changes(TurnTaskChanges())
         from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
         from pdl_taskmaster.verification.checkers.base import ProblemDomain
         requires_verified = False
@@ -1119,6 +1124,9 @@ class SessionEngine:
             return self._refuse(getattr(self, "_blocked_response", None), traces, "bootstrap")
         entities = self._task_entities_cache.get((substantive_request, self._previous_deliverable), ())
         self._active_task_entities = entities
+        # FB3: the drafter reads the user's own words (sanitized, as EXECUTE does), not
+        # only the bootstrap's summary of them; the summary stays as an aid.
+        source_request = compile_bootstrap_output(substantive_request, substantive_request)[0].strip()
 
         def _draft_call(ctx: dict[str, Any], tr: list[CallTrace], parser) -> Any:
             return self._call("DRAFT_PROMPT", ctx, tr, parser=parser)
@@ -1127,6 +1135,7 @@ class SessionEngine:
             _draft_call,
             {
                 "HOST_PROTOCOL_STATE": protocol_state,
+                "SOURCE_REQUEST": source_request,
                 "SUBSTANTIVE_REQUEST": compiled,
             },
             self.bridge.parse_prompt_draft,
@@ -1147,7 +1156,8 @@ class SessionEngine:
             self.workspace.append_event("PROMPT_LINT_RETRY", {"violations": prompt_lint.violations})
             redraft = self._call(
                 "DRAFT_PROMPT",
-                {"HOST_PROTOCOL_STATE": protocol_state, "SUBSTANTIVE_REQUEST": compiled},
+                {"HOST_PROTOCOL_STATE": protocol_state, "SOURCE_REQUEST": source_request,
+                 "SUBSTANTIVE_REQUEST": compiled},
                 traces,
                 parser=self.bridge.parse_prompt_draft,
                 operator_correction="OPERATOR CORRECTION: " + prompt_lint.feedback,
@@ -1522,12 +1532,19 @@ class SessionEngine:
                     "TASK_CHANGE_SOURCE": self._compile_context(
                         transition.payload["task_change_source"], traces
                     ),
+                    # FB3: the user's own change message, sanitized.
+                    "SOURCE_TASK_CHANGE": compile_bootstrap_output(
+                        transition.payload["task_change_source"], transition.payload["task_change_source"]
+                    )[0].strip(),
                 },
                 traces,
                 parser=self.bridge.parse_prompt_body,
                 artifact="PROMPT",
             )
             self.controller.commit_prompt_revision(change_id, body)
+            # The user's own change governs at execution with the request (AUTH-04′).
+            self._task_changes = self._task_changes + (transition.payload["task_change_source"],)
+            self.workspace.write_turn_task_changes(TurnTaskChanges(messages=self._task_changes))
             # Mechanical coverage regression check on revisions: entities the
             # draft carried must survive revision. Event-only in v1 (no loop).
             missing = self._entity_coverage_missing(body, self._active_task_entities)
@@ -1621,12 +1638,16 @@ class SessionEngine:
         # ADR-0027 execution boundary: entities reach prompt drafting only; the
         # confirmed EXECUTE receives the confirmed artifacts and the sanitized request.
         execute_context = {
+            "SUPPLIED_EXECUTION_INPUT_SOURCE": supplied,
             "CONFIRMED_PROMPT_BODY": prompt_body,
             "CONFIRMED_PLAN_BODY": plan_body,
             "REQUIRED_TASK_INPUTS": "\n\n".join(task_inputs) or None,
-            "SUPPLIED_EXECUTION_INPUT_SOURCE": supplied,
             "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
         }
+        if self._task_changes:
+            execute_context["SUPPLIED_TASK_CHANGES"] = [
+                compile_bootstrap_output(change, change)[0].strip() for change in self._task_changes
+            ]
 
         self._route_plan_profile(prompt_body, plan_body)
         execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools

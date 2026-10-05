@@ -208,6 +208,8 @@ The one automatic revision after a host finding already exists: one redraft per 
 
 ## Sequencing (PRs)
 
+> **Ordering change (2026-10-04, LEDGER L50):** FB3 and FB5 moved ahead of PR 3 and PR 4a as their own PR. FB1, FB4 and FB6 stay in PR 4b.
+
 1. **PR #1: merged** as `4ebf7c59` (`f8029231` + FA5 `8ea73cc7`). Integrity suite 15/15; full suite 734 passed; 35/35 CI checks; live REPL checks passed. The catalogue gate was waived by your decision: `--fail-fast` stopped at 01-01, the known REG-003 limit.
 2. **PR 2, measurement only; no protocol behaviour changes.** It provides the fixed commit everything is pre-registered against. Its living task list is [pr2-worklist.md](pr2-worklist.md). It contains:
    - the `experiments/` tooling (§9 of the companion);

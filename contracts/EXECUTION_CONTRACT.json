@@ -63,6 +63,7 @@
       "include": [
         "OPERATION_ID",
         "HOST_PROTOCOL_STATE",
+        "SOURCE_REQUEST",
         "SUBSTANTIVE_REQUEST",
         "APPLICABLE_STANDARD_CLAUSES",
         "HIGHER_PRIORITY_CONSTRAINTS"
@@ -257,6 +258,7 @@
       "include": [
         "OPERATION_ID",
         "CURRENT_PROMPT_BODY",
+        "SOURCE_TASK_CHANGE",
         "TASK_CHANGE_SOURCE",
         "APPLICABLE_STANDARD_CLAUSES",
         "HIGHER_PRIORITY_CONSTRAINTS"
@@ -396,9 +398,10 @@
       },
       "include": [
         "OPERATION_ID",
+        "SUPPLIED_EXECUTION_INPUT_SOURCE",
+        "SUPPLIED_TASK_CHANGES",
         "CONFIRMED_PROMPT_BODY",
         "CONFIRMED_PLAN_BODY",
-        "SUPPLIED_EXECUTION_INPUT_SOURCE",
         "APPLICABLE_STANDARD_CLAUSES",
         "HIGHER_PRIORITY_CONSTRAINTS",
         "AVAILABLE_EXECUTION_TOOLS"
@@ -424,7 +427,8 @@
       "optional_include": [
         "REQUIRED_TASK_INPUTS",
         "RESULT_IR_INSTRUCTIONS",
-        "PRIOR_RESULT_IR"
+        "PRIOR_RESULT_IR",
+        "SUPPLIED_TASK_CHANGES"
       ]
     },
     "EXECUTE_UNCONFIRMED": {
