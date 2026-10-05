@@ -108,15 +108,15 @@ class TaskEntity(WireModel):
         default="known",
         json_schema_extra=contract(description=(
             'Epistemic polarity of the entity in the task: '
-            '"known" for given inputs, established constants, governing rules, fixed parameters, and defined terms; '
-            '"unknown" for unobserved states, hidden mappings, mystery identities, or variables to deduce or find.'
+            '"known" for given inputs, established constants, fixed parameters, governing constraints, and defined terms; '
+            '"unknown" for unobserved states, latent variables, missing values, or target quantities to determine.'
         ))
     )
     group: str | None = Field(
         default=None,
         json_schema_extra=contract(description=(
             'Optional logical group or domain name relating entities that belong together '
-            '(e.g. "gods", "identities", "response_words", "coordinates", "inputs").'
+            '(e.g. "variables", "parameters", "endpoints", "coordinates", "inputs").'
         ))
     )
     relation: str | None = Field(
