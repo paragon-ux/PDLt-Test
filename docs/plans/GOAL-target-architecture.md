@@ -111,51 +111,58 @@ Done when: the counts are recorded in the ledger row. Expected: about 856 passed
 
 ## Phase 0: run attribution and honest scoring (nothing a model sees changes)
 
-**T0.3. Reconcile with the plan.** Status: `todo`
+Plan items 0.1–0.6 map to T0.4–T0.7b. Plan 0.6's judged rubric is not built: the standing rules forbid rubric changes (AD-6); 09-xx outcomes are read from run records instead (T0.7b).
+
+**T0.3. Reconcile with the plan.** Status: `done` (this commit; L55–L64)
 Read the Phase 0 and Phase 1 sections of `target-architecture-plan.md`. Rewrite T0.4–T1.4 to match the plan where it splits or names the work differently, keeping the done-when checks. Then expand Phases 2–6 below into numbered tasks, one per plan item, each with done-when checks in the same style, and attach each decision D1–D9 to the phase that implements it. Commit this file with a ledger row.
 Done when: every plan item for Phases 0–6 maps to exactly one task here.
 
-**T0.4. Runs record their commit and uncommitted diff.** Status: `todo`
-Run metadata gains the commit SHA, a dirty flag, and the uncommitted diff (stored alongside the run, or its hash plus a stored patch).
-Done when: a test creates a run in a dirty tree and finds the SHA and diff in the run record; the test fails on the pre-task code.
+**T0.4. Runs record their commit and uncommitted diff (plan 0.1).** Status: `todo`
+Run metadata gains the commit SHA, a dirty flag, and the uncommitted diff (stored alongside the run as `WORKTREE.diff`, with its SHA-256 in `RUN_META.json`). A live run from a dirty tree needs `--allow-dirty`.
+Done when: a test creates a run in a dirty tree and finds the SHA and diff in the run record; a dirty run without the flag refuses; the test fails on the pre-task code.
 
-**T0.5. Runs record the full provider request.** Status: `todo`
-The record includes everything sent, including the guidance text `ApiWorker` puts in the request's `instructions` field, which no run file records today.
+**T0.5. Runs record the full provider request (plan 0.2).** Status: `todo`
+The record includes everything sent, including the guidance text `ApiWorker` puts in the request's `instructions` field, which no run file records today. The body is built by one pure function, used both for sending and for recording.
 Done when: a test using the local stub server checks that each operation's recorded request equals the captured request body, `instructions` included; it fails on the pre-task code.
 
-**T0.6. Replays match on the full request.** Status: `todo`
-Replay keys cover the whole request, `instructions` included. Re-key the fixture offline with the recorded responses unchanged.
+**T0.6. Replays match on the full request (plan 0.3).** Status: `todo`
+Replay keys cover the whole request, `instructions` included. Re-key the fixture offline with `scripts/render_recorded_prompts.py rekey`, recorded responses unchanged.
 Done when: the replay suite passes; the fixture diff changes keys only, never a response; a test shows that changing only the `instructions` text causes a replay miss.
 
-**T0.7. An ungraded result never counts as a pass (L49d).** Status: `todo`
-Fix the aggregation in `experiments/run_four_arms.py` and anywhere else that totals results (check the catalogue runner and the viewer), applying the rule FA2 already applies to MANUAL. Ungraded results get their own count.
-Done when: a test feeds an ungraded result and finds it counted as ungraded, not passed; it fails on the pre-task code. No grader file appears in the diff.
+**T0.7. An ungraded result never counts as a pass (plan 0.4; L49d; D3 counting).** Status: `todo`
+Fix the aggregation in `experiments/run_four_arms.py` and anywhere else that totals results (the catalogue runner and the viewer), applying the rule FA2 already applies to MANUAL. Ungraded results and holds (exit 2) get their own counts.
+Done when: a test feeds an ungraded result and finds it counted as ungraded, not passed, and a hold counted as held; it fails on the pre-task code. No grader file appears in the diff.
+
+**T0.7b. Gate and comparison reports (plan 0.5; AD-1, AD-2, AD-4, AD-6).** Status: `todo`
+A report script reads run folders and prints, per prompt: verdict, grader grade, gate class (pass, fail, pending, ungraded, held), the 09-xx outcome from the run record (blocked, contained, held, refused, proceeded), tokens and cost; comparisons print n and a Wilson interval and label a difference without both as anecdotal. Old and new counting are printed side by side.
+Done when: tests over recorded run folders check each class, the 09-xx reading and the interval; they fail on the pre-task code (the script does not exist).
 
 **T0.8. Phase 0 gate** (no live gate: nothing a model sees changed). Status: `todo`
 Done when:
-- every reachable recorded prompt renders byte-identical to T0.2's baseline;
+- every reachable recorded prompt renders byte-identical to T0.2's baseline (`scripts/render_recorded_prompts.py compare`; provider requests compared from T0.5 on);
 - the full offline suite and the anti-overfitting suite pass (except L34);
 - a ledger row closes Phase 0 and lists each task's commit;
 - the branch is pushed.
 
 ## Phase 1: origins and rule-enforcing tests
 
-**T1.1. Label every model-call input field by origin.** Status: `todo`
-Each field assembled in `session_engine.py` and `context_compiler.py` is marked as user-supplied or harness-supplied when the call is built.
-Done when: a test walks every operation's assembled input and fails if any field has no origin; it fails on the pre-task code. Prompt bytes are unchanged at this step.
+**T1.1. Label every model-call input field by origin (plan 1.1, 1.2).** Status: `todo`
+An `Origin` enum and a typed projection value; `EXECUTION_CONTRACT.json` declares an origin for every symbol (both copies, manifest hashes); the compiler rejects a value whose origin differs from its declaration.
+Done when: a test walks every operation's assembled input and fails if any field has no origin; it fails on the pre-task code. Prompt bytes are unchanged at this step (render compare: 0 differences).
 
-**T1.2. Rename the one input symbol named in the plan.** Status: `todo`
-Done when: the rendered-prompt diff against T0.2's baseline shows only that symbol changing.
+**T1.2. Move the DRAFT_EXECUTE brief into its own symbol (plan 1.4).** Status: `todo`
+`EXECUTION_BRIEF` (origin `MODEL`) replaces the brief's append to `REQUIRED_TASK_INPUTS`.
+Done when: the rendered-prompt diff against T0.2's baseline shows only that symbol changing (in renders that use `--draft-execute`; the default renders are unchanged).
 
 **T1.3. Re-key the replay fixture for T1.2.** Status: `todo`
-Done when: the replay suite passes, and the fixture diff changes keys only, never a response.
+Done when: the replay suite passes, and the fixture diff changes keys only, never a response (an empty diff when no recorded case uses the brief).
 
-**T1.4. Tests that enforce the plan's rules, with a list of exceptions that can only shrink.** Status: `todo`
-Write one test per rule in `TARGET_ARCHITECTURE.md`. Where today's code breaks a rule that a later phase fixes, record the case in a checked-in exceptions list instead of weakening the test. A separate test fails if the list gains an entry compared with the commit that introduced it.
+**T1.4. Tests that enforce the plan's rules, with a list of exceptions that can only shrink (plan 1.3, 1.5, 1.6).** Status: `todo`
+One test per invariant I-1 to I-12 in `TARGET_ARCHITECTURE.md` (`tests/test_architecture_invariants.py`). Where today's code breaks a rule that a later phase fixes, the case goes in the checked-in exceptions list instead of weakening the test. A separate test fails if the list gains an entry compared with the commit that introduced it. ADR-0030 is drafted (Proposed).
 Done when: every rule has a test; each exception names the phase that removes it; adding a dummy exception makes the ratchet test fail.
 
 **T1.5. Phase 1 live gate: tiers a, b and c.** Status: `todo`
-Tier c here is the first full-catalogue run at the new settings; its per-prompt results become the reference for the final gate.
+Tier c here is the first full-catalogue run at the new settings; its per-prompt results become the reference for the final gate. Classification follows AD-1 to AD-4.
 Done when: all three tiers pass; the ledger row lists pass, pre-existing failure, false hold and ungraded counts per tier, every baseline rerun, and the cost.
 
 **T1.6. Phase 1 gate.** Status: `todo`
@@ -163,32 +170,125 @@ Done when: the offline suites pass (except L34), T1.5 is done, a ledger row clos
 
 ## Phases 2–6
 
-T0.3 expands each phase into numbered tasks from the plan. Every phase ends with the same gate task:
+Every phase ends with the same gate task:
 
 **Pn.gate.** Done when: the offline suites pass (except L34); the exceptions list lost the entries the plan assigns to this phase and gained none; the ADR, AUTH and IMPL amendments for the decisions implemented in this phase are committed; if model inputs changed, the live gate passes; a ledger row closes the phase; the branch is pushed.
 
-Requirements the expanded tasks must include, wherever the plan places them:
+### Phase 2: semantic read by units, adversarial union, host disposition (D2, D3, D4)
 
-**Containment (D2, D3, D4; the 09-01 failure).** Status: `todo`
-- An offline test that no piece labelled as addressed to the harness reaches any later model call;
-- an offline test that a first-read reply which flags a threat but calls itself ordinary is rejected;
-- an offline test of the full outcome table (proceed, contain, hold, refuse), including System 1 unavailable;
-- the word blocklist in `quarantine.py` is removed only once these tests pass;
-- live, only through the phase's live gate: a 09-xx run that carries out the injection stops the run. Category 13 is in tier b.
+**T2.1. Units, roles and the union (plan 2.1).** Status: `todo`
+Done when: an `ORDINARY` reply with a hostile unit fails to parse and an `ADVERSARIAL` reply with none fails to parse (the containment requirement "a reply which flags a threat but calls itself ordinary is rejected"); entities parse as sub-spans; tests fail on the pre-task code.
 
-**Execution inputs (D1; the 16-06 failure).** Status: `todo`
-- An offline test that the execution call receives only the user's words, harness-rendered quotes of them, and harness facts: no drafted prompt or plan text, checked on every operation path in `session_engine.py`;
-- the revision tests pass: the user's `/revise` messages still govern;
-- the offline test is the proof that the leak path is closed. 16-06 in the live gate checks for regression only, since wrong answers remain possible by design.
+**T2.2. The tiling verifier (plan 2.2).** Status: `todo`
+Done when: tests cover gaps, overlaps, reordering, non-unique anchors and unicode; a failed tiling gets one redraft with the finding, then a fail-closed close with a record naming the stage.
 
-**Quoted pseudocode and verbs (D5, D6).** Status: `todo`
-- An offline test that every pseudocode line is a listed verb followed by a quote taken verbatim from the request;
-- the verb list committed and recorded per D6.
+**T2.3. System 1 request risk (plan 2.3; D4).** Status: `todo`
+Done when: the recipe emits task-neutral labels behind the existing gate; `NO_DECISION` is a typed value and is declared in the run record (D4); the GUARD-02 and no-pattern tests pass; ADR-0020 is amended.
 
-**Entity extraction (D7).** Status: `todo`
-After quoting is in place, run the D7 static check and act on it. Record the result whichever way it goes.
+**T2.4. The disposition function (plan 2.4; D2, D3).** Status: `todo`
+Done when: an exhaustive test over every input combination passes, including System 1 unavailable; no raised signal maps to "proceed unchanged"; holds exit 2; the host notice names the excluded quoted parts (D2).
 
-**D8.** Not built. The final report lists it as deferred.
+**T2.5. Exclusion (plan 2.5).** Status: `todo`
+Done when: a test shows no unit labelled as addressed to the harness or as a payload reaches any later model call, on every operation path.
+
+**T2.6. Review messages through the semantic read (plan 2.6; D9 reuse).** Status: `todo`
+Done when: task-change units are stored per turn and survive `--restore` (persistence reused from `c153b8fc`, with its own tests); the revise tests pass.
+
+**T2.7. Remove the keyword test (plan 2.7).** Status: `todo`
+Done when: `session_engine.py` has no keyword check on model text on a decision path (I-4 scan), and the typed no-task path is tested.
+
+**T2.8. Higher-priority constraints text (plan 2.8).** Status: `todo`
+Done when: the provenance text is in `app.py` and its two copies, snapshot-tested, and the render diff explains every changed byte.
+
+**T2.9. Drafting reads task units (plan 2.9).** Status: `todo`
+Done when: DRAFT_PROMPT's projection carries task units and no summary; the render diff is explained in the ledger; the replay fixture is re-recorded under AD-3.
+
+**P2.gate.** Status: `todo` (live gate: tiers a, b with categories 16, 09 and 13, and c).
+
+### Phase 3: solver isolation (D1)
+
+**T3.1. One solver projection (plan 3.1).** Status: `todo`
+Done when: `EXECUTE` and `EXECUTE_UNCONFIRMED` are built by one function from user words, harness-rendered quotes and harness facts; the execution-inputs test passes on every operation path in `session_engine.py`.
+
+**T3.2. Interpretation and approach in EXECUTE; DRAFT_EXECUTE retired (plan 3.2).** Status: `todo`
+Done when: both routes share one output model; `--draft-execute` prints a deprecation notice and changes nothing.
+
+**T3.3. Drafted text leaves solver inputs (plan 3.3).** Status: `todo`
+Done when: the exceptions list has no solver entries; the revision tests pass (the user's `/revise` messages still govern, D1).
+
+**T3.4. Output echo check; the blocklist leaves decision paths (plan 3.4).** Status: `todo`
+Done when: the echo check on excluded units is tested, the containment tests from Phase 2 pass, and only then are `quarantine.py`'s regexes removed from decision paths.
+
+**T3.5. Standards and ADRs for D1 (plan 3.5).** Status: `todo`
+Done when: AUTH-03 and AUTH-04 are rewritten in both copies with manifest hashes; ADR-0030 is accepted (superseding ADR-0004's authority and projection clauses); ADR-0001's roles are amended; ADR-0029 is written.
+
+**P3.gate.** Status: `todo` (live gate: tiers a with the unconfirmed route added per AD-7, b with categories 16, 09 and 13, and c).
+
+### Phase 4: quoted pseudocode (D5, D6, D7)
+
+**T4.1. The verb list (plan 4.1; D6).** Status: `todo`
+Done when: `contracts/PDL_VERBS.json` is committed with one-line definitions and no value, result or variable slot; a test rejects any verb not on the list; the list and its rationale are recorded in the ledger.
+
+**T4.2. Requirement items (plan 4.2).** Status: `todo`
+Done when: DRAFT_PROMPT and REVISE_PROMPT emit verb plus quote references; references to non-task units are rejected; tests fail on the pre-task code.
+
+**T4.3. The renderer and coverage (plan 4.3; D5).** Status: `todo`
+Done when: a test checks every pseudocode line is a listed verb followed by a quote taken verbatim from the user's words; every instruction unit is covered.
+
+**T4.4. Checklist to the solver; Result IR cites requirements (plan 4.4).** Status: `todo`
+Done when: the checklist enters the solver projection as a harness rendering; coverage is a recorded finding; ADR-0009 is amended.
+
+**T4.5. Retire the prompt grammar lint (plan 4.5).** Status: `todo`
+Done when: lint tests cover the plan only; prompt conformance is tested on the renderer.
+
+**T4.6. Entity extraction, decided statically (plan 4.6; D7).** Status: `todo`
+Done when: the static check over recorded requests is run and recorded (AD-5), and extraction is retired or kept accordingly, with ADR-0027 amended.
+
+**P4.gate.** Status: `todo` (live gate: tiers a, b with categories 16, 09 and any touched, and c).
+
+### Phase 5: typed plan and approval origins
+
+**T5.1. Plan steps (plan 5.1).** Status: `todo`
+Done when: DRAFT_PLAN and REVISE_PLAN emit verb, served requirement identifiers and method text; the host renders them; plan coverage is deterministic and tested.
+
+**T5.2. Approval origins (plan 5.2).** Status: `todo`
+Done when: approvals record `HUMAN`, `POLICY` or `DELEGATED` in events and the transcript, tested.
+
+**T5.3. Per-item adoption (plan 5.3; D8).** Status: `deferred (D8)`. Not built.
+
+**P5.gate.** Status: `todo` (live gate if model inputs changed).
+
+### Phase 6: close-out
+
+**T6.1. Close-out (plan Phase 6).** Status: `todo`
+Done when: the exceptions list is empty or each remaining entry is matched to a "what remains possible" entry; ADR-0030 to ADR-0032 are accepted and the ADR README updated; ARCHITECTURE.md describes the new current state and TARGET_ARCHITECTURE.md keeps §9; the ledger rows for Phases 0–5 are marked done.
+
+Requirements the tasks above carry (from the original goal; each is now attached to a task):
+
+**Containment (D2, D3, D4; the 09-01 failure).** T2.1, T2.4, T2.5, T3.4; live: a 09-xx run that carries out the injection stops the run from P2.gate on (AD-4). Category 13 is in tier b.
+
+**Execution inputs (D1; the 16-06 failure).** T3.1, T3.3; the offline test is the proof that the leak path is closed. 16-06 in the live gate checks for regression only, since wrong answers remain possible by design.
+
+**Quoted pseudocode and verbs (D5, D6).** T4.1, T4.3.
+
+**Entity extraction (D7).** T4.6.
+
+**D8.** Not built (T5.3). The final report lists it as deferred.
+
+## Agent decisions (recorded before any live run; ledger rows marked `decided by agent`)
+
+| ID | Question the goal or plan left open | Decision | Evidence |
+|---|---|---|---|
+| AD-1 | How to classify a pass/fail difference when the model sees byte-identical inputs, and on stochastic prompts | (a) Where the render compare shows the default route's model inputs byte-identical to the comparison commit, a pass-to-fail difference cannot come from the phase: it is recorded as a stochastic flip with the render evidence, not a regression. (b) Otherwise the goal's rule applies, except that a prompt whose two samples at identical inputs disagreed in T1.5 (an unstable prompt) is not declared a regression on one baseline pass: its flip is recorded with both samples. (c) A failure with a structural signature attributable to the phase (harness error, schema rejection, crash, fail-closed close, a false hold, an excluded task unit, a coverage finding) is always a regression stop, whatever the prompt's stability. | At low effort gpt-oss is stochastic on many items (16-06: 1/5, 1/5, 2/5 in L48 and L51); with p = 0.5 on 20 such prompts, one baseline rerun gives a spurious "regression" with probability above 0.99. |
+| AD-2 | How a MANUAL grade counts in a gate | Not a pass. It is treated as a fail for the rerun rule and reported as pending; the agent reads the final answer from the record and states it. | FA2; `is_prompt_pass` (`run_catalogue.py:554-558`) |
+| AD-3 | Recorded replay cases whose responses no longer parse after a contract change | The task that breaks them re-records them live with the same scripted turns, pinned settings, low effort, counted in spend. New responses are added; no recorded response is edited; the old ones stay in git history. | The replay suite must pass before each commit; AGENTS.md requires a live check on a replay miss. |
+| AD-4 | A 09-xx injection carried out in a gate that runs before containment exists | At T1.5 the model inputs are byte-identical to the comparison commit, so a carried-out injection there is the documented pre-existing defect F3 (L51): recorded, not a stop. From P2.gate on, the goal's rule applies literally. | F3; L51 (13 recorded runs, 3 not blocked) |
+| AD-5 | How D7 is checked statically | Over every recorded Bootstrap reply in `catalogue-runs/`: each entity surface must lie in a unit the request states (guaranteed once units tile the request), and each `relation` word that does not occur in the request is a model addition, not a stated fact. Extraction is retired if every stated fact an entity carries is in the request's own words; otherwise it is kept and the misses are listed. | ADR-0027 Decision: a relation records "what the request itself says" |
+| AD-6 | Plan 0.6's judged compliance rubric | Not built (the standing rules forbid rubric changes). 09-xx outcomes are read from the run record (T0.7b), and a `PROCEEDED` 09-xx deliverable is read by the agent for compliance. | Goal, "Graders" |
+| AD-7 | Phase 3 changes `EXECUTE_UNCONFIRMED`'s inputs, but the live gate pins the confirmed route | P3.gate's tier a adds 16-06 and 09-01 on the unconfirmed route. | AGENTS.md trigger: what the model receives changed for that operation |
+| AD-8 | "Every reachable recorded prompt" | The corpora of `scripts/render_recorded_prompts.py`: the 10 fixture requests reachable by the recorded cases' scripted turns, plus the first request for every catalogue prompt (112). A ledger row explains each changed corpus entry by cause. | The re-key run of L48 reached the same 10 |
+| AD-10 | `test_sandbox_low_overhead` fails in the full suite in this checkout at the unchanged baseline | Recorded as a pre-existing environment-dependent timing failure (L54); any other failure, or a change in this one, is a stop | L54 |
+| AD-9 | How spend is counted | Recorded token usage × Crusoe's list price ($0.05 per million input, $0.25 per million output, OpenRouter, 2026-10-05); System 1 calls are reported separately as unpriced. | OpenRouter endpoints listing |
 
 ## Final gate
 
