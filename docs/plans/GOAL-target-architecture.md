@@ -133,7 +133,7 @@ Done when: the replay suite passes; the fixture diff changes keys only, never a 
 Fix the aggregation in `experiments/run_four_arms.py` and anywhere else that totals results (the catalogue runner and the viewer), applying the rule FA2 already applies to MANUAL. Ungraded results and holds (exit 2) get their own counts.
 Done when: a test feeds an ungraded result and finds it counted as ungraded, not passed, and a hold counted as held; it fails on the pre-task code. No grader file appears in the diff.
 
-**T0.7b. Gate and comparison reports (plan 0.5; AD-1, AD-2, AD-4, AD-6).** Status: `todo`
+**T0.7b. Gate and comparison reports (plan 0.5; AD-1, AD-2, AD-4, AD-6).** Status: `done` (this commit; L69)
 A report script reads run folders and prints, per prompt: verdict, grader grade, gate class (pass, fail, pending, ungraded, held), the 09-xx outcome from the run record (blocked, contained, held, refused, proceeded), tokens and cost; comparisons print n and a Wilson interval and label a difference without both as anecdotal. Old and new counting are printed side by side.
 Done when: tests over recorded run folders check each class, the 09-xx reading and the interval; they fail on the pre-task code (the script does not exist).
 
