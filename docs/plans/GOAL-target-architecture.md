@@ -137,7 +137,7 @@ Done when: a test feeds an ungraded result and finds it counted as ungraded, not
 A report script reads run folders and prints, per prompt: verdict, grader grade, gate class (pass, fail, pending, ungraded, held), the 09-xx outcome from the run record (blocked, contained, held, refused, proceeded), tokens and cost; comparisons print n and a Wilson interval and label a difference without both as anecdotal. Old and new counting are printed side by side.
 Done when: tests over recorded run folders check each class, the 09-xx reading and the interval; they fail on the pre-task code (the script does not exist).
 
-**T0.8. Phase 0 gate** (no live gate: nothing a model sees changed). Status: `todo`
+**T0.8. Phase 0 gate** (no live gate: nothing a model sees changed). Status: `done` (this commit; L70)
 Done when:
 - every reachable recorded prompt renders byte-identical to T0.2's baseline (`scripts/render_recorded_prompts.py compare`; provider requests compared from T0.5 on);
 - the full offline suite and the anti-overfitting suite pass (except L34);
