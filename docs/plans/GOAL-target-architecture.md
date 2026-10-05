@@ -117,7 +117,7 @@ Plan items 0.1–0.6 map to T0.4–T0.7b. Plan 0.6's judged rubric is not built:
 Read the Phase 0 and Phase 1 sections of `target-architecture-plan.md`. Rewrite T0.4–T1.4 to match the plan where it splits or names the work differently, keeping the done-when checks. Then expand Phases 2–6 below into numbered tasks, one per plan item, each with done-when checks in the same style, and attach each decision D1–D9 to the phase that implements it. Commit this file with a ledger row.
 Done when: every plan item for Phases 0–6 maps to exactly one task here.
 
-**T0.4. Runs record their commit and uncommitted diff (plan 0.1).** Status: `todo`
+**T0.4. Runs record their commit and uncommitted diff (plan 0.1).** Status: `done` (this commit; L65)
 Run metadata gains the commit SHA, a dirty flag, and the uncommitted diff (stored alongside the run as `WORKTREE.diff`, with its SHA-256 in `RUN_META.json`). A live run from a dirty tree needs `--allow-dirty`.
 Done when: a test creates a run in a dirty tree and finds the SHA and diff in the run record; a dirty run without the flag refuses; the test fails on the pre-task code.
 

@@ -24,6 +24,7 @@ Outputs:
 """
 
 import argparse
+import hashlib
 import json
 import os
 import signal
@@ -57,6 +58,54 @@ sys.path.insert(0, str(PDLT_TEST_ROOT / "src"))
 
 PROMPTS_DIR = PDLT_TEST_ROOT / "prompts"
 MANIFEST_PATH = PROMPTS_DIR / "CATALOGUE_MANIFEST.jsonl"
+WORKTREE_DIFF = "WORKTREE.diff"
+
+
+def code_provenance(root: Path = PDLT_TEST_ROOT) -> dict:
+    """The code a run executes (TARGET_ARCHITECTURE I-9): the commit, whether the tree
+    differs from it, and the difference itself. Untracked files run too, so each one is
+    part of the difference. Returns ``diff`` (text) for the run folder plus the metadata
+    recorded in RUN_META."""
+    def git(*args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True,
+                              encoding="utf-8", errors="replace")
+
+    head = git("rev-parse", "HEAD")
+    if head.returncode != 0:
+        return {"commit": None, "dirty": None, "diff": "", "diff_sha256": None, "untracked": []}
+    parts = [git("diff", "HEAD", "--binary").stdout]
+    untracked = []
+    for rel in git("ls-files", "--others", "--exclude-standard", "-z").stdout.split("\0"):
+        if not rel:
+            continue
+        data = (Path(root) / rel).read_bytes()
+        untracked.append({"path": rel, "sha256": hashlib.sha256(data).hexdigest()})
+        text = data.decode("utf-8", errors="replace")
+        parts.append(f"--- /dev/null\n+++ b/{rel}\n" + "".join(f"+{line}\n" for line in text.splitlines()))
+    diff = "".join(parts)
+    dirty = bool(diff.strip())
+    return {
+        "commit": head.stdout.strip(),
+        "dirty": dirty,
+        "diff": diff,
+        "diff_sha256": hashlib.sha256(diff.encode("utf-8")).hexdigest() if dirty else None,
+        "untracked": untracked,
+    }
+
+
+def record_provenance(run_dir: Path, provenance: dict) -> dict:
+    """Store the uncommitted difference beside the run and return RUN_META's ``code`` record."""
+    if provenance.get("dirty"):
+        (Path(run_dir) / WORKTREE_DIFF).write_bytes(provenance["diff"].encode("utf-8"))
+    return {key: provenance.get(key) for key in ("commit", "dirty", "diff_sha256", "untracked")} | {
+        "diff_file": WORKTREE_DIFF if provenance.get("dirty") else None}
+
+
+def refuse_dirty_tree(provenance: dict, allow_dirty: bool) -> None:
+    """A live run from uncommitted code is refused unless explicitly allowed (I-9)."""
+    if provenance.get("dirty") and not allow_dirty:
+        raise SystemExit("The working tree has uncommitted changes, so this run could not be attributed "
+                         "to a commit. Commit them, or pass --allow-dirty to record the difference with the run.")
 TIMEOUT_PER_PROMPT = 600  # heavy-tier tasks may make 3 execute attempts (2 repairs)
 EXIT_SUCCESS = 0
 EXIT_CANCELLED = 1
@@ -852,6 +901,9 @@ def main():
                         help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
     parser.add_argument("--route", choices=["confirmed", "unconfirmed"], default="confirmed",
                         help="execution route: 'confirmed' (default, multi-stage with review) or 'unconfirmed' (--no-review / ultrafast)")
+    parser.add_argument("--allow-dirty", action="store_true",
+                        help="run from a working tree with uncommitted changes; the difference is stored with "
+                             "the run as WORKTREE.diff (without it, such a run is refused)")
     parser.add_argument("--regrade", metavar="RUN_DIR", default=None,
                         help="re-grade a finished run with the current graders and rewrite its scoreboard")
     args = parser.parse_args()
@@ -904,6 +956,9 @@ def main():
         print(f"\nVERIFIED = verified ground truth ({n_verified} prompts)")
         sys.exit(0)
 
+    provenance = code_provenance()
+    refuse_dirty_tree(provenance, args.allow_dirty)
+
     route_tag = args.route
     if args.draft_execute:
         route_tag += "-draft-execute"
@@ -930,6 +985,7 @@ def main():
         "harness_memory_mb": args.harness_memory_mb,
         "sandbox": args.sandbox or os.environ.get("PDLT_SANDBOX") or "auto",
         "pdlt_test_root": str(PDLT_TEST_ROOT),
+        "code": record_provenance(run_dir, provenance),
         "rules": {
             "retries_allowed": 0,
             "do_overs_allowed": False,
