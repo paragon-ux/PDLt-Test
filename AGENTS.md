@@ -19,11 +19,7 @@
   - provider behaviour: schema acceptance, routing, stalls, token reporting, latency;
   - a System 1 decision on an input it has not seen;
   - a change to what the model or provider receives, checked once before merge (trigger below).
-- **The trigger for "receives".** Either of these:
-  - a recorded replay misses, because the rendered prompt's hash changed (`RecordedWorker` keys on the operation plus the prompt's SHA-256 and raises `ReplayMissError`);
-  - the provider-layer request changed (`providers/api_worker.py`: guidance text, effort, response format, caps, provider pinning).
-
-  Replay alone does not cover the second: those parts are added after the prompt is hashed.
+- **The trigger for "receives".** A recorded replay misses. `RecordedWorker` keys on the operation plus the SHA-256 of the complete provider request the API worker would send (`ApiWorker.build_request_body`: input, `instructions` guidance, effort, response format, caps, provider pinning; LEDGER L67), so any change to what a model or provider receives raises `ReplayMissError`. `python scripts/render_recorded_prompts.py render` and `compare` show which requests changed.
 - **A static conclusion about runtime behaviour is a hypothesis.** Code can be read confidently and still not be what runs: environment variables, provider defaults, a stale install. A static claim about model or provider behaviour stays a hypothesis until a recorded artifact confirms it. Only when none exists does it justify a live run.
 - **A live run answers a stated question.** Before running, write what you expect and what would falsify it. Use the smallest run that answers it, in dev mode (`--dev`), from the repository root. No generic smoke runs.
 - **Label the evidence.** Every claim says how it was established: static (`file:line`), offline test, recorded artifact, or live run. Never report a static or offline result as "verified live". If a required live check can't run because `OPENROUTER_API_KEY` is unavailable, say so.

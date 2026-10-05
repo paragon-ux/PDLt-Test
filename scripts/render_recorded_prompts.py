@@ -15,8 +15,9 @@ usage:
   python scripts/render_recorded_prompts.py compare BASE.json NEW.json
   python scripts/render_recorded_prompts.py rekey OUT_FIXTURE.json
 
-``rekey`` rewrites the fixture's keys (``prompt_text``, ``prompt_sha256``) for the
-current code and refuses to change any recorded response.
+``rekey`` rewrites the fixture's keys for the current code (``prompt_text``,
+``prompt_sha256``, and the replay key: the complete ``provider_request`` and its
+``request_sha256``) and refuses to change any recorded response.
 """
 from __future__ import annotations
 
@@ -29,6 +30,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from pdl_taskmaster.providers.fixtures import REPLAY_REQUEST_SETTINGS, replay_request_builder  # noqa: E402
+from pdl_taskmaster.providers.recorded import request_sha256  # noqa: E402
 from pdl_taskmaster.runtime.session_engine import SessionEngine  # noqa: E402
 
 FIXTURE = ROOT / "tests" / "fixtures" / "recorded-cases.json"
@@ -45,14 +48,18 @@ def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+_BODY = None
+
+
 def _request_record(request) -> dict:
-    record = {"operation": request.operation, "prompt_sha256": _sha(request.prompt), "prompt_text": request.prompt}
-    body = getattr(request, "provider_request", None)
-    if body is not None:
-        text = json.dumps(body, sort_keys=True, ensure_ascii=False)
-        record["provider_request_sha256"] = _sha(text)
-        record["provider_request"] = body
-    return record
+    """The prompt the engine rendered and the complete provider request a live worker
+    would send for it (fixed replay settings; no network)."""
+    global _BODY
+    if _BODY is None:
+        _BODY = replay_request_builder(ROOT, json.loads(FIXTURE.read_text(encoding="utf-8")).get("request_settings"))
+    body = _BODY(request)
+    return {"operation": request.operation, "prompt_sha256": _sha(request.prompt), "prompt_text": request.prompt,
+            "request_sha256": request_sha256(body), "provider_request": body}
 
 
 def _engine(model_call, workspace: str) -> SessionEngine:
@@ -135,8 +142,8 @@ def compare(base_path: Path, new_path: Path) -> int:
                 print(f"{corpus}:{name}: {'added' if a is None else 'removed'}")
                 changed += 1
                 continue
-            for field in ("operation", "prompt_sha256", "provider_request_sha256"):
-                if a.get(field) != b.get(field) and not (field == "provider_request_sha256" and field not in a):
+            for field in ("operation", "prompt_sha256", "request_sha256"):
+                if field in a and a.get(field) != b.get(field):
                     print(f"{corpus}:{name}: {field} differs")
                     changed += 1
     print(f"{changed} difference(s)")
@@ -154,6 +161,8 @@ def rekey(out: Path) -> None:
         if new["operation"] != entry["operation"]:
             raise SystemExit(f"{entry['source']}: operation changed; refusing to re-key")
         entry["prompt_text"], entry["prompt_sha256"] = new["prompt_text"], new["prompt_sha256"]
+        entry["provider_request"], entry["request_sha256"] = new["provider_request"], new["request_sha256"]
+    fixture.setdefault("request_settings", dict(REPLAY_REQUEST_SETTINGS))
     original = {e["source"]: e["response"] for e in json.loads(FIXTURE.read_text(encoding="utf-8"))["entries"]}
     if any(original[e["source"]] != e["response"] for e in fixture["entries"]):
         raise SystemExit("a recorded response would change; refusing to write")

@@ -3,11 +3,35 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
-import hashlib
 import sys
 import tempfile
 
-from pdl_taskmaster.providers.recorded import RecordedFixtureBuilder, RecordedWorker
+from pdl_taskmaster.providers.recorded import RecordedFixtureBuilder, RecordedWorker, request_sha256
+
+# The provider settings replay keys are built with (TARGET_ARCHITECTURE I-10). They are
+# fixed here and stored in the fixture, never read from the environment, so a key is a
+# function of the code alone: the operation guidance, the effort mapping, the output
+# format and the input the engine renders.
+REPLAY_REQUEST_SETTINGS: dict[str, Any] = {
+    "model": "openai/gpt-oss-120b",
+    "provider_pinning": {"order": ["Baseten", "Crusoe"], "allow_fallbacks": True},
+    "max_output_tokens": 16384,
+}
+
+
+def replay_request_builder(repo_root: str | Path, settings: dict[str, Any] | None = None):
+    """The request body the live API worker would send for a request, built offline
+    (no network, no credentials) with the fixture's settings."""
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+
+    resolved = {**REPLAY_REQUEST_SETTINGS, **(settings or {})}
+    worker = ApiWorker(
+        model=resolved["model"],
+        repo_root=repo_root,
+        provider_pinning=resolved["provider_pinning"],
+        max_output_tokens=resolved["max_output_tokens"],
+    )
+    return lambda request: worker.build_request_body(request)[0]
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -83,7 +107,8 @@ def build_recorded_fixture(
 
     from pdl_taskmaster.runtime.session_engine import SessionEngine
 
-    builder = RecordedFixtureBuilder()
+    request_body = replay_request_builder(repo)
+    builder = RecordedFixtureBuilder(request_body)
     for row in rows:
         workspaces = _resolve_workspaces(eval_root, row)
         recorded_calls = _ordered_recorded_calls(workspaces)
@@ -105,7 +130,7 @@ def build_recorded_fixture(
                 )
             builder.add(
                 request.operation,
-                hashlib.sha256(request.prompt.encode("utf-8")).hexdigest(),
+                request_sha256(request_body(request)),
                 recorded["response"],
                 metadata={"source": f"{row['case_id']}:{recorded['invocation_id']}"},
                 prompt_text=request.prompt,
@@ -137,11 +162,17 @@ def build_recorded_fixture_from_vendored(
     harness vendors the exact recorded calls (operation, prompt hash, response)
     so the published harness does not depend on that repository.
 
+    Each entry is keyed by the complete provider request recorded with it
+    (``provider_request``, built with the fixture's ``request_settings``), so a change
+    to anything a model receives is a replay miss (TARGET_ARCHITECTURE I-10). An entry
+    without a recorded request (one the scripted turns never reach) cannot be matched
+    and is left out.
+
     The sandbox declares the host's own interpreter version in EXECUTE prompts, so a
     fixture recorded under another version (``recorded_python``) is replayed against
-    the prompt this host sends: the sandbox's interpreter declaration in the recorded
-    prompt text is swapped for this host's, and the entry is keyed by that prompt.
-    Every other byte of the prompt must still match.
+    the request this host sends: the sandbox's interpreter declaration in the recorded
+    request is swapped for this host's, and the entry is keyed by that request.
+    Every other byte of the request must still match.
     """
     from pdl_taskmaster.verification.sandbox import PYTHON_VERSION, python_declaration
 
@@ -154,26 +185,23 @@ def build_recorded_fixture_from_vendored(
     if not entries:
         raise SystemExit("no vendored fixture entries selected")
     recorded_python = value.get("recorded_python")
-    builder = RecordedFixtureBuilder()
+    builder = RecordedFixtureBuilder(replay_request_builder(candidate_repo, value.get("request_settings")))
     for entry in entries:
-        prompt_sha256 = entry["prompt_sha256"]
-        prompt_text = entry.get("prompt_text")
+        body = entry.get("provider_request")
+        if body is None or request_sha256(body) != entry.get("request_sha256"):
+            continue  # not reached by the recorded turns, or not keyed by its request
         metadata = {"source": entry.get("source", "vendored")}
-        if (
-            recorded_python
-            and recorded_python != PYTHON_VERSION
-            and prompt_text is not None
-            and hashlib.sha256(prompt_text.encode("utf-8")).hexdigest() == prompt_sha256
-            and python_declaration(recorded_python) in prompt_text
-        ):
-            prompt_text = prompt_text.replace(python_declaration(recorded_python), python_declaration())
-            prompt_sha256 = hashlib.sha256(prompt_text.encode("utf-8")).hexdigest()
-            metadata["recorded_python"] = recorded_python
+        if recorded_python and recorded_python != PYTHON_VERSION:
+            recorded, host = python_declaration(recorded_python), python_declaration()
+            if any(isinstance(body.get(k), str) and recorded in body[k] for k in ("input", "instructions")):
+                body = {k: (v.replace(recorded, host) if k in ("input", "instructions") and isinstance(v, str) else v)
+                        for k, v in body.items()}
+                metadata["recorded_python"] = recorded_python
         builder.add(
             entry["operation"],
-            prompt_sha256,
+            request_sha256(body),
             entry["response"],
             metadata=metadata,
-            prompt_text=prompt_text,
+            prompt_text=entry.get("prompt_text"),
         )
     return builder.build()

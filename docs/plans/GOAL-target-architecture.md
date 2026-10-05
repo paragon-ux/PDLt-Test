@@ -125,7 +125,7 @@ Done when: a test creates a run in a dirty tree and finds the SHA and diff in th
 The record includes everything sent, including the guidance text `ApiWorker` puts in the request's `instructions` field, which no run file records today. The body is built by one pure function, used both for sending and for recording.
 Done when: a test using the local stub server checks that each operation's recorded request equals the captured request body, `instructions` included; it fails on the pre-task code.
 
-**T0.6. Replays match on the full request (plan 0.3).** Status: `todo`
+**T0.6. Replays match on the full request (plan 0.3).** Status: `done` (this commit; L67)
 Replay keys cover the whole request, `instructions` included. Re-key the fixture offline with `scripts/render_recorded_prompts.py rekey`, recorded responses unchanged.
 Done when: the replay suite passes; the fixture diff changes keys only, never a response; a test shows that changing only the `instructions` text causes a replay miss.
 
