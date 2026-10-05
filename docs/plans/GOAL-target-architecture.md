@@ -157,7 +157,7 @@ Done when: the rendered-prompt diff against T0.2's baseline shows only that symb
 **T1.3. Re-key the replay fixture for T1.2.** Status: `done` (this commit; L73)
 Done when: the replay suite passes, and the fixture diff changes keys only, never a response (an empty diff when no recorded case uses the brief).
 
-**T1.4. Tests that enforce the plan's rules, with a list of exceptions that can only shrink (plan 1.3, 1.5, 1.6).** Status: `todo`
+**T1.4. Tests that enforce the plan's rules, with a list of exceptions that can only shrink (plan 1.3, 1.5, 1.6).** Status: `done` (this commit; L74)
 One test per invariant I-1 to I-12 in `TARGET_ARCHITECTURE.md` (`tests/test_architecture_invariants.py`). Where today's code breaks a rule that a later phase fixes, the case goes in the checked-in exceptions list instead of weakening the test. A separate test fails if the list gains an entry compared with the commit that introduced it. ADR-0030 is drafted (Proposed).
 Done when: every rule has a test; each exception names the phase that removes it; adding a dummy exception makes the ratchet test fail.
 
@@ -289,6 +289,8 @@ Requirements the tasks above carry (from the original goal; each is now attached
 | AD-8 | "Every reachable recorded prompt" | The corpora of `scripts/render_recorded_prompts.py`: the 10 fixture requests reachable by the recorded cases' scripted turns, plus the first request for every catalogue prompt (112). A ledger row explains each changed corpus entry by cause. | The re-key run of L48 reached the same 10 |
 | AD-10 | `test_sandbox_low_overhead` fails in the full suite in this checkout at the unchanged baseline | Recorded as a pre-existing environment-dependent timing failure (L54); any other failure, or a change in this one, is a stop | L54 |
 | AD-9 | How spend is counted | Recorded token usage × Crusoe's list price ($0.05 per million input, $0.25 per million output, OpenRouter, 2026-10-05); System 1 calls are reported separately as unpriced. | OpenRouter endpoints listing |
+| AD-11 | A semantic wire default that no planned task removes (`NegativeWitness.basis = "search"`) | Added to T4.4's scope (the Result IR rework), listed as an I-8 exception for Phase 4. The semantic marks themselves are host-only: `_normalize` drops `semantic` as it drops `when`, so no schema a model or provider sees changes (240 schema views and all render corpora identical). | `wire_payloads.py` NegativeWitness; T1.4 schema dump |
+| AD-12 | How I-2, I-5 to I-7 and I-11 are tested before their mechanisms exist, and which I-4 sites are not violations | I-2: mechanically through I-3 (every solver input outside I-3's listed cases is USER, HOST, PUBLISHED or the solver's own output), plus AUTH-03 and AUTH-04 pinned by their exact clause SHA-256 until T3.5 rewrites them. I-5, I-6, I-7, I-11: listed with a `probe` (the function the Phase 2 task adds); the test fails once the probe exists until its real check replaces the exception. I-4: regex or phrase sites that parse a host format (command grammar, turn directory names, the standards file format, OS and sandbox messages) are listed apart as `not_decision_text`, under the same ratchet. | `tests/architecture_exceptions.json`; T1.4 ratchet check |
 
 ## Final gate
 

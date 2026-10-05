@@ -95,7 +95,7 @@ class TaskEntity(WireModel):
     model_config = ConfigDict(extra="forbid")
     surface: str = Field(json_schema_extra=contract(description='The exact text the request uses for this entity.', minLength=1))
     kind: Literal["identifier", "input_data", "literal", "parameter", "term"] = Field(
-        json_schema_extra=contract(description=(
+        json_schema_extra=contract(semantic=True, description=(
                 'identifier: a name the task acts on or refers to (a function, type, field, file, path, key or '
                 'ID; a labelled person, object or option). input_data: data the task must operate on exactly as '
                 'given (a list, a string, a table, numbers supplied as input). literal: text the deliverable must '
@@ -106,7 +106,7 @@ class TaskEntity(WireModel):
             )))
     polarity: Literal["known", "unknown"] | None = Field(
         default=None,
-        json_schema_extra=contract(description=(
+        json_schema_extra=contract(semantic=True, description=(
             'Epistemic polarity of the entity in the task: '
             '"known" for given inputs, established constants, fixed parameters, governing constraints, and defined terms; '
             '"unknown" for unobserved states, latent variables, missing values, or target quantities to determine. '
@@ -115,14 +115,14 @@ class TaskEntity(WireModel):
     )
     group: str | None = Field(
         default=None,
-        json_schema_extra=contract(description=(
+        json_schema_extra=contract(semantic=True, description=(
             'Optional logical group or domain name relating entities that belong together '
             '(e.g. "variables", "parameters", "endpoints", "coordinates", "inputs").'
         ))
     )
     relation: str | None = Field(
         default=None,
-        json_schema_extra=contract(description=(
+        json_schema_extra=contract(semantic=True, description=(
             "What the request states regarding this entity: its facts, constraints, governing rules, or "
             "what is unknown, random, ambiguous or in some order. Leave it out only when the request says "
             "nothing more about the entity."
@@ -267,14 +267,14 @@ class PromptDraftData(WireModel):
             'body.'
         ), minLength=1))
     approach_handoff: Literal["NONE", "CARRY_SOURCE_TO_PLAN"] = Field(
-        default="NONE", json_schema_extra=contract(description=(
+        default="NONE", json_schema_extra=contract(semantic=True, description=(
                 'Select CARRY_SOURCE_TO_PLAN when the substantive request contains any TASK-02 response-method '
                 'instruction for the later Plan; otherwise select NONE. This is an independent source-handoff '
                 'fact: even when CARRY_SOURCE_TO_PLAN is selected, prompt_body must still preserve every TASK-01 '
                 'instruction. Protocol invocation or confirmation control is never a response-method instruction.'
             )))
     task_entities: list[str] = Field(
-        default_factory=list, json_schema_extra=contract(description=(
+        default_factory=list, json_schema_extra=contract(semantic=True, description=(
                 'The surfaces of the TASK ENTITIES listed in the substantive request context, copied '
                 'character-for-character into this array. prompt_body spells each one exactly so where it refers '
                 'to it and keeps what the request says about it; entities add no step, list or requirement of '
@@ -380,19 +380,19 @@ SYSTEM1_CONFIDENCE_FLOOR: float = 0.85
 class ReviewFactsData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["REVIEW_FACTS"] = "REVIEW_FACTS"
-    task_change_dimensions: list[TaskChangeDimension] = Field(json_schema_extra=contract(description=(
+    task_change_dimensions: list[TaskChangeDimension] = Field(json_schema_extra=contract(semantic=True, description=(
             'List every TASK-01 dimension changed by the message; use [] only when none changed. These '
             'dimensions describe what work or externally observable result is required. A date, as-of point, '
             'currency/freshness requirement, or other factual time boundary belongs in '
             'TIME_FRESHNESS_QUANTITY_OR_CONDITION whenever it constrains which result may be returned, even '
             'if satisfying it also requires an evidence-selection method.'
         ), uniqueItems=True))
-    approach_change_dimensions: list[ApproachChangeDimension] = Field(json_schema_extra=contract(description=(
+    approach_change_dimensions: list[ApproachChangeDimension] = Field(json_schema_extra=contract(semantic=True, description=(
             'List every TASK-02 dimension changed by the message; use [] only when none changed. These '
             'dimensions describe only how an already-defined result will be produced. A message may populate '
             'both arrays when a task/result change also imposes a response method.'
         ), uniqueItems=True))
-    progression_requested: bool = Field(json_schema_extra=contract(description=(
+    progression_requested: bool = Field(json_schema_extra=contract(semantic=True, description=(
             'True if the message confirms the bound artifact or asks to proceed or execute. Report this '
             'independently even when the same message also contains a correction; the host applies change '
             'precedence mechanically.'
@@ -434,7 +434,7 @@ class ExecutionInputReviseData(WireModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["REVISE_TASK"] = "REVISE_TASK"
     also_changes_approach: bool = Field(
-        json_schema_extra=contract(description='Whether the same task-changing message also changes the response approach.'))
+        json_schema_extra=contract(semantic=True, description='Whether the same task-changing message also changes the response approach.'))
     confidence: SkipJsonSchema[Optional[float]] = Field(default=None, ge=0.0, le=1.0)
 
 
@@ -505,7 +505,7 @@ class ExecutionDraftResultData(WireModel):
             'criteria. Plain text; no code fences inside.'
         ), minLength=1))
     execution_entities: list[Union[dict[str, Any], str]] = Field(
-        default_factory=list, json_schema_extra=contract(type="array", items=EXECUTION_ENTITY_ITEMS))
+        default_factory=list, json_schema_extra=contract(semantic=True, type="array", items=EXECUTION_ENTITY_ITEMS))
 
     @model_validator(mode="after")
     def validate_body(self) -> ExecutionDraftResultData:
@@ -538,9 +538,9 @@ class PositiveWitness(WireModel):
     polarity: Literal["positive"] = "positive"
     evidence: Evidence = Field(default_factory=lambda: Evidence(path="execution://witness"))
     data: dict[str, Any]
-    basis: Optional[Literal["search", "proof"]] = None
-    search_exhausted: Optional[bool] = None
-    nodes_explored: Optional[NonNegativeInt] = None
+    basis: Optional[Literal["search", "proof"]] = Field(default=None, json_schema_extra=contract(semantic=True))
+    search_exhausted: Optional[bool] = Field(default=None, json_schema_extra=contract(semantic=True))
+    nodes_explored: Optional[NonNegativeInt] = Field(default=None, json_schema_extra=contract(semantic=True))
     method: Optional[str] = None
     argument: Optional[str] = None
     domain: Optional[str] = None  # typed checker selector (GUARD-02); never inferred from text
@@ -555,9 +555,9 @@ class NegativeWitness(WireModel):
     model_config = ConfigDict(extra="forbid")
     polarity: Literal["negative"] = "negative"
     evidence: Evidence = Field(default_factory=lambda: Evidence(path="execution://witness"))
-    basis: Literal["search", "proof"] = "search"
-    search_exhausted: Optional[bool] = None
-    nodes_explored: Optional[PositiveInt] = None
+    basis: Literal["search", "proof"] = Field(default="search", json_schema_extra=contract(semantic=True))
+    search_exhausted: Optional[bool] = Field(default=None, json_schema_extra=contract(semantic=True))
+    nodes_explored: Optional[PositiveInt] = Field(default=None, json_schema_extra=contract(semantic=True))
     method: Optional[str] = None
     argument: Optional[str] = None
     domain: Optional[str] = None
@@ -594,7 +594,7 @@ class FileItem(WireModel):
     model_config = ConfigDict(extra="allow", json_schema_extra=contract(
         additionalProperties=False, required=["filename", "satisfies", "evidence"]))
     filename: str
-    satisfies: list[str] = Field(default_factory=list)
+    satisfies: list[str] = Field(default_factory=list, json_schema_extra=contract(semantic=True))
     evidence: Evidence
 
 
@@ -616,9 +616,9 @@ class DefectItem(WireModel):
 class ResultIRData(WireModel):
     model_config = ConfigDict(extra="allow", json_schema_extra=contract(
         additionalProperties=False, required=["files", "reconciliation", "open_defects"]))
-    files: list[FileItem] = Field(default_factory=list)
-    reconciliation: list[ReconciliationItem] = Field(default_factory=list)
-    open_defects: list[DefectItem] = Field(default_factory=list)
+    files: list[FileItem] = Field(default_factory=list, json_schema_extra=contract(semantic=True))
+    reconciliation: list[ReconciliationItem] = Field(default_factory=list, json_schema_extra=contract(semantic=True))
+    open_defects: list[DefectItem] = Field(default_factory=list, json_schema_extra=contract(semantic=True))
     witness: Optional[WitnessPayload] = Field(
         default=None, json_schema_extra=contract(description='Witness certifying substantive execution correctness (ADR-0013 / ADR-0015).'))
 

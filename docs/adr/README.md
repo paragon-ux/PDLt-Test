@@ -30,6 +30,7 @@
 | [ADR-0026](0026-extension-and-workflow-model.md) | Proposed (future) | Extension and workflow model: closed core, versioned and validated contracts, workflow packs. |
 | [ADR-0027](0027-typed-task-entity-extraction.md) | Accepted (provisional) | Typed task entities for every problem type (surface, kind, the request's own definition), contained against the sanitized request. IMPL-0012. |
 | [ADR-0028](0028-model-capability-boundary.md) | Proposed | Provider boundary: the protocol states what each operation needs; an adapter discovers each model's capabilities, translates, adjusts and reports; one output contract per operation; model specifics are data, not code. Implemented by IMPL-0001 to IMPL-0003. |
+| [ADR-0030](0030-origins-authority-and-solver-isolation.md) | Proposed | Every projection value has one origin (USER, HOST, MODEL, PUBLISHED) declared in the execution contract; task authority comes only from the user's words; the solver sees no other operation's model text. Enforced by `tests/test_architecture_invariants.py` with a shrink-only exceptions list. Will supersede ADR-0004 (Phase 3). |
 
 **Implementation records.** Decisions that carry out an ADR (modules, generators, provider endpoints, per-model values, and the evidence behind them) live in a separate set, [`impl/`](impl/README.md) (`IMPL-NNNN`), so this index stays at project scope.
 

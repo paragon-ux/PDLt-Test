@@ -19,6 +19,10 @@ contract. Pydantic's own titles, defaults and docstring descriptions are never s
 A property declared ``contract(when=<mode>)`` exists in the contract only while the
 host runs that mode (``modes``): the host does not read it otherwise, so it is not
 shown, required or enforced (RESULT_IR_MODE: RS-10).
+
+A field declared ``contract(semantic=True)`` states a semantic fact (a fact about the
+task or the result), so it may not have a default (TARGET_ARCHITECTURE I-8; checked
+by ``tests/test_architecture_invariants.py``). The marker is the host's: never shown.
 """
 from __future__ import annotations
 
@@ -30,6 +34,8 @@ UNION_WRAPPER = "outcome"
 # The host reads the Result IR only in this mode (RESULT_STANDARD RS-10).
 RESULT_IR_MODE = "result_ir"
 _NO_MODES: frozenset[str] = frozenset()
+# contract(...) keys the host reads and never shows: a mode condition, and the I-8 marker.
+_HOST_ONLY_KEYS = ("when", "semantic")
 
 # Keywords a decoding engine does not take; the grammar view drops them (the prompt
 # view keeps the advisory ones, e.g. minLength).
@@ -110,7 +116,7 @@ def _normalize(node: Any, defs: dict[str, Any], modes: frozenset[str]) -> Any:
             branch["required"] = list(dict.fromkeys([*(branch.get("required") or []), tag]))
     if isinstance(result.get("properties"), dict) and result["properties"]:
         result.setdefault("additionalProperties", False)
-    result.update({k: v for k, v in (node.get(CONTRACT_KEY) or {}).items() if k != "when"})
+    result.update({k: v for k, v in (node.get(CONTRACT_KEY) or {}).items() if k not in _HOST_ONLY_KEYS})
     if isinstance(result.get("properties"), dict) and isinstance(result.get("required"), list):
         # A required override names only the properties present in these modes.
         result["required"] = [name for name in result["required"] if name in result["properties"]]
