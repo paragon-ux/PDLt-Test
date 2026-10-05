@@ -148,25 +148,23 @@ def summarize_results(target_prompts: str | None = None):
         print(f"{row[0]} | {row[1]:<18} | {row[2]:<18} | {row[3]:<18} | {row[4]:<18}")
 
     print("-" * len(header))
-    summary_row = f"{'TOTALS':<6}"
-    adjudicated_row = f"{'ADJUD':<6}"
+    # Counted from each arm's results, never from its scoreboard's "passed": scoreboards
+    # written before L49d (2026-10-05) counted an ungraded prompt as a pass.
+    sys.path.insert(0, str(ROOT))
+    import run_catalogue
+
     for arm in ARMS:
-        sb = scoreboards.get(arm["name"])
-        if sb:
-            rate = sb.get("pass_rate_pct", 0)
-            passed = sb.get("passed", 0)
-            elapsed = sb.get("total_elapsed_seconds", 0)
+        rows = list(results_map.get(arm["name"], {}).values())
+        sb = scoreboards.get(arm["name"]) or {}
+        if rows:
+            counts = run_catalogue.outcome_counts(rows)
             calls = sb.get("model_calls", {}).get("total", 0)
-            summary_row += f" | {rate:.1f}% ({calls}c, {elapsed:.0f}s)"
-            adj_rate = (passed / float(len(prompt_ids))) * 100.0
-            adjudicated_row += f" | {adj_rate:.1f}% ({passed}/{len(prompt_ids)})"
+            elapsed = sb.get("total_elapsed_seconds", 0)
+            print(f"{arm['label']}: {run_catalogue.format_counts(counts)} ({calls} calls, {elapsed:.0f}s)")
         else:
-            summary_row += " | N/A"
-            adjudicated_row += " | N/A"
-    print(summary_row)
-    print(adjudicated_row)
+            print(f"{arm['label']}: not run")
     print("#" * 90)
-    print("*(ADJUD: Adjudicated pass rate across tested categories with 16-01 judged against rubric)*\n")
+    print("*(pass: the expected stage and a grader PASS; ungraded and held results are never passes)*\n")
 
 
 def main():

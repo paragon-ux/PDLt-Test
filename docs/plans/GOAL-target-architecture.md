@@ -129,7 +129,7 @@ Done when: a test using the local stub server checks that each operation's recor
 Replay keys cover the whole request, `instructions` included. Re-key the fixture offline with `scripts/render_recorded_prompts.py rekey`, recorded responses unchanged.
 Done when: the replay suite passes; the fixture diff changes keys only, never a response; a test shows that changing only the `instructions` text causes a replay miss.
 
-**T0.7. An ungraded result never counts as a pass (plan 0.4; L49d; D3 counting).** Status: `todo`
+**T0.7. An ungraded result never counts as a pass (plan 0.4; L49d; D3 counting).** Status: `done` (this commit; L68)
 Fix the aggregation in `experiments/run_four_arms.py` and anywhere else that totals results (the catalogue runner and the viewer), applying the rule FA2 already applies to MANUAL. Ungraded results and holds (exit 2) get their own counts.
 Done when: a test feeds an ungraded result and finds it counted as ungraded, not passed, and a hold counted as held; it fails on the pre-task code. No grader file appears in the diff.
 

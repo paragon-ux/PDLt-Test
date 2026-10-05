@@ -225,8 +225,11 @@ def test_manual_is_pending_never_a_pass():
     assert not run_catalogue.is_prompt_pass(manual)
     assert run_catalogue.is_prompt_pending(manual) and not run_catalogue.is_prompt_fail(manual)
     assert run_catalogue.outcome_label(manual) == "PENDING"
-    # No ground truth required: the stage alone decides, as before.
-    assert run_catalogue.is_prompt_pass(run("CLOSED_SUCCESS", "N/A"))
+    # No grader: the stage alone cannot make a pass (L49d, 2026-10-05); it is UNGRADED,
+    # which the old counting (reported beside the new) still counted as a pass.
+    ungraded = run("CLOSED_SUCCESS", "N/A")
+    assert not run_catalogue.is_prompt_pass(ungraded) and run_catalogue.outcome_label(ungraded) == "UNGRADED"
+    assert run_catalogue.is_prompt_pass_legacy(ungraded)
     # A missed stage is a failure whatever the grade.
     assert run_catalogue.is_prompt_fail(run("CLOSED_CANCELLED", "MANUAL"))
     assert run_catalogue.is_prompt_fail(run("CLOSED_SUCCESS", "ERROR"))
@@ -244,8 +247,9 @@ def test_scoreboard_counts_manual_as_pending(tmp_path):
                result("d", "N/A")]
     meta = {"run_id": "r", "start_time": "t", "model": "m", "reasoning_effort": "e"}
     board = run_catalogue.generate_scoreboard(results, tmp_path, meta)
-    assert (board["passed"], board["failed"], board["pending_human_check"]) == (2, 1, 1)
-    assert board["pass_rate_pct"] == 50.0 and board["decided_pass_rate_pct"] == 66.7
+    assert (board["passed"], board["failed"], board["pending_human_check"], board["ungraded"]) == (1, 1, 1, 1)
+    assert board["pass_rate_pct"] == 25.0 and board["decided_pass_rate_pct"] == 50.0
+    assert board["legacy_passed"] == 2 and board["legacy_pass_rate_pct"] == 50.0  # the old counting, beside
     # A pending prompt with a regression tag is not a regression hit; a failed one is.
     assert [r["id"] for r in board["regressions_hit"]] == ["c"]
     assert [f["id"] for f in board["failures"]] == ["c"]
