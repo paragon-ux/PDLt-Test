@@ -89,17 +89,17 @@ Run only after a phase that changes what a model receives, and only once its off
 Commit `TARGET_ARCHITECTURE.md`, `docs/plans/target-architecture-plan.md`, this file, and the L52 ledger row updated with D1–D9 as decided above, as one commit.
 Done when: `git status` is clean for those paths; record the SHA as `DOCS_SHA`.
 
-**S2. Check the branch point.** Status: `todo`
+**S2. Check the branch point.** Status: `done dce07f11` (ancestor check passed; diff lists docs and ledger only)
 The new branch starts from `DOCS_SHA`, not from `0a8e9d5c`, which would not contain S1's commit or any ledger commits after it.
 Done when: `git merge-base --is-ancestor 0a8e9d5c DOCS_SHA` succeeds, and `git diff --stat 0a8e9d5c DOCS_SHA` lists only docs and ledger paths. If it lists code, stop.
 
-**S3. Create the worktree and branch.** Status: `todo`
+**S3. Create the worktree and branch.** Status: `done dce07f11` (worktree HEAD = DOCS_SHA)
 `git worktree add .claude/worktrees/target-arch -b feat/target-arch DOCS_SHA`. All further work happens there.
 Done when: `git -C .claude/worktrees/target-arch rev-parse HEAD` equals `DOCS_SHA`.
 
 ## Baseline
 
-**T0.1. Revert the held FB3+FB5 commit `c153b8fc` (D9: keep unmerged), keeping the ledger history.** Status: `todo`
+**T0.1. Revert the held FB3+FB5 commit `c153b8fc` (D9: keep unmerged), keeping the ledger history.** Status: `done` (this commit; L53)
 `git revert --no-commit c153b8fc`, then restore `docs/plans/LEDGER.md` and any other docs from `HEAD` so the L50 row and later rows stay. Add a ledger row recording the revert and that the task-change persistence can be recovered with `git show c153b8fc` for Phase 2.
 Done when:
 - `git diff c153b8fc^ HEAD -- . ':!docs' ':!TARGET_ARCHITECTURE.md'` is empty, so code and fixtures match the verified L48 state exactly;

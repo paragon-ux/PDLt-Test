@@ -34,7 +34,6 @@ def test_sem05_reaches_draft_prompt():
     compiler = ContextCompiler(ROOT)
     values = {
         "HOST_PROTOCOL_STATE": {"stage": "10_prompt", "has_prior_prompt": False},
-        "SOURCE_REQUEST": "hi",
         "SUBSTANTIVE_REQUEST": "hi",
     }
     projection = compiler.compile("DRAFT_PROMPT", values, higher_priority_constraints=None)
@@ -45,7 +44,6 @@ def test_sem05_reaches_revise_prompt():
     compiler = ContextCompiler(ROOT)
     values = {
         "CURRENT_PROMPT_BODY": "Compare Kafka and RabbitMQ for event delivery.",
-        "SOURCE_TASK_CHANGE": "This is not confirmed. The audience should be data engineers.",
         "TASK_CHANGE_SOURCE": "This is not confirmed. The audience should be data engineers.",
     }
     projection = compiler.compile("REVISE_PROMPT", values, higher_priority_constraints=None)
@@ -58,7 +56,6 @@ def test_revise_prompt_has_full_sem_family():
     compiler = ContextCompiler(ROOT)
     values = {
         "CURRENT_PROMPT_BODY": "Compare Kafka and RabbitMQ for event delivery.",
-        "SOURCE_TASK_CHANGE": "This is not confirmed. The audience should be data engineers.",
         "TASK_CHANGE_SOURCE": "This is not confirmed. The audience should be data engineers.",
     }
     projection = compiler.compile("REVISE_PROMPT", values, higher_priority_constraints=None)
@@ -87,7 +84,6 @@ def test_sem05_text_is_load_bearing():
     compiler = ContextCompiler(ROOT)
     values = {
         "HOST_PROTOCOL_STATE": {"stage": "10_prompt", "has_prior_prompt": False},
-        "SOURCE_REQUEST": "hi",
         "SUBSTANTIVE_REQUEST": "hi",
     }
     projection = compiler.compile("DRAFT_PROMPT", values, higher_priority_constraints=None)

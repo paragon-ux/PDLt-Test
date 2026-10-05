@@ -70,9 +70,7 @@ class ContextCompiler:
         # absent optional symbols are omitted from the projection entirely so
         # single-turn projections stay byte-identical (fixture replay safe).
         optional = tuple(spec.get("optional_include", ()))
-        # An optional symbol also listed in ``include`` is shown at that position when
-        # supplied (input order is part of the contract, e.g. AUTH-04′ for EXECUTE).
-        expected = set(include) - _AUTO_SYMBOLS - set(optional)
+        expected = set(include) - _AUTO_SYMBOLS
         provided = set(values)
         missing = expected - provided
         extra = (provided - expected) - set(optional)
@@ -99,13 +97,10 @@ class ContextCompiler:
                 ordered_inputs[symbol] = clause_values
             elif symbol == "HIGHER_PRIORITY_CONSTRAINTS":
                 ordered_inputs[symbol] = higher_priority_constraints
-            elif symbol in optional:
-                if values.get(symbol) is not None:
-                    ordered_inputs[symbol] = values[symbol]
             else:
                 ordered_inputs[symbol] = values[symbol]
         for symbol in optional:
-            if symbol not in include and symbol in provided and values[symbol] is not None:
+            if symbol in provided and values[symbol] is not None:
                 ordered_inputs[symbol] = values[symbol]
 
         # One output contract per operation (IMPL-0001): generated from the payload model.

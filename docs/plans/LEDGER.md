@@ -100,3 +100,4 @@ This file is the **single source of truth** for cross-cutting decisions and open
 
 
 
+| L53 | **T0.1: `c153b8fc` (FB3 + FB5, L50) reverted on `feat/target-arch`** (D9). Code, contracts, standards, fixtures and tests match `c153b8fc^` byte for byte: `git diff c153b8fc^ HEAD -- . ':!docs' ':!TARGET_ARCHITECTURE.md'` is empty. Docs are kept from HEAD so the L50 and later rows stay; ADR-0004's FB5 amendment carries a "reverted in code" note pointing to ADR-0030 (Phase 3). Replay suites (`test_recorded_replay.py`, `test_repl_integration.py`): 30 passed, no re-key. Phase 2 may recover the task-change persistence (`turns/<id>/task_changes.json`) with `git show c153b8fc -- src/pdl_taskmaster/runtime/workspace.py`. | main (goal T0.1), 2026-10-05 | done (this commit) | | GOAL T0.1 |

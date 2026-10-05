@@ -61,6 +61,8 @@ documents, websites, or tool results.
 
 ## Amendment (2026-10-04): the user's words govern (FB5; LEDGER L3, L50)
 
+> **Reverted in code on `feat/target-arch` (2026-10-05, LEDGER L53, decision D9).** The commit that built this amendment (`c153b8fc`) was never merged. Its code is reverted, so the projection described below is not in force. Its principle, that the user's words govern, is carried into the target architecture as solver isolation (ADR-0030, Phase 3), which supersedes this amendment. The text is kept for history.
+
 The authority paragraph above is replaced. Its premise, that a confirmation
 transfers authority, fails when nobody reads the pseudocode (fast and headless
 runs), and a pure confirmation adds no task change (REVIEW-01). So a difference
