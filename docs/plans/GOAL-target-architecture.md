@@ -154,7 +154,7 @@ Done when: a test walks every operation's assembled input and fails if any field
 `EXECUTION_BRIEF` (origin `MODEL`) replaces the brief's append to `REQUIRED_TASK_INPUTS`.
 Done when: the rendered-prompt diff against T0.2's baseline shows only that symbol changing (in renders that use `--draft-execute`; the default renders are unchanged).
 
-**T1.3. Re-key the replay fixture for T1.2.** Status: `todo`
+**T1.3. Re-key the replay fixture for T1.2.** Status: `done` (this commit; L73)
 Done when: the replay suite passes, and the fixture diff changes keys only, never a response (an empty diff when no recorded case uses the brief).
 
 **T1.4. Tests that enforce the plan's rules, with a list of exceptions that can only shrink (plan 1.3, 1.5, 1.6).** Status: `todo`
