@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import difflib
+import hashlib
 import http.client
 import json
 import os
@@ -274,6 +275,8 @@ def _rejecting_provider(error: BaseException, order: list[str]) -> str | None:
 # "\n   " for 3K-29K characters before the closing braces (session-20261003-141956;
 # 5 of 6 constrained EXECUTE replays). No deliverable ends in a run this long.
 STALL_WHITESPACE_CHARS = 1000
+# Where each call's exact request bodies are kept, beside call-trace.jsonl (I-9).
+REQUEST_DIR = "provider-requests"
 
 
 class OutputLimitError(ProviderError):
@@ -396,6 +399,7 @@ class ApiWorker:
         self.call_traces: deque[CallTrace] = deque(maxlen=64)
         self.trace_path: Path | None = None
         self._calls_per_operation: dict[str, int] = {}
+        self._requests_stored = 0  # provider-requests/ files written this session
         # Operations whose reply stalled in whitespace under the output schema: sent
         # without the decoding constraint for the rest of the session (the host still
         # validates every reply against the schema).
@@ -708,11 +712,29 @@ class ApiWorker:
             return
         try:
             self.trace_path.parent.mkdir(parents=True, exist_ok=True)
+            record = {"at": time.strftime("%Y-%m-%dT%H:%M:%S"), **trace.to_dict()}
+            self._store_request_bodies(trace, record)
             with self.trace_path.open("a", encoding="utf-8", newline="\n") as handle:
-                record = {"at": time.strftime("%Y-%m-%dT%H:%M:%S"), **trace.to_dict()}
                 handle.write(json.dumps(record, ensure_ascii=False) + "\n")
         except OSError:
             pass
+
+    def _store_request_bodies(self, trace: CallTrace, record: dict[str, Any]) -> None:
+        """Keep the exact bytes each attempt sent (TARGET_ARCHITECTURE I-9): model, input,
+        instructions, reasoning, caps, pinning and output format, System 1 requests
+        included. Credentials travel in headers and are never part of a body. The trace
+        record names each file and its SHA-256."""
+        directory = self.trace_path.parent / REQUEST_DIR
+        for attempt, row in zip(trace.attempts, record["attempts"]):
+            if not attempt.body:
+                continue
+            self._requests_stored += 1
+            operation = "".join(c if c.isalnum() or c in "-_" else "-" for c in trace.operation)
+            name = f"{self._requests_stored:04d}-{operation}-{trace.number}-a{attempt.attempt}.json"
+            directory.mkdir(parents=True, exist_ok=True)
+            (directory / name).write_bytes(bytes(attempt.body))
+            row["request_file"] = f"{REQUEST_DIR}/{name}"
+            row["request_sha256"] = hashlib.sha256(bytes(attempt.body)).hexdigest()
 
     def _attempt(self, req: urllib.request.Request) -> AttemptTrace:
         """The HTTP attempt this request makes, on the call in flight (or its own)."""
@@ -746,6 +768,125 @@ class ApiWorker:
                               attempts=[*exc.attempts, {"provider": "OpenRouter", "message": str(exc)[:600]}])
         error.failed_generation = exc.failed_generation
         return error
+
+    def build_request_body(self, request: Any) -> tuple[dict[str, Any], bool, Any]:
+        """The complete request this worker sends for ``request``: model, input,
+        instructions (the operation guidance), reasoning, caps, provider pinning and
+        output format (TARGET_ARCHITECTURE I-9, I-10). Pure: no network, no credentials;
+        the same function builds what is sent, what is recorded and what replay keys on.
+        Returns the body, whether the schema was union-wrapped, and the effort sent."""
+        operation_name = getattr(request, "operation", None)
+        instructions, input_text = self._split_prompt(request.prompt)
+        if self.reorder_keys_for_cache:
+            input_text = self._reorder_for_cache(input_text.lstrip())
+        if operation_name != "BYPASS_ORDINARY":
+            # A direct reply is plain text: the suffix made it answer in JSON
+            # ({"message": "Hello! ..."} printed raw in the REPL).
+            input_text = input_text.rstrip() + _JSON_ONLY_SUFFIX
+
+        body: dict[str, Any] = {
+            "model": self._model_for(getattr(request, "operation", None)),
+            "input": input_text,
+        }
+        # ADR-0009 finding: schema enforcement on the semantic-read boundary
+        # (BOOTSTRAP_ANALYSIS) degrades interpretation quality — a lazy
+        # structured summary classifies substantive tasks as instruction-free,
+        # losing the entire task upstream of every gate. Structured output is
+        # for ops whose SHAPE is the contract (drafts, executions, reviews);
+        # the semantic read must stay free-text.
+        form = self.contract_form(operation_name)
+
+        extra_guidance = ""
+        if operation_name == "BYPASS_ORDINARY" and getattr(request, "environment", None):
+            # Capabilities only, from the session sandbox (never task guidance): a
+            # direct reply claimed "I cannot execute code" in a session that runs it.
+            extra_guidance = "Execution environment of this session (host fact): " + request.environment
+        elif operation_name in ("DRAFT_PROMPT", "REVISE_PROMPT"):
+            extra_guidance = (
+                "\n\nNORMATIVE GUIDELINES FOR PROMPT PSEUDOCODE (PDL-01 to PDL-08, PROMPT-01 to PROMPT-05):\n"
+                "1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
+                "   Example format:\n"
+                "   READ the monthly sales records from the supplied CSV data\n"
+                "   GROUP the records by region\n"
+                "   RETURN the total sales for each region\n"
+                "2. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n"
+                "3. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n"
+                "4. Purpose-Complete Target: Prompt Pseudocode defines the substantive requirements to be solved upon execution (PROMPT-01). DO NOT insert internal meta-rules, drafting instructions, or negative execution prohibitions (PROMPT-02, PDL-08)."
+            )
+        elif operation_name in ("DRAFT_PLAN", "REVISE_PLAN"):
+            extra_guidance = (
+                "\n\nNORMATIVE GUIDELINES FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-08, PLAN-01 to PLAN-10):\n"
+                "1. Express the response plan in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
+                "   Example format:\n"
+                "   PARSE the supplied CSV records\n"
+                "   AGGREGATE the sales amounts for each region\n"
+                "   EMIT the per-region totals\n"
+                "2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n"
+                "3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n"
+                "4. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04), and NEVER insert placeholder steps or meta-prohibitions like 'insert placeholders without performing computation' (PLAN-10).\n"
+                "5. Plan the steps that produce the deliverable itself. Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue."
+            )
+        elif operation_name == "DRAFT_EXECUTE":
+            extra_guidance = (
+                "\n\nDRAFT_EXECUTE: write an execution brief in plain text (brief_body): algorithmic choice, "
+                "data structures, and estimated step count against the step budget in AVAILABLE_EXECUTION_TOOLS. "
+                "Do not draft witness payloads, delivery markers, or hypothetical outcome branches; focus strictly "
+                "on computational feasibility. The brief is passed to the EXECUTE call that follows; do not write the "
+                "deliverable here."
+            )
+        elif operation_name == "EXECUTE":
+            extra_guidance = (
+                "\n\nNORMATIVE GUIDELINES FOR EXECUTE (EXEC-01, AUTH-03, AUTH-04, GUARD-03):\n"
+                "- Deliver the result the confirmed prompt asks for, following the confirmed plan. Do not substitute a description of how the result could be obtained.\n"
+                "- AVAILABLE_EXECUTION_TOOLS describes the execution environment exactly. Work within it. REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (EXEC-01); an environment capability is never user input.\n"
+                "- SUPPLIED_EXECUTION_INPUT_SOURCE, when present, is the user's original source text: use its data, and let the confirmed prompt govern where they differ (AUTH-04).\n"
+                "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"
+                "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
+            )
+        elif operation_name == "EXECUTE_UNCONFIRMED":
+            extra_guidance = (
+                "\n\nNORMATIVE GUIDELINES FOR EXECUTE_UNCONFIRMED (UNC-01, UNC-02, UNC-03, UNC-04, GUARD-03):\n"
+                "- Write your working understanding in `interpretation` and your working plan in `approach`, using PDL notation.\n"
+                "- Deliver the substantive result in `body`. Work within AVAILABLE_EXECUTION_TOOLS.\n"
+                "- REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (UNC-04, EXEC-01); people or events described in the task are part of the task, not a source of input.\n"
+                "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"
+                "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
+            )
+
+        if instructions:
+            body["instructions"] = instructions + extra_guidance
+        elif extra_guidance:
+            body["instructions"] = extra_guidance.strip()
+        if self.max_output_tokens:
+            body["max_output_tokens"] = self.max_output_tokens
+        effort = self._reasoning_for(getattr(request, "operation", None))
+        if effort == "none":
+            body["reasoning"] = {"enabled": False}
+        elif effort is not None:
+            if isinstance(effort, int) or (isinstance(effort, str) and effort.isdigit()):
+                body["reasoning"] = {"max_tokens": int(effort)}
+            else:
+                body["reasoning"] = {"effort": effort}
+
+        if self.provider_pinning:
+            body["provider"] = self.provider_pinning
+        if self.safety_settings:
+            body["safety_settings"] = self.safety_settings
+
+        # The output constraint for this call: the schema the projection showed the
+        # model, in the same form (contract_form; ADR-0028 rules 1 and 5), so it holds
+        # in the host's modes for this call too.
+        union_wrapped = False
+        if form.grammar == "schema":
+            output_kind = (getattr(request, "manifest", None) or {}).get("output_kind", "json_object")
+            shown = (getattr(getattr(request, "projection", None), "document", None) or {}).get("output_schema")
+            sent_schema = grammar_view(shown) if shown is not None else grammar_schema(operation_name, form)
+            union_wrapped = is_union_wrapped(sent_schema)
+            body["text"] = {"format": {"type": "json_schema", "name": output_kind, "schema": sent_schema}}
+        elif form.grammar == "json":
+            body["text"] = {"format": {"type": "json_object"}}
+
+        return body, union_wrapped, effort
 
     def _call(self, request: Any) -> WorkerResult:
         operation_name = getattr(request, "operation", None)
@@ -859,115 +1000,7 @@ class ApiWorker:
                 except Exception:
                     pass
 
-        instructions, input_text = self._split_prompt(request.prompt)
-        if self.reorder_keys_for_cache:
-            input_text = self._reorder_for_cache(input_text.lstrip())
-        if operation_name != "BYPASS_ORDINARY":
-            # A direct reply is plain text: the suffix made it answer in JSON
-            # ({"message": "Hello! ..."} printed raw in the REPL).
-            input_text = input_text.rstrip() + _JSON_ONLY_SUFFIX
-
-        body: dict[str, Any] = {
-            "model": self._model_for(getattr(request, "operation", None)),
-            "input": input_text,
-        }
-        # ADR-0009 finding: schema enforcement on the semantic-read boundary
-        # (BOOTSTRAP_ANALYSIS) degrades interpretation quality — a lazy
-        # structured summary classifies substantive tasks as instruction-free,
-        # losing the entire task upstream of every gate. Structured output is
-        # for ops whose SHAPE is the contract (drafts, executions, reviews);
-        # the semantic read must stay free-text.
-        form = self.contract_form(operation_name)
-
-        extra_guidance = ""
-        if operation_name == "BYPASS_ORDINARY" and getattr(request, "environment", None):
-            # Capabilities only, from the session sandbox (never task guidance): a
-            # direct reply claimed "I cannot execute code" in a session that runs it.
-            extra_guidance = "Execution environment of this session (host fact): " + request.environment
-        elif operation_name in ("DRAFT_PROMPT", "REVISE_PROMPT"):
-            extra_guidance = (
-                "\n\nNORMATIVE GUIDELINES FOR PROMPT PSEUDOCODE (PDL-01 to PDL-08, PROMPT-01 to PROMPT-05):\n"
-                "1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
-                "   Example format:\n"
-                "   READ the monthly sales records from the supplied CSV data\n"
-                "   GROUP the records by region\n"
-                "   RETURN the total sales for each region\n"
-                "2. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n"
-                "3. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n"
-                "4. Purpose-Complete Target: Prompt Pseudocode defines the substantive requirements to be solved upon execution (PROMPT-01). DO NOT insert internal meta-rules, drafting instructions, or negative execution prohibitions (PROMPT-02, PDL-08)."
-            )
-        elif operation_name in ("DRAFT_PLAN", "REVISE_PLAN"):
-            extra_guidance = (
-                "\n\nNORMATIVE GUIDELINES FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-08, PLAN-01 to PLAN-10):\n"
-                "1. Express the response plan in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
-                "   Example format:\n"
-                "   PARSE the supplied CSV records\n"
-                "   AGGREGATE the sales amounts for each region\n"
-                "   EMIT the per-region totals\n"
-                "2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n"
-                "3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n"
-                "4. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04), and NEVER insert placeholder steps or meta-prohibitions like 'insert placeholders without performing computation' (PLAN-10).\n"
-                "5. Plan the steps that produce the deliverable itself. Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue."
-            )
-        elif operation_name == "DRAFT_EXECUTE":
-            extra_guidance = (
-                "\n\nDRAFT_EXECUTE: write an execution brief in plain text (brief_body): algorithmic choice, "
-                "data structures, and estimated step count against the step budget in AVAILABLE_EXECUTION_TOOLS. "
-                "Do not draft witness payloads, delivery markers, or hypothetical outcome branches; focus strictly "
-                "on computational feasibility. The brief is passed to the EXECUTE call that follows; do not write the "
-                "deliverable here."
-            )
-        elif operation_name == "EXECUTE":
-            extra_guidance = (
-                "\n\nNORMATIVE GUIDELINES FOR EXECUTE (EXEC-01, AUTH-03, AUTH-04, GUARD-03):\n"
-                "- Deliver the result the confirmed prompt asks for, following the confirmed plan. Do not substitute a description of how the result could be obtained.\n"
-                "- AVAILABLE_EXECUTION_TOOLS describes the execution environment exactly. Work within it. REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (EXEC-01); an environment capability is never user input.\n"
-                "- SUPPLIED_EXECUTION_INPUT_SOURCE, when present, is the user's original source text: use its data, and let the confirmed prompt govern where they differ (AUTH-04).\n"
-                "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"
-                "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
-            )
-        elif operation_name == "EXECUTE_UNCONFIRMED":
-            extra_guidance = (
-                "\n\nNORMATIVE GUIDELINES FOR EXECUTE_UNCONFIRMED (UNC-01, UNC-02, UNC-03, UNC-04, GUARD-03):\n"
-                "- Write your working understanding in `interpretation` and your working plan in `approach`, using PDL notation.\n"
-                "- Deliver the substantive result in `body`. Work within AVAILABLE_EXECUTION_TOOLS.\n"
-                "- REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (UNC-04, EXEC-01); people or events described in the task are part of the task, not a source of input.\n"
-                "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"
-                "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
-            )
-
-        if instructions:
-            body["instructions"] = instructions + extra_guidance
-        elif extra_guidance:
-            body["instructions"] = extra_guidance.strip()
-        if self.max_output_tokens:
-            body["max_output_tokens"] = self.max_output_tokens
-        effort = self._reasoning_for(getattr(request, "operation", None))
-        if effort == "none":
-            body["reasoning"] = {"enabled": False}
-        elif effort is not None:
-            if isinstance(effort, int) or (isinstance(effort, str) and effort.isdigit()):
-                body["reasoning"] = {"max_tokens": int(effort)}
-            else:
-                body["reasoning"] = {"effort": effort}
-
-        if self.provider_pinning:
-            body["provider"] = self.provider_pinning
-        if self.safety_settings:
-            body["safety_settings"] = self.safety_settings
-
-        # The output constraint for this call: the schema the projection showed the
-        # model, in the same form (contract_form; ADR-0028 rules 1 and 5), so it holds
-        # in the host's modes for this call too.
-        union_wrapped = False
-        if form.grammar == "schema":
-            output_kind = (getattr(request, "manifest", None) or {}).get("output_kind", "json_object")
-            shown = (getattr(getattr(request, "projection", None), "document", None) or {}).get("output_schema")
-            sent_schema = grammar_view(shown) if shown is not None else grammar_schema(operation_name, form)
-            union_wrapped = is_union_wrapped(sent_schema)
-            body["text"] = {"format": {"type": "json_schema", "name": output_kind, "schema": sent_schema}}
-        elif form.grammar == "json":
-            body["text"] = {"format": {"type": "json_object"}}
+        body, union_wrapped, effort = self.build_request_body(request)
 
         api_key = self._resolve_api_key()
         req = self._responses_request(body, api_key)

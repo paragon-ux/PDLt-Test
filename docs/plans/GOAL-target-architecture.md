@@ -121,7 +121,7 @@ Done when: every plan item for Phases 0–6 maps to exactly one task here.
 Run metadata gains the commit SHA, a dirty flag, and the uncommitted diff (stored alongside the run as `WORKTREE.diff`, with its SHA-256 in `RUN_META.json`). A live run from a dirty tree needs `--allow-dirty`.
 Done when: a test creates a run in a dirty tree and finds the SHA and diff in the run record; a dirty run without the flag refuses; the test fails on the pre-task code.
 
-**T0.5. Runs record the full provider request (plan 0.2).** Status: `todo`
+**T0.5. Runs record the full provider request (plan 0.2).** Status: `done` (this commit; L66)
 The record includes everything sent, including the guidance text `ApiWorker` puts in the request's `instructions` field, which no run file records today. The body is built by one pure function, used both for sending and for recording.
 Done when: a test using the local stub server checks that each operation's recorded request equals the captured request body, `instructions` included; it fails on the pre-task code.
 
