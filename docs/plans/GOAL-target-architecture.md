@@ -105,7 +105,7 @@ Done when:
 - `git diff c153b8fc^ HEAD -- . ':!docs' ':!TARGET_ARCHITECTURE.md'` is empty, so code and fixtures match the verified L48 state exactly;
 - the replay suite passes with no re-key (the revert restores the old fixture keys along with the old prompts).
 
-**T0.2. Record the new baseline.** Status: `todo`
+**T0.2. Record the new baseline.** Status: `done` (this commit; L54)
 Run the full offline suite and the anti-overfitting suite.
 Done when: the counts are recorded in the ledger row. Expected: about 856 passed, 42 skipped, 1 failed (L34), anti-overfitting 16/16, because the revert removes the tests `c153b8fc` added. Any other failure is a stop condition.
 
