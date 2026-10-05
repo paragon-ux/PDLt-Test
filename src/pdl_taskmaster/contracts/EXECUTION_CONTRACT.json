@@ -26,6 +26,12 @@
         "CALIBRATION_CORPUS",
         "REPOSITORY_DISCOVERY"
       ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "RAW_USER_MESSAGE": "USER",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST"
+      },
       "output_kind": "ACTIVATION_DECISION",
       "output_fields": [
         "route",
@@ -76,6 +82,13 @@
         "CALIBRATION_CORPUS",
         "REPOSITORY_DISCOVERY"
       ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "HOST_PROTOCOL_STATE": "HOST",
+        "SUBSTANTIVE_REQUEST": "MODEL:BOOTSTRAP_ANALYSIS",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST"
+      },
       "output_kind": "PROMPT_DRAFT_OUTCOME",
       "output_fields": [
         "kind",
@@ -127,6 +140,14 @@
         "CALIBRATION_CORPUS",
         "REPOSITORY_DISCOVERY"
       ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "BOUND_REVIEW_SUBJECT_KIND": "HOST",
+        "BOUND_REVIEW_SUBJECT_BODY": "MODEL:DRAFT_PROMPT|REVISE_PROMPT",
+        "RAW_USER_REVIEW_MESSAGE": "USER",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST"
+      },
       "output_kind": "ARTIFACT_REVIEW_FACTS",
       "output_fields": [
         "kind",
@@ -175,6 +196,14 @@
         "CALIBRATION_CORPUS",
         "REPOSITORY_DISCOVERY"
       ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "BOUND_REVIEW_SUBJECT_KIND": "HOST",
+        "BOUND_REVIEW_SUBJECT_BODY": "MODEL:DRAFT_PLAN|REVISE_PLAN",
+        "RAW_USER_REVIEW_MESSAGE": "USER",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST"
+      },
       "output_kind": "ARTIFACT_REVIEW_FACTS",
       "output_fields": [
         "kind",
@@ -223,6 +252,14 @@
         "CALIBRATION_CORPUS",
         "REPOSITORY_DISCOVERY"
       ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "BOUND_REVIEW_SUBJECT_KIND": "HOST",
+        "BOUND_REVIEW_SUBJECT_BODY": "MODEL:EXECUTE|EXECUTE_UNCONFIRMED",
+        "RAW_USER_REVIEW_MESSAGE": "USER",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST"
+      },
       "output_kind": "EXECUTION_INPUT_DECISION",
       "output_fields": [
         "kind",
@@ -269,6 +306,13 @@
         "CALIBRATION_CORPUS",
         "REPOSITORY_DISCOVERY"
       ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "CURRENT_PROMPT_BODY": "MODEL:DRAFT_PROMPT|REVISE_PROMPT",
+        "TASK_CHANGE_SOURCE": "MODEL:BOOTSTRAP_ANALYSIS",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST"
+      },
       "output_kind": "PROMPT_ARTIFACT_BODY",
       "output_fields": [
         "prompt_body"
@@ -318,6 +362,13 @@
         "CALIBRATION_CORPUS",
         "REPOSITORY_DISCOVERY"
       ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "CONFIRMED_PROMPT_BODY": "MODEL:DRAFT_PROMPT|REVISE_PROMPT",
+        "CARRIED_APPROACH_SOURCES": "MODEL:BOOTSTRAP_ANALYSIS",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST"
+      },
       "output_kind": "RESPONSE_PLAN_ARTIFACT_BODY",
       "output_fields": [
         "neutral_plan_body"
@@ -368,6 +419,14 @@
         "CALIBRATION_CORPUS",
         "REPOSITORY_DISCOVERY"
       ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "CONFIRMED_PROMPT_BODY": "MODEL:DRAFT_PROMPT|REVISE_PROMPT",
+        "CURRENT_PLAN_BODY": "MODEL:DRAFT_PLAN|REVISE_PLAN",
+        "CARRIED_APPROACH_SOURCES": "MODEL:BOOTSTRAP_ANALYSIS",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST"
+      },
       "output_kind": "RESPONSE_PLAN_ARTIFACT_BODY",
       "output_fields": [
         "neutral_plan_body"
@@ -425,7 +484,19 @@
         "REQUIRED_TASK_INPUTS",
         "RESULT_IR_INSTRUCTIONS",
         "PRIOR_RESULT_IR"
-      ]
+      ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "CONFIRMED_PROMPT_BODY": "MODEL:DRAFT_PROMPT|REVISE_PROMPT",
+        "CONFIRMED_PLAN_BODY": "MODEL:DRAFT_PLAN|REVISE_PLAN",
+        "SUPPLIED_EXECUTION_INPUT_SOURCE": "USER",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST",
+        "AVAILABLE_EXECUTION_TOOLS": "HOST",
+        "REQUIRED_TASK_INPUTS": "USER",
+        "RESULT_IR_INSTRUCTIONS": "HOST",
+        "PRIOR_RESULT_IR": "MODEL:EXECUTE|EXECUTE_UNCONFIRMED|EMIT_RESULT_IR"
+      }
     },
     "EXECUTE_UNCONFIRMED": {
       "requirements": [
@@ -483,7 +554,18 @@
         "REQUIRED_TASK_INPUTS",
         "RESULT_IR_INSTRUCTIONS",
         "PRIOR_RESULT_IR"
-      ]
+      ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "SOURCE_REQUEST": "USER",
+        "TASK_ENTITIES": "MODEL:BOOTSTRAP_ANALYSIS",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST",
+        "AVAILABLE_EXECUTION_TOOLS": "HOST",
+        "REQUIRED_TASK_INPUTS": "USER",
+        "RESULT_IR_INSTRUCTIONS": "HOST",
+        "PRIOR_RESULT_IR": "MODEL:EXECUTE|EXECUTE_UNCONFIRMED|EMIT_RESULT_IR"
+      }
     },
     "ANSWER_PROTOCOL_DISCUSSION": {
       "requirements": [
@@ -531,6 +613,15 @@
         "CALIBRATION_CORPUS",
         "REPOSITORY_DISCOVERY"
       ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "RAW_PROTOCOL_QUESTION": "USER",
+        "CURRENT_STAGE_CLASS": "HOST",
+        "BOUND_REVIEW_SUBJECT_KIND": "HOST",
+        "BOUND_REVIEW_SUBJECT_BODY": "MODEL:DRAFT_PROMPT|REVISE_PROMPT|DRAFT_PLAN|REVISE_PLAN|EXECUTE|EXECUTE_UNCONFIRMED",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST"
+      },
       "output_kind": "PROTOCOL_DISCUSSION_RESPONSE",
       "output_fields": [
         "body"
@@ -589,7 +680,15 @@
       "workspace_stage": "10_prompt",
       "optional_include": [
         "PREVIOUS_DELIVERABLE"
-      ]
+      ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "HOST_PROTOCOL_STATE": "HOST",
+        "RAW_UNTRUSTED_CONTENT": "USER",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST",
+        "PREVIOUS_DELIVERABLE": "PUBLISHED"
+      }
     },
     "DRAFT_EXECUTE": {
       "requirements": [
@@ -629,7 +728,18 @@
       "workspace_stage": "50_execution",
       "optional_include": [
         "REQUIRED_TASK_INPUTS"
-      ]
+      ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "HOST_PROTOCOL_STATE": "HOST",
+        "CONFIRMED_PROMPT_BODY": "MODEL:DRAFT_PROMPT|REVISE_PROMPT",
+        "CONFIRMED_PLAN_BODY": "MODEL:DRAFT_PLAN|REVISE_PLAN",
+        "AVAILABLE_EXECUTION_TOOLS": "HOST",
+        "SUPPLIED_EXECUTION_INPUT_SOURCE": "USER",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST",
+        "REQUIRED_TASK_INPUTS": "USER"
+      }
     },
     "EMIT_RESULT_IR": {
       "requirements": [
@@ -655,6 +765,15 @@
         "CALIBRATION_CORPUS",
         "REPOSITORY_DISCOVERY"
       ],
+      "origins": {
+        "OPERATION_ID": "HOST",
+        "HOST_PROTOCOL_STATE": "HOST",
+        "DELIVERABLE_BODY": "MODEL:EXECUTE|EXECUTE_UNCONFIRMED",
+        "RESULT_IR_REQUIREMENTS": "HOST",
+        "RESULT_IR_ERRORS": "HOST",
+        "APPLICABLE_STANDARD_CLAUSES": "HOST",
+        "HIGHER_PRIORITY_CONSTRAINTS": "HOST"
+      },
       "output_kind": "RESULT_IR_REPAIR_OUTCOME",
       "output_fields": [
         "result_ir"

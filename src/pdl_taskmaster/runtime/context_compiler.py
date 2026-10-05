@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 import json
 
+from pdl_taskmaster.runtime.origins import Declared, check as check_origin
 from pdl_taskmaster.runtime.output_contracts import DEFAULT_FORM, ContractForm, prompt_schema
 from pdl_taskmaster.runtime.standard_registry import StandardRegistry
 
@@ -102,6 +103,15 @@ class ContextCompiler:
         for symbol in optional:
             if symbol in provided and values[symbol] is not None:
                 ordered_inputs[symbol] = values[symbol]
+        # I-1: every value has a declared origin, and a sourced value must match it.
+        declarations = spec.get("origins") or {}
+        symbol_origins: dict[str, str] = {}
+        for symbol, value in ordered_inputs.items():
+            if symbol not in declarations:
+                raise ValueError(f"origin_undeclared:{operation}:{symbol}")
+            declared = Declared.parse(declarations[symbol])
+            check_origin(symbol, value, declared)
+            symbol_origins[symbol] = str(declared)
 
         # One output contract per operation (IMPL-0001): generated from the payload model.
         output_schema = prompt_schema(operation, contract_form or DEFAULT_FORM, modes)
@@ -132,6 +142,7 @@ class ContextCompiler:
             "output_fields": list(spec.get("output_fields", [])),
             "output_schema": f"wire_payloads:{operation}",
             "output_schema_sha256": sha256(schema_text.encode("utf-8")).hexdigest(),
+            "symbol_origins": symbol_origins,
         }
         if modes:
             manifest["modes"] = sorted(modes)

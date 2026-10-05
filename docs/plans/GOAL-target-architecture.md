@@ -146,7 +146,7 @@ Done when:
 
 ## Phase 1: origins and rule-enforcing tests
 
-**T1.1. Label every model-call input field by origin (plan 1.1, 1.2).** Status: `todo`
+**T1.1. Label every model-call input field by origin (plan 1.1, 1.2).** Status: `done` (this commit; L71)
 An `Origin` enum and a typed projection value; `EXECUTION_CONTRACT.json` declares an origin for every symbol (both copies, manifest hashes); the compiler rejects a value whose origin differs from its declaration.
 Done when: a test walks every operation's assembled input and fails if any field has no origin; it fails on the pre-task code. Prompt bytes are unchanged at this step (render compare: 0 differences).
 
