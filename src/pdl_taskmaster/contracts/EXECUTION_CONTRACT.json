@@ -424,7 +424,8 @@
       "optional_include": [
         "REQUIRED_TASK_INPUTS",
         "RESULT_IR_INSTRUCTIONS",
-        "PRIOR_RESULT_IR"
+        "PRIOR_RESULT_IR",
+        "TASK_ENTITIES"
       ]
     },
     "EXECUTE_UNCONFIRMED": {

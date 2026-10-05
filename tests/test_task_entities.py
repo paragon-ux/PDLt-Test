@@ -130,7 +130,8 @@ class _StubOutcome:
         self.kind = kind
 
 
-def test_enforce_entity_coverage_retries_then_publishes(tmp_path, monkeypatch):
+def test_enforce_entity_coverage_records_event_without_blocking_retry(tmp_path, monkeypatch):
+    """L47: An entity missing from prompt body records an informative event without forcing a redraft loop."""
     eng = _engine_with_workspace(tmp_path)
     calls: list[str] = []
 
@@ -145,41 +146,14 @@ def test_enforce_entity_coverage_retries_then_publishes(tmp_path, monkeypatch):
 
     def fake_call(ctx, traces, parser):
         calls.append(ctx["SUBSTANTIVE_REQUEST"])
-        if "OPERATOR CORRECTION" not in ctx["SUBSTANTIVE_REQUEST"]:
-            return _StubOutcome("DRAFT an email to the landlord")  # entity missing
-        return _StubOutcome("DRAFT an email for unit 4B to the landlord")  # covered
+        return _StubOutcome("DRAFT an email to the landlord")  # entity 4B omitted
 
-    monkeypatch.setattr(eng, "_call", fake_call, raising=False)
     outcome = eng._enforce_entity_coverage(
         fake_call, {"SUBSTANTIVE_REQUEST": "base context"}, None, ("4B",), [], phase="test",
     )
-    assert len(calls) == 2  # retry-once
-    assert outcome.prompt_body == "DRAFT an email for unit 4B to the landlord"
-    assert eng.workspace.events == [("TASK_ENTITY_COVERAGE_RETRY", {"missing": 1})]
-
-
-def test_enforce_entity_coverage_persistent_miss_records_event(tmp_path, monkeypatch):
-    eng = _engine_with_workspace(tmp_path)
-
-    class FakeWorkspace:
-        def __init__(self):
-            self.events: list[tuple[str, dict]] = []
-
-        def append_event(self, kind, payload):
-            self.events.append((kind, payload))
-
-    eng.workspace = FakeWorkspace()
-
-    def fake_call(ctx, traces, parser):
-        return _StubOutcome("DRAFT an email to the landlord")  # never covers
-
-    outcome = eng._enforce_entity_coverage(
-        fake_call, {"SUBSTANTIVE_REQUEST": "base"}, None, ("4B",), [], phase="test",
-    )
-    assert outcome.prompt_body == "DRAFT an email to the landlord"  # published (utility-first)
-    kinds = [e[0] for e in eng.workspace.events]
-    assert kinds == ["TASK_ENTITY_COVERAGE_RETRY", "TASK_ENTITY_COVERAGE_MISSING"]
-    assert eng.workspace.events[1][1]["entities"] == ["4B"]
+    assert len(calls) == 1  # single call, zero retries
+    assert outcome.prompt_body == "DRAFT an email to the landlord"
+    assert eng.workspace.events == [("TASK_ENTITY_COVERAGE_MISSING", {"entities": ["4B"], "phase": "test"})]
 
 
 def test_enforce_entity_coverage_blocked_passthrough(tmp_path):
@@ -311,8 +285,10 @@ def test_exact_values_are_still_covered(tmp_path):
 
     engine = SessionEngine(ROOT, worker, workspace_root=tmp_path)
     engine.handle_user_message("$confirm-with-pseudocode " + raw)
-    assert seen.count("DRAFT_PROMPT") == 2
-    assert engine.controller.state.current_prompt.body == "PARTITION L = {1, 2, 3} with split_list"
+    assert seen.count("DRAFT_PROMPT") == 1
+    assert engine.controller.state.current_prompt.body == "PARTITION the list with split_list"
+    events = engine.workspace.read_events()
+    assert any(e["kind"] == "TASK_ENTITY_COVERAGE_MISSING" for e in events)
 
 
 def test_entities_reach_the_draft_with_grouping(tmp_path):

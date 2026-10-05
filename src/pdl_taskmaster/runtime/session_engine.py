@@ -855,10 +855,10 @@ class SessionEngine:
                         lines.append(f"- {entity['surface']} ({entity.get('kind', 'identifier')}) [{pol}]"
                                      + (f": {rel}" if rel else ""))
             document += (
-                "\nTASK ENTITIES (from the request: each surface, its kind, its epistemic polarity [KNOWN/UNKNOWN], "
-                "and what the request states about it. Copy each surface character-for-character into the task_entities "
-                "array. Where the prompt body refers to an entity it spells it exactly so and keeps what the request "
-                "says about it, including anything the request says is unknown; "
+                "\nTASK ENTITIES (informative reference from the request: each surface, its kind, its epistemic polarity [KNOWN/UNKNOWN], "
+                "and what the request states about it, including anything the request says is unknown. "
+                "Where the prompt body refers to an operative entity, spell it character-for-character "
+                "and preserve its stated polarity; select only the entities relevant to the substantive target without forcing artificial enumeration; "
                 "entities add no step, list or requirement of their own):\n"
                 + "\n".join(lines)
             )
@@ -902,27 +902,10 @@ class SessionEngine:
         traces: list[CallTrace],
         phase: str,
     ) -> Any:
-        """Call the draft op, then mechanically verify task-entity coverage of
-        the prompt body. On a miss, retry once with an operator correction
-        appended outside the projection document. Persistent misses are
-        published with a workspace event (utility-first: measurable, not
-        fatal)."""
+        """Call the draft op, then record task-entity coverage of the prompt
+        body as an informative telemetry event without forcing a mechanical
+        redraft loop (L47: informative reference, no closed-world anchoring)."""
         outcome = draft_fn(context, traces, parser=parser)
-        if getattr(outcome, "kind", "") == "TASK_BLOCKED_BY_HIGHER_PRIORITY":
-            return outcome
-        missing = self._entity_coverage_missing(outcome.prompt_body or "", entities)
-        if not missing:
-            return outcome
-        if self.workspace is not None:
-            self.workspace.append_event("TASK_ENTITY_COVERAGE_RETRY", {"missing": len(missing)})
-        corrected_context = dict(context)
-        corrected_context["SUBSTANTIVE_REQUEST"] = (
-            context["SUBSTANTIVE_REQUEST"]
-            + "\n\nOPERATOR CORRECTION (host-side mechanical check): the prompt body does not use these exact "
-            "names from the request; where it refers to what they name, it spells them character-for-character: "
-            + "; ".join(missing)
-        )
-        outcome = draft_fn(corrected_context, traces, parser=parser)
         if getattr(outcome, "kind", "") == "TASK_BLOCKED_BY_HIGHER_PRIORITY":
             return outcome
         missing = self._entity_coverage_missing(outcome.prompt_body or "", entities)
@@ -1638,6 +1621,9 @@ class SessionEngine:
                 requires_verified_execution=verified,
             )
             task_inputs.append(channel)
+        typed_entities = list(self._typed_task_entities_cache.get(
+            (self._source_request, self._previous_deliverable), []
+        ))
         execute_context = {
             "CONFIRMED_PROMPT_BODY": prompt_body,
             "CONFIRMED_PLAN_BODY": plan_body,
@@ -1645,6 +1631,8 @@ class SessionEngine:
             "SUPPLIED_EXECUTION_INPUT_SOURCE": supplied,
             "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
         }
+        if typed_entities:
+            execute_context["TASK_ENTITIES"] = typed_entities
 
         self._route_plan_profile(prompt_body, plan_body)
         execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools
