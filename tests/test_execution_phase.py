@@ -731,8 +731,11 @@ def test_draft_execute_runs_once_and_feeds_its_brief_to_execute(tmp_path):
     executes = [c for c in calls if c.operation == "EXECUTE"]
     assert len(drafts) == 1 and len(executes) == 2  # drafted once, not per repair
     assert "3, 4, 5" in drafts[0].prompt and "steps" in drafts[0].prompt  # sees the data and the budget
-    for execute in executes:
-        assert "EXECUTION BRIEF (your own draft" in execute.prompt and "about 200 steps" in execute.prompt
+    for execute in executes:  # in its own model-origin symbol, not the user-input slot (T1.2)
+        inputs = execute.projection.document["operation_inputs"]
+        assert inputs["EXECUTION_BRIEF"] == "Enumerate 12 candidates; about 200 steps."
+        assert execute.manifest["symbol_origins"]["EXECUTION_BRIEF"] == "MODEL:DRAFT_EXECUTE"
+        assert "about 200 steps" not in (inputs.get("REQUIRED_TASK_INPUTS") or "")
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
 
 

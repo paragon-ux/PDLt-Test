@@ -150,7 +150,7 @@ Done when:
 An `Origin` enum and a typed projection value; `EXECUTION_CONTRACT.json` declares an origin for every symbol (both copies, manifest hashes); the compiler rejects a value whose origin differs from its declaration.
 Done when: a test walks every operation's assembled input and fails if any field has no origin; it fails on the pre-task code. Prompt bytes are unchanged at this step (render compare: 0 differences).
 
-**T1.2. Move the DRAFT_EXECUTE brief into its own symbol (plan 1.4).** Status: `todo`
+**T1.2. Move the DRAFT_EXECUTE brief into its own symbol (plan 1.4).** Status: `done` (this commit; L72)
 `EXECUTION_BRIEF` (origin `MODEL`) replaces the brief's append to `REQUIRED_TASK_INPUTS`.
 Done when: the rendered-prompt diff against T0.2's baseline shows only that symbol changing (in renders that use `--draft-execute`; the default renders are unchanged).
 

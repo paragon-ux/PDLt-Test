@@ -22,6 +22,7 @@ from pdl_taskmaster.controller.mechanical_controller import (
     Transition,
 )
 from pdl_taskmaster.runtime.operation_bridge import ActivationRoute, ModelRequest, OperationBridge, WireError
+from pdl_taskmaster.runtime.origins import Origin, Sourced
 from pdl_taskmaster.runtime.output_contracts import RESULT_IR_MODE
 from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output
 from pdl_taskmaster.runtime.wire_payloads import ENTITY_POLARITIES
@@ -1633,11 +1634,9 @@ class SessionEngine:
         if self.draft_execute and self._requires_verified_execution:
             brief = self._draft_execution_brief(execute_context, traces)
             if brief:
-                # The model's own draft (GUARD-01: no harness feedback), drafted once.
-                execute_context["REQUIRED_TASK_INPUTS"] = (
-                    (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context["REQUIRED_TASK_INPUTS"] else "")
-                    + "EXECUTION BRIEF (your own draft for this task, written before this call):\n" + brief
-                )
+                # The model's own draft (GUARD-01: no harness feedback), drafted once, in
+                # its own symbol: model-written text never shares the user-input slot (I-1).
+                execute_context["EXECUTION_BRIEF"] = Sourced(brief, Origin.MODEL, "DRAFT_EXECUTE")
         stop_on_failure = self.max_repairs == 0
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
         repairs_used = 0
@@ -1867,10 +1866,7 @@ class SessionEngine:
         if self.draft_execute and self._requires_verified_execution:
             brief = self._draft_execution_brief(execute_context, traces)
             if brief:
-                execute_context["REQUIRED_TASK_INPUTS"] = (
-                    (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context.get("REQUIRED_TASK_INPUTS") else "")
-                    + "EXECUTION BRIEF (your own draft for this task, written before this call):\n" + brief
-                )
+                execute_context["EXECUTION_BRIEF"] = Sourced(brief, Origin.MODEL, "DRAFT_EXECUTE")
 
         stop_on_failure = self.max_repairs == 0
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs

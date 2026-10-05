@@ -1,17 +1,20 @@
 """Render every reachable recorded model request offline: no model, no network.
 
-Two corpora, both deterministic:
+Three corpora, all deterministic:
 
 * fixture: each case in ``tests/fixtures/recorded-cases.json`` is replayed through
   ``SessionEngine`` with its recorded responses, in order, and every request the
   engine sends is captured (operation and prompt);
 * bootstrap: the first request (``BOOTSTRAP_ANALYSIS``) is rendered for every prompt
-  in ``prompts/CATALOGUE_MANIFEST.jsonl``.
+  in ``prompts/CATALOGUE_MANIFEST.jsonl``;
+* brief (``--draft-execute`` only): two scripted sessions, confirmed and unconfirmed,
+  with ``DRAFT_EXECUTE`` on and System 1 labelling the task VERIFIED_EXECUTION; fixed
+  replies, so every request they send renders the same on every run.
 
 This is evaluation-plane tooling (it reads the catalogue); the harness never imports it.
 
 usage:
-  python scripts/render_recorded_prompts.py render OUT.json
+  python scripts/render_recorded_prompts.py render OUT.json [--draft-execute]
   python scripts/render_recorded_prompts.py compare BASE.json NEW.json
   python scripts/render_recorded_prompts.py rekey OUT_FIXTURE.json
 
@@ -121,19 +124,77 @@ def render_bootstrap() -> list[dict]:
     return rendered
 
 
-def render(out: Path) -> None:
+class _VerifiedSys1:
+    """System 1 stand-in for the brief corpus: routes through Phase 0 and labels the
+    task VERIFIED_EXECUTION, the only class for which DRAFT_EXECUTE runs."""
+
+    is_configured = True
+    model = "render-sys1"
+
+    def call(self, request):
+        name = next(iter(request.questions))
+        choice, other = ("APPLY_PROTOCOL", "BYPASS") if name == "route" else ("VERIFIED_EXECUTION", "STANDARD_EXECUTION")
+        return {"answers": {name: {"choice": choice, "confidence": 0.97,
+                                   "probabilities": {choice: 0.97, other: 0.03}}}}, 1.0
+
+
+_BRIEF_PROGRAM = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'answer': 12}}))"
+_BRIEF_REPLIES = {
+    "BOOTSTRAP_ANALYSIS": {"kind": "ANALYSIS", "task_summary": "Compute the stated value.", "approach_notes": "",
+                           "risk_notes": "", "task_entities": []},
+    "DRAFT_PROMPT": {"kind": "PROMPT", "prompt_body": "COMPUTE the stated value\nRETURN the value",
+                     "approach_handoff": "NONE"},
+    "DRAFT_PLAN": {"neutral_plan_body": "DERIVE the value\nEMIT the value"},
+    "DRAFT_EXECUTE": {"kind": "RESULT", "brief_body": "Sum the three values; one pass.", "execution_entities": []},
+    "EXECUTE": {"kind": "RESULT", "body": _BRIEF_PROGRAM, "result_ir": {}},
+    "EXECUTE_UNCONFIRMED": {"kind": "RESULT", "interpretation": "COMPUTE the stated value",
+                            "approach": "SUM the values", "body": _BRIEF_PROGRAM, "result_ir": {}},
+}
+_BRIEF_SESSIONS = {
+    "confirmed": ({}, ("$confirm-with-pseudocode Compute the sum of 3, 4 and 5.", "/confirm", "/confirm")),
+    "unconfirmed": ({"no_review": True}, ("Compute the sum of 3, 4 and 5.",)),
+}
+
+
+def render_brief() -> list[dict]:
+    rendered: list[dict] = []
+    for name, (options, turns) in _BRIEF_SESSIONS.items():
+        count = 0
+
+        def model_call(request, _name=name):
+            nonlocal count
+            count += 1
+            rendered.append({"source": f"{_name}:{count:04d}-{request.operation.lower()}", **_request_record(request)})
+            return json.dumps(_BRIEF_REPLIES[request.operation])
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+            engine = SessionEngine(str(ROOT), model_call, higher_priority_constraints=FIXTURE_CONSTRAINTS,
+                                   available_execution_tools=None, workspace_root=tmp,
+                                   sys1_client=_VerifiedSys1(), **options)
+            engine.draft_execute = True
+            for turn in turns:
+                engine.handle_user_message(turn)
+    return rendered
+
+
+def render(out: Path, draft_execute: bool = False) -> None:
     fixture, unreached = render_fixture()
     data = {"fixture": fixture, "fixture_unreached": unreached, "bootstrap": render_bootstrap()}
+    if draft_execute:
+        data["brief"] = render_brief()
     out.write_text(json.dumps(data, indent=1, ensure_ascii=False), encoding="utf-8")
     print(f"fixture requests: {len(fixture)} (unreached recorded entries: {len(unreached)}); "
-          f"bootstrap requests: {len(data['bootstrap'])} -> {out}")
+          f"bootstrap requests: {len(data['bootstrap'])}"
+          + (f"; brief requests: {len(data['brief'])}" if draft_execute else "") + f" -> {out}")
 
 
 def compare(base_path: Path, new_path: Path) -> int:
     base = json.loads(base_path.read_text(encoding="utf-8"))
     new = json.loads(new_path.read_text(encoding="utf-8"))
     changed = 0
-    for corpus, key in (("fixture", "source"), ("bootstrap", "id")):
+    for corpus, key in (("fixture", "source"), ("bootstrap", "id"), ("brief", "source")):
+        if corpus not in base or corpus not in new:
+            continue
         old_by = {r[key]: r for r in base[corpus]}
         new_by = {r[key]: r for r in new[corpus]}
         for name in sorted(set(old_by) | set(new_by)):
@@ -174,7 +235,7 @@ def rekey(out: Path) -> None:
 if __name__ == "__main__":
     command, *args = sys.argv[1:] or ["help"]
     if command == "render":
-        render(Path(args[0]))
+        render(Path(args[0]), draft_execute="--draft-execute" in args[1:])
     elif command == "compare":
         sys.exit(compare(Path(args[0]), Path(args[1])))
     elif command == "rekey":

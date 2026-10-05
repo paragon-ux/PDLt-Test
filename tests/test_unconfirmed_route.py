@@ -377,8 +377,10 @@ def test_unconfirmed_route_with_draft_execute(tmp_path: Path):
             })
         if req.operation == "EXECUTE_UNCONFIRMED":
             inputs = req.projection.document.get("operation_inputs", {})
-            req_inputs = inputs.get("REQUIRED_TASK_INPUTS", "")
-            assert "EXECUTION BRIEF" in req_inputs
+            # The brief arrives in its own model-origin symbol, never in the user-input slot (T1.2).
+            assert inputs.get("EXECUTION_BRIEF") == "Use backtracking with MRV heuristic under 10M step budget."
+            assert req.manifest["symbol_origins"]["EXECUTION_BRIEF"] == "MODEL:DRAFT_EXECUTE"
+            assert "backtracking" not in (inputs.get("REQUIRED_TASK_INPUTS") or "")
             return json.dumps({
                 "kind": "RESULT",
                 "interpretation": "DETERMINE identities of A, B, C",
