@@ -43,20 +43,22 @@ ARMS = [
 ]
 
 
-def run_arm(arm_info):
+def run_arm(arm_info, repeat: int = 1, prompts: str = PROMPTS):
     print("\n" + "=" * 70)
-    print(f"STARTING {arm_info['label']}")
+    print(f"STARTING {arm_info['label']}" + (f" (repeat x{repeat})" if repeat > 1 else "") + f" [prompts: {prompts}]")
     print("=" * 70 + "\n", flush=True)
 
     cmd = [
         sys.executable,
         "run_catalogue.py",
         "--model", MODEL,
-        "--prompt-id", PROMPTS,
+        "--prompt-id", prompts,
         "--reasoning", REASONING,
         "--timeout", TIMEOUT,
         *arm_info["args"],
     ]
+    if repeat > 1:
+        cmd += ["--repeat", str(repeat)]
 
     t0 = time.time()
     proc = subprocess.run(cmd, cwd=str(ROOT))
@@ -65,8 +67,9 @@ def run_arm(arm_info):
     return proc.returncode
 
 
-def summarize_results():
+def summarize_results(target_prompts: str | None = None):
     runs_dir = ROOT / "catalogue-runs"
+    prompt_ids = (target_prompts or PROMPTS).split(",")
     # Find newest run directories for each arm
     arm_runs = {}
     for candidate in sorted(runs_dir.glob("run-*"), key=lambda p: p.stat().st_mtime, reverse=True):
@@ -77,8 +80,12 @@ def summarize_results():
             continue
         try:
             data = json.loads(sb_path.read_text(encoding="utf-8"))
-            if data.get("total_prompts") != 16:
-                continue
+            if target_prompts:
+                if data.get("total_prompts") != len(prompt_ids):
+                    continue
+            else:
+                if data.get("total_prompts") != 16:
+                    continue
         except Exception:
             continue
 
@@ -126,7 +133,6 @@ def summarize_results():
     print(header)
     print("-" * len(header))
 
-    prompt_ids = PROMPTS.split(",")
     for pid in prompt_ids:
         row = [f"{pid:<6}"]
         for arm in ARMS:
@@ -152,15 +158,15 @@ def summarize_results():
             elapsed = sb.get("total_elapsed_seconds", 0)
             calls = sb.get("model_calls", {}).get("total", 0)
             summary_row += f" | {rate:.1f}% ({calls}c, {elapsed:.0f}s)"
-            adj_rate = (passed / 16.0) * 100.0
-            adjudicated_row += f" | {adj_rate:.1f}% ({passed}/16)"
+            adj_rate = (passed / float(len(prompt_ids))) * 100.0
+            adjudicated_row += f" | {adj_rate:.1f}% ({passed}/{len(prompt_ids)})"
         else:
             summary_row += " | N/A"
             adjudicated_row += " | N/A"
     print(summary_row)
     print(adjudicated_row)
     print("#" * 90)
-    print("*(ADJUD: Adjudicated pass rate across all 16 categories with 16-01 judged against rubric)*\n")
+    print("*(ADJUD: Adjudicated pass rate across tested categories with 16-01 judged against rubric)*\n")
 
 
 def main():
@@ -170,27 +176,31 @@ def main():
     parser.add_argument("--arms", default="1,2,3,4", help="Comma-separated list of arms to run (e.g. '3,4' or '1,2,3,4')")
     parser.add_argument("--arm4-only", action="store_true", help="Run only Arm 4")
     parser.add_argument("--arm3-only", action="store_true", help="Run only Arm 3")
+    parser.add_argument("--prompts", default=None, help="Comma-separated list of prompts to run (default: all 16)")
+    parser.add_argument("--repeat", type=int, default=1, help="Number of repeats per prompt")
     args = parser.parse_args()
 
+    active_prompts = args.prompts or PROMPTS
+
     if args.summary_only:
-        summarize_results()
+        summarize_results(target_prompts=args.prompts)
         return
 
     if args.arm3_only:
-        run_arm(ARMS[2])
-        summarize_results()
+        run_arm(ARMS[2], repeat=args.repeat, prompts=active_prompts)
+        summarize_results(target_prompts=args.prompts)
         return
 
     if args.arm4_only:
-        run_arm(ARMS[3])
-        summarize_results()
+        run_arm(ARMS[3], repeat=args.repeat, prompts=active_prompts)
+        summarize_results(target_prompts=args.prompts)
         return
 
     target_arm_indices = [int(x.strip()) - 1 for x in args.arms.split(",") if x.strip()]
     for idx in target_arm_indices:
         if 0 <= idx < len(ARMS):
-            run_arm(ARMS[idx])
-    summarize_results()
+            run_arm(ARMS[idx], repeat=args.repeat, prompts=active_prompts)
+    summarize_results(target_prompts=args.prompts)
 
 
 if __name__ == "__main__":

@@ -85,11 +85,12 @@ class ActivationDecisionPayload(WireModel):
 
 
 ENTITY_KINDS = ("identifier", "input_data", "literal", "parameter", "term")
+ENTITY_POLARITIES = ("known", "unknown")
 
 
 class TaskEntity(WireModel):
-    """One entity of the request: its exact surface form, its kind, and what the request
-    says about it, whatever its kind (including what the request says is unknown)."""
+    """One entity of the request: its exact surface form, its kind, its epistemic polarity,
+    and what the request states about it (facts, rules, or what is unknown about it)."""
 
     model_config = ConfigDict(extra="forbid")
     surface: str = Field(json_schema_extra=contract(description='The exact text the request uses for this entity.', minLength=1))
@@ -103,12 +104,41 @@ class TaskEntity(WireModel):
                 'symbol, never a sentence; a rule or requirement of the request is not an entity, it stays in '
                 'task_summary).'
             )))
-    definition: str | None = Field(
-        default=None, json_schema_extra=contract(description=(
-                "What the request itself says about this entity, whatever its kind: what it means, does or is "
-                "constrained by, in the request's terms, including anything the request says is unknown, random, "
-                'ambiguous or in some order. Leave it out only when the request says nothing more about the entity.'
-            )))
+    polarity: Literal["known", "unknown"] = Field(
+        default="known",
+        json_schema_extra=contract(description=(
+            'Epistemic polarity of the entity in the task: '
+            '"known" for given inputs, established constants, governing rules, fixed parameters, and defined terms; '
+            '"unknown" for unobserved states, hidden mappings, mystery identities, or variables to deduce or find.'
+        ))
+    )
+    group: str | None = Field(
+        default=None,
+        json_schema_extra=contract(description=(
+            'Optional logical group or domain name relating entities that belong together '
+            '(e.g. "gods", "identities", "response_words", "coordinates", "inputs").'
+        ))
+    )
+    relation: str | None = Field(
+        default=None,
+        json_schema_extra=contract(description=(
+            "What the request states regarding this entity: its facts, constraints, governing rules, or "
+            "what is unknown, random, ambiguous or in some order. Leave it out only when the request says "
+            "nothing more about the entity."
+        ))
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_definition(cls, data: Any) -> Any:
+        """Alias coercion (ADR-0018): map legacy 'definition' field to 'relation'."""
+        if isinstance(data, dict):
+            data = dict(data)
+            if "definition" in data:
+                if "relation" not in data or data["relation"] is None:
+                    data["relation"] = data["definition"]
+                del data["definition"]
+        return data
 
     @model_validator(mode="after")
     def validate_surface(self) -> TaskEntity:
@@ -157,12 +187,33 @@ class BootstrapAnalysisData(WireModel):
     @model_validator(mode="before")
     @classmethod
     def _legacy_entities(cls, data: Any) -> Any:
-        """Alias coercion (ADR-0018): an entity given as a bare string, the earlier wire
-        form, is an identifier with that surface."""
+        """Alias coercion (ADR-0018): normalize string entities, members arrays,
+        and comma-separated grouped entities into individual conforming TaskEntity items."""
         if isinstance(data, dict) and isinstance(data.get("task_entities"), list):
-            data = {**data, "task_entities": [
-                {"surface": e, "kind": "identifier"} if isinstance(e, str) else e for e in data["task_entities"]
-            ]}
+            expanded = []
+            for item in data["task_entities"]:
+                if isinstance(item, str):
+                    expanded.append({"surface": item, "kind": "identifier", "polarity": "known", "group": None, "relation": None})
+                elif isinstance(item, dict):
+                    grp = item.get("group")
+                    members = item.get("members")
+                    if isinstance(members, list) and members:
+                        for m in members:
+                            d = dict(item)
+                            d.pop("members", None)
+                            d["surface"] = str(m).strip()
+                            d["group"] = grp
+                            expanded.append(d)
+                    elif grp and isinstance(item.get("surface"), str) and "," in item["surface"]:
+                        for part in item["surface"].split(","):
+                            if part.strip():
+                                d = dict(item)
+                                d["surface"] = part.strip()
+                                d["group"] = grp
+                                expanded.append(d)
+                    else:
+                        expanded.append(item)
+            data = {**data, "task_entities": expanded}
         return data
 
     @model_validator(mode="after")

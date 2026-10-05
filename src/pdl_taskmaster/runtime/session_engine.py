@@ -772,7 +772,7 @@ class SessionEngine:
         # exactly from the request is no longer lost because the summary paraphrased it.
         sanitized_request = compile_bootstrap_output(raw_text, raw_text)[0]
         raw_entities = [
-            {"surface": e, "kind": "identifier", "definition": None} if isinstance(e, str) else e
+            {"surface": e, "kind": "identifier", "polarity": "known", "relation": None} if isinstance(e, str) else e
             for e in outcome.get("task_entities") or []
         ]
         kept = [
@@ -791,13 +791,15 @@ class SessionEngine:
         self._task_entities_cache[cache_key] = entities
         typed_entities = []
         for e in kept:
-            d = e.get("definition")
-            if d:
-                d = compile_bootstrap_output(raw_text, d)[0].strip()
+            rel = e.get("relation") or e.get("definition")
+            if rel:
+                rel = compile_bootstrap_output(raw_text, rel)[0].strip()
             typed_entities.append({
                 "surface": e["surface"],
                 "kind": e.get("kind", "identifier"),
-                "definition": d or None,
+                "polarity": e.get("polarity", "known"),
+                "group": e.get("group"),
+                "relation": rel or None,
             })
         self._typed_task_entities_cache[cache_key] = typed_entities
         # In Protocol v2 out-of-band field isolation: approach_notes carries TASK-02
@@ -814,17 +816,50 @@ class SessionEngine:
         )
         if kept:
             lines = []
+            grouped: dict[str | None, list[dict]] = {}
             for entity in kept:
-                definition = entity.get("definition")
-                if definition:
-                    definition = compile_bootstrap_output(raw_text, definition)[0].strip()
-                lines.append(f"- {entity['surface']} ({entity.get('kind', 'identifier')})"
-                             + (f": {definition}" if definition else ""))
+                grp = entity.get("group")
+                grouped.setdefault(grp, []).append(entity)
+
+            for grp, items in grouped.items():
+                if grp:
+                    surfaces = ", ".join(e["surface"] for e in items)
+                    pol = str(items[0].get("polarity", "known")).upper()
+                    kind = items[0].get("kind", "identifier")
+                    rel = items[0].get("relation") or items[0].get("definition")
+                    all_same = all(
+                        str(e.get("polarity", "known")).upper() == pol
+                        and (e.get("relation") or e.get("definition")) == rel
+                        and e.get("kind", "identifier") == kind
+                        for e in items
+                    )
+                    if all_same:
+                        if rel:
+                            rel = compile_bootstrap_output(raw_text, rel)[0].strip()
+                        lines.append(f"- Group [{grp}] [{pol}]: {surfaces} ({kind})" + (f": {rel}" if rel else ""))
+                    else:
+                        lines.append(f"- Group [{grp}]:")
+                        for e in items:
+                            e_pol = str(e.get("polarity", "known")).upper()
+                            e_rel = e.get("relation") or e.get("definition")
+                            if e_rel:
+                                e_rel = compile_bootstrap_output(raw_text, e_rel)[0].strip()
+                            lines.append(f"  - {e['surface']} ({e.get('kind', 'identifier')}) [{e_pol}]"
+                                         + (f": {e_rel}" if e_rel else ""))
+                else:
+                    for entity in items:
+                        rel = entity.get("relation") or entity.get("definition")
+                        if rel:
+                            rel = compile_bootstrap_output(raw_text, rel)[0].strip()
+                        pol = str(entity.get("polarity", "known")).upper()
+                        lines.append(f"- {entity['surface']} ({entity.get('kind', 'identifier')}) [{pol}]"
+                                     + (f": {rel}" if rel else ""))
             document += (
-                "\nTASK ENTITIES (from the request: each surface, its kind, and what the request says about it. "
-                "Copy each surface character-for-character into the task_entities array. Where the prompt body "
-                "refers to an entity it spells it exactly so and keeps what the request says about it, including "
-                "anything the request says is unknown; entities add no step, list or requirement of their own):\n"
+                "\nTASK ENTITIES (from the request: each surface, its kind, its epistemic polarity [KNOWN/UNKNOWN], "
+                "and what the request states about it. Copy each surface character-for-character into the task_entities "
+                "array. Where the prompt body refers to an entity it spells it exactly so and keeps what the request "
+                "says about it, including anything the request says is unknown; "
+                "entities add no step, list or requirement of their own):\n"
                 + "\n".join(lines)
             )
         self._bootstrap_cache[cache_key] = document

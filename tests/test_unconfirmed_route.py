@@ -44,9 +44,9 @@ class ClassifyingSys1:
 def _bootstrap_reply(task_summary: str = "Deduce identities of three gods A, B, and C.", entities: list[dict] | None = None) -> str:
     if entities is None:
         entities = [
-            {"surface": "A", "kind": "identifier", "definition": None},
-            {"surface": "B", "kind": "identifier", "definition": None},
-            {"surface": "C", "kind": "identifier", "definition": None},
+            {"surface": "A", "kind": "identifier", "relation": None},
+            {"surface": "B", "kind": "identifier", "relation": None},
+            {"surface": "C", "kind": "identifier", "relation": None},
         ]
     return json.dumps({
         "kind": "ANALYSIS",
