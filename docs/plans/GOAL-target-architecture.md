@@ -165,7 +165,7 @@ Done when: every rule has a test; each exception names the phase that removes it
 Tier c here is the first full-catalogue run at the new settings; its per-prompt results become the reference for the final gate. Classification follows AD-1 to AD-4.
 Done when: all three tiers pass; the ledger row lists pass, pre-existing failure, false hold and ungraded counts per tier, every baseline rerun, and the cost.
 
-**T1.6. Phase 1 gate.** Status: `todo`
+**T1.6. Phase 1 gate.** Status: `done` (this commit; L77)
 Done when: the offline suites pass (except L34), T1.5 is done, a ledger row closes Phase 1, and the branch is pushed.
 
 ## Phases 2–6

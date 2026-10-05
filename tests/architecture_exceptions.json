@@ -1,6 +1,6 @@
 {
   "about": "Temporary exceptions to TARGET_ARCHITECTURE invariants I-1 to I-11, each naming the phase (and GOAL task) that removes it, and the I-4 sites that parse a host format rather than user or model meaning. Read by tests/test_architecture_invariants.py: every listed case must still occur (no stale entry), every occurring case must be listed (no silent violation), no entry may name a landed phase, and neither list may gain an entry compared with the commit that introduced this file (I-12). landed_phases only grows; a phase is added at its gate.",
-  "landed_phases": [0],
+  "landed_phases": [0, 1],
   "exceptions": [
     {"id": "I-1:REQUIRED_TASK_INPUTS", "phase": 3, "task": "T3.1", "reason": "Declared USER, but the engine also writes the host's Result IR channel instructions and the published previous deliverable into it (session_engine.py, both execute routes). The one solver projection gives each its own symbol."},
     {"id": "I-2:AUTH-03", "phase": 3, "task": "T3.5", "clause_sha256": "5c1384692cbe600ea6328b27262eb499cf0b4499cc96c0a3dacfc66be8a7a4d5", "reason": "Applied to EXECUTE; makes the confirmed Prompt and Plan Pseudocode (model-drafted) authoritative task semantics and approach. D1 rewrites it: authority is the user's words."},
