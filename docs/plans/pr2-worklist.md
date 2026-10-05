@@ -120,13 +120,14 @@ The design is written in the gate doc (§6.6, §8.4 G5/A1/M1, §3.2/§4 +FB1). B
 
 ## T8. Lock, strata and docs
 
-- [ ] Update the `prompt_set` strata and lock, including A and M.
+- [ ] Update the `prompt_set` strata and lock, including A and M. The WIP commit `3a541e69` already dropped the Q stratum from the example config without adding J (LEDGER L34). `test_example_config_plans` fails (106 blocks, not 118) until this is settled.
 - [ ] Update the docs: about 46 machine-graded prompts, about 170 blocks plus A/M, and the gpt-oss cost.
 - [x] U2 recorded: `--no-review` with `--ultrafast` as an alias, plus a startup banner (LEDGER L6).
 
 ## T9. Regrade and baseline
 
-- [ ] Regrade the old catalogue runs with FA2 and the new graders, giving the baseline report.
+- [ ] Regrade the old catalogue runs with FA2 and the new graders, giving the baseline report. The committed `experiments/baseline/BASELINE.md` predates the 02/05 hidden-test remap (`c0ff4c7b`); rerun it (offline) before citing it (LEDGER L20).
+- [ ] `experiments/run_four_arms.py` counts ungraded (N/A) prompts as passes; report decided-prompt pass rates only, as FA2 does (LEDGER L49d).
 
 ## T10. Gates and ship
 

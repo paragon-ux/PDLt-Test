@@ -104,12 +104,13 @@ class TaskEntity(WireModel):
                 'symbol, never a sentence; a rule or requirement of the request is not an entity, it stays in '
                 'task_summary).'
             )))
-    polarity: Literal["known", "unknown"] = Field(
-        default="known",
+    polarity: Literal["known", "unknown"] | None = Field(
+        default=None,
         json_schema_extra=contract(description=(
             'Epistemic polarity of the entity in the task: '
             '"known" for given inputs, established constants, fixed parameters, governing constraints, and defined terms; '
-            '"unknown" for unobserved states, latent variables, missing values, or target quantities to determine.'
+            '"unknown" for unobserved states, latent variables, missing values, or target quantities to determine. '
+            'Leave it out when the request does not say which.'
         ))
     )
     group: str | None = Field(
@@ -187,32 +188,23 @@ class BootstrapAnalysisData(WireModel):
     @model_validator(mode="before")
     @classmethod
     def _legacy_entities(cls, data: Any) -> Any:
-        """Alias coercion (ADR-0018): normalize string entities, members arrays,
-        and comma-separated grouped entities into individual conforming TaskEntity items."""
+        """Alias coercion (ADR-0018): an entity given as a bare string, the earlier wire
+        form, is an identifier with that surface; a grouped entity given with a members
+        array is one entity per member. A surface is never split on its own text: a comma
+        can belong to the surface (a number like 10,000, a literal list)."""
         if isinstance(data, dict) and isinstance(data.get("task_entities"), list):
             expanded = []
             for item in data["task_entities"]:
                 if isinstance(item, str):
-                    expanded.append({"surface": item, "kind": "identifier", "polarity": "known", "group": None, "relation": None})
-                elif isinstance(item, dict):
-                    grp = item.get("group")
-                    members = item.get("members")
-                    if isinstance(members, list) and members:
-                        for m in members:
-                            d = dict(item)
-                            d.pop("members", None)
-                            d["surface"] = str(m).strip()
-                            d["group"] = grp
-                            expanded.append(d)
-                    elif grp and isinstance(item.get("surface"), str) and "," in item["surface"]:
-                        for part in item["surface"].split(","):
-                            if part.strip():
-                                d = dict(item)
-                                d["surface"] = part.strip()
-                                d["group"] = grp
-                                expanded.append(d)
-                    else:
-                        expanded.append(item)
+                    expanded.append({"surface": item, "kind": "identifier"})
+                elif isinstance(item, dict) and isinstance(item.get("members"), list) and item["members"]:
+                    for m in item["members"]:
+                        d = dict(item)
+                        d.pop("members", None)
+                        d["surface"] = str(m).strip()
+                        expanded.append(d)
+                else:
+                    expanded.append(item)
             data = {**data, "task_entities": expanded}
         return data
 

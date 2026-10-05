@@ -24,6 +24,7 @@ from pdl_taskmaster.controller.mechanical_controller import (
 from pdl_taskmaster.runtime.operation_bridge import ActivationRoute, ModelRequest, OperationBridge, WireError
 from pdl_taskmaster.runtime.output_contracts import RESULT_IR_MODE
 from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output
+from pdl_taskmaster.runtime.wire_payloads import ENTITY_POLARITIES
 from pdl_taskmaster.verification.sandbox import ExecutionSandbox
 
 
@@ -772,7 +773,7 @@ class SessionEngine:
         # exactly from the request is no longer lost because the summary paraphrased it.
         sanitized_request = compile_bootstrap_output(raw_text, raw_text)[0]
         raw_entities = [
-            {"surface": e, "kind": "identifier", "polarity": "known", "relation": None} if isinstance(e, str) else e
+            {"surface": e, "kind": "identifier"} if isinstance(e, str) else e
             for e in outcome.get("task_entities") or []
         ]
         kept = [
@@ -797,7 +798,7 @@ class SessionEngine:
             typed_entities.append({
                 "surface": e["surface"],
                 "kind": e.get("kind", "identifier"),
-                "polarity": e.get("polarity", "known"),
+                "polarity": e.get("polarity"),
                 "group": e.get("group"),
                 "relation": rel or None,
             })
@@ -815,47 +816,43 @@ class SessionEngine:
             f"APPROACH/RISK NOTES:\n{notes}"
         )
         if kept:
+            def tag(entity: dict) -> str:
+                # Only the polarity the model stated is shown; the host never asserts one.
+                polarity = entity.get("polarity")
+                return f" [{polarity.upper()}]" if polarity in ENTITY_POLARITIES else ""
+
+            def relation(entity: dict) -> str:
+                rel = entity.get("relation") or entity.get("definition")
+                return compile_bootstrap_output(raw_text, rel)[0].strip() if rel else ""
+
             lines = []
             grouped: dict[str | None, list[dict]] = {}
             for entity in kept:
-                grp = entity.get("group")
-                grouped.setdefault(grp, []).append(entity)
+                grouped.setdefault(entity.get("group"), []).append(entity)
 
             for grp, items in grouped.items():
-                if grp:
-                    surfaces = ", ".join(e["surface"] for e in items)
-                    pol = str(items[0].get("polarity", "known")).upper()
-                    kind = items[0].get("kind", "identifier")
-                    rel = items[0].get("relation") or items[0].get("definition")
-                    all_same = all(
-                        str(e.get("polarity", "known")).upper() == pol
-                        and (e.get("relation") or e.get("definition")) == rel
-                        and e.get("kind", "identifier") == kind
-                        for e in items
-                    )
-                    if all_same:
-                        if rel:
-                            rel = compile_bootstrap_output(raw_text, rel)[0].strip()
-                        lines.append(f"- Group [{grp}] [{pol}]: {surfaces} ({kind})" + (f": {rel}" if rel else ""))
-                    else:
-                        lines.append(f"- Group [{grp}]:")
-                        for e in items:
-                            e_pol = str(e.get("polarity", "known")).upper()
-                            e_rel = e.get("relation") or e.get("definition")
-                            if e_rel:
-                                e_rel = compile_bootstrap_output(raw_text, e_rel)[0].strip()
-                            lines.append(f"  - {e['surface']} ({e.get('kind', 'identifier')}) [{e_pol}]"
-                                         + (f": {e_rel}" if e_rel else ""))
-                else:
+                if not grp:
                     for entity in items:
-                        rel = entity.get("relation") or entity.get("definition")
-                        if rel:
-                            rel = compile_bootstrap_output(raw_text, rel)[0].strip()
-                        pol = str(entity.get("polarity", "known")).upper()
-                        lines.append(f"- {entity['surface']} ({entity.get('kind', 'identifier')}) [{pol}]"
+                        rel = relation(entity)
+                        lines.append(f"- {entity['surface']} ({entity.get('kind', 'identifier')}){tag(entity)}"
+                                     + (f": {rel}" if rel else ""))
+                    continue
+                first = items[0]
+                kind = first.get("kind", "identifier")
+                if all(tag(e) == tag(first) and relation(e) == relation(first)
+                       and e.get("kind", "identifier") == kind for e in items):
+                    rel = relation(first)
+                    surfaces = ", ".join(e["surface"] for e in items)
+                    lines.append(f"- Group [{grp}]{tag(first)}: {surfaces} ({kind})" + (f": {rel}" if rel else ""))
+                else:
+                    lines.append(f"- Group [{grp}]:")
+                    for e in items:
+                        rel = relation(e)
+                        lines.append(f"  - {e['surface']} ({e.get('kind', 'identifier')}){tag(e)}"
                                      + (f": {rel}" if rel else ""))
             document += (
-                "\nTASK ENTITIES (informative reference from the request: each surface, its kind, its epistemic polarity [KNOWN/UNKNOWN], "
+                "\nTASK ENTITIES (informative reference from the request: each surface, its kind, its epistemic "
+                "polarity [KNOWN/UNKNOWN] where stated, "
                 "and what the request states about it, including anything the request says is unknown. "
                 "Where the prompt body refers to an operative entity, spell it character-for-character "
                 "and preserve its stated polarity; select only the entities relevant to the substantive target without forcing artificial enumeration; "
@@ -1621,9 +1618,8 @@ class SessionEngine:
                 requires_verified_execution=verified,
             )
             task_inputs.append(channel)
-        typed_entities = list(self._typed_task_entities_cache.get(
-            (self._source_request, self._previous_deliverable), []
-        ))
+        # ADR-0027 execution boundary: entities reach prompt drafting only; the
+        # confirmed EXECUTE receives the confirmed artifacts and the sanitized request.
         execute_context = {
             "CONFIRMED_PROMPT_BODY": prompt_body,
             "CONFIRMED_PLAN_BODY": plan_body,
@@ -1631,8 +1627,6 @@ class SessionEngine:
             "SUPPLIED_EXECUTION_INPUT_SOURCE": supplied,
             "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
         }
-        if typed_entities:
-            execute_context["TASK_ENTITIES"] = typed_entities
 
         self._route_plan_profile(prompt_body, plan_body)
         execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools

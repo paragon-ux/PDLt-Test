@@ -32,8 +32,8 @@ def test_bootstrap_parse_requires_task_entities():
         '{"kind":"ANALYSIS","task_summary":"write f","approach_notes":"","risk_notes":"",'
         '"task_entities":["fetch_with_retry"]}'
     )
-    # A bare string (the earlier wire form) is an identifier.
-    assert ok["task_entities"] == [{"surface": "fetch_with_retry", "kind": "identifier", "polarity": "known", "group": None, "relation": None}]
+    # A bare string (the earlier wire form) is an identifier; no polarity is assumed for it.
+    assert ok["task_entities"] == [{"surface": "fetch_with_retry", "kind": "identifier", "polarity": None, "group": None, "relation": None}]
     typed = bridge.parse_bootstrap_analysis(
         '{"kind":"ANALYSIS","task_summary":"ask","approach_notes":"","risk_notes":"",'
         '"task_entities":[{"surface":"da","kind":"term","polarity":"unknown","relation":"yes or no; which is unknown"}]}'
@@ -43,8 +43,8 @@ def test_bootstrap_parse_requires_task_entities():
         '{"kind":"ANALYSIS","task_summary":"ask","approach_notes":"","risk_notes":"",'
         '"task_entities":[{"surface":"da","kind":"term","definition":"yes or no; which is unknown"}]}'
     )
-    assert coerced["task_entities"] == [{"surface": "da", "kind": "term", "polarity": "known", "group": None, "relation": "yes or no; which is unknown"}]
-    # Test members array and comma-separated grouped entities
+    assert coerced["task_entities"] == [{"surface": "da", "kind": "term", "polarity": None, "group": None, "relation": "yes or no; which is unknown"}]
+    # A members array is one entity per member
     members_res = bridge.parse_bootstrap_analysis(
         '{"kind":"ANALYSIS","task_summary":"Three gods A, B, and C","approach_notes":"","risk_notes":"",'
         '"task_entities":[{"group":"gods","members":["A","B","C"],"kind":"identifier","polarity":"unknown","relation":"three gods"}]}'
@@ -53,15 +53,13 @@ def test_bootstrap_parse_requires_task_entities():
     assert members_res["task_entities"][0] == {"surface": "A", "kind": "identifier", "polarity": "unknown", "group": "gods", "relation": "three gods"}
     assert members_res["task_entities"][1] == {"surface": "B", "kind": "identifier", "polarity": "unknown", "group": "gods", "relation": "three gods"}
     assert members_res["task_entities"][2] == {"surface": "C", "kind": "identifier", "polarity": "unknown", "group": "gods", "relation": "three gods"}
+    # A surface is never split on its own commas, grouped or not: they can belong to it.
     comma_res = bridge.parse_bootstrap_analysis(
-        '{"kind":"ANALYSIS","task_summary":"Words da and ja","approach_notes":"","risk_notes":"",'
-        '"task_entities":[{"surface":"da, ja","group":"responses","kind":"term","polarity":"unknown","relation":"words"}]}'
+        '{"kind":"ANALYSIS","task_summary":"Cap at 10,000 rows of {1, 2, 3}","approach_notes":"","risk_notes":"",'
+        '"task_entities":[{"surface":"10,000","group":"limits","kind":"parameter"},'
+        '{"surface":"{1, 2, 3}","group":"inputs","kind":"input_data"}]}'
     )
-    assert len(comma_res["task_entities"]) == 2
-    assert comma_res["task_entities"][0]["surface"] == "da"
-    assert comma_res["task_entities"][0]["group"] == "responses"
-    assert comma_res["task_entities"][1]["surface"] == "ja"
-    assert comma_res["task_entities"][1]["group"] == "responses"
+    assert [e["surface"] for e in comma_res["task_entities"]] == ["10,000", "{1, 2, 3}"]
     with pytest.raises(WireError):
         bridge.parse_bootstrap_analysis(
             '{"kind":"ANALYSIS","task_summary":"ask","approach_notes":"","risk_notes":"",'
@@ -205,7 +203,9 @@ def test_bootstrap_entities_follow_the_general_spec():
     entity = schema["oneOf"][0]["properties"]["task_entities"]["items"]
     assert entity["required"] == ["surface", "kind"]
     assert entity["properties"]["kind"]["enum"] == ["identifier", "input_data", "literal", "parameter", "term"]
-    assert entity["properties"]["polarity"]["enum"] == ["known", "unknown"]
+    # Polarity is optional: the model states it or leaves it out; the host never assumes it.
+    (stated,) = [branch for branch in entity["properties"]["polarity"]["anyOf"] if "enum" in branch]
+    assert stated["enum"] == ["known", "unknown"]
     assert "unknown, random, ambiguous or in some order" in entity["properties"]["relation"]["description"]
     text = _entity_description("BOOTSTRAP_ANALYSIS")
     assert "nothing it states may be dropped, assumed or resolved here" in text
@@ -302,7 +302,8 @@ def test_entities_reach_the_draft_with_grouping(tmp_path):
         "approach_notes": "", "risk_notes": "",
         "task_entities": [
             {"group": "gods", "members": ["A", "B", "C"], "kind": "identifier", "polarity": "unknown", "relation": "three gods"},
-            {"surface": "da, ja", "group": "responses", "kind": "term", "polarity": "unknown", "relation": "words"},
+            {"group": "responses", "members": ["da", "ja"], "kind": "term", "polarity": "unknown", "relation": "words"},
+            {"surface": "three", "kind": "parameter", "relation": "number of gods"},
         ],
     }
     seen = []
@@ -318,3 +319,39 @@ def test_entities_reach_the_draft_with_grouping(tmp_path):
     draft = next(r for r in seen if r.operation == "DRAFT_PROMPT").prompt
     assert "- Group [gods] [UNKNOWN]: A, B, C (identifier): three gods" in draft
     assert "- Group [responses] [UNKNOWN]: da, ja (term): words" in draft
+    # No polarity stated, none shown: the host never stamps [KNOWN] on its own.
+    assert "- three (parameter): number of gods" in draft
+    assert "[KNOWN]" not in draft
+
+
+def test_confirmed_execute_receives_no_task_entities(tmp_path):
+    """ADR-0027 execution boundary: entities reach prompt drafting only. The confirmed
+    EXECUTE receives the confirmed artifacts and the sanitized request, never the entities."""
+    import json as _json
+
+    raw = "Write a short note for the tenant of unit 4B."
+    analysis = {"kind": "ANALYSIS", "task_summary": raw, "approach_notes": "", "risk_notes": "",
+                "task_entities": [{"surface": "4B", "kind": "identifier", "relation": "the unit"}]}
+    seen = []
+
+    def worker(request):
+        seen.append(request)
+        if request.operation == "BOOTSTRAP_ANALYSIS":
+            return _json.dumps(analysis)
+        if request.operation == "DRAFT_PROMPT":
+            return _json.dumps({"kind": "PROMPT", "prompt_body": "WRITE a short note for the tenant of unit 4B",
+                                "approach_handoff": "NONE"})
+        if request.operation == "DRAFT_PLAN":
+            return _json.dumps({"neutral_plan_body": "COMPOSE the note\nEMIT the note"})
+        if request.operation == "EXECUTE":
+            return _json.dumps({"kind": "RESULT", "body": "Dear tenant of unit 4B, ..."})
+        raise AssertionError(f"unexpected operation {request.operation}")
+
+    engine = SessionEngine(ROOT, worker, workspace_root=tmp_path)
+    for message in ("$confirm-with-pseudocode " + raw, "/confirm", "/confirm"):
+        engine.handle_user_message(message)
+    draft = next(r for r in seen if r.operation == "DRAFT_PROMPT").prompt
+    execute = next(r for r in seen if r.operation == "EXECUTE").prompt
+    assert "4B (identifier)" in draft
+    assert "TASK_ENTITIES" not in execute
+    assert "4B (identifier)" not in execute

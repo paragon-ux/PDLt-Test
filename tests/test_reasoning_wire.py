@@ -115,9 +115,16 @@ def _run_stub(tmp_path, settings, replies=None):
 
 
 def test_runner_settings_reach_the_wire(tmp_path):
-    ops, bodies = _run_stub(tmp_path, {"max_output_tokens": 8000, "providers": "Cerebras,Groq,SambaNova",
-                                       "draft_execute": True})
-    assert ops.count("DRAFT_EXECUTE") == 1 and "EXECUTE" in ops
+    import run_catalogue
+
+    settings = {"max_output_tokens": 8000, "providers": "Cerebras,Groq,SambaNova", "draft_execute": True}
+    cmd = run_catalogue.build_harness_command(tmp_path / "p.txt", "s", tmp_path / "t.txt", tmp_path / "s",
+                                              "openai/gpt-oss-120b", "low", (), settings)
+    assert "--draft-execute" in cmd
+    ops, bodies = _run_stub(tmp_path, settings)
+    # ADR-0013 P6 (LEDGER L41): DRAFT_EXECUTE runs only for verified execution; this
+    # standard task goes straight to EXECUTE even with --draft-execute on.
+    assert "DRAFT_EXECUTE" not in ops and "EXECUTE" in ops
     assert len(ops) == len(bodies)
     for op, body in zip(ops, bodies):
         assert body.get("max_output_tokens") == 8000 and "max_tokens" not in body

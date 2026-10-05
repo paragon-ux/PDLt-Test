@@ -171,7 +171,9 @@ def test_gpt_oss_default_reasoning_is_high_except_execute():
     EXECUTE=low) is the live default; at all-LOW, plans echoed the prompt."""
     mapping = get_proportional_reasoning_mapping("openai/gpt-oss-120b")
     assert mapping["EXECUTE"] == "low"
-    assert {effort for op, effort in mapping.items() if op != "EXECUTE"} == {"high"}
+    # Ultrafast decision U4: the unconfirmed execution call gets at least the model's default.
+    assert mapping["EXECUTE_UNCONFIRMED"] == "medium"
+    assert {effort for op, effort in mapping.items() if op not in ("EXECUTE", "EXECUTE_UNCONFIRMED")} == {"high"}
     assert mapping["INTERPRET_EXECUTION_INPUT"] == "high"
     worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT)
     for op in ("BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN", "INTERPRET_PROMPT_REVIEW"):

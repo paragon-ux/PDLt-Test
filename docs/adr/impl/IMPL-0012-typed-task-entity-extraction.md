@@ -17,6 +17,13 @@
   - A `TASK ENTITIES` block lists `- surface (kind): sanitized definition`.
   - Coverage (exact spelling in the prompt body, one redraft otherwise) applies to every kind except `term`.
 
+## Amendment (2026-10-04, LEDGER L45, L47, L48)
+- **Wire.** `TaskEntity(surface, kind, polarity=None, group=None, relation=None)`. A before-validator reads an older `definition` as `relation`; `BootstrapAnalysisData` expands a grouped item's `members` array into one entity per member and never splits a surface on its commas.
+- **Drafting context.** `- surface (kind) [POLARITY]: sanitized relation`, with the tag only when the model stated a polarity; entities sharing a group, kind, polarity and relation are listed on one `- Group [name]` line.
+- **Coverage** is recorded only (`TASK_ENTITY_COVERAGE_MISSING`); the redraft was removed in `c1e0e930`.
+- **Confirmed EXECUTE** receives no entities (`c1e0e930` added them; removed under L48).
+- The reviewed description snapshot (`tests/fixtures/prompt_schema_descriptions.json`) and the replay fixture's two bootstrap prompt keys were updated to match; the recorded responses are unchanged.
+
 ## Evidence
 `run_extraction_probe.py`, 94 catalogue prompts, one run each, scored up to the prompt review. The arms:
 - **A:** the original wording;

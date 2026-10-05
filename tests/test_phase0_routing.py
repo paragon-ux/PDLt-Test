@@ -159,7 +159,9 @@ def test_direct_reply_is_presented_as_text_with_the_execution_environment(tmp_pa
     assert request.operation == "BYPASS_ORDINARY" and request.prompt == "hi"
     environment = host.engine.sandbox.decision_state()["execution_environment"]
     assert request.environment.startswith(environment)
-    assert "Programs run only in the execution stage of a confirmed task" in request.environment
+    # Both routes execute (confirmed and unconfirmed, ADR-0029), so the reply states only
+    # that programs run when a task is executed, never during a direct reply.
+    assert "Programs run only when a task is executed, not during a direct reply." in request.environment
 
 
 def test_plain_reply_text_unwraps_only_a_single_string():
