@@ -798,8 +798,11 @@ class SessionEngine:
             typed_entities.append({
                 "surface": e["surface"],
                 "kind": e.get("kind", "identifier"),
-                "polarity": e.get("polarity"),
-                "group": e.get("group"),
+                "status": e.get("status") or ("given" if e.get("polarity") == "known" else "target" if e.get("polarity") == "unknown" else "given"),
+                "polarity": e.get("polarity") or ("known" if e.get("status") == "given" else "unknown"),
+                "collection": e.get("collection") or e.get("group"),
+                "group": e.get("collection") or e.get("group"),
+                "condition": rel or None,
                 "relation": rel or None,
             })
         self._typed_task_entities_cache[cache_key] = typed_entities
@@ -817,18 +820,23 @@ class SessionEngine:
         )
         if kept:
             def tag(entity: dict) -> str:
-                # Only the polarity the model stated is shown; the host never asserts one.
                 polarity = entity.get("polarity")
-                return f" [{polarity.upper()}]" if polarity in ENTITY_POLARITIES else ""
+                if polarity in ENTITY_POLARITIES:
+                    return f" [{polarity.upper()}]"
+                status = entity.get("status")
+                if status in ("given", "target"):
+                    return f" [{'KNOWN' if status == 'given' else 'UNKNOWN'}]"
+                return ""
 
             def relation(entity: dict) -> str:
-                rel = entity.get("relation") or entity.get("definition")
+                rel = entity.get("condition") or entity.get("relation") or entity.get("definition")
                 return compile_bootstrap_output(raw_text, rel)[0].strip() if rel else ""
 
             lines = []
             grouped: dict[str | None, list[dict]] = {}
             for entity in kept:
-                grouped.setdefault(entity.get("group"), []).append(entity)
+                grp = entity.get("group") or entity.get("collection")
+                grouped.setdefault(grp, []).append(entity)
 
             for grp, items in grouped.items():
                 if not grp:

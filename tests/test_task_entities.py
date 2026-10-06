@@ -32,8 +32,8 @@ def test_bootstrap_parse_requires_task_entities():
         '{"kind":"ANALYSIS","task_summary":"write f","approach_notes":"","risk_notes":"",'
         '"task_entities":["fetch_with_retry"]}'
     )
-    # A bare string (the earlier wire form) is an identifier; no polarity is assumed for it.
-    assert ok["task_entities"] == [{"surface": "fetch_with_retry", "kind": "identifier", "polarity": None, "group": None, "relation": None}]
+    # A bare string (the earlier wire form) is an identifier; legacy alias coerces to known.
+    assert ok["task_entities"] == [{"surface": "fetch_with_retry", "kind": "identifier", "polarity": "known", "group": None, "relation": None}]
     typed = bridge.parse_bootstrap_analysis(
         '{"kind":"ANALYSIS","task_summary":"ask","approach_notes":"","risk_notes":"",'
         '"task_entities":[{"surface":"da","kind":"term","polarity":"unknown","relation":"yes or no; which is unknown"}]}'
@@ -43,7 +43,7 @@ def test_bootstrap_parse_requires_task_entities():
         '{"kind":"ANALYSIS","task_summary":"ask","approach_notes":"","risk_notes":"",'
         '"task_entities":[{"surface":"da","kind":"term","definition":"yes or no; which is unknown"}]}'
     )
-    assert coerced["task_entities"] == [{"surface": "da", "kind": "term", "polarity": None, "group": None, "relation": "yes or no; which is unknown"}]
+    assert coerced["task_entities"] == [{"surface": "da", "kind": "term", "polarity": "known", "group": None, "relation": "yes or no; which is unknown"}]
     # A members array is one entity per member
     members_res = bridge.parse_bootstrap_analysis(
         '{"kind":"ANALYSIS","task_summary":"Three gods A, B, and C","approach_notes":"","risk_notes":"",'
@@ -201,11 +201,10 @@ def test_bootstrap_entities_follow_the_general_spec():
 
     schema = contract_schema("BOOTSTRAP_ANALYSIS")
     entity = schema["oneOf"][0]["properties"]["task_entities"]["items"]
-    assert entity["required"] == ["surface", "kind"]
+    assert entity["required"] == ["surface", "kind", "polarity"]
     assert entity["properties"]["kind"]["enum"] == ["identifier", "input_data", "literal", "parameter", "term"]
-    # Polarity is optional: the model states it or leaves it out; the host never assumes it.
-    (stated,) = [branch for branch in entity["properties"]["polarity"]["anyOf"] if "enum" in branch]
-    assert stated["enum"] == ["known", "unknown"]
+    # Polarity is required and binary: known or unknown
+    assert entity["properties"]["polarity"]["enum"] == ["known", "unknown"]
     assert "unknown, random, ambiguous or in some order" in entity["properties"]["relation"]["description"]
     text = _entity_description("BOOTSTRAP_ANALYSIS")
     assert "nothing it states may be dropped, assumed or resolved here" in text
@@ -303,7 +302,7 @@ def test_entities_reach_the_draft_with_grouping(tmp_path):
         "task_entities": [
             {"group": "gods", "members": ["A", "B", "C"], "kind": "identifier", "polarity": "unknown", "relation": "three gods"},
             {"group": "responses", "members": ["da", "ja"], "kind": "term", "polarity": "unknown", "relation": "words"},
-            {"surface": "three", "kind": "parameter", "relation": "number of gods"},
+            {"surface": "three", "kind": "parameter", "polarity": "known", "relation": "number of gods"},
         ],
     }
     seen = []
@@ -319,9 +318,7 @@ def test_entities_reach_the_draft_with_grouping(tmp_path):
     draft = next(r for r in seen if r.operation == "DRAFT_PROMPT").prompt
     assert "- Group [gods] [UNKNOWN]: A, B, C (identifier): three gods" in draft
     assert "- Group [responses] [UNKNOWN]: da, ja (term): words" in draft
-    # No polarity stated, none shown: the host never stamps [KNOWN] on its own.
-    assert "- three (parameter): number of gods" in draft
-    assert "[KNOWN]" not in draft
+    assert "- three (parameter) [KNOWN]: number of gods" in draft
 
 
 def test_confirmed_execute_receives_no_task_entities(tmp_path):

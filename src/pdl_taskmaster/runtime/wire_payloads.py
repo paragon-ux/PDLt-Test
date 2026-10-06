@@ -86,6 +86,7 @@ class ActivationDecisionPayload(WireModel):
 
 ENTITY_KINDS = ("identifier", "input_data", "literal", "parameter", "term")
 ENTITY_POLARITIES = ("known", "unknown")
+ENTITY_STATUSES = ("given", "target")
 
 
 class TaskEntity(WireModel):
@@ -104,13 +105,11 @@ class TaskEntity(WireModel):
                 'symbol, never a sentence; a rule or requirement of the request is not an entity, it stays in '
                 'task_summary).'
             )))
-    polarity: Literal["known", "unknown"] | None = Field(
-        default=None,
+    polarity: Literal["known", "unknown"] = Field(
         json_schema_extra=contract(description=(
-            'Epistemic polarity of the entity in the task: '
+            'Epistemic status of the entity in the task: '
             '"known" for given inputs, established constants, fixed parameters, governing constraints, and defined terms; '
-            '"unknown" for unobserved states, latent variables, missing values, or target quantities to determine. '
-            'Leave it out when the request does not say which.'
+            '"unknown" for unobserved states, latent variables, missing values, or target quantities to determine.'
         ))
     )
     group: str | None = Field(
@@ -129,16 +128,45 @@ class TaskEntity(WireModel):
         ))
     )
 
+    @property
+    def status(self) -> str:
+        return "given" if self.polarity == "known" else "target"
+
+    @property
+    def collection(self) -> str | None:
+        return self.group
+
+    @property
+    def condition(self) -> str | None:
+        return self.relation
+
     @model_validator(mode="before")
     @classmethod
-    def _coerce_definition(cls, data: Any) -> Any:
-        """Alias coercion (ADR-0018): map legacy 'definition' field to 'relation'."""
+    def _coerce_aliases(cls, data: Any) -> Any:
+        """Alias coercion (ADR-0018): map legacy and ergonomic fields to wire schema."""
         if isinstance(data, dict):
             data = dict(data)
-            if "definition" in data:
-                if "relation" not in data or data["relation"] is None:
-                    data["relation"] = data["definition"]
-                del data["definition"]
+            # Map ergonomic status -> polarity
+            if "polarity" not in data or data["polarity"] is None:
+                if "status" in data:
+                    st = data.pop("status")
+                    if st in ("given", "known"):
+                        data["polarity"] = "known"
+                    elif st in ("target", "unknown", "to_find"):
+                        data["polarity"] = "unknown"
+                    else:
+                        data["polarity"] = "known"
+                else:
+                    data["polarity"] = "known"
+            # Map legacy definition / condition -> relation
+            if "relation" not in data:
+                if "condition" in data:
+                    data["relation"] = data.pop("condition")
+                elif "definition" in data:
+                    data["relation"] = data.pop("definition")
+            # Map ergonomic collection -> group
+            if "group" not in data and "collection" in data:
+                data["group"] = data.pop("collection")
         return data
 
     @model_validator(mode="after")
@@ -196,7 +224,7 @@ class BootstrapAnalysisData(WireModel):
             expanded = []
             for item in data["task_entities"]:
                 if isinstance(item, str):
-                    expanded.append({"surface": item, "kind": "identifier"})
+                    expanded.append({"surface": item, "kind": "identifier", "status": "given"})
                 elif isinstance(item, dict) and isinstance(item.get("members"), list) and item["members"]:
                     for m in item["members"]:
                         d = dict(item)
