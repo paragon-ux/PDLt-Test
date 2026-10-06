@@ -32,27 +32,27 @@ def test_bootstrap_parse_requires_task_entities():
         '{"kind":"ANALYSIS","task_summary":"write f","approach_notes":"","risk_notes":"",'
         '"task_entities":["fetch_with_retry"]}'
     )
-    # A bare string (the earlier wire form) is an identifier; legacy alias coerces to known.
-    assert ok["task_entities"] == [{"surface": "fetch_with_retry", "kind": "identifier", "polarity": "known", "group": None, "relation": None}]
+    # A bare string (the earlier wire form) is an identifier; legacy alias coerces to given.
+    assert ok["task_entities"] == [{"surface": "fetch_with_retry", "kind": "identifier", "status": "given", "group": None, "relation": None}]
     typed = bridge.parse_bootstrap_analysis(
         '{"kind":"ANALYSIS","task_summary":"ask","approach_notes":"","risk_notes":"",'
-        '"task_entities":[{"surface":"da","kind":"term","polarity":"unknown","relation":"yes or no; which is unknown"}]}'
+        '"task_entities":[{"surface":"da","kind":"term","status":"target","relation":"yes or no; which is unknown"}]}'
     )
-    assert typed["task_entities"] == [{"surface": "da", "kind": "term", "polarity": "unknown", "group": None, "relation": "yes or no; which is unknown"}]
+    assert typed["task_entities"] == [{"surface": "da", "kind": "term", "status": "target", "group": None, "relation": "yes or no; which is unknown"}]
     coerced = bridge.parse_bootstrap_analysis(
         '{"kind":"ANALYSIS","task_summary":"ask","approach_notes":"","risk_notes":"",'
         '"task_entities":[{"surface":"da","kind":"term","definition":"yes or no; which is unknown"}]}'
     )
-    assert coerced["task_entities"] == [{"surface": "da", "kind": "term", "polarity": "known", "group": None, "relation": "yes or no; which is unknown"}]
+    assert coerced["task_entities"] == [{"surface": "da", "kind": "term", "status": "given", "group": None, "relation": "yes or no; which is unknown"}]
     # A members array is one entity per member
     members_res = bridge.parse_bootstrap_analysis(
         '{"kind":"ANALYSIS","task_summary":"Three gods A, B, and C","approach_notes":"","risk_notes":"",'
-        '"task_entities":[{"group":"gods","members":["A","B","C"],"kind":"identifier","polarity":"unknown","relation":"three gods"}]}'
+        '"task_entities":[{"group":"gods","members":["A","B","C"],"kind":"identifier","status":"target","relation":"three gods"}]}'
     )
     assert len(members_res["task_entities"]) == 3
-    assert members_res["task_entities"][0] == {"surface": "A", "kind": "identifier", "polarity": "unknown", "group": "gods", "relation": "three gods"}
-    assert members_res["task_entities"][1] == {"surface": "B", "kind": "identifier", "polarity": "unknown", "group": "gods", "relation": "three gods"}
-    assert members_res["task_entities"][2] == {"surface": "C", "kind": "identifier", "polarity": "unknown", "group": "gods", "relation": "three gods"}
+    assert members_res["task_entities"][0] == {"surface": "A", "kind": "identifier", "status": "target", "group": "gods", "relation": "three gods"}
+    assert members_res["task_entities"][1] == {"surface": "B", "kind": "identifier", "status": "target", "group": "gods", "relation": "three gods"}
+    assert members_res["task_entities"][2] == {"surface": "C", "kind": "identifier", "status": "target", "group": "gods", "relation": "three gods"}
     # A surface is never split on its own commas, grouped or not: they can belong to it.
     comma_res = bridge.parse_bootstrap_analysis(
         '{"kind":"ANALYSIS","task_summary":"Cap at 10,000 rows of {1, 2, 3}","approach_notes":"","risk_notes":"",'
@@ -201,10 +201,10 @@ def test_bootstrap_entities_follow_the_general_spec():
 
     schema = contract_schema("BOOTSTRAP_ANALYSIS")
     entity = schema["oneOf"][0]["properties"]["task_entities"]["items"]
-    assert entity["required"] == ["surface", "kind", "polarity"]
+    assert entity["required"] == ["surface", "kind", "status"]
     assert entity["properties"]["kind"]["enum"] == ["identifier", "input_data", "literal", "parameter", "term"]
-    # Polarity is required and binary: known or unknown
-    assert entity["properties"]["polarity"]["enum"] == ["known", "unknown"]
+    # Status is required and binary: given or target
+    assert entity["properties"]["status"]["enum"] == ["given", "target"]
     assert "unknown, random, ambiguous or in some order" in entity["properties"]["relation"]["description"]
     text = _entity_description("BOOTSTRAP_ANALYSIS")
     assert "nothing it states may be dropped, assumed or resolved here" in text
@@ -239,8 +239,8 @@ def test_entities_reach_the_draft_with_kind_and_definition_and_paraphrase_loses_
         "task_summary": "Identify the gods; their two answer words map to yes and no in an unknown order.",
         "approach_notes": "", "risk_notes": "",
         "task_entities": [
-            {"surface": "da", "kind": "term", "polarity": "unknown", "relation": "one of the words for yes and no; which one is unknown"},
-            {"surface": "ja", "kind": "term", "polarity": "unknown", "relation": "one of the words for yes and no; which one is unknown"},
+            {"surface": "da", "kind": "term", "status": "target", "relation": "one of the words for yes and no; which one is unknown"},
+            {"surface": "ja", "kind": "term", "status": "target", "relation": "one of the words for yes and no; which one is unknown"},
             {"surface": "TRIPWIRE_X_99", "kind": "literal"},
         ],
     }
@@ -256,8 +256,8 @@ def test_entities_reach_the_draft_with_kind_and_definition_and_paraphrase_loses_
     engine = SessionEngine(ROOT, worker, workspace_root=tmp_path)
     engine.handle_user_message("$confirm-with-pseudocode " + raw)
     draft = next(r for r in seen if r.operation == "DRAFT_PROMPT").prompt
-    assert "- da (term) [UNKNOWN]: one of the words for yes and no; which one is unknown" in draft
-    assert "- ja (term) [UNKNOWN]: one of the words for yes and no; which one is unknown" in draft
+    assert "- da (term) [TARGET]: one of the words for yes and no; which one is unknown" in draft
+    assert "- ja (term) [TARGET]: one of the words for yes and no; which one is unknown" in draft
     assert "TRIPWIRE_X_99" not in draft
     # Terms carry their meaning in the context; their surface is not forced into the body.
     assert list(engine._task_entities_cache.values()) == [()]
@@ -300,9 +300,9 @@ def test_entities_reach_the_draft_with_grouping(tmp_path):
         "task_summary": "Identify gods A, B, and C with words da and ja.",
         "approach_notes": "", "risk_notes": "",
         "task_entities": [
-            {"group": "gods", "members": ["A", "B", "C"], "kind": "identifier", "polarity": "unknown", "relation": "three gods"},
-            {"group": "responses", "members": ["da", "ja"], "kind": "term", "polarity": "unknown", "relation": "words"},
-            {"surface": "three", "kind": "parameter", "polarity": "known", "relation": "number of gods"},
+            {"group": "gods", "members": ["A", "B", "C"], "kind": "identifier", "status": "target", "relation": "three gods"},
+            {"group": "responses", "members": ["da", "ja"], "kind": "term", "status": "target", "relation": "words"},
+            {"surface": "three", "kind": "parameter", "status": "given", "relation": "number of gods"},
         ],
     }
     seen = []
@@ -316,9 +316,9 @@ def test_entities_reach_the_draft_with_grouping(tmp_path):
     engine = SessionEngine(ROOT, worker, workspace_root=tmp_path)
     engine.handle_user_message("$confirm-with-pseudocode " + raw)
     draft = next(r for r in seen if r.operation == "DRAFT_PROMPT").prompt
-    assert "- Group [gods] [UNKNOWN]: A, B, C (identifier): three gods" in draft
-    assert "- Group [responses] [UNKNOWN]: da, ja (term): words" in draft
-    assert "- three (parameter) [KNOWN]: number of gods" in draft
+    assert "- Group [gods] [TARGET]: A, B, C (identifier): three gods" in draft
+    assert "- Group [responses] [TARGET]: da, ja (term): words" in draft
+    assert "- three (parameter) [GIVEN]: number of gods" in draft
 
 
 def test_confirmed_execute_receives_no_task_entities(tmp_path):

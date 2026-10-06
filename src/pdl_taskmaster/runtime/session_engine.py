@@ -24,7 +24,7 @@ from pdl_taskmaster.controller.mechanical_controller import (
 from pdl_taskmaster.runtime.operation_bridge import ActivationRoute, ModelRequest, OperationBridge, WireError
 from pdl_taskmaster.runtime.output_contracts import RESULT_IR_MODE
 from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output, isolate_untrusted_input
-from pdl_taskmaster.runtime.wire_payloads import ENTITY_POLARITIES
+from pdl_taskmaster.runtime.wire_payloads import ENTITY_POLARITIES, ENTITY_STATUSES
 from pdl_taskmaster.verification.sandbox import ExecutionSandbox
 
 
@@ -824,12 +824,12 @@ class SessionEngine:
         )
         if kept:
             def tag(entity: dict) -> str:
+                status = entity.get("status")
+                if status in ENTITY_STATUSES:
+                    return f" [{status.upper()}]"
                 polarity = entity.get("polarity")
                 if polarity in ENTITY_POLARITIES:
-                    return f" [{polarity.upper()}]"
-                status = entity.get("status")
-                if status in ("given", "target"):
-                    return f" [{'KNOWN' if status == 'given' else 'UNKNOWN'}]"
+                    return f" [{'GIVEN' if polarity == 'known' else 'TARGET'}]"
                 return ""
 
             def relation(entity: dict) -> str:
@@ -864,10 +864,12 @@ class SessionEngine:
                                      + (f": {rel}" if rel else ""))
             document += (
                 "\nTASK ENTITIES (informative reference from the request: each surface, its kind, its epistemic "
-                "polarity [KNOWN/UNKNOWN] where stated, "
+                "status [GIVEN/TARGET] where stated, "
                 "and what the request states about it, including anything the request says is unknown. "
                 "Where the prompt body refers to an operative entity, spell it character-for-character "
-                "and preserve its stated polarity; select only the entities relevant to the substantive target without forcing artificial enumeration; "
+                "and preserve its stated status; preserve [GIVEN] values character-for-character as fixed problem constraints; "
+                "never pre-compute or assert a solution for [TARGET] entities during drafting; "
+                "select only the entities relevant to the substantive target without forcing artificial enumeration; "
                 "entities add no step, list or requirement of their own):\n"
                 + "\n".join(lines)
             )

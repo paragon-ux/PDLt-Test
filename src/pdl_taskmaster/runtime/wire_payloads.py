@@ -105,7 +105,7 @@ ENTITY_STATUSES = ("given", "target")
 
 
 class TaskEntity(WireModel):
-    """One entity of the request: its exact surface form, its kind, its epistemic polarity,
+    """One entity of the request: its exact surface form, its kind, its epistemic status,
     and what the request states about it (facts, rules, or what is unknown about it)."""
 
     model_config = ConfigDict(extra="forbid")
@@ -120,11 +120,11 @@ class TaskEntity(WireModel):
                 'symbol, never a sentence; a rule or requirement of the request is not an entity, it stays in '
                 'task_summary).'
             )))
-    polarity: Literal["known", "unknown"] = Field(
+    status: Literal["given", "target"] = Field(
         json_schema_extra=contract(description=(
             'Epistemic status of the entity in the task: '
-            '"known" for given inputs, established constants, fixed parameters, governing constraints, and defined terms; '
-            '"unknown" for unobserved states, latent variables, missing values, or target quantities to determine.'
+            '"given" for established inputs, constants, parameters, governing constraints, and defined terms; '
+            '"target" for unobserved states, latent variables, missing values, or target quantities to determine.'
         ))
     )
     group: str | None = Field(
@@ -144,8 +144,12 @@ class TaskEntity(WireModel):
     )
 
     @property
-    def status(self) -> str:
-        return "given" if self.polarity == "known" else "target"
+    def polarity(self) -> str:
+        return "known" if self.status == "given" else "unknown"
+
+    @property
+    def is_target(self) -> bool:
+        return self.status == "target"
 
     @property
     def collection(self) -> str | None:
@@ -161,18 +165,16 @@ class TaskEntity(WireModel):
         """Alias coercion (ADR-0018): map legacy and ergonomic fields to wire schema."""
         if isinstance(data, dict):
             data = dict(data)
-            # Map ergonomic status -> polarity
-            if "polarity" not in data or data["polarity"] is None:
-                if "status" in data:
-                    st = data.pop("status")
-                    if st in ("given", "known"):
-                        data["polarity"] = "known"
-                    elif st in ("target", "unknown", "to_find"):
-                        data["polarity"] = "unknown"
-                    else:
-                        data["polarity"] = "known"
-                else:
-                    data["polarity"] = "known"
+            # Map status / polarity aliases cleanly to canonical {"given", "target"}
+            raw_status = data.get("status") or data.get("polarity")
+            if raw_status in ("given", "known"):
+                data["status"] = "given"
+            elif raw_status in ("target", "unknown", "to_find"):
+                data["status"] = "target"
+            else:
+                data["status"] = "given"  # Safe domain default for unqualified entities
+            data.pop("polarity", None)
+
             # Map legacy definition / condition -> relation
             if "relation" not in data:
                 if "condition" in data:
