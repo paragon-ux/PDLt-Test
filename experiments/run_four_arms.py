@@ -81,7 +81,8 @@ def summarize_results(target_prompts: str | None = None):
         try:
             data = json.loads(sb_path.read_text(encoding="utf-8"))
             if target_prompts:
-                if data.get("total_prompts") != len(prompt_ids):
+                tot = data.get("total_prompts", 0)
+                if tot == 0 or tot % len(prompt_ids) != 0:
                     continue
             else:
                 if data.get("total_prompts") != 16:
