@@ -776,15 +776,44 @@ class SessionEngine:
         # in both, so a hostile entity can never pass this filter; an entity copied
         # exactly from the request is no longer lost because the summary paraphrased it.
         sanitized_request = compile_bootstrap_output(raw_text, raw_text)[0]
+        sanitized_req_lower = sanitized_request.lower()
+        compiled_lower = compiled.lower()
         raw_entities = [
             {"surface": e, "kind": "identifier"} if isinstance(e, str) else e
             for e in outcome.get("task_entities") or []
         ]
-        kept = [
-            e for e in raw_entities
-            if str(e.get("surface", "")).strip()
-            and (e["surface"] in sanitized_request or e["surface"] in compiled)
-        ]
+        kept = []
+        for e in raw_entities:
+            surf = str(e.get("surface", "")).strip()
+            if not surf:
+                continue
+            surf_unquoted = surf.strip("'\"`")
+            surf_check = surf_unquoted if surf_unquoted else surf
+            surf_trimmed = surf_check.rstrip(".,;:?!")
+            candidate = surf_trimmed if surf_trimmed else surf_check
+
+            # 1. Exact match in sanitized request or compiled summary
+            if surf in sanitized_request or surf in compiled:
+                matched = surf
+            elif surf_check in sanitized_request or surf_check in compiled:
+                matched = surf_check
+            elif candidate in sanitized_request or candidate in compiled:
+                matched = candidate
+            # 2. Case-insensitive match aligned to sanitized text
+            elif candidate.lower() in sanitized_req_lower:
+                idx = sanitized_req_lower.find(candidate.lower())
+                matched = sanitized_request[idx : idx + len(candidate)]
+            elif candidate.lower() in compiled_lower:
+                idx = compiled_lower.find(candidate.lower())
+                matched = compiled[idx : idx + len(candidate)]
+            else:
+                matched = None
+
+            if matched is not None:
+                e_copy = dict(e)
+                e_copy["surface"] = matched
+                kept.append(e_copy)
+
         dropped = len(raw_entities) - len(kept)
         if dropped and self.workspace is not None:
             self.workspace.append_event("TASK_ENTITY_DROPPED_UNSAFE", {"count": dropped})

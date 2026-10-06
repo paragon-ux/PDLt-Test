@@ -142,3 +142,63 @@ def test_16_06_specification_boundary_and_anti_computation(tmp_path: Path):
     assert entities[1]["surface"] == "B" and entities[1]["status"] == "given"
     assert entities[2]["surface"] == "S" and entities[2]["status"] == "given"
     assert entities[3]["surface"] == "sisters" and entities[3]["status"] == "target"
+
+
+def test_16_06_target_entities_preserved_and_not_dropped(tmp_path: Path):
+    """Verify that target entities (including repeated surfaces for given vs target and case/whitespace variations)
+    are retained without triggering TASK_ENTITY_DROPPED_UNSAFE events.
+    """
+    raw_prompt = (
+        "Maya has B brothers and S sisters, where B is at least 1. "
+        "Every brother and sister shares both parents with Maya. "
+        "How many sisters does each of Maya's brothers have? "
+        "Give the answer as an expression in B and S and explain why."
+    )
+
+    bootstrap_payload = {
+        "kind": "ANALYSIS",
+        "task_summary": (
+            "Determine the expression in terms of B and S for the number of sisters that each of Maya's brothers has, "
+            "where Maya has B brothers (B >= 1) and S sisters, all sharing both parents, "
+            "and provide the explanatory derivation."
+        ),
+        "approach_notes": "",
+        "risk_notes": "",
+        "task_entities": [
+            {"surface": " Maya ", "kind": "identifier", "status": "given", "relation": "subject"},
+            {"surface": "B", "kind": "parameter", "status": "given", "relation": "number of brothers, B >= 1"},
+            {"surface": "S", "kind": "parameter", "status": "given", "relation": "number of sisters of Maya"},
+            {"surface": "brothers", "kind": "term", "status": "given", "relation": "Maya's B brothers"},
+            {"surface": "sisters", "kind": "term", "status": "given", "relation": "Maya's S sisters"},
+            {"surface": "sisters", "kind": "term", "status": "target", "relation": "the number of sisters each brother has to determine"},
+            {"surface": "expression", "kind": "literal", "status": "target", "relation": "answer as an expression in B and S"},
+        ],
+    }
+
+    calls = []
+    def _worker(req):
+        calls.append(req)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps(bootstrap_payload)
+        return json.dumps({
+            "kind": "PROMPT",
+            "prompt_body": "DETERMINE expression in B and S for sisters of each brother",
+            "approach_handoff": "NONE",
+        })
+
+    engine = SessionEngine(ROOT, _worker, workspace_root=tmp_path, sys1_client=None)
+    engine.handle_user_message(f"$confirm-with-pseudocode {raw_prompt}")
+
+    draft_call = next(c for c in calls if c.operation == "DRAFT_PROMPT")
+    draft_prompt = draft_call.prompt
+
+    # Verify both GIVEN and TARGET tags reach downstream
+    assert "- Maya (identifier) [GIVEN]" in draft_prompt
+    assert "- sisters (term) [GIVEN]" in draft_prompt
+    assert "- sisters (term) [TARGET]" in draft_prompt
+    assert "- expression (literal) [TARGET]" in draft_prompt
+
+    # Verify ZERO entities were dropped
+    events = engine.workspace.read_events()
+    assert not any(e["kind"] == "TASK_ENTITY_DROPPED_UNSAFE" for e in events)
+
