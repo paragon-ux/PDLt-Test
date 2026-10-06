@@ -59,8 +59,10 @@ def test_repeat_runs_report_a_pass_rate_per_prompt(tmp_path):
     import run_catalogue
 
     def result(pid, verdict, k):
+        # A graded prompt: an ungraded (N/A) stage match is not a pass (L49d).
+        grade = "PASS" if verdict == "CLOSED_SUCCESS" else "FAIL"
         return {"id": pid, "category": "c", "difficulty": "d", "verdict": verdict, "expected_stage": "CLOSED_SUCCESS",
-                "elapsed_seconds": 1.0, "ground_truth_grade": {"grade": "N/A"}, "model_calls": {}, "repeat": k,
+                "elapsed_seconds": 1.0, "ground_truth_grade": {"grade": grade}, "model_calls": {}, "repeat": k,
                 "regression_ref": None}
 
     results = [result("01-01", v, k) for k, v in enumerate(["CLOSED_SUCCESS", "CLOSED_CANCELLED", "CLOSED_SUCCESS"], 1)]

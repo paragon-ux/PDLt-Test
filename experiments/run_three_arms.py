@@ -106,17 +106,16 @@ def summarize_results():
         print(f"{row[0]} | {cat_str:<24} | {row[1]:<18} | {row[2]:<18} | {row[3]:<18}")
 
     print("-" * len(header))
-    summary_row = f"{'TOTALS':<8} | {'Pass Rate / Elapsed':<24}"
+    # Counted from each arm's results (L49d): an ungraded prompt is never a pass.
+    sys.path.insert(0, str(ROOT))
+    import run_catalogue
+
     for arm in ARMS:
-        sb = scoreboard_data.get(arm["name"])
-        if sb:
-            rate = sb.get("pass_rate_pct", 0)
-            elapsed = sb.get("total_time_seconds", 0)
-            calls = sb.get("model_calls", {}).get("total", 0)
-            summary_row += f" | {rate:.1f}% ({calls}c, {elapsed:.0f}s)"
-        else:
-            summary_row += " | N/A"
-    print(summary_row)
+        matching = sorted(runs_dir.glob(f"run-*-{arm['name']}"), key=lambda p: p.stat().st_mtime, reverse=True)
+        rows = ([json.loads(f.read_text(encoding="utf-8")) for f in (matching[0] / "results").glob("*/result.json")]
+                if matching else [])
+        print(f"{arm['name']}: {run_catalogue.format_counts(run_catalogue.outcome_counts(rows))}" if rows
+              else f"{arm['name']}: not run")
     print("#" * 70 + "\n")
 
 
