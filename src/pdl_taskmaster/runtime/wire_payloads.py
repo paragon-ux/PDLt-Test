@@ -64,6 +64,8 @@ class ActivationRoute(str, Enum):
     PROTOCOL_DISCUSSION = "PROTOCOL_DISCUSSION"
     BYPASS = "BYPASS"
     BLOCKED_BY_HIGHER_PRIORITY = "BLOCKED_BY_HIGHER_PRIORITY"
+    REFUSAL = "REFUSAL"
+    ADVERSARIAL = "ADVERSARIAL"
 
 
 class ActivationDecisionPayload(WireModel):
@@ -73,14 +75,27 @@ class ActivationDecisionPayload(WireModel):
     # System 1's calibrated confidence (ADR-0012): validated, never part of the model's contract.
     confidence: SkipJsonSchema[Optional[float]] = Field(default=None, ge=0.0, le=1.0)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_route_alias(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "route" in data:
+            r = str(data["route"]).upper()
+            if r == "REFUSED":
+                data = dict(data)
+                data["route"] = "REFUSAL"
+            elif r == "BLOCKED":
+                data = dict(data)
+                data["route"] = "BLOCKED_BY_HIGHER_PRIORITY"
+        return data
+
     @model_validator(mode="after")
     def validate_route_constraints(self) -> ActivationDecisionPayload:
-        if self.route == ActivationRoute.BLOCKED_BY_HIGHER_PRIORITY:
+        if self.route in (ActivationRoute.BLOCKED_BY_HIGHER_PRIORITY, ActivationRoute.REFUSAL, ActivationRoute.ADVERSARIAL):
             if not self.response or not self.response.strip():
-                raise ValueError("blocked_response: response must be non-empty when route is BLOCKED_BY_HIGHER_PRIORITY")
+                raise ValueError("blocked_response: response must be non-empty when route is refusal or blocked")
         else:
             if self.response is not None:
-                raise ValueError("extra_fields: response is not permitted unless route is BLOCKED_BY_HIGHER_PRIORITY")
+                raise ValueError("extra_fields: response is not permitted unless route is refusal or blocked")
         return self
 
 
@@ -245,7 +260,7 @@ class BootstrapAnalysisData(WireModel):
 
 class BootstrapBlockedData(WireModel):
     model_config = ConfigDict(extra="forbid")
-    kind: Literal["BLOCKED_BY_HIGHER_PRIORITY"] = "BLOCKED_BY_HIGHER_PRIORITY"
+    kind: Literal["BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"] = "BLOCKED_BY_HIGHER_PRIORITY"
     response: str = Field(json_schema_extra=contract(minLength=1))
 
     @model_validator(mode="after")

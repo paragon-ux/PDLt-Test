@@ -39,10 +39,21 @@ _UUID_SHAPE = re.compile(
 )
 _LONG_HEX_RUN = re.compile(r"\b[0-9a-fA-F]{32,}\b")
 _EXPLOIT_PHRASE = re.compile(
-    r"(?:system\s+(?:directive\s+)?override|ignore\s+previous\s+instructions|dump\s+system\s+secrets|rootkit|credential[- ]harvesting)",
+    r"(?:system\s+(?:directive\s+)?override|override\s+(?:all\s+)?(?:previous\s+)?instructions|ignore\s+previous\s+instructions|dump\s+system\s+secrets|print\s+(?:the\s+)?system\s+prompt|reveal\s+(?:the\s+)?system\s+prompt|rootkit|credential[- ]harvesting)",
     re.IGNORECASE,
 )
 _QUOTED_SPAN = re.compile(r"(\"[^\"]{6,}\"|'[^']{6,}'|`[^`]{6,}`)")
+
+
+def isolate_untrusted_input(text: str) -> str:
+    """Enclose untrusted text within unambiguous XML boundary tags, neutralizing boundary breakout attempts."""
+    if not text:
+        return ""
+    neutralized = (
+        text.replace("</untrusted_user_input>", "&lt;/untrusted_user_input&gt;")
+        .replace("<untrusted_user_input>", "&lt;untrusted_user_input&gt;")
+    )
+    return f"<untrusted_user_input>\n{neutralized.strip()}\n</untrusted_user_input>"
 
 
 def compile_bootstrap_output(raw_source: str, analysis_text: str) -> tuple[str, dict]:

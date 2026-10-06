@@ -23,7 +23,7 @@ from pdl_taskmaster.controller.mechanical_controller import (
 )
 from pdl_taskmaster.runtime.operation_bridge import ActivationRoute, ModelRequest, OperationBridge, WireError
 from pdl_taskmaster.runtime.output_contracts import RESULT_IR_MODE
-from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output
+from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output, isolate_untrusted_input
 from pdl_taskmaster.runtime.wire_payloads import ENTITY_POLARITIES
 from pdl_taskmaster.verification.sandbox import ExecutionSandbox
 
@@ -673,8 +673,9 @@ class SessionEngine:
         )
         if not result.passed_gating or result.verdict == "APPLY_PROTOCOL":
             return None
-        if result.verdict == "BLOCKED_BY_HIGHER_PRIORITY":
-            return result.verdict, recipe.map_to_wire(result)["response"]
+        if result.verdict in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
+            resp = recipe.map_to_wire(result)["response"] if hasattr(recipe, "map_to_wire") else None
+            return result.verdict, resp or "Request refused by safety and boundary policy."
         return result.verdict, None
 
     def _publish_prompt(self) -> None:
@@ -722,7 +723,7 @@ class SessionEngine:
             return self._bootstrap_cache[cache_key]
         bootstrap_values: dict[str, Any] = {
             "HOST_PROTOCOL_STATE": "SEMANTIC_READ",
-            "RAW_UNTRUSTED_CONTENT": raw_text,
+            "RAW_UNTRUSTED_CONTENT": isolate_untrusted_input(raw_text),
         }
         if self._previous_deliverable:
             # S4: the prior turn's confirmed deliverable is host-published,
@@ -735,9 +736,10 @@ class SessionEngine:
             traces,
             parser=self.bridge.parse_bootstrap_analysis,
         )
-        if outcome["kind"] == "BLOCKED_BY_HIGHER_PRIORITY":
+        if outcome["kind"] in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
             self._bootstrap_cache[cache_key] = ""
-            self._blocked_response = outcome.get("response")
+            raw_response = outcome.get("response") or "Request refused by higher-priority policy and safety constraints."
+            self._blocked_response = compile_bootstrap_output(raw_text, raw_response)[0]
             return None
         compiled, _meta = compile_bootstrap_output(raw_text, outcome["task_summary"])
         # Containment-boundary durability: a lazy semantic read that classifies
@@ -760,8 +762,10 @@ class SessionEngine:
                 traces,
                 parser=self.bridge.parse_bootstrap_analysis,
             )
-            if outcome["kind"] == "BLOCKED_BY_HIGHER_PRIORITY":
+            if outcome["kind"] in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
                 self._bootstrap_cache[cache_key] = ""
+                raw_response = outcome.get("response") or "Request refused by higher-priority policy and safety constraints."
+                self._blocked_response = compile_bootstrap_output(raw_text, raw_response)[0]
                 return None
             compiled, _meta = compile_bootstrap_output(raw_text, outcome["task_summary"])
 
@@ -815,7 +819,7 @@ class SessionEngine:
             sanitized_risk, _ = compile_bootstrap_output(raw_text, outcome["risk_notes"])
             outcome["risk_notes"] = sanitized_risk
         document = (
-            f"TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):\n{compiled}\n"
+            f"TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):\n{isolate_untrusted_input(compiled)}\n"
             f"APPROACH/RISK NOTES:\n{notes}"
         )
         if kept:
@@ -1327,7 +1331,7 @@ class SessionEngine:
             routed = self._s1_activation(observation.substantive_request)
             if routed is not None:
                 route, refusal = routed
-                if route == "BLOCKED_BY_HIGHER_PRIORITY":
+                if route in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
                     return self._refuse(refusal, traces, "activation")
                 # BYPASS / PROTOCOL_DISCUSSION: a direct answer, no protocol instance (§3).
                 self.workspace.append_event("DIRECT_ANSWER_ROUTED", {"route": route})
@@ -1343,7 +1347,7 @@ class SessionEngine:
             routed = self._s1_activation(user_message.strip())
             if routed is not None:
                 route, refusal = routed
-                if route == "BLOCKED_BY_HIGHER_PRIORITY":
+                if route in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
                     return self._refuse(refusal, traces, "activation")
                 self.workspace.append_event("DIRECT_ANSWER_ROUTED", {"route": route})
                 if route == "PROTOCOL_DISCUSSION":
@@ -1354,7 +1358,7 @@ class SessionEngine:
             "INTERPRET_ACTIVATION", {"RAW_USER_MESSAGE": user_message}, traces,
             parser=self.bridge.parse_activation,
         )
-        if decision.route == ActivationRoute.BLOCKED_BY_HIGHER_PRIORITY:
+        if decision.route in (ActivationRoute.BLOCKED_BY_HIGHER_PRIORITY, ActivationRoute.REFUSAL, ActivationRoute.ADVERSARIAL, "REFUSED"):
             return self._refuse(decision.response, traces, "activation")
         if decision.route == ActivationRoute.BYPASS:
             return EngineResponse(None, traces, bypass=True)
