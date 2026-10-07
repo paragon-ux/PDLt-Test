@@ -38,19 +38,20 @@ Evaluated on `openai/gpt-oss-120b` (reasoning: `low`, timeout: 90s per prompt) w
 
 | Metric | Arm 3 (Confirmed + DE) | Arm 4 (Unconfirmed + DE) | Advantage |
 | :--- | :---: | :---: | :---: |
-| **Tier 1: `[ verified ]` Pass Rate (57 Prompts)** | 35 / 57 (**61.4%**) | **44 / 57 (77.2%)** | **+15.8% (Arm 4)** |
-| — Verified Failures | 16 | **7** | **-56% failures (Arm 4)** |
-| — Verified Pending Human Check | 6 | 6 | Parity |
+| **Tier 1: `[ verified ]` Pass Rate (57 Prompts)** | 39 / 57 (**68.4%**) | **44 / 57 (77.2%)** | **+8.8% (Arm 4)** |
+| — Verified Failures | 14 | **7** | **-50% failures (Arm 4)** |
+| — Verified Pending Human Check | **4** | 6 | +2 decided (Arm 3) |
+| — Decided Ground Truth Pass Rate | 39 / 53 (**73.6%**) | **44 / 51 (86.3%)** | **+12.7% (Arm 4)** |
 | **Tier 2: Qualitative Rubric Pass (55 Prompts)** | 21 / 55 (**38.2%**) | **23 / 55 (41.8%)** | **+3.6% (Arm 4)** |
 | — Qualitative Failures | 34 | 32 | -2 failures (Arm 4) |
-| **Combined: `[ graded + verified ]` (112 Prompts)** | 56 / 112 (**50.0%**) | **67 / 112 (59.8%)** | **+9.8% (Arm 4)** |
-| **Total Model Calls (Full 112 Catalogue)** | 485 calls (4.3 / prompt) | **237 calls (2.1 / prompt)** | **-51.1% fewer calls (Arm 4)** |
-| **Total Elapsed Execution Time** | 1,896s (16.9s / prompt) | **1,431s (12.8s / prompt)** | **+24.5% faster (Arm 4)** |
-| **Peak Confinement Memory** | 36 MB median | 35 MB median | Parity |
+| **Combined: `[ graded + verified ]` (112 Prompts)** | 60 / 112 (**53.6%**) | **67 / 112 (59.8%)** | **+6.2% (Arm 4)** |
+| **Total Model Calls (Full 112 Catalogue)** | 488 calls (4.4 / prompt) | **237 calls (2.1 / prompt)** | **-51.4% fewer calls (Arm 4)** |
+| **Total Elapsed Execution Time** | 2,315s (20.7s / prompt) | **1,431s (12.8s / prompt)** | **+38.2% faster (Arm 4)** |
+| **Peak Confinement Memory** | 37 MB median | 35 MB median | Parity |
 
-> [!IMPORTANT]
-> **Resolution of the Latency vs. Accuracy Trade-Off:**
-> The full 112-prompt catalogue conclusively shows that **additional multi-stage review latency does not improve accuracy on autonomous execution**. Arm 4 (Unconfirmed + DRAFT-EXECUTE) strictly dominates Arm 3 across every dimension: it is **+15.8% more accurate** on deterministic ground truth, **24.5% faster**, and requires **51% fewer model calls**.
+> [!NOTE]
+> **Impact of Entity Parity Restoration (L64):**
+> Providing extracted `TASK_ENTITIES` directly to confirmed `EXECUTE` lifted Arm 3's deterministic ground-truth score from **35 / 57 (61.4%)** to **39 / 57 (68.4%)** (+7.0% absolute accuracy uplift). Most notably, Arm 3 surged from **0 / 7 to 4 / 7** in Category 16 (Logic & Reasoning), outperforming Arm 4 on lateral puzzles. However, Arm 4 maintains superior overall algorithmic synthesis accuracy (77.2% vs 68.4%) while delivering over 51% reduction in model calls and 38% lower latency.
 
 ---
 
@@ -58,23 +59,23 @@ Evaluated on `openai/gpt-oss-120b` (reasoning: `low`, timeout: 90s per prompt) w
 
 | Category | Category Name | Ground Truth Type | Arm 3 Pass | Arm 4 Pass | Category Winner |
 | :---: | :--- | :---: | :---: | :---: | :---: |
-| **01** | Combinatorial Search (7 prompts) | Deterministic (Tests) | 6 / 7 | **7 / 7** | Arm 4 |
-| **02** | Data Structures (7 prompts) | Deterministic (Tests) | 6 / 7 | 6 / 7 | Parity |
-| **03** | Systems Programming (7 prompts) | Hybrid (4 Tests, 3 Rubric) | 3 / 7 | **4 / 7** | Arm 4 |
-| **04** | Parsers & Compilers (7 prompts) | Hybrid (6 Tests, 1 Rubric) | **5 / 7** | 3 / 7 | **Arm 3** |
-| **05** | Algorithm Design (7 prompts) | Deterministic (Tests) | 5 / 7 | **7 / 7** | Arm 4 |
-| **06** | Debugging & Repair (7 prompts) | Hybrid (5 Tests, 2 Rubric) | 3 / 7 | **5 / 7** | Arm 4 |
+| **01** | Combinatorial Search (7 prompts) | Deterministic (Tests) | **7 / 7** | **7 / 7** | **Parity (100%)** |
+| **02** | Data Structures (7 prompts) | Deterministic (Tests) | 5 / 7 | **6 / 7** | Arm 4 |
+| **03** | Systems Programming (7 prompts) | Hybrid (4 Tests, 3 Rubric) | **4 / 7** | **4 / 7** | **Parity** |
+| **04** | Parsers & Compilers (7 prompts) | Hybrid (6 Tests, 1 Rubric) | 1 / 7 | **3 / 7** | Arm 4 |
+| **05** | Algorithm Design (7 prompts) | Deterministic (Tests) | 6 / 7 | **7 / 7** | Arm 4 |
+| **06** | Debugging & Repair (7 prompts) | Hybrid (5 Tests, 2 Rubric) | 4 / 7 | **5 / 7** | Arm 4 |
 | **07** | Refactoring & Design (7 prompts) | Rubric-Adjudicated | 2 / 7 | **3 / 7** | Arm 4 |
 | **08** | Specification Extraction (7 prompts) | Rubric-Adjudicated | 3 / 7 | **4 / 7** | Arm 4 |
 | **09** | Adversarial & Injection (7 prompts) | Rubric-Adjudicated | 3 / 7 | **4 / 7** | Arm 4 |
 | **10** | Multi-Turn & Revision (7 prompts) | Rubric-Adjudicated | 2 / 7 | 2 / 7 | Parity |
 | **11** | Cross-Domain Composition (7 prompts) | Rubric-Adjudicated | **5 / 7** | 3 / 7 | **Arm 3** |
 | **12** | Domain Knowledge (7 prompts) | Rubric-Adjudicated | **5 / 7** | 4 / 7 | **Arm 3** |
-| **13** | Negative & Impossible (7 prompts) | Deterministic (Refusal Tests) | 6 / 7 | **7 / 7** | Arm 4 |
+| **13** | Negative & Impossible (7 prompts) | Deterministic (Refusal Tests) | **7 / 7** | **7 / 7** | **Parity (100%)** |
 | **14** | Formal Verification (7 prompts) | Deterministic (Proof Walkers) | 1 / 7 | **3 / 7** | Arm 4 |
 | **15** | Performance & Scale (7 prompts) | Rubric-Adjudicated | 1 / 7 | **2 / 7** | Arm 4 |
-| **16** | Logic & Reasoning (7 prompts) | Deterministic (Hidden Gates) | 0 / 7 | **3 / 7** | Arm 4 |
-| **Total** | **All 16 Domains (112 Prompts)** | **Composite** | **56 / 112 (50.0%)** | **67 / 112 (59.8%)** | **Arm 4 (+9.8%)** |
+| **16** | Logic & Reasoning (7 prompts) | Deterministic (Hidden Gates) | **4 / 7** | 3 / 7 | **Arm 3** |
+| **Total** | **All 16 Domains (112 Prompts)** | **Composite** | **60 / 112 (53.6%)** | **67 / 112 (59.8%)** | **Arm 4 (+6.2%)** |
 
 ---
 
@@ -91,7 +92,7 @@ quadrantChart
     quadrant-4 "High Friction"
     "Arm 1 (Unconfirmed 2-Call)": [0.70, 0.38]
     "Arm 2 (Confirmed Multi-Stage)": [0.25, 0.35]
-    "Arm 3 (Confirmed + DE)": [0.20, 0.50]
+    "Arm 3 (Confirmed + DE)": [0.20, 0.54]
     "Arm 4 (Unconfirmed + DE)": [0.82, 0.60]
 ```
 
