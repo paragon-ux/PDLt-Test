@@ -41,6 +41,10 @@ One entity specification for every problem type:
 - **Coverage is advisory.** A prompt body that misses an exact entity is recorded (`TASK_ENTITY_COVERAGE_MISSING`); there is no redraft. The drafting context presents the entities as an informative reference to spell exactly where the prompt refers to them, not a list to reproduce.
 - **The execution boundary stands.** Confirmed EXECUTE does not receive the entities. They were added to it on 2026-10-04 (L47) without an amendment, then removed (L48). The unconfirmed route's single execution call receives them by its own design ([ultrafast-route-design.md](../plans/ultrafast-route-design.md) §4.4); that route has no prompt drafting.
 
+## Amendment (2026-10-07, LEDGER L64, Entity Parity Restoration)
+- **Execution parity restored.** Confirmed `EXECUTE` and `DRAFT_EXECUTE` now receive `TASK_ENTITIES` (in `optional_include`), restoring complete parity with `EXECUTE_UNCONFIRMED`.
+- **Rationale.** During full 112-prompt evaluations, intermediate pseudocode stages (`DRAFT_PROMPT`) occasionally omitted or generalized literal entities (yielding 33 `TASK_ENTITY_COVERAGE_MISSING` telemetry events). Under the previous strict boundary, confirmed execution suffered permanent specification starvation. Passing typed entities directly into execution ensures identical entity grounding across all confirmed and unconfirmed routes while preserving the governance authority of confirmed prompts (`AUTH-04`).
+
 ## Consequences
 - More exact input reaches the confirmed prompt, and the narrowing that lost input data is undone.
 - A missed exact entity is recorded, not redrafted (amendment above). Whether that costs recall on input data is not yet measured; IMPL-0012's probe showed the redraft recovered it.

@@ -400,6 +400,7 @@ class SessionEngine:
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
         self.tier_d1 = False  # Tier D1 (advantage mechanism): feed back model's own test failures in standard mode
         self._active_task_entities: tuple[str, ...] = ()
+        self._active_typed_task_entities: list[dict[str, Any]] = []
         # AUTH-04: the user's original request is source data for execution; the
         # confirmed prompt governs task semantics where the two differ.
         self._source_request: str | None = None
@@ -1162,6 +1163,9 @@ class SessionEngine:
             return self._refuse(getattr(self, "_blocked_response", None), traces, "bootstrap")
         entities = self._task_entities_cache.get((substantive_request, self._previous_deliverable), ())
         self._active_task_entities = entities
+        self._active_typed_task_entities = list(
+            self._typed_task_entities_cache.get((substantive_request, self._previous_deliverable), [])
+        )
 
         def _draft_call(ctx: dict[str, Any], tr: list[CallTrace], parser) -> Any:
             return self._call("DRAFT_PROMPT", ctx, tr, parser=parser)
@@ -1272,6 +1276,9 @@ class SessionEngine:
             return self._refuse(getattr(self, "_blocked_response", None), traces, "bootstrap")
         entities = self._task_entities_cache.get((substantive_request, self._previous_deliverable), ())
         self._active_task_entities = entities
+        self._active_typed_task_entities = list(
+            self._typed_task_entities_cache.get((substantive_request, self._previous_deliverable), [])
+        )
 
         self.controller = self._bind_new_controller(self.workspace, instance_kind="UNCONFIRMED")
         return self._execute_unconfirmed(substantive_request, traces)
@@ -1668,8 +1675,11 @@ class SessionEngine:
                 task_inputs["WITNESS"] = channel.strip()
             else:
                 task_inputs["RESULT_IR"] = channel.strip()
-        # ADR-0027 execution boundary: entities reach prompt drafting only; the
-        # confirmed EXECUTE receives the confirmed artifacts and the sanitized request.
+        # Entity parity restoration: pass extracted typed task entities to confirmed EXECUTE
+        typed_entities = list(
+            self._active_typed_task_entities
+            or self._typed_task_entities_cache.get((self._source_request, self._previous_deliverable), [])
+        )
         execute_context = {
             "CONFIRMED_PROMPT_BODY": prompt_body,
             "CONFIRMED_PLAN_BODY": plan_body,
@@ -1677,6 +1687,8 @@ class SessionEngine:
             "SUPPLIED_EXECUTION_INPUT_SOURCE": supplied,
             "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
         }
+        if typed_entities:
+            execute_context["TASK_ENTITIES"] = typed_entities
 
         self._route_plan_profile(prompt_body, plan_body)
         execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools
@@ -1800,6 +1812,8 @@ class SessionEngine:
             "AVAILABLE_EXECUTION_TOOLS": execute_context.get("AVAILABLE_EXECUTION_TOOLS"),
             "SUPPLIED_EXECUTION_INPUT_SOURCE": supplied_source,
         }
+        if execute_context.get("TASK_ENTITIES"):
+            values["TASK_ENTITIES"] = execute_context["TASK_ENTITIES"]
         inputs = execute_context.get("REQUIRED_TASK_INPUTS")
         if inputs:
             # DRAFT_EXECUTE plans algorithmic feasibility against tools and inputs;

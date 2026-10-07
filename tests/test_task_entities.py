@@ -369,9 +369,9 @@ def test_entities_reach_the_draft_with_grouping(tmp_path):
     assert "- three (parameter) [GIVEN]: number of gods" in draft
 
 
-def test_confirmed_execute_receives_no_task_entities(tmp_path):
-    """ADR-0027 execution boundary: entities reach prompt drafting only. The confirmed
-    EXECUTE receives the confirmed artifacts and the sanitized request, never the entities."""
+def test_confirmed_execute_receives_task_entities(tmp_path):
+    """Entity parity restoration: confirmed EXECUTE receives extracted task entities,
+    matching EXECUTE_UNCONFIRMED to prevent specification starvation."""
     import json as _json
 
     raw = "Write a short note for the tenant of unit 4B."
@@ -398,5 +398,5 @@ def test_confirmed_execute_receives_no_task_entities(tmp_path):
     draft = next(r for r in seen if r.operation == "DRAFT_PROMPT").prompt
     execute = next(r for r in seen if r.operation == "EXECUTE").prompt
     assert "4B (identifier)" in draft
-    assert "TASK_ENTITIES" not in execute
-    assert "4B (identifier)" not in execute
+    assert "TASK_ENTITIES" in execute
+    assert "4B" in execute

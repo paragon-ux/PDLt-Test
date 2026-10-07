@@ -423,6 +423,7 @@
       "workspace_stage": "50_execution",
       "optional_include": [
         "REQUIRED_TASK_INPUTS",
+        "TASK_ENTITIES",
         "RESULT_IR_INSTRUCTIONS",
         "PRIOR_RESULT_IR"
       ]
@@ -628,7 +629,8 @@
       ],
       "workspace_stage": "50_execution",
       "optional_include": [
-        "REQUIRED_TASK_INPUTS"
+        "REQUIRED_TASK_INPUTS",
+        "TASK_ENTITIES"
       ]
     },
     "EMIT_RESULT_IR": {
