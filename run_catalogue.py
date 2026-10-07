@@ -380,8 +380,9 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
         setting_args += ["--sandbox", settings["sandbox"]]
     if settings.get("route") == "unconfirmed":
         setting_args.append("--no-review")
+    module = "pdl_taskmaster.host.control_cli" if settings.get("route") == "control" else "pdl_taskmaster.host.cli"
     cmd = [
-        sys.executable, "-m", "pdl_taskmaster.host.cli",
+        sys.executable, "-m", module,
         "--non-interactive",
         "--exit-on-close",
         "--dev",
@@ -974,8 +975,8 @@ def main():
                         help=f"memory cap for one prompt's harness process tree (default: {HARNESS_MEMORY_MB})")
     parser.add_argument("--repeat", type=int, default=1, metavar="N",
                         help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
-    parser.add_argument("--route", choices=["confirmed", "unconfirmed"], default="confirmed",
-                        help="execution route: 'confirmed' (default, multi-stage with review) or 'unconfirmed' (--no-review / ultrafast)")
+    parser.add_argument("--route", choices=["confirmed", "unconfirmed", "control"], default="confirmed",
+                        help="execution route: 'confirmed' (default, multi-stage with review), 'unconfirmed' (--no-review / ultrafast), or 'control' (unharnessed direct model baseline)")
     parser.add_argument("--allow-dirty", action="store_true",
                         help="run from a working tree with uncommitted changes; the difference is stored with "
                              "the run as WORKTREE.diff (without it, such a run is refused)")
