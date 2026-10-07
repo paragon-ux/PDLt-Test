@@ -109,3 +109,19 @@ def test_plan_prompt_echo_is_recorded_as_telemetry(tmp_path):
     engine.handle_user_message("/confirm")
     echo = next(e for e in engine.workspace.read_events() if e["kind"] == "PLAN_PROMPT_ECHO")["payload"]
     assert echo["identical"] is True and echo["copied_line_ratio"] == 1.0
+
+
+def test_lint_rejects_implementation_prohibitions_and_metatask_reading():
+    """PDL-08 & PDL-09: reject negative execution prohibitions and metatask ingestion."""
+    bad_snippets = [
+        "PROVIDE only the specification; do not implement the data structure or the tests.",
+        "ENSURE the specification contains no executable code, only method contracts",
+        "DO NOT implement the algorithm; only describe the steps",
+        "NEVER implement the requested class",
+        "READ the task specification for a recursive-descent calculator",
+        "READ the request to implement a write-ahead log in Python",
+    ]
+    for text in bad_snippets:
+        result = validate_plan_soundness(text)
+        assert not result.valid, f"Expected violation for: {text}"
+        assert any("PDL-08" in v for v in result.violations), f"Expected PDL-08 violation for: {text}"

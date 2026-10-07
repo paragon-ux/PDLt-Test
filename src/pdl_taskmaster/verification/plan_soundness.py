@@ -34,11 +34,14 @@ _DEFERRAL_PATTERNS = re.compile(
 # Drafting meta-rules: the artifact describing its own stage instead of the task.
 _META_RULE_PATTERNS = re.compile(
     r"(?i)\b(?:"
-    r"(?:do\s+not|never)\s+(?:perform|execute|calculate|compute|solve|do|produce)\s+(?:any\s+|the\s+)?(?:actual\s+)?"
-    r"(?:computation|computations|work|calculation|calculations|verification|task|search|result)|"
-    r"(?:only\s+(?:describe|specify)|(?:describe|specify)\s+only)\s+(?:the\s+)?(?:required\s+)?(?:task|result|output|deliverable)|"
+    r"(?:do\s+not|never)\s+(?:perform|execute|calculate|compute|solve|do|produce|implement|write|code|create|build)\s+(?:any\s+|the\s+)?(?:actual\s+)?"
+    r"(?:computation|computations|work|calculation|calculations|verification|task|search|result|data\s+structure|code|tests?|implementation)|"
+    r"(?:do\s+not|never)\s+implement\b|"
+    r"(?:only\s+(?:describe|specify|provide)|(?:describe|specify|provide)\s+only)\s+(?:the\s+)?(?:required\s+)?(?:task|result|output|deliverable|specification|spec|contracts?)|"
     r"without\s+performing\s+(?:any\s+|the\s+)?(?:actual\s+)?(?:computation|work|calculation|selection|search)|"
     r"no\s+(?:actual|algorithmic|substantive)\s+(?:computation|work|calculation)\s+(?:is\s+)?(?:performed|done)|"
+    r"(?:contains?\s+)?no\s+executable\s+code\b|"
+    r"(?:read|parse|examine)\s+(?:the\s+)?(?:task\s+specification|request\s+to\s+implement)\b|"
     r"(?:at\s+this\s+stage|in\s+this\s+step)[;,]?\s*only\s+(?:specify|describe|state)"
     r")\b"
 )

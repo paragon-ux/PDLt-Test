@@ -803,28 +803,23 @@ class ApiWorker:
             extra_guidance = "Execution environment of this session (host fact): " + request.environment
         elif operation_name in ("DRAFT_PROMPT", "REVISE_PROMPT"):
             extra_guidance = (
-                "\n\nNORMATIVE GUIDELINES FOR PROMPT PSEUDOCODE (PDL-01 to PDL-08, PROMPT-01 to PROMPT-05):\n"
+                "\n\nNORMATIVE GUIDELINES FOR PROMPT PSEUDOCODE (PDL-01 to PDL-09, PROMPT-01 to PROMPT-05):\n"
                 "1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
-                "   Example format:\n"
-                "   READ the monthly sales records from the supplied CSV data\n"
-                "   GROUP the records by region\n"
-                "   RETURN the total sales for each region\n"
-                "2. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n"
-                "3. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n"
-                "4. Purpose-Complete Target: Prompt Pseudocode defines the substantive requirements to be solved upon execution (PROMPT-01). DO NOT insert internal meta-rules, drafting instructions, or negative execution prohibitions (PROMPT-02, PDL-08)."
+                "2. Active Construction Directives (PDL-09): When the user asks to implement, write, develop, or create software, data structures, algorithms, or tests, use active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and preserve the target language (e.g., 'in Python') and interface contracts.\n"
+                "3. No Metatask Ingestion (PDL-09): DO NOT use 'READ the task specification' or 'READ the request'. The user prompt is the communicative frame, not a runtime data stream to be read.\n"
+                "4. Parameter vs. Stream Discrimination (PDL-09): Use READ strictly for explicit runtime stream or file ingestion. Represent function parameters, mathematical constants, and data structure inputs as parameters to accept or take, not streams to read.\n"
+                "5. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n"
+                "6. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n"
+                "7. Zero Execution Prohibitions: Prompt Pseudocode defines the substantive work to be completed upon execution (PROMPT-01). NEVER insert negative execution prohibitions like 'do not implement', 'provide only specification', or 'no executable code' (PROMPT-02, PDL-08, PDL-09)."
             )
         elif operation_name in ("DRAFT_PLAN", "REVISE_PLAN"):
             extra_guidance = (
-                "\n\nNORMATIVE GUIDELINES FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-08, PLAN-01 to PLAN-10):\n"
+                "\n\nNORMATIVE GUIDELINES FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-09, PLAN-01 to PLAN-10):\n"
                 "1. Express the response plan in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
-                "   Example format:\n"
-                "   PARSE the supplied CSV records\n"
-                "   AGGREGATE the sales amounts for each region\n"
-                "   EMIT the per-region totals\n"
                 "2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n"
                 "3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n"
-                "4. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04), and NEVER insert placeholder steps or meta-prohibitions like 'insert placeholders without performing computation' (PLAN-10).\n"
-                "5. Plan the steps that produce the deliverable itself. Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue."
+                "4. Active Construction: Plan the concrete procedural steps that produce the deliverable itself (e.g. data structure design, method implementations, algorithm logic, unit test suite). Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue.\n"
+                "5. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04), and NEVER insert placeholder steps or meta-prohibitions like 'insert placeholders without performing computation', 'do not implement', or 'contains no executable code' (PLAN-10, PDL-08, PDL-09)."
             )
         elif operation_name == "DRAFT_EXECUTE":
             extra_guidance = (

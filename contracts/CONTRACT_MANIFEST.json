@@ -62,6 +62,7 @@
     "PDL-06": "contracts/standards/PDL_STANDARD.md",
     "PDL-07": "contracts/standards/PDL_STANDARD.md",
     "PDL-08": "contracts/standards/PDL_STANDARD.md",
+    "PDL-09": "contracts/standards/PDL_STANDARD.md",
     "PLAN-01": "contracts/standards/RESPONSE_PLAN_STANDARD.md",
     "PLAN-02": "contracts/standards/RESPONSE_PLAN_STANDARD.md",
     "PLAN-03": "contracts/standards/RESPONSE_PLAN_STANDARD.md",
@@ -189,7 +190,7 @@
     },
     {
       "path": "contracts/standards/PDL_STANDARD.md",
-      "sha256": "f896399f8bd07df65a8fa4e8767674f89cc75ad34eaadc4f751a545631458ce1"
+      "sha256": "b299a8eedb767e4109514d3d8c4be212557309d335095a79ae16e04cad35cbf7"
     },
     {
       "path": "contracts/standards/PROMPT_STANDARD.md",

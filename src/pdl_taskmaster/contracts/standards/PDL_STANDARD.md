@@ -17,3 +17,5 @@ Normative scope: user-visible Prompt and Response Plan Pseudocode notation.
 **PDL-07 — Standard control forms.** Standard-compatible `IF/ELSE/ENDIF`, `WHILE/ENDWHILE`, `REPEAT/UNTIL`, `FOR/ENDFOR`, and `CASE/ENDCASE` forms MAY be used when useful.
 
 **PDL-08 — Purpose-complete notation.** Prompt and Response Plan Pseudocode MUST be complete for their protocol purpose without artificial expansion into implementation algorithms.
+
+**PDL-09 — Imperative construction and ingestion boundary.** Prompt and Response Plan Pseudocode MUST NOT use data-reading verbs (`READ`, `PARSE`, `ANALYZE`, `EXAMINE`) with the user prompt, request, or task specification as the object. When the request asks to implement, create, or write software, pseudocode MUST retain active construction verbs (`IMPLEMENT`, `CONSTRUCT`, `DEFINE`) and target language directives. `READ` MUST be reserved strictly for explicit runtime stream or file ingestion.
