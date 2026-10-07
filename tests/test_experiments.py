@@ -372,7 +372,7 @@ def test_example_config_plans(capsys):
     config = runner.load_config(ROOT / "experiments" / "gate_config.example.json")
     assert runner.cmd_plan(config, type("A", (), {"smoke": False, "show": 1})()) == 0
     out = capsys.readouterr().out
-    assert out.startswith("118 blocks")  # 59 prompts x 2 repetitions, one model
+    assert out.startswith("106 blocks")  # 53 prompts x 2 repetitions, one model
 
 
 # --------------------------------------------------------------------------- fork fidelity (§3.2)
