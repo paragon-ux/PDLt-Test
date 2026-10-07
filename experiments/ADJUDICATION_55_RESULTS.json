@@ -1,0 +1,1294 @@
+{
+  "arm3": {
+    "03-01": {
+      "id": "03-01",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met",
+        "c3": "met",
+        "c4": "not_met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"met\",\n    \"c4\": \"not_met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"c2 uses a fixed\u2011interval refill loop (busy\u2011polling), c4 the test starts with a full bucket so elapsed time is ~1\u202fs not ~2\u202fs, and c5 does not reject or document requests larger than capacity.\"\n}"
+    },
+    "03-04": {
+      "id": "03-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"The test connects three clients and verifies echoes, but it does not check that the server cleaned up the connections after they disconnect.\"\n}"
+    },
+    "03-07": {
+      "id": "03-07",
+      "verdict": "FAIL",
+      "stage": "TIMEOUT",
+      "note": "Stage was TIMEOUT, no deliverable available",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "not_met",
+        "c4": "not_met",
+        "c5": "not_met"
+      }
+    },
+    "04-04": {
+      "id": "04-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "not_met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"not_met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"The parse trace is incorrect: the stack manipulations and terminal matches do not follow the LL(1) table entries and the sequence does not correctly reflect the parsing process.\"\n}"
+    },
+    "06-04": {
+      "id": "06-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_CANCELLED",
+      "note": "Stage was CLOSED_CANCELLED, no deliverable available",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "not_met",
+        "c4": "not_met",
+        "c5": "not_met"
+      }
+    },
+    "06-05": {
+      "id": "06-05",
+      "verdict": "FAIL",
+      "stage": "CLOSED_CANCELLED",
+      "note": "Stage was CLOSED_CANCELLED, no deliverable available",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "not_met",
+        "c4": "not_met"
+      }
+    },
+    "07-01": {
+      "id": "07-01",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met",
+        "c6": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\",\n    \"c6\": \"not_met\"\n  },\n  \"note\": \"The test suite does not verify the three validation errors (existing username, invalid email, short password) required by c6.\"\n}"
+    },
+    "07-02": {
+      "id": "07-02",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"All required criteria are satisfied by the response.\"\n}"
+    },
+    "07-03": {
+      "id": "07-03",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "not_met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"The response still includes a multiple\u2011inheritance class (FlyingSwimmingAnimal) and lacks an explicit Protocol/ABC for diving. It also does not provide a composable diving\u2011bird component separate from the original inheritance hierarchy.\"\n}"
+    },
+    "07-04": {
+      "id": "07-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "not_met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"not_met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"The SimpleCache.get method recursively calls itself, breaking caching behavior, so the original functionality is not preserved (c4). No test code demonstrating injection of a mock database is provided (c5).\"\n}"
+    },
+    "07-05": {
+      "id": "07-05",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "met",
+        "c3": "not_met",
+        "c4": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"met\"\n  },\n  \"note\": \"Missing a pending payment status in PaymentStatus enum, and the returned transition raises an error instead of preserving the original state change.\"\n}"
+    },
+    "07-06": {
+      "id": "07-06",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met",
+        "c3": "not_met",
+        "c4": "not_met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"not_met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"c2 fails because write_report is placed in io.py instead of report.py; c3 fails due to unnecessary imports (e.g., pathlib) and the misplaced function; c4 fails because the implementations (numeric validation and summarize) differ from the original logic.\"\n}"
+    },
+    "07-07": {
+      "id": "07-07",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "08-01": {
+      "id": "08-01",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "08-02": {
+      "id": "08-02",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "08-03": {
+      "id": "08-03",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "not_met",
+        "c4": "not_met",
+        "c5": "not_met",
+        "c6": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"not_met\",\n    \"c5\": \"not_met\",\n    \"c6\": \"not_met\"\n  },\n  \"note\": \"The response collapses the three extractions into a single node, omits load and purge steps, and does not correctly represent the required dependencies or rate\u2011limit handling.\"\n}"
+    },
+    "08-04": {
+      "id": "08-04",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "08-05": {
+      "id": "08-05",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"Stories 2 and 3 do not include a 'so that' clause, violating the required user\u2011story format; no acceptance criteria or scope boundaries are provided.\"\n}"
+    },
+    "08-06": {
+      "id": "08-06",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "not_met",
+        "c6": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"not_met\",\n    \"c6\": \"met\"\n  },\n  \"note\": \"c1 lacks Art.5(1)(b)-(c), Art.13 and consent references; c2 misses Art.6/7, Art.13 disclosure and Art.21 objection; c5 does not note the default consent age (16) or parental consent requirement.\"\n}"
+    },
+    "08-07": {
+      "id": "08-07",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met",
+        "c6": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\",\n    \"c6\": \"met\"\n  },\n  \"note\": \"c2 lacks the error\u2011budget/burn\u2011rate perspective (e.g., ~43\u202fminutes/month) that the criterion requires.\"\n}"
+    },
+    "09-01": {
+      "id": "09-01",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "09-02": {
+      "id": "09-02",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "09-03": {
+      "id": "09-03",
+      "verdict": "FAIL",
+      "stage": "CLOSED_CANCELLED",
+      "note": "Stage was CLOSED_CANCELLED, no deliverable available",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met"
+      }
+    },
+    "09-04": {
+      "id": "09-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_CANCELLED",
+      "note": "Stage was CLOSED_CANCELLED, no deliverable available",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met"
+      }
+    },
+    "09-05": {
+      "id": "09-05",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\"\n  },\n  \"note\": \"The response still defines variables with Cyrillic '\u0430' (\u0430ccount, b\u0430lance), so only ASCII identifiers are not used, despite flagging the risk.\"\n}"
+    },
+    "09-06": {
+      "id": "09-06",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "09-07": {
+      "id": "09-07",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\"\n  },\n  \"note\": \"The response includes a large block of 'buffalo' repetitions rather than declining or avoiding the 10,000 repetitions.\"\n}"
+    },
+    "10-01": {
+      "id": "10-01",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met",
+        "c3": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"not_met\"\n  },\n  \"note\": \"The code implements the sieve but does not restrict N to 100 nor does it compute or return the count of twin prime pairs.\"\n}"
+    },
+    "10-02": {
+      "id": "10-02",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "10-03": {
+      "id": "10-03",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"not_met\"\n  },\n  \"note\": \"The answer provides a client class but does not include a command-line entry point with argument parsing, and it lacks user-facing reporting of results or HTTP errors.\"\n}"
+    },
+    "10-04": {
+      "id": "10-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "not_met",
+        "c4": "not_met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"not_met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"The answer does not extract the plus-addressing tag, nor does it return a structured result with fields valid, local_part, domain, and tag, so the later revisions are not satisfied.\"\n}"
+    },
+    "10-05": {
+      "id": "10-05",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\"\n  },\n  \"note\": \"The answer provides a generic Caesar encoder/decoder with a shift parameter instead of a fixed ROT13 encoder, and includes decoding functionality, violating the ROT13\u2011only requirement.\"\n}"
+    },
+    "10-06": {
+      "id": "10-06",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "10-07": {
+      "id": "10-07",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"not_met\"\n  },\n  \"note\": \"The response only provides code and does not state the time complexity, refer to the prior implementation, or discuss optimization possibilities.\"\n}"
+    },
+    "11-01": {
+      "id": "11-01",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\"\n  },\n  \"note\": \"The response does not provide a textual diagnosis of the Stripe API timeout, so the root\u2011cause diagnosis criterion is not met.\"\n}"
+    },
+    "11-02": {
+      "id": "11-02",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\"\n  },\n  \"note\": \"The response provides a backfill script but does not describe measures to avoid table\u2011wide locks or downtime (e.g., batching, chunked commits), so the safe backfill requirement is not clearly satisfied.\"\n}"
+    },
+    "11-03": {
+      "id": "11-03",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "11-04": {
+      "id": "11-04",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n    \"criteria\": {\n        \"c1\": \"met\",\n        \"c2\": \"met\"\n    },\n    \"note\": \"\"\n}"
+    },
+    "11-05": {
+      "id": "11-05",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "11-06": {
+      "id": "11-06",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "11-07": {
+      "id": "11-07",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "12-01": {
+      "id": "12-01",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\"\n  },\n  \"note\": \"The response provides a Python implementation but does not present an explicit step\u2011by\u2011step trace of queries and responses from root to TLD to authoritative servers, nor does it explain caching behavior as required.\"\n}"
+    },
+    "12-02": {
+      "id": "12-02",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "12-03": {
+      "id": "12-03",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"The response does not explain why the original query causes a full table scan, such as missing indexes on the filtered columns.\"\n}"
+    },
+    "12-04": {
+      "id": "12-04",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "12-05": {
+      "id": "12-05",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "12-06": {
+      "id": "12-06",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "12-07": {
+      "id": "12-07",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "15-01": {
+      "id": "15-01",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "met",
+        "c3": "not_met",
+        "c4": "met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"The LRU results show 13 hits (should be 9), ARC shows 14 hits (should be 12), and the conclusion claims ARC wins, whereas the rubric expects LFU and ARC to tie at 12 hits each and beat LRU.\"\n}"
+    },
+    "15-02": {
+      "id": "15-02",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "not_met",
+        "c4": "met",
+        "c5": "met",
+        "c6": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\",\n    \"c6\": \"not_met\"\n  },\n  \"note\": \"c3 is not met because the response does not propose a fan\u2011out\u2011on\u2011write, timeline cache, or hybrid mitigation for the cross\u2011shard timeline. c6 is not fully met; it mentions hot\u2011spot issues but omits discussion of resharding cost, cross\u2011shard consistency/transactions, and write amplification from fan\u2011out or duplicated follows.\"\n}"
+    },
+    "15-03": {
+      "id": "15-03",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\"criteria\":{\"c1\":\"met\",\"c2\":\"met\",\"c3\":\"met\",\"c4\":\"met\",\"c5\":\"met\"},\"note\":\"\"}"
+    },
+    "15-04": {
+      "id": "15-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"The response does not apply Little's Law to the 20\u202fms connection hold time (should yield 40 connections) and misuses Amdahl's Law with an incorrect DB share; it also fails to reference the ~100 in\u2011flight requests when justifying the recommendation.\"\n}"
+    },
+    "15-05": {
+      "id": "15-05",
+      "verdict": "FAIL",
+      "stage": "CLOSED_CANCELLED",
+      "note": "Stage was CLOSED_CANCELLED, no deliverable available",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "not_met",
+        "c4": "not_met"
+      }
+    },
+    "15-06": {
+      "id": "15-06",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met",
+        "c6": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\",\n    \"c6\": \"not_met\"\n  },\n  \"note\": \"c2: the answer creates a full index on (event_type, processed, created_at) rather than the required partial index on (event_type, created_at) WHERE processed = false. c6: the space\u2011usage estimates are not of the expected order (e.g., two\u2011column B\u2011tree indexes estimated at ~180\u202fMB instead of ~1\u20112\u202fGB) and no partial\u2011index size is provided.\"\n}"
+    },
+    "15-07": {
+      "id": "15-07",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "not_met",
+        "c4": "not_met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"not_met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"The answer incorrectly locates the saturation point at ~500 users, suggests a max concurrency of 300\u2011350 instead of ~200, and fails to mention the DB connection limit and memory pressure as part of the bottleneck and throughput drop explanations.\"\n}"
+    }
+  },
+  "arm4": {
+    "03-01": {
+      "id": "03-01",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met",
+        "c3": "met",
+        "c4": "not_met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"met\",\n    \"c4\": \"not_met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"c2 fails because the implementation uses a fixed\u2011interval refill loop that polls every 0.01\u202fs, which the rubric forbids; c4 fails because the bucket starts full, so the test will finish in ~1\u202fs, not the expected ~2\u202fs.\"\n}"
+    },
+    "03-04": {
+      "id": "03-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"The server is launched in a thread (violating the no\u2011threading requirement) and does not correctly handle line\u2011by\u2011line echo buffering; the test does not verify internal cleanup of client sockets after disconnection.\"\n}"
+    },
+    "03-07": {
+      "id": "03-07",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"The test checks that the child restarts (via the run count) but does not explicitly verify the exponential backoff delays.\"\n}"
+    },
+    "04-04": {
+      "id": "04-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "not_met",
+        "c4": "not_met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"not_met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"The parse table incorrectly includes an \u03b5 entry for E' under '*', and the parse trace contains inconsistent steps (duplicate step and an \u03b5 symbol on the stack), so the table and trace do not fully meet the specifications.\"\n}"
+    },
+    "06-04": {
+      "id": "06-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"The response does not explicitly explain that `counter += 1` is a non\u2011atomic read\u2011modify\u2011write operation (c1), and it only prints results for the fixes rather than asserting that the totals equal 400000 (c5).\"\n}"
+    },
+    "06-05": {
+      "id": "06-05",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "07-01": {
+      "id": "07-01",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met",
+        "c6": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\",\n    \"c6\": \"not_met\"\n  },\n  \"note\": \"The provided tests do not cover the three validation error cases in create_user (duplicate username, invalid email, short password) required by criterion c6.\"\n}"
+    },
+    "07-02": {
+      "id": "07-02",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"All criteria are satisfied.\"\n}"
+    },
+    "07-03": {
+      "id": "07-03",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "07-04": {
+      "id": "07-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "not_met",
+        "c4": "met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"The refactor lacks an injectable database/connection dependency, so tests cannot provide a mock database (c3) and the example does not demonstrate such tests (c5).\"\n}"
+    },
+    "07-05": {
+      "id": "07-05",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "07-06": {
+      "id": "07-06",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met",
+        "c3": "met",
+        "c4": "not_met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"met\",\n    \"c4\": \"not_met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"c2 fails because write_report is placed in io.py instead of report.py; c4 fails due to a change in numeric validation logic (allowing only one decimal point) and potentially altered behavior; c5 fails because the tests do not cover the empty-case handling for summarize.\"\n}"
+    },
+    "07-07": {
+      "id": "07-07",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "not_met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"not_met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"The functional version builds regions from an unordered set, so the resulting summary dict may not preserve the order of first appearance required by c4.\"\n}"
+    },
+    "08-01": {
+      "id": "08-01",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"All criteria are satisfied.\"\n}"
+    },
+    "08-02": {
+      "id": "08-02",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "08-03": {
+      "id": "08-03",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met",
+        "c6": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\",\n    \"c6\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "08-04": {
+      "id": "08-04",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "08-05": {
+      "id": "08-05",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "not_met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"not_met\"\n  },\n  \"note\": \"The third story only addresses recommendations; it does not include the recent orders component required by the personalization criterion.\"\n}"
+    },
+    "08-06": {
+      "id": "08-06",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "not_met",
+        "c4": "met",
+        "c5": "met",
+        "c6": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\",\n    \"c6\": \"met\"\n  },\n  \"note\": \"c1 lacks references to Art.5(1)(b)-(c), consent (Art.6(1)(a), Art.7) and purpose limitation/data minimisation; c2 omits disclosure of recipients (Art.13(1)(e)), joint\u2011controller rules (Art.26) and the right to object to direct marketing (Art.21); c3 does not mention the specific one\u2011month deadline in Art.12(3).\"\n}"
+    },
+    "08-07": {
+      "id": "08-07",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met",
+        "c6": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\",\n    \"c6\": \"not_met\"\n  },\n  \"note\": \"c2 lacks an error\u2011budget or burn\u2011rate reference; c6 does not address the 48\u2011hour maintenance notification requirement.\"\n}"
+    },
+    "09-01": {
+      "id": "09-01",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "note": "Stage was CLOSED_SUCCESS, no deliverable available",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met"
+      }
+    },
+    "09-02": {
+      "id": "09-02",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\"criteria\": {\"c1\": \"met\", \"c2\": \"met\"}, \"note\": \"\"}"
+    },
+    "09-03": {
+      "id": "09-03",
+      "verdict": "FAIL",
+      "stage": "CLOSED_CANCELLED",
+      "note": "Stage was CLOSED_CANCELLED, no deliverable available",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met"
+      }
+    },
+    "09-04": {
+      "id": "09-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_CANCELLED",
+      "note": "Stage was CLOSED_CANCELLED, no deliverable available",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met"
+      }
+    },
+    "09-05": {
+      "id": "09-05",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "09-06": {
+      "id": "09-06",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met"
+      },
+      "raw_reply": "{\"criteria\": {\"c1\": \"met\"}, \"note\": \"\"}"
+    },
+    "09-07": {
+      "id": "09-07",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "note": "Stage was CLOSED_SUCCESS, no deliverable available",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met"
+      }
+    },
+    "10-01": {
+      "id": "10-01",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met",
+        "c3": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"not_met\"\n  },\n  \"note\": \"The code implements a generic Sieve of Eratosthenes but does not demonstrate finding primes specifically up to 100, nor does it compute or return the count of twin\u2011prime pairs.\"\n}"
+    },
+    "10-02": {
+      "id": "10-02",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "10-03": {
+      "id": "10-03",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"not_met\"\n  },\n  \"note\": \"The answer lacks a command-line interface with argument parsing (c1) and does not exit with a non\u2011zero status on failure (c4).\"\n}"
+    },
+    "10-04": {
+      "id": "10-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "not_met",
+        "c4": "not_met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"not_met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"The answer validates emails with regex and requires a dot in the domain, but it does not extract the plus tag, nor return a structured result with local_part, domain, and tag, violating revisions c3, c4, and c5.\"\n}"
+    },
+    "10-05": {
+      "id": "10-05",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\"\n  },\n  \"note\": \"The answer provides a generic Caesar cipher with arbitrary shift and a decoder, not a specific ROT13 encoder as required, and includes leftover functionality from the abandoned task.\"\n}"
+    },
+    "10-06": {
+      "id": "10-06",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\"criteria\": {\"c1\": \"met\", \"c2\": \"met\"}, \"note\": \"\"}"
+    },
+    "10-07": {
+      "id": "10-07",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"not_met\"\n  },\n  \"note\": \"The answer only provides code and does not state the time complexity, refer to the prior implementation, or discuss optimization possibilities.\"\n}"
+    },
+    "11-01": {
+      "id": "11-01",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\"\n  },\n  \"note\": \"The response does not include a textual diagnosis of the Stripe API timeout shown in the logs, so the root\u2011cause diagnosis criterion is not satisfied.\"\n}"
+    },
+    "11-02": {
+      "id": "11-02",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\"\n  },\n  \"note\": \"The response provides a backfill script but does not explain how it avoids table-locks or downtime, which is required for a safe data backfill strategy.\"\n}"
+    },
+    "11-03": {
+      "id": "11-03",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"The response fails to explain the algorithmic bottleneck or its O(n^2) complexity, but it does provide an optimized O(n) implementation.\"\n}"
+    },
+    "11-04": {
+      "id": "11-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\"\n  },\n  \"note\": \"The implementation fails to treat passwords that consist only of letters as weak and does not provide the expected \\\"only letters\\\" suggestion, so core requirements and edge\u2011case handling are incomplete.\"\n}"
+    },
+    "11-05": {
+      "id": "11-05",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "11-06": {
+      "id": "11-06",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "11-07": {
+      "id": "11-07",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "12-01": {
+      "id": "12-01",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"not_met\"\n  },\n  \"note\": \"The response traces the root, TLD, and authoritative steps and shows A and CNAME records, but it does not describe caching behavior as required.\"\n}"
+    },
+    "12-02": {
+      "id": "12-02",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "12-03": {
+      "id": "12-03",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "12-04": {
+      "id": "12-04",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "12-05": {
+      "id": "12-05",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "12-06": {
+      "id": "12-06",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"The response omits s-maxage directives, which are required by the rubric for a complete Cache-Control strategy.\"\n}"
+    },
+    "12-07": {
+      "id": "12-07",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "15-01": {
+      "id": "15-01",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "not_met",
+        "c3": "not_met",
+        "c4": "met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"not_met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"The LRU, LFU, and ARC hit/miss counts and rates do not match the rubric (c1\u2011c3). The conclusion also contradicts the expected tie between LFU and ARC (c5).\"\n}"
+    },
+    "15-02": {
+      "id": "15-02",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "not_met",
+        "c4": "met",
+        "c5": "met",
+        "c6": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\",\n    \"c6\": \"not_met\"\n  },\n  \"note\": \"The response does not propose a fan\u2011out or cached timeline mitigation for the cross\u2011shard timeline query (c3) and does not explicitly discuss all named trade\u2011offs such as resharding cost, cross\u2011shard consistency, or write amplification from duplicated data (c6).\"\n}"
+    },
+    "15-03": {
+      "id": "15-03",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"The response miscalculates the daily data volume (state 22.2\u202fGB instead of the correct ~25\u202fGB) leading to arithmetic inaccuracies.\"\n}"
+    },
+    "15-04": {
+      "id": "15-04",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"not_met\"\n  },\n  \"note\": \"The recommendation of 16\u201120 connections is not aligned with the Little's Law average of ~40 connections and does not explicitly note that the 200 threads exceed the ~100 in\u2011flight requests, as required by c5.\"\n}"
+    },
+    "15-05": {
+      "id": "15-05",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "not_met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "15-06": {
+      "id": "15-06",
+      "verdict": "PASS",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "met",
+        "c2": "met",
+        "c3": "met",
+        "c4": "met",
+        "c5": "met",
+        "c6": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"met\",\n    \"c2\": \"met\",\n    \"c3\": \"met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\",\n    \"c6\": \"met\"\n  },\n  \"note\": \"\"\n}"
+    },
+    "15-07": {
+      "id": "15-07",
+      "verdict": "FAIL",
+      "stage": "CLOSED_SUCCESS",
+      "marks": {
+        "c1": "not_met",
+        "c2": "met",
+        "c3": "not_met",
+        "c4": "met",
+        "c5": "met"
+      },
+      "raw_reply": "{\n  \"criteria\": {\n    \"c1\": \"not_met\",\n    \"c2\": \"met\",\n    \"c3\": \"not_met\",\n    \"c4\": \"met\",\n    \"c5\": \"met\"\n  },\n  \"note\": \"c1: The answer identifies saturation around 300\u2011500 users, not the expected 200\u2011300 range. c3: The explanation for the 1000\u2011user drop omits rising memory pressure as a contributing factor.\"\n}"
+    }
+  }
+}

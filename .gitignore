@@ -16,3 +16,4 @@ build/
 # acceptance-gate runner output (experiments/runner.py)
 gate-runs/
 site/
+experiments/adjudication_cache/
