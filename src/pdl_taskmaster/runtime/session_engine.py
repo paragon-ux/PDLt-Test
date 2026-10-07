@@ -1647,9 +1647,9 @@ class SessionEngine:
         verified = self._requires_verified_execution
         result_ir_mode = verified or os.environ.get("PDLT_RESULT_IR") == "1"
         requirements: list[str] = []  # RESULT_STANDARD RS-02: not derived or rendered
-        task_inputs: list[str] = []
+        task_inputs: dict[str, str] = {}
         if self._previous_deliverable:
-            task_inputs.append(self._previous_deliverable)
+            task_inputs["PRIOR_DELIVERABLE"] = self._previous_deliverable
         if result_ir_mode:
             # The previous turn is reference only: it is never an evidence path and
             # its Result IR is never carried into this turn's instructions.
@@ -1660,13 +1660,20 @@ class SessionEngine:
                 evidence_paths=evidence_paths,
                 requires_verified_execution=verified,
             )
-            task_inputs.append(channel)
+            if "\n\nWITNESS:" in channel:
+                parts = channel.split("\n\nWITNESS:", 1)
+                task_inputs["RESULT_IR"] = parts[0].strip()
+                task_inputs["WITNESS"] = ("WITNESS: " + parts[1].strip()).strip()
+            elif channel.startswith("WITNESS:"):
+                task_inputs["WITNESS"] = channel.strip()
+            else:
+                task_inputs["RESULT_IR"] = channel.strip()
         # ADR-0027 execution boundary: entities reach prompt drafting only; the
         # confirmed EXECUTE receives the confirmed artifacts and the sanitized request.
         execute_context = {
             "CONFIRMED_PROMPT_BODY": prompt_body,
             "CONFIRMED_PLAN_BODY": plan_body,
-            "REQUIRED_TASK_INPUTS": "\n\n".join(task_inputs) or None,
+            "REQUIRED_TASK_INPUTS": task_inputs or None,
             "SUPPLIED_EXECUTION_INPUT_SOURCE": supplied,
             "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
         }
@@ -1677,10 +1684,15 @@ class SessionEngine:
             brief = self._draft_execution_brief(execute_context, traces)
             if brief:
                 # The model's own draft (GUARD-01: no harness feedback), drafted once.
-                execute_context["REQUIRED_TASK_INPUTS"] = (
-                    (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context["REQUIRED_TASK_INPUTS"] else "")
-                    + "EXECUTION BRIEF (your own draft for this task, written before this call):\n" + brief
-                )
+                if not execute_context.get("REQUIRED_TASK_INPUTS"):
+                    execute_context["REQUIRED_TASK_INPUTS"] = {}
+                if isinstance(execute_context["REQUIRED_TASK_INPUTS"], dict):
+                    execute_context["REQUIRED_TASK_INPUTS"]["DRAFT_EXECUTE"] = brief.strip()
+                else:
+                    execute_context["REQUIRED_TASK_INPUTS"] = (
+                        (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context["REQUIRED_TASK_INPUTS"] else "")
+                        + "EXECUTION BRIEF (your own draft for this task, written before this call):\n" + brief
+                    )
         stop_on_failure = self.max_repairs == 0
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
         repairs_used = 0
@@ -1793,12 +1805,20 @@ class SessionEngine:
             # DRAFT_EXECUTE plans algorithmic feasibility against tools and inputs;
             # strip the Result IR / witness channel so the brief does not anchor on
             # hypothetical witness formatting or outcome contingencies.
-            non_ir_inputs = [
-                part for part in inputs.split("\n\n")
-                if not part.startswith("RESULT IR:") and not part.startswith("WITNESS:")
-            ]
-            if non_ir_inputs:
-                values["REQUIRED_TASK_INPUTS"] = "\n\n".join(non_ir_inputs)
+            if isinstance(inputs, dict):
+                non_ir_inputs = {
+                    k: v for k, v in inputs.items()
+                    if k not in ("RESULT_IR", "WITNESS")
+                }
+                if non_ir_inputs:
+                    values["REQUIRED_TASK_INPUTS"] = non_ir_inputs
+            elif isinstance(inputs, str):
+                non_ir_inputs = [
+                    part for part in inputs.split("\n\n")
+                    if not part.startswith("RESULT IR:") and not part.startswith("WITNESS:")
+                ]
+                if non_ir_inputs:
+                    values["REQUIRED_TASK_INPUTS"] = "\n\n".join(non_ir_inputs)
         values["HOST_PROTOCOL_STATE"] = "EXECUTION_DRAFT"
         try:
             draft = self._call("DRAFT_EXECUTE", values, traces, parser=self.bridge.parse_execution_draft)
@@ -1882,13 +1902,13 @@ class SessionEngine:
         verified = self._requires_verified_execution
         result_ir_mode = verified or os.environ.get("PDLT_RESULT_IR") == "1"
         requirements: list[str] = []
-        task_inputs: list[str] = []
+        task_inputs: dict[str, str] = {}
         if self._previous_deliverable:
-            task_inputs.append(self._previous_deliverable)
+            task_inputs["PRIOR_DELIVERABLE"] = self._previous_deliverable
         if transition and transition.payload.get("execution_input_source") and not transition.payload.get("task_change"):
             supplied_input = transition.payload["execution_input_source"]
             sanitized_input = compile_bootstrap_output(supplied_input, supplied_input)[0].strip()
-            task_inputs.append(f"SUPPLIED INPUT: {sanitized_input}")
+            task_inputs["SUPPLIED_INPUT"] = sanitized_input
         if result_ir_mode:
             evidence_paths = ["execution://body"] + (["execution://witness"] if verified else [])
             channel = render_instructions(
@@ -1897,7 +1917,14 @@ class SessionEngine:
                 evidence_paths=evidence_paths,
                 requires_verified_execution=verified,
             )
-            task_inputs.append(channel)
+            if "\n\nWITNESS:" in channel:
+                parts = channel.split("\n\nWITNESS:", 1)
+                task_inputs["RESULT_IR"] = parts[0].strip()
+                task_inputs["WITNESS"] = ("WITNESS: " + parts[1].strip()).strip()
+            elif channel.startswith("WITNESS:"):
+                task_inputs["WITNESS"] = channel.strip()
+            else:
+                task_inputs["RESULT_IR"] = channel.strip()
 
         execute_context = {
             "SOURCE_REQUEST": sanitized,
@@ -1905,15 +1932,20 @@ class SessionEngine:
             "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
         }
         if task_inputs:
-            execute_context["REQUIRED_TASK_INPUTS"] = "\n\n".join(task_inputs)
+            execute_context["REQUIRED_TASK_INPUTS"] = task_inputs
 
         if self.draft_execute and self._requires_verified_execution:
             brief = self._draft_execution_brief(execute_context, traces)
             if brief:
-                execute_context["REQUIRED_TASK_INPUTS"] = (
-                    (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context.get("REQUIRED_TASK_INPUTS") else "")
-                    + "EXECUTION BRIEF (your own draft for this task, written before this call):\n" + brief
-                )
+                if not execute_context.get("REQUIRED_TASK_INPUTS"):
+                    execute_context["REQUIRED_TASK_INPUTS"] = {}
+                if isinstance(execute_context["REQUIRED_TASK_INPUTS"], dict):
+                    execute_context["REQUIRED_TASK_INPUTS"]["DRAFT_EXECUTE"] = brief.strip()
+                else:
+                    execute_context["REQUIRED_TASK_INPUTS"] = (
+                        (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context.get("REQUIRED_TASK_INPUTS") else "")
+                        + "EXECUTION BRIEF (your own draft for this task, written before this call):\n" + brief
+                    )
 
         stop_on_failure = self.max_repairs == 0
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs

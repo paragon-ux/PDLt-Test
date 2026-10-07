@@ -378,7 +378,10 @@ def test_unconfirmed_route_with_draft_execute(tmp_path: Path):
         if req.operation == "EXECUTE_UNCONFIRMED":
             inputs = req.projection.document.get("operation_inputs", {})
             req_inputs = inputs.get("REQUIRED_TASK_INPUTS", "")
-            assert "EXECUTION BRIEF" in req_inputs
+            if isinstance(req_inputs, dict):
+                assert "DRAFT_EXECUTE" in req_inputs
+            else:
+                assert "EXECUTION BRIEF" in req_inputs
             return json.dumps({
                 "kind": "RESULT",
                 "interpretation": "DETERMINE identities of A, B, C",

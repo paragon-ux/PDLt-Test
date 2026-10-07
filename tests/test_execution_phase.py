@@ -732,7 +732,7 @@ def test_draft_execute_runs_once_and_feeds_its_brief_to_execute(tmp_path):
     assert len(drafts) == 1 and len(executes) == 2  # drafted once, not per repair
     assert "3, 4, 5" in drafts[0].prompt and "steps" in drafts[0].prompt  # sees the data and the budget
     for execute in executes:
-        assert "EXECUTION BRIEF (your own draft" in execute.prompt and "about 200 steps" in execute.prompt
+        assert ("EXECUTION BRIEF" in execute.prompt or "DRAFT_EXECUTE" in execute.prompt) and "about 200 steps" in execute.prompt
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
 
 

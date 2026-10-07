@@ -414,8 +414,11 @@ def test_restored_session_executes_as_system1_routed_it(tmp_path):
     (execute,) = executes
     inputs = execute.projection.document["operation_inputs"]
     assert [r for r in execute.manifest["requirement_ids"] if r.startswith("RS-")]  # Result IR mode
-    verified_channel = render_instructions(repo_root=ROOT, requires_verified_execution=True)
-    assert verified_channel in inputs["REQUIRED_TASK_INPUTS"]  # with the witness instructions
+    req_inputs = inputs["REQUIRED_TASK_INPUTS"]
+    if isinstance(req_inputs, dict):
+        assert "WITNESS" in req_inputs and "verified execution" in req_inputs["WITNESS"]
+    else:
+        assert verified_channel in req_inputs  # with the witness instructions
     minimal = sandbox_module.EXECUTION_BUDGETS["MINIMAL"]
     assert inputs["AVAILABLE_EXECUTION_TOOLS"] == resumed.sandbox.describe(minimal)
     assert "at most 100,000 steps" in inputs["AVAILABLE_EXECUTION_TOOLS"][0]["description"]

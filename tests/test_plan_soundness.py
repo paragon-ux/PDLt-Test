@@ -120,6 +120,9 @@ def test_lint_rejects_implementation_prohibitions_and_metatask_reading():
         "NEVER implement the requested class",
         "READ the task specification for a recursive-descent calculator",
         "READ the request to implement a write-ahead log in Python",
+        "ENSURE all operations respect negative constraints (e.g., no code emission at this stage)",
+        "NEVER emit code during planning",
+        "DO NOT output code in this deliverable",
     ]
     for text in bad_snippets:
         result = validate_plan_soundness(text)
