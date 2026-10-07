@@ -1,0 +1,106 @@
+# Getting Started
+
+This guide walks you through installation, running offline tests, launching the interactive REPL, and executing automated catalogue evaluation.
+
+---
+
+## Installation
+
+PDLt requires Python 3.10 to 3.14.
+
+```bash
+# Upgrade pip
+python -m pip install --upgrade pip
+
+# Clone the repository
+git clone https://github.com/paragon-ux/PDLt-Test.git
+cd PDLt-Test
+
+# Install in editable mode with development & test dependencies
+pip install -e ".[test]"
+```
+
+---
+
+## Offline Test Suite
+
+Before running live models, verify that the offline test suite and harness anti-overfitting gates pass 100%:
+
+```bash
+pytest -q
+```
+
+This verifies:
+- 85+ formal output contract schemas
+- 16+ harness anti-overfitting tests
+- Sandbox confinement barriers and environment allowlists
+
+---
+
+## Interactive REPL
+
+Set your OpenRouter API key:
+
+=== "Linux / macOS"
+    ```bash
+    export OPENROUTER_API_KEY="sk-or-v1-..."
+    ```
+
+=== "Windows (PowerShell)"
+    ```powershell
+    $env:OPENROUTER_API_KEY = "sk-or-v1-..."
+    ```
+
+Launch the interactive REPL:
+
+```bash
+pdlt --new-session --dev
+```
+
+### REPL Commands & Workflow
+
+In a standard session, the harness guides interaction through deterministic review gates:
+
+```text
+USER> Write a Python function to compute the Collatz stopping time.
+ASSISTANT> Prompt Pseudocode:
+   PARSE input positive integer n
+   ITERATE: if even n/2, if odd 3n+1 until n == 1
+   COUNT steps and RETURN
+Confirm or correct this interpretation.
+```
+
+- `/confirm`: Approves pseudocode interpretation or plan.
+- `/revise <feedback>`: Feeds specific revisions to the model to update the artifact.
+- `/fast on|off`: Enables fast mode (automatically confirms when no host lint findings exist).
+- `/stop` or `/cancel`: Terminates the active session safely.
+- `/resume <session-id>`: Restores a prior session and displays the unconfirmed gate.
+
+---
+
+## Evaluation Runner & Local Viewer
+
+Execute prompts across the 16-category catalogue:
+
+```bash
+# Validate manifest and list prompts (dry run)
+python run_catalogue.py --dry-run
+
+# Run a specific prompt
+python run_catalogue.py --prompt-id 06-04
+
+# Run a single category with fail-fast
+python run_catalogue.py --category 13 --fail-fast
+
+# Sequential Four-Arm Parity Sweep
+python experiments/run_four_arms.py
+```
+
+### Local Web Viewer
+
+PDLt includes a localhost read-only browser viewer for inspecting sessions, scoreboards, and ground-truth artifacts:
+
+```bash
+python -m viewer
+```
+Opens `http://127.0.0.1:8090` in your default browser.
