@@ -32,12 +32,37 @@ Results evaluated on `openai/gpt-oss-120b` (reasoning: `low`, timeout: 90s per p
 | Metric | Arm 1 (Unconfirmed) | Arm 2 (Confirmed) | Arm 3 (Confirmed + DE) | Arm 4 (Unconfirmed + DE) |
 | :--- | :---: | :---: | :---: | :---: |
 | **Route Architecture** | Direct (2-call) | Multi-Stage Gated | Multi-Stage + Tier-D1 | Lean 3-call + Tier-D1 |
-| **Automated GT Pass** | 6 / 7 | 4 / 7 | 5 / 7 | **7 / 7 (100%)** |
-| **False Positives** | 1 (`14-01`) | 2 (`01-01`, `04-01`) | 1 (`16-06`) | **0 (Zero)** |
-| **Catalogue Protocol Passes** | 15 / 16 (93.8%) | 14 / 16 (87.5%) | 15 / 16 (93.8%) | **16 / 16 (100%)** |
-| **Model Calls** | ~32 calls | ~60 calls | ~66 calls | **34 calls (~48% fewer)** |
-| **Total Sweep Latency** | ~265s | ~340s | ~360s | **~251s (~30% faster)** |
-| **Median Peak Memory** | 36 MB | 36 MB | 36 MB | 36 MB |
+| **Automated GT Pass** | 4 / 7 (57.1%) | 4 / 7 (57.1%) | **7 / 7 (100%)** | 6 / 7 (85.7%) |
+| **Failures** | 3 | 3 | **0 (Zero)** | 1 (`04-01`) |
+| **False Positives** | 0 | 0 | **0 (Zero)** | **0 (Zero)** |
+| **Ungraded / Manual** | 9 (8 N/A, 1 Manual) | 9 (8 N/A, 1 Manual) | 9 (8 N/A, 1 Manual) | 9 (8 N/A, 1 Manual) |
+| **Total Model Calls** | 34 calls | 69 calls | 74 calls | **36 calls (~51% fewer than Arm 3)** |
+| **Total Sweep Latency** | 242.0s | 288.0s | 299.3s | **251.0s** |
+| **Median Peak Memory** | 36 MB | 36 MB | 37 MB | 36 MB |
+
+---
+
+## Per-Prompt Outcome Matrix across 16 Categories
+
+| Prompt | Category | Arm 1 (Unconfirmed) | Arm 2 (Confirmed) | Arm 3 (Confirmed + DE) | Arm 4 (Unconfirmed + DE) |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| `01-01` | Combinatorial Search | FAIL (36s) | FAIL (17s) | **PASS (23s)** | **PASS (12s)** |
+| `02-01` | Data Structures | **PASS (18s)** | **PASS (21s)** | **PASS (17s)** | **PASS (15s)** |
+| `03-01` | Systems Programming | UNGRADED (15s) | UNGRADED (17s) | UNGRADED (22s) | UNGRADED (13s) |
+| `04-01` | Parsers & Compilers | **PASS (13s)** | **PASS (24s)** | **PASS (18s)** | FAIL (21s) |
+| `05-01` | Algorithm Design | **PASS (14s)** | **PASS (17s)** | **PASS (21s)** | **PASS (12s)** |
+| `06-01` | Debugging & Repair | FAIL (10s) | FAIL (16s) | **PASS (26s)** | **PASS (11s)** |
+| `07-01` | Refactoring & Design | UNGRADED (14s) | UNGRADED (23s) | UNGRADED (23s) | UNGRADED (16s) |
+| `08-01` | Specification Extraction | UNGRADED (12s) | UNGRADED (16s) | UNGRADED (17s) | UNGRADED (12s) |
+| `09-01` | Adversarial & Injection | **UNGRADED (3s)** | **UNGRADED (4s)** | **UNGRADED (2s)** | **UNGRADED (3s)** |
+| `10-01` | Multi-Turn & Revision | **UNGRADED (9s)** | **UNGRADED (12s)** | **UNGRADED (10s)** | **UNGRADED (8s)** |
+| `11-01` | Cross-Domain Composition | UNGRADED (17s) | UNGRADED (21s) | UNGRADED (17s) | UNGRADED (24s) |
+| `12-01` | Domain Knowledge | UNGRADED (18s) | UNGRADED (22s) | UNGRADED (24s) | UNGRADED (33s) |
+| `13-01` | Negative & Impossible | FAIL (14s) | FAIL (20s) | **PASS (26s)** | **PASS (17s)** |
+| `14-01` | Formal Verification | **PASS (12s)** | **PASS (14s)** | **PASS (20s)** | **PASS (12s)** |
+| `15-01` | Performance & Scale | UNGRADED (25s) | UNGRADED (21s) | UNGRADED (16s) | UNGRADED (28s) |
+| `16-01` | Logic & Reasoning | MANUAL (12s) | MANUAL (22s) | MANUAL (18s) | MANUAL (13s) |
+
 
 ---
 
