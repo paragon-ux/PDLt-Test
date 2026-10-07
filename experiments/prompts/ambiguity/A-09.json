@@ -1,0 +1,10 @@
+{
+  "id": "A-09",
+  "intended": "Counting from 1 (the first prime is 2): 29.",
+  "others": [
+    "Zero-based indexing (index 10): 31."
+  ],
+  "answer": "29",
+  "correction": "Count from 1: the first prime is 2.",
+  "file": "A-09.txt"
+}

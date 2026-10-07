@@ -1,0 +1,4 @@
+Given an undirected graph G with 12 nodes (labeled 0-11) and the following edge list:
+Edges: [(0,8), (3,6), (1,7), (2,5), (3,4), (3,11), (0,1), (4,10), (5,7), (2,8), (0,10), (0,9), (6,9), (6,8), (7,8), (10,11)]
+
+Determine whether G contains a Hamiltonian path (a path that visits every node exactly once). If one exists, output the complete path. Use a backtracking search with pruning. Include verification that the path visits all 12 nodes and every consecutive pair in the path is a valid edge.

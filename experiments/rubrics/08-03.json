@@ -1,0 +1,38 @@
+{
+  "id": "08-03",
+  "task": "The implicit dependencies of the described ETL pipeline and a correct execution DAG.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The three extractions (sales DB, inventory CSV, customer API) are independent roots that can run in parallel.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Enriching sales with customer names and addresses depends on both the sales extraction and the customer extraction.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "The stock-out risk computation depends on the inventory extraction and on the sales data (raw or enriched).",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "The daily summary depends on all three datasets via their processed forms (enriched sales, stock-out risk, customers); load depends on the summary; purging data older than 90 days runs only after the load.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "The customer API's 100 requests/minute limit is treated as a scheduling or batching constraint on the customer extraction (its duration, retries, or caching), not ignored.",
+      "required": true
+    },
+    {
+      "id": "c6",
+      "text": "The DAG is presented explicitly (edges or a diagram) and is acyclic and consistent with the above.",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": ""
+}

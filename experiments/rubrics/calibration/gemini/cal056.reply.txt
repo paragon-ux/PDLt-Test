@@ -1,0 +1,12 @@
+```json
+{
+  "criteria": {
+    "c1": "met",
+    "c2": "met",
+    "c3": "not_met",
+    "c4": "not_met",
+    "c5": "not_met"
+  },
+  "note": "The response omits the LL(1) parse table entries/matrix entirely (c3, c5) and does not provide the step-by-step parse trace showing stack contents and remaining input (c4)."
+}
+```

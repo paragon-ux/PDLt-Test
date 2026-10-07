@@ -1,0 +1,1 @@
+Order: 1) extract sales, 2) extract inventory, 3) extract customers, 4) enrich sales, 5) compute stock-out risk, 6) purge stale data, 7) generate summary, 8) load into warehouse. Each step runs after the previous one, which guarantees correct ordering.

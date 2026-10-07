@@ -1,0 +1,1 @@
+{"criteria": {"c1": "not_met", "c2": "not_met", "c3": "met"}, "note": "Gives an exercise/fatigue explanation; the man is not said to be unable to reach the buttons, and there is no umbrella pressing the 10th-floor button."}

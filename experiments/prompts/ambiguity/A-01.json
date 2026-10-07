@@ -1,0 +1,10 @@
+{
+  "id": "A-01",
+  "intended": "When there are two middle values, report the lower one (an actual observed day), so the median is 9.",
+  "others": [
+    "The mean of the two middle values: 10.5."
+  ],
+  "answer": "9",
+  "correction": "Report an actual day's figure: when there are two middle values, take the lower one.",
+  "file": "A-01.txt"
+}

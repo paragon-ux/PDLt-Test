@@ -12,3 +12,7 @@ mlflow.db
 .env
 dist/
 build/
+
+# acceptance-gate runner output (experiments/runner.py)
+gate-runs/
+site/

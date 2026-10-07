@@ -1,0 +1,12 @@
+```json
+{
+  "criteria": {
+    "c1": "met",
+    "c2": "met",
+    "c3": "met",
+    "c4": "met",
+    "c5": "not_met"
+  },
+  "note": "Criterion c5 was marked not_met because the response did not fully describe CPython's collector architecture or its default thresholds (700/10/10)."
+}
+```

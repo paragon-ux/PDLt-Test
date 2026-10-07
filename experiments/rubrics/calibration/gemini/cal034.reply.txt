@@ -1,0 +1,12 @@
+```json
+{
+  "criteria": {
+    "c1": "met",
+    "c2": "not_met",
+    "c3": "not_met",
+    "c4": "not_met",
+    "c5": "not_met"
+  },
+  "note": "FOLLOW(T) and FOLLOW(T') are missing ')', while FOLLOW(F) is missing '+' and ')', which in turn causes T' -> ε under ')' to be omitted from the parse table. The trace omits remaining input at each step, drops stack symbols prematurely, and the table is not presented as a formatted matrix."
+}
+```

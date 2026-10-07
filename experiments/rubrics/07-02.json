@@ -1,0 +1,33 @@
+{
+  "id": "07-02",
+  "task": "An async/await conversion of the callback code that preserves the flow and error handling, with tests.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "async def versions of fetch_user, fetch_org and fetch_permissions that return their result and raise on error, instead of taking callbacks.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "get_user_context is async and awaits, in order, the user, then the org for user['org_id'], then the permissions for (user['org_id'], user_id), returning {'user', 'org', 'permissions'}.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Error handling preserved: an error at any step propagates to the caller (raised, or returned in the same (error, None) form as the original final_callback contract), and no later step runs after a failure.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Uses try/except where errors are handled or translated; no callbacks remain in the async path.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Tests cover the success path and the propagation of an error from at least one step, with the randomness controlled (seed, patch or injected fetchers).",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": "Converting the random failures to asyncio-based fakes is fine as long as the same success and failure cases exist."
+}

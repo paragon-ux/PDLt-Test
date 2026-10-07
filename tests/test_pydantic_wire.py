@@ -143,7 +143,7 @@ def test_precision_operator_correction_in_session_engine(tmp_path: Path) -> None
         traces,
         parser=BRIDGE.parse_bootstrap_analysis,
     )
-    assert res["task_entities"] == [{"surface": "work", "kind": "identifier", "definition": None}]
+    assert res["task_entities"] == [{"surface": "work", "kind": "identifier", "status": "given", "group": None, "relation": None}]
     assert len(seen_prompts) == 2
     retry_prompt = seen_prompts[1]
     assert "OPERATOR CORRECTION: Validation failed on field 'task_entities': Field required" in retry_prompt

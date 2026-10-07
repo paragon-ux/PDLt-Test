@@ -1,0 +1,10 @@
+{
+  "id": "A-03",
+  "intended": "Round halves up, as on a receipt: 3 + 4 + 5 = 12.",
+  "others": [
+    "Round half to even (banker's rounding, Python's round()): 2 + 4 + 4 = 10."
+  ],
+  "answer": "12",
+  "correction": "Round halves up, as on a receipt.",
+  "file": "A-03.txt"
+}

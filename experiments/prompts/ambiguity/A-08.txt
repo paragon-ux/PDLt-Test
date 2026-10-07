@@ -1,0 +1,1 @@
+Class A (10 students) averaged 80 on a test and class B (30 students) averaged 60. What is the average score?

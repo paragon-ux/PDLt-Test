@@ -1,0 +1,33 @@
+{
+  "id": "07-04",
+  "task": "A dependency-injection refactor of the global-state query module, testable without environment variables or globals.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Configuration (host, port) is passed in (constructor or factory) rather than read from the environment at import time; reading the environment, if kept, happens only in an explicit factory at the edge.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "No module-level mutable state: the cache and the request count belong to an instance (or an injected object).",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "The database or connection is an injectable dependency (an interface, protocol or callable), so a test can pass a mock.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Behaviour preserved: query() counts every call, returns a cached result for a repeated SQL string without touching the database, and otherwise returns the database's result for that SQL; get_stats() reports requests, cache_size and host; reset() clears the cache and the count.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Tests inject a mock database and verify query behaviour (cache hit avoids a second database call; counts), with no environment variables and no globals.",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": "Judge behaviour by reading the code: a criterion about preserved behaviour is met only if the refactored code visibly does the same thing (same checks, same values, same side effects) for every original operation."
+}

@@ -1,0 +1,12 @@
+```json
+{
+  "criteria": {
+    "c1": "met",
+    "c2": "met",
+    "c3": "met",
+    "c4": "met",
+    "c5": "met"
+  },
+  "note": ""
+}
+```

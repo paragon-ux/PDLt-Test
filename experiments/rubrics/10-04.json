@@ -1,0 +1,33 @@
+{
+  "id": "10-04",
+  "task": "The final deliverable after the conversation's revisions (the last turn's answer), judged against the request as revised. Request: validate email addresses with a regex; revised three times: the domain must have at least one dot; support plus-addressing (user+tag@domain.com); return {valid, local_part, domain, tag} with tag None when absent.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Validates with a regular expression.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Requires at least one dot in the domain (user@localhost is invalid).",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Supports plus-addressing: user+tag@domain.com is valid, and the tag is extracted.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Returns a structured result with valid (bool), local_part, domain and tag, where tag is None without a plus part (and the fields are sensible for an invalid address).",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "All three revisions hold together in the final version (none was dropped while applying a later one).",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": "Judge only the final answer. Earlier turns are context: a requirement added by a revision must be present in the final answer."
+}

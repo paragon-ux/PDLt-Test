@@ -1,0 +1,10 @@
+{
+  "id": "A-02",
+  "intended": "Count both the first and the last day: 5 days.",
+  "others": [
+    "The difference between the dates: 4 days."
+  ],
+  "answer": "5",
+  "correction": "Count both the first and the last day.",
+  "file": "A-02.txt"
+}

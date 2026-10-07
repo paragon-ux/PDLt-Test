@@ -1,0 +1,18 @@
+{
+  "id": "A-08-answer",
+  "task": "The final answer to the request, judged under the intended reading.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The final answer is 65 (The average over all 40 students: (10 x 80 + 30 x 60) / 40 = 65.)",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "The answer commits to that result (a response offering several results for different readings without choosing does not meet this).",
+      "required": true
+    }
+  ],
+  "reference": "Other readings give: The average of the two class averages: 70.",
+  "notes": "Judge the final stated result, not the working."
+}

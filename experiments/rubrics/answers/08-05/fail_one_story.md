@@ -1,0 +1,1 @@
+As a user, I want a product search experience with my recent orders, recommendations, real-time inventory and 24-hour reservations so that I can find and secure products quickly. This is one cohesive feature because all parts appear on the search page.

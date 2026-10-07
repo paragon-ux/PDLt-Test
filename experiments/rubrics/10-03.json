@@ -1,0 +1,28 @@
+{
+  "id": "10-03",
+  "task": "The final deliverable after the conversation's revisions (the last turn's answer), judged against the request as revised. Request: a client for the JSONPlaceholder API supporting listing, creating and deleting posts; revised to a CLI tool that wraps the API instead of a library.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "It is a command-line tool: an entry point that parses arguments (argparse, click or similar) with subcommands or options for each operation.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "It supports listing, creating and deleting posts.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "It uses the right endpoints: GET /posts, POST /posts with a JSON body (title, body, userId), DELETE /posts/{id}, on https://jsonplaceholder.typicode.com.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "It reports results and HTTP errors to the user (printing the response, non-zero exit on failure).",
+      "required": false
+    }
+  ],
+  "reference": "",
+  "notes": "Judge only the final answer. Earlier turns are context: a requirement added by a revision must be present in the final answer."
+}

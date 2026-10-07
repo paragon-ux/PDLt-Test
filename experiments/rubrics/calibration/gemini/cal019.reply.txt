@@ -1,0 +1,3 @@
+```json
+{"criteria": {"c1": "not_met", "c2": "not_met", "c3": "not_met", "c4": "not_met", "c5": "not_met", "c6": "not_met"}, "note": "The response provides a strictly linear sequence rather than identifying dependencies or a parallel DAG. It places data purging before the summary generation and loading, completely ignores the API rate limit, and does not define explicit graph edges."}
+```

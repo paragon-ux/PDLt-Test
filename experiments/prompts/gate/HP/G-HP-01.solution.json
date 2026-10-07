@@ -1,0 +1,85 @@
+{
+  "id": "G-HP-01",
+  "ground_truth_status": "verified",
+  "hamiltonian_path": [
+    4,
+    10,
+    11,
+    3,
+    6,
+    9,
+    0,
+    1,
+    7,
+    8,
+    2,
+    5
+  ],
+  "edge_list": [
+    [
+      0,
+      8
+    ],
+    [
+      3,
+      6
+    ],
+    [
+      1,
+      7
+    ],
+    [
+      2,
+      5
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      3,
+      11
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      4,
+      10
+    ],
+    [
+      5,
+      7
+    ],
+    [
+      2,
+      8
+    ],
+    [
+      0,
+      10
+    ],
+    [
+      0,
+      9
+    ],
+    [
+      6,
+      9
+    ],
+    [
+      6,
+      8
+    ],
+    [
+      7,
+      8
+    ],
+    [
+      10,
+      11
+    ]
+  ],
+  "verified_by": "graph constructed around a random Hamiltonian backbone plus 5 extra edges"
+}

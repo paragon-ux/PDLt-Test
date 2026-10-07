@@ -1,0 +1,1 @@
+A CRM manages customers. Entities: Customer, Order, Product. Business rules: data should be accurate; the system should be secure; the system should be fast; users should be able to search. Edge cases: errors should be handled. Questions: What features do you want?

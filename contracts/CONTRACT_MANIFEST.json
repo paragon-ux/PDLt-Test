@@ -113,7 +113,12 @@
     "RS-07": "contracts/standards/RESULT_STANDARD.md",
     "RS-08": "contracts/standards/RESULT_STANDARD.md",
     "RS-09": "contracts/standards/RESULT_STANDARD.md",
-    "RS-10": "contracts/standards/RESULT_STANDARD.md"
+    "RS-10": "contracts/standards/RESULT_STANDARD.md",
+    "UNC-01": "contracts/standards/UNCONFIRMED_STANDARD.md",
+    "UNC-02": "contracts/standards/UNCONFIRMED_STANDARD.md",
+    "UNC-03": "contracts/standards/UNCONFIRMED_STANDARD.md",
+    "UNC-04": "contracts/standards/UNCONFIRMED_STANDARD.md",
+    "UNC-05": "contracts/standards/UNCONFIRMED_STANDARD.md"
   },
   "source_provenance": {
     "compact_b3_repository": "paragon-ux/PDL-Standard-DS-Split-B3",
@@ -144,7 +149,7 @@
     },
     {
       "path": "contracts/EXECUTION_CONTRACT.json",
-      "sha256": "6387e2780c90550cf1c7670eb9d7aca8a4ae113dc74fa4bc7b7eff367f1011d6"
+      "sha256": "d428e46de6ded2f45965330642d76ec9b0a0c3ba23d08dc492a50eb6ee62fd40"
     },
     {
       "path": "contracts/IMPLEMENTATION_BOUNDARY.json",
@@ -209,6 +214,10 @@
     {
       "path": "contracts/standards/TASK_SEMANTICS_STANDARD.md",
       "sha256": "baeea45dc390bfe9d3e7ce6e34811f3a0113e33899358685c4381149b4021656"
+    },
+    {
+      "path": "contracts/standards/UNCONFIRMED_STANDARD.md",
+      "sha256": "526428d5be76b11c6cbe28864aebfe01a3b512ff4bc4f5aa2fa318282af52c30"
     }
   ],
   "standard_semantics_changed_from_finalized_source_substrate": true,

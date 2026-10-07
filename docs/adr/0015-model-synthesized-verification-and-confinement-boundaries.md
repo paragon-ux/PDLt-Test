@@ -4,6 +4,7 @@
   - **Harness-resident domain checkers have been removed (GUARD-02).** Ground-truth checking for the catalogue lives in the evaluation plane.
   - **Confinement is decided by [ADR-0021](0021-session-scoped-os-native-confinement.md).**
   - **The live-verification rule lives in `AGENTS.md`.** The regressions ledger named in §3 was never created.
+  - **Amendment (2026-10-04): decision 3 is superseded** by the `AGENTS.md` "Diagnosis and Verification Rule". Live verification is required only when a result depends on model, provider or System 1 behaviour, or when what the model or provider receives has changed. Otherwise static analysis and offline tests are the verification.
 - **Date:** 2026-09-27
 - **Related:** [ADR-0011](0011-in-memory-vfs-and-microvm-sandboxing.md), [ADR-0013](0013-substantive-correctness-verification.md), [ADR-0014](0014-dual-plane-boundary-and-wire-conformance.md), [ADR-0018](0018-elimination-of-regex-heuristics-in-verification-and-reconciliation-integrity.md)
 - **Implementation and evidence:** [IMPL-0009](impl/IMPL-0009-verification-witnesses-and-checkers.md), [IMPL-0010](impl/IMPL-0010-sandbox-backends-and-execution-budgets.md)

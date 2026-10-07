@@ -1,0 +1,1 @@
+The log shows the JVM's old generation filling up. Increase the heap with -Xmx, switch to the G1 or ZGC collector, and tune -XX:MaxGCPauseMillis to cap pause times. Generation 2 grows because the young generation is too small; raise -Xmn.

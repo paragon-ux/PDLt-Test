@@ -1,0 +1,18 @@
+{
+  "id": "A-02-answer",
+  "task": "The final answer to the request, judged under the intended reading.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The final answer is 5 (Count both the first and the last day: 5 days.)",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "The answer commits to that result (a response offering several results for different readings without choosing does not meet this).",
+      "required": true
+    }
+  ],
+  "reference": "Other readings give: The difference between the dates: 4 days.",
+  "notes": "Judge the final stated result, not the working."
+}

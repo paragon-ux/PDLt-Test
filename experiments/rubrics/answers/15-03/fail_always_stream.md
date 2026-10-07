@@ -1,0 +1,1 @@
+Streaming is always better: it gives real-time data and modern architectures use it. Batch is legacy. Switch to Kafka and Flink immediately; the cost is similar because the same amount of data is processed either way.

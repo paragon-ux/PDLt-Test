@@ -1,0 +1,23 @@
+{
+  "id": "10-07",
+  "task": "The final deliverable after the conversation's revisions (the last turn's answer), judged against the request as revised. Request: FizzBuzz for 1 to 100; follow-up: explain the time complexity of that implementation and whether it could be optimized.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "States the time complexity correctly: O(n) for n numbers (constant work per number), O(1) extra space besides the output.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Refers to the actual implementation from the first turn (its loop and its divisibility checks or string building), not a different or invented one.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Gives a sound answer on optimization: it can't beat O(n) because it must output n lines; only constant factors can improve (fewer modulo operations, building the output in one join, a precomputed 15-cycle pattern).",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": "Judge only the final answer. Earlier turns are context: a requirement added by a revision must be present in the final answer. The first turn's code is part of the conversation the response answers."
+}

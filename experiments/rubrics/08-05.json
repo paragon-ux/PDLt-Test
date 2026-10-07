@@ -1,0 +1,33 @@
+{
+  "id": "08-05",
+  "task": "The feature request separated into independently deliverable user stories.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Three user stories in user-story form (As a ... I want ... so that ...), each deliverable on its own.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Product search by name is its own story.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Real-time inventory across warehouses with 24-hour reservation forms its own story (the product detail page).",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Recent orders and recommendations based on purchase history form the third story (personalization). An answer may split these two further only if it justifies why, and none of the request's capabilities may be dropped.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Each story has acceptance criteria or a clear scope boundary.",
+      "required": false
+    }
+  ],
+  "reference": "",
+  "notes": ""
+}

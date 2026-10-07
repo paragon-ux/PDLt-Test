@@ -69,6 +69,16 @@ def test_guard02_activation_route_no_hardcoded_refusal_literals():
     )
 
 
+def test_guard02_no_benchmark_terms_in_wire_contracts():
+    """GUARD-02: wire schemas and contracts must not contain benchmark puzzle tokens."""
+    wire_payloads_file = ROOT / "src" / "pdl_taskmaster" / "runtime" / "wire_payloads.py"
+    text = wire_payloads_file.read_text(encoding="utf-8")
+    for banned in ("god", "gods", "boolos", "riddle", "da and ja", "frostbite"):
+        assert banned not in text.lower(), (
+            f"GUARD-02 VIOLATION: Found benchmark term '{banned}' in wire_payloads.py."
+        )
+
+
 _TEXT_SUFFIXES = {".md", ".json", ".txt", ".py", ".yaml", ".yml"}
 # Both manifest copies: the repository's and the one bundled in the package (the
 # NormativeStore fallback). Each lists paths relative to its own base directory.

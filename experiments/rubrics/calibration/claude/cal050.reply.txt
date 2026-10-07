@@ -1,0 +1,1 @@
+{"criteria": {"c1": "met", "c2": "met", "c3": "met", "c4": "met", "c5": "not_met"}, "note": "Does not actually describe the generational collector (three generations, default 700/10/10 thresholds); it only mentions gen-2 traversal, the permanent generation via freeze, and that refcounting cannot free cycles."}

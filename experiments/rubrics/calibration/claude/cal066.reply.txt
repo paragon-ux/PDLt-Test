@@ -1,0 +1,1 @@
+{"criteria": {"c1": "not_met", "c2": "not_met", "c3": "not_met", "c4": "not_met"}, "note": "OrderStatus has no RETURNED member and PaymentStatus has no pending state; the function still uses chained if/elif on .value with no exhaustive match or raising default, drops the delivered-to-returned transition, and the single test does not exercise the original bug."}

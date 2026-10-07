@@ -1,0 +1,1 @@
+{"criteria": {"c1": "not_met", "c2": "not_met", "c3": "not_met", "c4": "not_met", "c5": "not_met", "c6": "not_met"}, "note": "Only two classes are proposed (below the required three), bodies are elided with '...' so behaviour cannot be checked, create_user/hashing and persistence are lumped together, and no tests are given."}

@@ -1,0 +1,28 @@
+{
+  "id": "16-01",
+  "task": "A solution to the Three Gods puzzle: three yes/no questions, the god each is put to, and how the answers fix every identity.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Exactly three yes/no questions, each put to exactly one god.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Handles Random: the first question identifies a god who is certainly not Random, and later questions go to that god (the addressee of a later question may depend on earlier answers).",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "The questions work whatever da and ja mean and whether the god lies: the embedded-question form ('If I asked you Q, would you say ja?') or an equivalent device.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "The explanation maps every possible answer pattern to exactly one assignment of True, False and Random.",
+      "required": true
+    }
+  ],
+  "reference": "Boolos (1996). Q1 to A: 'If I asked you whether B is Random, would you say ja?' ja -> C is not Random; da -> B is not Random. Q2 to the non-Random god found: 'If I asked you whether you are False, would you say ja?' identifies True/False. Q3 to the same god: 'If I asked you whether A is Random, would you say ja?' identifies Random among the other two; the last follows by elimination.",
+  "notes": "Declaring the puzzle unsolvable fails every criterion. Other correct constructions (e.g. using an XOR/iff device instead of the embedded question) meet c3."
+}

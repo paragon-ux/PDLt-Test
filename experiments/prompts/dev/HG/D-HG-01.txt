@@ -1,0 +1,10 @@
+Three houses stand in a row, numbered 1 (left), 2 (middle) and 3 (right). Each house has a different color (red, green, blue), a different owner (Ana, Ben, Cleo) and a different pet (cat, dog, fish).
+
+1. The fish lives in the left house.
+2. Cleo does not own the cat.
+3. Ana does not own the cat.
+4. Cleo lives in the green house.
+5. The cat lives in the right house.
+6. The blue house is immediately to the left of the red house.
+
+Who owns the fish? Give the full arrangement of colors, owners and pets, and show how each clue fixes it.

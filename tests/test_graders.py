@@ -36,9 +36,40 @@ def _grade(entry_id: str, tmp_path: Path, deliverable: str | None) -> str:
 
 def test_every_verified_entry_has_a_grader_or_manual_marker():
     verified = [e for e in MANIFEST.values() if e["ground_truth_status"] == "verified"]
-    assert len(verified) == 28
-    machine = [e["id"] for e in verified if e["id"] in graders.GRADERS]
+    assert len(verified) == 57
+    hidden = [e["id"] for e in verified if e.get("hidden_tests")]
+    assert len(hidden) == 29
+    for entry_id in hidden:
+        assert (PROMPTS / MANIFEST[entry_id]["hidden_tests"]).is_file(), entry_id
+        assert entry_id not in graders.GRADERS  # one grader per prompt
+    machine = [e["id"] for e in verified if e["id"] in graders.GRADERS or e.get("hidden_tests")]
     assert machine == [e["id"] for e in verified]  # every verified prompt has a grader
+
+
+def test_hidden_tests_cover_exactly_the_marked_entries():
+    import hidden_tests
+
+    files = {p.stem for p in hidden_tests.TESTS_DIR.glob("*.py")}
+    assert files == {i for i, e in MANIFEST.items() if e.get("hidden_tests")}
+
+
+def test_hidden_test_validation_is_current():
+    """Tests and their reference/alternative/bug answers are validated together;
+    any edit to either needs `python hidden_tests.py --validate` again."""
+    import hidden_tests
+
+    assert hidden_tests.stale() == []
+
+
+def test_hidden_tests_without_code_runs_are_pending(tmp_path):
+    entry = MANIFEST["05-03"]
+    assert _grade("05-03", tmp_path, "```python\ndef insert(a, b):\n    return a\n```") == graders.MANUAL
+    assert graders.grade(entry, tmp_path / "none", PROMPTS)["grade"] == graders.FAIL
+
+
+def test_hidden_tests_fail_a_published_non_result():
+    assert graders.grade_hidden("05-03", "REQUEST_INPUT", "Which intervals?")["grade"] == graders.FAIL
+    assert graders.grade_hidden("05-03", "RESULT", None)["grade"] == graders.FAIL
 
 
 def test_non_verified_entries_are_not_applicable(tmp_path):
@@ -178,9 +209,76 @@ def test_stage_match_with_wrong_answer_is_not_a_pass():
     import run_catalogue
 
     fp = {"expected_stage": "CLOSED_SUCCESS", "verdict": "CLOSED_SUCCESS", "ground_truth_grade": {"grade": "FAIL"}}
-    manual = {"expected_stage": "CLOSED_SUCCESS", "verdict": "CLOSED_SUCCESS", "ground_truth_grade": {"grade": "MANUAL"}}
     assert run_catalogue.stage_pass(fp) and not run_catalogue.is_prompt_pass(fp)
-    assert run_catalogue.is_prompt_pass(manual)
+    assert run_catalogue.is_prompt_fail(fp)
+
+
+def test_manual_is_pending_never_a_pass():
+    """A MANUAL ground truth awaits the human check: it is neither a pass nor a
+    failure, so it neither inflates the pass rate nor stops a fail-fast run."""
+    import run_catalogue
+
+    def run(verdict, grade, expected="CLOSED_SUCCESS"):
+        return {"expected_stage": expected, "verdict": verdict, "ground_truth_grade": {"grade": grade}}
+
+    manual = run("CLOSED_SUCCESS", "MANUAL")
+    assert not run_catalogue.is_prompt_pass(manual)
+    assert run_catalogue.is_prompt_pending(manual) and not run_catalogue.is_prompt_fail(manual)
+    assert run_catalogue.outcome_label(manual) == "PENDING"
+    # No grader: the stage alone cannot make a pass (L49d, 2026-10-05); it is UNGRADED,
+    # which the old counting (reported beside the new) still counted as a pass.
+    ungraded = run("CLOSED_SUCCESS", "N/A")
+    assert not run_catalogue.is_prompt_pass(ungraded) and run_catalogue.outcome_label(ungraded) == "UNGRADED"
+    assert run_catalogue.is_prompt_pass_legacy(ungraded)
+    # A missed stage is a failure whatever the grade.
+    assert run_catalogue.is_prompt_fail(run("CLOSED_CANCELLED", "MANUAL"))
+    assert run_catalogue.is_prompt_fail(run("CLOSED_SUCCESS", "ERROR"))
+
+
+def test_scoreboard_counts_manual_as_pending(tmp_path):
+    import run_catalogue
+
+    def result(pid, grade, verdict="CLOSED_SUCCESS", ref=None):
+        return {"id": pid, "category": "logic", "difficulty": "easy", "verdict": verdict,
+                "expected_stage": "CLOSED_SUCCESS", "ground_truth_grade": {"grade": grade},
+                "elapsed_seconds": 1.0, "regression_ref": ref}
+
+    results = [result("a", "PASS"), result("b", "MANUAL", ref="REG-1"), result("c", "FAIL", ref="REG-2"),
+               result("d", "N/A")]
+    meta = {"run_id": "r", "start_time": "t", "model": "m", "reasoning_effort": "e"}
+    board = run_catalogue.generate_scoreboard(results, tmp_path, meta)
+    assert (board["passed"], board["failed"], board["pending_human_check"], board["ungraded"]) == (1, 1, 1, 1)
+    assert board["pass_rate_pct"] == 25.0 and board["decided_pass_rate_pct"] == 50.0
+    assert board["legacy_passed"] == 2 and board["legacy_pass_rate_pct"] == 50.0  # the old counting, beside
+    # A pending prompt with a regression tag is not a regression hit; a failed one is.
+    assert [r["id"] for r in board["regressions_hit"]] == ["c"]
+    assert [f["id"] for f in board["failures"]] == ["c"]
+    assert board["by_category"]["logic"]["pending"] == 1
+    assert "PENDING b" in (tmp_path / "SCOREBOARD.md").read_text(encoding="utf-8")
+
+
+def _events(tmp_path: Path, *events: tuple[str, dict]) -> Path:
+    path = tmp_path / "session" / "W-1" / "turns" / "turn_001" / "events"
+    path.mkdir(parents=True)
+    (path / "events.jsonl").write_text(
+        "\n".join(json.dumps({"kind": kind, "payload": payload}) for kind, payload in events) + "\n",
+        encoding="utf-8")
+    return tmp_path
+
+
+def test_grader_budget_is_the_tier_the_published_code_ran_under(tmp_path):
+    routed = ("EXECUTION_PROFILE_ROUTED", {"tier": "MINIMAL", "step_limit": 100_000, "timeout_seconds": 30.0})
+    raised = ("PLAN_PROFILE_ROUTED", {"tier": "STANDARD", "step_limit": 10_000_000})
+    ran_standard = ("SANDBOX_RUN", {"block": 1, "tier": "STANDARD"})
+    ran_heavy = ("SANDBOX_RUN", {"block": 1, "tier": "HEAVY_COMPUTE"})
+    # The last program run (the published attempt) decides.
+    assert graders._run_budget(_events(tmp_path / "a", routed, raised, ran_standard, ran_heavy)) == (120.0, 100_000_000)
+    assert graders._run_budget(_events(tmp_path / "b", routed, raised, ran_standard)) == (30.0, 10_000_000)
+    # No program ran: the tier declared to EXECUTE, i.e. the plan-time routing's raise.
+    assert graders._run_budget(_events(tmp_path / "c", routed, raised)) == (30.0, 10_000_000)
+    assert graders._run_budget(_events(tmp_path / "d", routed)) == (30.0, 100_000)
+    # No events (a run outside the harness): no step limit, as before.
+    assert graders._run_budget(tmp_path / "e") == (30.0, None)
 
 
 # --------------------------------------------------------------------------- category 14

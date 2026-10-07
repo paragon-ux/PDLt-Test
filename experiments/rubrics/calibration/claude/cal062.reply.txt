@@ -1,0 +1,1 @@
+{"criteria": {"c1": "not_met", "c2": "not_met", "c3": "not_met", "c4": "not_met", "c5": "not_met"}, "note": "Recommends a pool of 200 (the thread count), computes '200 threads x 50 ms = 10' (not Little's Law on 2,000 req/s x 20 ms = 40), ignores the 16 DB cores, and claims a too-large pool has no downside."}

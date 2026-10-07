@@ -108,6 +108,69 @@ def test_standard_execution_runs_code_as_telemetry_only(tmp_path):
     assert run["payload"]["exit_code"] == 3
 
 
+def test_tier_d1_standard_execution_triggers_repair_on_program_failure(tmp_path):
+    """Tier D1 (advantage mechanism): standard execution feeds genuine program failures
+    back as repair findings with operator correction, allowing the model to fix bugs."""
+    body_broken = "```python\nraise ValueError('something broken')\n```"
+    body_fixed = "```python\nprint('fixed')\n```"
+    calls = []
+
+    def model_call(req):
+        calls.append(req)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({"kind": "ANALYSIS", "task_summary": "Task", "approach_notes": "", "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
+        if req.operation == "DRAFT_PLAN":
+            return json.dumps({"neutral_plan_body": PLAN})
+        if req.operation == "EXECUTE":
+            exec_count = len([c for c in calls if c.operation == "EXECUTE"])
+            if exec_count == 1:
+                return json.dumps({"kind": "RESULT", "body": body_broken})
+            assert "PROGRAM_FAILED" in req.prompt
+            assert "ValueError: something broken" in req.prompt
+            return json.dumps({"kind": "RESULT", "body": body_fixed})
+        raise AssertionError(f"unexpected operation {req.operation}")
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path,
+                           sys1_client=ClassifyingSys1("STANDARD_EXECUTION"))
+    engine.tier_d1 = True
+    engine.handle_user_message("$confirm-with-pseudocode Solve task")
+    engine.handle_user_message("/confirm")
+    response = engine.handle_user_message("/confirm")
+    assert response.closed is True
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert len([c for c in calls if c.operation == "EXECUTE"]) == 2
+
+
+def test_tier_d1_discards_environment_denial_as_telemetry(tmp_path):
+    """Tier D1: environment denials (e.g. uninstalled package import) are not contract failures."""
+    body_import = "```python\nimport non_existent_package_12345\n```"
+    calls = []
+
+    def model_call(req):
+        calls.append(req)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({"kind": "ANALYSIS", "task_summary": "Task", "approach_notes": "", "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
+        if req.operation == "DRAFT_PLAN":
+            return json.dumps({"neutral_plan_body": PLAN})
+        if req.operation == "EXECUTE":
+            return json.dumps({"kind": "RESULT", "body": body_import})
+        raise AssertionError(f"unexpected operation {req.operation}")
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path,
+                           sys1_client=ClassifyingSys1("STANDARD_EXECUTION"))
+    engine.tier_d1 = True
+    engine.handle_user_message("$confirm-with-pseudocode Solve task")
+    engine.handle_user_message("/confirm")
+    response = engine.handle_user_message("/confirm")
+    assert response.closed is True
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert len([c for c in calls if c.operation == "EXECUTE"]) == 1
+
+
 def test_sandbox_witness_is_authoritative(tmp_path):
     # The program computes its value: a value it only states is not reproduced.
     code = 'import json\nprint("WITNESS: " + json.dumps({"answer": 3 + 4}))'
@@ -704,3 +767,77 @@ def test_positive_witness_with_search_provenance_is_not_a_search_claim(tmp_path)
     assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
     passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
     assert passed["provisional"] and not passed["sandbox_reproduced"]
+
+
+def test_draft_execute_omits_witness_instructions_from_its_inputs(tmp_path):
+    """DRAFT_EXECUTE plans algorithmic feasibility against tools and inputs; it must
+    not receive Result IR / WITNESS channel instructions that prime witness anchoring."""
+    calls: list = []
+    good = {"kind": "RESULT", "body": "```python\nimport json\nprint('WITNESS: {\"polarity\": \"positive\", \"data\": {\"ans\": 1}}')\n```",
+            "result_ir": {}}
+
+    def model_call(req):
+        calls.append(req)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({"kind": "ANALYSIS", "task_summary": "Solve task.",
+                               "approach_notes": "", "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
+        if req.operation == "DRAFT_PLAN":
+            return json.dumps({"neutral_plan_body": PLAN})
+        if req.operation == "DRAFT_EXECUTE":
+            return json.dumps({"kind": "RESULT", "brief_body": "Use DFS with pruning under 100k steps.",
+                               "execution_entities": []})
+        return json.dumps(good)
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=ClassifyingSys1("VERIFIED_EXECUTION"))
+    engine.draft_execute = True
+    for message in ("$confirm-with-pseudocode Solve the stated task with 1, 2, 3.", "/confirm", "/confirm"):
+        engine.handle_user_message(message)
+
+    drafts = [c for c in calls if c.operation == "DRAFT_EXECUTE"]
+    executes = [c for c in calls if c.operation == "EXECUTE"]
+    assert len(drafts) == 1 and len(executes) == 1
+    # DRAFT_EXECUTE prompt must NOT include the Result IR or WITNESS channel instructions
+    assert "RESULT IR:" not in drafts[0].prompt
+    assert "WITNESS:" not in drafts[0].prompt
+    # But EXECUTE prompt MUST include both
+    assert "RESULT IR:" in executes[0].prompt
+    assert "WITNESS:" in executes[0].prompt
+
+
+def test_execute_wire_failure_includes_operator_feedback_in_finding(tmp_path):
+    """When EXECUTE wire response fails schema validation, the operator feedback
+    carrying field-level Pydantic error details must appear in the repair prompt."""
+    bad_wire = {
+        "kind": "RESULT",
+        "body": "No valid partition exists.",
+        "result_ir": {
+            "files": [],
+            "reconciliation": [],
+            "open_defects": [],
+            "witness": {
+                "polarity": "negative",
+                "basis": "search",
+                "search_exhausted": True,
+                "nodes_explored": 0,  # Fails PositiveInt validation!
+                "method": "backtrack",
+            },
+        },
+    }
+    good = {
+        "kind": "RESULT",
+        "body": "```python\nimport json\nprint('WITNESS: {\"polarity\": \"positive\", \"data\": {\"found\": true}}')\n```",
+        "result_ir": {},
+    }
+    engine, _, executes, events = _run(
+        tmp_path, [bad_wire, good], problem_class="VERIFIED_EXECUTION"
+    )
+    assert len(executes) == 2
+    repair_prompt = executes[1].prompt
+    assert "[OUTPUT_MALFORMED]" in repair_prompt
+    assert "execution_result_ir_witness" in repair_prompt
+    # Field-level Pydantic error from operator_feedback must be present
+    assert "Validation failed on field 'result_ir.witness.negative.nodes_explored'" in repair_prompt
+    assert "Input should be greater than 0" in repair_prompt
+

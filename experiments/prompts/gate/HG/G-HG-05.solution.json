@@ -1,0 +1,29 @@
+{
+  "id": "G-HG-05",
+  "ground_truth_status": "verified",
+  "answer": {
+    "fish_owner": "Ben",
+    "houses": [
+      {
+        "house": 1,
+        "color": "green",
+        "owner": "Cleo",
+        "pet": "dog"
+      },
+      {
+        "house": 2,
+        "color": "red",
+        "owner": "Ana",
+        "pet": "cat"
+      },
+      {
+        "house": 3,
+        "color": "blue",
+        "owner": "Ben",
+        "pet": "fish"
+      }
+    ]
+  },
+  "verified_by": "exhaustive check of all 216 arrangements; clue set minimal",
+  "what_would_be_wrong": "Any other fish owner"
+}

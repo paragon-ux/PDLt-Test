@@ -1,7 +1,7 @@
 # IMPL-0009: Verification Plane: Witnesses, Checkers and Problem Domains
 
 ## Status
-**Accepted.** Implements [ADR-0013](../0013-substantive-correctness-verification.md) (P2, P3, P5), [ADR-0015](../0015-model-synthesized-verification-and-confinement-boundaries.md) §1–2 and [ADR-0018](../0018-elimination-of-regex-heuristics-in-verification-and-reconciliation-integrity.md). Recorded 2026-10-03 from the 2.6.0rc1 code.
+**Accepted.** Implements [ADR-0013](../0013-substantive-correctness-verification.md) (P2, P3, P5, P6), [ADR-0015](../0015-model-synthesized-verification-and-confinement-boundaries.md) §1–2 and [ADR-0018](../0018-elimination-of-regex-heuristics-in-verification-and-reconciliation-integrity.md). Recorded 2026-10-03 from the 2.6.0rc1 code; updated 2026-10-04 (P6).
 
 ## Context
 Requests that need a checkable answer are verified mechanically, from a structured witness the model's own program produces. The harness confines and checks; it never solves. This record holds the witness types, the checkers, domain dispatch and how code is found and run.
@@ -26,6 +26,11 @@ Requests that need a checkable answer are verified mechanically, from a structur
   - Ground-truth checks for catalogue prompts live in the evaluation plane (`graders.py`), never in the harness.
   - A failed verification goes through the bounded repair mechanism, and exhausting it yields an explicit unverified result.
 - **No scraping.** No checker reads deliverable prose to build or recover a witness (GUARD-05). A missing or malformed witness fails closed.
+- **Pre-execution drafting boundary (`DRAFT_EXECUTE`, ADR-0013 P6).**
+  - Gated to `requires_verified_execution = True` (`session_engine.py:1615, 1849`). Analytical proofs, derivations, qualitative design tasks, and `STANDARD_EXECUTION` bypass `DRAFT_EXECUTE` entirely to avoid code-framing and step-budget bias (`GUARD-03`, `GUARD-03.1`).
+  - Result IR and Witness channel instructions are filtered out of `REQUIRED_TASK_INPUTS` during `DRAFT_EXECUTE` (`session_engine.py:1730-1740`).
+  - System prompt guidance in `api_worker.py:910-917` directs the model to focus strictly on algorithmic feasibility, state representations, and step budgeting under `AVAILABLE_EXECUTION_TOOLS`, prohibiting witness schemas, delivery markers, or hypothetical outcome branches.
+  - Wire failures on deliverable execution retain field-level Pydantic error diagnostics (`exc.operator_feedback`) in `Finding("OUTPUT_MALFORMED")` (`session_engine.py:1790, 1977`), allowing the model to repair wire payloads without algorithmic advice (`ADR-0018`, `GUARD-01`).
 
 ## Divergence from the ADRs as written
 - **ADR-0013 P0** (the plan must commit to code execution before `EXECUTE`) is not implemented. It conflicts with GUARD-03, under which derivations and proofs are first-class. The review-gate lint checks notation only (IMPL-0007).

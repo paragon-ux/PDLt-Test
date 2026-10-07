@@ -1,0 +1,33 @@
+{
+  "id": "06-04",
+  "task": "A diagnosis of the counter race, a demonstration that it can produce wrong results, and two tested fixes (with a lock, and without an explicit lock).",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Identifies the race: `counter += 1` is a read-modify-write (load, add, store) that is not atomic, so threads can interleave between the load and the store and lose increments.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Shows the bug can produce incorrect results: a concrete interleaving, a bytecode-level explanation, or a demonstration that makes it observable (e.g. a smaller switch interval). It notes that the GIL makes the loss rare in CPython but does not prevent it.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Fix (a): a threading.Lock held around each increment (or around a thread's whole batch), with the total correct.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Fix (b) uses no explicit lock and is correct, for example per-thread partial counts summed after join, results passed back through a queue, or itertools.count with next() (stated as relying on CPython's GIL).",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Tests both fixes, asserting the expected total 400000.",
+      "required": true
+    }
+  ],
+  "reference": "`counter += 1` compiles to LOAD_GLOBAL, LOAD_CONST, BINARY_OP(+=), STORE_GLOBAL: a thread switch between the load and the store loses the other thread's updates. Lock fix: `with lock: counter += 1`. Lock-free fix: each thread counts locally and the partial sums are added after join (or a queue, or itertools.count).",
+  "notes": "A 'fix' that relies on the GIL making += atomic, or on time.sleep, does not meet c4."
+}

@@ -1,0 +1,1 @@
+Round each of these prices to whole dollars and give the total: $2.50, $3.50, $4.50.

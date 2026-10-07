@@ -1,0 +1,33 @@
+{
+  "id": "15-07",
+  "task": "An interpretation of the load-test table: saturation point, primary bottleneck, the throughput drop at 1,000 users, the maximum recommended concurrency, and scaling recommendations.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Saturation at about 200-300 concurrent users: throughput plateaus near 2,560-2,710 req/s while latency rises sharply after 200 (p99 210 ms → 890 ms at 300).",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "The primary bottleneck is application CPU (91% at 200 users, 98-99% beyond). The answer also notes that DB connections cap at 150 from 200 users (a pool limit) and add queueing; memory is not the bottleneck.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Throughput falls at 1,000 users because of overload effects: CPU contention and context switching, queueing for the 150 connections, timeouts and errors (23.4%) whose retries or handling consume capacity, and rising memory pressure.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "The maximum recommended concurrency is about 200 users or a bit less (headroom below the knee, where p99 is 210 ms and errors 0.1%), consistent with the table.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Scaling recommendations follow from the bottleneck: horizontal scaling of the application tier (CPU), profiling or caching to cut CPU per request, sizing the DB pool together with database capacity, plus load shedding or rate limiting at the saturation point.",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": ""
+}

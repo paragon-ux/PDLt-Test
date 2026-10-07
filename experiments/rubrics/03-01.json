@@ -1,0 +1,33 @@
+{
+  "id": "03-01",
+  "task": "An asyncio token-bucket rate limiter with FIFO-fair acquire(n), no busy-waiting, and the stated timing test.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Configurable burst capacity (max tokens) and refill rate; tokens are computed from elapsed time and capped at the capacity.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "acquire(n=1) is async and waits without polling or busy-waiting: waiters block on an asyncio.Event, Condition or Future that is signalled when tokens can be available (a single sleep computed from the deficit, inside that mechanism, is fine; a fixed-interval re-check loop is not).",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Waiters are served in FIFO order: a later caller can't take tokens ahead of an earlier waiting caller (e.g. a queue of waiters, or a lock held while waiting).",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "The test launches 10 coroutines taking 1 token each at 5 tokens/s and asserts the elapsed time is 2 s ± 0.3 s, with a configuration that actually produces about 2 s (for example the bucket starts empty). A full 5-token bucket would finish in about 1 s, which would fail its own assertion.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "A request for more tokens than the capacity is rejected or documented (it could never be satisfied).",
+      "required": false
+    }
+  ],
+  "reference": "10 tokens at 5/s take 2 s only if the bucket starts empty (or the burst is 1); starting full at capacity 5 gives about 1 s.",
+  "notes": ""
+}

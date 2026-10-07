@@ -33,9 +33,17 @@ One entity specification for every problem type:
 - **Execution boundary.** Entities reach prompt drafting only. Planning and execution still receive only the confirmed artifacts (and execution the sanitized request).
 - **Schema-first.** Parsing goes through Pydantic, with no pattern extraction.
 
+## Amendment (2026-10-04, LEDGER L45, L47, L48)
+- **Fields.** `definition` is replaced by three optional fields:
+  - `relation`: what the request states about the entity, including what it says is unknown; it takes over the definition's role, and an older `definition` is read as `relation`;
+  - `polarity`: `known` or `unknown`, only as the request states it. When it is left out, none is shown: the host never assumes one;
+  - `group`: a name relating entities that belong together. A group may list its `members`; a surface is never split on its own text (a comma can belong to it, as in `10,000`).
+- **Coverage is advisory.** A prompt body that misses an exact entity is recorded (`TASK_ENTITY_COVERAGE_MISSING`); there is no redraft. The drafting context presents the entities as an informative reference to spell exactly where the prompt refers to them, not a list to reproduce.
+- **The execution boundary stands.** Confirmed EXECUTE does not receive the entities. They were added to it on 2026-10-04 (L47) without an amendment, then removed (L48). The unconfirmed route's single execution call receives them by its own design ([ultrafast-route-design.md](../plans/ultrafast-route-design.md) §4.4); that route has no prompt drafting.
+
 ## Consequences
 - More exact input reaches the confirmed prompt, and the narrowing that lost input data is undone.
-- A missed exact entity costs one prompt redraft. How often that happens under the final scope is not yet measured.
+- A missed exact entity is recorded, not redrafted (amendment above). Whether that costs recall on input data is not yet measured; IMPL-0012's probe showed the redraft recovered it.
 - Next measurements:
   - repeated extraction probes;
   - the graded categories across all variants, under the same conditions.

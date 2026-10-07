@@ -1,0 +1,12 @@
+```json
+{
+  "criteria": {
+    "c1": "met",
+    "c2": "met",
+    "c3": "not_met",
+    "c4": "met",
+    "c5": "met"
+  },
+  "note": "Criterion c3 is not met because ARC is not simulated with its four lists (B1 and B2 are omitted entirely) and the target parameter p remains static at 0 rather than adapting to ghost cache hits."
+}
+```

@@ -1,0 +1,33 @@
+{
+  "id": "07-06",
+  "task": "A split of the single-file CSV script into the stated package layout, with imports and per-module tests.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Exactly the requested layout: mypackage/__init__.py, mypackage/io.py, mypackage/validation.py, mypackage/transform.py, mypackage/report.py, with each file's contents shown.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Each function lands in the matching module: read_csv in io; validate_row in validation; transform in transform; summarize and write_report in report.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Imports are correct and minimal: each module imports only what it uses (csv; datetime; statistics; json), the package's internal imports work, and __init__ exposes the public functions (or documents the import paths).",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Behaviour is unchanged: the function bodies keep the original logic.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Tests for each module (read_csv with a temporary file, validate_row's three rules, transform's mapping, summarize's statistics and empty case, write_report's JSON output).",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": "A module named io inside the package is fine (it is mypackage.io); an answer may rename it only if it explains why."
+}

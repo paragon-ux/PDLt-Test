@@ -1,0 +1,3 @@
+```json
+{"criteria": {"c1": "not_met", "c2": "not_met", "c3": "not_met", "c4": "not_met", "c5": "not_met", "c6": "not_met"}, "note": "The response suggests single-column B-tree indexes across all columns rather than composite, partial, or GIN indexes tailored to the queries, creates an unnecessary index on the existing primary key, provides no query mappings or reasoning, and vastly underestimates the index space overhead for 50 million rows."}
+```

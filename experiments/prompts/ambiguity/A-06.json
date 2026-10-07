@@ -1,0 +1,10 @@
+{
+  "id": "A-06",
+  "intended": "The second 10% applies to the already-reduced price: 50 x 0.9 x 0.9 = $40.50.",
+  "others": [
+    "A combined 20% off: $40.00."
+  ],
+  "answer": "$40.50",
+  "correction": "The second 10% applies to the already-reduced price.",
+  "file": "A-06.txt"
+}

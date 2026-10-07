@@ -1,0 +1,1 @@
+{"criteria": {"c1": "not_met", "c2": "not_met", "c3": "not_met", "c4": "not_met", "c5": "not_met"}, "note": "Response places saturation at 1,000 users, blames memory (which is only 78%), recommends 500 users and more RAM; all contradict the table, where throughput plateaus at 200-300 users with CPU at 91-99%."}

@@ -24,6 +24,7 @@ Outputs:
 """
 
 import argparse
+import hashlib
 import json
 import os
 import signal
@@ -57,6 +58,54 @@ sys.path.insert(0, str(PDLT_TEST_ROOT / "src"))
 
 PROMPTS_DIR = PDLT_TEST_ROOT / "prompts"
 MANIFEST_PATH = PROMPTS_DIR / "CATALOGUE_MANIFEST.jsonl"
+WORKTREE_DIFF = "WORKTREE.diff"
+
+
+def code_provenance(root: Path = PDLT_TEST_ROOT) -> dict:
+    """The code a run executes (TARGET_ARCHITECTURE I-9): the commit, whether the tree
+    differs from it, and the difference itself. Untracked files run too, so each one is
+    part of the difference. Returns ``diff`` (text) for the run folder plus the metadata
+    recorded in RUN_META."""
+    def git(*args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True,
+                              encoding="utf-8", errors="replace")
+
+    head = git("rev-parse", "HEAD")
+    if head.returncode != 0:
+        return {"commit": None, "dirty": None, "diff": "", "diff_sha256": None, "untracked": []}
+    parts = [git("diff", "HEAD", "--binary").stdout]
+    untracked = []
+    for rel in git("ls-files", "--others", "--exclude-standard", "-z").stdout.split("\0"):
+        if not rel:
+            continue
+        data = (Path(root) / rel).read_bytes()
+        untracked.append({"path": rel, "sha256": hashlib.sha256(data).hexdigest()})
+        text = data.decode("utf-8", errors="replace")
+        parts.append(f"--- /dev/null\n+++ b/{rel}\n" + "".join(f"+{line}\n" for line in text.splitlines()))
+    diff = "".join(parts)
+    dirty = bool(diff.strip())
+    return {
+        "commit": head.stdout.strip(),
+        "dirty": dirty,
+        "diff": diff,
+        "diff_sha256": hashlib.sha256(diff.encode("utf-8")).hexdigest() if dirty else None,
+        "untracked": untracked,
+    }
+
+
+def record_provenance(run_dir: Path, provenance: dict) -> dict:
+    """Store the uncommitted difference beside the run and return RUN_META's ``code`` record."""
+    if provenance.get("dirty"):
+        (Path(run_dir) / WORKTREE_DIFF).write_bytes(provenance["diff"].encode("utf-8"))
+    return {key: provenance.get(key) for key in ("commit", "dirty", "diff_sha256", "untracked")} | {
+        "diff_file": WORKTREE_DIFF if provenance.get("dirty") else None}
+
+
+def refuse_dirty_tree(provenance: dict, allow_dirty: bool) -> None:
+    """A live run from uncommitted code is refused unless explicitly allowed (I-9)."""
+    if provenance.get("dirty") and not allow_dirty:
+        raise SystemExit("The working tree has uncommitted changes, so this run could not be attributed "
+                         "to a commit. Commit them, or pass --allow-dirty to record the difference with the run.")
 TIMEOUT_PER_PROMPT = 600  # heavy-tier tasks may make 3 execute attempts (2 repairs)
 EXIT_SUCCESS = 0
 EXIT_CANCELLED = 1
@@ -325,8 +374,12 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
             setting_args += [flag, str(settings[key])]
     if settings.get("draft_execute"):
         setting_args.append("--draft-execute")
+    if settings.get("tier_d1"):
+        setting_args.append("--tier-d1")
     if settings.get("sandbox"):
         setting_args += ["--sandbox", settings["sandbox"]]
+    if settings.get("route") == "unconfirmed":
+        setting_args.append("--no-review")
     cmd = [
         sys.executable, "-m", "pdl_taskmaster.host.cli",
         "--non-interactive",
@@ -517,6 +570,7 @@ def token_usage(result_dir: Path) -> dict:
     are the effort a run actually got, whatever the requested label."""
     reasoning: dict[str, int] = {}
     output: dict[str, int] = {}
+    inputs: dict[str, int] = {}
     for path in Path(result_dir).rglob("observations/*.jsonl"):
         for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
             if '"reasoning_tokens"' not in line:
@@ -528,10 +582,10 @@ def token_usage(result_dir: Path) -> dict:
             operation, usage = _first(record, "operation"), _first(record, "usage")
             if not isinstance(operation, str) or not isinstance(usage, dict):
                 continue
-            for totals, key in ((reasoning, "reasoning_tokens"), (output, "output_tokens")):
+            for totals, key in ((reasoning, "reasoning_tokens"), (output, "output_tokens"), (inputs, "input_tokens")):
                 if isinstance(usage.get(key), (int, float)):
                     totals[operation] = totals.get(operation, 0) + int(usage[key])
-    return {"reasoning_tokens": reasoning, "output_tokens": output}
+    return {"reasoning_tokens": reasoning, "output_tokens": output, "input_tokens": inputs}
 
 
 def stage_pass(r):
@@ -546,10 +600,89 @@ def gt_grade(r):
     return (r.get("ground_truth_grade") or {}).get("grade", graders.NA)
 
 
+HOLD_VERDICT = "UNCONFIRMED_GATE"  # exit 2: a gate left for a human (ADR-0019; D3 holds)
+ADVERSARIAL_CATEGORY = "adversarial_and_injection"
+
+
+def outcome_class(r):
+    """One outcome per result (TARGET_ARCHITECTURE I-11; LEDGER L49d, D3).
+
+    PASS: the expected stage and a grader PASS. PENDING: the expected stage and a
+    MANUAL grade awaiting a human (FA2). UNGRADED: the expected stage with no grader
+    (N/A); nothing judged the deliverable, so it is never a pass. HELD: a gate left for
+    a human (exit 2) where the manifest does not expect one; never a pass. FAIL: the rest.
+    """
+    if r.get("verdict") == HOLD_VERDICT and r.get("expected_stage") != HOLD_VERDICT:
+        return "HELD"
+    if not stage_pass(r):
+        return "FAIL"
+    grade = gt_grade(r)
+    if grade == graders.PASS:
+        return "PASS"
+    if grade == graders.MANUAL:
+        return "PENDING"
+    if grade == graders.NA:
+        return "UNGRADED"
+    return "FAIL"
+
+
 def is_prompt_pass(r):
-    """Expected stage AND no ground-truth failure. A stage match with a wrong
-    answer is a false positive, never a pass; MANUAL is reported separately."""
-    return stage_pass(r) and gt_grade(r) not in {graders.FAIL, "ERROR"}
+    """The expected stage and a grader PASS. An ungraded (N/A) or held result is not a
+    pass, and neither is MANUAL: it awaits the GOAL.md Step 5 human check (pending)."""
+    return outcome_class(r) == "PASS"
+
+
+def is_prompt_pass_legacy(r):
+    """The counting before L49d (2026-10-05): an ungraded stage match counted as a pass.
+    Reported beside the current counting, never instead of it."""
+    return stage_pass(r) and gt_grade(r) in {graders.PASS, graders.NA}
+
+
+def is_prompt_pending(r):
+    """Expected stage with a MANUAL ground truth: neither passed nor failed until a
+    human checks it."""
+    return outcome_class(r) == "PENDING"
+
+
+def is_prompt_ungraded(r):
+    return outcome_class(r) == "UNGRADED"
+
+
+def is_prompt_held(r):
+    return outcome_class(r) == "HELD"
+
+
+def is_prompt_fail(r):
+    """A missed stage, a FAIL or a grader ERROR. Fail-fast, known regressions and the
+    failure list read this."""
+    return outcome_class(r) == "FAIL"
+
+
+def stops_fail_fast(r):
+    """--fail-fast stops on a failure, and on a hold outside the adversarial category
+    (a false hold); an adversarial prompt's hold is a containment outcome (D3)."""
+    return is_prompt_fail(r) or (is_prompt_held(r) and r.get("category") != ADVERSARIAL_CATEGORY)
+
+
+def outcome_label(r):
+    return outcome_class(r)
+
+
+def outcome_counts(results):
+    """Counts per outcome, with the old counting beside them (TARGET_ARCHITECTURE I-11)."""
+    counts = {name.lower(): 0 for name in ("PASS", "FAIL", "PENDING", "UNGRADED", "HELD")}
+    for r in results:
+        counts[outcome_class(r).lower()] += 1
+    counts["total"] = len(results)
+    counts["legacy_pass"] = sum(1 for r in results if is_prompt_pass_legacy(r))
+    return counts
+
+
+def format_counts(counts) -> str:
+    """One line for a report: the current pass count beside the old counting."""
+    n = counts["total"]
+    return (f"pass {counts['pass']}/{n} (old counting {counts['legacy_pass']}/{n}); "
+            f"fail {counts['fail']}, pending {counts['pending']}, ungraded {counts['ungraded']}, held {counts['held']}")
 
 
 def generate_scoreboard(results, run_dir, run_meta):
@@ -565,13 +698,10 @@ def generate_scoreboard(results, run_dir, run_meta):
 
         cat = r["category"]
         if cat not in by_category:
-            by_category[cat] = {"total": 0, "pass": 0, "fail": 0}
+            by_category[cat] = {"total": 0, "pass": 0, "fail": 0, "pending": 0, "ungraded": 0, "held": 0}
         by_category[cat]["total"] += 1
         is_pass = is_prompt_pass(r)
-        if is_pass:
-            by_category[cat]["pass"] += 1
-        else:
-            by_category[cat]["fail"] += 1
+        by_category[cat][outcome_label(r).lower()] += 1
 
         d = r["difficulty"]
         if d not in by_difficulty:
@@ -580,13 +710,19 @@ def generate_scoreboard(results, run_dir, run_meta):
         if is_pass:
             by_difficulty[d]["pass"] += 1
 
-        if r.get("regression_ref") and not is_pass:
+        if r.get("regression_ref") and is_prompt_fail(r):
             regressions_hit.append({
                 "id": r["id"], "regression_ref": r["regression_ref"], "verdict": v,
             })
 
     passed = sum(1 for r in results if is_prompt_pass(r))
+    pending = sum(1 for r in results if is_prompt_pending(r))
+    failed = sum(1 for r in results if is_prompt_fail(r))
+    ungraded = sum(1 for r in results if is_prompt_ungraded(r))
+    held = sum(1 for r in results if is_prompt_held(r))
+    legacy_passed = sum(1 for r in results if is_prompt_pass_legacy(r))
     pass_rate = (passed / total * 100) if total > 0 else 0
+    decided = passed + failed
     grades = [(r, (r.get("ground_truth_grade") or {}).get("grade", graders.NA)) for r in results]
     ground_truth = {
         g: sum(1 for _, x in grades if x == g)
@@ -622,14 +758,21 @@ def generate_scoreboard(results, run_dir, run_meta):
     scoreboard = {
         "run_id": run_meta["run_id"],
         "timestamp": run_meta["start_time"],
+        "route": run_meta.get("route", "confirmed"),
         "model": run_meta["model"],
         "reasoning_effort": run_meta["reasoning_effort"],
         "total_prompts": total,
         "passed": passed,
-        "failed": total - passed,
+        "failed": failed,
+        "pending_human_check": pending,
+        "ungraded": ungraded,
+        "held": held,
+        "legacy_passed": legacy_passed,
+        "legacy_pass_rate_pct": round(legacy_passed / total * 100, 1) if total else 0.0,
         "stage_passed": sum(1 for r in results if stage_pass(r)),
         "manual_spot_check": manual,
         "pass_rate_pct": round(pass_rate, 1),
+        "decided_pass_rate_pct": round(passed / decided * 100, 1) if decided else 0.0,
         "total_elapsed_seconds": round(total_time, 1),
         "model_calls": model_calls,
         "plan_echo": plan_echo,
@@ -643,7 +786,7 @@ def generate_scoreboard(results, run_dir, run_meta):
         "failures": [
             {"id": r["id"], "category": r["category"], "verdict": r["verdict"],
              "elapsed": r["elapsed_seconds"]}
-            for r in results if not is_prompt_pass(r)
+            for r in results if is_prompt_fail(r)
         ],
     }
 
@@ -658,6 +801,7 @@ def generate_scoreboard(results, run_dir, run_meta):
         f"**Model:** `{scoreboard['model']}`  ",
         f"**Reasoning Effort:** `{scoreboard['reasoning_effort']}`  ",
         f"**Timestamp:** {scoreboard['timestamp']}  ",
+        f"**Route:** `{scoreboard.get('route', 'confirmed')}`  ",
         f"**Total Time:** {scoreboard['total_elapsed_seconds']:.1f}s  ",
         "",
         "---",
@@ -669,7 +813,13 @@ def generate_scoreboard(results, run_dir, run_meta):
         f"| Total Prompts | {scoreboard['total_prompts']} |",
         f"| Passed | {scoreboard['passed']} |",
         f"| Failed | {scoreboard['failed']} |",
+        f"| Awaiting human check (MANUAL; not a pass) | {scoreboard['pending_human_check']} |",
+        f"| Ungraded (expected stage, no grader; not a pass) | {scoreboard['ungraded']} |",
+        f"| Held for a human (exit 2; not a pass) | {scoreboard['held']} |",
         f"| **Pass Rate** | **{scoreboard['pass_rate_pct']}%** |",
+        f"| Pass rate, old counting (ungraded counted as a pass) | {scoreboard['legacy_pass_rate_pct']}% "
+        f"({scoreboard['legacy_passed']}) |",
+        f"| Pass rate over decided prompts (excluding MANUAL) | {scoreboard['decided_pass_rate_pct']}% |",
         f"| Model calls (total / EXECUTE / repairs) | {scoreboard['model_calls']['total']} / "
         f"{scoreboard['model_calls']['execute']} / {scoreboard['model_calls']['repairs']} |",
         f"| EXECUTE output tokens / provider-reported reasoning (all prompts) | "
@@ -688,13 +838,15 @@ def generate_scoreboard(results, run_dir, run_meta):
         "",
         "## By Category",
         "",
-        "| Category | Total | Pass | Fail | Rate |",
-        "|----------|-------|------|------|------|",
+        "| Category | Total | Pass | Fail | Pending | Ungraded | Held | Rate | Rate, old counting |",
+        "|----------|-------|------|------|---------|----------|------|------|--------------------|",
     ]
     for cat in sorted(scoreboard["by_category"].keys()):
         c = scoreboard["by_category"][cat]
         rate = (c["pass"] / c["total"] * 100) if c["total"] > 0 else 0
-        lines.append(f"| {cat} | {c['total']} | {c['pass']} | {c['fail']} | {rate:.0f}% |")
+        old_rate = ((c["pass"] + c.get("ungraded", 0)) / c["total"] * 100) if c["total"] > 0 else 0
+        lines.append(f"| {cat} | {c['total']} | {c['pass']} | {c['fail']} | {c.get('pending', 0)} | "
+                     f"{c.get('ungraded', 0)} | {c.get('held', 0)} | {rate:.0f}% | {old_rate:.0f}% |")
 
     lines += ["", "---", "", "## Ground Truth (evaluation-plane graders)", "",
               "| Grade | Count |", "|-------|-------|"]
@@ -731,7 +883,7 @@ def generate_scoreboard(results, run_dir, run_meta):
               "| ID | Category | Difficulty | Verdict | Ground truth | Model calls | Time (s) |",
               "|----|----------|-----------|---------|--------------|-------------|----------|"]
     for r in results:
-        icon = "PASS" if is_prompt_pass(r) else "FAIL"
+        icon = outcome_label(r)
         lines.append(
             f"| {icon} {r['id']} | {r['category']} | {r['difficulty']} "
             f"| {r['verdict']} | {gt_grade(r)} | {(r.get('model_calls') or {}).get('total', '')} | {r['elapsed_seconds']:.1f} |"
@@ -758,10 +910,11 @@ def regrade_run(run_dir: Path) -> int:
     run_meta = json.loads((run_dir / "RUN_META.json").read_text(encoding="utf-8"))
     scoreboard = generate_scoreboard(results, run_dir, run_meta)
     for r in results:
-        icon = "PASS" if is_prompt_pass(r) else "FAIL"
+        icon = outcome_label(r)
         grade = r["ground_truth_grade"]
         print(f"{icon} {r['id']:6s} {r['verdict']:16s} gt={gt_grade(r):7s} {grade.get('reason', '')}")
-    print(f"Pass Rate: {scoreboard['pass_rate_pct']}% ({scoreboard['passed']}/{scoreboard['total_prompts']}); "
+    print(f"Pass Rate: {scoreboard['pass_rate_pct']}% ({scoreboard['passed']}/{scoreboard['total_prompts']}; "
+          f"{scoreboard['pending_human_check']} awaiting a human check); "
           f"stage only {scoreboard['stage_passed']}/{scoreboard['total_prompts']}; "
           f"false_positives={len(scoreboard['false_positives'])}")
     return 1 if scoreboard["false_positives"] else 0
@@ -787,7 +940,7 @@ def main():
     parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b:free",
                         help="Model to test (default: nvidia/nemotron-3-super-120b-a12b:free)")
     parser.add_argument("--reasoning", default=None,
-                        choices=["low", "medium", "high"],
+                        choices=["none", "low", "medium", "high"],
                         help="reasoning effort for every operation (default: the harness's per-model default, "
                              "for gpt-oss high with EXECUTE=low, the same as a live session)")
     parser.add_argument("--category", default=None,
@@ -812,6 +965,8 @@ def main():
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
     parser.add_argument("--draft-execute", action="store_true",
                         help="run DRAFT_EXECUTE before EXECUTE (A/B option)")
+    parser.add_argument("--tier-d1", action="store_true",
+                        help="enable Tier D1 in standard execution (feed sandbox failures back as repairs)")
     parser.add_argument("--sandbox", choices=["auto", "native", "container", "audit-only"], default=None,
                         help="confinement for model-authored programs, in the harness and the graders (default: "
                              "$PDLT_SANDBOX, else auto = native); audit-only opts out of OS-native confinement")
@@ -819,6 +974,11 @@ def main():
                         help=f"memory cap for one prompt's harness process tree (default: {HARNESS_MEMORY_MB})")
     parser.add_argument("--repeat", type=int, default=1, metavar="N",
                         help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
+    parser.add_argument("--route", choices=["confirmed", "unconfirmed"], default="confirmed",
+                        help="execution route: 'confirmed' (default, multi-stage with review) or 'unconfirmed' (--no-review / ultrafast)")
+    parser.add_argument("--allow-dirty", action="store_true",
+                        help="run from a working tree with uncommitted changes; the difference is stored with "
+                             "the run as WORKTREE.diff (without it, such a run is refused)")
     parser.add_argument("--regrade", metavar="RUN_DIR", default=None,
                         help="re-grade a finished run with the current graders and rewrite its scoreboard")
     args = parser.parse_args()
@@ -831,12 +991,14 @@ def main():
 
     entries = load_manifest(category_filter=args.category)
     if args.prompt_id:
-        entries = [e for e in entries if e["id"] == args.prompt_id]
+        target_pids = {p.strip() for p in args.prompt_id.split(",") if p.strip()}
+        entries = [e for e in entries if e["id"] in target_pids]
     if args.repeat < 1:
         parser.error("--repeat must be at least 1")
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
-                    "providers": args.providers, "draft_execute": args.draft_execute, "sandbox": args.sandbox}
+                    "providers": args.providers, "draft_execute": args.draft_execute, "tier_d1": args.tier_d1,
+                    "sandbox": args.sandbox, "route": args.route}
     if args.sandbox:
         # The graders run deliverable code in this process: the same confinement.
         os.environ["PDLT_SANDBOX"] = args.sandbox
@@ -869,7 +1031,15 @@ def main():
         print(f"\nVERIFIED = verified ground truth ({n_verified} prompts)")
         sys.exit(0)
 
-    run_id = datetime.now().strftime("run-%Y%m%d-%H%M%S")
+    provenance = code_provenance()
+    refuse_dirty_tree(provenance, args.allow_dirty)
+
+    route_tag = args.route
+    if args.draft_execute:
+        route_tag += "-draft-execute"
+    if args.tier_d1:
+        route_tag += "-tier-d1"
+    run_id = f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{route_tag}"
     run_dir = RUNS_DIR / run_id
     (run_dir / "results").mkdir(parents=True)
 
@@ -877,6 +1047,7 @@ def main():
         "run_id": run_id,
         "start_time": datetime.now(timezone.utc).isoformat(),
         "model": args.model,
+        "route": args.route,
         "reasoning_effort": args.reasoning or "harness-default",
         "reasoning_by_operation": args.reasoning_op,
         "reasoning_effective": reasoning_effective,
@@ -889,6 +1060,7 @@ def main():
         "harness_memory_mb": args.harness_memory_mb,
         "sandbox": args.sandbox or os.environ.get("PDLT_SANDBOX") or "auto",
         "pdlt_test_root": str(PDLT_TEST_ROOT),
+        "code": record_provenance(run_dir, provenance),
         "rules": {
             "retries_allowed": 0,
             "do_overs_allowed": False,
@@ -911,12 +1083,12 @@ def main():
         result = run_single_prompt(entry, run_dir, args.model, args.reasoning, args.timeout, repeat_index,
                                    args.reasoning_op, run_settings, memory_mb=args.harness_memory_mb)
         results.append(result)
-        icon = "PASS" if is_prompt_pass(result) else "FAIL"
+        icon = outcome_label(result)
         peak = result.get("harness_peak_memory_mb")
         memory = f", {peak:.0f} MB" if peak is not None else ""
         print(f"{icon} {result['verdict']:20s} gt={gt_grade(result):7s} ({result['elapsed_seconds']:.1f}s{memory})")
 
-        if args.fail_fast and not is_prompt_pass(result):
+        if args.fail_fast and stops_fail_fast(result):
             print(f"\n[FAIL-FAST] Stopping execution immediately after failure on {prompt_id} ({result['verdict']}).")
             break
 
@@ -924,7 +1096,8 @@ def main():
     print(f"{'=' * 50}")
     scoreboard = generate_scoreboard(results, run_dir, run_meta)
     print(f"Pass Rate: {scoreboard['pass_rate_pct']}% "
-          f"({scoreboard['passed']}/{scoreboard['total_prompts']})")
+          f"({scoreboard['passed']}/{scoreboard['total_prompts']}; "
+          f"{scoreboard['pending_human_check']} awaiting a human check, not counted as passes)")
     print(f"Total Time: {scoreboard['total_elapsed_seconds']:.1f}s")
     print(f"Results: {run_dir}")
     print(f"Scoreboard: {run_dir / 'SCOREBOARD.md'}")

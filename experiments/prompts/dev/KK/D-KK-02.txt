@@ -1,0 +1,7 @@
+On an island every inhabitant is either a knight, who always tells the truth, or a knave, who always lies. You meet three inhabitants, A, B and C.
+
+A says: "B is a knight."
+B says: "C and I are of different kinds."
+C says: "At least one of A and B is a knave."
+
+Which of A, B and C are knights and which are knaves? Show the reasoning that rules out every other assignment.

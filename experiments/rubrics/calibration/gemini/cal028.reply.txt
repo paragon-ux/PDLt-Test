@@ -1,0 +1,12 @@
+```json
+{
+  "criteria": {
+    "c1": "met",
+    "c2": "not_met",
+    "c3": "met",
+    "c4": "not_met",
+    "c5": "not_met"
+  },
+  "note": "The response failed to identify the contradictions between statements 3 and 4 (duplicate email handling) and statements 7 and 8 (user ID format/generation). Consequently, it did not provide resolutions with reasons for each contradiction."
+}
+```

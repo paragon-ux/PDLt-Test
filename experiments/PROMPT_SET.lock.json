@@ -1,0 +1,789 @@
+{
+  "version": 1,
+  "design": "docs/plans/protocol-vs-control-experiment-design.md",
+  "decision_strata": {
+    "G1": [
+      "S",
+      "I"
+    ],
+    "G2": [
+      "T",
+      "G"
+    ],
+    "G4": [
+      "T",
+      "G"
+    ]
+  },
+  "famous_tiers_status": "proposed by rater 1; a second rater confirms before Day 1",
+  "counts": {
+    "T": 18,
+    "G": 24,
+    "S": 4,
+    "I": 7,
+    "Q": 6,
+    "DEV": 24
+  },
+  "items": [
+    {
+      "id": "01-01",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "N",
+      "file": "prompts/01_combinatorial_search/schur_triples_n15.txt",
+      "sha256": "eff0b0fed4038d53c1e605779077796c2a742f5f4844763876bc305513291592"
+    },
+    {
+      "id": "01-02",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "N",
+      "file": "prompts/01_combinatorial_search/exact_cover_dlx.txt",
+      "sha256": "c6a6e1c19f7fa69d0a3bd000c8ed7895490a1810ac9393fe9408329bb9f3de21"
+    },
+    {
+      "id": "01-03",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "N",
+      "file": "prompts/01_combinatorial_search/graph_coloring_k4.txt",
+      "sha256": "b78dfb18f1fdc453e688ddd2aba0a7d8e4c2d696160b305241190faa56922730"
+    },
+    {
+      "id": "01-04",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "N",
+      "file": "prompts/01_combinatorial_search/subset_sum_target.txt",
+      "sha256": "fc53d68eba4f490c154b65c8caf3764a8e6979807a26224bde1ccc1f369978ad"
+    },
+    {
+      "id": "01-05",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "N",
+      "file": "prompts/01_combinatorial_search/latin_square_completion.txt",
+      "sha256": "3f031b29072d86dd0c5baee77987e41eea08bb4ee6292900588bbdc2f952bafa"
+    },
+    {
+      "id": "01-06",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "N",
+      "file": "prompts/01_combinatorial_search/bin_packing_first_fit.txt",
+      "sha256": "7e2ac5c52a8c8acaa82c427369bc6f2178eb90268a3e2903b42be0c48a267af7"
+    },
+    {
+      "id": "01-07",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "N",
+      "file": "prompts/01_combinatorial_search/hamiltonian_path_sparse.txt",
+      "sha256": "b9a8db14edb9871a39d3916208fec805778ca3f2d487ccdc670851eb61f76e0b"
+    },
+    {
+      "id": "13-01",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "R",
+      "file": "prompts/13_negative_and_impossible/unsatisfiable_constraints.txt",
+      "sha256": "84cc30aea552004c09a42877fdc7921d05b6039bf3840bd446110b52dd4bae58"
+    },
+    {
+      "id": "13-02",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "R",
+      "file": "prompts/13_negative_and_impossible/np_hard_exact_large.txt",
+      "sha256": "708f73bfcd45c12e0797a3213ba44c38ff010b351e45dc4942cafa6514810865"
+    },
+    {
+      "id": "13-04",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "F",
+      "file": "prompts/13_negative_and_impossible/contradictory_requirements.txt",
+      "sha256": "af5788db728cfc36569c031e374fe94d7ec7a3d63839e6308440b8632e30dbae"
+    },
+    {
+      "id": "14-01",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "R",
+      "file": "prompts/14_formal_verification/loop_invariant_proof.txt",
+      "sha256": "af0ef332f4213f1585b671b4d9099e98ad2f8b72e255775ab4e2326bff9b4227"
+    },
+    {
+      "id": "14-03",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "R",
+      "file": "prompts/14_formal_verification/protocol_deadlock_free.txt",
+      "sha256": "cb45ef5040df2acfdd81aeb9fcf11df23ba0b2b65f728848ef5e796e3f056aa6"
+    },
+    {
+      "id": "14-05",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "R",
+      "file": "prompts/14_formal_verification/amortized_analysis.txt",
+      "sha256": "75c874ba5b08a19c539fa9bd72faac7da205f43f9f26be6ad4142244800454c1"
+    },
+    {
+      "id": "14-07",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "F",
+      "file": "prompts/14_formal_verification/termination_argument.txt",
+      "sha256": "3081d5aeed6a9247dc1bdc1ba3714f997e62a580477508ee92ea08337945c261"
+    },
+    {
+      "id": "16-03",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "R",
+      "file": "prompts/16_logic_and_reasoning/knights_and_knaves.txt",
+      "sha256": "0a1a377f7bdc11c9e9a1f856cee26f78c909fcf960a0082727547f217719b331"
+    },
+    {
+      "id": "16-05",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "F",
+      "file": "prompts/16_logic_and_reasoning/masked_men.txt",
+      "sha256": "712fe822772bdbe2e5c8341cd442e96c7d0bad7f36a561f79f02877af351942a"
+    },
+    {
+      "id": "16-06",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "F",
+      "file": "prompts/16_logic_and_reasoning/sibling_count.txt",
+      "sha256": "05dc6f0467d0d6261d0c4edcb1d59fb8c44540843cc225d400b02cc6a16b144b"
+    },
+    {
+      "id": "16-07",
+      "set": "gate",
+      "stratum": "T",
+      "tier": "R",
+      "file": "prompts/16_logic_and_reasoning/house_grid.txt",
+      "sha256": "1cab1113aca264a13fcde977ccb8b38fd5fdf92d2f11637d7aa996161ace3ed0"
+    },
+    {
+      "id": "13-03",
+      "set": "gate",
+      "stratum": "S",
+      "tier": "N",
+      "file": "prompts/13_negative_and_impossible/hallucination_trap_api.txt",
+      "sha256": "23e7f81f3066a5ef1daf8b3b19cf08d815ea05465ad1f286a80fb876157e1828"
+    },
+    {
+      "id": "13-05",
+      "set": "gate",
+      "stratum": "S",
+      "tier": "N",
+      "file": "prompts/13_negative_and_impossible/out_of_scope_medical.txt",
+      "sha256": "7242d43b1ee5114c1674c197b0934a86bd3fcadd8ea81e88251adf1c15011c2b"
+    },
+    {
+      "id": "13-06",
+      "set": "gate",
+      "stratum": "S",
+      "tier": "N",
+      "file": "prompts/13_negative_and_impossible/insufficient_information.txt",
+      "sha256": "cb2f10aeb3d1d0cd061ae6c368f682fe8cefda0ab7b194ba50eb53e1bdf294d2"
+    },
+    {
+      "id": "13-07",
+      "set": "gate",
+      "stratum": "S",
+      "tier": "N",
+      "file": "prompts/13_negative_and_impossible/stale_knowledge_cutoff.txt",
+      "sha256": "1e4100882e8e88f0adff7cad2f38918f41802b04fa5272a199974d87f942cd94"
+    },
+    {
+      "id": "09-01",
+      "set": "gate",
+      "stratum": "I",
+      "tier": "N",
+      "file": "prompts/09_adversarial_and_injection/fielded_schema_injection.txt",
+      "sha256": "997a0937b7e7f62aad0eade2301ed5c3229c4a099b156d8c0f6d474b8a8d5e42"
+    },
+    {
+      "id": "09-02",
+      "set": "gate",
+      "stratum": "I",
+      "tier": "N",
+      "file": "prompts/09_adversarial_and_injection/system_prompt_override.txt",
+      "sha256": "3607c9295cd9e96140a261d6d9907afefb33320ac6b334ba79e538e8833c4e61"
+    },
+    {
+      "id": "09-03",
+      "set": "gate",
+      "stratum": "I",
+      "tier": "N",
+      "file": "prompts/09_adversarial_and_injection/nested_code_fence_escape.txt",
+      "sha256": "dfc3f712d3489f53efbac762bc1a1786c0125d3960dafc165ca4ef943bd9bd73"
+    },
+    {
+      "id": "09-04",
+      "set": "gate",
+      "stratum": "I",
+      "tier": "N",
+      "file": "prompts/09_adversarial_and_injection/json_payload_pollution.txt",
+      "sha256": "5757c5eed28601e1ff62fcfb4ffb4d4733e175c5da638fe6f0e4c512900dcfbd"
+    },
+    {
+      "id": "09-05",
+      "set": "gate",
+      "stratum": "I",
+      "tier": "N",
+      "file": "prompts/09_adversarial_and_injection/unicode_homoglyph_ids.txt",
+      "sha256": "17b9a7522e522cca30383938a9357fe1df88a8ca23a6e0d1462da230b0fcc359"
+    },
+    {
+      "id": "09-06",
+      "set": "gate",
+      "stratum": "I",
+      "tier": "N",
+      "file": "prompts/09_adversarial_and_injection/recursive_self_reference.txt",
+      "sha256": "bba7f22885faf1fb6b1774bbaf3b1d878fd765ce5c8bb477eee46d7ff19f3d31"
+    },
+    {
+      "id": "09-07",
+      "set": "gate",
+      "stratum": "I",
+      "tier": "N",
+      "file": "prompts/09_adversarial_and_injection/token_exhaustion_bomb.txt",
+      "sha256": "d9a103e018f5c3d4caf78fdf53fc69bc80be1f8b4414595e29ea4436bd21b1bd"
+    },
+    {
+      "id": "14-02",
+      "set": "gate",
+      "stratum": "Q",
+      "tier": "N",
+      "file": "prompts/14_formal_verification/type_system_soundness.txt",
+      "sha256": "d3f4f8e58533bf7a5f9411c49fda0437514b76217fcaab5acf99803c9f1577c5"
+    },
+    {
+      "id": "14-04",
+      "set": "gate",
+      "stratum": "Q",
+      "tier": "N",
+      "file": "prompts/14_formal_verification/sorting_correctness.txt",
+      "sha256": "36ada948b8c8d9e8bed3f86e8c0375a48aedf17a02cb0ac163c9ffdd29da2530"
+    },
+    {
+      "id": "14-06",
+      "set": "gate",
+      "stratum": "Q",
+      "tier": "N",
+      "file": "prompts/14_formal_verification/invariant_preservation.txt",
+      "sha256": "09e7292c1f155547ad5ceacf9a681b59cb9ddd5e5232ff7771f3623b122ab698"
+    },
+    {
+      "id": "16-01",
+      "set": "gate",
+      "stratum": "Q",
+      "tier": "F",
+      "file": "prompts/16_logic_and_reasoning/three_gods.txt",
+      "sha256": "4862d9f8aa40bcfeef32c0434ad9f5a57f56bb8c4b952c599bea49f50471b4a0"
+    },
+    {
+      "id": "16-02",
+      "set": "gate",
+      "stratum": "Q",
+      "tier": "F",
+      "file": "prompts/16_logic_and_reasoning/missing_dollar.txt",
+      "sha256": "5dc14dee63f252754f184d577fea474b711d194ed1e08cce8206aa65cc749f76"
+    },
+    {
+      "id": "16-04",
+      "set": "gate",
+      "stratum": "Q",
+      "tier": "F",
+      "file": "prompts/16_logic_and_reasoning/elevator_riddle.txt",
+      "sha256": "648a13047b8e68bca2d0009d9d136608bec779b14a50f3d0f055c18fec5ce44f"
+    },
+    {
+      "id": "G-SS-01",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "SS",
+      "template": "01-04",
+      "file": "experiments/prompts/gate/SS/G-SS-01.txt",
+      "sha256": "330f30b7381dd0324b33a9bc0887621f6cf1a1be5017faf5c0fae72be1c7e579"
+    },
+    {
+      "id": "G-SS-02",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "SS",
+      "template": "01-04",
+      "file": "experiments/prompts/gate/SS/G-SS-02.txt",
+      "sha256": "e4dc1444b2bafb2b09d43083c47cc6d4dea1ed274e20c4a493772fb1c5c20c2a"
+    },
+    {
+      "id": "G-SS-03",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "SS",
+      "template": "01-04",
+      "file": "experiments/prompts/gate/SS/G-SS-03.txt",
+      "sha256": "174e41bd80db83db1a63401cf41770bc655db0b163b0dc9f4ef501f8940133b3"
+    },
+    {
+      "id": "G-SS-04",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "SS",
+      "template": "01-04",
+      "file": "experiments/prompts/gate/SS/G-SS-04.txt",
+      "sha256": "2b8a34e97a67836226b382563e14102f433ad4f498a6c5a907333078e19357c4"
+    },
+    {
+      "id": "G-LS-01",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "LS",
+      "template": "01-05",
+      "file": "experiments/prompts/gate/LS/G-LS-01.txt",
+      "sha256": "c3582bc7afd73fb2e61302eea81008e90cd3a203ea8d7ba79c2ac7e4b9b68b98"
+    },
+    {
+      "id": "G-LS-02",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "LS",
+      "template": "01-05",
+      "file": "experiments/prompts/gate/LS/G-LS-02.txt",
+      "sha256": "e69b283bf920bed54ac21501c2a11fcbce3f86316c6300eddfacbbf1294c2ac2"
+    },
+    {
+      "id": "G-LS-03",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "LS",
+      "template": "01-05",
+      "file": "experiments/prompts/gate/LS/G-LS-03.txt",
+      "sha256": "f0199baac5d6e46a25a44cc761163fae0bf17ccd6549424857c0826223c23980"
+    },
+    {
+      "id": "G-LS-04",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "LS",
+      "template": "01-05",
+      "file": "experiments/prompts/gate/LS/G-LS-04.txt",
+      "sha256": "0b121db7e796a5a9c0fbbc40e7bf9edd4131893679b06048ce5086408f5dd15f"
+    },
+    {
+      "id": "G-HP-01",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "HP",
+      "template": "01-07",
+      "file": "experiments/prompts/gate/HP/G-HP-01.txt",
+      "sha256": "00171da46cafa573599a0fa3dc4a861a7d05ce2ad538e787c6ae0ca8b831795f"
+    },
+    {
+      "id": "G-HP-02",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "HP",
+      "template": "01-07",
+      "file": "experiments/prompts/gate/HP/G-HP-02.txt",
+      "sha256": "dee28333f07cae6c8b381cf51aa4aff9035be1a6014697e5416862753caebc89"
+    },
+    {
+      "id": "G-HP-03",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "HP",
+      "template": "01-07",
+      "file": "experiments/prompts/gate/HP/G-HP-03.txt",
+      "sha256": "949fda7e4124021df8ba73bf497c239ae4a1fc3628ba9e29cdd66a43ca10d0c7"
+    },
+    {
+      "id": "G-HP-04",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "HP",
+      "template": "01-07",
+      "file": "experiments/prompts/gate/HP/G-HP-04.txt",
+      "sha256": "aa4781870a6b9b57844ca5e03bccc417321ce2317d88bbea369517a8bb7ba65d"
+    },
+    {
+      "id": "G-KK-01",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "KK",
+      "template": "16-03",
+      "file": "experiments/prompts/gate/KK/G-KK-01.txt",
+      "sha256": "769d9d1eac3ddc7edd6523b85440dee51dbd855ff18c7462eecf8e72b3417ce6"
+    },
+    {
+      "id": "G-KK-02",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "KK",
+      "template": "16-03",
+      "file": "experiments/prompts/gate/KK/G-KK-02.txt",
+      "sha256": "caed0c95cd39bd6c23acb9b974310b4860999919d112f524449dbc46909dfe5d"
+    },
+    {
+      "id": "G-KK-03",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "KK",
+      "template": "16-03",
+      "file": "experiments/prompts/gate/KK/G-KK-03.txt",
+      "sha256": "b3900ffbd91a3a7adb52d61616c116e7ed216003fc47db3f1e1d2edd49eb283c"
+    },
+    {
+      "id": "G-KK-04",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "KK",
+      "template": "16-03",
+      "file": "experiments/prompts/gate/KK/G-KK-04.txt",
+      "sha256": "2ad7565ff56973f97c07aa641529aa008276fe40f9064e4f33ffa624f02e2e21"
+    },
+    {
+      "id": "G-KK-05",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "KK",
+      "template": "16-03",
+      "file": "experiments/prompts/gate/KK/G-KK-05.txt",
+      "sha256": "ff01315bd4c29cf8a05d473c88895d39ce0a0021ee8a4241c4ed9c6accb0f4b1"
+    },
+    {
+      "id": "G-KK-06",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "KK",
+      "template": "16-03",
+      "file": "experiments/prompts/gate/KK/G-KK-06.txt",
+      "sha256": "e3fd0a3c263ee354bb1ecf448a77328c7a1897fd8f8a0ee93c103dbad90b42a8"
+    },
+    {
+      "id": "G-HG-01",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "HG",
+      "template": "16-07",
+      "file": "experiments/prompts/gate/HG/G-HG-01.txt",
+      "sha256": "df4638891a1b2bdc3457d9d462d9db7bdbc7867c85fc5dcb7efd0442572ac498"
+    },
+    {
+      "id": "G-HG-02",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "HG",
+      "template": "16-07",
+      "file": "experiments/prompts/gate/HG/G-HG-02.txt",
+      "sha256": "2b4d1c50a5051c51a83f02f09f855be3031d741d46faaf27391a19057f818359"
+    },
+    {
+      "id": "G-HG-03",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "HG",
+      "template": "16-07",
+      "file": "experiments/prompts/gate/HG/G-HG-03.txt",
+      "sha256": "9a7b0bf812ecc9b0db901b5a946f4aa5177e85648226751155da98ec34b47b5e"
+    },
+    {
+      "id": "G-HG-04",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "HG",
+      "template": "16-07",
+      "file": "experiments/prompts/gate/HG/G-HG-04.txt",
+      "sha256": "399582b1d710b843dec6ce0138570b2dfeb8361c80bcb23681079442ffafd901"
+    },
+    {
+      "id": "G-HG-05",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "HG",
+      "template": "16-07",
+      "file": "experiments/prompts/gate/HG/G-HG-05.txt",
+      "sha256": "2c651a34d8791e23e684b83a945eac9b283247d9277a01008e4d559c6eaa6f31"
+    },
+    {
+      "id": "G-HG-06",
+      "set": "gate",
+      "stratum": "G",
+      "tier": "N",
+      "family": "HG",
+      "template": "16-07",
+      "file": "experiments/prompts/gate/HG/G-HG-06.txt",
+      "sha256": "f53a630024cf30425f63773e382ed5ee1741d40d519ce764223fe3af2d04b77d"
+    },
+    {
+      "id": "D-SS-01",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "SS",
+      "template": "01-04",
+      "file": "experiments/prompts/dev/SS/D-SS-01.txt",
+      "sha256": "7ce49b4cff98def5cc2c9f6186a2d057576b3889c6e47689939e320f7e80ed62"
+    },
+    {
+      "id": "D-SS-02",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "SS",
+      "template": "01-04",
+      "file": "experiments/prompts/dev/SS/D-SS-02.txt",
+      "sha256": "9f5415b33179fe357547113f704434c0bf40aebbed502e3012cec21204ddd61c"
+    },
+    {
+      "id": "D-SS-03",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "SS",
+      "template": "01-04",
+      "file": "experiments/prompts/dev/SS/D-SS-03.txt",
+      "sha256": "7f250dd9a320f3b8f77a313bb4bdfe119ec154172fc09797f78a0d2550ec8011"
+    },
+    {
+      "id": "D-SS-04",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "SS",
+      "template": "01-04",
+      "file": "experiments/prompts/dev/SS/D-SS-04.txt",
+      "sha256": "7877a58c3394f2339b9b6adcc63bfd222f9d4dc2728858b554026bdfa6f65e8d"
+    },
+    {
+      "id": "D-LS-01",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "LS",
+      "template": "01-05",
+      "file": "experiments/prompts/dev/LS/D-LS-01.txt",
+      "sha256": "27cb21db851a4eecaa4ebb311d0e3baea317521ad5e832c253015a61a7793764"
+    },
+    {
+      "id": "D-LS-02",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "LS",
+      "template": "01-05",
+      "file": "experiments/prompts/dev/LS/D-LS-02.txt",
+      "sha256": "f27fd34981afca3bbc3d63b5ed543983f0d7f57188c76ea8c2982a5eb5bf8183"
+    },
+    {
+      "id": "D-LS-03",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "LS",
+      "template": "01-05",
+      "file": "experiments/prompts/dev/LS/D-LS-03.txt",
+      "sha256": "4185a6ae0446bad6b054065b77fb1765a7c840e08755d8c7fdc2479fa2a6e460"
+    },
+    {
+      "id": "D-LS-04",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "LS",
+      "template": "01-05",
+      "file": "experiments/prompts/dev/LS/D-LS-04.txt",
+      "sha256": "82e99058c7e9786880fb95adab33d3cc565303d69fee3f93be96e251b52c3ef3"
+    },
+    {
+      "id": "D-HP-01",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "HP",
+      "template": "01-07",
+      "file": "experiments/prompts/dev/HP/D-HP-01.txt",
+      "sha256": "24a470903d5fa54505cd9a8566397fc411858a4818bb0611354f9d52d0bb442c"
+    },
+    {
+      "id": "D-HP-02",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "HP",
+      "template": "01-07",
+      "file": "experiments/prompts/dev/HP/D-HP-02.txt",
+      "sha256": "af09fa5033b4db08c286dade5abf6e96e64d795e897eec24ea775cbdf24f16b3"
+    },
+    {
+      "id": "D-HP-03",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "HP",
+      "template": "01-07",
+      "file": "experiments/prompts/dev/HP/D-HP-03.txt",
+      "sha256": "8b4d8b09fcca1952685e26f9577cad471e5e91ebe794bc050e0d5efe2869e39d"
+    },
+    {
+      "id": "D-HP-04",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "HP",
+      "template": "01-07",
+      "file": "experiments/prompts/dev/HP/D-HP-04.txt",
+      "sha256": "2674efbdbf7fde44dc4a77adae71ad134a12ab49e2d145c22baa76b9ef31f701"
+    },
+    {
+      "id": "D-KK-01",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "KK",
+      "template": "16-03",
+      "file": "experiments/prompts/dev/KK/D-KK-01.txt",
+      "sha256": "8c9a032be4b5d050a89f824160563a3ded1416e4844697915be117805d8b7da3"
+    },
+    {
+      "id": "D-KK-02",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "KK",
+      "template": "16-03",
+      "file": "experiments/prompts/dev/KK/D-KK-02.txt",
+      "sha256": "3f951a4e6af276bcd7bdcdd7890f14f76fcf656d17bca4b65427d1334f3ad7ae"
+    },
+    {
+      "id": "D-KK-03",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "KK",
+      "template": "16-03",
+      "file": "experiments/prompts/dev/KK/D-KK-03.txt",
+      "sha256": "42c7169094666e12c0e742884b64ea4c5a8f7f029aa5f530b3bd249392e12d0f"
+    },
+    {
+      "id": "D-KK-04",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "KK",
+      "template": "16-03",
+      "file": "experiments/prompts/dev/KK/D-KK-04.txt",
+      "sha256": "d6201f3b9e7894a05966eacd7c518e7377122ed9da7584959bbac02597a245ba"
+    },
+    {
+      "id": "D-KK-05",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "KK",
+      "template": "16-03",
+      "file": "experiments/prompts/dev/KK/D-KK-05.txt",
+      "sha256": "092809c205afc24e939f0e17ca060e309ffad86cfa4d7dcc20fe8d5c630f080b"
+    },
+    {
+      "id": "D-KK-06",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "KK",
+      "template": "16-03",
+      "file": "experiments/prompts/dev/KK/D-KK-06.txt",
+      "sha256": "97f2b8371be5b72aa5fb98539582d69395ee2f69dc45f2d4cb661dd9918d6ef7"
+    },
+    {
+      "id": "D-HG-01",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "HG",
+      "template": "16-07",
+      "file": "experiments/prompts/dev/HG/D-HG-01.txt",
+      "sha256": "9121d2ceda5b8219fa4868f8b799c52f87172207929f2fd17063d1b3595f5f13"
+    },
+    {
+      "id": "D-HG-02",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "HG",
+      "template": "16-07",
+      "file": "experiments/prompts/dev/HG/D-HG-02.txt",
+      "sha256": "6d0ad221a301fefbac69179f09b03151099d35cecfb8c52e1dc304d3aed1a911"
+    },
+    {
+      "id": "D-HG-03",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "HG",
+      "template": "16-07",
+      "file": "experiments/prompts/dev/HG/D-HG-03.txt",
+      "sha256": "73048cfe9d04ce0b72a4a6818126409f9342af6ca93eb8031b30c193690f2dd7"
+    },
+    {
+      "id": "D-HG-04",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "HG",
+      "template": "16-07",
+      "file": "experiments/prompts/dev/HG/D-HG-04.txt",
+      "sha256": "57507fa4953a26d80bcb0e8c206d7e1cc476d6a87ed593832428b70a5f8a74b9"
+    },
+    {
+      "id": "D-HG-05",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "HG",
+      "template": "16-07",
+      "file": "experiments/prompts/dev/HG/D-HG-05.txt",
+      "sha256": "2c506f519d6c7f3a22d76a13b0192d8e46d7fd7b3989eaeecb39b24facb9f7b4"
+    },
+    {
+      "id": "D-HG-06",
+      "set": "dev",
+      "stratum": "DEV",
+      "tier": "N",
+      "family": "HG",
+      "template": "16-07",
+      "file": "experiments/prompts/dev/HG/D-HG-06.txt",
+      "sha256": "e024ba28e8fc010096b15e0a4633d25f72879e424be7b06118155b98ad863be0"
+    }
+  ]
+}

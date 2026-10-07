@@ -1,0 +1,1 @@
+{"criteria": {"c1": "met", "c2": "met", "c3": "not_met", "c4": "not_met", "c5": "not_met"}, "note": "The per-item total is not rounded to 2 decimals, so the region sums use unrounded totals; sorting before groupby changes the region order from first-appearance; the 'test' is a single sentence with no code comparing against the original function."}

@@ -71,20 +71,42 @@ def published_outcome(result_dir: Path) -> tuple[str, str | None]:
     return "NONE", None
 
 
+_BUDGET_EVENTS = ("SANDBOX_RUN", "PLAN_PROFILE_ROUTED", "EXECUTION_PROFILE_ROUTED")
+
+
 def _run_budget(result_dir: Path) -> tuple[float, int | None]:
     """The wall-clock safety limit (at least 30 s) and the step budget the harness
-    granted the run, so graders re-run code under the same budget."""
-    seconds, steps = 30.0, None
-    for events in Path(result_dir).rglob("events.jsonl"):
+    granted the run, so graders re-run code under the same budget.
+
+    The tier is the one the published code actually ran under: the last
+    SANDBOX_RUN event's tier (the published attempt runs last). With no program
+    run, it is the tier declared to EXECUTE: the plan-time routing's (which may
+    have raised it), else the request-time routing's. Reading only the
+    request-time tier graded code that ran under a raised tier against a smaller
+    budget than the harness granted it."""
+    from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS
+
+    last: dict[str, dict] = {}
+    for events in sorted(Path(result_dir).rglob("events.jsonl")):
         for line in events.read_text(encoding="utf-8", errors="replace").splitlines():
-            if '"EXECUTION_PROFILE_ROUTED"' in line:
-                try:
-                    payload = json.loads(line)["payload"]
-                    seconds = max(seconds, float(payload["timeout_seconds"]))
-                    steps = int(payload["step_limit"]) if payload.get("step_limit") else steps
-                except (ValueError, KeyError, TypeError):
-                    pass
-    return seconds, steps
+            kind = next((k for k in _BUDGET_EVENTS if f'"{k}"' in line), None)
+            if kind is None:
+                continue
+            try:
+                last[kind] = json.loads(line)["payload"]
+            except (ValueError, KeyError, TypeError):
+                pass
+    for kind in _BUDGET_EVENTS:
+        payload = last.get(kind) or {}
+        budget = EXECUTION_BUDGETS.get(str(payload.get("tier")))
+        if budget is not None:
+            return max(30.0, float(budget.timeout_seconds)), int(budget.step_limit)
+    routed = last.get("EXECUTION_PROFILE_ROUTED") or {}
+    try:
+        steps = int(routed["step_limit"]) if routed.get("step_limit") else None
+        return max(30.0, float(routed.get("timeout_seconds", 30.0))), steps
+    except (ValueError, TypeError):
+        return 30.0, None
 
 
 def build_corpus(result_dir: Path, *, run_code: bool = True) -> str | None:
@@ -676,10 +698,34 @@ GRADERS: dict[str, Callable[[str, str], tuple[str, str]]] = {
 }
 
 
+def grade_hidden(prompt_id: str, kind: str, text: str | None, *, run_code: bool = True) -> dict:
+    """Grade a coding deliverable by the prompt's hidden tests (``hidden_tests.py``).
+
+    The tests run in the sandbox at hidden_tests.TIER, the same budget for every
+    run and arm: they are the grader's own code, not the deliverable's. Without
+    code runs the grade is pending (MANUAL), never a pass."""
+    import hidden_tests
+
+    if text is None:
+        return {"grade": FAIL, "reason": "no published deliverable"}
+    if kind != "RESULT":
+        return {"grade": FAIL, "reason": f"published {kind}, not a deliverable"}
+    if not run_code:
+        return {"grade": MANUAL, "reason": "hidden tests need a sandbox run"}
+    report = hidden_tests.run(prompt_id, text)
+    return {"grade": PASS if report["passed"] else FAIL, "reason": f"hidden tests: {report['reason']}"[:600]}
+
+
 def grade(entry: dict, result_dir: Path, prompts_dir: Path, *, run_code: bool = True) -> dict:
     """Grade one finished run. Never raises."""
     if entry.get("ground_truth_status") != "verified":
         return {"grade": NA, "reason": "no ground truth required"}
+    if entry.get("hidden_tests"):
+        try:
+            kind, text = published_outcome(Path(result_dir))
+            return grade_hidden(entry["id"], kind, text, run_code=run_code)
+        except Exception as exc:  # a grader bug must never mask a run
+            return {"grade": "ERROR", "reason": f"{type(exc).__name__}: {exc}"}
     fn = GRADERS.get(entry["id"])
     if fn is None:
         return {"grade": MANUAL, "reason": "needs GOAL.md Step 5 human spot check"}

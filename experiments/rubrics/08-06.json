@@ -1,0 +1,38 @@
+{
+  "id": "08-06",
+  "task": "A mapping of each privacy-policy statement to GDPR articles, and the GDPR requirements the policy doesn't cover.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Maps the data collection statement (name, email, browsing history 'to improve our services') to the principles and lawful basis: Art. 5(1)(b)-(c) purpose limitation and data minimisation, Art. 6 lawful basis, Art. 13 information; browsing history and ads may require consent (Art. 6(1)(a), Art. 7).",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Maps sharing with advertising partners to lawful basis or consent (Art. 6/7), disclosure of recipients (Art. 13(1)(e)), processor or joint-controller arrangements (Art. 26/28), and the right to object to direct marketing (Art. 21).",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Maps deletion on request to the right to erasure (Art. 17), with the response time in Art. 12(3) (one month).",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Maps US storage to international transfers (Chapter V, Art. 44-46: an adequacy decision such as the EU-US Data Privacy Framework, or standard contractual clauses).",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Maps the children statement to Art. 8, noting that the GDPR's default age of consent is 16 (member states may lower it to 13) and parental consent is needed below it.",
+      "required": true
+    },
+    {
+      "id": "c6",
+      "text": "Lists at least four requirements the policy doesn't cover, correctly cited. Examples: a stated lawful basis; retention periods (Art. 5(1)(e), 13(2)(a)); the rights of access, rectification, portability, restriction and objection (Art. 15, 16, 18, 20, 21); controller or DPO contact (Art. 13(1)(a)-(b)); withdrawing consent (Art. 7(3)); complaining to a supervisory authority (Art. 77); security (Art. 32); breach notification (Art. 33-34).",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": "Minor numbering slips (for example citing Art. 13 instead of Art. 14) do not fail a criterion if the requirement is right; citing an unrelated article for a requirement does."
+}

@@ -1,0 +1,24 @@
+{
+  "_comment": [
+    "A tooling check, not a measurement: one block of a trivial prompt that is in no set (runner --smoke).",
+    "Every protocol arm runs this checkout's code. P_unc is absent until the ultrafast route exists."
+  ],
+  "run_id": "smoke",
+  "out_dir": "gate-runs",
+  "seed": 1,
+  "reps": 1,
+  "strata": [],
+  "prompt_timeout_s": 1200,
+  "models": [
+    {"name": "gpt-oss", "model": "openai/gpt-oss-120b", "providers": ["Crusoe"], "sampling": {}}
+  ],
+  "arms": {
+    "C0": {"kind": "control"},
+    "C1": {"kind": "control", "effort": "medium"},
+    "C2": {"kind": "control", "effort": "medium"},
+    "C3": {"kind": "control"},
+    "P_old": {"kind": "protocol", "worktree": "."},
+    "P_new": {"kind": "branched", "worktree": ".",
+              "branches": {"P_new": [], "EXEC_HI": ["--api-reasoning-operation", "EXECUTE=high"]}}
+  }
+}

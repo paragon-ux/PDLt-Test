@@ -1,0 +1,33 @@
+{
+  "id": "15-04",
+  "task": "A derivation of the connection-pool size with Little's Law and Amdahl's Law, the effects of a too-small and too-large pool, and a recommendation.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Applies Little's Law with the time a request holds a connection: 2,000 req/s × 20 ms (15 ms query + 5 ms round trip) = 40 connections in use on average.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Uses Amdahl's Law or an equivalent capacity argument: only the database share (20 of 50 ms, 40%) is limited by the pool; database throughput is bounded by its 16 cores, so connections far beyond about 2 × cores add contention without throughput.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Too small: requests block waiting for a connection, the 200 application threads pile up, and latency grows (queueing) until timeouts.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Too large: database context switching, memory per connection, lock and cache contention reduce throughput; and the application can overload the database during spikes.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "A recommended size with headroom for bursts and variance, consistent with the computed average (for example about 40-60, or a value near 2 × 16 cores + a margin with a reason), noting that the 200 application threads are well above the ~100 requests in flight (2,000 × 50 ms).",
+      "required": true
+    }
+  ],
+  "reference": "L = λW: 2,000/s × 0.020 s = 40 connections; requests in flight: 2,000 × 0.050 = 100 (< 200 threads); DB cores: 16.",
+  "notes": ""
+}

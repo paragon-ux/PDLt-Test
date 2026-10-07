@@ -1,0 +1,1 @@
+The spec contradicts itself on the status code: statement 1 says 201 and statement 2 says 200. Use 201 Created. It also contradicts itself on authentication: statements 5 and 6. Make registration public. The rest of the spec is consistent.

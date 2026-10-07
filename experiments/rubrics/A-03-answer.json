@@ -1,0 +1,18 @@
+{
+  "id": "A-03-answer",
+  "task": "The final answer to the request, judged under the intended reading.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The final answer is 12 (Round halves up, as on a receipt: 3 + 4 + 5 = 12.)",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "The answer commits to that result (a response offering several results for different readings without choosing does not meet this).",
+      "required": true
+    }
+  ],
+  "reference": "Other readings give: Round half to even (banker's rounding, Python's round()): 2 + 4 + 4 = 10.",
+  "notes": "Judge the final stated result, not the working."
+}

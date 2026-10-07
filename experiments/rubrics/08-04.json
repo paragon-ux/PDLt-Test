@@ -1,0 +1,33 @@
+{
+  "id": "08-04",
+  "task": "At least 7 missing requirements in the authentication spec that would cause vulnerabilities or bugs.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "At least 7 distinct missing requirements, each a real gap in the given spec (not a restatement of it).",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Covers the token lifecycle: JWT expiry and refresh, and revocation or logout (a stolen or old token stays valid otherwise).",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Covers credential attacks: rate limiting, lockout or backoff for login attempts.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Covers password storage and policy: hashing with a slow salted algorithm (bcrypt, scrypt or argon2), minimum strength.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Covers at least two of: email verification and uniqueness (including case-insensitive matching); password reset flow; how admins are created or assigned (privilege escalation); authorization checks on profile IDs (IDOR); deactivated or deleted users with valid tokens; JWT algorithm and secret handling; user enumeration through error messages; HTTPS/transport.",
+      "required": true
+    }
+  ],
+  "reference": "",
+  "notes": ""
+}

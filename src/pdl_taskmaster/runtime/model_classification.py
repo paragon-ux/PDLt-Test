@@ -277,6 +277,7 @@ def get_proportional_reasoning_mapping(model_id: str) -> dict[str, str | int]:
             "INTERPRET_EXECUTION_INPUT": "high",
             "DRAFT_EXECUTE": "high",
             "EXECUTE": "low",
+            "EXECUTE_UNCONFIRMED": "medium",
             "EMIT_RESULT_IR": "high",
         }
     elif "glm-4.7" in mid:
@@ -298,6 +299,7 @@ def get_proportional_reasoning_mapping(model_id: str) -> dict[str, str | int]:
             "INTERPRET_PLAN_REVIEW": "none",
             "DRAFT_EXECUTE": "high",
             "EXECUTE": "high",
+            "EXECUTE_UNCONFIRMED": "high",
             "EMIT_RESULT_IR": "low",
         }
     elif "claude" in mid or "anthropic" in mid:
@@ -309,6 +311,7 @@ def get_proportional_reasoning_mapping(model_id: str) -> dict[str, str | int]:
             "DRAFT_PLAN": "none",
             "REVISE_PLAN": "none",
             "EXECUTE": "none",
+            "EXECUTE_UNCONFIRMED": 4096,
         }
     elif "thinking" in mid or "r1" in mid or "o1" in mid or "o3" in mid or "o4" in mid:
         # Class C / Native thinking open-weights / reasoning
@@ -319,6 +322,7 @@ def get_proportional_reasoning_mapping(model_id: str) -> dict[str, str | int]:
             "DRAFT_PLAN": "none",
             "REVISE_PLAN": "none",
             "EXECUTE": "none",
+            "EXECUTE_UNCONFIRMED": "medium",
         }
     else:
         # Class D: Pure instruct / quantized models (Llama 3.3, Qwen Instruct, GPT-4o-mini)
@@ -330,6 +334,7 @@ def get_proportional_reasoning_mapping(model_id: str) -> dict[str, str | int]:
             "DRAFT_PLAN": "none",
             "REVISE_PLAN": "none",
             "EXECUTE": "none",
+            "EXECUTE_UNCONFIRMED": "none",
         }
 
 

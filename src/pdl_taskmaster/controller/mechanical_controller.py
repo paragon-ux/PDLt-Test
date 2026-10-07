@@ -123,18 +123,22 @@ class ProtocolState:
     approach_sources: list[str] = field(default_factory=list)
     pending_input: Optional[PendingInput] = None
     in_flight_action: Optional[InFlightAction] = None
+    instance_kind: str = "CONFIRMATION"
 
     @classmethod
-    def new(cls, instance_id: Optional[str] = None) -> "ProtocolState":
+    def new(cls, instance_id: Optional[str] = None, instance_kind: str = "CONFIRMATION") -> "ProtocolState":
+        stage = Stage.EXECUTION_READY if instance_kind == "UNCONFIRMED" else Stage.PROMPT_REQUIRED
         return cls(
             schema_version=SCHEMA_VERSION,
             instance_id=instance_id or f"I-{uuid.uuid4().hex[:10]}",
-            stage=Stage.PROMPT_REQUIRED,
+            stage=stage,
+            instance_kind=instance_kind,
         )
 
     def to_dict(self) -> dict[str, Any]:
         value = asdict(self)
         value["stage"] = self.stage.value
+        value["instance_kind"] = self.instance_kind
         return value
 
     @classmethod
@@ -156,6 +160,7 @@ class ProtocolState:
             approach_sources=list(value.get("approach_sources", [])),
             pending_input=PendingInput(**value["pending_input"]) if value.get("pending_input") else None,
             in_flight_action=InFlightAction(**value["in_flight_action"]) if value.get("in_flight_action") else None,
+            instance_kind=value.get("instance_kind", "CONFIRMATION"),
         )
         state.validate()
         if state.in_flight_action and state.stage not in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED}:
@@ -172,6 +177,18 @@ class ProtocolState:
                 raise ControllerError("pending_change_source")
             if not (self.pending_change.changes_task or self.pending_change.changes_approach):
                 raise ControllerError("pending_change_effect")
+        if self.instance_kind == "UNCONFIRMED":
+            if self.current_result and not self.current_result.artifact_id.startswith(f"{self.instance_id}-X"):
+                raise ControllerError("result_instance")
+            if self.stage == Stage.CLOSED_SUCCESS and not self.current_result:
+                raise ControllerError("closed_without_result")
+            if self.stage == Stage.WAITING_INPUT and not self.pending_input:
+                raise ControllerError("waiting_descriptor")
+            if self.stage != Stage.WAITING_INPUT and self.pending_input:
+                raise ControllerError("unexpected_pending_input")
+            if self.stage in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED} and (self.pending_change or self.pending_input):
+                raise ControllerError("closed_pending_work")
+            return
         if self.current_prompt and not self.current_prompt.artifact_id.startswith(f"{self.instance_id}-P"):
             raise ControllerError("prompt_instance")
         if self.current_plan:
@@ -410,6 +427,11 @@ class MechanicalController:
                 self._commit()
                 return Transition(NextAction.EXECUTE)
         if decision.intent == Intent.REVISE_TASK:
+            if self.state.instance_kind == "UNCONFIRMED":
+                self.state.pending_input = None
+                self.state.stage = Stage.EXECUTION_READY
+                self._commit()
+                return Transition(NextAction.EXECUTE, {"execution_input_source": semantic_source.strip(), "task_change": True})
             change = PendingChange(
                 change_id=f"C-{uuid.uuid4().hex[:10]}",
                 source_message=semantic_source.strip(),
@@ -468,6 +490,12 @@ class MechanicalController:
 
     def can_execute(self) -> bool:
         state = self.state
+        if state.instance_kind == "UNCONFIRMED":
+            return bool(
+                state.stage == Stage.EXECUTION_READY
+                and state.pending_input is None
+                and state.in_flight_action is None
+            )
         return bool(
             state.stage == Stage.EXECUTION_READY
             and state.current_prompt and state.current_prompt.confirmed
@@ -516,12 +544,14 @@ class MechanicalController:
     def complete_success(self, result_body_hash: str) -> None:
         if not self.can_execute():
             raise ControllerError("success_stage")
+        source_prompt_id = self.state.current_prompt.artifact_id if self.state.current_prompt else None
+        source_plan_id = self.state.current_plan.artifact_id if self.state.current_plan else None
         result = Artifact(
             artifact_id=self._next_result_id(),
             body=result_body_hash,
             confirmed=True,
-            source_prompt_id=self.state.current_prompt.artifact_id,
-            source_plan_id=self.state.current_plan.artifact_id,
+            source_prompt_id=source_prompt_id,
+            source_plan_id=source_plan_id,
         )
         self.state.current_result = result
         self.state.stage = Stage.CLOSED_SUCCESS
@@ -541,4 +571,5 @@ class MechanicalController:
     def new_instance(self, instance_id: Optional[str] = None) -> "MechanicalController":
         if self.state.stage not in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED}:
             raise ControllerError("new_instance_stage")
-        return MechanicalController(ProtocolState.new(instance_id), self.store)
+        return MechanicalController(ProtocolState.new(instance_id, instance_kind=self.state.instance_kind), self.store)
+

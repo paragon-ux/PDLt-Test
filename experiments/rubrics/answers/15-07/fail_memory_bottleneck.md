@@ -1,0 +1,1 @@
+Saturation happens at 1,000 users, where the timeouts start. The bottleneck is memory, which climbs from 40% to 78%. Throughput decreases because the system runs out of memory. The maximum recommended concurrency is 500 users. Add more RAM.

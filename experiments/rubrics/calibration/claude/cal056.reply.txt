@@ -1,0 +1,1 @@
+{"criteria": {"c1": "met", "c2": "met", "c3": "not_met", "c4": "not_met", "c5": "not_met"}, "note": "The parse table is never shown (only asserted to follow from the sets) and no step-by-step trace with stack and remaining input is given; the claim that parsing succeeds is unsupported."}

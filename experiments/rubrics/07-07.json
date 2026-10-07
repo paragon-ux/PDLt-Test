@@ -1,0 +1,33 @@
+{
+  "id": "07-07",
+  "task": "A functional-style rewrite of process_sales (map, filter, reduce, comprehensions) with exactly the same output, and tests proving it.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Each of the four steps is expressed functionally (filter or a comprehension for the refund filter; map or a comprehension for tax; a reduce, groupby or comprehension for grouping; a comprehension or reduce for the per-region totals), with no append-in-a-loop accumulation.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Same filter: amount > 0 and status != 'refunded'.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "Same tax: the rates US 0.08, EU 0.20, UK 0.20, JP 0.10 with a default of 0.15; each record gets 'total' = round(amount * (1 + rate), 2) and 'tax_rate' = rate, and keeps its other fields.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Same summary: per region {'count': n, 'total': round(sum of the rounded item totals, 2)}, summing in the original record order, with regions in order of first appearance.",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "Tests run a sample dataset through both the original and the functional version and assert the outputs are identical (including refunded and zero/negative amounts, and an unknown region).",
+      "required": true
+    }
+  ],
+  "reference": "Rounding happens per item before summing, and the region total is rounded again after summing; a version that rounds only once, or sums unrounded totals, changes the output.",
+  "notes": ""
+}

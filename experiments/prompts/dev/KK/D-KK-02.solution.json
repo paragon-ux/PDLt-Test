@@ -1,0 +1,11 @@
+{
+  "id": "D-KK-02",
+  "ground_truth_status": "verified",
+  "answer": {
+    "A": "knight",
+    "B": "knight",
+    "C": "knave"
+  },
+  "verified_by": "exhaustive check of all 8 assignments",
+  "what_would_be_wrong": "Any other assignment, or more than one assignment"
+}

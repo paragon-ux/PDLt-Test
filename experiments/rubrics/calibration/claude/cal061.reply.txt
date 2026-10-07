@@ -1,0 +1,1 @@
+{"criteria": {"c1": "not_met", "c2": "not_met", "c3": "met", "c4": "not_met", "c5": "not_met"}, "note": "Wrongly claims the GIL makes counter += 1 uninterruptible and the program always correct; it never identifies the read-modify-write race or shows lost updates, the lock-free fix is just 'rely on the GIL', and neither fix is tested."}

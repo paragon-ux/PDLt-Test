@@ -1,0 +1,33 @@
+{
+  "id": "14-02",
+  "task": "A proof of the Progress theorem for the given typed language, with its small-step semantics.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "Defines the values: integer literals, true and false.",
+      "required": true
+    },
+    {
+      "id": "c2",
+      "text": "Gives small-step rules for +, < and if: computation rules (n1 + n2 steps to their sum, n1 < n2 steps to true or false, if true / if false step to the branch) and congruence rules that step a non-value subexpression.",
+      "required": true
+    },
+    {
+      "id": "c3",
+      "text": "States and uses canonical forms (or argues it inline): a value of type Bool is true or false, and a value of type Int is an integer literal.",
+      "required": true
+    },
+    {
+      "id": "c4",
+      "text": "Proves Progress by induction on the typing derivation, covering every rule: the literal cases are values; for +, < and if, either a subexpression steps (by the induction hypothesis) or all needed subexpressions are values and a computation rule applies (by canonical forms).",
+      "required": true
+    },
+    {
+      "id": "c5",
+      "text": "No case is missing or wrong: in particular the if case uses that a well-typed Bool value is true or false, and no step relies on preservation or on an untyped expression.",
+      "required": true
+    }
+  ],
+  "reference": "Values v ::= n | true | false. Rules: e1 -> e1' gives e1 + e2 -> e1' + e2; v1 + e2 -> v1 + e2'; n1 + n2 -> n (n = n1+n2); same pattern for <, with n1 < n2 -> true/false; if e1 then e2 else e3 -> if e1' then e2 else e3 when e1 -> e1'; if true then e2 else e3 -> e2; if false then e2 else e3 -> e3. Canonical forms: v : Bool implies v in {true,false}; v : Int implies v is a literal. Induction on the typing derivation, one case per rule.",
+  "notes": "Any standard formulation (evaluation contexts instead of congruence rules) is equivalent. A proof sketch that skips a case does not meet c4/c5."
+}

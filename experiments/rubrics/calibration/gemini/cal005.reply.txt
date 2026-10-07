@@ -1,0 +1,12 @@
+```json
+{
+  "criteria": {
+    "c1": "not_met",
+    "c2": "not_met",
+    "c3": "not_met",
+    "c4": "not_met",
+    "c5": "not_met"
+  },
+  "note": "The response only provides 3 entities without attributes, generic non-checkable rules instead of 8 business rules, 1 vague edge case, and 1 non-specific question, failing all criteria."
+}
+```

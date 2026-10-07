@@ -1,0 +1,93 @@
+[
+  {
+    "id": "A-01",
+    "intended": "When there are two middle values, report the lower one (an actual observed day), so the median is 9.",
+    "others": [
+      "The mean of the two middle values: 10.5."
+    ],
+    "answer": "9",
+    "correction": "Report an actual day's figure: when there are two middle values, take the lower one.",
+    "file": "A-01.txt"
+  },
+  {
+    "id": "A-02",
+    "intended": "Count both the first and the last day: 5 days.",
+    "others": [
+      "The difference between the dates: 4 days."
+    ],
+    "answer": "5",
+    "correction": "Count both the first and the last day.",
+    "file": "A-02.txt"
+  },
+  {
+    "id": "A-03",
+    "intended": "Round halves up, as on a receipt: 3 + 4 + 5 = 12.",
+    "others": [
+      "Round half to even (banker's rounding, Python's round()): 2 + 4 + 4 = 10."
+    ],
+    "answer": "12",
+    "correction": "Round halves up, as on a receipt.",
+    "file": "A-03.txt"
+  },
+  {
+    "id": "A-04",
+    "intended": "Alphabetical regardless of case: Adam, bob, Carl, zoe.",
+    "others": [
+      "Case-sensitive (ASCII) order: Adam, Carl, bob, zoe."
+    ],
+    "answer": "Adam, bob, Carl, zoe",
+    "correction": "Ignore upper and lower case when sorting.",
+    "file": "A-04.txt"
+  },
+  {
+    "id": "A-05",
+    "intended": "Break ties by first appearance in the sentence: the, and, cat.",
+    "others": [
+      "Include every word tied at third place: the, and, cat, dog, bird.",
+      "Break ties alphabetically: the, and, bird."
+    ],
+    "answer": "the, and, cat",
+    "correction": "When words tie, prefer the one that appears first in the sentence, and list exactly three.",
+    "file": "A-05.txt"
+  },
+  {
+    "id": "A-06",
+    "intended": "The second 10% applies to the already-reduced price: 50 x 0.9 x 0.9 = $40.50.",
+    "others": [
+      "A combined 20% off: $40.00."
+    ],
+    "answer": "$40.50",
+    "correction": "The second 10% applies to the already-reduced price.",
+    "file": "A-06.txt"
+  },
+  {
+    "id": "A-07",
+    "intended": "ISO-8601 week numbering: January 1, 2027 (a Friday) is in week 53 of ISO year 2026.",
+    "others": [
+      "Week 1 of 2027 (counting the week containing January 1 as week 1)."
+    ],
+    "answer": "ISO week 53 of 2026",
+    "correction": "Use ISO-8601 week numbering.",
+    "file": "A-07.txt"
+  },
+  {
+    "id": "A-08",
+    "intended": "The average over all 40 students: (10 x 80 + 30 x 60) / 40 = 65.",
+    "others": [
+      "The average of the two class averages: 70."
+    ],
+    "answer": "65",
+    "correction": "I mean the average over all 40 students.",
+    "file": "A-08.txt"
+  },
+  {
+    "id": "A-09",
+    "intended": "Counting from 1 (the first prime is 2): 29.",
+    "others": [
+      "Zero-based indexing (index 10): 31."
+    ],
+    "answer": "29",
+    "correction": "Count from 1: the first prime is 2.",
+    "file": "A-09.txt"
+  }
+]

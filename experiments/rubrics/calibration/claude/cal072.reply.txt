@@ -1,0 +1,1 @@
+{"criteria": {"c1": "not_met", "c2": "not_met", "c3": "met", "c4": "not_met", "c5": "not_met"}, "note": "Config still reads os.environ at class-definition (import) time; _cache and _request_count remain module-level globals; get_stats() and reset() are dropped; and no tests are provided."}

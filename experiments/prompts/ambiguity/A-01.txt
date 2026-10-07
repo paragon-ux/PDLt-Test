@@ -1,0 +1,1 @@
+Find the median of these daily sales figures: 12, 7, 3, 18, 9, 21.

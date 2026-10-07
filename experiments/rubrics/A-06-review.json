@@ -1,0 +1,13 @@
+{
+  "id": "A-06-review",
+  "task": "A drafted interpretation of the request (pseudocode or a plan), judged on which reading of the request it commits to.",
+  "criteria": [
+    {
+      "id": "c1",
+      "text": "The artifact commits to this reading: The second 10% applies to the already-reduced price: 50 x 0.9 x 0.9 = $40.50.",
+      "required": true
+    }
+  ],
+  "reference": "Other readings, which do not meet c1: A combined 20% off: $40.00.",
+  "notes": "Mark c1 not_met if the artifact commits to another reading, or leaves the choice open."
+}

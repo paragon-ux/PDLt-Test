@@ -1,0 +1,4 @@
+1. **Status code (1 vs 2):** 201 Created vs 200 OK. Resolution: 201 Created with a `Location: /users/{id}` header, the REST convention for creation.
+2. **Duplicate email (3 vs 4):** 409 Conflict vs silent merge. Resolution: 409. A silent merge lets anyone who knows an email attach data to (or receive) an existing account, an account-takeover and data-leak risk.
+3. **Authentication (5 vs 6):** all endpoints need a Bearer token vs public registration. Resolution: POST /users is explicitly exempt (with rate limiting and CAPTCHA); every other endpoint requires the token. Amend rule 5 to name the exception.
+4. **ID scheme (7 vs 8):** server auto-increment integers vs client-generated UUIDs. Resolution: the server generates the ID (a UUID if enumeration is a concern, otherwise an integer); clients never supply IDs, which avoids collisions and spoofing.

@@ -425,6 +425,7 @@ class SandboxResult:
     timed_out: bool = False
     oom_killed: bool = False
     error: Optional[str] = None
+    denial: Optional[str] = None  # environment or policy denial (e.g. "policy", "import", "sandbox_unavailable")
     step_budget_exceeded: bool = False
     steps_used: Optional[int] = None  # the program's own steps, when a step budget was set
 
@@ -868,6 +869,7 @@ class ExecutionSandbox:
                 exit_code=-1,
                 duration_ms=0.0,
                 error=f"sandbox_unavailable:{exc.reason}",
+                denial="sandbox_unavailable",
             )
         run_dir = session.new_run_dir()
         try:
@@ -935,6 +937,12 @@ class ExecutionSandbox:
             result = replace(result, stderr="".join(kept), steps_used=steps_used)
         if result.exit_code == STEP_BUDGET_EXIT_CODE and _STEP_BUDGET_MARKER in result.stderr:
             result = replace(result, step_budget_exceeded=True, steps_used=int(step_limit) + 1)
+        elif result.exit_code != 0:
+            stderr = result.stderr or ""
+            if "inside ExecutionSandbox" in stderr:
+                result = replace(result, denial="policy")
+            elif "ModuleNotFoundError" in stderr or "ImportError" in stderr:
+                result = replace(result, denial="import")
         return result
 
     def _execute_process(
