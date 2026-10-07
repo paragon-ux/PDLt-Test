@@ -89,12 +89,15 @@ python run_catalogue.py --dry-run
 # Run a specific prompt
 python run_catalogue.py --prompt-id 06-04
 
-# Run a single category with fail-fast
-python run_catalogue.py --category 13 --fail-fast
+# Run pure sandboxed control baseline (raw unharnessed completions)
+python run_catalogue.py --route control --prompt-id 01-01 --theme bright
 
-# Sequential Four-Arm Parity Sweep
-python experiments/run_four_arms.py
+# Sequential Five-Route Parity Sweep (Control + Arms 1-4)
+python run_catalogue.py --route control
+python run_catalogue.py --route unconfirmed
+python run_catalogue.py --route confirmed
 ```
+
 
 ### Local Web Viewer
 

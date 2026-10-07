@@ -16,8 +16,9 @@ Yes, by default. A program either runs confined or it does not run at all. The o
 ### What it covers
 
 - Every Python block the harness runs from a deliverable (`SessionEngine._run_deliverable_code`).
-- The grader's re-run of deliverable code (`graders.py`).
-- `run_catalogue.py --sandbox <mode>` passes the mode to both and records it in `RUN_META.json`.
+- The grader's re-run of deliverable code (`graders.py`) and hidden test execution (`hidden_tests.py`).
+- **Direct Control evaluation (`--route control`)**: Raw single-turn completions bypass protocol review, but deliverable programs and tests are strictly evaluated under the exact same sandbox confinement. Third parties can use PDLt as a pure sandboxed evaluation harness for arbitrary model completions without protocol machinery.
+- `run_catalogue.py --sandbox <mode>` passes the mode to both the execution engine and the graders, recording it in `RUN_META.json`.
 
 ### What it does not cover
 

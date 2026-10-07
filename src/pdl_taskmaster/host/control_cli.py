@@ -14,6 +14,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from pdl_taskmaster.host.console import COLOR_NAMES, THEME_NAMES, paint, resolve_colors
 from pdl_taskmaster.providers.api_worker import ApiWorker
 
 
@@ -33,8 +34,35 @@ def main() -> int:
     parser.add_argument("--dev", action="store_true")
     parser.add_argument("--new-session", action="store_true")
     parser.add_argument("--api-structured-output", action="store_true")
+    parser.add_argument(
+        "--sandbox",
+        choices=["auto", "native", "container", "audit-only"],
+        default=None,
+        help="confinement mode for execution sandbox parity (default: auto)",
+    )
+    parser.add_argument(
+        "--theme",
+        choices=THEME_NAMES,
+        default=None,
+        help="color theme for console output (default: $PDLT_THEME)",
+    )
+    parser.add_argument(
+        "--user-color",
+        choices=COLOR_NAMES,
+        default=None,
+        help="override user prompt color",
+    )
+    parser.add_argument(
+        "--assistant-color",
+        choices=COLOR_NAMES,
+        default=None,
+        help="override assistant response color",
+    )
 
     args, _ = parser.parse_known_args()
+
+    if args.sandbox:
+        os.environ["PDLT_SANDBOX"] = args.sandbox
 
     prompt_text = args.prompt_file.read_text(encoding="utf-8-sig")
 
@@ -73,6 +101,16 @@ def main() -> int:
         worker.end_call(trace)
 
     latency = time.perf_counter() - t0
+
+    # Console display with color/theme support when run interactively
+    if not args.non_interactive:
+        try:
+            colors = resolve_colors(args.theme, args.user_color, args.assistant_color)
+            print(paint(f"USER> {prompt_text}", "user", colors))
+            print(paint(f"ASSISTANT> {output_text}", "assistant", colors))
+        except Exception:
+            print(f"USER> {prompt_text}")
+            print(f"ASSISTANT> {output_text}")
 
     # Ensure stage directories match standard execution deliverable paths
     out_dir = args.workspace_root / "stages" / "50_execution" / "output"

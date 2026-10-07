@@ -42,10 +42,18 @@ PDLt supports four distinct execution topologies to balance auditability against
 
 | Arm | CLI Flags | Pipeline Structure | Model Calls | Use Case |
 | :--- | :--- | :--- | :--- | :--- |
+| **Control: Direct Model** | `--route control` | Raw single-turn completion (unharnessed) | 1 call | Baseline benchmark comparison & pure sandboxed harness |
 | **Arm 1: Unconfirmed** | `--route unconfirmed` | Direct execution without intermediate gates | 2 calls | Ultrafast baseline |
 | **Arm 2: Confirmed** | `--route confirmed` | Gated prompt pseudocode + gated plan pseudocode | 4–6 calls | Full human auditability |
 | **Arm 3: Confirmed + DRAFT-EXECUTE** | `--route confirmed --draft-execute --tier-d1` | Multi-stage gates + lean brief + Tier-D1 sandbox loop | 4–5 calls | High-assurance enterprise workflows |
 | **Arm 4: Unconfirmed + DRAFT-EXECUTE** | `--route unconfirmed --draft-execute --tier-d1` | Direct route + execution brief + Tier-D1 sandbox loop | 3 calls | **Pareto optimal autonomous agent mode** |
+
+### Direct Control Baseline (`--route control`)
+Developers can use PDLt as an unharnessed evaluation harness for third-party models without protocol machinery:
+- **Direct Single-Turn Execution**: Evaluates raw model completions without prompt interpretation, plan reviews, or repair loops.
+- **Confinement & Sandbox Parity**: Deliverable evaluation and hidden-test grading run under the identical OS-native `ExecutionSandbox` (Landlock, Seatbelt, AppContainer, Container) with OS memory bounding, ensuring adversarial prompt responses cannot escape confinement.
+- **Universal Flag Parity**: Supports non-protocol flags (`--model`, `--reasoning`, `--timeout`, `--max-output-tokens`, `--providers`, `--sandbox`, `--repeat`, `--theme`, `--user-color`, `--assistant-color`, `--dry-run`).
+
 
 ---
 

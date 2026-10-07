@@ -56,9 +56,12 @@ else:
 # the same source tree the harness runs from, never another installed copy.
 sys.path.insert(0, str(PDLT_TEST_ROOT / "src"))
 
+from pdl_taskmaster.host.console import COLOR_NAMES, THEME_NAMES
+
 PROMPTS_DIR = PDLT_TEST_ROOT / "prompts"
 MANIFEST_PATH = PROMPTS_DIR / "CATALOGUE_MANIFEST.jsonl"
 WORKTREE_DIFF = "WORKTREE.diff"
+
 
 
 def code_provenance(root: Path = PDLT_TEST_ROOT) -> dict:
@@ -380,6 +383,12 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
         setting_args += ["--sandbox", settings["sandbox"]]
     if settings.get("route") == "unconfirmed":
         setting_args.append("--no-review")
+    if settings.get("theme"):
+        setting_args += ["--theme", settings["theme"]]
+    if settings.get("user_color"):
+        setting_args += ["--user-color", settings["user_color"]]
+    if settings.get("assistant_color"):
+        setting_args += ["--assistant-color", settings["assistant_color"]]
     module = "pdl_taskmaster.host.control_cli" if settings.get("route") == "control" else "pdl_taskmaster.host.cli"
     cmd = [
         sys.executable, "-m", module,
@@ -977,6 +986,12 @@ def main():
                         help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
     parser.add_argument("--route", choices=["confirmed", "unconfirmed", "control"], default="confirmed",
                         help="execution route: 'confirmed' (default, multi-stage with review), 'unconfirmed' (--no-review / ultrafast), or 'control' (unharnessed direct model baseline)")
+    parser.add_argument("--theme", choices=THEME_NAMES, default=None,
+                        help="Color theme for runner output and child process (default: $PDLT_THEME)")
+    parser.add_argument("--user-color", choices=COLOR_NAMES, default=None,
+                        help="Override user prompt color")
+    parser.add_argument("--assistant-color", choices=COLOR_NAMES, default=None,
+                        help="Override assistant response color")
     parser.add_argument("--allow-dirty", action="store_true",
                         help="run from a working tree with uncommitted changes; the difference is stored with "
                              "the run as WORKTREE.diff (without it, such a run is refused)")
@@ -999,7 +1014,8 @@ def main():
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
                     "providers": args.providers, "draft_execute": args.draft_execute, "tier_d1": args.tier_d1,
-                    "sandbox": args.sandbox, "route": args.route}
+                    "sandbox": args.sandbox, "route": args.route,
+                    "theme": args.theme, "user_color": args.user_color, "assistant_color": args.assistant_color}
     if args.sandbox:
         # The graders run deliverable code in this process: the same confinement.
         os.environ["PDLT_SANDBOX"] = args.sandbox
