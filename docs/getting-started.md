@@ -92,11 +92,19 @@ python run_catalogue.py --prompt-id 06-04
 # Run pure sandboxed control baseline (raw unharnessed completions)
 python run_catalogue.py --route control --prompt-id 01-01 --theme bright
 
-# Sequential Five-Route Parity Sweep (Control + Arms 1-4)
-python run_catalogue.py --route control
-python run_catalogue.py --route unconfirmed
-python run_catalogue.py --route confirmed
+# Sequential Five-Route Parity Sweep (Control + Arms 1-4), one route after another
+M="--model openai/gpt-oss-120b --reasoning low --timeout 300"
+python run_catalogue.py $M --route control
+python run_catalogue.py $M --route unconfirmed
+python run_catalogue.py $M --route unconfirmed --draft-execute
+python run_catalogue.py $M --route confirmed
+python run_catalogue.py $M --route confirmed --draft-execute
+
+# Build the comparison tables from the finished runs
+python experiments/five_arm_report.py --md report.md
 ```
+
+Tier D1 (the sandbox repair loop) is on by default for the four harness routes; add `--no-tier-d1` to turn it off. It does not apply to `--route control`. A run from a dirty working tree is refused unless you pass `--allow-dirty`.
 
 
 ### Local Web Viewer

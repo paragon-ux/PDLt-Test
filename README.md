@@ -16,7 +16,7 @@
 - **Controller-Gated Execution**: Review gates (`/confirm`, `/revise`) enforce human-in-the-loop auditability before code synthesis.
 - **Two-Plane Separation**: The execution harness (`src/pdl_taskmaster/`) is strictly separated from the evaluation benchmark (`run_catalogue.py`), with zero benchmark leakage or keyword gaming.
 - **Session-Scoped OS Confinement**: All model-generated code runs under OS-native sandboxing (Landlock on Linux, Seatbelt on macOS, AppContainer on Windows).
-- **Four Execution Arms**: Flexible routing ranging from ultrafast 2-call unconfirmed dispatch to high-assurance gated verification with Tier-D1 sandbox feedback loops.
+- **Four Execution Arms and a Control**: Routing from lean 2-call unconfirmed dispatch to human-reviewed gated execution, all with Tier-D1 sandbox feedback loops on by default, plus an unharnessed raw-model control for baseline comparison.
 
 ---
 
@@ -48,8 +48,8 @@ Common REPL commands:
 For complete technical references, architectural specifications, and benchmark analyses, visit our **[Zensical Documentation Site](https://paragon-ux.github.io/pdlt-test/)**:
 
 - 📖 **[Getting Started](docs/getting-started.md)**: Installation, CLI flags, offline test matrix, and localhost viewer.
-- 🏗️ **[Architecture & Routing](docs/architecture.md)**: Multi-stage pipeline breakdown and the Four Architectural Arms.
-- 📊 **[Benchmark & Four-Arm Parity](docs/benchmarks.md)**: Authoritative sweep results, Pareto frontier analysis, and metrics.
+- 🏗️ **[Architecture & Routing](docs/architecture.md)**: Multi-stage pipeline breakdown and the execution routes (four arms and a control).
+- 📊 **[Benchmark & Four-Arm Parity](docs/benchmarks.md)**: The five-route sweep on the 112-prompt catalogue, Pareto frontier, paired tests and caveats.
 - 🎯 **[Catalogue & Evaluation](docs/evaluation.md)**: The 112-prompt catalogue across 16 categories and ground-truth grading rules.
 - 🛡️ **[OS Sandbox Confinement](docs/sandbox.md)**: Landlock, Seatbelt, and AppContainer security boundaries and session lifecycles.
 - 🔌 **[Providers & Models](docs/providers.md)**: OpenRouter configuration, fallback tiers, and operation-level reasoning controls.
