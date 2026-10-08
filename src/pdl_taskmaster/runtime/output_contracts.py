@@ -29,6 +29,8 @@ CONTRACT_KEY = "x-contract"
 UNION_WRAPPER = "outcome"
 # The host reads the Result IR only in this mode (RESULT_STANDARD RS-10).
 RESULT_IR_MODE = "result_ir"
+# EXECUTE carries a validated EXECUTION_BRIEF in this mode (EXECUTION_STANDARD EXEC-06).
+EXECUTION_BRIEF_MODE = "execution_brief"
 _NO_MODES: frozenset[str] = frozenset()
 
 # Keywords a decoding engine does not take; the grammar view drops them (the prompt

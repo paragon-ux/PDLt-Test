@@ -547,51 +547,98 @@ class ExecutionDraftBlockedData(WireModel):
         return self
 
 
-# The entity items the contract shows; the host accepts any dict or string entry.
-EXECUTION_ENTITY_ITEMS: dict[str, Any] = {'type': 'object',
- 'additionalProperties': False,
- 'required': ['kind', 'value'],
- 'properties': {'kind': {'enum': ['delivery_marker',
-                                  'api_signature',
-                                  'constant',
-                                  'wire_format',
-                                  'threshold',
-                                  'meta'],
-                         'description': 'delivery_marker: section header line (enforced verbatim in brief '
-                                        'and deliverable). api_signature: function/class signature (enforced '
-                                        'in deliverable). constant: named literal (enforced in deliverable; '
-                                        'arithmetic cross-checked when struct_format declared). wire_format: '
-                                        'binary layout declaration (arithmetic-checked: '
-                                        'calcsize(struct_format) MUST equal declared_size). threshold: '
-                                        'numeric policy constant (brief + deliverable). meta: procedural '
-                                        'reference (brief only; never enforced against the deliverable).'},
-                'value': {'type': 'string', 'minLength': 1, 'description': 'The verbatim-critical string.'},
-                'name': {'type': 'string', 'description': 'Optional identifier (e.g. constant name MAGIC).'},
-                'struct_format': {'type': 'string',
-                                  'description': 'Optional struct format string for wire_format entities '
-                                                 "(e.g. '!4sQI')."},
-                'declared_size': {'type': 'integer',
-                                  'description': 'Optional declared byte size for wire_format entities; MUST '
-                                                 'equal struct.calcsize(struct_format).'}}}
+class StepEstimate(WireModel):
+    """The brief's own count of the work its method does on the task's inputs. The host
+    multiplies the two counts and compares the product with the session's step budget."""
+
+    model_config = ConfigDict(extra="forbid")
+    iterations: int = Field(ge=0, json_schema_extra=contract(description=(
+            'Upper bound on the candidates, states or loop iterations the program visits on these inputs, '
+            'in the worst case the method in approach allows. A whole number, never a range or a formula.'
+        )))
+    steps_per_iteration: int = Field(ge=1, json_schema_extra=contract(description=(
+            "Steps the program's own code executes for each of those iterations, counted the way "
+            'AVAILABLE_EXECUTION_TOOLS counts steps. A whole number.'
+        )))
+    basis: str = Field(json_schema_extra=contract(description=(
+            'The counting argument for iterations: which input sizes or values it follows from and why the '
+            'bound holds.'
+        ), minLength=1))
+
+    @model_validator(mode="after")
+    def validate_basis(self) -> StepEstimate:
+        if not self.basis.strip():
+            raise ValueError("execution_draft_step_estimate: basis must not be empty")
+        return self
+
+    @property
+    def estimated_steps(self) -> int:
+        return self.iterations * self.steps_per_iteration
+
+
+class ExecutionEntity(WireModel):
+    """An exact string from the task that the deliverable must reproduce character for
+    character. The host keeps it only if it occurs verbatim in the task text."""
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["identifier", "literal", "parameter"] = Field(json_schema_extra=contract(description=(
+            'identifier: a name the deliverable must define or use exactly as the task spells it (a function, '
+            'class, method, field, file or key). literal: exact text the deliverable must print, return or '
+            'contain. parameter: a value the task sets that the computation depends on (a size, a limit, a '
+            'target, a count).'
+        )))
+    value: str = Field(json_schema_extra=contract(description=(
+            'Copied character for character from the task text; never paraphrased, completed or invented. '
+            'The host drops a value it does not find verbatim in the task.'
+        ), minLength=1))
+
+    @model_validator(mode="after")
+    def validate_value(self) -> ExecutionEntity:
+        if not self.value.strip():
+            raise ValueError("execution_draft_entities: value must not be empty")
+        return self
 
 
 class ExecutionDraftResultData(WireModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=contract(description=(
-            'Feasibility scratchpad drafted prior to EXECUTE (ADR-0009/TRD-0003 DRAFT_EXECUTE). '
-            'Examines sandbox tools, memory limits, and step budgets before writing code.'
-        ), required=['kind', 'brief_body']))
+            'Execution brief drafted before EXECUTE (ADR-0013 P6 DRAFT_EXECUTE): how the deliverable will '
+            'compute its result for these exact inputs within the stated environment. The host validates it, '
+            'keeps only entities found verbatim in the task, checks step_estimate against the step budget, '
+            'and passes it to EXECUTE as EXECUTION_BRIEF.'
+        )))
     kind: Literal["RESULT"] = "RESULT"
-    brief_body: str = Field(json_schema_extra=contract(description=(
-            'Feasibility scratchpad: environment review, step budget check, and computational feasibility '
-            'notes. Plain text; no code fences inside.'
+    approach: str = Field(json_schema_extra=contract(description=(
+            'The method the deliverable uses to produce the result for these inputs, in the order it runs, '
+            'in plain text: what is computed, searched or derived, and how the result is assembled. Not code.'
         ), minLength=1))
-    execution_entities: list[Union[dict[str, Any], str]] = Field(
-        default_factory=list, json_schema_extra=contract(type="array", items=EXECUTION_ENTITY_ITEMS))
+    data_structures: list[str] = Field(json_schema_extra=contract(description=(
+            'Each data structure the method keeps, with what it holds and why. Empty when the method keeps '
+            'nothing beyond the inputs.'
+        )))
+    step_estimate: Optional[StepEstimate] = Field(json_schema_extra=contract(description=(
+            'The work the program does on these inputs. Null only when the deliverable runs no program '
+            '(an analytical answer, a proof, a derivation).'
+        )))
+    invariants: list[str] = Field(json_schema_extra=contract(description=(
+            'Conditions the method keeps true throughout, which a correct run never violates. Empty when '
+            'there are none beyond the task statement.'
+        )))
+    self_checks: list[str] = Field(json_schema_extra=contract(description=(
+            "Checks the deliverable applies to its own result before reporting it, each naming what is "
+            'compared with what. Empty when the deliverable runs no program.'
+        )))
+    execution_entities: list[ExecutionEntity] = Field(json_schema_extra=contract(description=(
+            'Exact strings from the task that the deliverable must reproduce verbatim. Empty when the task '
+            'names none.'
+        )))
 
     @model_validator(mode="after")
-    def validate_body(self) -> ExecutionDraftResultData:
-        if not self.brief_body.strip():
-            raise ValueError("execution_draft_body: brief_body must not be empty")
+    def validate_brief(self) -> ExecutionDraftResultData:
+        if not self.approach.strip():
+            raise ValueError("execution_draft_approach: approach must not be empty")
+        for name in ("data_structures", "invariants", "self_checks"):
+            if any(not item.strip() for item in getattr(self, name)):
+                raise ValueError(f"execution_draft_{name}: entries must not be empty")
         return self
 
 
@@ -953,6 +1000,11 @@ def map_validation_error_to_wire_reason(
         return "execution_draft_body"
     if "execution_entities" in loc or "execution_entities" in msg:
         return "execution_draft_entities"
+    for brief_field in ("step_estimate", "data_structures", "invariants", "self_checks"):
+        if brief_field in loc or brief_field in msg:
+            return f"execution_draft_{brief_field}"
+    if operation in {"DRAFT_EXECUTION", "DRAFT_EXECUTE"} and ("approach" in loc or "approach" in msg):
+        return "execution_draft_approach"
     if "expected_type" in loc or "expected_type" in msg:
         return "execution_expected_type"
     if "description" in loc or "description" in msg:

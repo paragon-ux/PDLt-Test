@@ -392,6 +392,9 @@
           "RS-08",
           "RS-09",
           "RS-10"
+        ],
+        "execution_brief": [
+          "EXEC-06"
         ]
       },
       "include": [
@@ -425,7 +428,8 @@
         "REQUIRED_TASK_INPUTS",
         "TASK_ENTITIES",
         "RESULT_IR_INSTRUCTIONS",
-        "PRIOR_RESULT_IR"
+        "PRIOR_RESULT_IR",
+        "EXECUTION_BRIEF"
       ]
     },
     "EXECUTE_UNCONFIRMED": {
@@ -450,6 +454,9 @@
           "RS-08",
           "RS-09",
           "RS-10"
+        ],
+        "execution_brief": [
+          "EXEC-06"
         ]
       },
       "include": [
@@ -483,7 +490,8 @@
       "optional_include": [
         "REQUIRED_TASK_INPUTS",
         "RESULT_IR_INSTRUCTIONS",
-        "PRIOR_RESULT_IR"
+        "PRIOR_RESULT_IR",
+        "EXECUTION_BRIEF"
       ]
     },
     "ANSWER_PROTOCOL_DISCUSSION": {
@@ -609,10 +617,13 @@
       "output_kind": "EXECUTION_DRAFT_OUTCOME",
       "output_fields": [
         "kind",
-        "brief_body",
+        "approach",
+        "data_structures",
+        "step_estimate",
+        "invariants",
+        "self_checks",
         "execution_entities",
-        "blocking_basis",
-        "response"
+        "brief_body"
       ],
       "workspace_stage": "50_execution",
       "optional_include": [

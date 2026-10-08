@@ -943,7 +943,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--draft-execute",
         action="store_true",
-        help="run exactly one DRAFT_EXECUTE feasibility-scratchpad call before EXECUTE; one extra call per execution (A/B option)",
+        help="draft a typed execution brief (DRAFT_EXECUTE) before EXECUTE on tasks that are or need an algorithm or a calculation; one extra call per execution (A/B option)",
     )
     parser.add_argument(
         "--tier-d1",

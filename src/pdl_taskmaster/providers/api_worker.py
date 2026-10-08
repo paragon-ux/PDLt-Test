@@ -858,12 +858,13 @@ class ApiWorker:
             )
         elif operation_name == "DRAFT_EXECUTE":
             extra_guidance = (
-                "\n\nDRAFT_EXECUTE: review the execution environment and computational feasibility: "
-                "examine the sandbox tools, memory limits, and the step budget in AVAILABLE_EXECUTION_TOOLS. "
-                "Use this reflection area as an overflow scratchpad for low-reasoning to check whether the intended "
-                "approach fits within the step budget and identify any potential bottlenecks. "
-                "Do not draft witness payloads, delivery markers, or hypothetical outcome branches; do not write code "
-                "or the deliverable here."
+                "\n\nDRAFT_EXECUTE: write the execution brief in the output schema's fields, for these exact inputs "
+                "and the environment in AVAILABLE_EXECUTION_TOOLS: approach (your method, in the order it runs), "
+                "data_structures, step_estimate (count iterations from the input sizes the task gives; the host "
+                "multiplies iterations by steps_per_iteration and checks the product against the step budget), "
+                "invariants, self_checks, and execution_entities (exact strings copied from the task). The validated "
+                "brief is passed to the EXECUTE call that follows. Do not write code, the deliverable, witness "
+                "payloads or hypothetical outcome branches here."
             )
         elif operation_name == "EXECUTE":
             extra_guidance = (
@@ -871,7 +872,6 @@ class ApiWorker:
                 "- Deliver the result the confirmed prompt asks for, following the confirmed plan. Do not substitute a description of how the result could be obtained.\n"
                 "- AVAILABLE_EXECUTION_TOOLS describes the execution environment exactly. Work within it. REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (EXEC-01); an environment capability is never user input.\n"
                 "- SUPPLIED_EXECUTION_INPUT_SOURCE, when present, is the user's original source text: use its data, and let the confirmed prompt govern where they differ (AUTH-04).\n"
-                "- When a DRAFT_EXECUTE entry is present in inputs, it represents an advisory feasibility scratchpad from before execution. It is strictly non-binding working notes and may contain errors. Always prioritize code correctness, required interface signatures, and exact task constraints over any preliminary scratchpad notes.\n"
                 "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"
                 "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
             )
@@ -881,7 +881,6 @@ class ApiWorker:
                 "- Write your working understanding in `interpretation` and your working plan in `approach`, using PDL notation.\n"
                 "- Deliver the substantive result in `body`. Work within AVAILABLE_EXECUTION_TOOLS.\n"
                 "- REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (UNC-04, EXEC-01); people or events described in the task are part of the task, not a source of input.\n"
-                "- When a DRAFT_EXECUTE entry is present in inputs, it represents an advisory feasibility scratchpad from before execution. It is strictly non-binding working notes and may contain errors. Always prioritize code correctness, required interface signatures, and exact task constraints over any preliminary scratchpad notes. Do not copy the scratchpad into your interpretation or approach without independently evaluating whether it satisfies all constraints.\n"
                 "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"
                 "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
             )

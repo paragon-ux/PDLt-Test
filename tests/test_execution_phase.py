@@ -719,7 +719,10 @@ def test_draft_execute_runs_once_and_feeds_its_brief_to_execute(tmp_path):
         if req.operation == "DRAFT_PLAN":
             return json.dumps({"neutral_plan_body": PLAN})
         if req.operation == "DRAFT_EXECUTE":
-            return json.dumps({"kind": "RESULT", "brief_body": "Enumerate 12 candidates; about 200 steps.",
+            return json.dumps({"kind": "RESULT", "approach": "Enumerate the 12 candidates and keep the valid one.",
+                               "data_structures": [], "invariants": [], "self_checks": [],
+                               "step_estimate": {"iterations": 12, "steps_per_iteration": 20,
+                                                 "basis": "12 candidates from the given values"},
                                "execution_entities": []})
         return json.dumps(replies.pop(0))
 
@@ -732,7 +735,9 @@ def test_draft_execute_runs_once_and_feeds_its_brief_to_execute(tmp_path):
     assert len(drafts) == 1 and len(executes) == 2  # drafted once, not per repair
     assert "3, 4, 5" in drafts[0].prompt and "steps" in drafts[0].prompt  # sees the data and the budget
     for execute in executes:
-        assert ("EXECUTION BRIEF" in execute.prompt or "DRAFT_EXECUTE" in execute.prompt) and "about 200 steps" in execute.prompt
+        brief = execute.projection.document["operation_inputs"]["EXECUTION_BRIEF"]
+        assert brief["approach"].startswith("Enumerate the 12 candidates")
+        assert brief["step_estimate"]["estimated_steps"] == 240
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
 
 
@@ -786,7 +791,8 @@ def test_draft_execute_omits_witness_instructions_from_its_inputs(tmp_path):
         if req.operation == "DRAFT_PLAN":
             return json.dumps({"neutral_plan_body": PLAN})
         if req.operation == "DRAFT_EXECUTE":
-            return json.dumps({"kind": "RESULT", "brief_body": "Use DFS with pruning under 100k steps.",
+            return json.dumps({"kind": "RESULT", "approach": "Search the values in order and stop at the first fit.",
+                               "data_structures": [], "step_estimate": None, "invariants": [], "self_checks": [],
                                "execution_entities": []})
         return json.dumps(good)
 

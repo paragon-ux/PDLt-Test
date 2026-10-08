@@ -22,9 +22,11 @@ from pdl_taskmaster.controller.mechanical_controller import (
     Transition,
 )
 from pdl_taskmaster.runtime.operation_bridge import ActivationRoute, ModelRequest, OperationBridge, WireError
-from pdl_taskmaster.runtime.output_contracts import RESULT_IR_MODE
+from pdl_taskmaster.runtime.output_contracts import EXECUTION_BRIEF_MODE, RESULT_IR_MODE
 from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output, isolate_untrusted_input
-from pdl_taskmaster.runtime.wire_payloads import ENTITY_POLARITIES, ENTITY_STATUSES
+from pdl_taskmaster.runtime.wire_payloads import (
+    ENTITY_POLARITIES, ENTITY_STATUSES, ExecutionDraftResultData, ExecutionEntity,
+)
 from pdl_taskmaster.verification.sandbox import ExecutionSandbox
 
 
@@ -146,6 +148,37 @@ def _is_wire_failure(exc: BaseException) -> bool:
     (WireError) or one the provider's own schema check rejected (a ProviderError
     marked wire_equivalent). Both are model-output failures, never harness errors."""
     return isinstance(exc, WireError) or bool(getattr(exc, "wire_equivalent", False))
+
+
+def _execution_modes(execute_context: dict[str, Any], result_ir_mode: bool) -> frozenset[str]:
+    """The host modes of an EXECUTE call: the Result IR (RS-10) and a validated brief (EXEC-06)."""
+    modes = {RESULT_IR_MODE} if result_ir_mode else set()
+    if execute_context.get("EXECUTION_BRIEF") is not None:
+        modes.add(EXECUTION_BRIEF_MODE)
+    return frozenset(modes)
+
+
+def _ground_execution_entities(
+    entities: list[ExecutionEntity], task_text: list[Any],
+) -> tuple[list[dict[str, str]], list[str]]:
+    """Mechanical containment (as for task entities): an execution entity is kept only if its value,
+    with whitespace runs folded and one matching pair of surrounding quotes removed, occurs verbatim
+    in the task text. Returns (kept entities, dropped values); duplicates are kept once."""
+    haystack = " ".join(" ".join(text.split()) for text in task_text if isinstance(text, str))
+    kept: list[dict[str, str]] = []
+    dropped: list[str] = []
+    seen: set[tuple[str, str]] = set()
+    for entity in entities:
+        value = " ".join(entity.value.split())
+        if len(value) > 2 and value[0] == value[-1] and value[0] in "'\"`" and value[1:-1] in haystack:
+            value = value[1:-1]
+        if value and value in haystack:
+            if (entity.kind, value) not in seen:
+                seen.add((entity.kind, value))
+                kept.append({"kind": entity.kind, "value": value})
+        else:
+            dropped.append(entity.value)
+    return kept, dropped
 
 
 class _FailedExecution:
@@ -1777,24 +1810,8 @@ class SessionEngine:
 
         self._route_plan_profile(prompt_body, plan_body)
         execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools
-        if self._brief_wanted():
-            brief = self._draft_execution_brief(execute_context, traces)
-            if brief:
-                # The model's own draft (GUARD-01: no harness feedback), drafted once.
-                if not execute_context.get("REQUIRED_TASK_INPUTS"):
-                    execute_context["REQUIRED_TASK_INPUTS"] = {}
-                advisory_brief = (
-                    "ADVISORY FEASIBILITY SCRATCHPAD (non-binding working notes from before execution; "
-                    "may contain errors; prioritize prompt and exact constraints over this):\n"
-                    + brief.strip()
-                )
-                if isinstance(execute_context["REQUIRED_TASK_INPUTS"], dict):
-                    execute_context["REQUIRED_TASK_INPUTS"]["DRAFT_EXECUTE"] = advisory_brief
-                else:
-                    execute_context["REQUIRED_TASK_INPUTS"] = (
-                        (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context["REQUIRED_TASK_INPUTS"] else "")
-                        + advisory_brief
-                    )
+        # The model's own draft (GUARD-01: no harness feedback), drafted once.
+        self._attach_execution_brief(execute_context, traces)
         stop_on_failure = self.max_repairs == 0
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
         repairs_used = 0
@@ -1830,6 +1847,7 @@ class SessionEngine:
                 correction=(
                     "OPERATOR CORRECTION (host-side verification findings): the previous "
                     "deliverable failed these checks:\n" + "\n".join(f"- {e}" for e in errors)
+                    + self._withdraw_brief_on_overrun(execute_context, errors)
                 ),
             )
             attempt_findings.append(list(errors))
@@ -1889,16 +1907,12 @@ class SessionEngine:
         return EngineResponse(final_body, traces, closed=True)
 
     def _brief_wanted(self) -> bool:
-        """Whether DRAFT_EXECUTE runs for this task (--draft-execute).
-        When the flag is set, DRAFT_EXECUTE runs unconditionally. System 1's
-        computation classification is still recorded as telemetry
-        (COMPUTATION_CLASSIFIED), but no longer gates whether the draft runs."""
+        """Whether DRAFT_EXECUTE runs for this task (--draft-execute; ADR-0013 P6): a verified-execution
+        task always gets one; any other does when System 1 says its deliverable is, or needs, an algorithm
+        or a calculation."""
         if not self.draft_execute:
             return False
-        if not getattr(self, "_computation_classified", False):
-            self._classify_computation()
-            self._computation_classified = True
-        return True
+        return self._requires_verified_execution or self._classify_computation()
 
     def _classify_computation(self) -> bool:
         """System 1's answer to 'is this an algorithm or a calculation?', recorded as COMPUTATION_CLASSIFIED.
@@ -1929,10 +1943,23 @@ class SessionEngine:
         self.workspace.append_event("COMPUTATION_CLASSIFIED", {**record, "computational": computational})
         return computational
 
-    def _draft_execution_brief(self, execute_context: dict[str, Any], traces: list[CallTrace]) -> str | None:
-        """DRAFT_EXECUTE (A/B option): the model drafts how its deliverable will meet
-        the confirmed prompt and plan within the stated environment. A draft that
-        fails to parse is skipped, never retried into EXECUTE."""
+    def _attach_execution_brief(self, execute_context: dict[str, Any], traces: list[CallTrace]) -> None:
+        """DRAFT_EXECUTE, when wanted: the validated, host-checked brief goes to EXECUTE as its own
+        input, EXECUTION_BRIEF, read under EXEC-06. Without a brief (not wanted, invalid, blocked, or
+        over the step budget) the context stays exactly as it was."""
+        if not self._brief_wanted():
+            return
+        brief = self._draft_execution_brief(execute_context, traces)
+        if brief is not None:
+            execute_context["EXECUTION_BRIEF"] = brief
+
+    def _draft_execution_brief(self, execute_context: dict[str, Any], traces: list[CallTrace]) -> dict[str, Any] | None:
+        """DRAFT_EXECUTE (ADR-0013 P6): the model designs how its deliverable will compute the result
+        within the stated environment, as a typed brief (ExecutionDraftResultData). The host then checks
+        what it can check mechanically: the step_estimate product against the step budget (one re-draft
+        stating that fact, then the brief is rejected) and each execution entity against the task text
+        (one not found verbatim is dropped). A reply that fails validation after its one wire retry is
+        skipped, never passed on. Returns the brief EXECUTE receives, or None."""
         assert self.workspace is not None
         prompt_body = execute_context.get("CONFIRMED_PROMPT_BODY") or execute_context.get("SOURCE_REQUEST")
         plan_body = execute_context.get("CONFIRMED_PLAN_BODY") or "Implement the deliverable to satisfy all requirements and constraints of the task."
@@ -1965,18 +1992,101 @@ class SessionEngine:
                 if non_ir_inputs:
                     values["REQUIRED_TASK_INPUTS"] = "\n\n".join(non_ir_inputs)
         values["HOST_PROTOCOL_STATE"] = "EXECUTION_DRAFT"
+        draft = self._request_execution_brief(values, traces)
+        if draft is None:
+            return None
+        limit = self._execution_budget.step_limit
+        estimate = draft.step_estimate
+        if estimate is not None and estimate.estimated_steps > limit:
+            self.workspace.append_event("EXECUTION_BRIEF_OVER_BUDGET", {
+                "estimated_steps": estimate.estimated_steps, "step_limit": limit})
+            correction = (
+                "OPERATOR CORRECTION (host-side step check): step_estimate gives "
+                f"{estimate.iterations:,} iterations x {estimate.steps_per_iteration:,} steps = "
+                f"{estimate.estimated_steps:,} steps, above this session's step budget of {limit:,} steps, "
+                "so the program the brief describes would be stopped before it finishes. Draft the brief "
+                "again; step_estimate must count the method the brief describes."
+            )
+            draft = self._request_execution_brief(values, traces, correction)
+            if draft is None:
+                return None
+            estimate = draft.step_estimate
+            if estimate is not None and estimate.estimated_steps > limit:
+                self.workspace.append_event("EXECUTION_BRIEF_REJECTED", {
+                    "reason": "step_estimate_over_budget", "estimated_steps": estimate.estimated_steps,
+                    "step_limit": limit})
+                return None
+        task_text = [execute_context.get(key) for key in (
+            "CONFIRMED_PROMPT_BODY", "CONFIRMED_PLAN_BODY", "SOURCE_REQUEST", "SUPPLIED_EXECUTION_INPUT_SOURCE")]
+        entities, dropped = _ground_execution_entities(draft.execution_entities, task_text)
+        if dropped:
+            self.workspace.append_event("EXECUTION_ENTITY_DROPPED_UNGROUNDED", {"count": len(dropped), "values": dropped})
+        brief = {
+            "approach": draft.approach.strip(),
+            "data_structures": [item.strip() for item in draft.data_structures],
+            "step_estimate": None if estimate is None else {
+                "iterations": estimate.iterations,
+                "steps_per_iteration": estimate.steps_per_iteration,
+                "estimated_steps": estimate.estimated_steps,
+                "step_limit": limit,
+                "basis": estimate.basis.strip(),
+            },
+            "invariants": [item.strip() for item in draft.invariants],
+            "self_checks": [item.strip() for item in draft.self_checks],
+            "execution_entities": entities,
+        }
+        self.workspace.append_event("EXECUTION_BRIEF_DRAFTED", {
+            "estimated_steps": None if estimate is None else estimate.estimated_steps,
+            "step_limit": limit,
+            "entities_kept": len(entities),
+            "entities_dropped": len(dropped),
+            "data_structures": len(brief["data_structures"]),
+            "invariants": len(brief["invariants"]),
+            "self_checks": len(brief["self_checks"]),
+            "chars": len(json.dumps(brief, ensure_ascii=False)),
+        })
+        return brief
+
+    def _request_execution_brief(
+        self, values: dict[str, Any], traces: list[CallTrace], correction: str | None = None,
+    ) -> ExecutionDraftResultData | None:
+        """One DRAFT_EXECUTE call (with _call's one wire retry). An invalid or blocked reply is recorded
+        as EXECUTION_BRIEF_SKIPPED with its reason and yields no brief."""
+        assert self.workspace is not None
         try:
-            draft = self._call("DRAFT_EXECUTE", values, traces, parser=self.bridge.parse_execution_draft)
+            draft = self._call("DRAFT_EXECUTE", values, traces, parser=self.bridge.parse_execution_draft,
+                               operator_correction=correction)
         except Exception as exc:
             if not _is_wire_failure(exc):
                 raise
-            self.workspace.append_event("EXECUTION_BRIEF_SKIPPED", {"reason": str(exc)})
+            self.workspace.append_event("EXECUTION_BRIEF_SKIPPED", {
+                "reason": str(exc), "feedback": getattr(exc, "operator_feedback", None)})
             return None
-        if draft.kind != "RESULT" or not draft.brief_body.strip():
-            self.workspace.append_event("EXECUTION_BRIEF_SKIPPED", {"reason": draft.kind})
+        if draft.brief is None:
+            self.workspace.append_event("EXECUTION_BRIEF_SKIPPED", {
+                "reason": draft.kind, "blocked_reason": draft.blocked_reason})
             return None
-        self.workspace.append_event("EXECUTION_BRIEF_DRAFTED", {"chars": len(draft.brief_body)})
-        return draft.brief_body.strip()
+        return draft.brief
+
+    def _withdraw_brief_on_overrun(self, execute_context: dict[str, Any], errors: list[str]) -> str:
+        """EXEC-06: a run the sandbox stopped at the step budget contradicts the brief's step_estimate,
+        so the brief leaves the context for the attempts that follow, and the repair's correction states
+        that fact (a host finding, never a method). Returns the correction line, or ""."""
+        brief = execute_context.get("EXECUTION_BRIEF")
+        if brief is None or "STEP_BUDGET_EXCEEDED" not in finding_codes(errors):
+            return ""
+        assert self.workspace is not None
+        del execute_context["EXECUTION_BRIEF"]
+        estimate = brief.get("step_estimate")
+        self.workspace.append_event("EXECUTION_BRIEF_WITHDRAWN", {
+            "reason": "STEP_BUDGET_EXCEEDED",
+            "estimated_steps": None if estimate is None else estimate["estimated_steps"],
+            "step_limit": self._execution_budget.step_limit,
+        })
+        claim = (f"estimated {estimate['estimated_steps']:,} steps" if estimate is not None
+                 else "said the deliverable runs no program")
+        return (f"\n- The execution brief {claim}, but the sandbox stopped the program at the step budget: "
+                "the run contradicts the brief, so the brief is withdrawn from this attempt.")
 
     def _execute_attempt(
         self,
@@ -1995,7 +2105,7 @@ class SessionEngine:
         with a registry finding, never a hidden retry (each attempt cost up to two
         calls before, so a repair could cost four)."""
         try:
-            modes = frozenset({RESULT_IR_MODE}) if result_ir_mode else frozenset()
+            modes = _execution_modes(execute_context, result_ir_mode)
             outcome = self.bridge.parse_execution(self._call("EXECUTE", execute_context, traces,
                                                              operator_correction=correction, modes=modes))
         except Exception as exc:
@@ -2079,23 +2189,7 @@ class SessionEngine:
         if task_inputs:
             execute_context["REQUIRED_TASK_INPUTS"] = task_inputs
 
-        if self._brief_wanted():
-            brief = self._draft_execution_brief(execute_context, traces)
-            if brief:
-                if not execute_context.get("REQUIRED_TASK_INPUTS"):
-                    execute_context["REQUIRED_TASK_INPUTS"] = {}
-                advisory_brief = (
-                    "ADVISORY FEASIBILITY SCRATCHPAD (non-binding working notes from before execution; "
-                    "may contain errors; prioritize prompt and exact constraints over this):\n"
-                    + brief.strip()
-                )
-                if isinstance(execute_context["REQUIRED_TASK_INPUTS"], dict):
-                    execute_context["REQUIRED_TASK_INPUTS"]["DRAFT_EXECUTE"] = advisory_brief
-                else:
-                    execute_context["REQUIRED_TASK_INPUTS"] = (
-                        (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context.get("REQUIRED_TASK_INPUTS") else "")
-                        + advisory_brief
-                    )
+        self._attach_execution_brief(execute_context, traces)
 
         stop_on_failure = self.max_repairs == 0
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
@@ -2121,7 +2215,7 @@ class SessionEngine:
                 repairs_used += 1
             else:
                 unmeasured_repairs += 1
-            correction = "OPERATOR CORRECTION: " + "; ".join(errors)
+            correction = "OPERATOR CORRECTION: " + "; ".join(errors) + self._withdraw_brief_on_overrun(execute_context, errors)
             outcome, errors, final_body, ran_program = self._execute_unconfirmed_attempt(
                 execute_context, traces, sanitized, requirements, result_ir_mode,
                 correction=correction,
@@ -2198,7 +2292,7 @@ class SessionEngine:
         correction: str | None = None,
     ) -> tuple[Any, list[str], str, bool]:
         try:
-            modes = frozenset({RESULT_IR_MODE}) if result_ir_mode else frozenset()
+            modes = _execution_modes(execute_context, result_ir_mode)
             outcome = self.bridge.parse_unconfirmed_execution(
                 self._call("EXECUTE_UNCONFIRMED", execute_context, traces,
                            operator_correction=correction, modes=modes)

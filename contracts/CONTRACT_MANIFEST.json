@@ -38,6 +38,7 @@
     "EXEC-03": "contracts/standards/EXECUTION_STANDARD.md",
     "EXEC-04": "contracts/standards/EXECUTION_STANDARD.md",
     "EXEC-05": "contracts/standards/EXECUTION_STANDARD.md",
+    "EXEC-06": "contracts/standards/EXECUTION_STANDARD.md",
     "HANDOFF-01": "contracts/standards/HANDOFF_STANDARD.md",
     "HANDOFF-02": "contracts/standards/HANDOFF_STANDARD.md",
     "HANDOFF-03": "contracts/standards/HANDOFF_STANDARD.md",
@@ -150,7 +151,7 @@
     },
     {
       "path": "contracts/EXECUTION_CONTRACT.json",
-      "sha256": "2c9dacc31ce8031ec11c5137a3aff8096c0ef3a66df4af019f4fdd649c912c7a"
+      "sha256": "17359e17e87ff699f9fb9cafb739a1d74a3a1bca3234e73f0dc0588a4c711b81"
     },
     {
       "path": "contracts/IMPLEMENTATION_BOUNDARY.json",
@@ -178,7 +179,7 @@
     },
     {
       "path": "contracts/standards/EXECUTION_STANDARD.md",
-      "sha256": "7f41407de602cd9e68db4b74e035030f27f53d25126bfdf607a88a8634902f42"
+      "sha256": "767e967c499f0bf2b18238f36054cdeeebc04def196a2973657b20bdb2816a99"
     },
     {
       "path": "contracts/standards/HANDOFF_STANDARD.md",

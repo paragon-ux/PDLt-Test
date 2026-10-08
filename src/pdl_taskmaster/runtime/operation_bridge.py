@@ -81,9 +81,12 @@ class UnconfirmedExecutionOutcome:
 
 @dataclass(frozen=True)
 class ExecutionDraftOutcome:
+    """A validated DRAFT_EXECUTE reply: the typed brief on RESULT, the stated reason
+    (blocked_reason) on BLOCKED_BY_HIGHER_PRIORITY."""
+
     kind: str
-    brief_body: str
-    execution_entities: tuple[dict, ...] = ()
+    brief: ExecutionDraftResultData | None = None
+    blocked_reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -373,28 +376,10 @@ class OperationBridge:
         return payload.body.strip()
 
     def parse_execution_draft(self, model_text: str) -> ExecutionDraftOutcome:
-        payload: ExecutionDraftPayload = self._validate("DRAFT_EXECUTION", ExecutionDraftPayload, model_text)
+        payload: ExecutionDraftPayload = self._validate("DRAFT_EXECUTE", ExecutionDraftPayload, model_text)
         if isinstance(payload, ExecutionDraftBlockedData):
-            return ExecutionDraftOutcome(payload.kind, payload.brief_body.strip(), ())
-        clean: list[dict] = []
-        for e in payload.execution_entities:
-            if isinstance(e, dict) and str(e.get("value", "")).strip():
-                clean.append({
-                    "kind": str(e.get("kind", "meta")),
-                    "value": str(e["value"]).strip(),
-                    "name": e.get("name"),
-                    "struct_format": e.get("struct_format"),
-                    "declared_size": e.get("declared_size"),
-                })
-            elif isinstance(e, str) and e.strip():
-                clean.append({
-                    "kind": "meta",
-                    "value": e.strip(),
-                    "name": None,
-                    "struct_format": None,
-                    "declared_size": None,
-                })
-        return ExecutionDraftOutcome(payload.kind, payload.brief_body.strip(), tuple(clean))
+            return ExecutionDraftOutcome(payload.kind, None, payload.brief_body.strip())
+        return ExecutionDraftOutcome(payload.kind, payload)
 
     def parse_result_ir_repair(self, model_text: str) -> dict:
         payload: ResultIRRepairPayload = self._validate("EMIT_RESULT_IR", ResultIRRepairPayload, model_text)

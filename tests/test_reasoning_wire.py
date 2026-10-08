@@ -40,7 +40,8 @@ def _stub_server(seen: list[tuple[str, object]], bodies: list | None = None):
             if bodies is not None:
                 bodies.append(body)
             if operation == "DRAFT_EXECUTE":
-                reply = {"kind": "RESULT", "brief_body": "Add the two numbers.", "execution_entities": []}
+                reply = {"kind": "RESULT", "approach": "Add the two numbers.", "data_structures": [],
+                         "step_estimate": None, "invariants": [], "self_checks": [], "execution_entities": []}
             else:
                 reply = _REPLIES_OVERRIDE.get(operation, _REPLIES.get(operation, {"kind": "RESULT", "body": "ok"}))
             text_reply = reply if isinstance(reply, str) else json.dumps(reply)
@@ -122,8 +123,9 @@ def test_runner_settings_reach_the_wire(tmp_path):
                                               "openai/gpt-oss-120b", "low", (), settings)
     assert "--draft-execute" in cmd
     ops, bodies = _run_stub(tmp_path, settings)
-    # LEDGER L92: --draft-execute runs DRAFT_EXECUTE unconditionally before EXECUTE
-    assert "DRAFT_EXECUTE" in ops and "EXECUTE" in ops
+    # ADR-0013 P6 (LEDGER L41): DRAFT_EXECUTE runs only for verified execution; this
+    # standard task goes straight to EXECUTE even with --draft-execute on.
+    assert "DRAFT_EXECUTE" not in ops and "EXECUTE" in ops
     assert len(ops) == len(bodies)
     for op, body in zip(ops, bodies):
         assert body.get("max_output_tokens") == 8000 and "max_tokens" not in body

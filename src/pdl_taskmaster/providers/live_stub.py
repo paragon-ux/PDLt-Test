@@ -48,7 +48,11 @@ class LiveStubWorker:
         elif operation == "DRAFT_EXECUTE":
             payload = {
                 "kind": "RESULT",
-                "brief_body": "1. Confirm the file contract.\n2. Use the declared wire format.\n3. Execute and verify.",
+                "approach": "Compute the result directly from the given inputs and report it.",
+                "data_structures": [],
+                "step_estimate": None,
+                "invariants": [],
+                "self_checks": [],
                 "execution_entities": [],
             }
         elif operation == "EMIT_RESULT_IR":

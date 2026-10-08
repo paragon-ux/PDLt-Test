@@ -372,16 +372,20 @@ def test_unconfirmed_route_with_draft_execute(tmp_path: Path):
         if req.operation == "DRAFT_EXECUTE":
             return json.dumps({
                 "kind": "RESULT",
-                "brief_body": "Use backtracking with MRV heuristic under 10M step budget.",
-                "execution_entities": [],
+                "approach": "Ask each of A, B and C one question in turn and read the answers.",
+                "data_structures": [],
+                "step_estimate": None,
+                "invariants": [],
+                "self_checks": [],
+                "execution_entities": [{"kind": "identifier", "value": "A"}],
             })
         if req.operation == "EXECUTE_UNCONFIRMED":
             inputs = req.projection.document.get("operation_inputs", {})
-            req_inputs = inputs.get("REQUIRED_TASK_INPUTS", "")
-            if isinstance(req_inputs, dict):
-                assert "DRAFT_EXECUTE" in req_inputs
-            else:
-                assert "EXECUTION BRIEF" in req_inputs
+            brief = inputs["EXECUTION_BRIEF"]  # its own input, never folded into REQUIRED_TASK_INPUTS
+            assert brief["approach"].startswith("Ask each of A, B and C")
+            assert brief["execution_entities"] == [{"kind": "identifier", "value": "A"}]
+            assert "DRAFT_EXECUTE" not in (inputs.get("REQUIRED_TASK_INPUTS") or {})
+            assert "EXEC-06" in [c["requirement_id"] for c in inputs["APPLICABLE_STANDARD_CLAUSES"]]
             return json.dumps({
                 "kind": "RESULT",
                 "interpretation": "DETERMINE identities of A, B, C",
@@ -406,20 +410,14 @@ def test_unconfirmed_route_with_draft_execute(tmp_path: Path):
     assert calls == ["BOOTSTRAP_ANALYSIS", "DRAFT_EXECUTE", "EXECUTE_UNCONFIRMED"]
 
 
-def test_unconfirmed_route_with_draft_execute_runs_unconditionally(tmp_path: Path):
-    """When draft_execute is enabled, DRAFT_EXECUTE runs unconditionally as an advisory feasibility scratchpad."""
+def test_unconfirmed_route_with_draft_execute_bypasses_on_standard_execution(tmp_path: Path):
+    """When task is STANDARD_EXECUTION, DRAFT_EXECUTE is bypassed to prevent code-framing bias (GUARD-03.1)."""
     calls = []
 
     def model_call(req):
         calls.append(req.operation)
         if req.operation == "BOOTSTRAP_ANALYSIS":
             return _bootstrap_reply()
-        if req.operation == "DRAFT_EXECUTE":
-            return json.dumps({
-                "kind": "RESULT",
-                "brief_body": "Review cache replacement constraints against 10M step budget.",
-                "execution_entities": [],
-            })
         if req.operation == "EXECUTE_UNCONFIRMED":
             return _unconfirmed_result_reply()
         raise AssertionError(f"unexpected operation: {req.operation}")
@@ -436,6 +434,7 @@ def test_unconfirmed_route_with_draft_execute_runs_unconditionally(tmp_path: Pat
     response = engine.handle_user_message("Analyze the architectural tradeoffs of two cache replacement policies.")
     assert response.closed is True
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
-    assert calls == ["BOOTSTRAP_ANALYSIS", "DRAFT_EXECUTE", "EXECUTE_UNCONFIRMED"]
+    # DRAFT_EXECUTE bypassed: straight from BOOTSTRAP_ANALYSIS to EXECUTE_UNCONFIRMED
+    assert calls == ["BOOTSTRAP_ANALYSIS", "EXECUTE_UNCONFIRMED"]
 
 
