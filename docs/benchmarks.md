@@ -275,4 +275,6 @@ Then build every table on this page from the finished runs:
 python experiments/five_arm_report.py --commit <sha> --md report.md --json report.json
 ```
 
-`--no-tier-d1` turns the repair loop off for a harness arm. Runs are written to `catalogue-runs/`, one folder each, with per-prompt transcripts, execution traces and a `SCOREBOARD.md`. The report reads `KEY_USAGE.json` from a run folder when one is present (a before-and-after read of the OpenRouter key's usage counter); without it the spend column shows n/a.
+`--no-tier-d1` turns the repair loop off for a harness arm. Runs are written to `catalogue-runs/`, one folder each, with per-prompt transcripts, execution traces and a `SCOREBOARD.md`.
+
+To record what each route costs, start it through the wrapper instead, for example `python experiments/sweep_arm.py unconfirmed`. It fixes the model, `--reasoning low` and `--timeout 300`, reads the OpenRouter key's usage counter before and after, and writes `KEY_USAGE.json` into the run folder, which the report picks up (without it the spend column shows n/a). The sweep on this page ran each route through an equivalent wrapper; `sweep_arm.py` is that wrapper tidied for the repository.
