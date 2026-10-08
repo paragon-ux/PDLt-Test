@@ -1777,7 +1777,7 @@ class SessionEngine:
 
         self._route_plan_profile(prompt_body, plan_body)
         execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools
-        if self.draft_execute and self._requires_verified_execution:
+        if self._brief_wanted():
             brief = self._draft_execution_brief(execute_context, traces)
             if brief:
                 # The model's own draft (GUARD-01: no harness feedback), drafted once.
@@ -1882,6 +1882,42 @@ class SessionEngine:
             },
         )
         return EngineResponse(final_body, traces, closed=True)
+
+    def _brief_wanted(self) -> bool:
+        """Whether DRAFT_EXECUTE runs for this task (--draft-execute): a verified-execution task always gets
+        one; any other does when System 1 says its deliverable is, or needs, an algorithm or a calculation."""
+        if not self.draft_execute:
+            return False
+        return self._requires_verified_execution or self._classify_computation()
+
+    def _classify_computation(self) -> bool:
+        """System 1's answer to 'is this an algorithm or a calculation?', recorded as COMPUTATION_CLASSIFIED.
+        Below the confidence floor, with no System 1, or on any error the answer is no: the brief is an
+        addition, so doubt leaves the task as it was."""
+        assert self.workspace is not None
+        from pdl_taskmaster.providers.sys1.recipes.computation import ComputationRecipe
+
+        record: dict[str, Any] = {"verdict": None, "confidence": None, "passed_gating": False, "fallback": None}
+        computational = False
+        client = self.sys1_client
+        if client is None or not client.is_configured or not self._source_request:
+            record["fallback"] = "sys1_unavailable"
+        else:
+            try:
+                recipe = ComputationRecipe()
+                body, duration_ms = client.call(recipe.build_request({"request": self._source_request}))
+                result = recipe.parse_response(body, duration_ms=duration_ms)
+                record.update(
+                    verdict=result.verdict, confidence=round(result.confidence, 4), passed_gating=result.passed_gating,
+                    margin=round(result.margin, 4), entropy=round(result.entropy, 4),
+                    distribution={k: round(v, 4) for k, v in result.probabilities.items()},
+                    fallback=None if result.passed_gating else "below_floor",
+                )
+                computational = bool(result.passed_gating and recipe.map_to_wire(result)["computational"])
+            except Exception:
+                record["fallback"] = "sys1_failed"
+        self.workspace.append_event("COMPUTATION_CLASSIFIED", {**record, "computational": computational})
+        return computational
 
     def _draft_execution_brief(self, execute_context: dict[str, Any], traces: list[CallTrace]) -> str | None:
         """DRAFT_EXECUTE (A/B option): the model drafts how its deliverable will meet
@@ -2033,7 +2069,7 @@ class SessionEngine:
         if task_inputs:
             execute_context["REQUIRED_TASK_INPUTS"] = task_inputs
 
-        if self.draft_execute and self._requires_verified_execution:
+        if self._brief_wanted():
             brief = self._draft_execution_brief(execute_context, traces)
             if brief:
                 if not execute_context.get("REQUIRED_TASK_INPUTS"):
