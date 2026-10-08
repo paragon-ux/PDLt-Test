@@ -43,7 +43,7 @@ _META_RULE_PATTERNS = re.compile(
     r"no\s+(?:code|code\s+emission|executable\s+code)\b|"
     r"(?:do\s+not|never)\s+(?:emit|generate|output)\s+code\b|"
     r"(?:contains?\s+)?no\s+executable\s+code\b|"
-    r"(?:read|parse|examine)\s+(?:the\s+)?(?:task\s+specification|request\s+to\s+implement)\b|"
+    r"(?:read|parse|examine|load|ingest|fetch|open)\s+(?:the\s+)?(?:task\s+specification|request\s+to\s+implement|available_execution_tools|confirmed_prompt_body|confirmed_plan_body|supplied_execution_input_source|result_ir|execution_contract)\b|"
     r"(?:at\s+this\s+stage|in\s+this\s+step)[;,]?\s*only\s+(?:specify|describe|state)"
     r")\b"
 )

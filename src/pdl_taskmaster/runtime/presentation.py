@@ -37,30 +37,65 @@ _ADVANCEMENT_FEEDBACK = {
     "constraints_addressed": "it repeats or ignores the conditions that keep the task from being solved directly "
                              "instead of stating how the approach handles them",
     "advances": "it does not show how the result will be obtained",
+    "no_evasion": "it commands downstream execution to omit, avoid computing, or placeholderize the deliverable "
+                  "instead of specifying procedures to compute it",
+    "no_answer_leakage": "it preselects substantive conclusions or asserts the answer during planning instead of "
+                         "specifying neutral procedures to deduce or calculate it (PLAN-04)",
 }
 
 _ADVANCEMENT_NOTE = {
     "solution_actions": "adds no step beyond the prompt's own",
     "constraints_addressed": "does not say how it handles the task's constraints",
     "advances": "does not show how the result will be reached",
+    "no_evasion": "commands execution to omit or avoid computing the deliverable",
+    "no_answer_leakage": "preselects substantive conclusions or leaks the answer (PLAN-04)",
 }
 
 
 def plan_advancement_feedback(failed: list[str]) -> str:
-    """Operator correction for a plan that restates the prompt: which checks failed,
+    """Operator correction for a plan that restates the prompt or evades: which checks failed,
     never how to solve the task."""
     reasons = "; ".join(_ADVANCEMENT_FEEDBACK[c] for c in failed if c in _ADVANCEMENT_FEEDBACK)
     return (
-        "Response plan requirement (PLAN-02, minimum sufficient procedure): the plan restates the confirmed "
-        f"prompt instead of exposing an approach: {reasons}. State how the result will be obtained; do not "
-        "state the result itself (PLAN-04)."
+        "Response plan requirement (PLAN-02, minimum sufficient procedure; PLAN-04, no evasion): the plan "
+        f"restates the confirmed prompt or evades execution: {reasons}. State how the result will be obtained; "
+        "do not state the result itself (PLAN-04) and do not command execution to withhold or omit the solution."
     )
 
 
 def plan_advancement_note(failed: list[str]) -> str:
-    """Factual host note at the plan review for a plan that still restates the prompt."""
+    """Factual host note at the plan review for a plan that still restates the prompt or evades."""
     reasons = "; ".join(_ADVANCEMENT_NOTE[c] for c in failed if c in _ADVANCEMENT_NOTE)
-    return f"[host] PLAN-02: this plan restates the prompt ({reasons}); /revise to ask for the approach"
+    return f"[host] PLAN-02: this plan restates the prompt or evades ({reasons}); /revise to ask for the approach"
+
+
+def prompt_fidelity_note(failed_checks: list[str] | None = None) -> str:
+    """Factual host note at the prompt review for a prompt that commands evasion or drops scope."""
+    failed = failed_checks or ["no_evasion"]
+    if "complete_coverage" in failed and "no_evasion" not in failed:
+        return "[host] PROMPT-01: prompt omits material deliverables from the request; /revise to restore them"
+    return "[host] PROMPT-01: prompt commands execution to omit or avoid computing the deliverable; /revise to ask for the complete solution"
+
+
+def prompt_fidelity_feedback(failed_checks: list[str] | None = None) -> str:
+    """Operator correction for a prompt that fails semantic fidelity."""
+    failed = failed_checks or ["no_evasion"]
+    reasons = []
+    if "no_evasion" in failed:
+        reasons.append(
+            "the prompt commands downstream execution to omit, avoid computing, or placeholderize the requested "
+            "deliverable instead of specifying that execution computes and produces the solution in full (PROMPT-02)"
+        )
+    if "complete_coverage" in failed:
+        reasons.append(
+            "the prompt silently drops or omits material deliverables or requirements requested by the user (PROMPT-01)"
+        )
+    details = "; ".join(reasons)
+    return (
+        f"Prompt requirement (PROMPT-01, semantic fidelity): {details}. "
+        "Specify what execution must compute and produce for all requested requirements in full; "
+        "do not withhold answers or omit requested deliverables."
+    )
 
 
 def deferred_substantive() -> str:

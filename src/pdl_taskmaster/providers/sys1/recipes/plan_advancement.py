@@ -30,7 +30,7 @@ from pdl_taskmaster.providers.sys1.gating import evaluate_confidence_gate
 from pdl_taskmaster.providers.sys1.recipes.base import Sys1Recipe, as_decision_instruction
 from pdl_taskmaster.providers.sys1.schema import RecipeResult, Sys1Question, Sys1Request
 
-CHECKS = ("solution_actions", "constraints_addressed", "advances")
+CHECKS = ("solution_actions", "constraints_addressed", "advances", "no_evasion", "no_answer_leakage")
 # Not a check on the plan: when the confirmed prompt already states how the result is
 # obtained, a plan has nothing to add and is not rejected for restating it.
 PROMPT_STATES_METHOD = "prompt_states_method"
@@ -106,6 +106,38 @@ class PlanAdvancementRecipe(Sys1Recipe):
                 criteria={
                     "true": "The plan shows how the result will be reached.",
                     "false": "The plan restates the task: it says what to obtain but not how.",
+                },
+                choices=list(CHOICES),
+            ),
+            "no_evasion": Sys1Question(
+                instructions=as_decision_instruction(
+                    "Compare the response plan with the confirmed prompt. Does the plan specify procedures "
+                    "that compute or produce the requested deliverable, rather than directing execution to withhold, "
+                    "omit, avoid computing, or placeholderize the solution? If the user or prompt explicitly requested "
+                    "an abstract specification or templates without concrete data, answer true."
+                ),
+                criteria={
+                    "true": "The plan specifies procedures to compute and deliver what the prompt requires, without "
+                            "injecting unprompted negative withholding directives.",
+                    "false": "The plan commands downstream execution to avoid computing, omit concrete values, or "
+                             "placeholderize the deliverable when the prompt required the concrete solution.",
+                },
+                choices=list(CHOICES),
+            ),
+            "no_answer_leakage": Sys1Question(
+                instructions=as_decision_instruction(
+                    "Compare the response plan with the confirmed prompt. Does the plan keep its procedural "
+                    "steps neutral without leaking, preselecting, or locking in substantive conclusions, specific "
+                    "answers, or unproven outcomes before execution? Stating a procedure to deduce or calculate "
+                    "the result is neutral (e.g. 'determine whether the count is even or odd'). Stating or assuming "
+                    "the substantive answer or outcome as a premise (e.g. 'determine that the count is S' or "
+                    "'conclude that a specific approach is optimal') leaks the answer (PLAN-04)."
+                ),
+                criteria={
+                    "true": "The plan specifies procedures to deduce or compute the result without preselecting "
+                            "or asserting what the substantive outcome, count, or answer value will be.",
+                    "false": "The plan preselects or asserts the substantive answer, locks in an unproven premise, "
+                             "or decides the substantive outcome during planning.",
                 },
                 choices=list(CHOICES),
             ),

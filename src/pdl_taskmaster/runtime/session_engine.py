@@ -1207,7 +1207,36 @@ class SessionEngine:
                 return self._refuse(redraft.response, traces, "prompt_draft")
             if redraft.prompt_body is not None:
                 outcome = redraft
+        fidelity_verdict, failed = self._judge_prompt_fidelity(compiled, outcome.prompt_body)
+        if fidelity_verdict in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE"):
+            self.workspace.append_event(
+                "PROMPT_FIDELITY_RETRY",
+                {"operation": "DRAFT_PROMPT", "verdict": fidelity_verdict, "failed_checks": failed},
+            )
+            redraft = self._call(
+                "DRAFT_PROMPT",
+                {"HOST_PROTOCOL_STATE": protocol_state, "SUBSTANTIVE_REQUEST": compiled},
+                traces,
+                parser=self.bridge.parse_prompt_draft,
+                operator_correction="OPERATOR CORRECTION: " + presentation.prompt_fidelity_feedback(failed),
+            )
+            if redraft.kind == "TASK_BLOCKED_BY_HIGHER_PRIORITY":
+                self.workspace.append_event(
+                    "PROTOCOL_BLOCKED",
+                    {"phase": "prompt_draft", "blocking_basis": redraft.blocking_basis},
+                )
+                return self._refuse(redraft.response, traces, "prompt_draft")
+            if redraft.prompt_body is not None:
+                outcome = redraft
+                res_verdict, res_failed = self._judge_prompt_fidelity(compiled, outcome.prompt_body)
+                if res_verdict in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE"):
+                    self.workspace.append_event(
+                        "PROMPT_FIDELITY_UNRESOLVED",
+                        {"operation": "DRAFT_PROMPT", "host_note": True, "failed_checks": res_failed},
+                    )
         host_note = self._residual_lint_note(outcome.prompt_body, "PROMPT", "DRAFT_PROMPT")
+        if locals().get("res_verdict") in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE"):
+            host_note = "\n".join(filter(None, [host_note, presentation.prompt_fidelity_note(res_failed)]))
         self.controller = self._bind_new_controller(self.workspace)
         approach_source = substantive_request if outcome.approach_handoff == "CARRY_SOURCE_TO_PLAN" else None
         self.controller.commit_initial_prompt(outcome.prompt_body, approach_source)
@@ -1501,6 +1530,39 @@ class SessionEngine:
             )
             host_note = "\n".join(filter(None, [host_note, presentation.plan_advancement_note(failed)]))
         return body, host_note
+
+    def _judge_prompt_fidelity(
+        self, source_request: str, prompt_body: str
+    ) -> tuple[str | None, list[str]]:
+        """One PromptFidelityRecipe decision: (verdict, failed_checks). System 1
+        absent, failing or below its floor yields no verdict, and the prompt is not flagged."""
+        from pdl_taskmaster.providers.sys1.recipes.prompt_fidelity import PromptFidelityRecipe
+
+        assert self.workspace is not None
+        decision: dict[str, Any] = {
+            "verdict": None,
+            "failed_checks": [],
+            "confidence": None,
+            "fallback": "sys1_unavailable",
+        }
+        if self.sys1_client is not None and self.sys1_client.is_configured:
+            recipe = PromptFidelityRecipe()
+            try:
+                body, duration_ms = self.sys1_client.call(
+                    recipe.build_request({"source_request": source_request, "drafted_prompt": prompt_body})
+                )
+                result = recipe.parse_response(body, duration_ms=duration_ms)
+                wire = recipe.map_to_wire(result)
+                decision.update(
+                    verdict=wire["verdict"],
+                    failed_checks=wire["failed_checks"],
+                    confidence=round(result.confidence, 4),
+                    fallback=None if result.passed_gating else "below_floor",
+                )
+            except Exception as exc:
+                decision["fallback"] = f"sys1_error:{type(exc).__name__}"
+        self.workspace.append_event("PROMPT_FIDELITY", decision)
+        return decision["verdict"], list(decision["failed_checks"])
 
     def _judge_plan_advancement(
         self, operation: str, prompt_body: str, plan_body: str
