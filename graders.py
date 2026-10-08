@@ -223,7 +223,7 @@ def grade_wheel_coloring(corpus: str, prompt: str) -> tuple[str, str]:
 
     current: dict[int, int] = {}
     candidates = []
-    for m in re.finditer(r"['\"]?(\d{1,2})['\"]?\s*(?:[:=]|->)\s*([1-4])\b", corpus):
+    for m in re.finditer(r"['\"]?(\d{1,2})['\"]?\s*(?:[:=|]|->)\s*([1-4])\b", corpus):  # `n: c`, `n = c`, `n -> c`, `n | c` (table row)
         node, color = int(m.group(1)), int(m.group(2))
         if node in current or node > 11:
             current = {}

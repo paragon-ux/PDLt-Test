@@ -39,3 +39,24 @@ def test_model_facing_runtime_code_uses_no_regex():
                  and isinstance(n.func.value, ast.Name) and n.func.value.id == "re"]
         allowed = {"runtime/session_engine.py": 2, "runtime/workspace.py": 1}  # invocation prefix; turn_NNN dir names
         assert len(calls) <= allowed.get(name, 0), (name, [ast.unparse(c)[:60] for c in calls])
+
+
+def test_a_block_that_was_never_closed_ends_where_the_next_one_opens():
+    text = "Notes\n```text\nexplanation\n```python\nprint(1)\n```\nmore\n```python\nprint(2)\n```\n"
+    assert fenced_blocks(text, ("python",)) == ["print(1)\n", "print(2)\n"]
+    assert fenced_blocks(text, ("text",)) == ["explanation\n"]
+    # An unclosed block of a wanted language is kept as far as it went, and the next one is read too.
+    assert fenced_blocks("```python\nA = 1\n```python\nB = 2\n```\n", ("python",)) == ["A = 1\n", "B = 2\n"]
+
+
+def test_a_line_that_mentions_a_fence_does_not_end_a_block_that_is_closed_later():
+    code = ('```python\n"""Converts text.\n    7. Code blocks: indented or fenced with ```\n"""\n'
+            "def convert(text):\n    return text\n```\n")
+    assert fenced_blocks(code, ("python",)) == [
+        '"""Converts text.\n    7. Code blocks: indented or fenced with ```\n"""\ndef convert(text):\n    return text\n']
+
+
+def test_a_fence_stuck_to_the_last_line_still_closes_when_nothing_closes_it_properly():
+    assert fenced_blocks("```py\nx = 2```\n", ("py",)) == ["x = 2\n"]
+    # ... also when a later block follows, whose own closing fence must not be taken for this one's
+    assert fenced_blocks("```python\nx = 1```\ntext\n```python\ny = 2\n```\n", ("python",)) == ["x = 1\n", "y = 2\n"]

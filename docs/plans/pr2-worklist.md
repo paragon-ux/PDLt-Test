@@ -127,7 +127,7 @@ The design is written in the gate doc (§6.6, §8.4 G5/A1/M1, §3.2/§4 +FB1). B
 ## T9. Regrade and baseline
 
 - [ ] Regrade the old catalogue runs with FA2 and the new graders, giving the baseline report. The committed `experiments/baseline/BASELINE.md` predates the 02/05 hidden-test remap (`c0ff4c7b`); rerun it (offline) before citing it (LEDGER L20).
-- [ ] `experiments/run_four_arms.py` counts ungraded (N/A) prompts as passes; report decided-prompt pass rates only, as FA2 does (LEDGER L49d).
+- [x] `experiments/run_four_arms.py` counted ungraded (N/A) prompts as passes (LEDGER L49d). Retired (LEDGER L84): the sweep is the five `run_catalogue.py` commands in `docs/getting-started.md`, and `experiments/five_arm_report.py` counts decided-prompt pass rates from the runs' own results.
 
 ## T10. Gates and ship
 

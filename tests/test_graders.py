@@ -104,6 +104,19 @@ def test_01_03_coloring(tmp_path):
     assert _grade("01-03", tmp_path / "b", json.dumps(bad)) == graders.FAIL
 
 
+def test_01_03_coloring_as_a_table(tmp_path):
+    """A valid coloring written one node per row is still a valid coloring; an improper one is still not."""
+    coloring = _solution("01-03")["example_coloring"]
+    rows = sorted((int(n), c) for n, c in coloring.items())
+    aligned = "node : colour\n------|---------\n" + "\n".join(f"{n:3d}   |   {c}" for n, c in rows)
+    piped = "| node | colour |\n|---|---|\n" + "\n".join(f"| {n} | {c} |" for n, c in rows)
+    assert _grade("01-03", tmp_path / "a", aligned) == graders.PASS
+    assert _grade("01-03", tmp_path / "b", piped) == graders.PASS
+    improper = [(n, rows[0][1] if n == 1 else c) for n, c in rows]
+    assert _grade("01-03", tmp_path / "c", "\n".join(f"{n} | {c}" for n, c in improper)) == graders.FAIL
+    assert _grade("01-03", tmp_path / "d", "\n".join(f"{n} | {c}" for n, c in rows[:6])) == graders.FAIL
+
+
 def test_01_04_subset_sum(tmp_path):
     import itertools
 
