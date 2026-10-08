@@ -1543,6 +1543,9 @@ class SessionEngine:
             "verdict": None,
             "failed_checks": [],
             "confidence": None,
+            "margin": None,
+            "entropy": None,
+            "channels": {},
             "fallback": "sys1_unavailable",
         }
         if self.sys1_client is not None and self.sys1_client.is_configured:
@@ -1556,7 +1559,10 @@ class SessionEngine:
                 decision.update(
                     verdict=wire["verdict"],
                     failed_checks=wire["failed_checks"],
+                    channels=wire.get("channels", {}),
                     confidence=round(result.confidence, 4),
+                    margin=round(result.margin, 4),
+                    entropy=round(result.entropy, 4),
                     fallback=None if result.passed_gating else "below_floor",
                 )
             except Exception as exc:
@@ -1572,8 +1578,17 @@ class SessionEngine:
         from pdl_taskmaster.providers.sys1.recipes.plan_advancement import PlanAdvancementRecipe
 
         assert self.workspace is not None
-        decision: dict[str, Any] = {"operation": operation, "verdict": None, "failed_checks": [], "checks": {},
-                                    "confidence": None, "fallback": "sys1_unavailable"}
+        decision: dict[str, Any] = {
+            "operation": operation,
+            "verdict": None,
+            "failed_checks": [],
+            "checks": {},
+            "channels": {},
+            "confidence": None,
+            "margin": None,
+            "entropy": None,
+            "fallback": "sys1_unavailable",
+        }
         if self.sys1_client is not None and self.sys1_client.is_configured:
             recipe = PlanAdvancementRecipe()
             try:
@@ -1583,9 +1598,14 @@ class SessionEngine:
                 result = recipe.parse_response(body, duration_ms=duration_ms)
                 wire = recipe.map_to_wire(result)
                 decision.update(
-                    verdict=wire["verdict"], failed_checks=wire["failed_checks"], checks=wire["checks"],
+                    verdict=wire["verdict"],
+                    failed_checks=wire["failed_checks"],
+                    checks=wire["checks"],
                     prompt_states_method=wire["prompt_states_method"],
+                    channels=wire.get("channels", {}),
                     confidence=round(result.confidence, 4),
+                    margin=round(result.margin, 4),
+                    entropy=round(result.entropy, 4),
                     fallback=None if result.passed_gating else "below_floor",
                 )
             except Exception as exc:

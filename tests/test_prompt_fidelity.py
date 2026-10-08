@@ -281,3 +281,22 @@ def test_prompt_fidelity_gate_triggers_redraft_on_answer_leakage(tmp_path):
     assert "preselects or leaks substantive answers" in draft_calls[1].prompt
     assert "PROMPT-02" in draft_calls[1].prompt
     assert engine.controller.state.current_prompt.body == "CALCULATE the sibling count based on relationship constraints\nOUTPUT the result"
+
+
+def test_prompt_fidelity_channel_specific_calibration():
+    """Channel-specific calibration in PromptFidelityRecipe preserves decisive violation metrics."""
+    recipe = PromptFidelityRecipe()
+    answers = {
+        "no_evasion": {"choice": "true", "confidence": 0.88, "probabilities": {"true": 0.88, "false": 0.12}},
+        "complete_coverage": {"choice": "true", "confidence": 0.85, "probabilities": {"true": 0.85, "false": 0.15}},
+        "no_answer_leakage": {"choice": "false", "confidence": 0.94, "probabilities": {"true": 0.06, "false": 0.94}},
+    }
+    res = recipe.parse_response({"answers": answers})
+    assert res.verdict == "ANSWER_LEAKAGE"
+    assert res.passed_gating is True
+    assert res.confidence == pytest.approx(0.94, rel=1e-3)
+    assert res.margin == pytest.approx(0.88, rel=1e-3)
+    assert res.entropy <= 0.35
+    assert "channels" in res.labels
+    assert res.labels["channels"]["no_answer_leakage"]["passed"] is True
+    assert res.labels["channels"]["no_answer_leakage"]["choice"] == "false"

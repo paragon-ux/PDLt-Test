@@ -30,7 +30,9 @@ from pdl_taskmaster.providers.sys1.gating import evaluate_confidence_gate
 from pdl_taskmaster.providers.sys1.recipes.base import Sys1Recipe, as_decision_instruction
 from pdl_taskmaster.providers.sys1.schema import RecipeResult, Sys1Question, Sys1Request
 
-CHECKS = ("solution_actions", "constraints_addressed", "advances", "no_evasion", "no_answer_leakage")
+PROCEDURAL_CHECKS = ("solution_actions", "constraints_addressed", "advances")
+SUBSTANTIVE_CHECKS = ("no_evasion", "no_answer_leakage")
+CHECKS = (*PROCEDURAL_CHECKS, *SUBSTANTIVE_CHECKS)
 # Not a check on the plan: when the confirmed prompt already states how the result is
 # obtained, a plan has nothing to add and is not rejected for restating it.
 PROMPT_STATES_METHOD = "prompt_states_method"
@@ -167,21 +169,24 @@ class PlanAdvancementRecipe(Sys1Recipe):
         self, response_body: dict[str, Any], *, duration_ms: float = 0.0
     ) -> RecipeResult:
         answers = response_body.get("answers", {})
+        channels: dict[str, Any] = {}
         labels: dict[str, bool | None] = {}
         gated: dict[str, bool] = {}
-        min_conf = 1.0
+
         for key in (*CHECKS, PROMPT_STATES_METHOD):
-            gating = evaluate_confidence_gate(
-                answers.get(key, {}), confidence_floor=self.min_confidence, entropy_ceiling=_BINARY_ENTROPY_CEILING
+            gate = evaluate_confidence_gate(
+                answers.get(key, {}),
+                confidence_floor=self.min_confidence,
+                entropy_ceiling=_BINARY_ENTROPY_CEILING,
             )
-            passed = gating.passed and gating.choice in CHOICES
+            channels[key] = gate
+            passed = gate.passed and gate.choice in CHOICES
             gated[key] = passed
-            labels[key] = (gating.choice == "true") if passed else None
-            if key in CHECKS:
-                min_conf = min(min_conf, gating.confidence)
+            labels[key] = (gate.choice == "true") if passed else None
+
         failed = [key for key in CHECKS if labels[key] is False]
         if failed and labels[PROMPT_STATES_METHOD] is True:
-            substantive_violations = [k for k in failed if k in ("no_evasion", "no_answer_leakage")]
+            substantive_violations = [k for k in failed if k in SUBSTANTIVE_CHECKS]
             if substantive_violations:
                 verdict = "RESTATES"
                 failed = substantive_violations
@@ -189,22 +194,54 @@ class PlanAdvancementRecipe(Sys1Recipe):
                 verdict = "PROMPT_STATES_METHOD"
                 failed = []
         elif failed:
-            verdict = "RESTATES"  # one confident failure is enough
+            verdict = "RESTATES"
         elif all(labels[key] is True for key in CHECKS):
             verdict = "ADVANCES"
+        elif labels[PROMPT_STATES_METHOD] is True and all(labels.get(k) is True for k in SUBSTANTIVE_CHECKS):
+            verdict = "PROMPT_STATES_METHOD"
+            failed = []
         else:
             verdict = "UNCERTAIN"
-        passed_gating = verdict != "UNCERTAIN"
+
+        # Channel-specific calibration: metrics inherit from decisive channel
+        if verdict == "RESTATES" and failed:
+            decisive_key = min(failed, key=lambda k: channels[k].confidence)
+            decisive_gate = channels[decisive_key]
+            passed_gating = True
+        elif verdict == "PROMPT_STATES_METHOD":
+            decisive_key = PROMPT_STATES_METHOD
+            decisive_gate = channels[decisive_key]
+            passed_gating = decisive_gate.passed
+        elif verdict == "ADVANCES":
+            decisive_key = min(CHECKS, key=lambda k: channels[k].confidence)
+            decisive_gate = channels[decisive_key]
+            passed_gating = True
+        else:
+            decisive_key = min(CHECKS, key=lambda k: channels[k].confidence)
+            decisive_gate = channels[decisive_key]
+            passed_gating = False
+
+        channel_metrics = {
+            k: {
+                "choice": channels[k].choice,
+                "confidence": round(channels[k].confidence, 4),
+                "margin": round(channels[k].margin, 4),
+                "entropy": round(channels[k].entropy, 4),
+                "passed": channels[k].passed,
+            }
+            for k in (*CHECKS, PROMPT_STATES_METHOD)
+        }
+
         return RecipeResult(
             status="ready" if passed_gating else "review",
             verdict=verdict,
-            confidence=min_conf,
-            margin=0.0,
-            entropy=0.0,
+            confidence=decisive_gate.confidence,
+            margin=decisive_gate.margin,
+            entropy=decisive_gate.entropy,
             passed_gating=passed_gating,
-            probabilities={},
+            probabilities=decisive_gate.probabilities,
             duration_ms=duration_ms,
-            labels={"checks": labels, "failed": failed, "gated": gated},
+            labels={"checks": labels, "failed": failed, "gated": gated, "channels": channel_metrics},
             metadata=response_body.get("metadata", {}),
         )
 
@@ -216,4 +253,5 @@ class PlanAdvancementRecipe(Sys1Recipe):
             "failed_checks": list(labels.get("failed", [])),
             "checks": {k: v for k, v in checks.items() if k in CHECKS},
             "prompt_states_method": checks.get(PROMPT_STATES_METHOD),
+            "channels": labels.get("channels", {}),
         }

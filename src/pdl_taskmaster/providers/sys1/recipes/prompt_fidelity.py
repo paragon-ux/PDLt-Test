@@ -107,21 +107,22 @@ class PromptFidelityRecipe(Sys1Recipe):
         self, response_body: dict[str, Any], *, duration_ms: float = 0.0
     ) -> RecipeResult:
         answers = response_body.get("answers", {})
+        channels: dict[str, Any] = {}
         labels: dict[str, bool | None] = {}
         gated: dict[str, bool] = {}
-        min_conf = 1.0
         failed: list[str] = []
+
         for key in CHECKS:
-            gating = evaluate_confidence_gate(
+            gate = evaluate_confidence_gate(
                 answers.get(key, {}),
                 confidence_floor=self.min_confidence,
                 entropy_ceiling=_BINARY_ENTROPY_CEILING,
             )
-            passed = gating.passed and gating.choice in CHOICES
+            channels[key] = gate
+            passed = gate.passed and gate.choice in CHOICES
             gated[key] = passed
-            labels[key] = (gating.choice == "true") if passed else None
-            min_conf = min(min_conf, gating.confidence)
-            if passed and gating.choice == "false":
+            labels[key] = (gate.choice == "true") if passed else None
+            if passed and gate.choice == "false":
                 failed.append(key)
 
         if failed:
@@ -133,22 +134,41 @@ class PromptFidelityRecipe(Sys1Recipe):
                 verdict = "ANSWER_LEAKAGE"
             else:
                 verdict = "UNFAITHFUL"
+            decisive_key = min(failed, key=lambda k: channels[k].confidence)
+            decisive_gate = channels[decisive_key]
+            passed_gating = True
         elif all(labels.get(k) is True for k in CHECKS):
             verdict = "FAITHFUL"
+            decisive_key = min(CHECKS, key=lambda k: channels[k].confidence)
+            decisive_gate = channels[decisive_key]
+            passed_gating = True
         else:
             verdict = "UNCERTAIN"
+            decisive_key = min(CHECKS, key=lambda k: channels[k].confidence)
+            decisive_gate = channels[decisive_key]
+            passed_gating = False
 
-        passed_gating = verdict != "UNCERTAIN"
+        channel_metrics = {
+            k: {
+                "choice": channels[k].choice,
+                "confidence": round(channels[k].confidence, 4),
+                "margin": round(channels[k].margin, 4),
+                "entropy": round(channels[k].entropy, 4),
+                "passed": channels[k].passed,
+            }
+            for k in CHECKS
+        }
+
         return RecipeResult(
             status="ready" if passed_gating else "review",
             verdict=verdict,
-            confidence=min_conf,
-            margin=0.0,
-            entropy=0.0,
+            confidence=decisive_gate.confidence,
+            margin=decisive_gate.margin,
+            entropy=decisive_gate.entropy,
             passed_gating=passed_gating,
-            probabilities={},
+            probabilities=decisive_gate.probabilities,
             duration_ms=duration_ms,
-            labels={"checks": labels, "failed": failed, "gated": gated},
+            labels={"checks": labels, "failed": failed, "gated": gated, "channels": channel_metrics},
             metadata=response_body.get("metadata", {}),
         )
 
@@ -158,5 +178,8 @@ class PromptFidelityRecipe(Sys1Recipe):
             "verdict": result.verdict,
             "failed_checks": list(labels.get("failed", [])),
             "confidence": result.confidence,
+            "margin": result.margin,
+            "entropy": result.entropy,
             "passed_gating": result.passed_gating,
+            "channels": labels.get("channels", {}),
         }

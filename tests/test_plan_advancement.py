@@ -267,3 +267,27 @@ def test_plan_is_not_rejected_when_the_prompt_already_states_the_method(tmp_path
     assert len(worker.calls("DRAFT_PLAN")) == 1 and not response.host_findings
     (event,) = _events(engine, "PLAN_ADVANCEMENT")
     assert event["payload"]["verdict"] == "PROMPT_STATES_METHOD" and event["payload"]["prompt_states_method"] is True
+
+
+def test_plan_advancement_channel_specific_calibration():
+    """Channel-specific calibration: decisive channel metrics are preserved without flat collapse."""
+    recipe = PlanAdvancementRecipe()
+    # E.g. Procedural checks are noisy (0.65), but no_answer_leakage failed decisively (0.96)
+    answers = {
+        "solution_actions": {"choice": "true", "confidence": 0.65, "probabilities": {"true": 0.65, "false": 0.35}},
+        "constraints_addressed": {"choice": "true", "confidence": 0.62, "probabilities": {"true": 0.62, "false": 0.38}},
+        "advances": {"choice": "true", "confidence": 0.60, "probabilities": {"true": 0.60, "false": 0.40}},
+        "no_evasion": {"choice": "true", "confidence": 0.95, "probabilities": {"true": 0.95, "false": 0.05}},
+        "no_answer_leakage": {"choice": "false", "confidence": 0.96, "probabilities": {"true": 0.04, "false": 0.96}},
+        PROMPT_STATES_METHOD: {"choice": "false", "confidence": 0.90, "probabilities": {"true": 0.10, "false": 0.90}},
+    }
+    res = recipe.parse_response({"answers": answers})
+    assert res.verdict == "RESTATES"
+    assert res.passed_gating is True
+    # Confidence and margin inherit from the failing decisive channel (no_answer_leakage)
+    assert res.confidence == pytest.approx(0.96, rel=1e-3)
+    assert res.margin == pytest.approx(0.92, rel=1e-3)
+    assert res.entropy <= 0.35
+    assert "channels" in res.labels
+    assert res.labels["channels"]["no_answer_leakage"]["passed"] is True
+    assert res.labels["channels"]["no_answer_leakage"]["choice"] == "false"
