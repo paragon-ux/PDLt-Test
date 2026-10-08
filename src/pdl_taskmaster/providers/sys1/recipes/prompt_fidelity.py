@@ -13,10 +13,9 @@ tripartite confidence gating (ADR-0012).
 
 from __future__ import annotations
 
-import math
 from typing import Any
 
-from pdl_taskmaster.providers.sys1.gating import evaluate_confidence_gate
+from pdl_taskmaster.providers.sys1.gating import binary_entropy, evaluate_confidence_gate
 from pdl_taskmaster.providers.sys1.recipes.base import Sys1Recipe, as_decision_instruction
 from pdl_taskmaster.providers.sys1.schema import RecipeResult, Sys1Question, Sys1Request
 
@@ -25,11 +24,7 @@ CHOICES = ("true", "false")
 CONFIDENCE_FLOOR = 0.80
 
 
-def _binary_entropy(p: float) -> float:
-    return -(p * math.log2(p) + (1 - p) * math.log2(1 - p))
-
-
-_BINARY_ENTROPY_CEILING = _binary_entropy((1 + CONFIDENCE_FLOOR) / 2) + 1e-9
+_BINARY_ENTROPY_CEILING = binary_entropy((1 + CONFIDENCE_FLOOR) / 2) + 1e-9
 
 
 class PromptFidelityRecipe(Sys1Recipe):

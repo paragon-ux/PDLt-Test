@@ -841,3 +841,10 @@ def test_execute_wire_failure_includes_operator_feedback_in_finding(tmp_path):
     assert "Validation failed on field 'result_ir.witness.negative.nodes_explored'" in repair_prompt
     assert "Input should be greater than 0" in repair_prompt
 
+
+
+def test_a_bare_engine_has_tier_d1_off_whatever_the_environment_says(tmp_path, monkeypatch):
+    """The shipped default (on) is applied where the worker is built; the engine does not read the variable."""
+    monkeypatch.setenv("PDLT_TIER_D1", "1")
+    engine = SessionEngine(ROOT, lambda req: "", workspace_root=tmp_path)
+    assert engine.tier_d1 is False

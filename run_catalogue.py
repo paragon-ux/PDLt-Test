@@ -574,14 +574,32 @@ def _first(value, key):
     return None
 
 
+def is_execute_operation(operation: str) -> bool:
+    """The model call that produces the deliverable: EXECUTE (confirmed routes), EXECUTE_UNCONFIRMED, or the control's one call."""
+    return operation in ("EXECUTE", "EXECUTE_UNCONFIRMED", "CONTROL_EXECUTE")
+
+
 def token_usage(result_dir: Path) -> dict:
     """Output and reported reasoning tokens, summed per operation. Some providers
     report no reasoning split for some operations (EXECUTE on gpt-oss: 0 reported
     while ~30K hidden tokens are billed as output, run 215232), so output tokens
-    are the effort a run actually got, whatever the requested label."""
+    are the effort a run actually got, whatever the requested label.
+
+    An observation record is one REPL turn and lists every call of that turn, so
+    every call counts. (Reading only the first call of a record, as this once did,
+    dropped all of an unconfirmed run's EXECUTE tokens.) The control writes its one
+    call's tokens into its event log instead of an observation record."""
     reasoning: dict[str, int] = {}
     output: dict[str, int] = {}
     inputs: dict[str, int] = {}
+
+    def add(operation, usage) -> None:
+        if not isinstance(operation, str) or not isinstance(usage, dict):
+            return
+        for totals, key in ((reasoning, "reasoning_tokens"), (output, "output_tokens"), (inputs, "input_tokens")):
+            if isinstance(usage.get(key), (int, float)):
+                totals[operation] = totals.get(operation, 0) + int(usage[key])
+
     for path in Path(result_dir).rglob("observations/*.jsonl"):
         for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
             if '"reasoning_tokens"' not in line:
@@ -590,12 +608,23 @@ def token_usage(result_dir: Path) -> dict:
                 record = json.loads(line)
             except ValueError:
                 continue
-            operation, usage = _first(record, "operation"), _first(record, "usage")
-            if not isinstance(operation, str) or not isinstance(usage, dict):
-                continue
-            for totals, key in ((reasoning, "reasoning_tokens"), (output, "output_tokens"), (inputs, "input_tokens")):
-                if isinstance(usage.get(key), (int, float)):
-                    totals[operation] = totals.get(operation, 0) + int(usage[key])
+            calls = record.get("calls") if isinstance(record, dict) else None
+            if isinstance(calls, list):
+                for call in calls:
+                    if isinstance(call, dict):
+                        add(call.get("operation"), call.get("usage"))
+            else:  # an older record shape: one operation and its usage somewhere inside
+                add(_first(record, "operation"), _first(record, "usage"))
+    if not output:
+        for path in Path(result_dir).rglob("events.jsonl"):
+            for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+                if '"CONTROL_EXECUTE"' not in line:
+                    continue
+                try:
+                    payload = json.loads(line).get("payload") or {}
+                except ValueError:
+                    continue
+                add(payload.get("operation"), payload)
     return {"reasoning_tokens": reasoning, "output_tokens": output, "input_tokens": inputs}
 
 
@@ -748,11 +777,13 @@ def generate_scoreboard(results, run_dir, run_meta):
     calls = [(r.get("model_calls") or {}) for r in results]
     model_calls = {
         "total": sum(c.get("total", 0) for c in calls),
-        "execute": sum((c.get("by_operation") or {}).get("EXECUTE", 0) for c in calls),
+        "execute": sum(n for c in calls for op, n in (c.get("by_operation") or {}).items() if is_execute_operation(op)),
         "repairs": sum(c.get("repairs", 0) for c in calls),
     }
-    model_calls["execute_reasoning_tokens"] = sum((c.get("reasoning_tokens") or {}).get("EXECUTE", 0) for c in calls)
-    model_calls["execute_output_tokens"] = sum((c.get("output_tokens") or {}).get("EXECUTE", 0) for c in calls)
+    model_calls["execute_reasoning_tokens"] = sum(
+        n for c in calls for op, n in (c.get("reasoning_tokens") or {}).items() if is_execute_operation(op))
+    model_calls["execute_output_tokens"] = sum(
+        n for c in calls for op, n in (c.get("output_tokens") or {}).items() if is_execute_operation(op))
     repeat_pass_rates: dict = {}
     if any(r.get("repeat") for r in results):
         for r in results:

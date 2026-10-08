@@ -398,7 +398,9 @@ class SessionEngine:
         # 0 = stop at the first failed EXECUTE (no repair, no retry of any kind).
         self.max_repairs: int | None = None
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
-        self.tier_d1 = os.environ.get("PDLT_TIER_D1", "0") == "1"  # Tier D1: feed back model's own test failures in standard mode
+        # Tier D1 (feed back the model's own test failures in standard mode): off for a bare engine. The host sets it
+        # from the worker (App), whose default is on ($PDLT_TIER_D1, --no-tier-d1); the env var is read only there.
+        self.tier_d1 = False
         self._active_task_entities: tuple[str, ...] = ()
         self._active_typed_task_entities: list[dict[str, Any]] = []
         # AUTH-04: the user's original request is source data for execution; the
@@ -1207,6 +1209,7 @@ class SessionEngine:
                 return self._refuse(redraft.response, traces, "prompt_draft")
             if redraft.prompt_body is not None:
                 outcome = redraft
+        res_verdict, res_failed = None, []  # the verdict of the redraft, when there is one
         fidelity_verdict, failed = self._judge_prompt_fidelity(compiled, outcome.prompt_body)
         if fidelity_verdict in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE", "ANSWER_LEAKAGE", "UNFAITHFUL"):
             self.workspace.append_event(
@@ -1235,7 +1238,7 @@ class SessionEngine:
                         {"operation": "DRAFT_PROMPT", "host_note": True, "failed_checks": res_failed},
                     )
         host_note = self._residual_lint_note(outcome.prompt_body, "PROMPT", "DRAFT_PROMPT")
-        if locals().get("res_verdict") in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE", "ANSWER_LEAKAGE", "UNFAITHFUL"):
+        if res_verdict in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE", "ANSWER_LEAKAGE", "UNFAITHFUL"):
             host_note = "\n".join(filter(None, [host_note, presentation.prompt_fidelity_note(res_failed)]))
         self.controller = self._bind_new_controller(self.workspace)
         approach_source = substantive_request if outcome.approach_handoff == "CARRY_SOURCE_TO_PLAN" else None

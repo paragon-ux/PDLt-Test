@@ -23,10 +23,9 @@ which check failed.
 
 from __future__ import annotations
 
-import math
 from typing import Any
 
-from pdl_taskmaster.providers.sys1.gating import evaluate_confidence_gate
+from pdl_taskmaster.providers.sys1.gating import binary_entropy, evaluate_confidence_gate
 from pdl_taskmaster.providers.sys1.recipes.base import Sys1Recipe, as_decision_instruction
 from pdl_taskmaster.providers.sys1.schema import RecipeResult, Sys1Question, Sys1Request
 
@@ -39,10 +38,6 @@ PROMPT_STATES_METHOD = "prompt_states_method"
 CHOICES = ("true", "false")
 
 
-def _binary_entropy(p: float) -> float:
-    return -(p * math.log2(p) + (1 - p) * math.log2(1 - p))
-
-
 # The review-time floor, as for ReviewFacetsRecipe.
 CONFIDENCE_FLOOR = 0.80
 # For a two-choice question System 1's confidence is the top-two margin, and the
@@ -50,7 +45,7 @@ CONFIDENCE_FLOOR = 0.80
 # tripartite gate (ADR-0012) reduces to one floor. The default entropy ceiling (0.35)
 # would silently require a top probability of about 0.935; the ceiling here is the
 # entropy at the floor's top probability, so the confidence floor is the binding check.
-_BINARY_ENTROPY_CEILING = _binary_entropy((1 + CONFIDENCE_FLOOR) / 2) + 1e-9
+_BINARY_ENTROPY_CEILING = binary_entropy((1 + CONFIDENCE_FLOOR) / 2) + 1e-9
 
 
 class PlanAdvancementRecipe(Sys1Recipe):
