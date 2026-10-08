@@ -138,3 +138,78 @@ def test_brief_split_separates_the_prompts_where_the_brief_ran_from_the_noise_el
     assert (row["with_brief"]["n"], row["with_brief"]["plain"], row["with_brief"]["brief"]) == (1, 1, 0)
     assert (row["without_brief"]["n"], row["without_brief"]["only_plain"], row["without_brief"]["only_brief"]) == (3, 1, 1)
     assert row["without_brief"]["p"] == 1.0
+
+
+def _run(results: list[dict], **extra) -> dict:
+    return {"dir": None, "meta": {"run_id": "run-x", "run_settings": {}}, "results": results, "usage": None, **extra}
+
+
+def test_regraded_grades_replace_only_those_that_changed_and_are_listed_next_to_the_recorded_ones() -> None:
+    results = [
+        _result("01-01", "combinatorial_search", status="verified", grade="PASS"),
+        _result("01-02", "combinatorial_search", status="verified", grade="FAIL"),
+        _result("01-03", "combinatorial_search", status="verified", grade="FAIL"),
+        _result("07-01", "refactoring_and_design", status="not_required", grade="N/A"),
+    ]
+    run = _run(results)
+    grades = {
+        "01-01": {"old": "PASS", "new": "PASS", "reason": "ok"},
+        "01-02": {"old": "FAIL", "new": "PASS", "reason": "now readable"},
+        "01-03": {"old": "FAIL", "new": "FAIL", "reason": "wrong"},
+        "07-01": {"old": "N/A", "new": "N/A", "reason": ""},
+    }
+    after = report.with_grades(run, grades)
+    assert report.arm_metrics(run, light=True)["verified"]["pass"] == 1
+    assert report.arm_metrics(after, light=True)["verified"]["pass"] == 2
+    assert run["results"][1]["ground_truth_grade"]["grade"] == "FAIL"  # the recorded run itself is not touched
+    assert report.grade_changes({"confirmed": run}, {"confirmed": grades}) == [
+        {"route": "confirmed", "id": "01-02", "old": "FAIL", "new": "PASS", "reason": "now readable"}]
+
+
+def test_token_totals_sum_every_call_of_every_result(tmp_path: Path) -> None:
+    dirs = []
+    for index in range(2):
+        folder = tmp_path / f"r{index}"
+        (folder / "session" / "observations").mkdir(parents=True)
+        record = {"calls": [
+            {"operation": "BOOTSTRAP_ANALYSIS", "usage": {"input_tokens": 100, "output_tokens": 10, "reasoning_tokens": 0,
+                                                          "cached_tokens": 40}},
+            {"operation": "EXECUTE_UNCONFIRMED", "usage": {"input_tokens": 300, "output_tokens": 50, "reasoning_tokens": 0,
+                                                            "cached_tokens": 100}},
+        ]}
+        (folder / "session" / "observations" / "repl-session.jsonl").write_text(json.dumps(record) + "\n", encoding="utf-8")
+        dirs.append(folder)
+    assert report.token_totals({"result_dirs": dirs}) == {"input": 800, "cached": 280, "output": 120}
+    assert report.token_totals({}) == {"input": 0, "cached": 0, "output": 0}
+
+
+def test_gate_activity_counts_how_the_computation_question_was_answered(tmp_path: Path) -> None:
+    rows = [
+        {"kind": "COMPUTATION_CLASSIFIED", "payload": {"computational": True, "fallback": None}},
+        {"kind": "COMPUTATION_CLASSIFIED", "payload": {"computational": False, "fallback": "below_floor"}},
+        {"kind": "COMPUTATION_CLASSIFIED", "payload": {"computational": False, "fallback": None}},
+    ]
+    (tmp_path / "events.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+    assert report.gate_activity(tmp_path)["computation"] == {"yes": 1, "below_floor": 1, "no": 1}
+
+
+def test_the_report_shows_the_regrade_and_the_tokens_next_to_the_recorded_numbers() -> None:
+    plain = _run([_result("01-01", "combinatorial_search", status="verified", grade="FAIL")])
+    control = _run([_result("01-01", "combinatorial_search", status="verified", grade="FAIL")])
+    runs = {"control": control, "unconfirmed": plain}
+    grades = {"control": {"01-01": {"old": "FAIL", "new": "PASS", "reason": "valid coloring"}},
+              "unconfirmed": {"01-01": {"old": "FAIL", "new": "FAIL", "reason": "wrong"}}}
+    recorded = {n: report.arm_metrics(run, light=True) for n, run in runs.items()}
+    regraded = {n: report.with_grades(run, grades[n]) for n, run in runs.items()}
+    metrics = {n: report.arm_metrics(run) for n, run in regraded.items()}
+
+    def render(**extra) -> str:
+        return report.render(regraded, metrics, report.by_category(regraded, metrics), report.paired(regraded, metrics),
+                             report.pareto(metrics), report.brief_split(regraded, metrics), **extra)
+
+    markdown = render(recorded=recorded, changes=report.grade_changes(runs, grades))
+    assert "after the grader fixes" in markdown
+    assert "| Control: direct model | 0 / 1 = 0.0% | 1 / 1 = 100.0% | 1 |" in markdown  # as recorded, then with today's graders
+    assert "| Control | 01-01 | FAIL | PASS | valid coloring |" in markdown
+    assert "Tokens in / cached / out (M)" in markdown
+    assert "after the grader fixes" not in render()  # without --regrade there is nothing to set beside

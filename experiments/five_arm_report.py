@@ -62,10 +62,11 @@ PAIRS = (
 # ---------------------------------------------------------------- loading
 def load_run(run_dir: Path) -> dict:
     meta = json.loads((run_dir / "RUN_META.json").read_text(encoding="utf-8"))
-    results = [json.loads(p.read_text(encoding="utf-8")) for p in sorted(run_dir.glob("results/*/result.json"))]
+    files = sorted(run_dir.glob("results/*/result.json"))
+    results = [json.loads(p.read_text(encoding="utf-8")) for p in files]
     usage_file = run_dir / "KEY_USAGE.json"
     usage = json.loads(usage_file.read_text(encoding="utf-8")) if usage_file.exists() else None
-    return {"dir": run_dir, "meta": meta, "results": results, "usage": usage}
+    return {"dir": run_dir, "meta": meta, "results": results, "usage": usage, "result_dirs": [p.parent for p in files]}
 
 
 def discover(runs_dir: Path, commit: str | None, timeout: int, total: int) -> dict[str, Path]:
@@ -115,16 +116,37 @@ def percentile(values: list[float], q: float) -> float:
 
 
 # ---------------------------------------------------------------- metrics
+def token_totals(run: dict) -> dict:
+    """Input, cached and output tokens of every model call of a run, from the run's own observation records (and the
+    control's event). The counts stored in result.json before LEDGER L82 covered only the first call of each record."""
+    totals = {"input": 0, "cached": 0, "output": 0}
+    for result_dir in run.get("result_dirs", []):
+        usage = run_catalogue.token_usage(result_dir)
+        totals["input"] += sum(usage["input_tokens"].values())
+        totals["cached"] += sum(usage.get("cached_tokens", {}).values())
+        totals["output"] += sum(usage["output_tokens"].values())
+    return totals
+
+
 def gate_activity(run_dir: Path | None) -> dict:
     """What the System 1 gates decided in a run, from its own events: the verdict of every prompt-fidelity and
-    plan-advancement decision (no verdict means System 1 was unavailable), and the retries they caused."""
+    plan-advancement decision (no verdict means System 1 was unavailable), and the retries they caused. Also how
+    the computation question (which gates the DRAFT-EXECUTE brief) was answered."""
     fidelity: Counter = Counter()
     advancement: Counter = Counter()
     kinds: Counter = Counter()
+    computation: Counter = Counter()
     if run_dir is None:
         return {}
     for events in Path(run_dir).rglob("events.jsonl"):
         for line in events.read_text(encoding="utf-8", errors="replace").splitlines():
+            if '"COMPUTATION_CLASSIFIED"' in line:
+                try:
+                    payload = json.loads(line).get("payload") or {}
+                except ValueError:
+                    continue
+                computation["yes" if payload.get("computational") else (payload.get("fallback") or "no")] += 1
+                continue
             if '"PROMPT_FIDELITY' not in line and '"PLAN_ADVANCEMENT' not in line:
                 continue
             try:
@@ -138,10 +160,13 @@ def gate_activity(run_dir: Path | None) -> dict:
                 advancement[payload.get("verdict") or "NO_DECISION"] += 1
             else:
                 kinds[kind] += 1
-    return {"fidelity": dict(fidelity), "advancement": dict(advancement), "events": dict(kinds)}
+    return {"fidelity": dict(fidelity), "advancement": dict(advancement), "events": dict(kinds),
+            "computation": dict(computation)}
 
 
-def arm_metrics(run: dict) -> dict:
+def arm_metrics(run: dict, *, light: bool = False) -> dict:
+    """Everything the report says about one run. ``light`` skips what needs the run's event files and
+    observation records (gates, tokens): enough for the pass rates of a regraded copy."""
     results = run["results"]
     outcome = {r["id"]: run_catalogue.outcome_class(r) for r in results}
     verified = [r for r in results if r.get("ground_truth_status") == "verified"]
@@ -190,9 +215,45 @@ def arm_metrics(run: dict) -> dict:
         "timeouts": verdicts.get("TIMEOUT", 0),
         "faults": sum(v for k, v in verdicts.items() if str(k).startswith("HARNESS")),
         "cost_usd": cost,
-        "gates": gate_activity(run.get("dir")),
+        "tokens": {} if light else token_totals(run),
+        "gates": {} if light else gate_activity(run.get("dir")),
         "outcome": outcome,
     }
+
+
+def regrade_run(run_dir: Path, cache: dict) -> dict[str, dict]:
+    """Every result of a run graded again with today's graders, read-only (experiments/baseline.py):
+    {prompt id: {old, new, reason}}. ``cache`` (name of the run folder -> that mapping) saves a slow rerun."""
+    key = Path(run_dir).name
+    if key not in cache:
+        from experiments import baseline
+
+        cache[key] = {row["id"]: {"old": row["old_grade"], "new": row["new_grade"], "reason": row["reason"]}
+                      for row in baseline.regrade(Path(run_dir))["rows"]}
+    return cache[key]
+
+
+def with_grades(run: dict, grades: dict[str, dict]) -> dict:
+    """The run as it reads with the regraded verdicts in place of the recorded ones."""
+    results = []
+    for r in run["results"]:
+        g = grades.get(r["id"])
+        if g is not None and g["new"] != g["old"]:
+            r = {**r, "ground_truth_grade": {**(r.get("ground_truth_grade") or {}), "grade": g["new"],
+                                             "reason": g["reason"]}}
+        results.append(r)
+    return {**run, "results": results}
+
+
+def grade_changes(runs: dict[str, dict], grades: dict[str, dict[str, dict]]) -> list[dict]:
+    """The verified prompts whose grade differs between the recorded run and the regrade."""
+    rows = []
+    for name, run in runs.items():
+        for r in run["results"]:
+            g = grades[name].get(r["id"])
+            if r.get("ground_truth_status") == "verified" and g is not None and g["new"] != g["old"]:
+                rows.append({"route": name, "id": r["id"], "old": g["old"], "new": g["new"], "reason": g["reason"]})
+    return sorted(rows, key=lambda c: (c["id"], c["route"]))
 
 
 def by_category(runs: dict[str, dict], metrics: dict[str, dict]) -> list[dict]:
@@ -286,7 +347,8 @@ def money(x: float | None) -> str:
 
 
 def render(runs: dict[str, dict], metrics: dict[str, dict], categories: list[dict], pairs: list[dict],
-           dominated: dict[str, list[str]], splits: list[dict]) -> str:
+           dominated: dict[str, list[str]], splits: list[dict], recorded: dict[str, dict] | None = None,
+           changes: list[dict] | None = None) -> str:
     names = [n for n, _, _ in ARMS if n in metrics]
     out: list[str] = []
     w = out.append
@@ -310,14 +372,40 @@ def render(runs: dict[str, dict], metrics: dict[str, dict], categories: list[dic
           f"**{pct(v['decided_rate'])}** ({pct(v['ci'][0])}-{pct(v['ci'][1])}) | {pct(v['rate_of_all'])} | "
           f"{v['false_positive']} / {v['stage_miss']} |")
 
+    if recorded is not None:
+        w("\n### The grades as recorded, and after the grader fixes (LEDGER L84)\n")
+        w("Every table in this report scores all five routes with today's graders, so that no route is scored by an "
+          "older rule than another. This table sets that beside what the graders said when each run was scored. "
+          "The graders changed in four ways, none of which changes what a correct answer must do: the loader registers "
+          "the deliverable as a module (a `@dataclass` under `from __future__ import annotations` failed to load "
+          "before); the tests that scan an object's attributes read `__slots__` classes; a coloring written one node "
+          "per table row is read; and the fence rule no longer loses a block after an unclosed one or cuts a block at "
+          "a docstring that mentions a fence.\n")
+        w("| Route | Decided pass rate as recorded | With today's graders | Verified grades that changed |")
+        w("| :--- | :---: | :---: | :---: |")
+        for n in names:
+            r, v = recorded[n]["verified"], metrics[n]["verified"]
+            moved = sum(1 for c in (changes or []) if c["route"] == n)
+            w(f"| {TITLE[n]} | {r['pass']} / {r['decided']} = {pct(r['decided_rate'])} | "
+              f"{v['pass']} / {v['decided']} = {pct(v['decided_rate'])} | {moved} |")
+        if changes:
+            w("\n| Route | Prompt | Recorded | Today | What the grader says now |")
+            w("| :--- | :---: | :---: | :---: | :--- |")
+            for c in changes:
+                reason = " ".join(str(c["reason"]).split())[:150].replace("|", "/")
+                w(f"| {LABEL[c['route']]} | {c['id']} | {c['old']} | {c['new']} | {reason} |")
+
     w("\n### Cost and latency (all 112 prompts)\n")
-    w("| Route | Model calls | Calls / prompt | Mean s / prompt | Median | p90 | Total time | Timeouts | Harness faults | Key spend |")
-    w("| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |")
+    w("Tokens are counted from every model call in the run's own records (millions: input / of which cached / output); "
+      "key spend is the OpenRouter counter's change over the run, System 1 included.\n")
+    w("| Route | Model calls | Calls / prompt | Mean s / prompt | Median | p90 | Total time | Tokens in / cached / out (M) | Timeouts | Harness faults | Key spend |")
+    w("| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |")
     for n in names:
         m = metrics[n]
-        lat = m["latency"]
+        lat, tok = m["latency"], m.get("tokens") or {}
+        tokens = (f"{tok['input'] / 1e6:.2f} / {tok['cached'] / 1e6:.2f} / {tok['output'] / 1e6:.2f}" if tok else "n/a")
         w(f"| {TITLE[n]} | {m['calls']['total']} | {m['calls']['per_prompt']:.2f} | {lat['mean_s']:.1f} | "
-          f"{lat['median_s']:.1f} | {lat['p90_s']:.1f} | {lat['total_s'] / 60:.0f} min | {m['timeouts']} | "
+          f"{lat['median_s']:.1f} | {lat['p90_s']:.1f} | {lat['total_s'] / 60:.0f} min | {tokens} | {m['timeouts']} | "
           f"{m['faults']} | {money(m['cost_usd'])} |")
 
     w("\n### Full catalogue outcomes (112 prompts)\n")
@@ -356,21 +444,30 @@ def render(runs: dict[str, dict], metrics: dict[str, dict], categories: list[dic
 
     if splits:
         w("\n### Where DRAFT-EXECUTE ran\n")
-        w("The brief runs only when a task needs verified execution. On every other prompt a DRAFT-EXECUTE arm is the "
-          "same pipeline as its plain counterpart, so how often the two disagree there is run-to-run noise.\n")
+        w("The brief runs when a task needs verified execution, or when System 1 judges its deliverable to be an "
+          "algorithm or a calculation (LEDGER L85). On every other prompt a DRAFT-EXECUTE arm is the same pipeline as "
+          "its plain counterpart, so how often the two disagree there is run-to-run noise.\n")
         w("| Plain route | DRAFT-EXECUTE route | Prompts with the brief | Verified passes on those (plain / brief) | "
           "Other verified prompts | Passes on those (plain / brief) | Flipped (plain only / brief only) | p |")
         w("| :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: |")
         for row in splits:
             on, off = row["with_brief"], row["without_brief"]
-            w(f"| {LABEL[row['plain']]} | {LABEL[row['brief']]} | {len(row['ran_on'])} ({', '.join(row['ran_on'])}) | "
+            ran = len(row["ran_on"])
+            listed = f" ({', '.join(row['ran_on'])})" if ran <= 12 else ""
+            w(f"| {LABEL[row['plain']]} | {LABEL[row['brief']]} | {ran}{listed} | "
               f"{on['plain']} / {on['brief']} of {on['n']} | {off['n']} | {off['plain']} / {off['brief']} | "
               f"{off['only_plain']} / {off['only_brief']} | {off['p']:.3f} |")
+        for row in splits:
+            asked = metrics[row["brief"]]["gates"].get("computation")
+            if asked:
+                w(f"\n{TITLE[row['brief']]}: the computation question was asked on {sum(asked.values())} prompts "
+                  f"(verified-execution tasks skip it) and answered "
+                  + ", ".join(f"{k} {v}" for k, v in sorted(asked.items(), key=lambda kv: -kv[1])) + ".")
 
     w("\n### Pareto frontier\n")
     w("A route is dominated when another is no worse on decided pass rate, mean seconds per prompt and calls per "
       "prompt, and strictly better on one (point estimates). A DRAFT-EXECUTE arm runs the same pipeline as its plain "
-      "counterpart except where the brief ran (previous table), so a gap between the two is noise.\n")
+      "counterpart except where the brief ran (previous table), so a gap on the other prompts is noise.\n")
     w("| Route | Decided pass rate | Mean s / prompt | Calls / prompt | Seconds per verified pass | Calls per verified pass | Dominated by |")
     w("| :--- | :---: | :---: | :---: | :---: | :---: | :--- |")
     for n in names:
@@ -458,6 +555,11 @@ def main() -> int:
     parser.add_argument("--arm", action="append", default=[], metavar="NAME=RUN_DIR")
     parser.add_argument("--md", type=Path, default=None)
     parser.add_argument("--json", type=Path, default=None)
+    parser.add_argument("--regrade", action="store_true",
+                        help="also grade every run again with today's graders (read-only, slow) and show it next to "
+                             "the recorded numbers")
+    parser.add_argument("--regrade-cache", type=Path, default=None,
+                        help="JSON file of regrades: read first, extended, written back")
     args = parser.parse_args()
 
     chosen = discover(args.runs_dir, args.commit, args.timeout, args.total)
@@ -468,22 +570,34 @@ def main() -> int:
         print("no matching runs found", file=sys.stderr)
         return 1
     runs = {name: load_run(path) for name, _, _ in ARMS if (path := chosen.get(name))}
+    recorded = changes = None
+    if args.regrade:  # every table below is then computed on the regraded runs; the recorded numbers sit beside them
+        cache = (json.loads(args.regrade_cache.read_text(encoding="utf-8"))
+                 if args.regrade_cache and args.regrade_cache.exists() else {})
+        graded = {name: regrade_run(run["dir"], cache) for name, run in runs.items()}
+        if args.regrade_cache:
+            args.regrade_cache.write_text(json.dumps(cache, indent=1), encoding="utf-8")
+        recorded = {name: arm_metrics(run, light=True) for name, run in runs.items()}
+        changes = grade_changes(runs, graded)
+        runs = {name: with_grades(run, graded[name]) for name, run in runs.items()}
     metrics = {name: arm_metrics(run) for name, run in runs.items()}
     categories = by_category(runs, metrics)
     pairs = paired(runs, metrics)
     dominated = pareto(metrics)
     splits = brief_split(runs, metrics)
 
-    markdown = render(runs, metrics, categories, pairs, dominated, splits)
+    markdown = render(runs, metrics, categories, pairs, dominated, splits, recorded, changes)
     if args.md:
         args.md.write_text(markdown, encoding="utf-8")
     else:
         sys.stdout.buffer.write(markdown.encode("utf-8"))
     if args.json:
         slim = {n: {k: v for k, v in m.items() if k != "outcome"} for n, m in metrics.items()}
-        args.json.write_text(json.dumps(
-            {"arms": slim, "pairs": pairs, "dominated_by": dominated, "brief_split": splits}, indent=2),
-            encoding="utf-8")
+        payload = {"arms": slim, "pairs": pairs, "dominated_by": dominated, "brief_split": splits}
+        if recorded is not None:
+            payload["recorded_grades"] = {n: m["verified"] for n, m in recorded.items()}
+            payload["grade_changes"] = changes
+        args.json.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return 0
 
 

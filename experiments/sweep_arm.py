@@ -60,6 +60,9 @@ def main(argv: list[str]) -> int:
 
     LOGS.mkdir(parents=True, exist_ok=True)
     log = LOGS / f"{route}.log"
+    if log.exists():  # a later sweep of the same route keeps the earlier log
+        stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(log.stat().st_mtime))
+        log.rename(log.with_name(f"{route}.{stamp}.log"))
     command = [sys.executable, "-u", str(ROOT / "run_catalogue.py"), "--model", MODEL, "--reasoning", "low",
                "--timeout", "300", *ROUTES[route], *extra]
     started = time.time()

@@ -592,11 +592,13 @@ def token_usage(result_dir: Path) -> dict:
     reasoning: dict[str, int] = {}
     output: dict[str, int] = {}
     inputs: dict[str, int] = {}
+    cached: dict[str, int] = {}
 
     def add(operation, usage) -> None:
         if not isinstance(operation, str) or not isinstance(usage, dict):
             return
-        for totals, key in ((reasoning, "reasoning_tokens"), (output, "output_tokens"), (inputs, "input_tokens")):
+        for totals, key in ((reasoning, "reasoning_tokens"), (output, "output_tokens"), (inputs, "input_tokens"),
+                            (cached, "cached_tokens")):
             if isinstance(usage.get(key), (int, float)):
                 totals[operation] = totals.get(operation, 0) + int(usage[key])
 
@@ -625,7 +627,7 @@ def token_usage(result_dir: Path) -> dict:
                 except ValueError:
                     continue
                 add(payload.get("operation"), payload)
-    return {"reasoning_tokens": reasoning, "output_tokens": output, "input_tokens": inputs}
+    return {"reasoning_tokens": reasoning, "output_tokens": output, "input_tokens": inputs, "cached_tokens": cached}
 
 
 def stage_pass(r):

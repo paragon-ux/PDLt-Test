@@ -8,8 +8,9 @@ from pathlib import Path
 import run_catalogue
 
 
-def _usage(inp: int, out: int, reasoning: int = 0) -> dict:
-    return {"input_tokens": inp, "output_tokens": out, "total_tokens": inp + out, "reasoning_tokens": reasoning}
+def _usage(inp: int, out: int, reasoning: int = 0, cached: int = 0) -> dict:
+    return {"input_tokens": inp, "output_tokens": out, "total_tokens": inp + out, "reasoning_tokens": reasoning,
+            "cached_tokens": cached}
 
 
 def _write_lines(path: Path, records: list[dict]) -> None:
@@ -21,13 +22,14 @@ def test_every_call_of_a_record_is_counted(tmp_path: Path) -> None:
     # One REPL turn of an unconfirmed route: two calls in one record.
     record = {"calls": [
         {"operation": "BOOTSTRAP_ANALYSIS", "usage": _usage(2800, 800)},
-        {"operation": "EXECUTE_UNCONFIRMED", "usage": _usage(4100, 970, 12)},
+        {"operation": "EXECUTE_UNCONFIRMED", "usage": _usage(4100, 970, 12, 64)},
     ]}
     _write_lines(tmp_path / "session" / "observations" / "repl-session.jsonl", [record, record])
     totals = run_catalogue.token_usage(tmp_path)
     assert totals["output_tokens"] == {"BOOTSTRAP_ANALYSIS": 1600, "EXECUTE_UNCONFIRMED": 1940}
     assert totals["input_tokens"] == {"BOOTSTRAP_ANALYSIS": 5600, "EXECUTE_UNCONFIRMED": 8200}
     assert totals["reasoning_tokens"]["EXECUTE_UNCONFIRMED"] == 24
+    assert totals["cached_tokens"] == {"BOOTSTRAP_ANALYSIS": 0, "EXECUTE_UNCONFIRMED": 128}
 
 
 def test_an_older_record_shape_still_reads_its_one_call(tmp_path: Path) -> None:
@@ -38,11 +40,12 @@ def test_an_older_record_shape_still_reads_its_one_call(tmp_path: Path) -> None:
 
 def test_the_control_event_supplies_the_tokens_when_there_is_no_observation_record(tmp_path: Path) -> None:
     event = {"kind": "MODEL_OUTPUT_RECORDED", "payload": {
-        "operation": "CONTROL_EXECUTE", "input_tokens": 279, "output_tokens": 3880, "reasoning_tokens": 2729}}
+        "operation": "CONTROL_EXECUTE", "input_tokens": 279, "output_tokens": 3880, "reasoning_tokens": 2729,
+        "cached_tokens": 64}}
     _write_lines(tmp_path / "session" / "turns" / "turn_001" / "events.jsonl", [event])
     totals = run_catalogue.token_usage(tmp_path)
     assert totals == {"reasoning_tokens": {"CONTROL_EXECUTE": 2729}, "output_tokens": {"CONTROL_EXECUTE": 3880},
-                      "input_tokens": {"CONTROL_EXECUTE": 279}}
+                      "input_tokens": {"CONTROL_EXECUTE": 279}, "cached_tokens": {"CONTROL_EXECUTE": 64}}
 
 
 def test_a_harness_event_is_never_counted_twice(tmp_path: Path) -> None:
