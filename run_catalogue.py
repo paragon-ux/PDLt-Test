@@ -377,8 +377,9 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
             setting_args += [flag, str(settings[key])]
     if settings.get("draft_execute"):
         setting_args.append("--draft-execute")
-    if settings.get("tier_d1"):
-        setting_args.append("--tier-d1")
+    if settings.get("route") != "control" and settings.get("tier_d1") is not None:
+        # Always explicit: the harness's own default is on, so leaving the flag out does not mean off.
+        setting_args.append("--tier-d1" if settings["tier_d1"] else "--no-tier-d1")
     if settings.get("sandbox"):
         setting_args += ["--sandbox", settings["sandbox"]]
     if settings.get("route") == "unconfirmed":
@@ -975,8 +976,11 @@ def main():
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
     parser.add_argument("--draft-execute", action="store_true",
                         help="run DRAFT_EXECUTE before EXECUTE (A/B option)")
-    parser.add_argument("--tier-d1", action="store_true",
-                        help="enable Tier D1 in standard execution (feed sandbox failures back as repairs)")
+    parser.add_argument("--tier-d1", action=argparse.BooleanOptionalAction,
+                        default=os.environ.get("PDLT_TIER_D1", "1") == "1",
+                        help="Tier D1 in standard execution: feed sandbox failures back as repairs "
+                             "(default: on, as the harness ships; --no-tier-d1 turns it off, PDLT_TIER_D1=0 flips the "
+                             "default). Not applicable to --route control")
     parser.add_argument("--sandbox", choices=["auto", "native", "container", "audit-only"], default=None,
                         help="confinement for model-authored programs, in the harness and the graders (default: "
                              "$PDLT_SANDBOX, else auto = native); audit-only opts out of OS-native confinement")
@@ -1013,7 +1017,8 @@ def main():
         parser.error("--repeat must be at least 1")
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
-                    "providers": args.providers, "draft_execute": args.draft_execute, "tier_d1": args.tier_d1,
+                    "providers": args.providers, "draft_execute": args.draft_execute,
+                    "tier_d1": args.tier_d1 and args.route != "control",  # what the child will run with
                     "sandbox": args.sandbox, "route": args.route,
                     "theme": args.theme, "user_color": args.user_color, "assistant_color": args.assistant_color}
     if args.sandbox:
@@ -1054,7 +1059,7 @@ def main():
     route_tag = args.route
     if args.draft_execute:
         route_tag += "-draft-execute"
-    if args.tier_d1:
+    if run_settings["tier_d1"]:
         route_tag += "-tier-d1"
     run_id = f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{route_tag}"
     run_dir = RUNS_DIR / run_id

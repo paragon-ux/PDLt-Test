@@ -352,7 +352,7 @@ class ApiWorker:
         max_output_tokens: int | None = 16384,
         max_repairs: int | None = None,
         draft_execute: bool = False,
-        tier_d1: bool = True,
+        tier_d1: bool | None = None,
         capture_tokens: bool = True,
         reasoning_effort: str | None = None,
         reasoning_by_operation: dict[str, str] | None = None,
@@ -377,7 +377,8 @@ class ApiWorker:
         self.max_output_tokens = int(max_output_tokens) if max_output_tokens else None
         self.max_repairs = max_repairs  # run setting read by the host (0 = stop at the first failure)
         self.draft_execute = draft_execute  # run setting read by the host (A/B option)
-        self.tier_d1 = bool(tier_d1 and os.environ.get("PDLT_TIER_D1", "1") == "1")  # run setting read by the host (Tier D1 advantage mechanism)
+        # run setting read by the host (Tier D1): an explicit value wins, $PDLT_TIER_D1 (default on) is only the default
+        self.tier_d1 = (os.environ.get("PDLT_TIER_D1", "1") == "1") if tier_d1 is None else bool(tier_d1)
         self.capture_tokens = capture_tokens
         # An explicit effort applies to every operation (per-operation flags still
         # win); the per-model mapping is the default only when none is given.
@@ -825,7 +826,7 @@ class ApiWorker:
                 "4. Parameter vs. Stream Discrimination (PDL-09): Use READ strictly for explicit runtime stream or file ingestion. Represent function parameters, mathematical constants, and data structure inputs as parameters to accept or take, not streams to read.\n"
                 "5. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n"
                 "6. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n"
-                "7. Zero Execution Prohibitions & Substantive Delivery: Prompt Pseudocode defines the substantive deliverable to be produced upon execution (PROMPT-01). PROMPT-02 means that Prompt Pseudocode itself does not leak or pre-solve the problem during drafting; it is an author-time constraint and MUST NEVER be projected into an execution-time prohibition. Prompt Pseudocode MUST specify that execution computes, solves, and produces the requested concrete solutions, entities, and outputs in full. NEVER command execution to omit, evade, placeholderize, or avoid computing the requested solution (e.g. do not write 'without providing actual entity names', 'without computing a specific coloring solution', 'provide only specification', 'do not compute', 'insert placeholders', or 'no executable code') (PROMPT-01, PROMPT-02, PDL-08, PDL-09)."
+                "7. Zero Execution Prohibitions & Substantive Delivery: Prompt Pseudocode defines the substantive deliverable to be produced upon execution (PROMPT-01). PROMPT-02 means that Prompt Pseudocode itself does not leak or pre-solve the problem during drafting; it is an author-time constraint and MUST NEVER be projected into an execution-time prohibition. Prompt Pseudocode MUST specify that execution computes, solves, and produces the requested concrete solutions, entities, and outputs in full. NEVER command execution to omit, evade, placeholderize, or avoid computing the requested solution (e.g. do not write 'without providing the actual values', 'without computing a specific result', 'provide only specification', 'do not compute', 'insert placeholders', or 'no executable code') (PROMPT-01, PROMPT-02, PDL-08, PDL-09)."
             )
         elif operation_name in ("DRAFT_PLAN", "REVISE_PLAN"):
             extra_guidance = (
@@ -853,7 +854,7 @@ class ApiWorker:
                 "2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n"
                 "3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n"
                 "4. Active Construction: Plan the concrete procedural steps that produce the deliverable itself (e.g. data structure design, method implementations, algorithm logic, unit test suite). Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue.\n"
-                "5. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04). PLAN-04 is a planner-time constraint and MUST NEVER be projected into an execution-time prohibition. The Plan MUST specify procedures that compute and produce the requested concrete deliverable upon execution. NEVER insert placeholder steps, evasive notes, or meta-prohibitions commanding execution to avoid calculating, omit concrete values, or withhold the answer (e.g. do not write 'without calculating or outputting a concrete assignment', 'insert placeholders without performing computation', 'do not implement', 'do not provide actual names', or 'contains no executable code') (PLAN-04, PLAN-10, PDL-08, PDL-09)."
+                "5. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04). PLAN-04 is a planner-time constraint and MUST NEVER be projected into an execution-time prohibition. The Plan MUST specify procedures that compute and produce the requested concrete deliverable upon execution. NEVER insert placeholder steps, evasive notes, or meta-prohibitions commanding execution to avoid calculating, omit concrete values, or withhold the answer (e.g. do not write 'without calculating or outputting a concrete result', 'insert placeholders without performing computation', 'do not implement', 'do not provide actual values', or 'contains no executable code') (PLAN-04, PLAN-10, PDL-08, PDL-09)."
             )
         elif operation_name == "DRAFT_EXECUTE":
             extra_guidance = (

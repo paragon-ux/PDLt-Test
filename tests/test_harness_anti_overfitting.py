@@ -215,7 +215,7 @@ def test_benchmark_contamination_scan():
     prompt_id_pattern = re.compile(r"\b(0[1-9]|1[0-6])-(0[1-7])\b")
     word_tokens = [
         r"frostbite", r"schur", r"\bdlx\b", r"dancing\s+link", r"algorithm\s+x", r"backtrack",
-        r"\bmrv\b", r"nobel", r"hamiltonian", r"palindrome", r"wheel\s+graph", r"alice\s+has",
+        r"\bmrv\b", r"nobel", r"hamiltonian", r"palindrome", r"wheel\s+graph", r"\bcolou?ring\b", r"alice\s+has",
         r"catalogue_manifest", r"prompts/", r"solutions/", r"\btriples?\b",
         r"\bpartition(?:s|ed|ing)?\b(?!\()",
     ]

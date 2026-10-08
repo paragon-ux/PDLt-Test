@@ -109,3 +109,55 @@ def test_the_runner_refuses_a_dirty_tree_without_the_flag(monkeypatch, repo: Pat
         run_catalogue.main()
     assert "uncommitted" in str(refused.value)
     assert not (tmp_path / "runs").exists()  # nothing was started
+
+
+@pytest.mark.parametrize("env", [None, "0"])
+@pytest.mark.parametrize("tier_d1", [True, False])
+def test_the_recorded_tier_d1_is_what_the_harness_runs_with(monkeypatch, tmp_path: Path, env, tier_d1) -> None:
+    """The runner always sends the flag, so an explicit value beats the harness default and
+    $PDLT_TIER_D1, and RUN_META cannot disagree with the process it started."""
+    from pdl_taskmaster.host import repl
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+
+    if env is None:
+        monkeypatch.delenv("PDLT_TIER_D1", raising=False)
+    else:
+        monkeypatch.setenv("PDLT_TIER_D1", env)
+    cmd = run_catalogue.build_harness_command(
+        tmp_path / "p.txt", "s", tmp_path / "t.txt", tmp_path / "d", "m", "low",
+        run_settings={"route": "confirmed", "tier_d1": tier_d1})
+    settings = repl._api_run_settings(repl._build_parser().parse_args(cmd[3:]))
+    assert settings["tier_d1"] is tier_d1
+    assert ApiWorker(repo_root=tmp_path, model="m", tier_d1=settings["tier_d1"]).tier_d1 is tier_d1
+
+
+def test_the_flag_is_left_out_for_control_and_for_legacy_settings(tmp_path: Path) -> None:
+    base = (tmp_path / "p.txt", "s", tmp_path / "t.txt", tmp_path / "d", "m", "low")
+    for settings in ({"route": "control", "tier_d1": False}, {"route": "control", "tier_d1": True}, {}, None):
+        cmd = run_catalogue.build_harness_command(*base, run_settings=settings)
+        assert "--tier-d1" not in cmd and "--no-tier-d1" not in cmd
+
+
+@pytest.mark.parametrize("argv, expected, suffix", [
+    ([], True, "-confirmed-tier-d1"),
+    (["--no-tier-d1"], False, "-confirmed"),
+    (["--route", "control"], False, "-control"),
+    (["--route", "unconfirmed", "--draft-execute"], True, "-unconfirmed-draft-execute-tier-d1"),
+])
+def test_run_meta_and_the_run_name_state_the_tier_d1_the_harness_gets(
+        monkeypatch, repo: Path, tmp_path: Path, argv, expected, suffix) -> None:
+    monkeypatch.delenv("PDLT_TIER_D1", raising=False)
+    run_dir = _start_run(monkeypatch, tmp_path, repo, argv)
+    meta = json.loads((run_dir / "RUN_META.json").read_text(encoding="utf-8"))
+    assert meta["run_settings"]["tier_d1"] is expected
+    assert run_dir.name.endswith(suffix)
+
+
+def test_tier_d1_environment_is_a_default_not_an_override(monkeypatch, tmp_path: Path) -> None:
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+
+    monkeypatch.setenv("PDLT_TIER_D1", "0")
+    assert ApiWorker(repo_root=tmp_path, model="m").tier_d1 is False
+    assert ApiWorker(repo_root=tmp_path, model="m", tier_d1=True).tier_d1 is True
+    monkeypatch.delenv("PDLT_TIER_D1")
+    assert ApiWorker(repo_root=tmp_path, model="m").tier_d1 is True
