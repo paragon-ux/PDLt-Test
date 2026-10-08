@@ -406,14 +406,20 @@ def test_unconfirmed_route_with_draft_execute(tmp_path: Path):
     assert calls == ["BOOTSTRAP_ANALYSIS", "DRAFT_EXECUTE", "EXECUTE_UNCONFIRMED"]
 
 
-def test_unconfirmed_route_with_draft_execute_bypasses_on_standard_execution(tmp_path: Path):
-    """When task is STANDARD_EXECUTION, DRAFT_EXECUTE is bypassed to prevent code-framing bias (GUARD-03.1)."""
+def test_unconfirmed_route_with_draft_execute_runs_unconditionally(tmp_path: Path):
+    """When draft_execute is enabled, DRAFT_EXECUTE runs unconditionally as an advisory feasibility scratchpad."""
     calls = []
 
     def model_call(req):
         calls.append(req.operation)
         if req.operation == "BOOTSTRAP_ANALYSIS":
             return _bootstrap_reply()
+        if req.operation == "DRAFT_EXECUTE":
+            return json.dumps({
+                "kind": "RESULT",
+                "brief_body": "Review cache replacement constraints against 10M step budget.",
+                "execution_entities": [],
+            })
         if req.operation == "EXECUTE_UNCONFIRMED":
             return _unconfirmed_result_reply()
         raise AssertionError(f"unexpected operation: {req.operation}")
@@ -430,7 +436,6 @@ def test_unconfirmed_route_with_draft_execute_bypasses_on_standard_execution(tmp
     response = engine.handle_user_message("Analyze the architectural tradeoffs of two cache replacement policies.")
     assert response.closed is True
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
-    # DRAFT_EXECUTE bypassed: straight from BOOTSTRAP_ANALYSIS to EXECUTE_UNCONFIRMED
-    assert calls == ["BOOTSTRAP_ANALYSIS", "EXECUTE_UNCONFIRMED"]
+    assert calls == ["BOOTSTRAP_ANALYSIS", "DRAFT_EXECUTE", "EXECUTE_UNCONFIRMED"]
 
 

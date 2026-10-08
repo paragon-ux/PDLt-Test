@@ -577,14 +577,13 @@ EXECUTION_ENTITY_ITEMS: dict[str, Any] = {'type': 'object',
 
 class ExecutionDraftResultData(WireModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=contract(description=(
-            'Entity-dense execution brief drafted prior to EXECUTE (ADR-0009/TRD-0003 DRAFT_EXECUTE). '
-            'execution_entities are TYPED, verbatim-critical strings; the host applies kind-appropriate '
-            'mechanical checks (arithmetic, containment, coverage) and rejects fabrication.'
-        ), required=['kind', 'brief_body', 'execution_entities']))
+            'Feasibility scratchpad drafted prior to EXECUTE (ADR-0009/TRD-0003 DRAFT_EXECUTE). '
+            'Examines sandbox tools, memory limits, and step budgets before writing code.'
+        ), required=['kind', 'brief_body']))
     kind: Literal["RESULT"] = "RESULT"
     brief_body: str = Field(json_schema_extra=contract(description=(
-            'The entity-dense execution brief: file-by-file contract, wire formats, invariants, success '
-            'criteria. Plain text; no code fences inside.'
+            'Feasibility scratchpad: environment review, step budget check, and computational feasibility '
+            'notes. Plain text; no code fences inside.'
         ), minLength=1))
     execution_entities: list[Union[dict[str, Any], str]] = Field(
         default_factory=list, json_schema_extra=contract(type="array", items=EXECUTION_ENTITY_ITEMS))

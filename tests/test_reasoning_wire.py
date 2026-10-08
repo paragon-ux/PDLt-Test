@@ -122,9 +122,8 @@ def test_runner_settings_reach_the_wire(tmp_path):
                                               "openai/gpt-oss-120b", "low", (), settings)
     assert "--draft-execute" in cmd
     ops, bodies = _run_stub(tmp_path, settings)
-    # ADR-0013 P6 (LEDGER L41): DRAFT_EXECUTE runs only for verified execution; this
-    # standard task goes straight to EXECUTE even with --draft-execute on.
-    assert "DRAFT_EXECUTE" not in ops and "EXECUTE" in ops
+    # LEDGER L92: --draft-execute runs DRAFT_EXECUTE unconditionally before EXECUTE
+    assert "DRAFT_EXECUTE" in ops and "EXECUTE" in ops
     assert len(ops) == len(bodies)
     for op, body in zip(ops, bodies):
         assert body.get("max_output_tokens") == 8000 and "max_tokens" not in body

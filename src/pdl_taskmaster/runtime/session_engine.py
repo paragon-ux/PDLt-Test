@@ -1783,12 +1783,17 @@ class SessionEngine:
                 # The model's own draft (GUARD-01: no harness feedback), drafted once.
                 if not execute_context.get("REQUIRED_TASK_INPUTS"):
                     execute_context["REQUIRED_TASK_INPUTS"] = {}
+                advisory_brief = (
+                    "ADVISORY FEASIBILITY SCRATCHPAD (non-binding working notes from before execution; "
+                    "may contain errors; prioritize prompt and exact constraints over this):\n"
+                    + brief.strip()
+                )
                 if isinstance(execute_context["REQUIRED_TASK_INPUTS"], dict):
-                    execute_context["REQUIRED_TASK_INPUTS"]["DRAFT_EXECUTE"] = brief.strip()
+                    execute_context["REQUIRED_TASK_INPUTS"]["DRAFT_EXECUTE"] = advisory_brief
                 else:
                     execute_context["REQUIRED_TASK_INPUTS"] = (
                         (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context["REQUIRED_TASK_INPUTS"] else "")
-                        + "EXECUTION BRIEF (your own draft for this task, written before this call):\n" + brief
+                        + advisory_brief
                     )
         stop_on_failure = self.max_repairs == 0
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
@@ -1884,11 +1889,16 @@ class SessionEngine:
         return EngineResponse(final_body, traces, closed=True)
 
     def _brief_wanted(self) -> bool:
-        """Whether DRAFT_EXECUTE runs for this task (--draft-execute): a verified-execution task always gets
-        one; any other does when System 1 says its deliverable is, or needs, an algorithm or a calculation."""
+        """Whether DRAFT_EXECUTE runs for this task (--draft-execute).
+        When the flag is set, DRAFT_EXECUTE runs unconditionally. System 1's
+        computation classification is still recorded as telemetry
+        (COMPUTATION_CLASSIFIED), but no longer gates whether the draft runs."""
         if not self.draft_execute:
             return False
-        return self._requires_verified_execution or self._classify_computation()
+        if not getattr(self, "_computation_classified", False):
+            self._classify_computation()
+            self._computation_classified = True
+        return True
 
     def _classify_computation(self) -> bool:
         """System 1's answer to 'is this an algorithm or a calculation?', recorded as COMPUTATION_CLASSIFIED.
@@ -2074,12 +2084,17 @@ class SessionEngine:
             if brief:
                 if not execute_context.get("REQUIRED_TASK_INPUTS"):
                     execute_context["REQUIRED_TASK_INPUTS"] = {}
+                advisory_brief = (
+                    "ADVISORY FEASIBILITY SCRATCHPAD (non-binding working notes from before execution; "
+                    "may contain errors; prioritize prompt and exact constraints over this):\n"
+                    + brief.strip()
+                )
                 if isinstance(execute_context["REQUIRED_TASK_INPUTS"], dict):
-                    execute_context["REQUIRED_TASK_INPUTS"]["DRAFT_EXECUTE"] = brief.strip()
+                    execute_context["REQUIRED_TASK_INPUTS"]["DRAFT_EXECUTE"] = advisory_brief
                 else:
                     execute_context["REQUIRED_TASK_INPUTS"] = (
                         (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context.get("REQUIRED_TASK_INPUTS") else "")
-                        + "EXECUTION BRIEF (your own draft for this task, written before this call):\n" + brief
+                        + advisory_brief
                     )
 
         stop_on_failure = self.max_repairs == 0

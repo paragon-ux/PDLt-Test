@@ -127,23 +127,32 @@ def test_a_confident_yes_drafts_the_brief_on_the_unconfirmed_route(tmp_path) -> 
     _answer(COMPUTATIONAL, 0.60),
     RuntimeError("System 1 is down"),
 ])
-def test_no_confident_yes_means_no_brief(tmp_path, computation) -> None:
-    calls, _ = _unconfirmed(tmp_path, Sys1(computation=computation))
-    assert calls == ["BOOTSTRAP_ANALYSIS", "EXECUTE_UNCONFIRMED"]
+def test_unconditional_draft_records_telemetry_even_without_confident_yes(tmp_path, computation) -> None:
+    # LEDGER L92: ComputationRecipe is observational telemetry, not an authorization gate
+    calls, engine = _unconfirmed(tmp_path, Sys1(computation=computation))
+    assert calls == ["BOOTSTRAP_ANALYSIS", "DRAFT_EXECUTE", "EXECUTE_UNCONFIRMED"]
+    recorded = [e["payload"] for e in engine.workspace.read_events() if e["kind"] == "COMPUTATION_CLASSIFIED"]
+    assert len(recorded) == 1
 
 
-def test_without_system_1_there_is_no_brief_for_a_task_that_is_not_verified(tmp_path) -> None:
+def test_without_system_1_draft_execute_runs_with_telemetry_fallback(tmp_path) -> None:
     calls: list[str] = []
 
     def model_call(req):
         calls.append(req.operation)
-        return _bootstrap() if req.operation == "BOOTSTRAP_ANALYSIS" else json.dumps(
-            {"kind": "RESULT", "interpretation": "DETERMINE", "approach": "COMPUTE", "body": "42"})
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return _bootstrap()
+        if req.operation == "DRAFT_EXECUTE":
+            return json.dumps({"kind": "RESULT", "brief_body": "Feasibility scratchpad.", "execution_entities": []})
+        return json.dumps({"kind": "RESULT", "interpretation": "DETERMINE", "approach": "COMPUTE", "body": "42"})
 
     engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, no_review=True)
     engine.draft_execute = True
     engine.handle_user_message("Count the subsets of 1..10 that sum to 20.")
-    assert calls == ["BOOTSTRAP_ANALYSIS", "EXECUTE_UNCONFIRMED"]
+    assert calls == ["BOOTSTRAP_ANALYSIS", "DRAFT_EXECUTE", "EXECUTE_UNCONFIRMED"]
+    recorded = [e["payload"] for e in engine.workspace.read_events() if e["kind"] == "COMPUTATION_CLASSIFIED"]
+    assert len(recorded) == 1
+    assert recorded[0]["fallback"] == "sys1_unavailable"
 
 
 def test_the_question_is_not_asked_unless_the_brief_is_on(tmp_path) -> None:
@@ -153,11 +162,11 @@ def test_the_question_is_not_asked_unless_the_brief_is_on(tmp_path) -> None:
     assert "computation" not in sys1.asked  # Control and Arms 1 and 2 pay nothing for it
 
 
-def test_a_verified_task_gets_its_brief_without_the_question(tmp_path) -> None:
+def test_a_verified_task_records_telemetry_and_runs_brief(tmp_path) -> None:
     sys1 = Sys1(problem_class="VERIFIED_EXECUTION", computation=_answer(OTHER, 0.97))
     calls, _ = _unconfirmed(tmp_path, sys1)
     assert calls == ["BOOTSTRAP_ANALYSIS", "DRAFT_EXECUTE", "EXECUTE_UNCONFIRMED"]
-    assert "computation" not in sys1.asked
+    assert "computation" in sys1.asked
 
 
 def test_the_answer_is_recorded_as_an_event(tmp_path) -> None:
@@ -169,8 +178,8 @@ def test_the_answer_is_recorded_as_an_event(tmp_path) -> None:
     assert recorded[0]["verdict"] == COMPUTATIONAL and recorded[0]["passed_gating"] is False
 
 
-def test_the_confirmed_route_follows_the_same_gate(tmp_path) -> None:
-    for computation, expected_drafts in ((_answer(COMPUTATIONAL, 0.97), 1), (_answer(OTHER, 0.97), 0)):
+def test_the_confirmed_route_follows_unconditional_draft(tmp_path) -> None:
+    for idx, computation in enumerate((_answer(COMPUTATIONAL, 0.97), _answer(OTHER, 0.97))):
         calls: list[str] = []
 
         def model_call(req):
@@ -185,10 +194,10 @@ def test_the_confirmed_route_follows_the_same_gate(tmp_path) -> None:
                 return json.dumps({"kind": "RESULT", "brief_body": "Plan the computation.", "execution_entities": []})
             return json.dumps({"kind": "RESULT", "body": "The result is 42."})
 
-        engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path / str(expected_drafts),
+        engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path / str(idx),
                                sys1_client=Sys1(computation=computation))
         engine.draft_execute = True
         for message in ("$confirm-with-pseudocode Count the subsets of 1..10 that sum to 20.", "/confirm", "/confirm"):
             engine.handle_user_message(message)
-        assert calls.count("DRAFT_EXECUTE") == expected_drafts
+        assert calls.count("DRAFT_EXECUTE") == 1
         assert engine.controller.state.stage == Stage.CLOSED_SUCCESS

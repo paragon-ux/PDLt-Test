@@ -1008,7 +1008,7 @@ def main():
     parser.add_argument("--providers", default=None, metavar="A,B,C",
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
     parser.add_argument("--draft-execute", action="store_true",
-                        help="run DRAFT_EXECUTE before EXECUTE (A/B option)")
+                        help="run exactly one DRAFT_EXECUTE feasibility-scratchpad call before EXECUTE (A/B option)")
     parser.add_argument("--tier-d1", action=argparse.BooleanOptionalAction,
                         default=os.environ.get("PDLT_TIER_D1", "1") == "1",
                         help="Tier D1 in standard execution: feed sandbox failures back as repairs "
