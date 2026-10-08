@@ -70,8 +70,10 @@ def plan_advancement_note(failed: list[str]) -> str:
 
 
 def prompt_fidelity_note(failed_checks: list[str] | None = None) -> str:
-    """Factual host note at the prompt review for a prompt that commands evasion or drops scope."""
+    """Factual host note at the prompt review for a prompt that commands evasion, drops scope, or leaks answers."""
     failed = failed_checks or ["no_evasion"]
+    if "no_answer_leakage" in failed and "no_evasion" not in failed and "complete_coverage" not in failed:
+        return "[host] PROMPT-02: prompt preselects or leaks substantive answers; /revise to keep prompt neutral"
     if "complete_coverage" in failed and "no_evasion" not in failed:
         return "[host] PROMPT-01: prompt omits material deliverables from the request; /revise to restore them"
     return "[host] PROMPT-01: prompt commands execution to omit or avoid computing the deliverable; /revise to ask for the complete solution"
@@ -84,17 +86,22 @@ def prompt_fidelity_feedback(failed_checks: list[str] | None = None) -> str:
     if "no_evasion" in failed:
         reasons.append(
             "the prompt commands downstream execution to omit, avoid computing, or placeholderize the requested "
-            "deliverable instead of specifying that execution computes and produces the solution in full (PROMPT-02)"
+            "deliverable instead of specifying that execution computes and produces the solution in full (PROMPT-01)"
         )
     if "complete_coverage" in failed:
         reasons.append(
             "the prompt silently drops or omits material deliverables or requirements requested by the user (PROMPT-01)"
         )
+    if "no_answer_leakage" in failed:
+        reasons.append(
+            "the prompt preselects or leaks substantive answers, conclusions, or unproven outcomes instead of "
+            "staying neutral and defining what to compute or investigate (PROMPT-02)"
+        )
     details = "; ".join(reasons)
     return (
-        f"Prompt requirement (PROMPT-01, semantic fidelity): {details}. "
-        "Specify what execution must compute and produce for all requested requirements in full; "
-        "do not withhold answers or omit requested deliverables."
+        f"Prompt requirement (PROMPT-01/PROMPT-02, semantic fidelity): {details}. "
+        "Specify what execution must compute and produce for all requested requirements in full, stay neutral, "
+        "and do not state or preselect answers in prompt pseudocode."
     )
 
 

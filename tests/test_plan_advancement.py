@@ -69,8 +69,12 @@ VERDICTS = {
     "fail": {**{c: ("false", 0.95) for c in CHECKS}, PROMPT_STATES_METHOD: ("false", 0.95)},
     "pass": {**{c: ("true", 0.95) for c in CHECKS}, PROMPT_STATES_METHOD: ("false", 0.95)},
     "unsure": {**{c: ("true", 0.55) for c in CHECKS}, PROMPT_STATES_METHOD: ("false", 0.95)},
-    # The prompt already says how; a plan that only follows it has nothing to add.
-    "prompt_has_method": {**{c: ("false", 0.95) for c in CHECKS}, PROMPT_STATES_METHOD: ("true", 0.95)},
+    # The prompt already says how; a plan that only follows it has no new procedural steps to add.
+    "prompt_has_method": {
+        **{c: ("false", 0.95) for c in ("solution_actions", "constraints_addressed", "advances")},
+        **{c: ("true", 0.95) for c in ("no_evasion", "no_answer_leakage")},
+        PROMPT_STATES_METHOD: ("true", 0.95),
+    },
 }
 
 

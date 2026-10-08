@@ -86,6 +86,30 @@ def test_prompt_fidelity_recipe_verdicts():
     assert res_incomplete.verdict == "INCOMPLETE_COVERAGE"
     assert res_incomplete.passed_gating is True
 
+    # Confident false on no_answer_leakage -> ANSWER_LEAKAGE
+    resp_leakage = {
+        "answers": {
+            "no_evasion": {
+                "choice": "true",
+                "confidence": 0.92,
+                "probabilities": {"true": 0.92, "false": 0.08},
+            },
+            "complete_coverage": {
+                "choice": "true",
+                "confidence": 0.91,
+                "probabilities": {"true": 0.91, "false": 0.09},
+            },
+            "no_answer_leakage": {
+                "choice": "false",
+                "confidence": 0.93,
+                "probabilities": {"true": 0.07, "false": 0.93},
+            },
+        }
+    }
+    res_leakage = recipe.parse_response(resp_leakage)
+    assert res_leakage.verdict == "ANSWER_LEAKAGE"
+    assert res_leakage.passed_gating is True
+
     # Low confidence -> UNCERTAIN
     resp_uncertain = {
         "answers": {
@@ -95,6 +119,11 @@ def test_prompt_fidelity_recipe_verdicts():
                 "probabilities": {"true": 0.55, "false": 0.45},
             },
             "complete_coverage": {
+                "choice": "true",
+                "confidence": 0.90,
+                "probabilities": {"true": 0.90, "false": 0.10},
+            },
+            "no_answer_leakage": {
                 "choice": "true",
                 "confidence": 0.90,
                 "probabilities": {"true": 0.90, "false": 0.10},
@@ -211,3 +240,44 @@ def test_prompt_fidelity_gate_triggers_redraft_on_incomplete_coverage(tmp_path):
     assert "OPERATOR CORRECTION" in draft_calls[1].prompt
     assert "silently drops or omits" in draft_calls[1].prompt
     assert engine.controller.state.current_prompt.body == "IMPLEMENT topological sort and report exact cycle nodes when detected"
+
+
+def test_prompt_fidelity_gate_triggers_redraft_on_answer_leakage(tmp_path):
+    judge = MockFidelityJudge(choices={"no_evasion": "true", "complete_coverage": "true", "no_answer_leakage": "false"})
+    calls = []
+
+    def model_call(req):
+        calls.append(req)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({
+                "kind": "ANALYSIS",
+                "task_summary": "Sibling count riddle",
+                "approach_notes": "",
+                "risk_notes": "",
+                "task_entities": [],
+            })
+        if req.operation == "DRAFT_PROMPT":
+            if len([c for c in calls if c.operation == "DRAFT_PROMPT"]) == 1:
+                return json.dumps({
+                    "kind": "PROMPT",
+                    "prompt_body": "DEFINE result as 5\nOUTPUT result",
+                    "approach_handoff": "NONE",
+                })
+            # Second attempt stays neutral
+            judge.choices = {"no_evasion": "true", "complete_coverage": "true", "no_answer_leakage": "true"}
+            return json.dumps({
+                "kind": "PROMPT",
+                "prompt_body": "CALCULATE the sibling count based on relationship constraints\nOUTPUT the result",
+                "approach_handoff": "NONE",
+            })
+        return json.dumps({"neutral_plan_body": "COMPUTE sibling count"})
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=judge)
+    response = engine.handle_user_message("$confirm-with-pseudocode sibling riddle")
+
+    draft_calls = [c for c in calls if c.operation == "DRAFT_PROMPT"]
+    assert len(draft_calls) == 2
+    assert "OPERATOR CORRECTION" in draft_calls[1].prompt
+    assert "preselects or leaks substantive answers" in draft_calls[1].prompt
+    assert "PROMPT-02" in draft_calls[1].prompt
+    assert engine.controller.state.current_prompt.body == "CALCULATE the sibling count based on relationship constraints\nOUTPUT the result"

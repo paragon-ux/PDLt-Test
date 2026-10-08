@@ -1208,7 +1208,7 @@ class SessionEngine:
             if redraft.prompt_body is not None:
                 outcome = redraft
         fidelity_verdict, failed = self._judge_prompt_fidelity(compiled, outcome.prompt_body)
-        if fidelity_verdict in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE"):
+        if fidelity_verdict in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE", "ANSWER_LEAKAGE", "UNFAITHFUL"):
             self.workspace.append_event(
                 "PROMPT_FIDELITY_RETRY",
                 {"operation": "DRAFT_PROMPT", "verdict": fidelity_verdict, "failed_checks": failed},
@@ -1229,13 +1229,13 @@ class SessionEngine:
             if redraft.prompt_body is not None:
                 outcome = redraft
                 res_verdict, res_failed = self._judge_prompt_fidelity(compiled, outcome.prompt_body)
-                if res_verdict in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE"):
+                if res_verdict in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE", "ANSWER_LEAKAGE", "UNFAITHFUL"):
                     self.workspace.append_event(
                         "PROMPT_FIDELITY_UNRESOLVED",
                         {"operation": "DRAFT_PROMPT", "host_note": True, "failed_checks": res_failed},
                     )
         host_note = self._residual_lint_note(outcome.prompt_body, "PROMPT", "DRAFT_PROMPT")
-        if locals().get("res_verdict") in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE"):
+        if locals().get("res_verdict") in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE", "ANSWER_LEAKAGE", "UNFAITHFUL"):
             host_note = "\n".join(filter(None, [host_note, presentation.prompt_fidelity_note(res_failed)]))
         self.controller = self._bind_new_controller(self.workspace)
         approach_source = substantive_request if outcome.approach_handoff == "CARRY_SOURCE_TO_PLAN" else None

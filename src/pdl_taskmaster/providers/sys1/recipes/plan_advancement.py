@@ -130,7 +130,7 @@ class PlanAdvancementRecipe(Sys1Recipe):
                     "steps neutral without leaking, preselecting, or locking in substantive conclusions, specific "
                     "answers, or unproven outcomes before execution? Stating a procedure to deduce or calculate "
                     "the result is neutral (e.g. 'determine whether the count is even or odd'). Stating or assuming "
-                    "the substantive answer or outcome as a premise (e.g. 'determine that the count is S' or "
+                    "the substantive answer or outcome as a premise (e.g. 'determine that the count is 5' or "
                     "'conclude that a specific approach is optimal') leaks the answer (PLAN-04)."
                 ),
                 criteria={
@@ -181,8 +181,13 @@ class PlanAdvancementRecipe(Sys1Recipe):
                 min_conf = min(min_conf, gating.confidence)
         failed = [key for key in CHECKS if labels[key] is False]
         if failed and labels[PROMPT_STATES_METHOD] is True:
-            verdict = "PROMPT_STATES_METHOD"  # nothing for the plan to add: not a restating plan
-            failed = []
+            substantive_violations = [k for k in failed if k in ("no_evasion", "no_answer_leakage")]
+            if substantive_violations:
+                verdict = "RESTATES"
+                failed = substantive_violations
+            else:
+                verdict = "PROMPT_STATES_METHOD"
+                failed = []
         elif failed:
             verdict = "RESTATES"  # one confident failure is enough
         elif all(labels[key] is True for key in CHECKS):

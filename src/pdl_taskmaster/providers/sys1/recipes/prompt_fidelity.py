@@ -20,7 +20,7 @@ from pdl_taskmaster.providers.sys1.gating import evaluate_confidence_gate
 from pdl_taskmaster.providers.sys1.recipes.base import Sys1Recipe, as_decision_instruction
 from pdl_taskmaster.providers.sys1.schema import RecipeResult, Sys1Question, Sys1Request
 
-CHECKS = ("no_evasion", "complete_coverage")
+CHECKS = ("no_evasion", "complete_coverage", "no_answer_leakage")
 CHOICES = ("true", "false")
 CONFIDENCE_FLOOR = 0.80
 
@@ -33,7 +33,7 @@ _BINARY_ENTROPY_CEILING = _binary_entropy((1 + CONFIDENCE_FLOOR) / 2) + 1e-9
 
 
 class PromptFidelityRecipe(Sys1Recipe):
-    """Evaluates whether drafted Prompt Pseudocode avoids unprompted evasion and covers all requested deliverables."""
+    """Evaluates whether drafted Prompt Pseudocode avoids unprompted evasion, covers all requested deliverables, and stays neutral."""
 
     @property
     def name(self) -> str:
@@ -76,6 +76,24 @@ class PromptFidelityRecipe(Sys1Recipe):
                 },
                 choices=list(CHOICES),
             ),
+            "no_answer_leakage": Sys1Question(
+                instructions=as_decision_instruction(
+                    "Compare the drafted prompt pseudocode against the user's source request. Does the prompt "
+                    "keep its operational directives neutral without answering the request, preselecting substantive "
+                    "conclusions, locking unproven outcomes, or inserting the author's hypothesized answer into the "
+                    "prompt body (PROMPT-02)? The prompt defines what is to be computed, deduced, or investigated, "
+                    "not the answer itself (for example, assigning or stating the final result or stating which conclusion "
+                    "to reach before computation violates neutrality; directing execution to calculate, solve, or "
+                    "determine the result is neutral)."
+                ),
+                criteria={
+                    "true": "The prompt stays neutral and specifies what to compute or investigate without preselecting "
+                            "or stating the final substantive answer or outcome.",
+                    "false": "The prompt answers the question, leaks the final result, or locks in an unproven conclusion "
+                             "before execution.",
+                },
+                choices=list(CHOICES),
+            ),
         }
         return Sys1Request(
             state={
@@ -109,8 +127,12 @@ class PromptFidelityRecipe(Sys1Recipe):
         if failed:
             if "no_evasion" in failed:
                 verdict = "UNPROMPTED_EVASION"
-            else:
+            elif "complete_coverage" in failed:
                 verdict = "INCOMPLETE_COVERAGE"
+            elif "no_answer_leakage" in failed:
+                verdict = "ANSWER_LEAKAGE"
+            else:
+                verdict = "UNFAITHFUL"
         elif all(labels.get(k) is True for k in CHECKS):
             verdict = "FAITHFUL"
         else:
