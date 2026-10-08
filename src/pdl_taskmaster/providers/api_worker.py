@@ -352,7 +352,7 @@ class ApiWorker:
         max_output_tokens: int | None = 16384,
         max_repairs: int | None = None,
         draft_execute: bool = False,
-        tier_d1: bool = False,
+        tier_d1: bool = True,
         capture_tokens: bool = True,
         reasoning_effort: str | None = None,
         reasoning_by_operation: dict[str, str] | None = None,
@@ -377,7 +377,7 @@ class ApiWorker:
         self.max_output_tokens = int(max_output_tokens) if max_output_tokens else None
         self.max_repairs = max_repairs  # run setting read by the host (0 = stop at the first failure)
         self.draft_execute = draft_execute  # run setting read by the host (A/B option)
-        self.tier_d1 = tier_d1  # run setting read by the host (Tier D1 advantage mechanism)
+        self.tier_d1 = bool(tier_d1 and os.environ.get("PDLT_TIER_D1", "1") == "1")  # run setting read by the host (Tier D1 advantage mechanism)
         self.capture_tokens = capture_tokens
         # An explicit effort applies to every operation (per-operation flags still
         # win); the per-model mapping is the default only when none is given.
@@ -803,7 +803,7 @@ class ApiWorker:
             extra_guidance = "Execution environment of this session (host fact): " + request.environment
         elif operation_name in ("DRAFT_PROMPT", "REVISE_PROMPT"):
             extra_guidance = (
-                "\n\nNORMATIVE SPECIFICATION FOR PROMPT PSEUDOCODE (PDL-01 to PDL-09, PROMPT-01 to PROMPT-05):\n"
+                "\n\nNORMATIVE GUIDELINES AND SPECIFICATION FOR PROMPT PSEUDOCODE (PDL-01 to PDL-09, PROMPT-01 to PROMPT-05):\n"
                 "PDL-01 — Structured English: Pseudocode MUST use readable structured English compatible with the project PDL profile.\n"
                 "PDL-02 — Operation layout: Each operation SHOULD appear on its own line; equally indented operations are read top to bottom; subordinate operations are indented beneath the operation that controls or qualifies them.\n"
                 "PDL-03 — Domain terminology: Pseudocode MUST use task-domain terminology rather than invent a separate task schema.\n"
@@ -825,11 +825,11 @@ class ApiWorker:
                 "4. Parameter vs. Stream Discrimination (PDL-09): Use READ strictly for explicit runtime stream or file ingestion. Represent function parameters, mathematical constants, and data structure inputs as parameters to accept or take, not streams to read.\n"
                 "5. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n"
                 "6. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n"
-                "7. Zero Execution Prohibitions & No Meta-Rules: Prompt Pseudocode defines the substantive work to be completed upon execution (PROMPT-01). Prompt Pseudocode is your intermediate representation—never command the deliverable to follow PDL syntax, and NEVER insert negative execution prohibitions like 'do not implement', 'provide only specification', or 'no executable code' (PROMPT-02, PDL-08, PDL-09)."
+                "7. Zero Execution Prohibitions & Substantive Delivery: Prompt Pseudocode defines the substantive deliverable to be produced upon execution (PROMPT-01). Prompt Pseudocode is an intermediate representation—never command the deliverable to follow PDL syntax, and NEVER insert negative deliverable withholding clauses across any domain (e.g. do not write 'without providing actual entity names', 'provide only specification', 'do not compute', 'insert placeholders', or 'no executable code') (PROMPT-01, PROMPT-02, PDL-08, PDL-09)."
             )
         elif operation_name in ("DRAFT_PLAN", "REVISE_PLAN"):
             extra_guidance = (
-                "\n\nNORMATIVE SPECIFICATION FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-09, PLAN-01 to PLAN-10):\n"
+                "\n\nNORMATIVE GUIDELINES AND SPECIFICATION FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-09, PLAN-01 to PLAN-10):\n"
                 "PDL-01 — Structured English: Pseudocode MUST use readable structured English compatible with the project PDL profile.\n"
                 "PDL-02 — Operation layout: Each operation SHOULD appear on its own line; equally indented operations are read top to bottom; subordinate operations are indented beneath the operation that controls or qualifies them.\n"
                 "PDL-03 — Domain terminology: Pseudocode MUST use task-domain terminology rather than invent a separate task schema.\n"
@@ -853,7 +853,7 @@ class ApiWorker:
                 "2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n"
                 "3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n"
                 "4. Active Construction: Plan the concrete procedural steps that produce the deliverable itself (e.g. data structure design, method implementations, algorithm logic, unit test suite). Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue.\n"
-                "5. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04), and NEVER insert placeholder steps or meta-prohibitions like 'insert placeholders without performing computation', 'do not implement', or 'contains no executable code' (PLAN-10, PDL-08, PDL-09)."
+                "5. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04), and NEVER insert placeholder steps or meta-prohibitions like 'insert placeholders without performing computation', 'do not implement', 'do not provide actual names', or 'contains no executable code' (PLAN-10, PDL-08, PDL-09)."
             )
         elif operation_name == "DRAFT_EXECUTE":
             extra_guidance = (

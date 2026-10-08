@@ -548,20 +548,7 @@
         "SEM-03",
         "SEM-04",
         "SEM-05",
-        "SEM-06",
-        "PROMPT-01",
-        "PROMPT-02",
-        "PROMPT-03",
-        "PROMPT-04",
-        "PDL-01",
-        "PDL-02",
-        "PDL-03",
-        "PDL-04",
-        "PDL-05",
-        "PDL-06",
-        "PDL-07",
-        "PDL-08",
-        "ARTIFACT-02"
+        "SEM-06"
       ],
       "include": [
         "OPERATION_ID",

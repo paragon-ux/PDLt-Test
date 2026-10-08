@@ -398,7 +398,7 @@ class SessionEngine:
         # 0 = stop at the first failed EXECUTE (no repair, no retry of any kind).
         self.max_repairs: int | None = None
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
-        self.tier_d1 = False  # Tier D1 (advantage mechanism): feed back model's own test failures in standard mode
+        self.tier_d1 = os.environ.get("PDLT_TIER_D1", "0") == "1"  # Tier D1: feed back model's own test failures in standard mode
         self._active_task_entities: tuple[str, ...] = ()
         self._active_typed_task_entities: list[dict[str, Any]] = []
         # AUTH-04: the user's original request is source data for execution; the
