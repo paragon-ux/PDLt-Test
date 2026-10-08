@@ -817,7 +817,15 @@ class ApiWorker:
                 "PROMPT-02 — No substantive solution: Prompt Pseudocode MUST NOT solve the task, research task facts, inspect task-specific resources, plan the response, or include substantive task findings.\n"
                 "PROMPT-03 — No invented requirements: Prompt Pseudocode MUST NOT invent missing requirements or silently improve the user's request.\n"
                 "PROMPT-04 — Unspecified details: If a detail is unspecified, Prompt Pseudocode MUST represent the request as currently understood. Prompt generation MUST NOT be replaced with clarification unless a higher-priority requirement makes the missing input genuinely blocking.\n"
-                "PROMPT-05 — Revision semantics: A Prompt revision MUST apply the user's changed TASK-01 semantics and preserve every current TASK-01 requirement not changed by the user."
+                "PROMPT-05 — Revision semantics: A Prompt revision MUST apply the user's changed TASK-01 semantics and preserve every current TASK-01 requirement not changed by the user.\n\n"
+                "OPERATIONAL GUIDELINES FOR PROMPT DRAFTING:\n"
+                "1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
+                "2. Active Construction Directives (PDL-09): When the user asks to implement, write, develop, or create software, data structures, algorithms, or tests, use active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and preserve the target language (e.g., 'in Python') and interface contracts.\n"
+                "3. No Metatask Ingestion (PDL-09): DO NOT use 'READ the task specification' or 'READ the request'. The user prompt is the communicative frame, not a runtime data stream to be read.\n"
+                "4. Parameter vs. Stream Discrimination (PDL-09): Use READ strictly for explicit runtime stream or file ingestion. Represent function parameters, mathematical constants, and data structure inputs as parameters to accept or take, not streams to read.\n"
+                "5. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n"
+                "6. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n"
+                "7. Zero Execution Prohibitions & No Meta-Rules: Prompt Pseudocode defines the substantive work to be completed upon execution (PROMPT-01). Prompt Pseudocode is your intermediate representation—never command the deliverable to follow PDL syntax, and NEVER insert negative execution prohibitions like 'do not implement', 'provide only specification', or 'no executable code' (PROMPT-02, PDL-08, PDL-09)."
             )
         elif operation_name in ("DRAFT_PLAN", "REVISE_PLAN"):
             extra_guidance = (
@@ -839,7 +847,13 @@ class ApiWorker:
                 "PLAN-06 — No substantive research: Response Plan generation MUST NOT research the substantive task.\n"
                 "PLAN-07 — Revision semantics: A Plan revision MUST keep the confirmed Prompt fixed, apply only changed TASK-02 semantics, and preserve PLAN-01 through PLAN-03.\n"
                 "PLAN-08 — Carried approach constraints: When ordered TASK-02 projections are supplied to a Plan operation, the Response Plan MUST incorporate their operative approach constraints while remaining consistent with the confirmed Prompt and the other Plan requirements.\n"
-                "PLAN-10 — Negative constraint operationalization by omission: When Prompt Pseudocode specifies negative constraints, exclusions, or unhandled conditions (e.g. 'do not do X', 'let unhandled exceptions propagate'), the Response Plan MUST operationalize them as structural omission rather than defensive assertions, catch-all wrappers, or redundant re-raises. In programming deliverables, native platform propagation and runtime defaults MUST be relied upon without generating active procedural steps for unrequested conditions."
+                "PLAN-10 — Negative constraint operationalization by omission: When Prompt Pseudocode specifies negative constraints, exclusions, or unhandled conditions (e.g. 'do not do X', 'let unhandled exceptions propagate'), the Response Plan MUST operationalize them as structural omission rather than defensive assertions, catch-all wrappers, or redundant re-raises. In programming deliverables, native platform propagation and runtime defaults MUST be relied upon without generating active procedural steps for unrequested conditions.\n\n"
+                "OPERATIONAL GUIDELINES FOR RESPONSE PLAN DRAFTING:\n"
+                "1. Express the response plan in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
+                "2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n"
+                "3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n"
+                "4. Active Construction: Plan the concrete procedural steps that produce the deliverable itself (e.g. data structure design, method implementations, algorithm logic, unit test suite). Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue.\n"
+                "5. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04), and NEVER insert placeholder steps or meta-prohibitions like 'insert placeholders without performing computation', 'do not implement', or 'contains no executable code' (PLAN-10, PDL-08, PDL-09)."
             )
         elif operation_name == "DRAFT_EXECUTE":
             extra_guidance = (
