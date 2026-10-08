@@ -95,7 +95,8 @@ def test_the_appendix_has_one_row_per_verified_prompt_and_counts_the_routes_that
                                          "results": value["results"], "usage": None})
                for name, value in runs.items()}
     text = report.appendix(runs, metrics, ["control", "unconfirmed"])
-    assert text.startswith("By prompt: 1 prompt passed on 2 routes, 1 prompt passed on 1 route, 1 prompt passed on 0 routes.")
+    assert text.startswith("By prompt: 1 prompt passed on 2 routes, 1 prompt passed on 1 route, 1 on no route "
+                           "(0 of them awaiting a human check on every route, so not failures).")
     assert "| 05-01 | pass | pass | 2 / 2 |" in text
     assert "| 05-02 | FAIL | pass | 1 / 2 |" in text
     assert "| 05-03 | pending | miss | 0 / 2 |" in text
@@ -213,3 +214,15 @@ def test_the_report_shows_the_regrade_and_the_tokens_next_to_the_recorded_number
     assert "| Control | 01-01 | FAIL | PASS | valid coloring |" in markdown
     assert "Tokens in / cached / out (M)" in markdown
     assert "after the grader fixes" not in render()  # without --regrade there is nothing to set beside
+
+
+def test_the_appendix_does_not_count_a_prompt_awaiting_a_human_check_as_a_failure() -> None:
+    def results(rows: list[tuple[str, str]]) -> list[dict]:
+        return [_result(pid, "formal_verification", status="verified", grade=grade) for pid, grade in rows]
+
+    runs = {"control": _run(results([("14-02", "MANUAL"), ("04-02", "FAIL"), ("01-01", "PASS")])),
+            "unconfirmed": _run(results([("14-02", "MANUAL"), ("04-02", "FAIL"), ("01-01", "FAIL")]))}
+    metrics = {name: report.arm_metrics(run) for name, run in runs.items()}
+    text = report.appendix(runs, metrics, ["control", "unconfirmed"])
+    assert "1 prompt passed on 1 route" in text
+    assert "2 on no route (1 of them awaiting a human check on every route, so not failures)" in text

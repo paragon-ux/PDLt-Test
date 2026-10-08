@@ -522,6 +522,7 @@ def appendix(runs: dict[str, dict], metrics: dict[str, dict], names: list[str]) 
     lines = ["| Prompt | " + " | ".join(LABEL[n] for n in names) + " | Routes passing |",
              "| :--- | " + " | ".join(":---:" for _ in names) + " | :---: |"]
     histogram: Counter = Counter()
+    pending_everywhere = 0  # no route passed it because every route left it for a human check: not a failure
     for pid in ids:
         cells, passing = [], 0
         for n in names:
@@ -539,10 +540,15 @@ def appendix(runs: dict[str, dict], metrics: dict[str, dict], names: list[str]) 
             else:
                 cells.append("FAIL")
         histogram[passing] += 1
+        if passing == 0 and all(c in ("pending", "-") for c in cells):
+            pending_everywhere += 1
         lines.append(f"| {pid} | " + " | ".join(cells) + f" | {passing} / {len(names)} |")
     spread = ", ".join(
         f"{histogram[k]} prompt{'s' if histogram[k] != 1 else ''} passed on {k} route{'s' if k != 1 else ''}"
-        for k in range(len(names), -1, -1) if histogram[k])
+        for k in range(len(names), 0, -1) if histogram[k])
+    if histogram[0]:
+        spread += (f"{', ' if spread else ''}{histogram[0]} on no route ({pending_everywhere} of them awaiting a "
+                   f"human check on every route, so not failures)")
     return f"By prompt: {spread}.\n\n" + "\n".join(lines)
 
 

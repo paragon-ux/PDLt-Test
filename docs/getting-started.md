@@ -100,11 +100,15 @@ python run_catalogue.py $M --route unconfirmed --draft-execute
 python run_catalogue.py $M --route confirmed
 python run_catalogue.py $M --route confirmed --draft-execute
 
-# Build the comparison tables from the finished runs
-python experiments/five_arm_report.py --md report.md
+# The same sweep, one wrapper per route: it also records what the route cost on the OpenRouter key
+python experiments/sweep_arm.py control        # then unconfirmed, unconfirmed-draft-execute, confirmed, confirmed-draft-execute
+
+# Build the comparison tables from the finished runs; --regrade scores every route with today's graders
+# and sets the grades recorded when each run was scored beside them (a few minutes per route)
+python experiments/five_arm_report.py --regrade --regrade-cache regrade.json --md report.md
 ```
 
-Tier D1 (the sandbox repair loop) is on by default for the four harness routes; add `--no-tier-d1` to turn it off. It does not apply to `--route control`. A run from a dirty working tree is refused unless you pass `--allow-dirty`.
+Tier D1 (the sandbox repair loop) is on by default for the four harness routes; add `--no-tier-d1` to turn it off. It does not apply to `--route control`. The control sends the same provider order as the harness (`--api-providers` overrides both). A run from a dirty working tree is refused unless you pass `--allow-dirty`. Run the routes one after another and keep the machine otherwise idle: seconds per prompt, and the timing of a threaded hidden test, depend on CPU load.
 
 
 ### Local Web Viewer
