@@ -792,7 +792,8 @@ def test_draft_execute_omits_witness_instructions_from_its_inputs(tmp_path):
             return json.dumps({"neutral_plan_body": PLAN})
         if req.operation == "DRAFT_EXECUTE":
             return json.dumps({"kind": "RESULT", "approach": "Search the values in order and stop at the first fit.",
-                               "data_structures": [], "step_estimate": None, "invariants": [], "self_checks": [],
+                               "data_structures": [], "invariants": [], "self_checks": [],
+                               "step_estimate": {"iterations": 3, "steps_per_iteration": 10, "basis": "one pass over the given values"},
                                "execution_entities": []})
         return json.dumps(good)
 

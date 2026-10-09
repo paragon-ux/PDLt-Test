@@ -1,5 +1,5 @@
 {
-  "_note": "Every description the model is shown in each operation's output_schema, captured from the static controller/schemas files on 2026-10-03 (ADR-0028 / IMPL-0001). Generated schemas must keep each one verbatim at the same path. One reviewed change (IMPL-0001): approach_notes says 'SEM-05/TASK-03 split' instead of 'partition', which the benchmark-contamination scan flags in harness source. Reviewed change (LEDGER L45, L48): the entity 'definition' description is replaced by 'polarity', 'group' and 'relation'; 'polarity' is optional. Reviewed change (LEDGER L56): every task-entity description is rewritten for clarity; 'target' is defined as what the request asks for, and a role or relationship word is a 'term'. Reviewed change (LEDGER L93): DRAFT_EXECUTE's brief is typed (approach, data_structures, step_estimate, invariants, self_checks, execution_entities); the old entity kinds, whose host checks were removed on 2026-09-30, are gone.",
+  "_note": "Every description the model is shown in each operation's output_schema, captured from the static controller/schemas files on 2026-10-03 (ADR-0028 / IMPL-0001). Generated schemas must keep each one verbatim at the same path. One reviewed change (IMPL-0001): approach_notes says 'SEM-05/TASK-03 split' instead of 'partition', which the benchmark-contamination scan flags in harness source. Reviewed change (LEDGER L45, L48): the entity 'definition' description is replaced by 'polarity', 'group' and 'relation'; 'polarity' is optional. Reviewed change (LEDGER L56): every task-entity description is rewritten for clarity; 'target' is defined as what the request asks for, and a role or relationship word is a 'term'. Reviewed change (LEDGER L93): DRAFT_EXECUTE's brief is typed (approach, data_structures, step_estimate, invariants, self_checks, execution_entities); the old entity kinds, whose host checks were removed on 2026-09-30, are gone. Reviewed change (LEDGER L93, after review): DRAFT_EXECUTE's brief is typed (approach, data_structures, step_estimate, invariants, self_checks, execution_entities); the old entity kinds, whose host checks were removed on 2026-09-30, are gone.",
   "operations": {
     "BOOTSTRAP_ANALYSIS": {
       "$": [
@@ -35,7 +35,7 @@
     },
     "DRAFT_EXECUTE": {
       "$": [
-        "Execution brief drafted before EXECUTE (ADR-0013 P6 DRAFT_EXECUTE): how the deliverable will compute its result for these exact inputs within the stated environment. The host validates it, keeps only entities found verbatim in the task, checks step_estimate against the step budget, and passes it to EXECUTE as EXECUTION_BRIEF."
+        "Execution brief drafted before EXECUTE (ADR-0013 P6 DRAFT_EXECUTE): how the deliverable will compute its result for these exact inputs within the stated environment. The host validates it, keeps only entities found verbatim in the task, and passes it to EXECUTE as EXECUTION_BRIEF."
       ],
       "$.approach": [
         "The method the deliverable uses to produce the result for these inputs, in the order it runs, in plain text: what is computed, searched or derived, and how the result is assembled. Not code."
@@ -44,7 +44,7 @@
         "Each data structure the method keeps, with what it holds and why. Empty when the method keeps nothing beyond the inputs."
       ],
       "$.execution_entities": [
-        "Exact strings from the task that the deliverable must reproduce verbatim. Empty when the task names none."
+        "Exact strings from the task that the deliverable must use exactly as written wherever it uses them. Empty when the task names none."
       ],
       "$.execution_entities[].kind": [
         "identifier: a name the deliverable must define or use exactly as the task spells it (a function, class, method, field, file or key). literal: exact text the deliverable must print, return or contain. parameter: a value the task sets that the computation depends on (a size, a limit, a target, a count)."

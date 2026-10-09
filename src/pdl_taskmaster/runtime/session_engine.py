@@ -158,26 +158,56 @@ def _execution_modes(execute_context: dict[str, Any], result_ir_mode: bool) -> f
     return frozenset(modes)
 
 
+_RESOURCE_STOPS = {"STEP_BUDGET_EXCEEDED": "step budget", "WALL_CLOCK_EXCEEDED": "wall-clock limit",
+                   "MEMORY_EXCEEDED": "memory limit"}
+
+
+def _occurs_as_token(value: str, text: str) -> bool:
+    """Whether value occurs in text with no name character (letter, digit, underscore) running on
+    at either end, so a fragment of a longer name ("total" in "total_of") is not a match."""
+    start = text.find(value)
+    while start != -1:
+        end = start + len(value)
+        before = text[start - 1] if start > 0 else ""
+        after = text[end] if end < len(text) else ""
+        if not ((before.isalnum() or before == "_") and (value[0].isalnum() or value[0] == "_")) and \
+                not ((after.isalnum() or after == "_") and (value[-1].isalnum() or value[-1] == "_")):
+            return True
+        start = text.find(value, start + 1)
+    return False
+
+
 def _ground_execution_entities(
     entities: list[ExecutionEntity], task_text: list[Any],
 ) -> tuple[list[dict[str, str]], list[str]]:
-    """Mechanical containment (as for task entities): an execution entity is kept only if its value,
-    with whitespace runs folded and one matching pair of surrounding quotes removed, occurs verbatim
-    in the task text. Returns (kept entities, dropped values); duplicates are kept once."""
-    haystack = " ".join(" ".join(text.split()) for text in task_text if isinstance(text, str))
+    """Mechanical containment (as for task entities): an execution entity is kept only if its value
+    occurs as a whole token in one of the task texts, exactly or with whitespace runs folded (then the
+    folded form is kept); one matching pair of surrounding quotes is removed if only the inner text
+    occurs. Returns (kept entities, dropped values); duplicates are kept once."""
+    texts = [text for text in task_text if isinstance(text, str) and text]
+    folded = [" ".join(text.split()) for text in texts]
+
+    def grounded(value: str) -> str | None:
+        if any(_occurs_as_token(value, text) for text in texts):
+            return value
+        compact = " ".join(value.split())
+        if compact and any(_occurs_as_token(compact, text) for text in folded):
+            return compact
+        return None
+
     kept: list[dict[str, str]] = []
     dropped: list[str] = []
     seen: set[tuple[str, str]] = set()
     for entity in entities:
-        value = " ".join(entity.value.split())
-        if len(value) > 2 and value[0] == value[-1] and value[0] in "'\"`" and value[1:-1] in haystack:
-            value = value[1:-1]
-        if value and value in haystack:
-            if (entity.kind, value) not in seen:
-                seen.add((entity.kind, value))
-                kept.append({"kind": entity.kind, "value": value})
-        else:
+        value = entity.value.strip()
+        match = grounded(value)
+        if match is None and len(value) > 2 and value[0] == value[-1] and value[0] in "'\"`":
+            match = grounded(value[1:-1])
+        if match is None:
             dropped.append(entity.value)
+        elif (entity.kind, match) not in seen:
+            seen.add((entity.kind, match))
+            kept.append({"kind": entity.kind, "value": match})
     return kept, dropped
 
 
@@ -1997,27 +2027,28 @@ class SessionEngine:
             return None
         limit = self._execution_budget.step_limit
         estimate = draft.step_estimate
-        if estimate is not None and estimate.estimated_steps > limit:
-            self.workspace.append_event("EXECUTION_BRIEF_OVER_BUDGET", {
-                "estimated_steps": estimate.estimated_steps, "step_limit": limit})
-            correction = (
-                "OPERATOR CORRECTION (host-side step check): step_estimate gives "
-                f"{estimate.iterations:,} iterations x {estimate.steps_per_iteration:,} steps = "
-                f"{estimate.estimated_steps:,} steps, above this session's step budget of {limit:,} steps, "
-                "so the program the brief describes would be stopped before it finishes. Draft the brief "
-                "again; step_estimate must count the method the brief describes."
-            )
+        problem = self._step_check(estimate, limit)
+        if problem is not None:
+            reason, correction = problem
+            self.workspace.append_event("EXECUTION_BRIEF_STEP_CHECK_FAILED", {
+                "reason": reason, "estimated_steps": None if estimate is None else estimate.estimated_steps,
+                "step_limit": limit})
             draft = self._request_execution_brief(values, traces, correction)
             if draft is None:
                 return None
             estimate = draft.step_estimate
-            if estimate is not None and estimate.estimated_steps > limit:
+            problem = self._step_check(estimate, limit)
+            if problem is not None:
                 self.workspace.append_event("EXECUTION_BRIEF_REJECTED", {
-                    "reason": "step_estimate_over_budget", "estimated_steps": estimate.estimated_steps,
+                    "reason": problem[0], "estimated_steps": None if estimate is None else estimate.estimated_steps,
                     "step_limit": limit})
                 return None
+        # The task text DRAFT_EXECUTE was shown (the host's default plan line for the unconfirmed
+        # route is not task text): an entity is grounded only in what the task itself says.
         task_text = [execute_context.get(key) for key in (
             "CONFIRMED_PROMPT_BODY", "CONFIRMED_PLAN_BODY", "SOURCE_REQUEST", "SUPPLIED_EXECUTION_INPUT_SOURCE")]
+        shown_inputs = values.get("REQUIRED_TASK_INPUTS")
+        task_text += list(shown_inputs.values()) if isinstance(shown_inputs, dict) else [shown_inputs]
         entities, dropped = _ground_execution_entities(draft.execution_entities, task_text)
         if dropped:
             self.workspace.append_event("EXECUTION_ENTITY_DROPPED_UNGROUNDED", {"count": len(dropped), "values": dropped})
@@ -2047,20 +2078,44 @@ class SessionEngine:
         })
         return brief
 
+    def _step_check(self, estimate: Any, limit: int) -> tuple[str, str] | None:
+        """The host's mechanical check of a brief's step_estimate: (reason, operator correction) when
+        it fails, else None. A verified task's result is certified by a program the sandbox runs, so
+        its brief must count that program; any brief's count must fit the step budget."""
+        if estimate is None:
+            if not self._requires_verified_execution:
+                return None
+            return "step_estimate_missing", (
+                "OPERATOR CORRECTION (host-side step check): step_estimate is null, but this task's result is "
+                "certified by a program the sandbox runs, so the brief must count that program's work on these "
+                "inputs. Draft the brief again."
+            )
+        if estimate.estimated_steps <= limit:
+            return None
+        return "step_estimate_over_budget", (
+            "OPERATOR CORRECTION (host-side step check): step_estimate gives "
+            f"{estimate.iterations:,} iterations x {estimate.steps_per_iteration:,} steps = "
+            f"{estimate.estimated_steps:,} steps, above this session's step budget of {limit:,} steps, "
+            "so the program the brief describes would be stopped before it finishes. Draft the brief "
+            "again; step_estimate must count the method the brief describes."
+        )
+
     def _request_execution_brief(
         self, values: dict[str, Any], traces: list[CallTrace], correction: str | None = None,
     ) -> ExecutionDraftResultData | None:
-        """One DRAFT_EXECUTE call (with _call's one wire retry). An invalid or blocked reply is recorded
-        as EXECUTION_BRIEF_SKIPPED with its reason and yields no brief."""
+        """One DRAFT_EXECUTE call (with _call's one wire retry). An invalid, cut-off or blocked reply is
+        recorded as EXECUTION_BRIEF_SKIPPED with its reason and yields no brief."""
         assert self.workspace is not None
         try:
             draft = self._call("DRAFT_EXECUTE", values, traces, parser=self.bridge.parse_execution_draft,
                                operator_correction=correction)
         except Exception as exc:
-            if not _is_wire_failure(exc):
+            limit = getattr(exc, "output_limit", None)
+            if limit is None and not _is_wire_failure(exc):
                 raise
             self.workspace.append_event("EXECUTION_BRIEF_SKIPPED", {
-                "reason": str(exc), "feedback": getattr(exc, "operator_feedback", None)})
+                "reason": "output_limit" if limit is not None else str(exc),
+                "feedback": getattr(exc, "operator_feedback", None)})
             return None
         if draft.brief is None:
             self.workspace.append_event("EXECUTION_BRIEF_SKIPPED", {
@@ -2069,24 +2124,26 @@ class SessionEngine:
         return draft.brief
 
     def _withdraw_brief_on_overrun(self, execute_context: dict[str, Any], errors: list[str]) -> str:
-        """EXEC-06: a run the sandbox stopped at the step budget contradicts the brief's step_estimate,
-        so the brief leaves the context for the attempts that follow, and the repair's correction states
-        that fact (a host finding, never a method). Returns the correction line, or ""."""
+        """EXEC-06: a run the sandbox stopped at a step, time or memory limit contradicts the brief's
+        feasibility, so the brief leaves the context for the attempts that follow, and the repair's
+        correction states that fact (a host finding, never a method). Returns the correction line, or ""."""
         brief = execute_context.get("EXECUTION_BRIEF")
-        if brief is None or "STEP_BUDGET_EXCEEDED" not in finding_codes(errors):
+        stops = [code for code in finding_codes(errors) if code in _RESOURCE_STOPS]
+        if brief is None or not stops:
             return ""
         assert self.workspace is not None
         del execute_context["EXECUTION_BRIEF"]
         estimate = brief.get("step_estimate")
         self.workspace.append_event("EXECUTION_BRIEF_WITHDRAWN", {
-            "reason": "STEP_BUDGET_EXCEEDED",
+            "reason": stops[0],
             "estimated_steps": None if estimate is None else estimate["estimated_steps"],
-            "step_limit": self._execution_budget.step_limit,
+            "step_limit": None if estimate is None else estimate["step_limit"],
         })
         claim = (f"estimated {estimate['estimated_steps']:,} steps" if estimate is not None
                  else "said the deliverable runs no program")
-        return (f"\n- The execution brief {claim}, but the sandbox stopped the program at the step budget: "
-                "the run contradicts the brief, so the brief is withdrawn from this attempt.")
+        return (f"\n- The execution brief {claim}, but the sandbox stopped the program at its "
+                f"{_RESOURCE_STOPS[stops[0]]}: the run contradicts the brief, so the brief is withdrawn from "
+                "this attempt.")
 
     def _execute_attempt(
         self,

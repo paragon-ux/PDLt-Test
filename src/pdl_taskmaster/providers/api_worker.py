@@ -860,8 +860,7 @@ class ApiWorker:
             extra_guidance = (
                 "\n\nDRAFT_EXECUTE: write the execution brief in the output schema's fields, for these exact inputs "
                 "and the environment in AVAILABLE_EXECUTION_TOOLS: approach (your method, in the order it runs), "
-                "data_structures, step_estimate (count iterations from the input sizes the task gives; the host "
-                "multiplies iterations by steps_per_iteration and checks the product against the step budget), "
+                "data_structures, step_estimate (count iterations from the input sizes the task gives), "
                 "invariants, self_checks, and execution_entities (exact strings copied from the task). The validated "
                 "brief is passed to the EXECUTE call that follows. Do not write code, the deliverable, witness "
                 "payloads or hypothetical outcome branches here."

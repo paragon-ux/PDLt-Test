@@ -80,6 +80,10 @@ def test_empty_lists_and_a_null_step_estimate_are_explicit_answers():
     {"step_estimate": {"iterations": -1, "steps_per_iteration": 10, "basis": "b"}},
     {"step_estimate": {"iterations": 10, "steps_per_iteration": 10, "basis": " "}},
     {"step_estimate": {"iterations": 10, "steps_per_iteration": 10}},
+    {"step_estimate": {"iterations": "5000", "steps_per_iteration": 10, "basis": "b"}},
+    {"step_estimate": {"iterations": 5000.0, "steps_per_iteration": 10, "basis": "b"}},
+    {"step_estimate": {"iterations": True, "steps_per_iteration": 10, "basis": "b"}},
+    {"step_estimate": {"iterations": 10**31, "steps_per_iteration": 10, "basis": "b"}},
     {"execution_entities": ["total_of"]},
     {"execution_entities": [{"kind": "api_signature", "value": "total_of"}]},
     {"execution_entities": [{"kind": "identifier", "value": ""}]},
@@ -141,6 +145,7 @@ def test_the_grammar_requires_every_field_and_closes_every_object(strict):
     assert entity["properties"]["kind"]["enum"] == ["identifier", "literal", "parameter"]
     estimate = next(b for b in props["step_estimate"]["anyOf"] if b.get("type") == "object")
     assert set(estimate["required"]) == {"iterations", "steps_per_iteration", "basis"}
+    assert estimate["additionalProperties"] is False
 
 
 @pytest.mark.parametrize("pinning", [{"order": ["Cerebras"], "allow_fallbacks": False},
@@ -158,15 +163,20 @@ def test_the_provider_request_carries_the_generated_schema(monkeypatch, pinning)
         sent.update(json.loads(req.data))
         raise _Stop
 
-    class _Req:
-        operation = "DRAFT_EXECUTE"
-        prompt = "Draft the execution brief."
-        manifest: dict = {}
-        projection = None
-
     monkeypatch.setattr(ApiWorker, "_send_json_with_retries", fake_send)
     monkeypatch.setattr(ApiWorker, "_resolve_api_key", lambda self: "k")
     worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT, provider_pinning=pinning)
+    spec = BRIDGE.compiler.execution_contract["operations"]["DRAFT_EXECUTE"]
+    inputs = {symbol: "x" for symbol in spec["include"] if symbol not in
+              ("OPERATION_ID", "APPLICABLE_STANDARD_CLAUSES", "HIGHER_PRIORITY_CONSTRAINTS")}
+    projection = BRIDGE.compiler.compile("DRAFT_EXECUTE", inputs, contract_form=worker.contract_form("DRAFT_EXECUTE"))
+
+    class _Req:
+        operation = "DRAFT_EXECUTE"
+        prompt = "Draft the execution brief."
+        manifest = projection.manifest
+
+    _Req.projection = projection
     with pytest.raises(_Stop):
         worker.call(_Req())
     response_format = sent["text"]["format"]
@@ -180,11 +190,19 @@ def test_entities_not_found_verbatim_in_the_task_are_dropped():
     entities = [ExecutionEntity(kind="identifier", value="total_of"),
                 ExecutionEntity(kind="identifier", value="`total_of`"),
                 ExecutionEntity(kind="literal", value="Sum:   3,\n 4"),
+                ExecutionEntity(kind="literal", value="Sum: 3,  4 and"),
                 ExecutionEntity(kind="identifier", value="sum_values"),
-                ExecutionEntity(kind="identifier", value="Total_Of")]
-    kept, dropped = _ground_execution_entities(entities, ["Write total_of; print Sum: 3, 4 and 5.", None])
-    assert kept == [{"kind": "identifier", "value": "total_of"}, {"kind": "literal", "value": "Sum: 3, 4"}]
-    assert dropped == ["sum_values", "Total_Of"]  # names are case-sensitive; invented ones never pass
+                ExecutionEntity(kind="identifier", value="Total_Of"),
+                ExecutionEntity(kind="identifier", value="total"),
+                ExecutionEntity(kind="literal", value="5. Then"),
+                ExecutionEntity(kind="parameter", value="7, 8")]
+    kept, dropped = _ground_execution_entities(
+        entities, ["Write total_of; print Sum: 3, 4 and 5.", None, "Then use 7, 8 as given."])
+    assert kept == [{"kind": "identifier", "value": "total_of"}, {"kind": "literal", "value": "Sum: 3, 4"},
+                    {"kind": "literal", "value": "Sum: 3, 4 and"}, {"kind": "parameter", "value": "7, 8"}]
+    # names are case-sensitive, a fragment of a longer name is not that name, invented values never pass,
+    # and a span is never stitched across two task texts
+    assert dropped == ["sum_values", "Total_Of", "total", "5. Then"]
 
 
 class Sys1:
@@ -291,9 +309,9 @@ def test_an_invented_entity_never_reaches_execute(tmp_path):
     assert _event(events, "EXECUTION_ENTITY_DROPPED_UNGROUNDED") == [{"count": 1, "values": ["compute_everything"]}]
 
 
-def test_without_the_flag_execute_is_exactly_what_it_was(tmp_path):
-    """No accidental change to the routes without a brief: no DRAFT_EXECUTE call, no System 1 computation
-    question, no EXECUTION_BRIEF input and no EXEC-06 clause."""
+def test_without_the_flag_there_is_no_brief_call_input_or_clause(tmp_path):
+    """No DRAFT_EXECUTE call, no System 1 computation question, no EXECUTION_BRIEF input and no EXEC-06
+    clause. (That such a request matches 83fd0b40's byte for byte was checked across checkouts: LEDGER L93.)"""
     sys1 = Sys1()
     _, calls, events = _confirmed(tmp_path, [], [PRINTS], draft_execute=False, sys1=sys1)
     assert "DRAFT_EXECUTE" not in _ops(calls) and "computation" not in sys1.asked
@@ -319,7 +337,7 @@ def test_the_gate_follows_adr_0013_p6(tmp_path, problem_class, computational, dr
     """Verified execution always gets a brief; any other task only on System 1's confident 'computational'."""
     sys1 = Sys1(problem_class, computational)
     executes = [WITNESS] if problem_class == VERIFIED else [PRINTS]
-    _, calls, _ = _confirmed(tmp_path, [_brief(step_estimate=None)], executes, sys1=sys1)
+    _, calls, _ = _confirmed(tmp_path, [_brief()], executes, sys1=sys1)
     assert ("DRAFT_EXECUTE" in _ops(calls)) is drafted
     assert ("computation" in sys1.asked) is (problem_class != "VERIFIED_EXECUTION")
 
@@ -342,7 +360,8 @@ def test_a_brief_over_the_step_budget_is_redrafted_once_with_the_fact(tmp_path):
     drafts = [c for c in calls if c.operation == "DRAFT_EXECUTE"]
     assert len(drafts) == 2
     assert "20,000,000,000 steps" in drafts[1].prompt and f"{MINIMAL_LIMIT:,} steps" in drafts[1].prompt
-    assert _event(events, "EXECUTION_BRIEF_OVER_BUDGET") == [{"estimated_steps": 20 * 10**9, "step_limit": MINIMAL_LIMIT}]
+    assert _event(events, "EXECUTION_BRIEF_STEP_CHECK_FAILED") == [
+        {"reason": "step_estimate_over_budget", "estimated_steps": 20 * 10**9, "step_limit": MINIMAL_LIMIT}]
     assert _inputs(calls[-1])["EXECUTION_BRIEF"]["step_estimate"]["estimated_steps"] == 30
 
 
@@ -488,3 +507,92 @@ def test_04_01_an_error_message_the_task_never_states_is_not_imposed_on_execute(
     repair = [c for c in calls if c.operation == "EXECUTE"][1]
     assert "AssertionError" in repair.prompt and "EXECUTION_BRIEF" in _inputs(repair)
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+
+
+# --- review fixes (LEDGER L93) ----------------------------------------------------------------------------
+
+def test_a_verified_task_cannot_skip_the_count_with_a_null_estimate(tmp_path):
+    """The step check had a way around it: null. A verified task's result comes from a program the sandbox
+    runs, so a null estimate gets the one re-draft, and a second null is rejected, not passed on."""
+    _, calls, events = _confirmed(tmp_path, [_brief(step_estimate=None)] * 2, [WITNESS], sys1=Sys1(VERIFIED))
+    drafts = [c for c in calls if c.operation == "DRAFT_EXECUTE"]
+    assert len(drafts) == 2 and "step_estimate is null" in drafts[1].prompt
+    assert _event(events, "EXECUTION_BRIEF_REJECTED")[0]["reason"] == "step_estimate_missing"
+    assert "EXECUTION_BRIEF" not in _inputs(calls[-1])
+
+
+def test_an_over_budget_brief_cannot_escape_the_check_by_answering_null(tmp_path):
+    over = _brief(step_estimate={"iterations": 10**9, "steps_per_iteration": 20, "basis": "every subset"})
+    _, calls, events = _confirmed(tmp_path, [over, _brief(step_estimate=None)], [WITNESS], sys1=Sys1(VERIFIED))
+    assert _event(events, "EXECUTION_BRIEF_REJECTED")[0]["reason"] == "step_estimate_missing"
+    assert "EXECUTION_BRIEF" not in _inputs(calls[-1])
+
+
+def test_a_task_without_verified_execution_may_answer_without_a_program(tmp_path):
+    _, calls, events = _confirmed(tmp_path, [_brief(step_estimate=None)], [PRINTS])
+    assert _ops(calls).count("DRAFT_EXECUTE") == 1 and not _event(events, "EXECUTION_BRIEF_STEP_CHECK_FAILED")
+    assert _inputs(calls[-1])["EXECUTION_BRIEF"]["step_estimate"] is None
+
+
+@pytest.mark.parametrize("code, facts, words", [
+    ("WALL_CLOCK_EXCEEDED", {"block": 1, "timeout_seconds": 30.0}, "wall-clock limit"),
+    ("MEMORY_EXCEEDED", {"block": 1, "memory_mb": 256}, "memory limit"),
+    ("STEP_BUDGET_EXCEEDED", {"block": 1, "step_limit": 100_000}, "step budget"),
+])
+def test_any_resource_stop_withdraws_the_brief(tmp_path, code, facts, words):
+    from pdl_taskmaster.verification.error_registry import Finding
+
+    engine = SessionEngine(ROOT, lambda r: "", workspace_root=tmp_path, sys1_client=None)
+    engine.workspace = engine._new_workspace()
+    brief = {"step_estimate": {"estimated_steps": 30, "step_limit": MINIMAL_LIMIT}}
+    context = {"EXECUTION_BRIEF": brief}
+    line = engine._withdraw_brief_on_overrun(context, [Finding(code, **facts)])
+    assert "EXECUTION_BRIEF" not in context and words in line and "withdrawn" in line
+    payload = [e["payload"] for e in engine.workspace.read_events() if e["kind"] == "EXECUTION_BRIEF_WITHDRAWN"]
+    assert payload == [{"reason": code, "estimated_steps": 30, "step_limit": MINIMAL_LIMIT}]
+
+
+def test_a_failure_that_is_no_resource_stop_leaves_the_brief(tmp_path):
+    from pdl_taskmaster.verification.error_registry import Finding
+
+    engine = SessionEngine(ROOT, lambda r: "", workspace_root=tmp_path, sys1_client=None)
+    engine.workspace = engine._new_workspace()
+    context = {"EXECUTION_BRIEF": {"step_estimate": None}}
+    failed = Finding("PROGRAM_FAILED", block=1, exit_code=1, stderr="")
+    assert engine._withdraw_brief_on_overrun(context, [failed, "an unregistered note"]) == ""
+    assert "EXECUTION_BRIEF" in context
+
+
+def test_a_brief_cut_off_at_the_output_cap_is_skipped_not_a_harness_error(tmp_path):
+    class Capped(RuntimeError):
+        output_limit = 16384
+
+    calls: list = []
+
+    def model_call(req):
+        calls.append(req)
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return json.dumps({"kind": "ANALYSIS", "task_summary": "Sum 3, 4, 5.", "approach_notes": "",
+                               "risk_notes": "", "task_entities": []})
+        if req.operation == "DRAFT_PROMPT":
+            return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
+        if req.operation == "DRAFT_PLAN":
+            return json.dumps({"neutral_plan_body": PLAN})
+        if req.operation == "DRAFT_EXECUTE":
+            raise Capped("output cap")
+        return json.dumps({"kind": "RESULT", "body": PRINTS})
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=Sys1())
+    engine.draft_execute = True
+    for message in ("$confirm-with-pseudocode Sum the values 3, 4, 5 with a function total_of.", "/confirm", "/confirm"):
+        engine.handle_user_message(message)
+    events = list(engine.workspace.read_events())
+    assert _event(events, "EXECUTION_BRIEF_SKIPPED")[0]["reason"] == "output_limit"
+    assert "EXECUTION_BRIEF" not in _inputs(calls[-1]) and engine.controller.state.stage == Stage.CLOSED_SUCCESS
+
+
+def test_entities_are_grounded_in_input_the_user_supplied_to_the_task(tmp_path):
+    """REQUIRED_TASK_INPUTS (supplied input, a prior deliverable) is task text DRAFT_EXECUTE is shown."""
+    kept, dropped = _ground_execution_entities(
+        [ExecutionEntity(kind="identifier", value="merge_rows")], ["Fix the function.", {"x": 1}, "def merge_rows(a):"])
+    assert kept == [{"kind": "identifier", "value": "merge_rows"}] and dropped == []

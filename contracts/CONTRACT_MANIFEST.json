@@ -179,7 +179,7 @@
     },
     {
       "path": "contracts/standards/EXECUTION_STANDARD.md",
-      "sha256": "767e967c499f0bf2b18238f36054cdeeebc04def196a2973657b20bdb2816a99"
+      "sha256": "8d34866b04b063c4f9ad880a9e8aa635d4b0f80e8c4fd442b48404116ac23840"
     },
     {
       "path": "contracts/standards/HANDOFF_STANDARD.md",

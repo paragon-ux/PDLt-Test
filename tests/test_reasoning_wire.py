@@ -123,8 +123,8 @@ def test_runner_settings_reach_the_wire(tmp_path):
                                               "openai/gpt-oss-120b", "low", (), settings)
     assert "--draft-execute" in cmd
     ops, bodies = _run_stub(tmp_path, settings)
-    # ADR-0013 P6 (LEDGER L41): DRAFT_EXECUTE runs only for verified execution; this
-    # standard task goes straight to EXECUTE even with --draft-execute on.
+    # ADR-0013 P6 (LEDGER L41, L85): DRAFT_EXECUTE runs for verified execution or a confident
+    # 'computational' from System 1; this stub session has neither, so it goes straight to EXECUTE.
     assert "DRAFT_EXECUTE" not in ops and "EXECUTE" in ops
     assert len(ops) == len(bodies)
     for op, body in zip(ops, bodies):

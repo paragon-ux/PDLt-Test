@@ -547,16 +547,21 @@ class ExecutionDraftBlockedData(WireModel):
         return self
 
 
+# Whole-number counts only (strict: no strings, floats or booleans), bounded so the host's
+# arithmetic and records stay exact; any count near the bound is far over every budget.
+STEP_COUNT_CEILING = 10**30
+
+
 class StepEstimate(WireModel):
     """The brief's own count of the work its method does on the task's inputs. The host
     multiplies the two counts and compares the product with the session's step budget."""
 
     model_config = ConfigDict(extra="forbid")
-    iterations: int = Field(ge=0, json_schema_extra=contract(description=(
+    iterations: int = Field(strict=True, ge=0, le=STEP_COUNT_CEILING, json_schema_extra=contract(description=(
             'Upper bound on the candidates, states or loop iterations the program visits on these inputs, '
             'in the worst case the method in approach allows. A whole number, never a range or a formula.'
         )))
-    steps_per_iteration: int = Field(ge=1, json_schema_extra=contract(description=(
+    steps_per_iteration: int = Field(strict=True, ge=1, le=STEP_COUNT_CEILING, json_schema_extra=contract(description=(
             "Steps the program's own code executes for each of those iterations, counted the way "
             'AVAILABLE_EXECUTION_TOOLS counts steps. A whole number.'
         )))
@@ -603,8 +608,7 @@ class ExecutionDraftResultData(WireModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra=contract(description=(
             'Execution brief drafted before EXECUTE (ADR-0013 P6 DRAFT_EXECUTE): how the deliverable will '
             'compute its result for these exact inputs within the stated environment. The host validates it, '
-            'keeps only entities found verbatim in the task, checks step_estimate against the step budget, '
-            'and passes it to EXECUTE as EXECUTION_BRIEF.'
+            'keeps only entities found verbatim in the task, and passes it to EXECUTE as EXECUTION_BRIEF.'
         )))
     kind: Literal["RESULT"] = "RESULT"
     approach: str = Field(json_schema_extra=contract(description=(
@@ -628,8 +632,8 @@ class ExecutionDraftResultData(WireModel):
             'compared with what. Empty when the deliverable runs no program.'
         )))
     execution_entities: list[ExecutionEntity] = Field(json_schema_extra=contract(description=(
-            'Exact strings from the task that the deliverable must reproduce verbatim. Empty when the task '
-            'names none.'
+            'Exact strings from the task that the deliverable must use exactly as written wherever it uses '
+            'them. Empty when the task names none.'
         )))
 
     @model_validator(mode="after")

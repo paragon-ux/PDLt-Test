@@ -98,7 +98,7 @@ def _unconfirmed(tmp_path: Path, sys1: Sys1, *, draft_execute: bool = True):
         if req.operation == "BOOTSTRAP_ANALYSIS":
             return _bootstrap()
         if req.operation == "DRAFT_EXECUTE":
-            return json.dumps({"kind": "RESULT", "approach": "Compute the value from the inputs.", "data_structures": [], "step_estimate": None, "invariants": [], "self_checks": [], "execution_entities": []})
+            return json.dumps({"kind": "RESULT", "approach": "Compute the value from the inputs.", "data_structures": [], "step_estimate": {"iterations": 3, "steps_per_iteration": 10, "basis": "one pass over the given values"}, "invariants": [], "self_checks": [], "execution_entities": []})
         if req.operation == "EXECUTE_UNCONFIRMED":
             # A verified task needs a witness from a program; any other task closes on its text.
             body = ("```python\nimport json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'x': 42}}))\n```"
@@ -181,7 +181,7 @@ def test_the_confirmed_route_follows_the_same_gate(tmp_path) -> None:
             if req.operation == "DRAFT_PLAN":
                 return json.dumps({"neutral_plan_body": PLAN})
             if req.operation == "DRAFT_EXECUTE":
-                return json.dumps({"kind": "RESULT", "approach": "Compute the value from the inputs.", "data_structures": [], "step_estimate": None, "invariants": [], "self_checks": [], "execution_entities": []})
+                return json.dumps({"kind": "RESULT", "approach": "Compute the value from the inputs.", "data_structures": [], "step_estimate": {"iterations": 3, "steps_per_iteration": 10, "basis": "one pass over the given values"}, "invariants": [], "self_checks": [], "execution_entities": []})
             return json.dumps({"kind": "RESULT", "body": "The result is 42."})
 
         engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path / str(expected_drafts),

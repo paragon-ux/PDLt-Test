@@ -374,7 +374,7 @@ def test_unconfirmed_route_with_draft_execute(tmp_path: Path):
                 "kind": "RESULT",
                 "approach": "Ask each of A, B and C one question in turn and read the answers.",
                 "data_structures": [],
-                "step_estimate": None,
+                "step_estimate": {"iterations": 3, "steps_per_iteration": 10, "basis": "one question each"},
                 "invariants": [],
                 "self_checks": [],
                 "execution_entities": [{"kind": "identifier", "value": "A"}],
