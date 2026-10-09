@@ -10,6 +10,13 @@ sandbox on five scenarios: the attached fixture, the fixture in reverse order, a
 fixture, a credit and rounding fixture, and the fixture run twice. The published deliverable is graded whatever the session's
 closure (RESULT or VERIFICATION_FAILED), and the closure is reported beside it. Criteria T1-01..T1-15 of
 ``scoring/acceptance-criteria.csv`` are scored pass or fail; nothing is partial.
+
+Amended after the outputs were read (ledger L97), in the extraction only, the same for both arms:
+both arms wrote ``reconcile.py`` unfenced with a prose README after it, and a cancelled session
+publishes the harness's UNVERIFIED banner before the model's body. The program is now the longest
+run of lines in the model's body that parses as a module and mentions ``--events``. The frozen
+rule's grades stay in ``grades-t1-frozen.json``. ``--first-attempt`` grades each execution's first
+EXECUTE reply instead of the published one (exploratory: it leaves out the repair loop).
 """
 from __future__ import annotations
 
@@ -108,15 +115,64 @@ print("@@REPORT@@" + json.dumps(report))
 '''
 
 
-def candidate_program(deliverable: str) -> str | None:
-    """The Python block that defines the CLI: mentions ``--events`` (the longest such), else the longest block."""
-    from graders import _python_blocks
+CANDIDATE_MARK = "\n\nCandidate deliverable:\n"  # session_engine's UNVERIFIED banner ends here
 
-    blocks = _python_blocks(deliverable or "")
-    if not blocks:
+
+def model_body(deliverable: str) -> str:
+    """The model's own body: the published text without the harness's UNVERIFIED banner."""
+    text = deliverable or ""
+    return text.split(CANDIDATE_MARK, 1)[1] if text.startswith("UNVERIFIED ANSWER:") and CANDIDATE_MARK in text else text
+
+
+def _syntax_error_line(lines: list[str]) -> int | None:
+    try:
+        ast.parse("\n".join(lines))
+    except SyntaxError as error:
+        return error.lineno or 1
+    except (ValueError, MemoryError, RecursionError):
+        return 1
+    return None
+
+
+def code_runs(text: str) -> list[str]:
+    """Maximal runs of lines that parse as a module: each run ends where the next line breaks the parse."""
+    lines, runs, start = text.splitlines(), [], 0
+    while start < len(lines):
+        end = len(lines)
+        while end > start:
+            bad = _syntax_error_line(lines[start:end])
+            if bad is None:
+                break
+            end = start + bad - 1
+        if end > start:
+            runs.append("\n".join(lines[start:end]).strip("\n") + "\n")
+            start = end
+        else:
+            start += 1
+    return [run for run in runs if any(not (isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant))
+                                       for node in ast.parse(run).body)]
+
+
+def candidate_program(deliverable: str) -> str | None:
+    """The program that defines the CLI: the longest code run that mentions ``--events``, else the longest run."""
+    runs = code_runs(model_body(deliverable))
+    if not runs:
         return None
-    cli = [b for b in blocks if "--events" in b]
-    return max(cli or blocks, key=len)
+    cli = [run for run in runs if "--events" in run]
+    return max(cli or runs, key=len)
+
+
+def first_reply(execution_dir: Path) -> str | None:
+    """The body of the execution's first EXECUTE reply, before any repair."""
+    replies = sorted(execution_dir.rglob("stages/50_execution/output/*/model-response.txt"), key=lambda p: p.parent.name)
+    for reply in replies:
+        try:
+            body = json.loads(reply.read_text(encoding="utf-8")).get("body")
+        except (ValueError, AttributeError):
+            continue
+        if isinstance(body, str):
+            return body
+    return None
 
 
 def imports(program: str) -> set[str] | None:
@@ -245,16 +301,18 @@ def run_program(program: str) -> tuple[dict, str | None]:
     return json.loads(out.stdout[marker + len("@@REPORT@@"):].strip().splitlines()[0]), None
 
 
-def grade(execution_dir: Path) -> dict:
+def grade(execution_dir: Path, first_attempt: bool = False) -> dict:
     import graders
 
     # Graded whatever the closure: a cancelled session publishes its failed deliverable (VERIFICATION_FAILED),
     # and the closure is reported beside the marks.
     closure, deliverable = graders.published_outcome(execution_dir)
+    if first_attempt:
+        deliverable = first_reply(execution_dir)
     program = candidate_program(deliverable) if deliverable else None
     report: dict = {}
     if program is None:
-        note = "no deliverable" if deliverable is None else "no Python block"
+        note = "no deliverable" if deliverable is None else "no program"
     else:
         report, note = run_program(program)
     marks = score(report, program)
@@ -264,9 +322,11 @@ def grade(execution_dir: Path) -> dict:
 
 
 def main(argv: list[str]) -> int:
+    first_attempt = "--first-attempt" in argv
+    argv = [a for a in argv if a != "--first-attempt"]
     targets = [Path(a).resolve() for a in argv] or sorted(p for p in SESSIONS.glob("T1-*/exec*") if p.is_dir())
-    rows = [grade(t) for t in targets]
-    out = SESSIONS.parent / "grades-t1.json"
+    rows = [grade(t, first_attempt) for t in targets]
+    out = SESSIONS.parent / ("grades-t1-first-attempt.json" if first_attempt else "grades-t1.json")
     out.write_text(json.dumps(rows, indent=2), encoding="utf-8")
     for r in rows:
         passed = sum(r["criteria"].values())

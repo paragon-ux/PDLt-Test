@@ -6,6 +6,7 @@
 """
 from __future__ import annotations
 
+import ast
 import json
 import sys
 from pathlib import Path
@@ -48,9 +49,21 @@ def test_the_task_1_suite_passes_the_reference_and_catches_each_defect(name) -> 
 def test_the_cli_program_is_picked_from_the_deliverable() -> None:
     deliverable = ("Usage:\n\n```python\nprint('example')\n```\n\n```python\n" + REFERENCE + "```\n\n"
                    "```python\nimport subprocess  # sample run\n```\n")
-    assert grade_t1.candidate_program(deliverable) == REFERENCE
+    assert grade_t1.candidate_program(deliverable) == REFERENCE.strip("\n") + "\n"
     assert grade_t1.candidate_program("no code here") is None
     assert grade_t1.score({}, None)["T1-01"] is False
+
+
+@pytest.mark.parametrize("shape", ["unfenced, README after", "header line, untagged fence", "UNVERIFIED banner"])
+def test_the_program_is_found_in_every_shape_both_arms_published(shape) -> None:
+    readme = "\n# README.md\n\n`reconcile.py` reconciles usage ‑ events.\n\n```bash\npython reconcile.py --events e\n```\n"
+    body = {"unfenced, README after": REFERENCE + readme,
+            "header line, untagged fence": "--- reconcile.py ---\n```\n" + REFERENCE + "```\n" + readme,
+            "UNVERIFIED banner": "UNVERIFIED ANSWER: Substantive verification was not completed. Reason: [PROGRAM_FAILED]"
+                                 "\n\nAttempt 1: PROGRAM_FAILED" + grade_t1.CANDIDATE_MARK + REFERENCE + readme}[shape]
+    program = grade_t1.candidate_program(body)
+    assert program is not None and ast.dump(ast.parse(program)) == ast.dump(ast.parse(REFERENCE))
+    assert "UNVERIFIED" not in program and "reconciles usage" not in program
 
 
 def test_judge_packets_are_blind_to_arm_repeat_and_path(tmp_path, monkeypatch) -> None:

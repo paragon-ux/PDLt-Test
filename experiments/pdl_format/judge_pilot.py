@@ -60,7 +60,7 @@ DELIVERABLE_TASK = ("The deliverable produced for the task above. Judge each cri
 
 
 def criteria(task: str) -> list[judge.Criterion]:
-    rows = list(csv.DictReader((HERE / "scoring" / "acceptance-criteria.csv").open(encoding="utf-8")))
+    rows = list(csv.DictReader((HERE / "scoring" / "acceptance-criteria.csv").read_text(encoding="utf-8").splitlines()))
     return [judge.Criterion(r["criterion_id"], r["criterion"]) for r in rows if r["task_id"] == TASK_IDS[task]]
 
 
