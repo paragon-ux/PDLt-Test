@@ -22,7 +22,8 @@ from pdl_taskmaster.controller.mechanical_controller import (
     Transition,
 )
 from pdl_taskmaster.runtime.operation_bridge import ActivationRoute, ModelRequest, OperationBridge, WireError
-from pdl_taskmaster.runtime.output_contracts import EXECUTION_BRIEF_MODE, RESULT_IR_MODE
+from pdl_taskmaster.runtime.output_contracts import EXECUTION_BRIEF_MODE, NL_REPRESENTATION_MODE, RESULT_IR_MODE
+from pdl_taskmaster.runtime.representation import NL, PDL, REPRESENTATIONS
 from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output, isolate_untrusted_input
 from pdl_taskmaster.runtime.wire_payloads import (
     ENTITY_POLARITIES, ENTITY_STATUSES, ExecutionDraftResultData, ExecutionEntity,
@@ -461,6 +462,7 @@ class SessionEngine:
         # 0 = stop at the first failed EXECUTE (no repair, no retry of any kind).
         self.max_repairs: int | None = None
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
+        self.representation = PDL  # the confirmed route's artifacts: PDL, or prose in the L97 pilot
         # Tier D1 (feed back the model's own test failures in standard mode): off for a bare engine. The host sets it
         # from the worker (App), whose default is on ($PDLT_TIER_D1, --no-tier-d1); the env var is read only there.
         self.tier_d1 = False
@@ -578,6 +580,18 @@ class SessionEngine:
              "routing": routing.model_dump(mode="json") if routing is not None else None},
         )
         return engine
+
+    @property
+    def representation(self) -> str:
+        return self._representation
+
+    @representation.setter
+    def representation(self, value: str) -> None:
+        """PDL or prose artifacts (representation.py): prose runs every call in NL_REPRESENTATION_MODE."""
+        if value not in REPRESENTATIONS:
+            raise ValueError(f"representation:{value}")
+        self._representation = value
+        self.bridge.session_modes = frozenset({NL_REPRESENTATION_MODE}) if value == NL else frozenset()
 
     def _apply_routing(self, routing: TurnRouting) -> None:
         from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS
@@ -1220,6 +1234,8 @@ class SessionEngine:
         budget_refusal = self._budget_refusal()
         if budget_refusal is not None:
             return self._refuse(budget_refusal, traces, "budget")
+        if self.representation != PDL:
+            self.workspace.append_event("REPRESENTATION_CONFIGURED", {"representation": self.representation})
         # Protocol v2: raw content is read by BOOTSTRAP_ANALYSIS only; the
         # compile op receives the sanitized compiled analysis.
         compiled = self._semantic_read(substantive_request, traces)
@@ -1254,7 +1270,7 @@ class SessionEngine:
             return self._refuse(outcome.response, traces, "prompt_draft")
         assert outcome.prompt_body is not None
         from pdl_taskmaster.verification.plan_soundness import validate_plan_soundness
-        prompt_lint = validate_plan_soundness(outcome.prompt_body)
+        prompt_lint = validate_plan_soundness(outcome.prompt_body, representation=self.representation)
         if not prompt_lint.valid:
             self.workspace.append_event("PROMPT_LINT_RETRY", {"violations": prompt_lint.violations})
             redraft = self._call(
@@ -1284,7 +1300,7 @@ class SessionEngine:
                 {"HOST_PROTOCOL_STATE": protocol_state, "SUBSTANTIVE_REQUEST": compiled},
                 traces,
                 parser=self.bridge.parse_prompt_draft,
-                operator_correction="OPERATOR CORRECTION: " + presentation.prompt_fidelity_feedback(failed),
+                operator_correction="OPERATOR CORRECTION: " + presentation.prompt_fidelity_feedback(failed, self.representation),
             )
             if redraft.kind == "TASK_BLOCKED_BY_HIGHER_PRIORITY":
                 self.workspace.append_event(
@@ -1550,7 +1566,7 @@ class SessionEngine:
 
         assert self.workspace is not None
         body = self._call(operation, context, traces, parser=parser)
-        lint = validate_plan_soundness(body)
+        lint = validate_plan_soundness(body, representation=self.representation)
         if lint.valid:
             return body, None
         self.workspace.append_event(
@@ -1615,7 +1631,9 @@ class SessionEngine:
             "fallback": "sys1_unavailable",
         }
         if self.sys1_client is not None and self.sys1_client.is_configured:
-            recipe = PromptFidelityRecipe()
+            recipe = PromptFidelityRecipe(
+                artifact="prompt interpretation" if self.representation == NL else "prompt pseudocode"
+            )
             try:
                 body, duration_ms = self.sys1_client.call(
                     recipe.build_request({"source_request": source_request, "drafted_prompt": prompt_body})
@@ -1686,10 +1704,10 @@ class SessionEngine:
         from pdl_taskmaster.verification.plan_soundness import line_violations, validate_plan_soundness
 
         assert self.workspace is not None
-        residual = validate_plan_soundness(body)
+        residual = validate_plan_soundness(body, representation=self.representation)
         if residual.valid:
             return None
-        located = line_violations(body)
+        located = line_violations(body, self.representation)
         self.workspace.append_event(
             f"{artifact}_LINT_UNRESOLVED",
             {
@@ -1784,6 +1802,8 @@ class SessionEngine:
         assert self.controller is not None and self.workspace is not None
         if not self.controller.can_execute():
             raise ControllerError("execute_gate")
+        if self.representation != PDL:
+            self.workspace.append_event("REPRESENTATION_CONFIGURED", {"representation": self.representation})
         prompt = self.controller.state.current_prompt
         plan = self.controller.state.current_plan
         assert prompt is not None and plan is not None

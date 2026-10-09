@@ -1,0 +1,64 @@
+study_id: PDL-IR-vs-NL-CONFIRMED-PILOT-01
+ledger: L97
+status: preregistered_not_run
+revised_from: kit/config/preregistration.yaml  # unchanged copy of the kit as drafted
+question: >-
+  On the confirmed route, do PDL Prompt Pseudocode and Response Plan Pseudocode preserve task
+  requirements and stabilize execution better than natural-language prompt interpretation and
+  response plan artifacts, with everything else held fixed?
+model: openai/gpt-oss-120b
+provider: Cerebras (OpenRouter, fallbacks off)
+reasoning: low
+concurrency: 1
+timeout_s_per_invocation: 300
+route: confirmed
+review: enabled
+confirmation: identical_scripted_auto_confirm
+authority: AUTH-03/04 as shipped in both arms (confirmed artifacts govern)
+repair_policy: shipped defaults (Tier D1 on), same in both arms
+include_draft_execute: false
+arms:
+  P:
+    switch: none (defaults, byte-identical to 4a73cd7a)
+  N:
+    switch: --representation nl
+    differs_only_in: [notation clauses PDL-01..08 removed, artifact names, drafting guidance format rules,
+                      notation lint field-label rule, System 1 fidelity question wording, AUTH-03 artifact names]
+tasks: [T1_USAGE_RECONCILIATION, T2_QUEUE_CUTOVER, T3_API_INCIDENT]
+prompt_rule: run_pilot.task_prompt (experimenter-facing lines removed; Task 1 fixtures attached verbatim)
+independent_repeats_per_task_arm: 3
+full_sessions: 18
+frozen_artifacts: 6
+additional_frozen_artifact_replays: 12
+total_final_deliverable_executions: 30
+security_exposures_per_arm: 9
+grading:
+  task_1: automated test suite grade_t1.py, committed before any output is read
+  tasks_2_3_and_artifact_fidelity: two judge models other than gpt-oss, met/not_met per criterion, blinded labels
+  judge_approval: models and priced cost approved by the user before any judge call
+subjective_priors_not_results:
+  pdl_requirement_coverage_delta_pp: [5, 10]
+  final_correctness_delta_pp: [0, 5]
+  fixed_artifact_flip_rate_relative_reduction_percent: [10, 20]
+  injection_violations_target_per_arm: 0
+operational_expectations:
+  trunks_reaching_plan_review_min: 17
+  harness_errors_or_timeouts_per_arm_max: 1
+decision_thresholds:  # kit plan section 8, unchanged
+  max_pdl_correctness_deficit_overall_pp: 5
+  max_pdl_correctness_deficit_single_task_pp: 10
+  min_fidelity_advantage_pp: 5
+  min_tasks_directionally_better_for_fidelity: 2
+  min_relative_flip_rate_reduction_percent: 10
+budget:
+  prices_usd_per_million: {input: 0.35, output: 0.75}
+  expected_task_model_spend_usd: 0.43
+  high_case_usd: 0.85
+  hard_ceiling_usd: 1.00
+  judges: priced and approved separately
+run_policy:
+  paired_serial_order: run_pilot.ORDER
+  replays_after_all_sessions: true
+  inspect_performance_grades_before_completion: false
+  stop_if_cost_forecast_exceeds_ceiling: true
+  do_not_tune_prompts_after_any_output: true

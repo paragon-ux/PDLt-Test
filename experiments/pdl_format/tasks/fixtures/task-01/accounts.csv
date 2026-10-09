@@ -1,0 +1,5 @@
+account_id,status,plan
+acct_A,active,standard
+acct_B,active,trial
+acct_C,inactive,standard
+acct_D,active,enterprise

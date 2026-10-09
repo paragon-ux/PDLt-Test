@@ -79,7 +79,7 @@ def prompt_fidelity_note(failed_checks: list[str] | None = None) -> str:
     return "[host] PROMPT-01: prompt commands execution to omit or avoid computing the deliverable; /revise to ask for the complete solution"
 
 
-def prompt_fidelity_feedback(failed_checks: list[str] | None = None) -> str:
+def prompt_fidelity_feedback(failed_checks: list[str] | None = None, representation: str = "pdl") -> str:
     """Operator correction for a prompt that fails semantic fidelity."""
     failed = failed_checks or ["no_evasion"]
     reasons = []
@@ -98,10 +98,11 @@ def prompt_fidelity_feedback(failed_checks: list[str] | None = None) -> str:
             "staying neutral and defining what to compute or investigate (PROMPT-02)"
         )
     details = "; ".join(reasons)
+    artifact = "prompt interpretation" if representation == "nl" else "prompt pseudocode"
     return (
         f"Prompt requirement (PROMPT-01/PROMPT-02, semantic fidelity): {details}. "
         "Specify what execution must compute and produce for all requested requirements in full, stay neutral, "
-        "and do not state or preselect answers in prompt pseudocode."
+        f"and do not state or preselect answers in {artifact}."
     )
 
 

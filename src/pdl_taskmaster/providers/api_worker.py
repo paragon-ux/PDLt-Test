@@ -18,6 +18,7 @@ from typing import Any
 from pdl_taskmaster.providers.base import TransportError, WorkerResult
 from pdl_taskmaster.providers.call_trace import AttemptTrace, CallTrace, tracking
 from pdl_taskmaster.runtime.output_contracts import (
+    NL_REPRESENTATION_MODE,
     UNION_WRAPPER,
     ContractForm,
     contract_schema,
@@ -25,6 +26,7 @@ from pdl_taskmaster.runtime.output_contracts import (
     grammar_view,
     is_union_wrapped,
 )
+from pdl_taskmaster.runtime.representation import nl_plan_guidance, nl_prompt_guidance
 
 _JSON_ONLY_SUFFIX = (
     "\n\nReturn only a JSON object. Do not include markdown fences, commentary, or extra text."
@@ -32,6 +34,66 @@ _JSON_ONLY_SUFFIX = (
 
 
 _SEMANTIC_READ_OPERATIONS = {"BOOTSTRAP_ANALYSIS", "INTERPRET_ACTIVATION"}
+
+
+def _nl_mode(request: Any) -> bool:
+    """Whether the call's projection runs in the natural-language arm (representation.py)."""
+    manifest = getattr(getattr(request, "projection", None), "manifest", None) or {}
+    return NL_REPRESENTATION_MODE in (manifest.get("modes") or ())
+
+# Drafting guidance for the confirmed route's two artifacts in PDL, the default representation.
+_PROMPT_GUIDANCE = (
+    "\n\nNORMATIVE GUIDELINES AND SPECIFICATION FOR PROMPT PSEUDOCODE (PDL-01 to PDL-09, PROMPT-01 to PROMPT-05):\n"
+    "PDL-01 — Structured English: Pseudocode MUST use readable structured English compatible with the project PDL profile.\n"
+    "PDL-02 — Operation layout: Each operation SHOULD appear on its own line; equally indented operations are read top to bottom; subordinate operations are indented beneath the operation that controls or qualifies them.\n"
+    "PDL-03 — Domain terminology: Pseudocode MUST use task-domain terminology rather than invent a separate task schema.\n"
+    "PDL-04 — Action/control casing: Common action verbs and control keywords MAY be uppercased when helpful for readability.\n"
+    "PDL-05 — No invented field schema: Pseudocode MUST NOT invent a fielded protocol schema.\n"
+    "PDL-06 — Prefer ordinary structured English: Pseudocode MUST NOT imitate programming syntax when ordinary structured English is clearer.\n"
+    "PDL-07 — Standard control forms: Standard-compatible IF/ELSE/ENDIF, WHILE/ENDWHILE, REPEAT/UNTIL, FOR/ENDFOR, and CASE/ENDCASE forms MAY be used when useful.\n"
+    "PDL-08 — Purpose-complete notation: Prompt and Response Plan Pseudocode MUST be complete for their protocol purpose without artificial expansion into implementation algorithms.\n"
+    "PDL-09 — Imperative construction and ingestion boundary: Prompt and Response Plan Pseudocode MUST NOT use data-reading verbs (READ, PARSE, ANALYZE, EXAMINE) with the user prompt, request, or task specification as the object. When the request asks to implement, create, or write software, pseudocode MUST retain active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and target language directives. READ MUST be reserved strictly for explicit runtime stream or file ingestion.\n"
+    "PROMPT-01 — Semantic fidelity: Prompt Pseudocode MUST represent all and only operative TASK-01 semantics that remain applicable to the requested work after the confirmation protocol is complete.\n"
+    "PROMPT-02 — No substantive solution: Prompt Pseudocode MUST NOT solve the task, research task facts, inspect task-specific resources, plan the response, or include substantive task findings.\n"
+    "PROMPT-03 — No invented requirements: Prompt Pseudocode MUST NOT invent missing requirements or silently improve the user's request.\n"
+    "PROMPT-04 — Unspecified details: If a detail is unspecified, Prompt Pseudocode MUST represent the request as currently understood. Prompt generation MUST NOT be replaced with clarification unless a higher-priority requirement makes the missing input genuinely blocking.\n"
+    "PROMPT-05 — Revision semantics: A Prompt revision MUST apply the user's changed TASK-01 semantics and preserve every current TASK-01 requirement not changed by the user.\n\n"
+    "OPERATIONAL GUIDELINES FOR PROMPT DRAFTING:\n"
+    "1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
+    "2. Active Construction Directives (PDL-09): When the user asks to implement, write, develop, or create software, data structures, algorithms, or tests, use active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and preserve the target language (e.g., 'in Python') and interface contracts.\n"
+    "3. No Metatask Ingestion (PDL-09): DO NOT use 'READ the task specification' or 'READ the request'. The user prompt is the communicative frame, not a runtime data stream to be read.\n"
+    "4. Parameter vs. Stream Discrimination (PDL-09): Use READ strictly for explicit runtime stream or file ingestion. Represent function parameters, mathematical constants, and data structure inputs as parameters to accept or take, not streams to read.\n"
+    "5. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n"
+    "6. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n"
+    "7. Zero Execution Prohibitions & Substantive Delivery: Prompt Pseudocode defines the substantive deliverable to be produced upon execution (PROMPT-01). PROMPT-02 means that Prompt Pseudocode itself does not leak or pre-solve the problem during drafting; it is an author-time constraint and MUST NEVER be projected into an execution-time prohibition. Prompt Pseudocode MUST specify that execution computes, solves, and produces the requested concrete solutions, entities, and outputs in full. NEVER command execution to omit, evade, placeholderize, or avoid computing the requested solution (e.g. do not write 'without providing the actual values', 'without computing a specific result', 'provide only specification', 'do not compute', 'insert placeholders', or 'no executable code') (PROMPT-01, PROMPT-02, PDL-08, PDL-09)."
+)
+_PLAN_GUIDANCE = (
+    "\n\nNORMATIVE GUIDELINES AND SPECIFICATION FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-09, PLAN-01 to PLAN-10):\n"
+    "PDL-01 — Structured English: Pseudocode MUST use readable structured English compatible with the project PDL profile.\n"
+    "PDL-02 — Operation layout: Each operation SHOULD appear on its own line; equally indented operations are read top to bottom; subordinate operations are indented beneath the operation that controls or qualifies them.\n"
+    "PDL-03 — Domain terminology: Pseudocode MUST use task-domain terminology rather than invent a separate task schema.\n"
+    "PDL-04 — Action/control casing: Common action verbs and control keywords MAY be uppercased when helpful for readability.\n"
+    "PDL-05 — No invented field schema: Pseudocode MUST NOT invent a fielded protocol schema.\n"
+    "PDL-06 — Prefer ordinary structured English: Pseudocode MUST NOT imitate programming syntax when ordinary structured English is clearer.\n"
+    "PDL-07 — Standard control forms: Standard-compatible IF/ELSE/ENDIF, WHILE/ENDWHILE, REPEAT/UNTIL, FOR/ENDFOR, and CASE/ENDCASE forms MAY be used when useful.\n"
+    "PDL-08 — Purpose-complete notation: Prompt and Response Plan Pseudocode MUST be complete for their protocol purpose without artificial expansion into implementation algorithms.\n"
+    "PDL-09 — Imperative construction and ingestion boundary: Prompt and Response Plan Pseudocode MUST NOT use data-reading verbs (READ, PARSE, ANALYZE, EXAMINE) with the user prompt, request, or task specification as the object. When the request asks to implement, create, or write software, pseudocode MUST retain active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and target language directives. READ MUST be reserved strictly for explicit runtime stream or file ingestion.\n"
+    "PLAN-01 — Coverage before minimization: For each material action or deliverable in the confirmed Prompt Pseudocode, the Response Plan MUST represent it with a high-level operation or cover it unambiguously with a broader operation.\n"
+    "PLAN-02 — Minimum sufficient procedure: The Response Plan MUST expose only enough procedure for the user to reject a materially undesirable response approach.\n"
+    "PLAN-03 — Neutrality: The Response Plan MUST remain neutral and high-level.\n"
+    "PLAN-04 — No answer leakage: The Response Plan MUST NOT answer the request, anticipate findings, choose winners, invent hypotheses, lock arguments, preselect substantive conclusions, or otherwise perform the requested task.\n"
+    "PLAN-05 — No unnecessary implementation commitment: The Response Plan MUST NOT choose unrequired sources or over-specify evidence, examples, calculations, sections, or low-level reasoning.\n"
+    "PLAN-06 — No substantive research: Response Plan generation MUST NOT research the substantive task.\n"
+    "PLAN-07 — Revision semantics: A Plan revision MUST keep the confirmed Prompt fixed, apply only changed TASK-02 semantics, and preserve PLAN-01 through PLAN-03.\n"
+    "PLAN-08 — Carried approach constraints: When ordered TASK-02 projections are supplied to a Plan operation, the Response Plan MUST incorporate their operative approach constraints while remaining consistent with the confirmed Prompt and the other Plan requirements.\n"
+    "PLAN-10 — Negative constraint operationalization by omission: When Prompt Pseudocode specifies negative constraints, exclusions, or unhandled conditions (e.g. 'do not do X', 'let unhandled exceptions propagate'), the Response Plan MUST operationalize them as structural omission rather than defensive assertions, catch-all wrappers, or redundant re-raises. In programming deliverables, native platform propagation and runtime defaults MUST be relied upon without generating active procedural steps for unrequested conditions.\n\n"
+    "OPERATIONAL GUIDELINES FOR RESPONSE PLAN DRAFTING:\n"
+    "1. Express the response plan in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
+    "2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n"
+    "3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n"
+    "4. Active Construction: Plan the concrete procedural steps that produce the deliverable itself (e.g. data structure design, method implementations, algorithm logic, unit test suite). Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue.\n"
+    "5. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04). PLAN-04 is a planner-time constraint and MUST NEVER be projected into an execution-time prohibition. The Plan MUST specify procedures that compute and produce the requested concrete deliverable upon execution. NEVER insert placeholder steps, evasive notes, or meta-prohibitions commanding execution to avoid calculating, omit concrete values, or withhold the answer (e.g. do not write 'without calculating or outputting a concrete result', 'insert placeholders without performing computation', 'do not implement', 'do not provide actual values', or 'contains no executable code') (PLAN-04, PLAN-10, PDL-08, PDL-09)."
+)
 
 def _default_provider_order() -> list[str]:
     env_order = os.environ.get("OPENROUTER_PROVIDER_ORDER")
@@ -352,6 +414,7 @@ class ApiWorker:
         max_output_tokens: int | None = 16384,
         max_repairs: int | None = None,
         draft_execute: bool = False,
+        representation: str = "pdl",
         tier_d1: bool | None = None,
         capture_tokens: bool = True,
         reasoning_effort: str | None = None,
@@ -377,6 +440,7 @@ class ApiWorker:
         self.max_output_tokens = int(max_output_tokens) if max_output_tokens else None
         self.max_repairs = max_repairs  # run setting read by the host (0 = stop at the first failure)
         self.draft_execute = draft_execute  # run setting read by the host (A/B option)
+        self.representation = representation  # run setting read by the host (representation.py, L97)
         # run setting read by the host (Tier D1): an explicit value wins, $PDLT_TIER_D1 (default on) is only the default
         self.tier_d1 = (os.environ.get("PDLT_TIER_D1", "1") == "1") if tier_d1 is None else bool(tier_d1)
         self.capture_tokens = capture_tokens
@@ -803,59 +867,9 @@ class ApiWorker:
             # direct reply claimed "I cannot execute code" in a session that runs it.
             extra_guidance = "Execution environment of this session (host fact): " + request.environment
         elif operation_name in ("DRAFT_PROMPT", "REVISE_PROMPT"):
-            extra_guidance = (
-                "\n\nNORMATIVE GUIDELINES AND SPECIFICATION FOR PROMPT PSEUDOCODE (PDL-01 to PDL-09, PROMPT-01 to PROMPT-05):\n"
-                "PDL-01 — Structured English: Pseudocode MUST use readable structured English compatible with the project PDL profile.\n"
-                "PDL-02 — Operation layout: Each operation SHOULD appear on its own line; equally indented operations are read top to bottom; subordinate operations are indented beneath the operation that controls or qualifies them.\n"
-                "PDL-03 — Domain terminology: Pseudocode MUST use task-domain terminology rather than invent a separate task schema.\n"
-                "PDL-04 — Action/control casing: Common action verbs and control keywords MAY be uppercased when helpful for readability.\n"
-                "PDL-05 — No invented field schema: Pseudocode MUST NOT invent a fielded protocol schema.\n"
-                "PDL-06 — Prefer ordinary structured English: Pseudocode MUST NOT imitate programming syntax when ordinary structured English is clearer.\n"
-                "PDL-07 — Standard control forms: Standard-compatible IF/ELSE/ENDIF, WHILE/ENDWHILE, REPEAT/UNTIL, FOR/ENDFOR, and CASE/ENDCASE forms MAY be used when useful.\n"
-                "PDL-08 — Purpose-complete notation: Prompt and Response Plan Pseudocode MUST be complete for their protocol purpose without artificial expansion into implementation algorithms.\n"
-                "PDL-09 — Imperative construction and ingestion boundary: Prompt and Response Plan Pseudocode MUST NOT use data-reading verbs (READ, PARSE, ANALYZE, EXAMINE) with the user prompt, request, or task specification as the object. When the request asks to implement, create, or write software, pseudocode MUST retain active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and target language directives. READ MUST be reserved strictly for explicit runtime stream or file ingestion.\n"
-                "PROMPT-01 — Semantic fidelity: Prompt Pseudocode MUST represent all and only operative TASK-01 semantics that remain applicable to the requested work after the confirmation protocol is complete.\n"
-                "PROMPT-02 — No substantive solution: Prompt Pseudocode MUST NOT solve the task, research task facts, inspect task-specific resources, plan the response, or include substantive task findings.\n"
-                "PROMPT-03 — No invented requirements: Prompt Pseudocode MUST NOT invent missing requirements or silently improve the user's request.\n"
-                "PROMPT-04 — Unspecified details: If a detail is unspecified, Prompt Pseudocode MUST represent the request as currently understood. Prompt generation MUST NOT be replaced with clarification unless a higher-priority requirement makes the missing input genuinely blocking.\n"
-                "PROMPT-05 — Revision semantics: A Prompt revision MUST apply the user's changed TASK-01 semantics and preserve every current TASK-01 requirement not changed by the user.\n\n"
-                "OPERATIONAL GUIDELINES FOR PROMPT DRAFTING:\n"
-                "1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
-                "2. Active Construction Directives (PDL-09): When the user asks to implement, write, develop, or create software, data structures, algorithms, or tests, use active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and preserve the target language (e.g., 'in Python') and interface contracts.\n"
-                "3. No Metatask Ingestion (PDL-09): DO NOT use 'READ the task specification' or 'READ the request'. The user prompt is the communicative frame, not a runtime data stream to be read.\n"
-                "4. Parameter vs. Stream Discrimination (PDL-09): Use READ strictly for explicit runtime stream or file ingestion. Represent function parameters, mathematical constants, and data structure inputs as parameters to accept or take, not streams to read.\n"
-                "5. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n"
-                "6. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n"
-                "7. Zero Execution Prohibitions & Substantive Delivery: Prompt Pseudocode defines the substantive deliverable to be produced upon execution (PROMPT-01). PROMPT-02 means that Prompt Pseudocode itself does not leak or pre-solve the problem during drafting; it is an author-time constraint and MUST NEVER be projected into an execution-time prohibition. Prompt Pseudocode MUST specify that execution computes, solves, and produces the requested concrete solutions, entities, and outputs in full. NEVER command execution to omit, evade, placeholderize, or avoid computing the requested solution (e.g. do not write 'without providing the actual values', 'without computing a specific result', 'provide only specification', 'do not compute', 'insert placeholders', or 'no executable code') (PROMPT-01, PROMPT-02, PDL-08, PDL-09)."
-            )
+            extra_guidance = nl_prompt_guidance(_PROMPT_GUIDANCE) if _nl_mode(request) else _PROMPT_GUIDANCE
         elif operation_name in ("DRAFT_PLAN", "REVISE_PLAN"):
-            extra_guidance = (
-                "\n\nNORMATIVE GUIDELINES AND SPECIFICATION FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-09, PLAN-01 to PLAN-10):\n"
-                "PDL-01 — Structured English: Pseudocode MUST use readable structured English compatible with the project PDL profile.\n"
-                "PDL-02 — Operation layout: Each operation SHOULD appear on its own line; equally indented operations are read top to bottom; subordinate operations are indented beneath the operation that controls or qualifies them.\n"
-                "PDL-03 — Domain terminology: Pseudocode MUST use task-domain terminology rather than invent a separate task schema.\n"
-                "PDL-04 — Action/control casing: Common action verbs and control keywords MAY be uppercased when helpful for readability.\n"
-                "PDL-05 — No invented field schema: Pseudocode MUST NOT invent a fielded protocol schema.\n"
-                "PDL-06 — Prefer ordinary structured English: Pseudocode MUST NOT imitate programming syntax when ordinary structured English is clearer.\n"
-                "PDL-07 — Standard control forms: Standard-compatible IF/ELSE/ENDIF, WHILE/ENDWHILE, REPEAT/UNTIL, FOR/ENDFOR, and CASE/ENDCASE forms MAY be used when useful.\n"
-                "PDL-08 — Purpose-complete notation: Prompt and Response Plan Pseudocode MUST be complete for their protocol purpose without artificial expansion into implementation algorithms.\n"
-                "PDL-09 — Imperative construction and ingestion boundary: Prompt and Response Plan Pseudocode MUST NOT use data-reading verbs (READ, PARSE, ANALYZE, EXAMINE) with the user prompt, request, or task specification as the object. When the request asks to implement, create, or write software, pseudocode MUST retain active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and target language directives. READ MUST be reserved strictly for explicit runtime stream or file ingestion.\n"
-                "PLAN-01 — Coverage before minimization: For each material action or deliverable in the confirmed Prompt Pseudocode, the Response Plan MUST represent it with a high-level operation or cover it unambiguously with a broader operation.\n"
-                "PLAN-02 — Minimum sufficient procedure: The Response Plan MUST expose only enough procedure for the user to reject a materially undesirable response approach.\n"
-                "PLAN-03 — Neutrality: The Response Plan MUST remain neutral and high-level.\n"
-                "PLAN-04 — No answer leakage: The Response Plan MUST NOT answer the request, anticipate findings, choose winners, invent hypotheses, lock arguments, preselect substantive conclusions, or otherwise perform the requested task.\n"
-                "PLAN-05 — No unnecessary implementation commitment: The Response Plan MUST NOT choose unrequired sources or over-specify evidence, examples, calculations, sections, or low-level reasoning.\n"
-                "PLAN-06 — No substantive research: Response Plan generation MUST NOT research the substantive task.\n"
-                "PLAN-07 — Revision semantics: A Plan revision MUST keep the confirmed Prompt fixed, apply only changed TASK-02 semantics, and preserve PLAN-01 through PLAN-03.\n"
-                "PLAN-08 — Carried approach constraints: When ordered TASK-02 projections are supplied to a Plan operation, the Response Plan MUST incorporate their operative approach constraints while remaining consistent with the confirmed Prompt and the other Plan requirements.\n"
-                "PLAN-10 — Negative constraint operationalization by omission: When Prompt Pseudocode specifies negative constraints, exclusions, or unhandled conditions (e.g. 'do not do X', 'let unhandled exceptions propagate'), the Response Plan MUST operationalize them as structural omission rather than defensive assertions, catch-all wrappers, or redundant re-raises. In programming deliverables, native platform propagation and runtime defaults MUST be relied upon without generating active procedural steps for unrequested conditions.\n\n"
-                "OPERATIONAL GUIDELINES FOR RESPONSE PLAN DRAFTING:\n"
-                "1. Express the response plan in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
-                "2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n"
-                "3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n"
-                "4. Active Construction: Plan the concrete procedural steps that produce the deliverable itself (e.g. data structure design, method implementations, algorithm logic, unit test suite). Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue.\n"
-                "5. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04). PLAN-04 is a planner-time constraint and MUST NEVER be projected into an execution-time prohibition. The Plan MUST specify procedures that compute and produce the requested concrete deliverable upon execution. NEVER insert placeholder steps, evasive notes, or meta-prohibitions commanding execution to avoid calculating, omit concrete values, or withhold the answer (e.g. do not write 'without calculating or outputting a concrete result', 'insert placeholders without performing computation', 'do not implement', 'do not provide actual values', or 'contains no executable code') (PLAN-04, PLAN-10, PDL-08, PDL-09)."
-            )
+            extra_guidance = nl_plan_guidance(_PLAN_GUIDANCE) if _nl_mode(request) else _PLAN_GUIDANCE
         elif operation_name == "DRAFT_EXECUTE":
             extra_guidance = (
                 "\n\nDRAFT_EXECUTE: write the execution brief in the output schema's fields, for these exact inputs "

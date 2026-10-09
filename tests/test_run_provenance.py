@@ -161,6 +161,7 @@ def test_the_repl_defaults_to_no_review() -> None:
     ([], True, "-unconfirmed-tier-d1"),
     (["--no-tier-d1"], False, "-unconfirmed"),
     (["--route", "confirmed"], True, "-confirmed-tier-d1"),
+    (["--route", "confirmed", "--representation", "nl"], True, "-confirmed-nl-tier-d1"),
     (["--route", "control"], False, "-control"),
     (["--route", "unconfirmed", "--draft-execute"], True, "-unconfirmed-draft-execute-tier-d1"),
 ])

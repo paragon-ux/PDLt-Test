@@ -1,0 +1,11 @@
+{"event_id":"evt-001","account_id":"acct_A","occurred_at":"2026-10-08T23:30:00-04:00","event_type":"usage","units":100,"received_at":"2026-10-09T04:01:00Z"}
+{"event_id":"evt-001","account_id":"acct_A","occurred_at":"2026-10-08T23:30:00-04:00","event_type":"usage","units":100,"received_at":"2026-10-09T04:02:00Z"}
+{"event_id":"evt-002","account_id":"acct_A","occurred_at":"2026-10-09T04:00:00Z","event_type":"usage","units":50}
+{"event_id":"evt-003","account_id":"acct_A","occurred_at":"2026-10-09T05:00:00Z","event_type":"credit","units":-10}
+{"event_id":"evt-004","account_id":"acct_B","occurred_at":"2026-10-09T05:00:00Z","event_type":"usage","units":100}
+{"event_id":"evt-005","account_id":"acct_C","occurred_at":"2026-10-09T05:00:00Z","event_type":"usage","units":10}
+{"event_id":"evt-006","account_id":"acct_D","occurred_at":"2026-10-09T05:00:00Z","event_type":"usage","units":200}
+{"event_id":"evt-007","account_id":"acct_UNKNOWN","occurred_at":"2026-10-09T05:00:00Z","event_type":"usage","units":8}
+{"event_id":"evt-conflict","account_id":"acct_A","occurred_at":"2026-10-09T06:00:00Z","event_type":"usage","units":5}
+{"event_id":"evt-conflict","account_id":"acct_A","occurred_at":"2026-10-09T06:00:00Z","event_type":"usage","units":6}
+{this is not valid json}

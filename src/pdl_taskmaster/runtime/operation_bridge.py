@@ -140,6 +140,8 @@ class OperationBridge:
         # The worker's ContractForm for an operation (ApiWorker.contract_form), set by the
         # host; without one, the default form is shown (ADR-0028 rule 1).
         self.contract_form: Any = None
+        # Host modes on every call of the session (the natural-language arm, representation.py).
+        self.session_modes: frozenset[str] = frozenset()
         bootstrap_path = Path(__file__).parent / "worker-bootstrap.txt"
         if not bootstrap_path.is_file():
             bootstrap_path = self.repo_root / "src" / "pdl_taskmaster" / "runtime" / "worker-bootstrap.txt"
@@ -165,7 +167,7 @@ class OperationBridge:
             materialized_values,
             higher_priority_constraints=materialized_higher_priority,
             contract_form=form,
-            modes=modes,
+            modes=frozenset(modes) | self.session_modes,
         )
         workspace.record_projection(invocation, projection.manifest, projection.document)
         prompt = projection.render(self.bootstrap, compact=self.render_compact)

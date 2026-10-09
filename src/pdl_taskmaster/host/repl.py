@@ -407,6 +407,7 @@ def _api_run_settings(args) -> dict:
         "max_call_seconds": getattr(args, "api_call_deadline", 300.0),
         "max_repairs": getattr(args, "max_repairs", None),
         "draft_execute": bool(getattr(args, "draft_execute", False)),
+        "representation": getattr(args, "representation", None) or "pdl",
         "tier_d1": bool(getattr(args, "tier_d1", True) if getattr(args, "tier_d1", None) is not None else (os.environ.get("PDLT_TIER_D1", "1") == "1")),
     }
     providers = [p.strip() for p in (getattr(args, "api_providers", None) or "").split(",") if p.strip()]
@@ -946,6 +947,13 @@ def _build_parser() -> argparse.ArgumentParser:
         help="draft a typed execution brief (DRAFT_EXECUTE) before EXECUTE on tasks that are or need an algorithm or a calculation; one extra call per execution (A/B option)",
     )
     parser.add_argument(
+        "--representation",
+        choices=["pdl", "nl"],
+        default="pdl",
+        help="the confirmed route's prompt and plan artifacts: PDL pseudocode (default) or natural-language prose "
+        "(the L97 pilot); needs --review",
+    )
+    parser.add_argument(
         "--tier-d1",
         action=argparse.BooleanOptionalAction,
         default=os.environ.get("PDLT_TIER_D1", "1") == "1",
@@ -1150,6 +1158,8 @@ def main() -> int:
     args = _build_parser().parse_args()
     if args.fast:
         args.no_review = False  # fast mode accepts reviews in advance, so it runs with review on
+    if args.representation != "pdl" and args.no_review:
+        raise SystemExit("pdlt: --representation applies to the confirmed route's artifacts; add --review")
 
     if args.worker != "codex":
         if args.config_override:

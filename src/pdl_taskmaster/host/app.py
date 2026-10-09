@@ -140,6 +140,7 @@ class PDLtHost:
         engine.bridge.contract_form = getattr(self.worker, "contract_form", None)
         engine.max_repairs = getattr(self.worker, "max_repairs", None)
         engine.draft_execute = bool(getattr(self.worker, "draft_execute", False))
+        engine.representation = getattr(self.worker, "representation", None) or "pdl"
         engine.tier_d1 = bool(getattr(self.worker, "tier_d1", engine.tier_d1))
         if self.observation_dir is not None:
             session_id = f"{self.run_id}-{self.case_id or 'session'}"
