@@ -1,7 +1,7 @@
-"""Locating text a model copied from the request (ledger L100, docs/plans/ENTITY_REDESIGN.md).
+"""Locating text a model copied from the request (ledger L100, docs/plans/ENTITY_V3_DESIGN.md).
 
-An entity's name and its quotes are kept only when each is one continuous piece of
-the request. The match ignores typography only: Unicode compatibility forms, dash and
+A request index's spans and exact values are kept only when each is one continuous piece
+of the request. The match ignores typography only: Unicode compatibility forms, dash and
 quote variants, a backslash escaping a quotation mark, inline-code backticks, and runs
 of whitespace (gpt-oss writes U+2011 and U+202F where the request has "-" and " ").
 Letters, digits and spelling must match; case is ignored only as a fallback. What is
@@ -61,11 +61,6 @@ def _candidates(copy: str) -> list[str]:
     return found
 
 
-def fold_key(text: str) -> str:
-    """Typography-folded text, case kept: two surfaces with the same key name one thing."""
-    return _fold(text.strip(), casefold=False)[0].strip()
-
-
 class RequestText:
     """The texts a copy may come from (the sanitized request, and a prior deliverable on a
     follow-up turn), folded once."""
@@ -75,13 +70,6 @@ class RequestText:
             casefold: [(source, *_fold(source, casefold=casefold)) for source in sources if source]
             for casefold in (False, True)
         }
-
-    def marked(self, text: str) -> bool:
-        """Whether a source writes ``text`` as a word in its own right: in backticks or
-        quotation marks (a mention of the word, such as the code keyword `this`)."""
-        return any(f"{left}{text}{right}" in source
-                   for source, _folded, _origin in self._folded[False]
-                   for left, right in (("`", "`"), ('"', '"'), ("'", "'"), ("“", "”"), ("‘", "’")))
 
     def locate(self, copy: object) -> str | None:
         """The source's own text for ``copy``, or None when it is not one continuous piece of a source."""

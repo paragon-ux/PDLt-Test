@@ -26,7 +26,7 @@ class LiveStubWorker:
                 "task_summary": "The user requests a benign explanation of a topic in plain terms.",
                 "approach_notes": "",
                 "risk_notes": "",
-                "task_entities": [],
+                "request_index": {"asks": [], "states": [], "exact": []},
             }
         elif operation == "DRAFT_PROMPT":
             payload = {

@@ -13,7 +13,7 @@ import pytest
 from pdl_taskmaster.controller.mechanical_controller import Stage
 from pdl_taskmaster.providers.sys1.recipes.computation import COMPUTATIONAL, OTHER, ComputationRecipe
 from pdl_taskmaster.runtime.session_engine import SessionEngine
-from entity_stub import request_of, target_entities  # noqa: E402
+from entity_stub import ask_index, request_of  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 PROMPT = "COMPUTE the answer to the stated task\nRETURN the answer"
@@ -88,7 +88,7 @@ class Sys1:
 
 def _bootstrap(req) -> str:
     return json.dumps({"kind": "ANALYSIS", "task_summary": "The user states a task.", "approach_notes": "",
-                       "risk_notes": "", "task_entities": target_entities(request_of(req.prompt))})
+                       "risk_notes": "", "request_index": ask_index(request_of(req.prompt))})
 
 
 def _unconfirmed(tmp_path: Path, sys1: Sys1, *, draft_execute: bool = True):

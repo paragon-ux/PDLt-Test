@@ -56,7 +56,6 @@ class PromptDraftOutcome:
     approach_handoff: str = "NONE"
     blocking_basis: str | None = None
     response: str | None = None
-    task_entities: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -288,7 +287,6 @@ class OperationBridge:
                 payload.kind,
                 _normalize_body_newlines(payload.prompt_body.strip()),
                 payload.approach_handoff,
-                task_entities=tuple(payload.task_entities) if payload.task_entities else (),
             )
         return PromptDraftOutcome(
             payload.kind,
@@ -358,7 +356,7 @@ class OperationBridge:
                 "task_summary": payload.task_summary,
                 "approach_notes": payload.approach_notes,
                 "risk_notes": payload.risk_notes,
-                "task_entities": payload.task_entities.host_dump(),
+                "request_index": payload.request_index.host_dump(),
             }
         return {"kind": payload.kind, "response": payload.response.strip()}
 

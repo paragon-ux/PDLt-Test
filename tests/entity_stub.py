@@ -1,9 +1,9 @@
-"""Task entities for scripted BOOTSTRAP replies (L100 schema v2).
+"""A request index for scripted BOOTSTRAP replies (L100 v3).
 
-The entity rules reject a reply with no question quoted on an entity, or with a name the
-request does not contain, and the host retries once. Tests that script BOOTSTRAP for some
-other purpose (routing, briefs, reasoning effort) use this to send one target taken from
-the request the call actually carries, so their call sequences stay as they were.
+The index's one rule rejects a reply with no ask found in the request, and the host retries
+once. Tests that script BOOTSTRAP for some other purpose (routing, briefs, reasoning effort)
+use this to send one ask taken from the request the call actually carries, so their call
+sequences stay as they were.
 """
 from __future__ import annotations
 
@@ -31,10 +31,7 @@ def request_of(projection_text: str) -> str:
     return text.replace("<untrusted_user_input>", "").replace("</untrusted_user_input>", "").strip()
 
 
-def target_entities(request: str) -> dict[str, Any]:
-    """One target: the request's first word that is not a pronoun as its name, its first line as the question."""
-    from pdl_taskmaster.runtime.task_entities import is_pronoun
-
+def ask_index(request: str) -> dict[str, Any]:
+    """One ask: the request's first line."""
     line = next((line.strip() for line in request.splitlines() if line.strip()), request.strip())
-    name = next((word for word in line.split() if not is_pronoun(word.strip("?.,!"))), line)
-    return {"groups": [], "entities": [{"name": name, "kind": "term", "unknown": line}]}
+    return {"asks": [line], "states": [], "exact": []}

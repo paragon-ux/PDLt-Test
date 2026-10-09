@@ -82,8 +82,7 @@
         "prompt_body",
         "approach_handoff",
         "blocking_basis",
-        "response",
-        "task_entities"
+        "response"
       ],
       "artifact_kind": "PROMPT_PSEUDOCODE",
       "workspace_stage": "10_prompt"
@@ -426,7 +425,7 @@
       "workspace_stage": "50_execution",
       "optional_include": [
         "REQUIRED_TASK_INPUTS",
-        "TASK_ENTITIES",
+        "TASK_INDEX",
         "RESULT_IR_INSTRUCTIONS",
         "PRIOR_RESULT_IR",
         "EXECUTION_BRIEF"
@@ -462,7 +461,6 @@
       "include": [
         "OPERATION_ID",
         "SOURCE_REQUEST",
-        "TASK_ENTITIES",
         "APPLICABLE_STANDARD_CLAUSES",
         "HIGHER_PRIORITY_CONSTRAINTS",
         "AVAILABLE_EXECUTION_TOOLS"
@@ -488,6 +486,7 @@
       ],
       "workspace_stage": "50_execution",
       "optional_include": [
+        "TASK_INDEX",
         "REQUIRED_TASK_INPUTS",
         "RESULT_IR_INSTRUCTIONS",
         "PRIOR_RESULT_IR",
@@ -580,7 +579,7 @@
         "task_summary",
         "approach_notes",
         "risk_notes",
-        "task_entities"
+        "request_index"
       ],
       "workspace_stage": "10_prompt",
       "optional_include": [
@@ -628,7 +627,7 @@
       "workspace_stage": "50_execution",
       "optional_include": [
         "REQUIRED_TASK_INPUTS",
-        "TASK_ENTITIES"
+        "TASK_INDEX"
       ]
     },
     "EMIT_RESULT_IR": {

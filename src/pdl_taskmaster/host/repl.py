@@ -407,6 +407,7 @@ def _api_run_settings(args) -> dict:
         "max_call_seconds": getattr(args, "api_call_deadline", 300.0),
         "max_repairs": getattr(args, "max_repairs", None),
         "draft_execute": bool(getattr(args, "draft_execute", False)),
+        "task_index": bool(getattr(args, "task_index", True)),
         "representation": getattr(args, "representation", None) or "pdl",
         "tier_d1": bool(getattr(args, "tier_d1", True) if getattr(args, "tier_d1", None) is not None else (os.environ.get("PDLT_TIER_D1", "1") == "1")),
     }
@@ -945,6 +946,13 @@ def _build_parser() -> argparse.ArgumentParser:
         "--draft-execute",
         action="store_true",
         help="draft a typed execution brief (DRAFT_EXECUTE) before EXECUTE on tasks that are or need an algorithm or a calculation; one extra call per execution (A/B option)",
+    )
+    parser.add_argument(
+        "--no-task-index",
+        dest="task_index",
+        action="store_false",
+        help="send the request index to no stage (drafting, EXECUTE); BOOTSTRAP still writes it (the L100 v3 "
+        "measurement's off arm)",
     )
     parser.add_argument(
         "--representation",
