@@ -210,7 +210,11 @@ All answered by the user on 2026-10-09:
 ## 9. Steps
 
 1. ~~The user reviews this plan and answers section 8.~~ Done, 2026-10-09.
-2. Build sections 4.2-4.6 with the offline tests (6.1).
+2. ~~Build sections 4.2-4.6 with the offline tests (6.1).~~ Done, 2026-10-09 (ledger L100 cites the commit). `runtime/quotes.py` (location), `runtime/task_entities.py` (checks, merge, forwarding, rendering), `tests/test_entity_quotes.py`. Two points settled during the build:
+   - A quote containing a hostile token is dropped, not redacted: matching runs against the sanitized request, so the token's text is never there to match (6.1's "redacted" case is covered by the drop).
+   - The drafting summary's entity lines sit inside the untrusted-input wrapper, like the summary (4.5). EXECUTE needed no change: its `TASK_ENTITIES` and `SOURCE_REQUEST` are both sanitized and unwrapped.
+
+   `tests/fixtures/recorded-cases.json` was re-keyed with `scripts/render_recorded_prompts.py rekey`: two BOOTSTRAP keys, responses unchanged (both record `task_entities: []`). That is plumbing, not evidence about the model: step 3 still applies.
 3. Live check (6.2); re-record the replays it invalidates.
 4. Catalogue gate (6.3).
 5. Measurement (6.4), then the ledger row's outcome.

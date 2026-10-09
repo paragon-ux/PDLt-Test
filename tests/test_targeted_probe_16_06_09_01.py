@@ -96,10 +96,14 @@ def test_16_06_specification_boundary_and_anti_computation(tmp_path: Path):
         "approach_notes": "",
         "risk_notes": "",
         "task_entities": [
-            {"surface": "Maya", "kind": "identifier", "status": "given", "relation": "subject"},
-            {"surface": "B", "kind": "parameter", "status": "given", "relation": "number of brothers, B >= 1"},
-            {"surface": "S", "kind": "parameter", "status": "given", "relation": "number of sisters of Maya"},
-            {"surface": "sisters", "kind": "term", "status": "target", "relation": "number of sisters of each brother to determine"},
+            {"surface": "Maya", "kind": "identifier", "status": "given"},
+            {"surface": "B", "kind": "parameter", "status": "given",
+             "relation": {"known": ["Maya has B brothers", "B is at least 1"]}},
+            {"surface": "S", "kind": "parameter", "status": "given", "relation": {"known": ["S sisters"]}},
+            {"surface": "sisters", "kind": "term", "status": "target",
+             "relation": {"known": ["Every brother and sister shares both parents with Maya."],
+                          "unknown": "How many sisters does each of Maya's brothers have?",
+                          "distinction": "implicit"}},
         ],
     }
 
@@ -126,9 +130,14 @@ def test_16_06_specification_boundary_and_anti_computation(tmp_path: Path):
 
     # Verify GIVEN and TARGET status tags appear correctly
     assert "- Maya (identifier) [GIVEN]" in draft_prompt
-    assert "- B (parameter) [GIVEN]" in draft_prompt
-    assert "- S (parameter) [GIVEN]" in draft_prompt
-    assert "- sisters (term) [TARGET]" in draft_prompt
+    # The entity lines sit inside the call's JSON projection
+    shown = lambda text: json.dumps(text)[1:-1]  # noqa: E731
+    assert shown('- B (parameter) [GIVEN]\n    stated: "Maya has B brothers"; "B is at least 1"') in draft_prompt
+    assert shown('- S (parameter) [GIVEN]\n    stated: "S sisters"') in draft_prompt
+    assert shown("- sisters (term) [TARGET]\n"
+                 '    stated: "Every brother and sister shares both parents with Maya."\n'
+                 '    asked: "How many sisters does each of Maya\'s brothers have?"\n'
+                 "    extraction step's reading: not stated in the request") in draft_prompt
 
     # Verify anti-computation guidance is injected into the drafting instructions
     assert "preserve [GIVEN] values character-for-character as fixed problem constraints" in draft_prompt
@@ -145,8 +154,9 @@ def test_16_06_specification_boundary_and_anti_computation(tmp_path: Path):
 
 
 def test_16_06_target_entities_preserved_and_not_dropped(tmp_path: Path):
-    """Verify that target entities (including repeated surfaces for given vs target and case/whitespace variations)
-    are retained without triggering TASK_ENTITY_DROPPED_UNSAFE events.
+    """Verify that target entities (including case/whitespace variations) are retained without
+    triggering TASK_ENTITY_DROPPED_UNSAFE events, and that a surface listed once as given and once
+    as target becomes one target (L100).
     """
     raw_prompt = (
         "Maya has B brothers and S sisters, where B is at least 1. "
@@ -165,13 +175,15 @@ def test_16_06_target_entities_preserved_and_not_dropped(tmp_path: Path):
         "approach_notes": "",
         "risk_notes": "",
         "task_entities": [
-            {"surface": " Maya ", "kind": "identifier", "status": "given", "relation": "subject"},
-            {"surface": "B", "kind": "parameter", "status": "given", "relation": "number of brothers, B >= 1"},
-            {"surface": "S", "kind": "parameter", "status": "given", "relation": "number of sisters of Maya"},
-            {"surface": "brothers", "kind": "term", "status": "given", "relation": "Maya's B brothers"},
-            {"surface": "sisters", "kind": "term", "status": "given", "relation": "Maya's S sisters"},
-            {"surface": "sisters", "kind": "term", "status": "target", "relation": "the number of sisters each brother has to determine"},
-            {"surface": "expression", "kind": "literal", "status": "target", "relation": "answer as an expression in B and S"},
+            {"surface": " Maya ", "kind": "identifier", "status": "given"},
+            {"surface": "B", "kind": "parameter", "status": "given", "relation": {"known": ["Maya has B brothers"]}},
+            {"surface": "S", "kind": "parameter", "status": "given", "relation": {"known": ["S sisters"]}},
+            {"surface": "brothers", "kind": "term", "status": "given", "relation": {"known": ["Maya has B brothers"]}},
+            {"surface": "sisters", "kind": "term", "status": "given", "relation": {"known": ["S sisters"]}},
+            {"surface": "sisters", "kind": "term", "status": "target",
+             "relation": {"unknown": "How many sisters does each of Maya's brothers have?", "distinction": "implicit"}},
+            {"surface": "expression", "kind": "literal", "status": "target",
+             "relation": {"unknown": "Give the answer as an expression in B and S", "distinction": "implicit"}},
         ],
     }
 
@@ -192,13 +204,15 @@ def test_16_06_target_entities_preserved_and_not_dropped(tmp_path: Path):
     draft_call = next(c for c in calls if c.operation == "DRAFT_PROMPT")
     draft_prompt = draft_call.prompt
 
-    # Verify both GIVEN and TARGET tags reach downstream
+    # Verify both GIVEN and TARGET tags reach downstream; the two sisters entries are one target
     assert "- Maya (identifier) [GIVEN]" in draft_prompt
-    assert "- sisters (term) [GIVEN]" in draft_prompt
-    assert "- sisters (term) [TARGET]" in draft_prompt
+    assert "- sisters (term) [GIVEN]" not in draft_prompt
+    assert json.dumps('- sisters (term) [TARGET]\n    stated: "S sisters"\n'
+                      '    asked: "How many sisters does each of Maya\'s brothers have?"')[1:-1] in draft_prompt
     assert "- expression (literal) [TARGET]" in draft_prompt
 
-    # Verify ZERO entities were dropped
+    # Verify ZERO entities were dropped; one merge recorded
     events = engine.workspace.read_events()
     assert not any(e["kind"] == "TASK_ENTITY_DROPPED_UNSAFE" for e in events)
+    assert [e["payload"] for e in events if e["kind"] == "TASK_ENTITY_MERGED"] == [{"count": 1}]
 
