@@ -54,14 +54,33 @@ On the two coding prompts (02-05, 04-07; recorded EXECUTE inputs of L99 and ever
 - the off switch, `--no-task-index`, renamed `--no-task-entities`, for the measurement's off arm.
 
 **Delta D1: unanchored names are labelled, not dropped.**
-- The host keeps an entry whose sanitized name is non-empty and carries no redaction marker. It records host-side whether the name is found in the request (`anchored`, telemetry only, never forwarded).
-- A name the sanitizer redacted, such as 09-04 r2's payload, is dropped as today.
-- The coverage telemetry reads only anchored names of exact kinds.
-- This replaces the request-or-summary match. EXECUTE's input changes only in runs where the original dropped something.
+- The original's matcher runs unchanged and still decides the forwarded name (request, then summary; exact, unquoted, trimmed, then case-insensitive). Only its last branch changes: the original dropped an entry the matcher could not find.
+- vNext keeps that entry when its sanitized name is non-empty and carries no `[REDACTED_IOC]`. It is forwarded with the model's sanitized name and counted as `TASK_ENTITY_UNANCHORED`.
+- A name the sanitizer redacts, such as 09-04 r2's payload, is dropped and counted as `TASK_ENTITY_DROPPED_UNSAFE`, as today.
+- The coverage telemetry reads the names the matcher found, as before; unanchored names are not added.
+- EXECUTE's input changes only in runs where the original dropped something.
 
 **Delta D2 (optional): drop the duplicated keys** from the forwarded entries (`polarity`, `collection`, `condition`). The information is identical and the input is 42% shorter. It is the one change to every EXECUTE input, so it is kept separate (decision 2).
 
 **Removed:** the v3 request index (`request_index.py`, `TASK_INDEX`), which carries no role or meaning.
+
+### 3.1 System 1 in vNext
+
+System 1 is unchanged. It takes no new recipe and reads no new input (static, `session_engine.py` and `providers/sys1/recipes/`).
+
+| Where | Recipe | Reads | Effect on entities |
+|---|---|---|---|
+| Before BOOTSTRAP, both routes | activation route (ADR-0020), problem class, execution profile | the request and the environment | none: none of them reads an entity. Their outputs shape EXECUTE's other inputs: a verified-execution verdict adds the Result IR and witness instructions; the tier sets the tool and budget text |
+| Confirmed route, after DRAFT_PROMPT | prompt fidelity | the drafting context (which contains the rendered entity block) and the prompt body | **indirect**: entities are part of the reference it judges the prompt against. vNext restores the original's render, so this input is the original's again, except in D1's runs |
+| Confirmed route, reviews | confirmation match, review facets, plan advancement | the user's review messages and artifacts | none |
+
+**Not in vNext:**
+- **L103's recipe** (System 1 decides whether a request has targets or groups, to condition BOOTSTRAP's rules). It stays closed, for a new reason: the original has no entity rules to condition, and any input from System 1 into BOOTSTRAP changes BOOTSTRAP's request, which S1 forbids. The original wrote at least one target in 118 of 118 analyses without it.
+- **A System 1 check on the meanings** (the main chat's proposal in L100's first round). The corpus shows no breach to justify it (section 2), and filtering meanings would change EXECUTE's input in unmeasured ways.
+
+**In the static tests**, System 1 is replayed, not re-run. Each run's recorded `ACTIVATION_ROUTED`, `PROBLEM_CLASS_CLASSIFIED` and `EXECUTION_PROFILE_ROUTED` decisions are returned by a replay client. The tier and the verified-execution flag then match the recorded run, and the entity channel is the only variable in S3.
+
+**In the live measurement**, System 1 runs live and identically in every arm (same recipes, same model), so its run-to-run variation is shared across the paired arms.
 
 ## 4. Static acceptance (criteria fixed before the build)
 
@@ -69,7 +88,7 @@ On the two coding prompts (02-05, 04-07; recorded EXECUTE inputs of L99 and ever
 |---|---|---|---|
 | S1 | **BOOTSTRAP is asked the same thing** | render BOOTSTRAP's request for every catalogue prompt at `a5973ae7` and at vNext (`scripts/render_recorded_prompts.py render`, then `compare`) | byte-identical. The model's extraction is then the measured one (P1-P4) |
 | S2 | **Every recorded reply parses** | the 118 recorded original replies through vNext's parser | 118 of 118, no rejection or retry |
-| S3 | **EXECUTE receives the same input** | replay each recorded reply through the vNext engine offline (stub EXECUTE captures its projection); diff against the recorded EXECUTE projection | identical, except where the diff is a listed delta: D1 in the 7 runs of section 2, and D2 everywhere if chosen |
+| S3 | **EXECUTE receives the same input** | replay each recorded run through the vNext engine offline: System 1 answers from the run's recorded events (section 3.1); BOOTSTRAP's recorded replies are returned in order; a stub EXECUTE captures its projection. Diff against the recorded EXECUTE projection | identical, except where the diff is a listed delta: D1 in the 7 runs of section 2, and D2 everywhere if chosen |
 | S4 | **Each delta does only what it says** | D1: the entries gained are exactly the dropped non-hostile ones (16-06 r3 and 16-03 r2 regain their target; 09-04 r2's payload stays out). D2: the set of (name, kind, status, group, meaning) is unchanged in every run | exact match |
 | S5 | **Containment** | across the corpus and the unit fixtures: no forwarded name or meaning carries a canary, an override phrase or a redaction marker; 09-* forwarded payloads are a subset of the original's plus D1's | zero |
 | S6 | **Restore** | a session restored from disk sends EXECUTE the same entities as the live session | identical |
@@ -96,17 +115,65 @@ If S1-S4 pass, vNext's EXECUTE input matches the original's exactly, except D1 (
 2. D2 (drop the duplicated keys from EXECUTE's input): include it now, or keep EXECUTE's input identical and test D2 later as its own delta. Recommendation: later, so S3 proves identity in its strongest form.
 3. Close v3 in the ledger as superseded (its live check stands as recorded).
 
-## 7. Files
+## 7. Implementation
 
-- `runtime/wire_payloads.py`;
-- `runtime/session_engine.py` (`_semantic_read`, the forwarding, the EXECUTE contexts);
-- `runtime/operation_bridge.py`;
-- `runtime/request_index.py` (removed);
-- `runtime/workspace.py`;
-- both `EXECUTION_CONTRACT.json` and their manifests;
-- `host/repl.py`, `host/app.py`, `providers/api_worker.py`, `run_catalogue.py` (switch name);
-- tests;
-- `tests/fixtures/prompt_schema_descriptions.json` and `recorded-cases.json` (back to the original keys).
+Between `a5973ae7` and HEAD, 27 files changed, all of them L100 (static, `git diff --stat a5973ae7 HEAD -- src tests contracts scripts`). So the restore is a file checkout from `a5973ae7`. The host-only fixes are then re-applied on top as small, separate edits.
+
+### 7.1 Files
+
+| Action | Files |
+|---|---|
+| **Restore from `a5973ae7`, byte for byte** | `runtime/wire_payloads.py`, `runtime/operation_bridge.py`, `runtime/session_engine.py` (then E1-E3 below), `providers/live_stub.py`, both `EXECUTION_CONTRACT.json` and `CONTRACT_MANIFEST.json`; tests `test_task_entities.py`, `test_targeted_probe_16_06_09_01.py`, `test_pydantic_wire.py`, `test_output_contracts.py`, `test_unconfirmed_route.py`, `test_execution_brief.py`, `test_computation_recipe.py`, `test_reasoning_wire.py`; fixtures `prompt_schema_descriptions.json`, `recorded-cases.json` |
+| **Delete** (L100 only, no consumer after the restore) | `runtime/request_index.py`, `runtime/quotes.py` (D1 does not need it; the corpus scripts keep a copy in `experiments/l100_vnext/`), `tests/test_request_index.py`, `tests/test_entity_quotes.py`, `tests/entity_stub.py` |
+| **Re-apply** (host only) | `runtime/workspace.py` (`write_turn_entities`, `turn_entities`, from `d664c63e`); `host/repl.py`, `host/app.py`, `providers/api_worker.py`, `run_catalogue.py` (the off switch, renamed) |
+| **New** | `tests/test_entity_vnext.py` (E1-E3); `experiments/l100_vnext/static_checks.py` (S1-S5) |
+
+### 7.2 The three edits to the restored `session_engine.py`
+
+- **E1, D1** (in `_semantic_read`'s matcher loop):
+  - The original's `else: matched = None` becomes: sanitize the model's name (`compile_bootstrap_output(raw_text, surface)`).
+  - If it is non-empty and has no `[REDACTED_IOC]`, keep the entry under that name and count it in a `TASK_ENTITY_UNANCHORED {count}` event. Otherwise drop it, counted in the existing `TASK_ENTITY_DROPPED_UNSAFE`.
+  - The coverage tuple excludes the unanchored names.
+  - Nothing else in the loop, the forwarding (`typed_entities`) or the drafting render changes.
+- **E2, entities kept with the turn** (from `d664c63e`):
+  - After each of the two activation points (confirmed and unconfirmed), `workspace.write_turn_entities(names, forwarded)`.
+  - In `restore()`, `workspace.turn_entities()` refills `_active_task_entities` and `_active_typed_task_entities`.
+  - No model input changes, except that a restored session's EXECUTE now gets its entities, which is the fix.
+- **E3, the off switch** (`self.task_entities_enabled`, default `True`; set by the host from `--no-task-entities`). When it is off:
+  - EXECUTE_UNCONFIRMED gets `TASK_ENTITIES: []`. The symbol stays in `include`, so with the switch on the contract is the original's.
+  - Confirmed EXECUTE and DRAFT_EXECUTE get no `TASK_ENTITIES`.
+  - The drafting context has no entity block.
+  - BOOTSTRAP and the host check run as usual, so the arms differ only in what later stages receive.
+
+D2 is not in this build (recommended in decision 2). If you choose it, it is one more edit, E4: the `typed_entities` dict loses three keys, and S3 then expects that diff in every run.
+
+### 7.3 Order of work, each step gated offline
+
+1. **Restore and delete** (7.1).
+   - Gate: the offline suite passes.
+   - Gate: `recorded-cases.json` replays with its `a5973ae7` keys and no `ReplayMissError`. That is already proof that what the models receive in that corpus is the original's.
+2. **E2 and E3**, switch on by default.
+   - Gate: the offline suite.
+   - Gate: S1 against a worktree of `a5973ae7`, zero differences.
+3. **E1 and its tests.**
+   - Gate: the offline suite.
+   - Gate: S1 still shows zero differences. D1 acts after BOOTSTRAP replies, so its request cannot change.
+4. **S2-S6** on the corpus. Gate: section 4's criteria, unchanged.
+5. **S7:** the anti-overfitting suite under `-W error` and the offline suite. Then commit and update the ledger, and stop: the measurement runs only on your approval.
+
+**Live-check trigger** (`AGENTS.md`):
+- The restore changes nothing a model receives relative to `a5973ae7`: S1, and the replay keys of step 1.
+- E1 changes EXECUTE's input in the runs where the original dropped an entry. That is a change to what the model receives, so one live run is due before merge. The outcome measurement (section 5) is that run.
+- `run_catalogue.py --fail-fast` is due before merge, as for any behaviour change.
+
+### 7.4 What S3 needs to replay a run
+
+- **System 1:** a client that answers from the run's recorded events (3.1).
+- **BOOTSTRAP:** a model worker that returns the recorded `model-response.txt` files in order, including a degenerate-read retry when one was recorded.
+- **EXECUTE:** a stub that records the projection and stops the session.
+- **Comparison:** the captured `document` against the run's recorded `compiled-projection.json`, field by field.
+  - A difference outside `TASK_ENTITIES` fails S3, whatever it is. For example, a different `AVAILABLE_EXECUTION_TOOLS` text means the environment differs and must be reconciled before any conclusion.
+  - Inside `TASK_ENTITIES`, the only allowed difference is D1's added entries, in the runs of section 2.
 
 ## 8. Research
 
