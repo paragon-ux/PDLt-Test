@@ -190,16 +190,59 @@ def run(packets: list[dict], judges: list[judge.JudgeSpec]) -> list[dict]:
     return results
 
 
+def export(packets: list[dict], out_dir: Path, batches: int) -> None:
+    """Manual mode: each packet's judge prompt (the API path's exact text) as ``<id>.txt``, in shuffled batches."""
+    import random
+
+    from experiments.grading import strip_for_adjudication
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for packet in packets:
+        text = judge.judge_prompt(packet["rubric"], task_prompt(packet["task"]), strip_for_adjudication(packet["text"]))
+        (out_dir / f"{packet['id']}.txt").write_text(text, encoding="utf-8")
+    ids = [p["id"] for p in packets]
+    random.Random(97).shuffle(ids)  # each batch mixes tasks, kinds and arms
+    (out_dir / "batches.json").write_text(json.dumps([ids[n::batches] for n in range(batches)], indent=1),
+                                          encoding="utf-8")
+
+
+def import_replies(packets: list[dict], replies: Path, name: str, model: str) -> list[dict]:
+    """Manual mode: marks from ``<id>.reply.txt``, read by the API path's parser; a missing reply is recorded."""
+    results = []
+    for packet in packets:
+        path = replies / f"{packet['id']}.reply.txt"
+        reply = path.read_text(encoding="utf-8") if path.is_file() else None
+        marks = judge.parse_marks(reply, packet["rubric"]) if reply is not None else {}
+        results.append({"id": packet["id"], "kind": packet["kind"], "task": packet["task"], "marks": marks,
+                        "mechanical": packet.get("mechanical"), "notes": {name: (reply or "no reply")[-600:]}})
+    return results
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--price", action="store_true")
     mode.add_argument("--run", action="store_true")
-    parser.add_argument("--judges", required=True, help="NAME=MODEL[,NAME=MODEL]")
+    mode.add_argument("--export", type=Path, metavar="DIR", help="manual mode: write the judge prompts")
+    mode.add_argument("--import", dest="import_dir", type=Path, metavar="DIR", help="manual mode: read the replies")
+    parser.add_argument("--judges", help="NAME=MODEL[,NAME=MODEL]; one judge for --import")
+    parser.add_argument("--batches", type=int, default=8)
     args = parser.parse_args(argv)
-    judges = parse_judges(args.judges)
+    if not args.judges and not args.export:
+        parser.error("--judges is required")
+    judges = parse_judges(args.judges) if args.judges else []
     packets = items()
     (OUT / "judge-key.json").write_text(json.dumps({p["id"]: p["key"] for p in packets}, indent=1), encoding="utf-8")
+    if args.export:
+        export(packets, args.export, args.batches)
+        print(f"{len(packets)} judge prompts in {args.export}")
+        return 0
+    if args.import_dir:
+        results = import_replies(packets, args.import_dir, judges[0].name, judges[0].model)
+        (OUT / "judgments.json").write_text(json.dumps({"judges": [j.__dict__ for j in judges[:1]], "results": results},
+                                                       indent=1), encoding="utf-8")
+        print(f"{sum(1 for r in results if r['marks'])} of {len(results)} packets have replies")
+        return 0
     if args.price:
         print(json.dumps(price(packets, judges), indent=1))
         return 0
