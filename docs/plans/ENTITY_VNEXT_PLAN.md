@@ -164,6 +164,27 @@ The static results change what a live run must answer. The plan's four-arm measu
 - **04-06 failed all 3 runs the same way** ("Expected SEMI, got EOF" on the prompt's own example). The original failed it once, cancelled. This consistent failure is worth watching in stage 3, but it is not D1's: no entity was unanchored in those runs.
 - **Next:** stage 3 (`run_catalogue.py --fail-fast`, about $0.40, cap $0.60), on the user's go. Stage 2 is not needed.
 
+### 5.2 Fixed-entity experiment (proposed by ChatGPT via the user; design fixed before any result)
+
+- **Question:** does the entity block's content change EXECUTE's pass rate, with the extraction held fixed? This is a question about the original's design. It does not decide vNext's merge.
+- **Prompts:** 01-01 and 04-06 (both lost in stage 1, computational) and 16-06 (gained, logical). Each is reported separately, never pooled.
+- **Frozen extraction, by a rule fixed in advance:** for each prompt, the original's (L99) first repeat, its first BOOTSTRAP reply. It is the same reply in all arms. BOOTSTRAP makes no model call; System 1, EXECUTE, its retries and the host's verification run as usual.
+- **Arms** (only EXECUTE's `TASK_ENTITIES` differs):
+  - **A:** `--no-task-entities`, so `TASK_ENTITIES` is present and empty;
+  - **B:** the full block, as the original sent it;
+  - **C:** the block without the model-written meanings. Each entity's `relation` is removed from the frozen reply, so `condition` and `relation` go out as null; names, kinds, statuses and groups are kept.
+- **Runs:** 20 blocks. Each block is the 9 (arm, prompt) pairs in a seeded random order (seed 20261009). The catalogue's own runner and graders are used (`run_catalogue.run_single_prompt`), through `experiments/l100_vnext/frozen_cli.py`. The experiment stops between blocks once it has spent its cap.
+- **Checks:**
+  - Offline dry run, before anything is spent (`fixed_entity.py dryrun`): **pass**. For all 3 prompts, B's EXECUTE body is byte-identical to the one L99 sent in that run. A's and C's differ from it only in `TASK_ENTITIES`, as their arm says. No network was used (offline, via the catalogue's runner and child process).
+  - Live: `report` checks each run's recorded EXECUTE body the same way.
+- **Reading, per prompt** (two-sided Fisher exact test on PASS of decided, p < 0.05 counts as a difference):
+  - B below A and C close to A: the model-written meanings are a candidate for harm.
+  - B and C both below A: something broader in the block interferes.
+  - B above A on 16-06 but below on 01-01: a task-dependent trade-off.
+  - No difference: inconclusive at this size (about 40-point effects detectable). This does not show that the content is irrelevant.
+- **Cost:** from L99's recorded tokens, about $0.0053 a run for 01-01, $0.0033 for 04-06 and $0.0009 for 16-06. That is about $0.03 a block, about $0.60 for 20 blocks. **Cap: $0.80.**
+- **Stage 3 caveat:** `--fail-fast` stops at the first failed prompt (`run_catalogue.py:709`), and the catalogue starts with 01-01. 01-01 failed 4 of its last 6 runs, and PR #1's gate stopped there (waived by the user, `protocol-fixes-plan.md`). So the literal gate will almost surely stop at 01-01 for about a cent, which says nothing about vNext. The alternative is one full pass of all 16 categories without `--fail-fast` (about $0.40, cap $0.60), compared per category with the last full unconfirmed run (`run-20261008-061233`, `7a882f10`: 41 of 53 decided, 77.4%; provider not pinned then). The user decides.
+
 ## 6. Decisions for the user
 
 1. Adopt this plan: restore the original contract, D1, and the L100 host-only fixes; remove v3's index.
