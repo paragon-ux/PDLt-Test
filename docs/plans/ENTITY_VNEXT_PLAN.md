@@ -1,6 +1,6 @@
 # Task entities vNext: the original as the contract (plan, ledger L100)
 
-Status: **plan for the user's review** (2026-10-09). Nothing built. The user decided that the original entity model (L99, commit `a5973ae7`) is the baseline to beat, and that vNext must be planned and verified statically before any live run. Supersedes [ENTITY_V3_DESIGN.md](ENTITY_V3_DESIGN.md) and the request index built in `3acc08ec`.
+Status: **plan for the user's review** (2026-10-09), amended after ChatGPT's review via the user: D1's per-entry provenance, narrower safety and causal claims, S1 extended to the provider request, the corpus counts reconciled, and the live-result logic corrected. Nothing built. The user decided that the original entity model (L99, commit `a5973ae7`) is the baseline to beat, and that vNext must be planned and verified statically before any live run. Supersedes [ENTITY_V3_DESIGN.md](ENTITY_V3_DESIGN.md) and the request index built in `3acc08ec`.
 
 Evidence labels: **static** (code at a cited commit), **corpus** (L99's 126 recorded unconfirmed runs, `catalogue-runs/run-20261009-042907-unconfirmed-tier-d1`, read offline by `experiments/l100_vnext/orig_corpus.py` and `orig_defects.py`), **research** (cited at the end).
 
@@ -10,9 +10,9 @@ On the unconfirmed route, `TASK_ENTITIES` is the only BOOTSTRAP output that reac
 
 | # | Property | Measured (corpus) |
 |---|---|---|
-| P1 | **A flat list of the task's parts**, one entry per thing given or to produce | 1,216 entries in 118 analyses (10.3 per run) |
-| P2 | **A role written by the model**: `target` means to be found, determined or *produced*, so a build task's parts are targets | 437 targets; every analysis wrote at least one, on the first reply; target kinds: term 190, identifier 159, literal 70 |
-| P3 | **A one-line meaning in the model's words**, forwarded to EXECUTE after the sanitizer | 1,110 of 1,216 entries (91%); 41% of their words do not occur in the request, so this is interpretation, not a copy |
+| P1 | **A flat list of the task's parts**, one entry per thing given or to produce | 1,216 entries written in 118 analyses (10.3 per run); 1,205 forwarded, because the filter dropped 11 (section 2). ENTITY_REDESIGN section 3's "1,205 entities, 1,099 relations" counted forwarded entries |
+| P2 | **A role written by the model**: `target` means to be found, determined or *produced*, so a build task's parts are targets | 437 targets written; every analysis wrote at least one, on the first reply; target kinds: term 190, identifier 159, literal 70, parameter 16, input_data 2 |
+| P3 | **A one-line meaning in the model's words**, forwarded to EXECUTE after the sanitizer | 1,110 of 1,216 written entries (91%); 1,099 of 1,205 forwarded, since all 11 dropped entries had one. 41% of their words do not occur in the request, so this is interpretation, not a copy |
 | P4 | **A schema the model fills in one call** | no retries, no rule rejections; 2 of 118 runs forwarded no target |
 | P5 | **Names mostly taken from the request, but not required to be** | 1,195 of 1,216 names (98%) are found in the request; the rest are mostly deliverables the request names only through an instruction ("optimized multi-stage Dockerfile", "number of sisters each brother has") |
 | P6 | **Placement**: `TASK_ENTITIES` directly after `SOURCE_REQUEST` in EXECUTE's input | static, `EXECUTION_CONTRACT.json` at `a5973ae7` |
@@ -26,6 +26,11 @@ Every L100 version removed at least one of these, which is why no change of word
 | v3 | removed | removed | yes | n/a | moved after the clauses |
 
 On the two coding prompts (02-05, 04-07; recorded EXECUTE inputs of L99 and every L100 version), 6 of 8 runs passed when the parts to build were labelled `target`, and 2 of 7 when they were not.
+- This is **observational**: the runs come from different versions, and their entity payloads differ in more than the role (the meanings, the names kept).
+- It is consistent with the hypothesis that the decomposition helps EXECUTE. It is not an ablation of the role.
+- The original's entries were not graded one by one for semantic accuracy, so the original is the empirical baseline, not a schema shown to be correct in every case.
+
+**The hypothesis vNext tests** (wording from ChatGPT's review, via the user, 2026-10-09): the original entity schema is the current empirical baseline because it produced useful task decomposition and reliable target identification in the recorded corpus. The L100 replacements altered several aspects of that representation and showed repeated target-recovery failures. vNext restores the original contract to isolate those changes, then evaluates a narrowly scoped host-side fix for entries the name matcher dropped. The original is not assumed correct in every case, and D1's safety and performance effects stay open until tested.
 
 ## 2. The original's measured defects
 
@@ -56,6 +61,10 @@ On the two coding prompts (02-05, 04-07; recorded EXECUTE inputs of L99 and ever
 **Delta D1: unanchored names are labelled, not dropped.**
 - The original's matcher runs unchanged and still decides the forwarded name (request, then summary; exact, unquoted, trimmed, then case-insensitive). Only its last branch changes: the original dropped an entry the matcher could not find.
 - vNext keeps that entry when its sanitized name is non-empty and carries no `[REDACTED_IOC]`. It is forwarded with the model's sanitized name and counted as `TASK_ENTITY_UNANCHORED`.
+- **The provenance travels with it.** The host adds `"name_source": "model"` to that entry only, in what EXECUTE receives. The drafting render appends "(name written by the extraction step; not found in the request)". So a model-written name never reads as request text, and it gains no authority over the request. Entries the matcher found carry no new key, so every other entry, and every other run, is unchanged.
+- **Safety, stated narrowly.**
+  - An unanchored name is model-written text, the same exposure class as the meaning the original already forwards for 91% of entries, through the same sanitizer.
+  - D1 widens that channel by 10 entries in 6 of 118 recorded runs (listed in S5). The sanitizer blocks known hostile patterns only, so D1 is not claimed safe against unseen injected instructions. Its containment effect is measured (S5 and the measurement's category 09), not assumed.
 - A name the sanitizer redacts, such as 09-04 r2's payload, is dropped and counted as `TASK_ENTITY_DROPPED_UNSAFE`, as today.
 - The coverage telemetry reads the names the matcher found, as before; unanchored names are not added.
 - EXECUTE's input changes only in runs where the original dropped something.
@@ -80,21 +89,21 @@ System 1 is unchanged. It takes no new recipe and reads no new input (static, `s
 
 **In the static tests**, System 1 is replayed, not re-run. Each run's recorded `ACTIVATION_ROUTED`, `PROBLEM_CLASS_CLASSIFIED` and `EXECUTION_PROFILE_ROUTED` decisions are returned by a replay client. The tier and the verified-execution flag then match the recorded run, and the entity channel is the only variable in S3.
 
-**In the live measurement**, System 1 runs live and identically in every arm (same recipes, same model), so its run-to-run variation is shared across the paired arms.
+**In the live measurement**, System 1 runs live in every arm with the same recipes and model. Its calls are independent, so its variation is not shared between arms. Pairing by prompt and repeat controls prompt difficulty, not System 1's or BOOTSTRAP's sampling. The measurement's per-run records (`ACTIVATION_ROUTED`, `PROBLEM_CLASS_CLASSIFIED`, `EXECUTION_PROFILE_ROUTED`) show where System 1's decisions differed between paired runs, so those pairs can be reported separately.
 
 ## 4. Static acceptance (criteria fixed before the build)
 
 | # | Test | Method | Pass |
 |---|---|---|---|
-| S1 | **BOOTSTRAP is asked the same thing** | render BOOTSTRAP's request for every catalogue prompt at `a5973ae7` and at vNext (`scripts/render_recorded_prompts.py render`, then `compare`) | byte-identical. The model's extraction is then the measured one (P1-P4) |
+| S1 | **BOOTSTRAP is asked the same thing** | (a) render BOOTSTRAP's prompt for every catalogue prompt at `a5973ae7` and at vNext (`scripts/render_recorded_prompts.py render`, then `compare`). (b) Build the provider request body that `providers/api_worker.py` would send for BOOTSTRAP, with the HTTP call captured offline and nothing sent, at both commits: messages, output schema and field order, reasoning effort, caps and provider pinning | byte-identical in (a) and (b). The model's extraction then comes from the same request, so from the same output distribution as measured (P1-P4). Identical generations are not implied |
 | S2 | **Every recorded reply parses** | the 118 recorded original replies through vNext's parser | 118 of 118, no rejection or retry |
-| S3 | **EXECUTE receives the same input** | replay each recorded run through the vNext engine offline: System 1 answers from the run's recorded events (section 3.1); BOOTSTRAP's recorded replies are returned in order; a stub EXECUTE captures its projection. Diff against the recorded EXECUTE projection | identical, except where the diff is a listed delta: D1 in the 7 runs of section 2, and D2 everywhere if chosen |
-| S4 | **Each delta does only what it says** | D1: the entries gained are exactly the dropped non-hostile ones (16-06 r3 and 16-03 r2 regain their target; 09-04 r2's payload stays out). D2: the set of (name, kind, status, group, meaning) is unchanged in every run | exact match |
-| S5 | **Containment** | across the corpus and the unit fixtures: no forwarded name or meaning carries a canary, an override phrase or a redaction marker; 09-* forwarded payloads are a subset of the original's plus D1's | zero |
+| S3 | **EXECUTE receives the same input** | replay each recorded run through the vNext engine offline: System 1 answers from the run's recorded events (section 3.1); BOOTSTRAP's recorded replies are returned in order; a stub EXECUTE captures its projection. Diff against the recorded EXECUTE projection | identical, except where the diff is a listed delta: D1's 10 entries in 6 runs (S5), each with its `name_source` key, and D2 everywhere if chosen |
+| S4 | **Each delta does only what it says** | D1: the entries gained are exactly S5's list (16-06 r3 and 16-03 r2 regain their target). D2: the set of (name, kind, status, group, meaning) is unchanged in every run | exact match |
+| S5 | **Containment, within stated limits** | explicit assertions: (1) 09-04 r2's planted JSON payload is not forwarded (the sanitizer redacts it); (2) D1's additions are exactly these 10 entries: 12-04 r1 "explanations of each optimization", 12-04 r3 "optimized multi-stage Dockerfile", 12-07 r3 "server‑side fix", "client‑side debugging aid", "openssl verify", 16-03 r2 "knights and knaves", 16-06 r3 "number of sisters each brother has", 16-07 r2 "house 1", "house 2", "house 3"; (3) every forwarded unanchored entry carries `name_source: model`, and the drafting render marks it; (4) no forwarded name or meaning carries a canary, a known override phrase or a redaction marker, in the corpus and the unit fixtures | all four hold. S5 verifies the configured rules against the recorded corpus and known hostile fixtures; it does not establish protection against unseen injected instructions |
 | S6 | **Restore** | a session restored from disk sends EXECUTE the same entities as the live session | identical |
 | S7 | **Suites** | `pytest tests/test_harness_anti_overfitting.py -W error`, the offline suite, the description snapshot back to the original's texts | all pass |
 
-If S1-S4 pass, vNext's EXECUTE input matches the original's exactly, except D1 (and D2). Its expected pass rate is then the original's plus whatever D1 and D2 change, known before any live run. If S1 or S3 fails, the build is not the original and is fixed before anything else.
+If S1-S4 pass, vNext's requests match the original's exactly, except D1 (and D2). The original's behaviour is a distribution, not a fixed output: identical requests give the same distribution, not the same answers. So vNext's expected pass rate is the original's plus whatever D1 (and D2) change, and any live difference outside D1's runs is sampling variation. If S1 or S3 fails, the build is not the original and is fixed before any live run.
 
 ## 5. Live (after S1-S7 only)
 
@@ -107,7 +116,12 @@ If S1-S4 pass, vNext's EXECUTE input matches the original's exactly, except D1 (
   - B ≥ C;
   - B and C differ only in D1's runs, and in D2's if chosen;
   - A < C on the coding prompts.
-- **Falsified by:** B losing more paired runs to C than it gains. That would mean S3's identity did not hold in the live request, so the cause would be looked for in what the provider received, not in the schema.
+- **Falsified by:** B losing more paired runs to C than it gains.
+- **Reading the result:**
+  - **A static check failed:** fix the build before measuring. This is the only case that points at the implementation.
+  - **Static checks passed, live B < C:** look first at D1 (S5 lists where it acts) and at run-to-run variation. Static identity has already been established, so a regression is not evidence that S3 failed.
+  - **B > C:** supports D1 on this evaluation set; it does not establish superiority elsewhere.
+  - **B and C differ in D1's runs by design.** A result change there is D1's effect, not an identity defect.
 
 ## 6. Decisions for the user
 
@@ -132,7 +146,7 @@ Between `a5973ae7` and HEAD, 27 files changed, all of them L100 (static, `git di
 
 - **E1, D1** (in `_semantic_read`'s matcher loop):
   - The original's `else: matched = None` becomes: sanitize the model's name (`compile_bootstrap_output(raw_text, surface)`).
-  - If it is non-empty and has no `[REDACTED_IOC]`, keep the entry under that name and count it in a `TASK_ENTITY_UNANCHORED {count}` event. Otherwise drop it, counted in the existing `TASK_ENTITY_DROPPED_UNSAFE`.
+  - If it is non-empty and has no `[REDACTED_IOC]`, keep the entry under that name, add `"name_source": "model"` to its forwarded dict, mark it in the drafting render, and count it in a `TASK_ENTITY_UNANCHORED {count}` event. Otherwise drop it, counted in the existing `TASK_ENTITY_DROPPED_UNSAFE`.
   - The coverage tuple excludes the unanchored names.
   - Nothing else in the loop, the forwarding (`typed_entities`) or the drafting render changes.
 - **E2, entities kept with the turn** (from `d664c63e`):
