@@ -55,7 +55,7 @@ def run_session(prompt: str, workspace: Path) -> tuple[list[str], str, list[str]
     """(extracted entities, prompt pseudocode, entity events) for one request."""
     proc = subprocess.run(
         [sys.executable, "-m", "pdl_taskmaster.host.repl", "--worker", "api", "--dev", "--non-interactive",
-         "--new-session", "--workspace-root", str(workspace), "--prompt", prompt],
+         "--review", "--new-session", "--workspace-root", str(workspace), "--prompt", prompt],
         cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600,
         env={**os.environ, "PYTHONUTF8": "1"},
     )

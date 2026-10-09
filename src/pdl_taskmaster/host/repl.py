@@ -1103,16 +1103,24 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Fast mode: confirm in advance. Every phase still runs and both pseudocode artifacts are shown; "
         "a review whose artifact has no host findings is accepted without waiting for /confirm, and one "
-        "with findings stops for you as usual. Toggle in the REPL with /fast [on|off]",
+        "with findings stops for you as usual. Implies --review. Toggle in the REPL with /fast [on|off]",
     )
     parser.add_argument(
         "--no-review",
         "--ultrafast",
         dest="no_review",
         action="store_true",
-        help="No-review mode: run through the governor in 2 task-model calls without review gates (ADR-0029). "
-        "Review is off and the interpretation is presented as unconfirmed. Toggle in the REPL with /no-review [on|off]",
+        help="No-review mode (the default): run through the governor in 2 task-model calls without review gates "
+        "(ADR-0029). The interpretation is presented as unconfirmed. Toggle in the REPL with /no-review [on|off]",
     )
+    parser.add_argument(
+        "--review",
+        dest="no_review",
+        action="store_false",
+        help="Review mode: stop at the prompt and plan pseudocode for /confirm or /revise (the confirmed route). "
+        "Toggle in the REPL with /no-review [on|off]",
+    )
+    parser.set_defaults(no_review=True)  # the unconfirmed route is the standard (ledger L94)
     parser.add_argument(
         "--exit-on-close",
         action="store_true",
@@ -1140,6 +1148,8 @@ def main() -> int:
         pass
 
     args = _build_parser().parse_args()
+    if args.fast:
+        args.no_review = False  # fast mode accepts reviews in advance, so it runs with review on
 
     if args.worker != "codex":
         if args.config_override:
@@ -1243,7 +1253,7 @@ def main() -> int:
         print("[fast] Fast mode: ON (reviews without host findings are accepted on your advance "
               "confirmation; /fast off to review each one)", flush=True)
     if no_review:
-        print("[no-review] No-review mode: ON (review gates disabled; interpretation and approach are unconfirmed working notes; /no-review off to enable review)", flush=True)
+        print("[no-review] No-review mode: ON (review gates disabled; interpretation and approach are unconfirmed working notes; --review or /no-review off to enable review)", flush=True)
     show_resumed_history(runtime, colors)  # a session picked at startup resumes like /resume
     if args.allow_bypass:
         print(
@@ -1590,6 +1600,9 @@ def main() -> int:
                         fast_mode = not fast_mode
                     _write_transcript(f"FAST MODE: {'ON' if fast_mode else 'OFF'}")
                     print(f"fast mode: {'on' if fast_mode else 'off'}", flush=True)
+                    if fast_mode and no_review:
+                        print("fast mode applies to review gates, and review is off (/no-review off to turn it on)",
+                              flush=True)
                 elif cmd in {"/no-review", "/ultrafast"}:
                     if arg in {"on", "off"}:
                         no_review = arg == "on"

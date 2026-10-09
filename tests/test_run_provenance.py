@@ -138,9 +138,29 @@ def test_the_flag_is_left_out_for_control_and_for_legacy_settings(tmp_path: Path
         assert "--tier-d1" not in cmd and "--no-tier-d1" not in cmd
 
 
+@pytest.mark.parametrize("route, no_review", [("unconfirmed", True), ("confirmed", False)])
+def test_the_child_runs_the_route_the_runner_records(tmp_path: Path, route, no_review) -> None:
+    """The REPL defaults to no review (L94), so the confirmed route asks for review explicitly."""
+    from pdl_taskmaster.host import repl
+
+    cmd = run_catalogue.build_harness_command(
+        tmp_path / "p.txt", "s", tmp_path / "t.txt", tmp_path / "d", "m", "low", run_settings={"route": route})
+    assert repl._build_parser().parse_args(cmd[3:]).no_review is no_review
+
+
+def test_the_repl_defaults_to_no_review() -> None:
+    from pdl_taskmaster.host import repl
+
+    parser = repl._build_parser()
+    assert parser.parse_args([]).no_review is True
+    assert parser.parse_args(["--review"]).no_review is False
+    assert parser.parse_args(["--no-review"]).no_review is True
+
+
 @pytest.mark.parametrize("argv, expected, suffix", [
-    ([], True, "-confirmed-tier-d1"),
-    (["--no-tier-d1"], False, "-confirmed"),
+    ([], True, "-unconfirmed-tier-d1"),
+    (["--no-tier-d1"], False, "-unconfirmed"),
+    (["--route", "confirmed"], True, "-confirmed-tier-d1"),
     (["--route", "control"], False, "-control"),
     (["--route", "unconfirmed", "--draft-execute"], True, "-unconfirmed-draft-execute-tier-d1"),
 ])

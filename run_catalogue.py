@@ -384,6 +384,8 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
         setting_args += ["--sandbox", settings["sandbox"]]
     if settings.get("route") == "unconfirmed":
         setting_args.append("--no-review")
+    elif settings.get("route") == "confirmed":
+        setting_args.append("--review")  # the REPL's default is no review (L94), so the confirmed route asks for it
     if settings.get("theme"):
         setting_args += ["--theme", settings["theme"]]
     if settings.get("user_color"):
@@ -1021,8 +1023,8 @@ def main():
                         help=f"memory cap for one prompt's harness process tree (default: {HARNESS_MEMORY_MB})")
     parser.add_argument("--repeat", type=int, default=1, metavar="N",
                         help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
-    parser.add_argument("--route", choices=["confirmed", "unconfirmed", "control"], default="confirmed",
-                        help="execution route: 'confirmed' (default, multi-stage with review), 'unconfirmed' (--no-review / ultrafast), or 'control' (unharnessed direct model baseline)")
+    parser.add_argument("--route", choices=["confirmed", "unconfirmed", "control"], default="unconfirmed",
+                        help="execution route: 'unconfirmed' (default: --no-review / ultrafast), 'confirmed' (multi-stage with review), or 'control' (unharnessed direct model baseline)")
     parser.add_argument("--theme", choices=THEME_NAMES, default=None,
                         help="Color theme for runner output and child process (default: $PDLT_THEME)")
     parser.add_argument("--user-color", choices=COLOR_NAMES, default=None,

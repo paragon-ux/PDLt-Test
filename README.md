@@ -7,13 +7,13 @@
 [![Tests](https://img.shields.io/badge/offline%20contracts-85%2F85%20passing-brightgreen.svg)](tests/)
 [![Python](https://img.shields.io/badge/python-3.10%20--%203.14-blue.svg)](pyproject.toml)
 
-`PDLt` is a controller-gated REPL harness where models interpret user intent into concise, human-readable pseudocode and halt for confirmation before synthesizing code. Content quoted or pasted into a task stays passive data (semantic bootstrap containment), and generated code executes strictly inside an isolated OS sandbox.
+`PDLt` is a controller-gated REPL harness where models interpret user intent into concise, human-readable pseudocode and, in review mode (`--review`), halt for confirmation before synthesizing code. By default it runs the unconfirmed route: no review gates, no execution brief, Tier D1 repairs on. Content quoted or pasted into a task stays passive data (semantic bootstrap containment), and generated code executes strictly inside an isolated OS sandbox.
 
 ---
 
 ## Core Principles
 
-- **Controller-Gated Execution**: Review gates (`/confirm`, `/revise`) enforce human-in-the-loop auditability before code synthesis.
+- **Controller-Gated Execution**: With review on (`--review`, or `/no-review off`), review gates (`/confirm`, `/revise`) enforce human-in-the-loop auditability before code synthesis.
 - **Two-Plane Separation**: The execution harness (`src/pdl_taskmaster/`) is strictly separated from the evaluation benchmark (`run_catalogue.py`), with zero benchmark leakage or keyword gaming.
 - **Session-Scoped OS Confinement**: All model-generated code runs under OS-native sandboxing (Landlock on Linux, Seatbelt on macOS, AppContainer on Windows).
 - **Four Execution Arms and a Control**: Routing from lean 2-call unconfirmed dispatch to human-reviewed gated execution, all with Tier-D1 sandbox feedback loops on by default, plus an unharnessed raw-model control for baseline comparison.
@@ -36,6 +36,7 @@ pdlt --new-session --dev
 ```
 
 Common REPL commands:
+- `/no-review on|off`: Turn the review gates off (the default) or on.
 - `/confirm`: Approve pseudocode interpretation or execution plan.
 - `/revise <feedback>`: Provide targeted revisions to the model.
 - `/fast on|off`: Automatically accept pseudocode when no host lint findings exist.

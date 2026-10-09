@@ -59,7 +59,8 @@ pdlt --new-session --dev
 
 ### REPL Commands & Workflow
 
-In a standard session, the harness guides interaction through deterministic review gates:
+A session runs the unconfirmed route by default: no review gates, no execution brief, Tier D1 repairs on. Start it
+with `--review` (or type `/no-review off`) and the harness guides interaction through deterministic review gates:
 
 ```text
 USER> Write a Python function to compute the Collatz stopping time.
@@ -70,6 +71,7 @@ ASSISTANT> Prompt Pseudocode:
 Confirm or correct this interpretation.
 ```
 
+- `/no-review on|off`: Turns the review gates off (the default) or on.
 - `/confirm`: Approves pseudocode interpretation or plan.
 - `/revise <feedback>`: Feeds specific revisions to the model to update the artifact.
 - `/fast on|off`: Enables fast mode (automatically confirms when no host lint findings exist).

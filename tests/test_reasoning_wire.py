@@ -79,7 +79,7 @@ def test_runner_command_sends_the_requested_effort_per_operation(tmp_path, effor
     prompt = tmp_path / "prompt.txt"
     prompt.write_text("What is 2 + 3?", encoding="utf-8")
     cmd = run_catalogue.build_harness_command(prompt, "stub-session", tmp_path / "t.txt", tmp_path / "s",
-                                              "openai/gpt-oss-120b", effort, ops)
+                                              "openai/gpt-oss-120b", effort, ops, {"route": "confirmed"})
     cmd += ["--api-base-url", f"http://127.0.0.1:{server.server_address[1]}"]
     env = {k: v for k, v in os.environ.items() if not k.startswith(("SYS1", "OPENROUTER"))}
     env.update(OPENROUTER_API_KEY="stub", PYTHONPATH=str(ROOT / "src"))
@@ -98,6 +98,7 @@ def _run_stub(tmp_path, settings, replies=None):
 
     seen: list[tuple[str, object]] = []
     bodies: list[dict] = []
+    settings = {"route": "confirmed", **settings}  # these tests drive the review route; the REPL defaults to no review
     if replies:
         _REPLIES_OVERRIDE.update(replies)
     server = _stub_server(seen, bodies)
@@ -167,7 +168,7 @@ def test_provider_error_ends_a_headless_run_as_a_harness_error(tmp_path):
     prompt = tmp_path / "prompt.txt"
     prompt.write_text("What is 2 + 3?", encoding="utf-8")
     cmd = run_catalogue.build_harness_command(prompt, "stub-session", tmp_path / "t.txt", tmp_path / "s",
-                                              "openai/gpt-oss-120b", "low", (), {})
+                                              "openai/gpt-oss-120b", "low", (), {"route": "confirmed"})
     cmd += ["--api-base-url", f"http://127.0.0.1:{server.server_address[1]}"]
     env = {k: v for k, v in os.environ.items() if not k.startswith(("SYS1", "OPENROUTER"))}
     env.update(OPENROUTER_API_KEY="stub", PYTHONPATH=str(ROOT / "src"))
