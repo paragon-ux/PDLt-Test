@@ -62,7 +62,10 @@ def _label(group: dict[str, Any], index: int) -> str:
 def _entity_problems(entity: dict[str, Any], where: str, sources: RequestText) -> list[str]:
     name = entity.get("name") or ""
     out = []
-    if pronoun_use(name, sources):
+    if sources.locate(name) is None:
+        out.append(f'{where}entity "{name}": its name is not found word for word in the request; use the '
+                   "request's own word for it")
+    elif pronoun_use(name, sources):
         out.append(f'{where}entity "{name}": a pronoun is never a name; list the thing it refers to and give '
                    'the pronoun as its alias')
     if not entity.get("known") and not entity.get("unknown"):
@@ -100,6 +103,11 @@ def violations(entities: dict[str, Any], sources: RequestText) -> list[str]:
             out += _entity_problems(member, f"in {_label(group, index)}, ", sources)
     for entity in entities.get("entities") or []:
         out += _entity_problems(entity, "", sources)
+    everyone = [m for g in entities.get("groups") or [] for m in g.get("members") or []] + list(entities.get("entities") or [])
+    if not any(entity.get("unknown") for entity in everyone):
+        # Every task asks for something (L56/L57): the link from its question to what it asks about.
+        out.append("no entity has an unknown: put the request's exact question or instruction in unknown on the "
+                   "entity it asks about, named with the request's own word for it")
     return out
 
 

@@ -17,6 +17,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from entity_stub import request_of, target_entities  # noqa: E402
+
 _REPLIES = {
     "BOOTSTRAP_ANALYSIS": {"kind": "ANALYSIS", "task_summary": "The user asks for the sum of two numbers.",
                            "approach_notes": "", "risk_notes": "", "task_entities": []},
@@ -44,6 +46,9 @@ def _stub_server(seen: list[tuple[str, object]], bodies: list | None = None):
                          "step_estimate": None, "invariants": [], "self_checks": [], "execution_entities": []}
             else:
                 reply = _REPLIES_OVERRIDE.get(operation, _REPLIES.get(operation, {"kind": "RESULT", "body": "ok"}))
+                if operation == "BOOTSTRAP_ANALYSIS" and operation not in _REPLIES_OVERRIDE:
+                    # one target from the request this call carries (the entity rules, L100 v2)
+                    reply = {**reply, "task_entities": target_entities(request_of(body.get("input") or ""))}
             text_reply = reply if isinstance(reply, str) else json.dumps(reply)
             payload = {"status": "completed", "model": body.get("model"),
                        "output": [{"type": "message", "content": [{"type": "output_text", "text": text_reply}]}],

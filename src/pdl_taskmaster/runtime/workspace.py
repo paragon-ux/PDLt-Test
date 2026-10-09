@@ -276,6 +276,20 @@ class WorkspaceRun:
         except ValidationError as exc:
             raise WorkspaceError("turn_routing_file") from exc
 
+    def write_turn_entities(self, names: tuple[str, ...], forwarded: list[dict[str, Any]]) -> None:
+        """The turn's checked task entities (L100): the names the prompt body must spell and
+        the entities later stages receive, kept so a restored session executes with them."""
+        self._write(self._turn_base() / "task_entities.json",
+                    json.dumps({"names": list(names), "forwarded": forwarded}, ensure_ascii=False, indent=2) + "\n")
+
+    def turn_entities(self) -> tuple[tuple[str, ...], list[dict[str, Any]]] | None:
+        """The active turn's checked task entities; None for a turn read before they were kept."""
+        path = self._turn_base() / "task_entities.json"
+        if not path.is_file():
+            return None
+        data = json.loads(self._read(path))
+        return tuple(data.get("names") or ()), list(data.get("forwarded") or [])
+
     def previous_turn(self) -> dict[str, Any] | None:
         """The most recent closed turn, as a follow-up needs it: its request and its
         result. A successful turn's result is its published deliverable without the

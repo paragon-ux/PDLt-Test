@@ -13,6 +13,7 @@ import pytest
 from pdl_taskmaster.controller.mechanical_controller import Stage
 from pdl_taskmaster.providers.sys1.recipes.computation import COMPUTATIONAL, OTHER, ComputationRecipe
 from pdl_taskmaster.runtime.session_engine import SessionEngine
+from entity_stub import request_of, target_entities  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 PROMPT = "COMPUTE the answer to the stated task\nRETURN the answer"
@@ -85,9 +86,9 @@ class Sys1:
         return {"answers": {name: {"choice": choice, "confidence": 0.97, "probabilities": {choice: 0.97, other: 0.03}}}}, 1.0
 
 
-def _bootstrap() -> str:
+def _bootstrap(req) -> str:
     return json.dumps({"kind": "ANALYSIS", "task_summary": "The user states a task.", "approach_notes": "",
-                       "risk_notes": "", "task_entities": []})
+                       "risk_notes": "", "task_entities": target_entities(request_of(req.prompt))})
 
 
 def _unconfirmed(tmp_path: Path, sys1: Sys1, *, draft_execute: bool = True):
@@ -96,7 +97,7 @@ def _unconfirmed(tmp_path: Path, sys1: Sys1, *, draft_execute: bool = True):
     def model_call(req):
         calls.append(req.operation)
         if req.operation == "BOOTSTRAP_ANALYSIS":
-            return _bootstrap()
+            return _bootstrap(req)
         if req.operation == "DRAFT_EXECUTE":
             return json.dumps({"kind": "RESULT", "approach": "Compute the value from the inputs.", "data_structures": [], "step_estimate": {"iterations": 3, "steps_per_iteration": 10, "basis": "one pass over the given values"}, "invariants": [], "self_checks": [], "execution_entities": []})
         if req.operation == "EXECUTE_UNCONFIRMED":
@@ -136,7 +137,7 @@ def test_without_system_1_there_is_no_brief_for_a_task_that_is_not_verified(tmp_
 
     def model_call(req):
         calls.append(req.operation)
-        return _bootstrap() if req.operation == "BOOTSTRAP_ANALYSIS" else json.dumps(
+        return _bootstrap(req) if req.operation == "BOOTSTRAP_ANALYSIS" else json.dumps(
             {"kind": "RESULT", "interpretation": "DETERMINE", "approach": "COMPUTE", "body": "42"})
 
     engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, no_review=True)
@@ -175,7 +176,7 @@ def test_the_confirmed_route_follows_the_same_gate(tmp_path) -> None:
         def model_call(req):
             calls.append(req.operation)
             if req.operation == "BOOTSTRAP_ANALYSIS":
-                return _bootstrap()
+                return _bootstrap(req)
             if req.operation == "DRAFT_PROMPT":
                 return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
             if req.operation == "DRAFT_PLAN":

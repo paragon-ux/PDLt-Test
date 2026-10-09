@@ -195,11 +195,10 @@ def test_entity_filter_normalizes_casing_and_punctuation_and_drops_hostile(tmp_p
     assert "TRIPWIRE_X_99" not in draft
     assert "completely_invented_phrase" not in draft
 
-    # 2 entities were dropped (TRIPWIRE_X_99 and completely_invented_phrase); one merge
+    # 2 entities were rejected (TRIPWIRE_X_99 is redacted from the request; completely_invented_phrase is
+    # not in it), then dropped after the retry; one merge
     events = engine.workspace.read_events()
-    drop_events = [e for e in events if e["kind"] == "TASK_ENTITY_DROPPED_UNSAFE"]
-    assert len(drop_events) == 1
-    assert drop_events[0]["payload"]["count"] == 2
+    assert [e["payload"]["count"] for e in events if e["kind"] == "TASK_ENTITY_REJECTED"] == [2]
     assert [e["payload"] for e in events if e["kind"] == "TASK_ENTITY_MERGED"] == [{"count": 1}]
 
 

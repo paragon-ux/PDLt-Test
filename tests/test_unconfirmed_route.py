@@ -41,13 +41,32 @@ class ClassifyingSys1:
         }, 1.0
 
 
-def _bootstrap_reply(task_summary: str = "Deduce identities of three gods A, B, and C.", entities: list[dict] | None = None) -> str:
+def _request_text(req) -> str:
+    """The request BOOTSTRAP received, from its projection."""
+    projection, _ = json.JSONDecoder().raw_decode(req.prompt[req.prompt.index("{"):])
+
+    def find(node):
+        if isinstance(node, dict):
+            if "RAW_UNTRUSTED_CONTENT" in node:
+                return node["RAW_UNTRUSTED_CONTENT"]
+            node = list(node.values())
+        if isinstance(node, list):
+            for value in node:
+                found = find(value)
+                if found is not None:
+                    return found
+        return None
+
+    return find(projection).replace("<untrusted_user_input>", "").replace("</untrusted_user_input>", "").strip()
+
+
+def _bootstrap_reply(task_summary: str = "Deduce identities of three gods A, B, and C.", entities: list[dict] | None = None,
+                     request=None) -> str:
     if entities is None:
-        entities = [  # every entity carries a quote (L100 v2, rule 9)
-            {"name": "A", "kind": "identifier", "known": ["three gods A, B, and C"]},
-            {"name": "B", "kind": "identifier", "known": ["three gods A, B, and C"]},
-            {"name": "C", "kind": "identifier", "known": ["three gods A, B, and C"]},
-        ]
+        # One target taken from the request itself: these tests are about the route, and the
+        # entity rules (L100 v2) want a name from the request and the question quoted.
+        text = _request_text(request) if request is not None else task_summary
+        entities = [{"name": text.split()[0], "kind": "term", "unknown": text, "distinction": "implicit"}]
     return json.dumps({
         "kind": "ANALYSIS",
         "task_summary": task_summary,
@@ -77,7 +96,7 @@ def test_standard_two_call_unconfirmed_execution(tmp_path: Path):
     def model_call(req):
         calls.append(req)
         if req.operation == "BOOTSTRAP_ANALYSIS":
-            return _bootstrap_reply()
+            return _bootstrap_reply(request=req)
         if req.operation == "EXECUTE_UNCONFIRMED":
             return _unconfirmed_result_reply()
         raise AssertionError(f"unexpected operation in unconfirmed route: {req.operation}")
@@ -126,7 +145,7 @@ def test_explicit_confirm_with_pseudocode_bypasses_no_review(tmp_path: Path):
     def model_call(req):
         calls.append(req)
         if req.operation == "BOOTSTRAP_ANALYSIS":
-            return _bootstrap_reply()
+            return _bootstrap_reply(request=req)
         if req.operation == "DRAFT_PROMPT":
             return json.dumps({
                 "kind": "PROMPT",
@@ -169,7 +188,7 @@ def test_request_input_transitions_to_waiting_input_and_resumes(tmp_path: Path):
         nonlocal first_execute
         calls.append(req)
         if req.operation == "BOOTSTRAP_ANALYSIS":
-            return _bootstrap_reply()
+            return _bootstrap_reply(request=req)
         if req.operation == "EXECUTE_UNCONFIRMED":
             if first_execute:
                 first_execute = False
@@ -223,7 +242,7 @@ def test_task_change_in_waiting_input_restarts_execution(tmp_path: Path):
         nonlocal first_execute
         calls.append(req)
         if req.operation == "BOOTSTRAP_ANALYSIS":
-            return _bootstrap_reply()
+            return _bootstrap_reply(request=req)
         if req.operation == "EXECUTE_UNCONFIRMED":
             if first_execute:
                 first_execute = False
@@ -308,7 +327,7 @@ def test_blocked_by_higher_priority_closes_as_refusal(tmp_path: Path):
     """ADR-0019: BLOCKED_BY_HIGHER_PRIORITY in EXECUTE_UNCONFIRMED closes with refused=True, closed=True."""
     def model_call(req):
         if req.operation == "BOOTSTRAP_ANALYSIS":
-            return _bootstrap_reply()
+            return _bootstrap_reply(request=req)
         if req.operation == "EXECUTE_UNCONFIRMED":
             return json.dumps({
                 "kind": "BLOCKED_BY_HIGHER_PRIORITY",
@@ -339,7 +358,7 @@ def test_host_app_no_review_wiring(tmp_path: Path):
 
         def call(self, request):
             if request.operation == "BOOTSTRAP_ANALYSIS":
-                return _bootstrap_reply()
+                return _bootstrap_reply(request=request)
             if request.operation == "EXECUTE_UNCONFIRMED":
                 return _unconfirmed_result_reply()
             raise AssertionError(f"unexpected operation: {request.operation}")
@@ -368,7 +387,7 @@ def test_unconfirmed_route_with_draft_execute(tmp_path: Path):
     def model_call(req):
         calls.append(req.operation)
         if req.operation == "BOOTSTRAP_ANALYSIS":
-            return _bootstrap_reply()
+            return _bootstrap_reply(request=req)
         if req.operation == "DRAFT_EXECUTE":
             return json.dumps({
                 "kind": "RESULT",
@@ -417,7 +436,7 @@ def test_unconfirmed_route_with_draft_execute_bypasses_on_standard_execution(tmp
     def model_call(req):
         calls.append(req.operation)
         if req.operation == "BOOTSTRAP_ANALYSIS":
-            return _bootstrap_reply()
+            return _bootstrap_reply(request=req)
         if req.operation == "EXECUTE_UNCONFIRMED":
             return _unconfirmed_result_reply()
         raise AssertionError(f"unexpected operation: {req.operation}")

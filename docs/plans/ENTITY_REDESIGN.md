@@ -159,6 +159,8 @@ The first live check (section 9, step 3) found targets left without an `unknown`
 
 **Live check rerun (6.2):** the same criteria, plus: retries and rejected items per run; no pronoun name kept; B and S not aliased to brothers or sisters; 16-06 keeps "sisters" as a target with its `unknown` quote and `implicit`. Groups are reported, not graded (the user, 2026-10-09). Not addressed: Task 1's empty entity list and 13-06's `implicit`.
 
+**v2.1 (after the v2 rerun, which kept no target in any run; ledger L100):** two more rules go through the same single retry: at least one entity carries an `unknown` (every task asks for something), and an entity whose name is not in the request is rejected on the first reply with the request's own word asked for, then dropped and counted on the retry. Matching also reads inline-code backticks as formatting. After the host checks, a run where no entity keeps its `unknown` records `TASK_ENTITY_NO_ANCHORED_TARGET`, and the live check fails such a run. The checked entities are kept with the turn, so a restored session executes with them (the L97 pilot's restored EXECUTE calls had none). If one retry with this feedback still leaves targets out, the next step is a separate target list reconciled by the host, not more rules and not a written `status` (ChatGPT via the user).
+
 ## 5. Risks
 
 - **Fewer targets (L56/L57):** the "answer" wording was added because models marked every entity given. Measured by runs with no target (baseline 2 of 118) and by `TASK_ENTITY_TARGET_UNANCHORED`.

@@ -571,6 +571,11 @@ class SessionEngine:
         engine._previous_turn = workspace.previous_turn()
         engine._previous_deliverable = _previous_turn_reference(engine._previous_turn)
         engine._source_request = workspace.turn_source()
+        # The turn's checked task entities (L100): without them a resumed EXECUTE ran with
+        # no TASK_ENTITIES (the L97 pilot's restored executions, recorded provider requests).
+        kept_entities = workspace.turn_entities()
+        if kept_entities is not None:
+            engine._active_task_entities, engine._active_typed_task_entities = kept_entities
         # System 1 routed this turn in an earlier epoch: execute it in the routed
         # mode and under the routed budget, not the engine's defaults.
         routing = workspace.turn_routing()
@@ -819,7 +824,7 @@ class SessionEngine:
                 )
             if problems:
                 outcome["task_entities"], reasons = task_entities.enforce(outcome["task_entities"], sources)
-                if self.workspace is not None:
+                if reasons and self.workspace is not None:
                     self.workspace.append_event("TASK_ENTITY_REJECTED", {"count": len(reasons), "reasons": reasons})
             return outcome
 
@@ -895,6 +900,11 @@ class SessionEngine:
         kept, entity_events = task_entities.check(
             outcome.get("task_entities") or {}, sources, lambda text: compile_bootstrap_output(raw_text, text)[0]
         )
+        if not any(entity["unknown"] for entity in task_entities.members_of(kept)):
+            # No target keeps its question quote: the link the entity channel exists to carry is
+            # missing (counted, never a session failure: the harness referees, it does not solve).
+            entity_events["TASK_ENTITY_NO_ANCHORED_TARGET"] = {
+                "targets": sum(entity["status"] == "target" for entity in task_entities.members_of(kept))}
         if self.workspace is not None:
             for kind, payload in entity_events.items():
                 self.workspace.append_event(kind, payload)
@@ -1198,6 +1208,8 @@ class SessionEngine:
         self._active_typed_task_entities = list(
             self._typed_task_entities_cache.get((substantive_request, self._previous_deliverable), [])
         )
+        # Kept with the turn, so a session restored in a later process executes with them.
+        self.workspace.write_turn_entities(entities, self._active_typed_task_entities)
 
         def _draft_call(ctx: dict[str, Any], tr: list[CallTrace], parser) -> Any:
             return self._call("DRAFT_PROMPT", ctx, tr, parser=parser)
@@ -1341,6 +1353,8 @@ class SessionEngine:
         self._active_typed_task_entities = list(
             self._typed_task_entities_cache.get((substantive_request, self._previous_deliverable), [])
         )
+        # Kept with the turn, so a session restored in a later process executes with them.
+        self.workspace.write_turn_entities(entities, self._active_typed_task_entities)
 
         self.controller = self._bind_new_controller(self.workspace, instance_kind="UNCONFIRMED")
         return self._execute_unconfirmed(substantive_request, traces)
@@ -2181,7 +2195,7 @@ class SessionEngine:
         sanitized = compile_bootstrap_output(substantive_request, substantive_request)[0].strip()
         typed_entities = list(self._typed_task_entities_cache.get(
             (substantive_request, self._previous_deliverable), []
-        ))
+        ) or self._active_typed_task_entities)
         verified = self._requires_verified_execution
         result_ir_mode = verified or os.environ.get("PDLT_RESULT_IR") == "1"
         requirements: list[str] = []
