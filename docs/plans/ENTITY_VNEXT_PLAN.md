@@ -149,12 +149,18 @@ The static results change what a live run must answer. The plan's four-arm measu
 
 ### 5.1 Stage 1 result (2026-10-09, live, `83a5de44`; `catalogue-runs/run-20261009-175714-unconfirmed-tier-d1`)
 
-- **Pass.** Decided pass rate **56 of 78 (71.8%)**, against the 68% threshold. The original scored 60 of 77 (77.9%). The gap is 6 points, about 1.3 SDs. Per repeat: 19/25, 19/25, 18/24 (the original: 19/24, 22/25, 20/25).
+- **Pass.** Decided pass rate **56 of 78 (71.8%)**, against the 68% threshold. The original scored 60 of 77 (77.9%). The gap is 6.1 points: about 0.9 standard errors of a difference between two samples (corrected after ChatGPT's review via the user; the earlier "1.3 SDs" used the original's spread alone). By prompt, vNext lost passes on 6 prompts and gained on 3 (sign test p = 0.51). Per repeat: 19/25, 19/25, 18/24 (the original: 19/24, 22/25, 20/25).
 - **Cost:** $0.477; $2.78 left on the key. No provider or harness error (exit 4). One run waited for input (02-05 r1, exit 3, `REQUEST_INPUT`).
 - **Where the prompts moved** (PASS of decided, original → vNext):
   - lost: 01-01 2/3 → 0/3; 04-03 2/3 → 0/3; 04-06 2/3 → 0/3; 02-05 3/3 → 2/3; 16-07 3/3 → 2/3;
   - gained: 02-03 2/3 → 3/3; 04-02 0/3 → 1/3; 16-06 0/2 → 2/3.
-- **None of the lost runs involved D1.** `TASK_ENTITY_UNANCHORED` fired in 10 runs (01-03 r1, r2; 02-01 r3; 02-03 r1; 04-05 r2; 12-03 r1, r2; 12-04 r2; 16-03 r3; 16-07 r1). Of the 6 graded, 5 passed. 04-05 r2 failed, but 04-05 scored the same as in the original. So in every lost run, EXECUTE got its entities exactly as the original would have built them from that BOOTSTRAP reply (static, S3). The losses are therefore sampling or provider variation, not vNext's change (recorded artifact, static).
+- **None of the lost runs involved D1.** `TASK_ENTITY_UNANCHORED` fired in 10 runs (01-03 r1, r2; 02-01 r3; 02-03 r1; 04-05 r2; 12-03 r1, r2; 12-04 r2; 16-03 r3; 16-07 r1). Of the 6 graded, 5 passed. 04-05 r2 failed, but 04-05 scored the same as in the original. So in every lost run, EXECUTE got its entities exactly as the original would have built them from that BOOTSTRAP reply (static, S3). The losses are not caused by vNext's change: those runs are draws from the original's own process (recorded artifact, static). That process's variation includes BOOTSTRAP's entity draw (audit below), so this does not show that entities are irrelevant to the losses.
+- **Audit of the sent requests** (recorded artifact, `provider-requests/` of both sweeps, after ChatGPT's review via the user):
+  - BOOTSTRAP's body is byte-identical in every run of all 42 prompts, in both sweeps.
+  - Between any two runs of one prompt, in either sweep, EXECUTE's body differs **only in `TASK_ENTITIES`**: every other input, the instructions, effort, caps and pinning are identical. In the original as in vNext, the entity payload is the only part of EXECUTE's input that varies from run to run. It differed in every comparison.
+  - System 1's problem class varied only on 04-04 and 16-01, in both sweeps; neither lost or gained.
+  - 01-01, all 6 runs: every payload's meanings restate the request's constraint correctly. A passing payload (original r3: `a_i`, `b_i`, `c_i` as targets, the sum as given) has the same structure as a failing one (vNext r3). Every failure is computational: no exact partition found (0 or 3 valid triples), the original's r1 included. At n = 6 there is no visible link between the payload and the outcome, and no way to rule one out.
+  - Category 1 under the original, with the full entity block: 20 of 21. Under vNext: 18 of 21, all losses on 01-01.
 - **04-06 failed all 3 runs the same way** ("Expected SEMI, got EOF" on the prompt's own example). The original failed it once, cancelled. This consistent failure is worth watching in stage 3, but it is not D1's: no entity was unanchored in those runs.
 - **Next:** stage 3 (`run_catalogue.py --fail-fast`, about $0.40, cap $0.60), on the user's go. Stage 2 is not needed.
 
