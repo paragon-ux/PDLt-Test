@@ -144,6 +144,21 @@ Rewritten for `surface`, `status`, `relation` and its three fields, the `term` k
 - **Missing information** keeps its own channel, the input request (graded by 13-06). `undetermined` labels it but does not trigger it.
 - **Known limitation:** `task_summary` stays model-written free text. It is sanitized and wrapped as untrusted, as today, so it keeps the exposure that `relation` had. This change does not touch it.
 
+### 4.9 Schema v2 (after the failed live check; supersedes 4.2-4.4 where they differ)
+
+The first live check (section 9, step 3) found targets left without an `unknown` because `relation` was optional and nullable, and 16-06's only target dropped because its name was a paraphrase. Side chat 3 and the user redesigned the shape (ledger L100 has each decision and its source):
+
+- **Wire shape, fixed keys** (Cerebras needs closed objects with every property present): `task_entities` is `{groups: [{name, alias, known, members}], entities: [...]}`; an entity is `{name, kind, alias, known, unknown, distinction}`. `surface` is renamed `name`; there is no `relation` wrapper and no `status` field.
+- **Groups** hold entities, one level. A group's name is the request's own word for the set; a set the request states without naming has `name: null` and gets a host label (`__g1__`) when rendered. Every group has a `known` quote; an unnamed group's members are each named in one of its quotes.
+- **Aliases**: other names the request gives the same thing (identity only: never its count, size or value). A pronoun is never a name, but may be an alias, kept only when it appears in one of its owner's kept quotes; a pronoun claimed by two owners is dropped from both. An alias that is another entity's name merges the two only when both have the same `kind`. The pronoun check is a fixed list of English pronouns matched against the whole name, single letters exempt: schema validation over a closed grammatical class, not a task word list (4.1, ADR-0018).
+- **Every entity has at least one quote**, in `known` or `unknown`.
+- **The role is derived**: a target when the model wrote an `unknown`, given otherwise. A target whose `unknown` fails the quote match stays a target and is counted unanchored, so a typography slip never turns a target into a given.
+- **Enforcement**: a reply that breaks a rule (a nested group, a group name not in the request, a pronoun name, an entity or group with no quote, an unnamed group whose quotes don't name its members) is rejected once through the existing wire retry, with feedback naming each violation (`TASK_ENTITY_RETRY`). On the retry the host drops only the offending items (`TASK_ENTITY_REJECTED`): an entity is dropped; a group loses its label and its members stay as entities. Quote mismatches stay drop-and-count, never rejections.
+- **What later stages receive**: `TASK_ENTITIES` lists each group (`{group: label, alias, known, members}`) and then each standalone entity (`{name, kind, status, alias, known, unknown, distinction}`); the drafting summary renders `- group <label> { member, member [TARGET] }` with the group's quotes, then each entity with its role, aliases ("also called"), quotes and the host's reading of its distinction.
+- **Matching** also reads a backslash-escaped quotation mark as the mark (12-01's one lost quote).
+
+**Live check rerun (6.2):** the same criteria, plus: retries and rejected items per run; no pronoun name kept; B and S not aliased to brothers or sisters; 16-06 keeps "sisters" as a target with its `unknown` quote and `implicit`. Groups are reported, not graded (the user, 2026-10-09). Not addressed: Task 1's empty entity list and 13-06's `implicit`.
+
 ## 5. Risks
 
 - **Fewer targets (L56/L57):** the "answer" wording was added because models marked every entity given. Measured by runs with no target (baseline 2 of 118) and by `TASK_ENTITY_TARGET_UNANCHORED`.
@@ -215,6 +230,7 @@ All answered by the user on 2026-10-09:
    - The drafting summary's entity lines sit inside the untrusted-input wrapper, like the summary (4.5). EXECUTE needed no change: its `TASK_ENTITIES` and `SOURCE_REQUEST` are both sanitized and unwrapped.
 
    `tests/fixtures/recorded-cases.json` was re-keyed with `scripts/render_recorded_prompts.py rekey`: two BOOTSTRAP keys, responses unchanged (both record `task_entities: []`). That is plumbing, not evidence about the model: step 3 still applies.
-3. Live check (6.2); re-record the replays it invalidates. Run 2026-10-09: falsified (ledger L100 has the numbers): targets left without an `unknown` in 7 of 10 runs, 16-06's paraphrased target dropped, 13-06 marked `implicit`. Next: a description fix, then the check again.
+3. Live check (6.2); re-record the replays it invalidates. Run 2026-10-09: falsified (ledger L100 has the numbers): targets left without an `unknown` in 7 of 10 runs, 16-06's paraphrased target dropped, 13-06 marked `implicit`. Next: schema v2 (section 4.9), then the check again.
+3a. Schema v2 built (section 4.9); the check reruns with its added criteria.
 4. Catalogue gate (6.3).
 5. Measurement (6.4), then the ledger row's outcome.

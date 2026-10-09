@@ -95,16 +95,14 @@ def test_16_06_specification_boundary_and_anti_computation(tmp_path: Path):
         ),
         "approach_notes": "",
         "risk_notes": "",
-        "task_entities": [
-            {"surface": "Maya", "kind": "identifier", "status": "given"},
-            {"surface": "B", "kind": "parameter", "status": "given",
-             "relation": {"known": ["Maya has B brothers", "B is at least 1"]}},
-            {"surface": "S", "kind": "parameter", "status": "given", "relation": {"known": ["S sisters"]}},
-            {"surface": "sisters", "kind": "term", "status": "target",
-             "relation": {"known": ["Every brother and sister shares both parents with Maya."],
-                          "unknown": "How many sisters does each of Maya's brothers have?",
-                          "distinction": "implicit"}},
-        ],
+        "task_entities": {"groups": [], "entities": [
+            {"name": "Maya", "kind": "identifier", "known": ["Maya has B brothers and S sisters"]},
+            {"name": "B", "kind": "parameter", "known": ["Maya has B brothers", "B is at least 1"]},
+            {"name": "S", "kind": "parameter", "known": ["S sisters"]},
+            {"name": "sisters", "kind": "term",
+             "known": ["Every brother and sister shares both parents with Maya."],
+             "unknown": "How many sisters does each of Maya's brothers have?", "distinction": "implicit"},
+        ]},
     }
 
     calls = []
@@ -143,14 +141,13 @@ def test_16_06_specification_boundary_and_anti_computation(tmp_path: Path):
     assert "preserve [GIVEN] values character-for-character as fixed problem constraints" in draft_prompt
     assert "never pre-compute or assert a solution for [TARGET] entities during drafting" in draft_prompt
 
-    # Verify wire payload parsing validates status: given / target
+    # The model writes no role (L100 v2): the host derives it, a target being what has an unknown
     bridge = OperationBridge(ROOT)
     parsed = bridge.parse_bootstrap_analysis(json.dumps(bootstrap_payload))
-    entities = parsed["task_entities"]
-    assert len(entities) == 4
-    assert entities[1]["surface"] == "B" and entities[1]["status"] == "given"
-    assert entities[2]["surface"] == "S" and entities[2]["status"] == "given"
-    assert entities[3]["surface"] == "sisters" and entities[3]["status"] == "target"
+    entities = parsed["task_entities"]["entities"]
+    assert [e["name"] for e in entities] == ["Maya", "B", "S", "sisters"]
+    assert all("status" not in e for e in entities)
+    assert [e["name"] for e in entities if e["unknown"]] == ["sisters"]
 
 
 def test_16_06_target_entities_preserved_and_not_dropped(tmp_path: Path):
@@ -174,17 +171,17 @@ def test_16_06_target_entities_preserved_and_not_dropped(tmp_path: Path):
         ),
         "approach_notes": "",
         "risk_notes": "",
-        "task_entities": [
-            {"surface": " Maya ", "kind": "identifier", "status": "given"},
-            {"surface": "B", "kind": "parameter", "status": "given", "relation": {"known": ["Maya has B brothers"]}},
-            {"surface": "S", "kind": "parameter", "status": "given", "relation": {"known": ["S sisters"]}},
-            {"surface": "brothers", "kind": "term", "status": "given", "relation": {"known": ["Maya has B brothers"]}},
-            {"surface": "sisters", "kind": "term", "status": "given", "relation": {"known": ["S sisters"]}},
-            {"surface": "sisters", "kind": "term", "status": "target",
-             "relation": {"unknown": "How many sisters does each of Maya's brothers have?", "distinction": "implicit"}},
-            {"surface": "expression", "kind": "literal", "status": "target",
-             "relation": {"unknown": "Give the answer as an expression in B and S", "distinction": "implicit"}},
-        ],
+        "task_entities": {"groups": [], "entities": [
+            {"name": " Maya ", "kind": "identifier", "known": ["Maya has B brothers"]},
+            {"name": "B", "kind": "parameter", "known": ["Maya has B brothers"]},
+            {"name": "S", "kind": "parameter", "known": ["S sisters"]},
+            {"name": "brothers", "kind": "term", "known": ["Maya has B brothers"]},
+            {"name": "sisters", "kind": "term", "known": ["S sisters"]},
+            {"name": "sisters", "kind": "term",
+             "unknown": "How many sisters does each of Maya's brothers have?", "distinction": "implicit"},
+            {"name": "expression", "kind": "literal",
+             "unknown": "Give the answer as an expression in B and S", "distinction": "implicit"},
+        ]},
     }
 
     calls = []

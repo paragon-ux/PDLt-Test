@@ -43,10 +43,10 @@ class ClassifyingSys1:
 
 def _bootstrap_reply(task_summary: str = "Deduce identities of three gods A, B, and C.", entities: list[dict] | None = None) -> str:
     if entities is None:
-        entities = [
-            {"surface": "A", "kind": "identifier", "relation": None},
-            {"surface": "B", "kind": "identifier", "relation": None},
-            {"surface": "C", "kind": "identifier", "relation": None},
+        entities = [  # every entity carries a quote (L100 v2, rule 9)
+            {"name": "A", "kind": "identifier", "known": ["three gods A, B, and C"]},
+            {"name": "B", "kind": "identifier", "known": ["three gods A, B, and C"]},
+            {"name": "C", "kind": "identifier", "known": ["three gods A, B, and C"]},
         ]
     return json.dumps({
         "kind": "ANALYSIS",
@@ -267,9 +267,9 @@ def test_mechanical_entity_coverage_and_lint_events_recorded(tmp_path: Path):
         calls.append(req)
         if req.operation == "BOOTSTRAP_ANALYSIS":
             return _bootstrap_reply(entities=[
-                {"surface": "A", "kind": "identifier", "definition": None},
-                {"surface": "B", "kind": "identifier", "definition": None},
-                {"surface": "MISSING_ENTITY_X", "kind": "identifier", "definition": None},
+                {"name": "A", "kind": "identifier", "known": ["Three gods"]},
+                {"name": "B", "kind": "identifier", "known": ["Three gods"]},
+                {"name": "MISSING_ENTITY_X", "kind": "identifier", "known": ["Three gods with MISSING_ENTITY_X"]},
             ])
         if req.operation == "EXECUTE_UNCONFIRMED":
             # interpretation does not mention MISSING_ENTITY_X, and has a plan soundness violation (invented field)

@@ -1,10 +1,10 @@
 """Locating text a model copied from the request (ledger L100, docs/plans/ENTITY_REDESIGN.md).
 
-An entity's surface and its quotes are kept only when each is one continuous piece of
+An entity's name and its quotes are kept only when each is one continuous piece of
 the request. The match ignores typography only: Unicode compatibility forms, dash and
-quote variants, and runs of whitespace (gpt-oss writes U+2011 and U+202F where the
-request has "-" and " "). Letters, digits and spelling must match; case is ignored only
-as a fallback. What is kept is the request's own text for the span, never the model's
+quote variants, a backslash escaping a quotation mark, and runs of whitespace (gpt-oss
+writes U+2011 and U+202F where the request has "-" and " "). Letters, digits and
+spelling must match; case is ignored only as a fallback. What is kept is the request's own text for the span, never the model's
 copy, so a model that corrects the user's spelling finds no match.
 """
 from __future__ import annotations
@@ -26,6 +26,8 @@ def _fold(text: str, *, casefold: bool) -> tuple[str, list[int]]:
     origin: list[int] = []
     in_space = False
     for index, char in enumerate(text):
+        if char == "\\" and text[index + 1:index + 2].translate(_TYPOGRAPHY) in ('"', "'"):
+            continue  # an escaped quotation mark is a copying artifact: \" reads as "
         if char.isspace():
             if not in_space:
                 out.append(" ")

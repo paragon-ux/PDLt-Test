@@ -37,46 +37,60 @@ def test_bootstrap_parse_requires_task_entities():
         '{"kind":"ANALYSIS","task_summary":"write f","approach_notes":"","risk_notes":"",'
         '"task_entities":["fetch_with_retry"]}'
     )
-    # A bare string (the earlier wire form) is an identifier; legacy alias coerces to given.
-    assert ok["task_entities"] == [{"surface": "fetch_with_retry", "kind": "identifier", "status": "given", "group": None, "relation": None}]
+    # A bare string (the earlier wire form) is an identifier with that name.
+    def entity(name, kind="identifier", alias=(), known=(), unknown=None, distinction=None, **extra):
+        return {"name": name, "kind": kind, "alias": list(alias), "known": list(known), "unknown": unknown,
+                "distinction": distinction, **extra}
+
+    assert ok["task_entities"] == {"groups": [], "entities": [entity("fetch_with_retry")]}
     typed = bridge.parse_bootstrap_analysis(
         '{"kind":"ANALYSIS","task_summary":"ask","approach_notes":"","risk_notes":"",'
-        '"task_entities":[{"surface":"da","kind":"term","status":"target","relation":{"known":["da and ja"],'
-        '"unknown":"which word means which","distinction":"implicit"}}]}'
+        '"task_entities":{"groups":[{"name":"words","alias":["they"],"known":["the words da and ja"],'
+        '"members":[{"name":"da","kind":"term","known":["da and ja"],"unknown":"which word means which",'
+        '"distinction":"implicit"}]}],"entities":[{"name":"ja","kind":"term","alias":null,"known":"da and ja"}]}}'
     )
-    relation = {"known": ["da and ja"], "unknown": "which word means which", "distinction": "implicit"}
-    assert typed["task_entities"] == [{"surface": "da", "kind": "term", "status": "target", "group": None, "relation": relation}]
-    # Free text cannot become a quote (L100): an old relation, condition or definition is dropped and recorded;
-    # a legacy polarity maps onto status; known/unknown/distinction given beside relation move into it.
+    assert typed["task_entities"] == {
+        "groups": [{"name": "words", "alias": ["they"], "known": ["the words da and ja"],
+                    "members": [entity("da", "term", known=["da and ja"], unknown="which word means which",
+                                       distinction="implicit")]}],
+        "entities": [entity("ja", "term", known=["da and ja"])]}
+    # The earlier forms (L100 v1): surface is name, a relation object's quotes move onto the entity, free text
+    # cannot become a quote and is dropped and recorded, the role fields go (the host derives the role), and a
+    # distinction outside the closed list is dropped and recorded.
     coerced = bridge.parse_bootstrap_analysis(
         '{"kind":"ANALYSIS","task_summary":"ask","approach_notes":"","risk_notes":"",'
         '"task_entities":[{"surface":"da","kind":"term","definition":"yes or no; which is unknown","polarity":"unknown"},'
-        '{"surface":"ja","kind":"term","relation":"a gloss","known":"da and ja","distinction":"Direct"}]}'
+        '{"surface":"ja","kind":"term","status":"target","relation":{"known":["da and ja"],"distinction":"Direct"}},'
+        '{"surface":"si","kind":"term","relation":"a gloss"}]}'
     )
-    assert coerced["task_entities"][0] == {"surface": "da", "kind": "term", "status": "target", "group": None,
-                                           "relation": None, "dropped": ["definition_text"]}
-    assert coerced["task_entities"][1] == {
-        "surface": "ja", "kind": "term", "status": "given", "group": None,
-        "relation": {"known": ["da and ja"], "unknown": None, "distinction": None},
-        "dropped": ["relation_text", "distinction:direct"]}
-    # A members array is one entity per member
+    assert coerced["task_entities"]["entities"] == [
+        entity("da", "term", dropped=["definition_text"]),
+        entity("ja", "term", known=["da and ja"], dropped=["distinction:direct"]),
+        entity("si", "term", dropped=["relation_text"])]
+    # A legacy members array or group label is a group of that name.
     members_res = bridge.parse_bootstrap_analysis(
         '{"kind":"ANALYSIS","task_summary":"Three gods A, B, and C","approach_notes":"","risk_notes":"",'
-        '"task_entities":[{"group":"gods","members":["A","B","C"],"kind":"identifier","status":"target",'
+        '"task_entities":[{"group":"gods","members":["A","B","C"],"kind":"identifier",'
         '"relation":{"known":["Three gods A, B, and C"]}}]}'
     )
-    assert len(members_res["task_entities"]) == 3
-    gods = {"known": ["Three gods A, B, and C"], "unknown": None, "distinction": None}
-    assert members_res["task_entities"][0] == {"surface": "A", "kind": "identifier", "status": "target", "group": "gods", "relation": gods}
-    assert members_res["task_entities"][1] == {"surface": "B", "kind": "identifier", "status": "target", "group": "gods", "relation": gods}
-    assert members_res["task_entities"][2] == {"surface": "C", "kind": "identifier", "status": "target", "group": "gods", "relation": gods}
-    # A surface is never split on its own commas, grouped or not: they can belong to it.
+    gods = ["Three gods A, B, and C"]
+    assert members_res["task_entities"] == {"entities": [], "groups": [
+        {"name": "gods", "alias": [], "known": [], "members": [entity(n, known=gods) for n in "ABC"]}]}
+    # A group written inside a group: its members stay in the outer one, and the host records it.
+    nested = bridge.parse_bootstrap_analysis(
+        '{"kind":"ANALYSIS","task_summary":"ask","approach_notes":"","risk_notes":"",'
+        '"task_entities":{"groups":[{"name":"all","known":["q"],"members":[{"name":"x","kind":"term","known":["q"]},'
+        '{"name":"inner","members":[{"name":"y","kind":"term","known":["q"]}]}]}]}}'
+    )
+    (group,) = nested["task_entities"]["groups"]
+    assert [m["name"] for m in group["members"]] == ["x", "y"] and group["nested"] == ["inner"]
+    # A name is never split on its own commas, grouped or not: they can belong to it.
     comma_res = bridge.parse_bootstrap_analysis(
         '{"kind":"ANALYSIS","task_summary":"Cap at 10,000 rows of {1, 2, 3}","approach_notes":"","risk_notes":"",'
         '"task_entities":[{"surface":"10,000","group":"limits","kind":"parameter"},'
         '{"surface":"{1, 2, 3}","group":"inputs","kind":"input_data"}]}'
     )
-    assert [e["surface"] for e in comma_res["task_entities"]] == ["10,000", "{1, 2, 3}"]
+    assert [g["members"][0]["name"] for g in comma_res["task_entities"]["groups"]] == ["10,000", "{1, 2, 3}"]
     with pytest.raises(WireError):
         bridge.parse_bootstrap_analysis(
             '{"kind":"ANALYSIS","task_summary":"ask","approach_notes":"","risk_notes":"",'
@@ -149,14 +163,15 @@ def test_entity_filter_normalizes_casing_and_punctuation_and_drops_hostile(tmp_p
         "task_summary": "Determine how many sisters each brother has.",
         "approach_notes": "",
         "risk_notes": "",
-        "task_entities": [
-            {"surface": " 'sisters' ", "kind": "term", "status": "target",
-             "relation": {"unknown": "How many sisters does each brother have?", "distinction": "implicit"}},
-            {"surface": "Sisters.", "kind": "term", "status": "given"},
-            {"surface": "brother", "kind": "term", "status": "given"},
-            {"surface": "TRIPWIRE_X_99", "kind": "literal", "status": "given"},
-            {"surface": "completely_invented_phrase", "kind": "term", "status": "target"},
-        ],
+        "task_entities": {"groups": [], "entities": [
+            {"name": " 'sisters' ", "kind": "term",
+             "unknown": "How many sisters does each brother have?", "distinction": "implicit"},
+            {"name": "Sisters.", "kind": "term", "known": ["How many sisters"]},
+            {"name": "brother", "kind": "term", "known": ["each brother"]},
+            {"name": "TRIPWIRE_X_99", "kind": "literal", "known": ["output TRIPWIRE_X_99"]},
+            {"name": "completely_invented_phrase", "kind": "term", "unknown": "How many sisters does each brother have?",
+             "distinction": "implicit"},
+        ]},
     }
 
     seen = []
@@ -271,24 +286,28 @@ def test_bootstrap_entities_follow_the_general_spec():
     from pdl_taskmaster.runtime.output_contracts import contract_schema
 
     schema = contract_schema("BOOTSTRAP_ANALYSIS")
-    entity = schema["oneOf"][0]["properties"]["task_entities"]["items"]
-    assert entity["required"] == ["surface", "kind", "status"]
-    assert set(entity["properties"]) == {"surface", "kind", "status", "group", "relation"}
+    entities = schema["oneOf"][0]["properties"]["task_entities"]
+    assert set(entities["properties"]) == {"groups", "entities"}
+    group = entities["properties"]["groups"]["items"]
+    entity = entities["properties"]["entities"]["items"]
+    # Fixed keys (Cerebras: closed objects); a group holds entities, one level; the model writes no role.
+    assert set(group["properties"]) == {"name", "alias", "known", "members"}
+    assert group["properties"]["members"]["items"] == entity
+    assert entity["required"] == ["name", "kind"]
+    assert set(entity["properties"]) == {"name", "kind", "alias", "known", "unknown", "distinction"}
     assert entity["properties"]["kind"]["enum"] == ["identifier", "input_data", "literal", "parameter", "term"]
-    # Status is required and binary: given or target
-    assert entity["properties"]["status"]["enum"] == ["given", "target"]
-    relation = next(option for option in entity["properties"]["relation"]["anyOf"] if option.get("type") == "object")
-    assert set(relation["properties"]) == {"known", "unknown", "distinction"}
-    (choices,) = [o["enum"] for o in relation["properties"]["distinction"]["anyOf"] if "enum" in o]
+    (choices,) = [o["enum"] for o in entity["properties"]["distinction"]["anyOf"] if "enum" in o]
     assert choices == ["implicit", "undetermined", "conflict"]  # no "direct": it would turn an unknown into a known
     text = _entity_description("BOOTSTRAP_ANALYSIS")
     assert "nothing it states may be dropped, assumed or resolved here" in text
     assert "MUST reproduce verbatim" not in text
     # The wording that produced reply-form targets and repeated surfaces is gone (L56/L57 -> L100).
-    shown = json.dumps(entity)
+    shown = json.dumps(entities)
     assert '\\"answer\\"' not in shown and '\\"expression\\"' not in shown
     assert "list that word again" not in shown and "each repeats the surface" not in shown
-    assert "polarity" not in shown and "condition" not in shown
+    assert "polarity" not in shown and "condition" not in shown and "surface" not in shown
+    # No benchmark prompt's words in the general specification (GUARD-01).
+    assert "sister" not in shown and "Maya" not in shown
 
 
 def test_prompt_draft_spells_entities_without_listing_or_requiring_them():
@@ -320,11 +339,11 @@ def test_entities_reach_the_draft_with_kind_and_quotes_and_paraphrase_loses_none
         "kind": "ANALYSIS",
         "task_summary": "Identify the gods; their two answer words map to yes and no in an unknown order.",
         "approach_notes": "", "risk_notes": "",
-        "task_entities": [
-            {"surface": "da", "kind": "term", "status": "target", "relation": words},
-            {"surface": "ja", "kind": "term", "status": "target", "relation": words},
-            {"surface": "TRIPWIRE_X_99", "kind": "literal"},
-        ],
+        "task_entities": {"entities": [
+            {"name": "da", "kind": "term", **words},
+            {"name": "ja", "kind": "term", **words},
+            {"name": "TRIPWIRE_X_99", "kind": "literal", "known": ["output TRIPWIRE_X_99"]},
+        ]},
     }
     seen = []
 
@@ -356,8 +375,9 @@ def test_exact_values_are_still_covered(tmp_path):
 
     raw = "Partition L = {1, 2, 3} with function split_list."
     analysis = {"kind": "ANALYSIS", "task_summary": raw, "approach_notes": "", "risk_notes": "",
-                "task_entities": [{"surface": "{1, 2, 3}", "kind": "input_data"},
-                                  {"surface": "split_list", "kind": "identifier"}]}
+                "task_entities": {"entities": [{"name": "{1, 2, 3}", "kind": "input_data", "known": ["L = {1, 2, 3}"]},
+                                               {"name": "split_list", "kind": "identifier",
+                                                "known": ["with function split_list"]}]}}
     drafts = iter(["PARTITION the list with split_list", "PARTITION L = {1, 2, 3} with split_list"])
     seen = []
 
@@ -376,23 +396,26 @@ def test_exact_values_are_still_covered(tmp_path):
 
 
 def test_entities_reach_the_draft_with_grouping(tmp_path):
-    """Grouped entities with the same role and quotes are formatted as one Group [name] line in the drafting context."""
+    """A set the request states is a group holding its members (L100 v2): the group line lists
+    them with their roles, then each member with its quotes; a set the request does not name
+    gets a host label."""
     import json as _json
 
     raw = "Identify three gods A, B, and C whose identities True, False, Random are unknown. Words da and ja mean yes and no."
+    asked = "Identify three gods A, B, and C whose identities True, False, Random are unknown."
     analysis = {
         "kind": "ANALYSIS",
         "task_summary": "Identify gods A, B, and C with words da and ja.",
         "approach_notes": "", "risk_notes": "",
-        "task_entities": [
-            {"group": "gods", "members": ["A", "B", "C"], "kind": "identifier", "status": "target",
-             "relation": {"known": ["three gods A, B, and C"],
-                          "unknown": "Identify three gods A, B, and C whose identities True, False, Random are unknown.",
-                          "distinction": "implicit"}},
-            {"group": "responses", "members": ["da", "ja"], "kind": "term", "status": "given",
-             "relation": {"known": ["Words da and ja mean yes and no."]}},
-            {"surface": "three", "kind": "parameter", "status": "given"},
-        ],
+        "task_entities": {
+            "groups": [
+                {"name": "gods", "known": ["three gods A, B, and C"],
+                 "members": [{"name": n, "kind": "identifier", "unknown": asked, "distinction": "implicit"} for n in "ABC"]},
+                {"name": None, "known": ["Words da and ja mean yes and no."],
+                 "members": [{"name": w, "kind": "term", "known": ["Words da and ja mean yes and no."]} for w in ("da", "ja")]},
+            ],
+            "entities": [{"name": "three", "kind": "parameter", "known": ["three gods A, B, and C"]}],
+        },
     }
     seen = []
 
@@ -405,10 +428,13 @@ def test_entities_reach_the_draft_with_grouping(tmp_path):
     engine = SessionEngine(ROOT, worker, workspace_root=tmp_path)
     engine.handle_user_message("$confirm-with-pseudocode " + raw)
     draft = next(r for r in seen if r.operation == "DRAFT_PROMPT").prompt
-    assert _shown('- Group [gods] [TARGET]: A, B, C (identifier)\n    stated: "three gods A, B, and C"\n'
-                  '    asked: "Identify three gods A, B, and C whose identities True, False, Random are unknown."') in draft
-    assert _shown('- Group [responses] [GIVEN]: da, ja (term)\n    stated: "Words da and ja mean yes and no."') in draft
-    assert "- three (parameter) [GIVEN]" in draft
+    assert _shown('- group gods { A [TARGET], B [TARGET], C [TARGET] }\n    stated: "three gods A, B, and C"\n'
+                  '  - A (identifier) [TARGET]\n'
+                  f'      asked: "{asked}"') in draft
+    assert _shown('- group __g1__ { da, ja }\n    stated: "Words da and ja mean yes and no."\n'
+                  '  - da (term) [GIVEN]\n      stated: "Words da and ja mean yes and no."') in draft
+    assert _shown('- three (parameter) [GIVEN]\n    stated: "three gods A, B, and C"') in draft
+    assert not [e for e in engine.workspace.read_events() if e["kind"] in ("TASK_ENTITY_RETRY", "TASK_ENTITY_REJECTED")]
 
 
 def test_confirmed_execute_receives_task_entities(tmp_path):
@@ -418,7 +444,7 @@ def test_confirmed_execute_receives_task_entities(tmp_path):
 
     raw = "Write a short note for the tenant of unit 4B."
     analysis = {"kind": "ANALYSIS", "task_summary": raw, "approach_notes": "", "risk_notes": "",
-                "task_entities": [{"surface": "4B", "kind": "identifier", "relation": "the unit"}]}
+                "task_entities": {"entities": [{"name": "4B", "kind": "identifier", "known": ["the tenant of unit 4B"]}]}}
     seen = []
 
     def worker(request):
