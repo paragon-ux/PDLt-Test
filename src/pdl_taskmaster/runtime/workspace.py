@@ -266,6 +266,20 @@ class WorkspaceRun:
         """The turn's System 1 routing, rewritten whenever the routing changes."""
         self._write(self._turn_base() / "routing.json", routing.model_dump_json(indent=2) + "\n")
 
+    def write_turn_entities(self, names: tuple[str, ...], forwarded: list[dict[str, Any]]) -> None:
+        """The turn's checked task entities (L100): the names the prompt body must spell and
+        the entities later stages receive, kept so a restored session executes with them."""
+        self._write(self._turn_base() / "task_entities.json",
+                    json.dumps({"names": list(names), "forwarded": forwarded}, ensure_ascii=False, indent=2) + "\n")
+
+    def turn_entities(self) -> tuple[tuple[str, ...], list[dict[str, Any]]] | None:
+        """The active turn's checked task entities; None for a turn read before they were kept."""
+        path = self._turn_base() / "task_entities.json"
+        if not path.is_file():
+            return None
+        data = json.loads(self._read(path))
+        return tuple(data.get("names") or ()), list(data.get("forwarded") or [])
+
     def turn_routing(self) -> TurnRouting | None:
         """The active turn's routing; None for a turn routed before routing was kept."""
         path = self._turn_base() / "routing.json"
