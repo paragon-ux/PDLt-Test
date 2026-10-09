@@ -1,6 +1,6 @@
 # Task-entity redesign (ledger L100)
 
-Status: **approved by the user (2026-10-09), section 8 answered**; nothing built or run yet. Branch `claude/final-five-arm-benchmark`.
+Status: **superseded by [ENTITY_V3_DESIGN.md](ENTITY_V3_DESIGN.md)** (the user, 2026-10-09; ledger L100). Kept as the record of v1 to v2.3. Branch `claude/final-five-arm-benchmark`.
 
 ## 1. Provenance
 
