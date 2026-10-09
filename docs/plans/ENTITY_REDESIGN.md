@@ -87,10 +87,11 @@ Inbound aliases (ADR-0018 coercion, for recorded payloads and models that use ol
 | `conflict` | The request's statements about it contradict each other. |
 
 Rules:
-- One operator per target, chosen from the closed list. No prose, no counts, no rule registry: the user's limit for gpt-oss-120b on low, and the reason the other versions were rejected (section 1).
+- One operator for every target that has an `unknown`, chosen from the closed list, whether or not it has `known` quotes. No prose, no counts, no rule registry: the user's limit for gpt-oss-120b on low, and the reason the other versions were rejected (section 1). A target with a kept `unknown` and no `distinction` is counted (`TASK_ENTITY_DISTINCTION_MISSING`).
+- **No null fallback beside an `unknown`.** ChatGPT later suggested allowing null to mean "no classification safely asserted". Side chat 2 (pasted into main, 2026-10-09) advised against it, and main agrees: a model would reach for null exactly when unsure, which is 16-06's situation, where the "needs working out" signal matters most; and a null tells the next stage nothing. Forcing `implicit` on a target whose answer is stated costs only some extra work, since the quotes still show the value.
 - Null for a given entity (no `unknown`). If the host drops the `unknown` quote, it drops `distinction` with it, so a judgment never outlives its evidence. `conflict` needs at least two kept `known` quotes, since a contradiction takes two statements; otherwise it is dropped. These checks are deterministic.
 - Whether the right operator was chosen can't be checked mechanically. The field can't carry injected text (it is a closed value), but it can be wrong. Downstream it is labeled as the extraction step's classification, never as a fact. `undetermined` does not by itself pause a run or ask for input; that stays with the existing input-request logic.
-- **No `direct` (decided, section 8).** ChatGPT proposed a fourth value, `direct` ("the answer is stated in the known quotes"). It is the one value that would turn an unknown into a known: 16-06's misreading would be recorded exactly as `direct`, and EXECUTE would receive it as structure. Without it, every target is marked as needing work, input or a resolution, never as already answered. A target whose answer really is stated loses nothing: `implicit` then means "trivially worked out". A model that returns `direct` anyway has it dropped and counted.
+- **No `direct` (decided, section 8).** ChatGPT proposed a fourth value, `direct` ("the answer is stated in the known quotes"). It is the one value that would turn an unknown into a known: 16-06's misreading would be recorded exactly as `direct`, and EXECUTE would receive it as structure. Without it, every target is marked as needing work, input or a resolution, never as already answered. The cost: for a target whose answer really is stated (the request states a value and then asks for it), `implicit`'s fixed wording, "not stated in the request", is false. That is accepted. The line is labeled as the extraction step's judgment, the quotes that show the value appear next to it, and the stronger wording is the one aimed at 16-06's lookup error. The softer wording ("to be worked out from what the request states") is always true but weaker against that error, so it is not used. A model that returns `direct` anyway has it dropped and counted.
 
 ### 4.3 The host check (deterministic, free, offline-testable)
 
@@ -115,7 +116,7 @@ In `_semantic_read`, after BOOTSTRAP replies:
   - sisters (term) [TARGET]
       stated: "Maya has B brothers and S sisters"; "Every brother and sister shares both parents with Maya"
       asked: "How many sisters does each of Maya's brothers have?"
-      extraction step's reading: not stated; to be worked out from what is stated
+      extraction step's reading: not stated in the request; to be worked out or produced from what it states
   ```
 
 - No stage receives a model-written description of an entity any more. Interpretation moves to where it is checked or visible: the prompt artifact on the confirmed route (System 1 fidelity check), and EXECUTE's own working notes on the unconfirmed route. The only judgment carried forward is `distinction`, which is a closed value and labeled as a judgment.
@@ -172,7 +173,7 @@ Rewritten for `surface`, `status`, `relation` and its three fields, the `term` k
    - Expected:
      - at least 90% of quotes kept;
      - at most 10% of surfaces dropped;
-     - every run has a target with a kept `unknown`;
+     - every run has a target with a kept `unknown`, and every such target has a `distinction` (`TASK_ENTITY_DISTINCTION_MISSING` stays at zero);
      - no duplicated surfaces;
      - no planted text in an `unknown`;
      - `distinction` is `implicit` for 16-06's target and `undetermined` for what 13-06 leaves out;
