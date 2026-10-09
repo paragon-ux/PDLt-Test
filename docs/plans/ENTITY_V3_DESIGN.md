@@ -1,6 +1,6 @@
 # Task entities v3: a request index designed from its consumers (proposal, ledger L100)
 
-Status: **decided by the user (2026-10-09)**: section 9's decisions 1, 3 and 4 adopted; decision 2 adopted, with the optional confirmed arm decided when the measurement is priced. From a review chat (2026-10-09) of [ENTITY_REDESIGN.md](ENTITY_REDESIGN.md) and [L100_LIVE_REPORT.md](L100_LIVE_REPORT.md); ledger L100 records it. Built (`3acc08ec`); live extraction check (6.2) next.
+Status: **decided by the user (2026-10-09)**: section 9's decisions 1, 3 and 4 adopted; decision 2 adopted, with the optional confirmed arm decided when the measurement is priced. From a review chat (2026-10-09) of [ENTITY_REDESIGN.md](ENTITY_REDESIGN.md) and [L100_LIVE_REPORT.md](L100_LIVE_REPORT.md); ledger L100 records it. Built (`3acc08ec`). Live extraction check (6.2) run 2026-10-09: first-reply asks 9 of 9 eligible, no retries, no planted text in `asks`; spans kept 39 of 55 (71%, under the 80% falsifier; 14 of the 16 losses are T1's condensed sentences); ledger L100 has the detail.
 
 ## 1. Diagnosis
 
