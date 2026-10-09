@@ -164,26 +164,83 @@ The static results change what a live run must answer. The plan's four-arm measu
 - **04-06 failed all 3 runs the same way** ("Expected SEMI, got EOF" on the prompt's own example). The original failed it once, cancelled. This consistent failure is worth watching in stage 3, but it is not D1's: no entity was unanchored in those runs.
 - **Next:** stage 3 (`run_catalogue.py --fail-fast`, about $0.40, cap $0.60), on the user's go. Stage 2 is not needed.
 
-### 5.2 Fixed-entity experiment (proposed by ChatGPT via the user; design fixed before any result)
+### 5.2 Fixed-entity experiment (proposed by ChatGPT via the user; design fixed before any result; revised before the run to two frozen replies per prompt, on ChatGPT's second review)
 
-- **Question:** does the entity block's content change EXECUTE's pass rate, with the extraction held fixed? This is a question about the original's design. It does not decide vNext's merge.
+- **Question:** does the entity block's content change EXECUTE's pass rate, with the extraction held fixed? And does that depend on which extraction was produced? This is a question about the original's design. It does not decide vNext's merge.
 - **Prompts:** 01-01 and 04-06 (both lost in stage 1, computational) and 16-06 (gained, logical). Each is reported separately, never pooled.
-- **Frozen extraction, by a rule fixed in advance:** for each prompt, the original's (L99) first repeat, its first BOOTSTRAP reply. It is the same reply in all arms. BOOTSTRAP makes no model call; System 1, EXECUTE, its retries and the host's verification run as usual.
+- **Frozen extractions, by a rule fixed in advance** (`fixed_entity.py`, `SELECTION`): per prompt, **P** is the earliest passing run's first BOOTSTRAP reply and **F** the earliest failing run's, from the original's sweep (L99) first.
+  - 01-01: P is L99 r2, F is L99 r1.
+  - 04-06: P is L99 r1, F is L99 r3.
+  - 16-06: no original run passed, so P is stage 1's r1. D1 did not fire in it, so the host built its EXECUTE input as the original would; the dry run checks this. F is L99 r2.
+  - The selection makes this a targeted diagnostic, not an estimate of the pass rate.
+  - BOOTSTRAP makes no model call. System 1, EXECUTE, its retries and the host's verification run as usual.
 - **Arms** (only EXECUTE's `TASK_ENTITIES` differs):
   - **A:** `--no-task-entities`, so `TASK_ENTITIES` is present and empty;
-  - **B:** the full block, as the original sent it;
-  - **C:** the block without the model-written meanings. Each entity's `relation` is removed from the frozen reply, so `condition` and `relation` go out as null; names, kinds, statuses and groups are kept.
-- **Runs:** 20 blocks. Each block is the 9 (arm, prompt) pairs in a seeded random order (seed 20261009). The catalogue's own runner and graders are used (`run_catalogue.run_single_prompt`), through `experiments/l100_vnext/frozen_cli.py`. The experiment stops between blocks once it has spent its cap.
+  - **B:** the full block, as its source run sent it;
+  - **C:** the block without the model-written meanings. Each entity's `relation` is removed from the frozen reply, so `condition` and `relation` go out as null. Names, kinds, statuses, groups and order are kept. The keys stay, so C changes content and length, not structure.
+- **Runs:** 10 blocks. Each block is the 18 (prompt, reply, arm) cells in a seeded random order (seed 20261009), so 10 runs per cell, 20 per arm and prompt. Same total, 180 runs. The catalogue's own runner and graders are used, through `frozen_cli.py`. The experiment stops between blocks once it has spent its cap.
 - **Checks:**
-  - Offline dry run, before anything is spent (`fixed_entity.py dryrun`): **pass**. For all 3 prompts, B's EXECUTE body is byte-identical to the one L99 sent in that run. A's and C's differ from it only in `TASK_ENTITIES`, as their arm says. No network was used (offline, via the catalogue's runner and child process).
+  - Offline dry run before anything is spent: B's EXECUTE body equals its source run's, byte for byte; A's and C's differ only in `TASK_ENTITIES`, as their arm says.
   - Live: `report` checks each run's recorded EXECUTE body the same way.
-- **Reading, per prompt** (two-sided Fisher exact test on PASS of decided, p < 0.05 counts as a difference):
-  - B below A and C close to A: the model-written meanings are a candidate for harm.
-  - B and C both below A: something broader in the block interferes.
-  - B above A on 16-06 but below on 01-01: a task-dependent trade-off.
-  - No difference: inconclusive at this size (about 40-point effects detectable). This does not show that the content is irrelevant.
-- **Cost:** from L99's recorded tokens, about $0.0053 a run for 01-01, $0.0033 for 04-06 and $0.0009 for 16-06. That is about $0.03 a block, about $0.60 for 20 blocks. **Cap: $0.80.**
-- **Stage 3 caveat:** `--fail-fast` stops at the first failed prompt (`run_catalogue.py:709`), and the catalogue starts with 01-01. 01-01 failed 4 of its last 6 runs, and PR #1's gate stopped there (waived by the user, `protocol-fixes-plan.md`). So the literal gate will almost surely stop at 01-01 for about a cent, which says nothing about vNext. The alternative is one full pass of all 16 categories without `--fail-fast` (about $0.40, cap $0.60), compared per category with the last full unconfirmed run (`run-20261008-061233`, `7a882f10`: 41 of 53 decided, 77.4%; provider not pinned then). The user decides.
+- **Contrasts, per prompt** (two-sided Fisher exact test on PASS of decided; p < 0.05 counts as a difference):
+
+  | Contrast | Question |
+  |---|---|
+  | B vs A (pooled over replies, n = 20 each) | Does the complete block help or hurt EXECUTE? |
+  | C vs B | Do the model-written meanings carry the effect? |
+  | C vs A | Do the structural fields help without the meanings? |
+  | B, reply P vs F (n = 10 each) | Does the extraction produced matter? |
+
+- **Predictions, written before the run** (from the audit in 5.3):
+  - **01-01 and 04-06: no arm or reply effect.** Their failures are on EXECUTE's side; 5.3 gives the mechanism.
+  - **16-06:**
+    - B with reply P beats B with reply F (H1).
+    - If the structure carries the effect, C with reply P is close to B with reply P. If the meanings carry it, C with reply P is lower.
+- **Reading:**
+  - B below A on 01-01 or 04-06: the block interferes with computational work (ChatGPT's hypothesis), and the predictions above are falsified.
+  - On 16-06, B above A and reply P above F: the block helps logic, through what it extracts.
+  - No difference: inconclusive at this size (about 40-point effects pooled, about 60-point effects per reply). This does not show that the content is irrelevant.
+- **Cost:** about $0.60 (L99's recorded tokens: $0.0053 a run for 01-01, $0.0033 for 04-06, $0.0009 for 16-06). **Cap: $0.80.**
+
+### 5.3 Audit of the failures and improvement hypotheses (recorded artifact, read-only, no model call)
+
+Each prompt's 6 runs (L99 and stage 1) were read: the EXECUTE input's entities, every EXECUTE attempt's approach, the sandbox runs and the outcome (scratchpad `failure_audit.py`).
+
+- **01-01: the search's speed, not the entities.**
+  - Every run writes a backtracking search for the partition.
+  - Passing runs finished on a retry in about 3.0M steps; their search branches on one element at a time.
+  - Failing runs hit the 10M-step budget on every attempt (original r1, stage 1 r3), or printed a witness that does not check (stage 1 r2).
+  - A passing payload (L99 r3: `a_i`, `b_i`, `c_i` as targets) has the same structure as a failing one (stage 1 r3).
+  - The lever is the search's efficiency. GUARD-01 forbids the harness from suggesting one. So 01-01 is a model limit (REG-003), not an entity defect.
+  - Separately, stage 1 r1 printed a hard-coded list that is not a partition (35 twice), and the host logged `VERIFICATION_PASSED`. That is a referee gap, flagged as its own task.
+- **04-06: the deliverable's own demo, not the entities.**
+  - Stage 1 r2 and r3 ended with programs whose parser requires a `;` after the last statement. Their demos ran the request's example with a `;` added, so the host's run passed and the hidden tests failed.
+  - Stage 1 r1 failed on the tests' other entry points. Original r3 had a syntax error.
+  - The example entity was present (as `literal` or `input_data`) in all 6 runs, passing or failing.
+- **16-06: the target entity tracks the outcome.**
+  - Both passes (stage 1 r1, r3) name the asked quantity, `sisters`, as the target, distinct from Maya's given `sisters`. r1 lists the word twice, given and target; r3's meaning includes Maya.
+  - The failures and the manual have a target of `answer` and `expression` (L99 r1, manual), `How many sisters` (L99 r2), none (L99 r3), or `expression` (stage 1 r2).
+  - 2 of 2 against 0 of 3 decided: Fisher p = 0.10, observational.
+  - L99 r2's target meaning ("the count of sisters that each brother of Maya has") is close to stage 1 r1's, so the meaning alone does not separate them. The surface and the split do.
+- **Hypotheses for beating the original** (each a single delta; none built):
+  - **H1, the target names the asked thing.**
+    - The original's `surface` description (`wire_payloads.py`, `TaskEntity.surface`) offers `"answer"` and `"expression"` as example target surfaces. In both sweeps, only 16-06 produced such targets (2 of 6 runs), and none of those passed.
+    - Delta: remove that example from the one sentence.
+    - Test: first this experiment's 16-06 contrasts. If B's reply P beats F, then a paired live run of 16-06 and category 16 with the delta (it changes BOOTSTRAP's request).
+    - Risk: the earlier versions changed many rules at once and lost pass rate. This is one phrase, and it is measured alone.
+  - **H2, the meanings are dispensable.** If C ≈ B ≥ A on all three prompts, then D2 plus dropping `relation` shortens EXECUTE's input (the corpus shows duplicated keys are 42% of the payload) without losing passes. Test: this experiment's C vs B; then a six-category run.
+  - **H3, entities do not help computation.** If A ≥ B on 01-01 and 04-06 while B > A on 16-06, then whether to send entities could depend on the task. That needs a host signal that is not a heuristic (ADR-0018), so it is the most expensive to build. It is the last to try, and only on evidence.
+
+### 5.4 Stage 3 result (2026-10-09, live, `c295e7b2`; `catalogue-runs/run-20261009-190107-unconfirmed-tier-d1`)
+
+- The user chose one full pass of all 16 categories over the literal `--fail-fast` gate, which would have stopped at 01-01.
+- **No regression.** Decided **42 of 53 (79.2%)**, against the last full unconfirmed run (`run-20261008-061233`, `7a882f10`, provider not pinned): 41 of 53 (77.4%).
+  - PASS → FAIL on 5 prompts: 01-01, 02-03, 02-05, 04-06, 14-03.
+  - FAIL → PASS on 6: 04-02, 05-07, 06-03, 06-06, 06-07, 16-06.
+  - One run per prompt, so per-prompt changes are within run-to-run variation.
+- **Cost:** $0.388; $2.38 left on the key.
+- **One harness error (exit 4), 05-05.** Both BOOTSTRAP replies gave an entity `"kind": "output"`, a value outside the schema's enum, and the parser rejected them (recorded artifact, parsed offline). The provider did not enforce the enum despite structured output. The BOOTSTRAP request is the original's byte for byte (S1), so this is model and provider behaviour, not vNext. It is left out of the decided count.
+- **The merge gate is met.**
 
 ## 6. Decisions for the user
 

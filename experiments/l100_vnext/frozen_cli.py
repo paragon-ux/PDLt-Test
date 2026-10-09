@@ -4,7 +4,8 @@ recorded reply and makes no model call. Everything else (System 1, EXECUTE, its 
 host's verification) runs as usual. Evaluation plane only; the harness never imports this.
 
 Environment:
-    PDLT_FROZEN_REPLIES  JSON file written by fixed_entity.py freeze: {prompt path: {"reply", "sys1"}}
+    PDLT_FROZEN_REPLIES  JSON file written by fixed_entity.py freeze: {prompt path: {label: {"reply", "sys1"}}}
+    PDLT_FROZEN_REPLY    which frozen reply of the prompt: P (from a passing run) or F (from a failing run)
     PDLT_FROZEN_ARM      A (no entities: run with --no-task-entities), B (the reply as recorded),
                          C (the reply with every entity's relation removed)
     PDLT_FROZEN_DRYRUN   optional file: offline. System 1 answers from the recorded decisions,
@@ -40,7 +41,7 @@ def frozen_reply(entry: dict, arm: str) -> str:
 def main() -> None:
     prompt = Path(sys.argv[sys.argv.index("--prompt-file") + 1]).resolve()
     entry = json.loads(Path(os.environ["PDLT_FROZEN_REPLIES"]).read_text(encoding="utf-8"))[
-        prompt.relative_to(ROOT / "prompts").as_posix()]
+        prompt.relative_to(ROOT / "prompts").as_posix()][os.environ["PDLT_FROZEN_REPLY"]]
     arm = os.environ["PDLT_FROZEN_ARM"]
     reply = frozen_reply(entry, arm)
     original_call = ApiWorker._call
