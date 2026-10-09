@@ -147,6 +147,17 @@ The static results change what a live run must answer. The plan's four-arm measu
   - **Stage 1 misses and C passes:** a regression in vNext. Look first at D1's runs, then at run-to-run variation. Static identity holds, so this is not evidence against S3.
   - **B above the original:** consistent with D1 helping; on this sample it does not establish it.
 
+### 5.1 Stage 1 result (2026-10-09, live, `83a5de44`; `catalogue-runs/run-20261009-175714-unconfirmed-tier-d1`)
+
+- **Pass.** Decided pass rate **56 of 78 (71.8%)**, against the 68% threshold. The original scored 60 of 77 (77.9%). The gap is 6 points, about 1.3 SDs. Per repeat: 19/25, 19/25, 18/24 (the original: 19/24, 22/25, 20/25).
+- **Cost:** $0.477; $2.78 left on the key. No provider or harness error (exit 4). One run waited for input (02-05 r1, exit 3, `REQUEST_INPUT`).
+- **Where the prompts moved** (PASS of decided, original → vNext):
+  - lost: 01-01 2/3 → 0/3; 04-03 2/3 → 0/3; 04-06 2/3 → 0/3; 02-05 3/3 → 2/3; 16-07 3/3 → 2/3;
+  - gained: 02-03 2/3 → 3/3; 04-02 0/3 → 1/3; 16-06 0/2 → 2/3.
+- **None of the lost runs involved D1.** `TASK_ENTITY_UNANCHORED` fired in 10 runs (01-03 r1, r2; 02-01 r3; 02-03 r1; 04-05 r2; 12-03 r1, r2; 12-04 r2; 16-03 r3; 16-07 r1). Of the 6 graded, 5 passed. 04-05 r2 failed, but 04-05 scored the same as in the original. So in every lost run, EXECUTE got its entities exactly as the original would have built them from that BOOTSTRAP reply (static, S3). The losses are therefore sampling or provider variation, not vNext's change (recorded artifact, static).
+- **04-06 failed all 3 runs the same way** ("Expected SEMI, got EOF" on the prompt's own example). The original failed it once, cancelled. This consistent failure is worth watching in stage 3, but it is not D1's: no entity was unanchored in those runs.
+- **Next:** stage 3 (`run_catalogue.py --fail-fast`, about $0.40, cap $0.60), on the user's go. Stage 2 is not needed.
+
 ## 6. Decisions for the user
 
 1. Adopt this plan: restore the original contract, D1, and the L100 host-only fixes; remove v3's index.
