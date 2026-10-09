@@ -242,6 +242,33 @@ Each prompt's 6 runs (L99 and stage 1) were read: the EXECUTE input's entities, 
 - **One harness error (exit 4), 05-05.** Both BOOTSTRAP replies gave an entity `"kind": "output"`, a value outside the schema's enum, and the parser rejected them (recorded artifact, parsed offline). The provider did not enforce the enum despite structured output. The BOOTSTRAP request is the original's byte for byte (S1), so this is model and provider behaviour, not vNext. It is left out of the decided count.
 - **The merge gate is met.**
 
+### 5.5 Fixed-entity result (2026-10-09, live, `a3e72be6`; `catalogue-runs/l100-fixed-entity`)
+
+- **Runs:** all 180, in 10 blocks. Cost $0.520; $1.85 left. Every run's first EXECUTE body matched its arm (`report`'s check), so the arms differed only in `TASK_ENTITIES` (recorded artifact).
+- **PASS of decided** (reply P | reply F, then pooled over replies, per arm):
+
+  | Prompt | A (no block) | B (full block) | C (no meanings) | B vs A | C vs B | B: P vs F |
+  |---|---|---|---|---|---|---|
+  | 01-01 | 2/10, 1/10: **3/20** | 7/10, 3/10: **10/20** | 3/10, 2/10: **5/20** | p = 0.041 | p = 0.19 | p = 0.18 |
+  | 04-06 | 3/10, 2/10: 5/20 | 6/10, 3/10: 9/20 | 4/10, 3/10: 7/20 | p = 0.32 | p = 0.75 | p = 0.37 |
+  | 16-06 | 5/8, 2/7: 7/15 | 6/7, 3/6: 9/13 | 4/5, 4/9: 8/14 | p = 0.28 | p = 0.70 | p = 0.27 |
+
+- **Against the predictions:**
+  - **01-01: falsified.** The full block helps (B 10/20 against A 3/20), the opposite of "entities hurt computation". C (5/20) is closer to A: the model-written meanings appear to carry part of the help (C vs B not significant).
+    - Mechanism, from the runs' events: without the block, 6 of 20 runs published a wrong partition that the host accepted (FAIL with `CLOSED_SUCCESS`). That happened in 1 of 20 with B and 1 of 20 with C.
+    - Step-budget overruns: A 11, B 8, C 14.
+  - **04-06: not falsified.** Same direction (B 9/20 against A 5/20), not significant.
+  - **16-06:** H1's direction (B with reply P 6/7, with reply F 3/6), but inconclusive. 18 of 60 runs were graded manual, which lowers n.
+  - **Noise reference:** arm A's two replies send identical EXECUTE inputs (verified). Their gaps (2 vs 1, 3 vs 2, 5/8 vs 2/7) are run-to-run variation.
+  - **Exploratory, not pre-registered** (the design reports per prompt): B ≥ A in all 6 prompt × reply cells.
+- **Reading:**
+  - ChatGPT's hypothesis that the block competes with exact computation is not supported. On 01-01 the evidence points the other way.
+  - **Correction to 5.3:** "01-01 is not the entities" was wrong as a causal claim. No content of the payload separated passing from failing runs, but whether the block is there changes the pass rate.
+  - **H2 (the meanings are dispensable): not supported.** C ≤ B in 5 of 6 cells. Dropping `relation` risks losing passes, so D2, if taken, keeps `relation` and drops only its duplicates.
+  - **H1 stays open.** Testing it needs more 16-06 runs, or graded prompts like it.
+  - This fits the user's premise: the original's model-written decomposition is what EXECUTE uses. The L100 versions removed those meanings and scored lower.
+  - The host accepted wrong partitions on 01-01 (8 runs across arms). This is the referee gap flagged in 5.3.
+
 ## 6. Decisions for the user
 
 1. Adopt this plan: restore the original contract, D1, and the L100 host-only fixes; remove v3's index.
