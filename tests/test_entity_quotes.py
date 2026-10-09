@@ -108,6 +108,22 @@ def test_a_pronoun_group_name_and_a_clean_reply():
     assert task_entities.violations(clean, sources) == []
 
 
+def test_a_pronoun_the_request_marks_as_a_word_is_a_name():
+    """`this` in backticks names the code keyword, not a referent; the bare "It" is still a pronoun."""
+    request = "Explain what `this` refers to inside an arrow function. It is often confused. Rename \"it\" to item."
+    sources = RequestText(request)
+    entities = {"groups": [], "entities": [
+        _e("this", "literal", ["Explain what `this` refers to"]),
+        _e("it", "identifier", ['Rename "it" to item.']),
+        _e("It", "term", ["It is often confused."]),
+    ]}
+    assert task_entities.violations(entities, sources) == [
+        'entity "It": a pronoun is never a name; list the thing it refers to and give the pronoun as its alias']
+    # as an alias, a marked word needs no owner's quote to show who it means
+    kept, events = _check([_e("arrow function", known=["inside an arrow function"], alias=["this"])], request=request)
+    assert kept["entities"][0]["alias"] == ["this"] and events == {}
+
+
 def test_enforce_drops_only_what_breaks_a_rule():
     sources = RequestText(APPLES)
     cleaned, reasons = task_entities.enforce({
@@ -241,6 +257,20 @@ def test_unnamed_groups_get_host_labels_and_a_failed_anchor_costs_only_the_label
     assert kept["groups"][0]["alias"] == ["They"]
     assert [e["name"] for e in kept["entities"]] == ["apples"]  # its group's only quote was not in the request
     assert events == {"TASK_ENTITY_QUOTE_DROPPED": {"count": 1}, "TASK_ENTITY_GROUP_DROPPED": {"count": 1}}
+
+
+def test_one_thing_in_two_groups_keeps_the_first_and_is_counted():
+    request = "The red team is Ann and Bo. The blue team is Bo and Cy. Who plays twice?"
+    kept, events = _check(groups=[
+        {"name": "red team", "known": ["The red team is Ann and Bo."],
+         "members": [_e("Ann", "identifier", ["Ann and Bo"]), _e("Bo", "identifier", ["Ann and Bo"])]},
+        {"name": "blue team", "known": ["The blue team is Bo and Cy."],
+         "members": [_e("Bo", "identifier", ["Bo and Cy"]), _e("Cy", "identifier", ["Bo and Cy"])]},
+    ], request=request)
+    red, blue = kept["groups"]
+    assert [m["name"] for m in red["members"]] == ["Ann", "Bo"] and [m["name"] for m in blue["members"]] == ["Cy"]
+    assert red["members"][1]["known"] == ["Ann and Bo", "Bo and Cy"]  # no stated fact is lost
+    assert events == {"TASK_ENTITY_MERGED": {"count": 1, "across_groups": 1}}
 
 
 def test_a_clean_extraction_records_no_event():

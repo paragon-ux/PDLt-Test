@@ -73,6 +73,13 @@ class RequestText:
             for casefold in (False, True)
         }
 
+    def marked(self, text: str) -> bool:
+        """Whether a source writes ``text`` as a word in its own right: in backticks or
+        quotation marks (a mention of the word, such as the code keyword `this`)."""
+        return any(f"{left}{text}{right}" in source
+                   for source, _folded, _origin in self._folded[False]
+                   for left, right in (("`", "`"), ('"', '"'), ("'", "'"), ("“", "”"), ("‘", "’")))
+
     def locate(self, copy: object) -> str | None:
         """The source's own text for ``copy``, or None when it is not one continuous piece of a source."""
         if not isinstance(copy, str) or not copy.strip():

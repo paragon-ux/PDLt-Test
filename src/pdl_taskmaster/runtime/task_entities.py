@@ -44,16 +44,25 @@ def is_pronoun(name: object) -> bool:
     return len(text) > 1 and text in PRONOUNS
 
 
+def pronoun_use(name: object, sources: RequestText) -> bool:
+    """A pronoun used as one: not a word the request itself marks in backticks or quotation
+    marks (the code keyword `this`, a variable "it"), which names the word, not a referent."""
+    if not is_pronoun(name):
+        return False
+    found = sources.locate(name)
+    return found is None or not sources.marked(found)
+
+
 # --- the entity rules, on what the model wrote -------------------------------------------------
 
 def _label(group: dict[str, Any], index: int) -> str:
     return f'group "{group["name"]}"' if group.get("name") else f"unnamed group {index}"
 
 
-def _entity_problems(entity: dict[str, Any], where: str) -> list[str]:
+def _entity_problems(entity: dict[str, Any], where: str, sources: RequestText) -> list[str]:
     name = entity.get("name") or ""
     out = []
-    if is_pronoun(name):
+    if pronoun_use(name, sources):
         out.append(f'{where}entity "{name}": a pronoun is never a name; list the thing it refers to and give '
                    'the pronoun as its alias')
     if not entity.get("known") and not entity.get("unknown"):
@@ -68,7 +77,7 @@ def _group_problems(group: dict[str, Any], index: int, sources: RequestText) -> 
               for inner in group.get("nested") or []]
     out = []
     name = group.get("name")
-    if name and is_pronoun(name):
+    if name and pronoun_use(name, sources):
         out.append(f"{label}: a pronoun is never a name; set name to null and give the pronoun as an alias")
     elif name and sources.locate(name) is None:
         out.append(f"{label}: its name is not found word for word in the request")
@@ -88,9 +97,9 @@ def violations(entities: dict[str, Any], sources: RequestText) -> list[str]:
         problems, nested = _group_problems(group, index, sources)
         out += nested + problems
         for member in group.get("members") or []:
-            out += _entity_problems(member, f"in {_label(group, index)}, ")
+            out += _entity_problems(member, f"in {_label(group, index)}, ", sources)
     for entity in entities.get("entities") or []:
-        out += _entity_problems(entity, "")
+        out += _entity_problems(entity, "", sources)
     return out
 
 
@@ -105,7 +114,7 @@ def enforce(entities: dict[str, Any], sources: RequestText) -> tuple[dict[str, A
         reasons += nested + problems
         members = []
         for member in group.get("members") or []:
-            found = _entity_problems(member, f"in {_label(group, index)}, ")
+            found = _entity_problems(member, f"in {_label(group, index)}, ", sources)
             reasons += found
             if not found:
                 members.append(member)
@@ -114,7 +123,7 @@ def enforce(entities: dict[str, Any], sources: RequestText) -> tuple[dict[str, A
         else:
             groups.append({**group, "members": members, "nested": []})
     for entity in entities.get("entities") or []:
-        found = _entity_problems(entity, "")
+        found = _entity_problems(entity, "", sources)
         reasons += found
         if not found:
             loose.append(entity)
@@ -163,7 +172,7 @@ def check(entities: dict[str, Any], sources: RequestText,
             found = quote(copy)
             if found is None:
                 alias_drops["not_in_request"] += 1
-            elif is_pronoun(found) and (not own_quotes or RequestText(*own_quotes).locate(found) is None):
+            elif pronoun_use(found, sources) and (not own_quotes or RequestText(*own_quotes).locate(found) is None):
                 alias_drops["pronoun_outside_quotes"] += 1  # what shows who it means is its owner's quote
             elif found not in kept:
                 kept.append(found)
@@ -225,11 +234,20 @@ def check(entities: dict[str, Any], sources: RequestText,
 
     # Merge: one entity per thing, by name, then by an alias that is another entity's name.
     everyone = [member for group in groups for member in group["members"]] + loose
+    home = {id(member): index for index, group in enumerate(groups) for member in group["members"]}
+
+    def across(first: dict[str, Any], other: dict[str, Any]) -> None:
+        # One thing listed in two groups keeps only the first membership (its quotes are
+        # combined, so no stated fact is lost); counted so a live run shows how often.
+        if id(first) in home and id(other) in home and home[id(first)] != home[id(other)]:
+            counts["across_groups"] += 1
+
     removed: set[int] = set()
     by_key: dict[str, dict[str, Any]] = {}
     for entity in everyone:
         first = by_key.setdefault(fold_key(entity["name"]), entity)
         if first is not entity:
+            across(first, entity)
             _absorb(first, entity)
             removed.add(id(entity))
             counts["merged"] += 1
@@ -242,6 +260,7 @@ def check(entities: dict[str, Any], sources: RequestText,
             if other is None or other is entity or id(other) in removed:
                 kept_alias.append(alias)
             elif other["kind"] == entity["kind"]:
+                across(entity, other)
                 _absorb(entity, other)
                 removed.add(id(other))
                 by_key[fold_key(alias)] = entity
@@ -254,7 +273,7 @@ def check(entities: dict[str, Any], sources: RequestText,
     owners: dict[str, list[dict[str, Any]]] = {}
     for owner in [*groups, *(e for e in everyone if id(e) not in removed)]:
         for alias in owner["alias"]:
-            if is_pronoun(alias):
+            if pronoun_use(alias, sources):
                 owners.setdefault(fold_key(alias).casefold(), []).append(owner)
     for key, claimed in owners.items():
         if len(claimed) > 1:
@@ -292,6 +311,8 @@ def check(entities: dict[str, Any], sources: RequestText,
         events["TASK_ENTITY_TEXT_DROPPED"] = {"count": counts["text"]}
     if counts["merged"]:
         events["TASK_ENTITY_MERGED"] = {"count": counts["merged"]}
+        if counts["across_groups"]:
+            events["TASK_ENTITY_MERGED"]["across_groups"] = counts["across_groups"]
     if sum(alias_drops.values()):
         events["TASK_ENTITY_ALIAS_DROPPED"] = {"count": sum(alias_drops.values()), **dict(sorted(alias_drops.items()))}
     if counts["group"]:
