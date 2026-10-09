@@ -215,6 +215,6 @@ All answered by the user on 2026-10-09:
    - The drafting summary's entity lines sit inside the untrusted-input wrapper, like the summary (4.5). EXECUTE needed no change: its `TASK_ENTITIES` and `SOURCE_REQUEST` are both sanitized and unwrapped.
 
    `tests/fixtures/recorded-cases.json` was re-keyed with `scripts/render_recorded_prompts.py rekey`: two BOOTSTRAP keys, responses unchanged (both record `task_entities: []`). That is plumbing, not evidence about the model: step 3 still applies.
-3. Live check (6.2); re-record the replays it invalidates.
+3. Live check (6.2); re-record the replays it invalidates. Run 2026-10-09: falsified (ledger L100 has the numbers): targets left without an `unknown` in 7 of 10 runs, 16-06's paraphrased target dropped, 13-06 marked `implicit`. Next: a description fix, then the check again.
 4. Catalogue gate (6.3).
 5. Measurement (6.4), then the ledger row's outcome.
