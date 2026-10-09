@@ -1,6 +1,6 @@
 # Task entities vNext: the original as the contract (plan, ledger L100)
 
-Status: **plan for the user's review** (2026-10-09), amended after ChatGPT's review via the user: D1's per-entry provenance, narrower safety and causal claims, S1 extended to the provider request, the corpus counts reconciled, and the live-result logic corrected. Nothing built. The user decided that the original entity model (L99, commit `a5973ae7`) is the baseline to beat, and that vNext must be planned and verified statically before any live run. Supersedes [ENTITY_V3_DESIGN.md](ENTITY_V3_DESIGN.md) and the request index built in `3acc08ec`.
+Status: **approved by the user and built** (2026-10-09; restore `8c09047d`, E1-E3 and the static checks `0e085fbc`). S1-S7 pass offline (section 4.1). No live run yet: the budget in section 5 awaits the user's go. The plan was amended after ChatGPT's review via the user: D1's per-entry provenance, narrower safety and causal claims, S1 extended to the provider request, the corpus counts reconciled, and the live-result logic corrected. The user decided that the original entity model (L99, commit `a5973ae7`) is the baseline to beat, and that vNext must be planned and verified statically before any live run. Supersedes [ENTITY_V3_DESIGN.md](ENTITY_V3_DESIGN.md) and the request index built in `3acc08ec`.
 
 Evidence labels: **static** (code at a cited commit), **corpus** (L99's 126 recorded unconfirmed runs, `catalogue-runs/run-20261009-042907-unconfirmed-tier-d1`, read offline by `experiments/l100_vnext/orig_corpus.py` and `orig_defects.py`), **research** (cited at the end).
 
@@ -105,23 +105,47 @@ System 1 is unchanged. It takes no new recipe and reads no new input (static, `s
 
 If S1-S4 pass, vNext's requests match the original's exactly, except D1 (and D2). The original's behaviour is a distribution, not a fixed output: identical requests give the same distribution, not the same answers. So vNext's expected pass rate is the original's plus whatever D1 (and D2) change, and any live difference outside D1's runs is sampling variation. If S1 or S3 fails, the build is not the original and is fixed before any live run.
 
+### 4.1 Results (2026-10-09, `0e085fbc`; offline, `experiments/l100_vnext/static_checks.py`)
+
+| # | Result | Evidence |
+|---|---|---|
+| S1 | **Pass.** (a) 0 differences in 122 rendered requests (the recorded fixture's 10, and each catalogue prompt's first request). (b) For all 112 catalogue prompts, the BOOTSTRAP and EXECUTE provider bodies built at vNext equal those built at a worktree of `a5973ae7`, with System 1's decisions held fixed | offline, both trees |
+| S2 | **Pass.** 126 of 126 recorded BOOTSTRAP replies parse (the plan's 118 counted EXECUTE inputs; every run has a reply) | recorded artifact |
+| S3 | **Pass**, compared with the bodies L99 actually sent (`provider-requests/`, stronger than the plan's `compiled-projection.json`). In all 126 runs, System 1's replayed decisions equal the recorded events, the same operations are sent, and the BOOTSTRAP body is byte-identical. EXECUTE: 112 bodies byte-identical; 6 byte-identical once D1's entries are taken out; the 8 runs L99 refused before EXECUTE send none here either | recorded artifact |
+| S4 | **Pass.** The entries gained are exactly the 10 listed in S5, nothing else; each run's `TASK_ENTITY_UNANCHORED` count equals its additions | recorded artifact |
+| S5 | **Pass.** 09-04 r2's planted payload stays out; every addition carries `name_source: model`; no forwarded entity carries a canary, override phrase or redaction marker; the drafting marker is unit-tested | recorded artifact, offline test |
+| S6 | **Pass.** A restored session keeps the checked entities (`tests/test_entity_vnext.py`) | offline test |
+| S7 | **Pass.** Anti-overfitting 16 passed under `-W error`; offline suite 1078 passed, 42 skipped (1073 before, plus the 5 new tests) | offline test |
+
+The replay needed the catalogue's settings: compact rendering (`render_compact`) and the run's constraints text. With the default rendering, every body differed in whitespace only.
+
+So vNext sends what the original sent in every recorded run, except D1's 10 marked entries in 6 runs (static, against recorded artifacts). Its live pass rate should match the original's, within sampling variation.
+
 ## 5. Live (after S1-S7 only)
 
-- **The outcome measurement:** six L99 categories, 3 repeats, the same day, paired, about $1.53. Arms:
-  - A: vNext with entities off;
-  - B: vNext;
-  - C: the original (`a5973ae7`);
-  - D: Control.
-- **Prediction, written now:**
-  - B ≥ C;
-  - B and C differ only in D1's runs, and in D2's if chosen;
-  - A < C on the coding prompts.
-- **Falsified by:** B losing more paired runs to C than it gains.
+The static results change what a live run must answer. The plan's four-arm measurement (about $1.53) included C (the original) to show that B sends the same requests; S1 and S3 now show that offline, against the bodies L99 actually sent. A and D answer other questions: whether entities help at all, and what the harness adds. Neither decides whether to adopt vNext. So the live budget is fixed below, in stages, each with a stated question and a stop rule.
+
+**Costs:** L99's 126 runs (the same six categories × 3 repeats, the same model, provider and settings) cost $0.449, about $0.0036 a run (`KEY_USAGE.json`). The key has $3.27 left (`l100-live-check-v3/live-log.json`).
+
+| Stage | Run | Question | Expected | Cost |
+|---|---|---|---|---|
+| 1 | B: vNext, L99's six categories × 3 repeats, L99's settings | Does vNext's pass rate match the original's? It is also the live check `AGENTS.md` requires for D1's change to EXECUTE's input | decided pass rate within the original's range | $0.45 |
+| 2, only if stage 1 misses | C: the original (`a5973ae7` worktree), the same day, the same settings | Did the provider drift, or did vNext regress? | — | $0.45 |
+| 3, only if stage 1 passes (or stage 2 clears it) | `python run_catalogue.py --fail-fast`, all 16 categories | The before-merge regression gate (`AGENTS.md`) | no regression | about $0.40 at L99's per-run cost; stops early at a regression. Cap $0.60: categories 3, 5-8, 10, 11, 13-15 are unmeasured on this configuration |
+
+- **Committed:** stages 1 and 3, about $0.85 (caps $1.15). **Worst case:** with stage 2, about $1.30 (caps $1.70). At least $1.57 stays on the key.
+- **Not in the budget:** A (entities off), D (Control: L99 measured it), D2. Each is a separate question and needs its own approval.
+- **Stage 1's criterion, written before the run:**
+  - The original scored **60 of 77 decided (77.9%)** in L99 (`SCOREBOARD.json`). Per repeat, by grade: 19/24, 22/25, 20/25. Only categories 1, 2, 4 and 16 are graded; 9 and 12 are not.
+  - The binomial SD at about 77 decided runs is about 4.7 points.
+  - **Pass:** B's decided pass rate is at least **68%** (two SDs below the original's). **Miss:** below 68%, then stage 2.
+  - Provider errors (exit 4, rate limits) are reported apart and left out of the decided count, as in L99.
+  - D1 is described, not tested: how often `TASK_ENTITY_UNANCHORED` fires, and those runs' outcomes. Of D1's 6 runs in L99, 3 are in graded categories (16-03, 16-06, 16-07), so 126 runs cannot measure D1's effect on pass rate.
 - **Reading the result:**
-  - **A static check failed:** fix the build before measuring. This is the only case that points at the implementation.
-  - **Static checks passed, live B < C:** look first at D1 (S5 lists where it acts) and at run-to-run variation. Static identity has already been established, so a regression is not evidence that S3 failed.
-  - **B > C:** supports D1 on this evaluation set; it does not establish superiority elsewhere.
-  - **B and C differ in D1's runs by design.** A result change there is D1's effect, not an identity defect.
+  - **Stage 1 passes:** vNext is at the original's level. Then stage 3, then merge.
+  - **Stage 1 misses, and C misses too (stage 2):** the provider drifted. Compare B with C, paired by prompt.
+  - **Stage 1 misses and C passes:** a regression in vNext. Look first at D1's runs, then at run-to-run variation. Static identity holds, so this is not evidence against S3.
+  - **B above the original:** consistent with D1 helping; on this sample it does not establish it.
 
 ## 6. Decisions for the user
 
