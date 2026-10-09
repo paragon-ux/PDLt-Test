@@ -377,8 +377,6 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
             setting_args += [flag, str(settings[key])]
     if settings.get("draft_execute"):
         setting_args.append("--draft-execute")
-    if settings.get("task_index") is False:
-        setting_args.append("--no-task-index")
     if settings.get("representation", "pdl") != "pdl":
         setting_args += ["--representation", settings["representation"]]
     if settings.get("route") != "control" and settings.get("tier_d1") is not None:
@@ -1015,8 +1013,6 @@ def main():
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
     parser.add_argument("--draft-execute", action="store_true",
                         help="run DRAFT_EXECUTE (a typed execution brief) before EXECUTE on tasks that are or need an algorithm or a calculation (A/B option)")
-    parser.add_argument("--no-task-index", dest="task_index", action="store_false",
-                        help="send the request index to no stage (BOOTSTRAP still writes it): the L100 v3 measurement's off arm")
     parser.add_argument("--representation", choices=["pdl", "nl"], default="pdl",
                         help="the confirmed route's prompt and plan artifacts: PDL pseudocode (default) or "
                              "natural-language prose (the L97 pilot); --route confirmed only")
@@ -1064,7 +1060,6 @@ def main():
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
                     "providers": args.providers, "draft_execute": args.draft_execute,
-                    "task_index": args.task_index,
                     "representation": args.representation,
                     "tier_d1": args.tier_d1 and args.route != "control",  # what the child will run with
                     "sandbox": args.sandbox, "route": args.route,
@@ -1107,8 +1102,6 @@ def main():
     route_tag = args.route
     if args.draft_execute:
         route_tag += "-draft-execute"
-    if not args.task_index:
-        route_tag += "-no-task-index"
     if args.representation != "pdl":
         route_tag += f"-{args.representation}"
     if run_settings["tier_d1"]:

@@ -78,6 +78,7 @@ def test_prompt_draft_discriminated_union() -> None:
     assert draft.kind == "PROMPT"
     assert draft.prompt_body == "Analyze data"
     assert draft.approach_handoff == "NONE"
+    assert draft.task_entities == ()
 
     # Invalid approach handoff
     with pytest.raises(WireError, match="approach_handoff"):
@@ -114,7 +115,7 @@ def test_precision_operator_correction_in_session_engine(tmp_path: Path) -> None
     def flaky_model(request):
         seen_prompts.append(request.prompt)
         if len(seen_prompts) == 1:
-            # Drop required field 'request_index'
+            # Drop required field 'task_entities'
             return json.dumps({
                 "kind": "ANALYSIS",
                 "task_summary": "Do work",
@@ -127,7 +128,7 @@ def test_precision_operator_correction_in_session_engine(tmp_path: Path) -> None
             "task_summary": "Do work",
             "approach_notes": "None",
             "risk_notes": "None",
-            "request_index": {"asks": ["Do work"], "states": [], "exact": []},
+            "task_entities": ["work"],
         })
 
     engine = SessionEngine(ROOT, model_call=flaky_model, workspace_root=tmp_path)
@@ -142,10 +143,10 @@ def test_precision_operator_correction_in_session_engine(tmp_path: Path) -> None
         traces,
         parser=BRIDGE.parse_bootstrap_analysis,
     )
-    assert res["request_index"] == {"asks": ["Do work"], "states": [], "exact": []}
+    assert res["task_entities"] == [{"surface": "work", "kind": "identifier", "status": "given", "group": None, "relation": None}]
     assert len(seen_prompts) == 2
     retry_prompt = seen_prompts[1]
-    assert "OPERATOR CORRECTION: Validation failed on field 'request_index': Field required" in retry_prompt
+    assert "OPERATOR CORRECTION: Validation failed on field 'task_entities': Field required" in retry_prompt
     assert "Emit exactly one conforming JSON object matching the declared schema." in retry_prompt
 
 

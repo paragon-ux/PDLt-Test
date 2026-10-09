@@ -276,19 +276,6 @@ class WorkspaceRun:
         except ValidationError as exc:
             raise WorkspaceError("turn_routing_file") from exc
 
-    def write_turn_index(self, index: dict[str, Any] | None) -> None:
-        """The turn's checked request index (L100 v3), kept so a restored session executes with it."""
-        self._write(self._turn_base() / "task_index.json",
-                    json.dumps({"index": index}, ensure_ascii=False, indent=2) + "\n")
-
-    def turn_index(self) -> dict[str, Any] | None:
-        """The active turn's checked request index; None when none was kept (an empty read, or a
-        turn from before the index, whose entities are not read)."""
-        path = self._turn_base() / "task_index.json"
-        if not path.is_file():
-            return None
-        return json.loads(self._read(path)).get("index")
-
     def previous_turn(self) -> dict[str, Any] | None:
         """The most recent closed turn, as a follow-up needs it: its request and its
         result. A successful turn's result is its published deliverable without the

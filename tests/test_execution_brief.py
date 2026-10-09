@@ -17,7 +17,6 @@ from pdl_taskmaster.runtime.operation_bridge import OperationBridge, WireError
 from pdl_taskmaster.runtime.output_contracts import ContractForm, grammar_schema
 from pdl_taskmaster.runtime.session_engine import SessionEngine, _ground_execution_entities
 from pdl_taskmaster.runtime.wire_payloads import ExecutionDraftResultData, ExecutionEntity
-from entity_stub import ask_index, request_of  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 BRIDGE = OperationBridge(ROOT)
@@ -247,7 +246,7 @@ def _confirmed(tmp_path, briefs: list, executes: list[str], *, draft_execute: bo
         calls.append(req)
         if req.operation == "BOOTSTRAP_ANALYSIS":
             return json.dumps({"kind": "ANALYSIS", "task_summary": "Sum the values 3, 4, 5 with total_of.",
-                               "approach_notes": "", "risk_notes": "", "request_index": ask_index(request_of(req.prompt))})
+                               "approach_notes": "", "risk_notes": "", "task_entities": []})
         if req.operation == "DRAFT_PROMPT":
             return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
         if req.operation == "DRAFT_PLAN":
@@ -405,7 +404,7 @@ def _unconfirmed(tmp_path, briefs: list, bodies: list[str]):
         calls.append(req)
         if req.operation == "BOOTSTRAP_ANALYSIS":
             return json.dumps({"kind": "ANALYSIS", "task_summary": "Sum the values 3, 4, 5 with total_of.",
-                               "approach_notes": "", "risk_notes": "", "request_index": ask_index(request_of(req.prompt))})
+                               "approach_notes": "", "risk_notes": "", "task_entities": []})
         if req.operation == "DRAFT_EXECUTE":
             return json.dumps(briefs.pop(0))
         if req.operation == "EXECUTE_UNCONFIRMED":
@@ -574,7 +573,7 @@ def test_a_brief_cut_off_at_the_output_cap_is_skipped_not_a_harness_error(tmp_pa
         calls.append(req)
         if req.operation == "BOOTSTRAP_ANALYSIS":
             return json.dumps({"kind": "ANALYSIS", "task_summary": "Sum 3, 4, 5.", "approach_notes": "",
-                               "risk_notes": "", "request_index": ask_index(request_of(req.prompt))})
+                               "risk_notes": "", "task_entities": []})
         if req.operation == "DRAFT_PROMPT":
             return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
         if req.operation == "DRAFT_PLAN":
