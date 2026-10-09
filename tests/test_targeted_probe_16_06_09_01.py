@@ -137,7 +137,7 @@ def test_16_06_specification_boundary_and_anti_computation(tmp_path: Path):
     assert shown("- sisters (term) [TARGET]\n"
                  '    stated: "Every brother and sister shares both parents with Maya."\n'
                  '    asked: "How many sisters does each of Maya\'s brothers have?"\n'
-                 "    extraction step's reading: not stated in the request") in draft_prompt
+                 "    extraction step's reading: to be worked out from what the request states") in draft_prompt
 
     # Verify anti-computation guidance is injected into the drafting instructions
     assert "preserve [GIVEN] values character-for-character as fixed problem constraints" in draft_prompt

@@ -17,7 +17,7 @@ from pdl_taskmaster.runtime.wire_payloads import ENTITY_DISTINCTIONS, ENTITY_STA
 
 # The host's own wording for each distinction; the model only ever chooses the word.
 DISTINCTION_READINGS = {
-    "implicit": "not stated in the request; to be worked out or produced from what it states",
+    "implicit": "to be worked out from what the request states; a stated value is not assumed to be the answer",
     "undetermined": "what the request states may not be enough to settle it",
     "conflict": "the quoted statements about it may contradict each other",
 }

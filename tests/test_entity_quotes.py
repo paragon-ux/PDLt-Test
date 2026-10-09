@@ -155,7 +155,7 @@ def test_forwarded_entities_carry_quotes_and_the_hosts_reading():
     assert maya == {"surface": "Maya", "kind": "identifier", "status": "given", "group": None, "relation": None}
     assert set(sisters) == {"surface", "kind", "status", "group", "relation"}
     assert sisters["relation"]["known"] == ["S sisters"]
-    assert sisters["relation"]["distinction"].startswith("implicit: not stated in the request")
+    assert sisters["relation"]["distinction"].startswith("implicit: to be worked out from what the request states")
     assert sisters["relation"]["distinction"].endswith("(the extraction step's reading, not a fact)")
     for distinction in ("implicit", "undetermined", "conflict"):
         assert "not a fact" in task_entities.reading(distinction)
@@ -174,7 +174,7 @@ def test_render_splits_a_group_whose_members_differ():
         '      stated: "Maya has B brothers"',
         "  - sisters (term) [TARGET]",
         '      asked: "How many sisters does each of Maya\'s brothers have?"',
-        "      extraction step's reading: not stated in the request; to be worked out or produced from what it states",
+        "      extraction step's reading: to be worked out from what the request states; a stated value is not assumed to be the answer",
     ]
 
 

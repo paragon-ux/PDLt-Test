@@ -123,8 +123,8 @@ class EntityRelation(WireModel):
     distinction: Literal["implicit", "undetermined", "conflict"] | None = Field(
         default=None, json_schema_extra=contract(description=(
             'For a target only, how its unknown stands to its known quotes. Exactly one word: "implicit": the '
-            'request does not state the answer; it has to be worked out or produced from what the request '
-            'states. "undetermined": what the request states is not enough to settle it. "conflict": the known '
+            'answer has to be worked out or produced from what the request states, not assumed to be a value '
+            'it states. "undetermined": what the request states is not enough to settle it. "conflict": the known '
             'quotes contradict each other about it. Null for a given thing. Never explain.'
         )))
     # Host bookkeeping, never shown to the model: values the coercion removed.

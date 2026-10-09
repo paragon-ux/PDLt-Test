@@ -341,7 +341,7 @@ def test_entities_reach_the_draft_with_kind_and_quotes_and_paraphrase_loses_none
     entry = ('- {} (term) [TARGET]\n'
              '    stated: "the words for yes and no are da and ja, in some order"\n'
              '    asked: "You do not know which word means which."\n'
-             "    extraction step's reading: not stated in the request; to be worked out or produced from what it states")
+             "    extraction step's reading: to be worked out from what the request states; a stated value is not assumed to be the answer")
     assert _shown(entry.format("da")) in draft and _shown(entry.format("ja")) in draft
     assert "TRIPWIRE_X_99" not in draft
     # Terms carry their meaning in the context; their surface is not forced into the body.
