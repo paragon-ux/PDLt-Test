@@ -289,7 +289,7 @@ def test_bootstrap_entities_follow_the_general_spec():
     # Fixed keys (Cerebras: closed objects); a group holds entities, one level; the model writes no role.
     assert set(group["properties"]) == {"name", "alias", "known", "members"}
     assert group["properties"]["members"]["items"] == entity
-    assert entity["required"] == ["name", "kind"]
+    assert entity["required"] == ["relation", "name", "kind"]  # the working note is required (v2.3)
     # v2.2: the working note comes first, so the model reasons before it names; no distinction
     assert list(entity["properties"]) == ["relation", "name", "kind", "alias", "known", "unknown"]
     assert entity["properties"]["kind"]["enum"] == ["identifier", "input_data", "literal", "parameter", "term"]

@@ -119,7 +119,9 @@ class TaskEntity(WireModel):
     host never forwards, renders or parses it (ledger L100, v2.2)."""
 
     model_config = ConfigDict(extra="forbid")
-    relation: str | None = Field(default=None, json_schema_extra=contract(description=(
+    # Required and non-null (v2.3): gpt-oss on low leaves an optional field null (0 of 62 notes
+    # in the v2.2 rerun); no minimum length, so an empty note is counted, never a failed reply.
+    relation: str = Field(json_schema_extra=contract(description=(
             'Write this first: in your own words, what this thing is in the task, what the request states about '
             'it, whether the request asks for it, and so which word of the request names it. A working note for '
             'filling in the fields below; it is not passed on.'
@@ -189,7 +191,7 @@ class TaskEntity(WireModel):
             for key in ("known", "unknown"):
                 if data.get(key) in (None, [], "") and relation.get(key) not in (None, [], ""):
                     data[key] = relation[key]
-        data["relation"] = relation.strip() or None if isinstance(relation, str) else None
+        data["relation"] = relation.strip() if isinstance(relation, str) else ""
         for key in ("status", "polarity", "group", "collection", "distinction"):
             data.pop(key, None)
         data["alias"] = _quote_list(data.get("alias"))
