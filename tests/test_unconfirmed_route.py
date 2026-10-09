@@ -66,7 +66,7 @@ def _bootstrap_reply(task_summary: str = "Deduce identities of three gods A, B, 
         # One target taken from the request itself: these tests are about the route, and the
         # entity rules (L100 v2) want a name from the request and the question quoted.
         text = _request_text(request) if request is not None else task_summary
-        entities = [{"name": text.split()[0], "kind": "term", "unknown": text, "distinction": "implicit"}]
+        entities = [{"name": text.split()[0], "kind": "term", "unknown": text}]
     return json.dumps({
         "kind": "ANALYSIS",
         "task_summary": task_summary,

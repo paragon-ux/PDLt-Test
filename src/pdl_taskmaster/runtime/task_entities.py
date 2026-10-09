@@ -1,14 +1,13 @@
-"""The host's checks on BOOTSTRAP's task entities (ledger L100, schema v2; docs/plans/ENTITY_REDESIGN.md).
+"""The host's checks on BOOTSTRAP's task entities (ledger L100, schema v2.2; docs/plans/ENTITY_REDESIGN.md).
 
 Everything here is deterministic. ``violations`` reads what the model wrote against the
 entity rules: the first reply that breaks one is rejected with feedback naming each
 violation (the single wire retry), and on the retry ``enforce`` drops only the offending
 items. ``check`` then keeps a name, alias or quote only when it is one continuous piece
 of the request (``quotes.RequestText``), keeping the request's own text; merges entities
-that name the same thing; derives each entity's role (a target when the model wrote an
-``unknown``); and applies ``distinction`` (implicit, undetermined, conflict), BOOTSTRAP's
-one closed judgment, which later stages read in the host's fixed wording, labeled as a
-judgment.
+that name the same thing; and derives each entity's role (a target when the model wrote
+an ``unknown``). Each entity's working note (``relation``) is read by none of this and
+passed to no later stage.
 """
 from __future__ import annotations
 
@@ -16,15 +15,6 @@ from collections import Counter
 from typing import Any, Callable
 
 from pdl_taskmaster.runtime.quotes import RequestText, fold_key
-from pdl_taskmaster.runtime.wire_payloads import ENTITY_DISTINCTIONS
-
-# The host's own wording for each distinction; the model only ever chooses the word.
-DISTINCTION_READINGS = {
-    "implicit": "to be worked out from what the request states; a stated value is not assumed to be the answer",
-    "undetermined": "what the request states may not be enough to settle it",
-    "conflict": "the quoted statements about it may contradict each other",
-}
-_PRECEDENCE = {None: 0, "implicit": 1, "undetermined": 2, "conflict": 3}  # a merge never hides a gap
 
 # English personal, possessive, reflexive, demonstrative and interrogative pronouns. A closed
 # grammatical class, so this is schema validation, not a task word list (L100 rule 6 and (c);
@@ -141,13 +131,11 @@ def enforce(entities: dict[str, Any], sources: RequestText) -> tuple[dict[str, A
 # --- the host check ---------------------------------------------------------------------------
 
 def _absorb(first: dict[str, Any], other: dict[str, Any]) -> None:
-    """Merge ``other`` into ``first``: a target if either is, quotes combined, the stronger distinction."""
+    """Merge ``other`` into ``first``: a target if either is, quotes and aliases combined."""
     if other["status"] == "target":
         first["status"] = "target"
     first["known"] += [q for q in other["known"] if q not in first["known"]]
     first["unknown"] = first["unknown"] or other["unknown"]
-    if _PRECEDENCE[other["distinction"]] > _PRECEDENCE[first["distinction"]]:
-        first["distinction"] = other["distinction"]
     first["alias"] += [a for a in other["alias"]
                        if a not in first["alias"] and fold_key(a) != fold_key(first["name"])]
 
@@ -158,7 +146,6 @@ def check(entities: dict[str, Any], sources: RequestText,
     record (name -> payload, nonzero only)."""
     counts: Counter[str] = Counter()
     alias_drops: Counter[str] = Counter()
-    dropped_values: list[str] = []
 
     def quote(copy: object) -> str | None:
         found = sources.locate(copy)
@@ -191,12 +178,7 @@ def check(entities: dict[str, Any], sources: RequestText,
         if name is None:
             counts["name"] += 1
             return None
-        for note in entity.get("dropped") or []:
-            if note.startswith("distinction:"):
-                counts["distinction"] += 1
-                dropped_values.append(note.split(":", 1)[1])
-            else:
-                counts["text"] += 1
+        counts["text"] += len(entity.get("dropped") or [])
         known = quotes(entity.get("known") or [])
         written = entity.get("unknown")
         unknown = None
@@ -204,17 +186,12 @@ def check(entities: dict[str, Any], sources: RequestText,
             unknown = quote(written)
             if unknown is None:
                 counts["quote_not_in_request"] += 1  # it stays a target: a slip never makes a target a given
-        distinction = entity.get("distinction") if entity.get("distinction") in ENTITY_DISTINCTIONS else None
-        if distinction and unknown is None:
-            counts["distinction"] += 1
-            dropped_values.append(f"{distinction} (no kept unknown)")
-            distinction = None
         return {
             "name": sanitize(name).strip(),
             "kind": entity.get("kind") or "identifier",
             "status": "target" if written else "given",
             "alias": aliases(entity.get("alias") or [], [*known, *([unknown] if unknown else [])]),
-            "known": known, "unknown": unknown, "distinction": distinction,
+            "known": known, "unknown": unknown,
         }
 
     groups: list[dict[str, Any]] = []
@@ -298,23 +275,13 @@ def check(entities: dict[str, Any], sources: RequestText,
         else:
             counts["group"] += 1
     kept = {"groups": kept_groups, "entities": [e for e in loose if id(e) not in removed]}
-    for entity in members_of(kept):
-        if entity["distinction"] == "conflict" and len(entity["known"]) < 2:
-            counts["distinction"] += 1
-            dropped_values.append("conflict (fewer than two known quotes)")
-            entity["distinction"] = None
-        if entity["status"] == "target" and entity["unknown"] is None:
-            counts["unanchored"] += 1
-        if entity["unknown"] is not None and entity["distinction"] is None:
-            counts["distinction_missing"] += 1  # every target with an unknown takes one (no null fallback)
+    counts["unanchored"] = sum(e["status"] == "target" and e["unknown"] is None for e in members_of(kept))
 
     events: dict[str, dict[str, Any]] = {}
     if counts["name"]:
         events["TASK_ENTITY_DROPPED_UNSAFE"] = {"count": counts["name"]}
     if counts["quote_not_in_request"]:
         events["TASK_ENTITY_QUOTE_DROPPED"] = {"count": counts["quote_not_in_request"]}
-    if counts["distinction"]:
-        events["TASK_ENTITY_DISTINCTION_DROPPED"] = {"count": counts["distinction"], "values": dropped_values}
     if counts["text"]:
         events["TASK_ENTITY_TEXT_DROPPED"] = {"count": counts["text"]}
     if counts["merged"]:
@@ -327,8 +294,6 @@ def check(entities: dict[str, Any], sources: RequestText,
         events["TASK_ENTITY_GROUP_DROPPED"] = {"count": counts["group"]}
     if counts["unanchored"]:
         events["TASK_ENTITY_TARGET_UNANCHORED"] = {"count": counts["unanchored"]}
-    if counts["distinction_missing"]:
-        events["TASK_ENTITY_DISTINCTION_MISSING"] = {"count": counts["distinction_missing"]}
     return kept, events
 
 
@@ -339,15 +304,9 @@ def members_of(kept: dict[str, Any]) -> list[dict[str, Any]]:
 
 # --- what later stages receive -------------------------------------------------------------------
 
-def reading(distinction: str) -> str:
-    """The host's wording of a distinction, labeled as BOOTSTRAP's judgment."""
-    return f"{distinction}: {DISTINCTION_READINGS[distinction]} (the extraction step's reading, not a fact)"
-
-
 def _forwarded_entity(entity: dict[str, Any]) -> dict[str, Any]:
     return {"name": entity["name"], "kind": entity["kind"], "status": entity["status"], "alias": list(entity["alias"]),
-            "known": list(entity["known"]), "unknown": entity["unknown"],
-            "distinction": reading(entity["distinction"]) if entity["distinction"] else None}
+            "known": list(entity["known"]), "unknown": entity["unknown"]}
 
 
 def forwarded(kept: dict[str, Any]) -> list[dict[str, Any]]:
@@ -370,8 +329,6 @@ def _entity_lines(entity: dict[str, Any], indent: str) -> list[str]:
         lines.append(f"{inner}stated: " + "; ".join(f'"{quote}"' for quote in entity["known"]))
     if entity["unknown"]:
         lines.append(f'{inner}asked: "{entity["unknown"]}"')
-    if entity["distinction"]:
-        lines.append(f"{inner}extraction step's reading: {DISTINCTION_READINGS[entity['distinction']]}")
     return lines
 
 

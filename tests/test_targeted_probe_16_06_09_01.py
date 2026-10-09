@@ -101,7 +101,7 @@ def test_16_06_specification_boundary_and_anti_computation(tmp_path: Path):
             {"name": "S", "kind": "parameter", "known": ["S sisters"]},
             {"name": "sisters", "kind": "term",
              "known": ["Every brother and sister shares both parents with Maya."],
-             "unknown": "How many sisters does each of Maya's brothers have?", "distinction": "implicit"},
+             "unknown": "How many sisters does each of Maya's brothers have?"},
         ]},
     }
 
@@ -134,8 +134,7 @@ def test_16_06_specification_boundary_and_anti_computation(tmp_path: Path):
     assert shown('- S (parameter) [GIVEN]\n    stated: "S sisters"') in draft_prompt
     assert shown("- sisters (term) [TARGET]\n"
                  '    stated: "Every brother and sister shares both parents with Maya."\n'
-                 '    asked: "How many sisters does each of Maya\'s brothers have?"\n'
-                 "    extraction step's reading: to be worked out from what the request states") in draft_prompt
+                 '    asked: "How many sisters does each of Maya\'s brothers have?"') in draft_prompt
 
     # Verify anti-computation guidance is injected into the drafting instructions
     assert "preserve [GIVEN] values character-for-character as fixed problem constraints" in draft_prompt
@@ -178,9 +177,9 @@ def test_16_06_target_entities_preserved_and_not_dropped(tmp_path: Path):
             {"name": "brothers", "kind": "term", "known": ["Maya has B brothers"]},
             {"name": "sisters", "kind": "term", "known": ["S sisters"]},
             {"name": "sisters", "kind": "term",
-             "unknown": "How many sisters does each of Maya's brothers have?", "distinction": "implicit"},
+             "unknown": "How many sisters does each of Maya's brothers have?"},
             {"name": "expression", "kind": "literal",
-             "unknown": "Give the answer as an expression in B and S", "distinction": "implicit"},
+             "unknown": "Give the answer as an expression in B and S"},
         ]},
     }
 

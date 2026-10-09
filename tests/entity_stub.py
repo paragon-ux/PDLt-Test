@@ -37,4 +37,4 @@ def target_entities(request: str) -> dict[str, Any]:
 
     line = next((line.strip() for line in request.splitlines() if line.strip()), request.strip())
     name = next((word for word in line.split() if not is_pronoun(word.strip("?.,!"))), line)
-    return {"groups": [], "entities": [{"name": name, "kind": "term", "unknown": line, "distinction": "implicit"}]}
+    return {"groups": [], "entities": [{"name": name, "kind": "term", "unknown": line}]}

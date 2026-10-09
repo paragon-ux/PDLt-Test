@@ -161,6 +161,8 @@ The first live check (section 9, step 3) found targets left without an `unknown`
 
 **v2.1 (after the v2 rerun, which kept no target in any run; ledger L100):** two more rules go through the same single retry: at least one entity carries an `unknown` (every task asks for something), and an entity whose name is not in the request is rejected on the first reply with the request's own word asked for, then dropped and counted on the retry. Matching also reads inline-code backticks as formatting. After the host checks, a run where no entity keeps its `unknown` records `TASK_ENTITY_NO_ANCHORED_TARGET`, and the live check fails such a run. The checked entities are kept with the turn, so a restored session executes with them (the L97 pilot's restored EXECUTE calls had none). If one retry with this feedback still leaves targets out, the next step is a separate target list reconciled by the host, not more rules and not a written `status` (ChatGPT via the user).
 
+**v2.2 (the user's change, 2026-10-09; ledger L100):** each entity starts with a free-text `relation`, the model's working note, written before `name` because fields are generated in schema order; the host never forwards, renders or parses it, so no unchecked model text reaches later stages. `distinction` and its readings are removed (section 4.2.1 is superseded): every kept value was `implicit`, and 13-06 never got `undetermined`. The v2.1 rules stay, so the rerun measures this one change.
+
 ## 5. Risks
 
 - **Fewer targets (L56/L57):** the "answer" wording was added because models marked every entity given. Measured by runs with no target (baseline 2 of 118) and by `TASK_ENTITY_TARGET_UNANCHORED`.

@@ -101,10 +101,7 @@ class ActivationDecisionPayload(WireModel):
 
 ENTITY_KINDS = ("identifier", "input_data", "literal", "parameter", "term")
 ENTITY_STATUSES = ("given", "target")
-# How a target's unknown stands to its known quotes (L100). There is no value for "the
-# answer is stated": that would turn an unknown into a known (ENTITY_REDESIGN.md 4.2.1).
-ENTITY_DISTINCTIONS = ("implicit", "undetermined", "conflict")
-_LEGACY_TEXT_FIELDS = ("relation", "condition", "definition")
+_LEGACY_TEXT_FIELDS = ("condition", "definition")
 
 
 def _quote_list(value: Any) -> list[str]:
@@ -115,11 +112,18 @@ def _quote_list(value: Any) -> list[str]:
 
 
 class TaskEntity(WireModel):
-    """One thing the task is about (L100, schema v2): the request's own name for it, its
-    kind, other names the request gives it, and what the request states and asks about it,
-    quoted. Its role is not written: the host derives it (a target when ``unknown`` is)."""
+    """One thing the task is about (L100, schema v2.2): a working note, the request's own
+    name for it, its kind, other names the request gives it, and what the request states and
+    asks about it, quoted. Its role is not written: the host derives it (a target when
+    ``unknown`` is). The working note comes first so the model reasons before it names; the
+    host never forwards, renders or parses it (ledger L100, v2.2)."""
 
     model_config = ConfigDict(extra="forbid")
+    relation: str | None = Field(default=None, json_schema_extra=contract(description=(
+            'Write this first: in your own words, what this thing is in the task, what the request states about '
+            'it, whether the request asks for it, and so which word of the request names it. A working note for '
+            'filling in the fields below; it is not passed on.'
+        )))
     name: str = Field(json_schema_extra=contract(description=(
             "The request's own word or phrase for this thing, copied exactly as written, including its spelling: "
             'a name, symbol, number, word or short phrase; the most specific one the request uses. Never a '
@@ -155,13 +159,6 @@ class TaskEntity(WireModel):
             'find, compute, choose, explain or produce it, copied character for character. Writing it is what marks '
             'the thing as asked for. Null when the request asks nothing about this thing.'
         )))
-    distinction: Literal["implicit", "undetermined", "conflict"] | None = Field(
-        default=None, json_schema_extra=contract(description=(
-            'Only with an unknown: how the unknown stands to the known quotes. Exactly one word: "implicit": the '
-            'answer has to be worked out or produced from what the request states, not assumed to be a value '
-            'it states. "undetermined": what the request states is not enough to settle it. "conflict": the known '
-            'quotes contradict each other about it. Null when unknown is null. Never explain.'
-        )))
     # Host bookkeeping, never shown to the model: what the coercion removed.
     dropped: SkipJsonSchema[list[str]] = Field(default_factory=list, exclude=True)
 
@@ -169,10 +166,11 @@ class TaskEntity(WireModel):
     @classmethod
     def _coerce(cls, data: Any) -> Any:
         """Alias coercion (ADR-0018): the earlier wire forms map onto this one. ``surface``
-        is ``name``; a ``relation`` object's quotes move onto the entity; free text (an old
-        relation, condition or definition) cannot become a quote, so it is dropped and
-        recorded; the role fields (``status``, ``polarity``) are removed, since the host
-        derives the role; a distinction outside the closed list is dropped and recorded."""
+        is ``name``; a ``relation`` object's quotes move onto the entity, and a ``relation``
+        string is the working note; other free text (an old condition or definition) cannot
+        become a quote, so it is dropped and recorded; the role fields (``status``,
+        ``polarity``) and the removed ``distinction`` are removed, since the host derives the
+        role."""
         if not isinstance(data, dict):
             return data
         data = dict(data)
@@ -182,16 +180,17 @@ class TaskEntity(WireModel):
         data.pop("surface", None)
         if isinstance(data.get("name"), str):
             data["name"] = data["name"].strip()
-        relation = data.pop("relation", None)
+        relation = data.get("relation")
         for key in _LEGACY_TEXT_FIELDS:
-            value = relation if key == "relation" else data.pop(key, None)
+            value = data.pop(key, None)
             if isinstance(value, str) and value.strip():
                 dropped.append(f"{key}_text")
         if isinstance(relation, dict):
-            for key in ("known", "unknown", "distinction"):
+            for key in ("known", "unknown"):
                 if data.get(key) in (None, [], "") and relation.get(key) not in (None, [], ""):
                     data[key] = relation[key]
-        for key in ("status", "polarity", "group", "collection"):
+        data["relation"] = relation.strip() or None if isinstance(relation, str) else None
+        for key in ("status", "polarity", "group", "collection", "distinction"):
             data.pop(key, None)
         data["alias"] = _quote_list(data.get("alias"))
         data["known"] = _quote_list(data.get("known"))
@@ -200,14 +199,6 @@ class TaskEntity(WireModel):
             quotes = _quote_list(unknown)
             unknown = quotes[0] if quotes else None
         data["unknown"] = unknown if isinstance(unknown, str) and unknown.strip() else None
-        distinction = data.get("distinction")
-        if distinction is not None:
-            value = str(distinction).strip().lower()
-            if value in ENTITY_DISTINCTIONS:
-                data["distinction"] = value
-            else:
-                dropped.append(f"distinction:{value}")
-                data["distinction"] = None
         data["dropped"] = dropped
         return data
 
@@ -218,8 +209,9 @@ class TaskEntity(WireModel):
         return self
 
     def host_dump(self) -> dict[str, Any]:
-        """The entity as the host reads it: the wire fields, plus what coercion removed when anything was."""
-        out = self.model_dump()
+        """The entity as the host reads it: the wire fields without the working note (the host
+        reads none of it), plus what coercion removed when anything was."""
+        out = self.model_dump(exclude={"relation"})
         if self.dropped:
             out["dropped"] = list(self.dropped)
         return out
