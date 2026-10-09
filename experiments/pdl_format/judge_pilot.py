@@ -125,8 +125,17 @@ def mechanical(task: str, text: str) -> dict:
         return {"yaml_blocks": len(blocks), "yaml_parses": bool(parsed) and all(p is not None for p in parsed),
                 "states_225_minutes": bool(re.search(r"\b225\s*(?:min|minutes)\b", text, re.I))}
     blocks = [b for b in _fenced(text, ("csv", "")) if "timestamp_utc" in b.splitlines()[0]] if text else []
+    if not blocks and text:
+        # Both arms also wrote the timeline unfenced: the rows from its header line to the next blank or fence line.
+        lines = text.splitlines()
+        start = next((n for n, line in enumerate(lines) if line.lstrip('"').startswith("timestamp_utc")), None)
+        if start is not None:
+            end = next((n for n in range(start + 1, len(lines)) if not lines[n].strip() or lines[n].startswith("```")),
+                       len(lines))
+            blocks = ["\n".join(lines[start:end])]
     if not blocks:
         return {"timeline_csv": False}
+    blocks[0] = "\n".join(",".join(row) for row in csv.reader(blocks[0].splitlines()))  # quoted header -> plain
     rows = list(csv.DictReader(blocks[0].splitlines()))
     stamps = []
     for row in rows:
