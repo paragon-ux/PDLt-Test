@@ -38,3 +38,16 @@ The 12 recorded L107 turns whose first attempt ran a program and hit the step bu
 |---|---|---|---|---|---|---|
 | 2026-10-09 | baseline (`a5973ae7` + L104) | L107 | `ec089e2d` | 11/30 | 5/20 | $0.399 (both arms) |
 | 2026-10-09 | scratchpad v1 (note required on repairs) | L107 | `scratchpad-test` `93f8d033` | 9/30 | 7/26 | (above) |
+
+## Full runs, 01-01, tool loop on every attempt (L112 step 2)
+
+Nothing frozen: System 1 and BOOTSTRAP_ANALYSIS live, every EXECUTE_UNCONFIRMED call a tool loop (submit, `run_python`, `read_attempt` when there is a previous attempt). Arms alternate in ABBA blocks; tag `full-0101`; report from `frozen_repair.py full-report full-0101`. The $0.30 cap stopped it at 18 of 24 runs (9 per arm); the last run took it to $0.308.
+
+| Date | Arm | Ledger | Engine / branch | n | Grader PASS | Host-verified | False success | Honest open | Bare witness | Runs with more than one call | Cost |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-10-10 | tool loop on every attempt | L112 step 2 | `l110` `f547a2d7` + `l112-scratchpad-tool` `14166e96` | 9 | 9/9 | 9/9 | 0 | 0 | 0 | 3 (2 after a declared-incomplete first attempt), all PASS | $0.308 (both arms) |
+| 2026-10-10 | + scratchpad tools | L112 step 2 | (same) | 9 | 9/9 | 9/9 | 0 | 0 | 0 | 2 (both declared-incomplete), all PASS | (above) |
+
+- **Scratchpad:** no run wrote or read a note (0 of 9), so the tool had no effect to measure. No host-side STEP_BUDGET or PROGRAM_FAILED correction occurred in either arm: the submission check caught them inside the call (rejections: STEP_BUDGET_EXCEEDED 7, NO_PROGRAM 5, OUTPUT_MALFORMED 1, WITNESS_NOT_PRINTED 1).
+- **Against the recorded L107 full 01-01 runs** (historical, not interleaved; engine `ec089e2d` without L110): baseline 5/10 PASS, 9 of 10 repaired; scratchpad v1 3/10. Tool loop, both arms: 18/18; Fisher p 0.0026 against the baseline, p < 0.001 against both L107 arms (8/20).
+- The literal-witness flag (L113) makes every success here provisional too.
