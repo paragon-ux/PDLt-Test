@@ -29,7 +29,7 @@ Provider fact: Cerebras rejects `tools` together with `response_format`, so a to
 7. **Off by default.** A run setting (`agent_tools`, CLI `--agent-tools`, environment `PDLT_AGENT_TOOLS=1`) turns the loop on. With it off, every request is byte-identical to today's.
 8. **Provider handling.** Tool turns carry the tools and no response format; when the provider refuses the full output schema in the submission's parameters, the submission falls back to a plain object, still checked by the host. When the budgets are spent, the last submission stands as the reply (the host verifies and corrects it as any reply); with no submission, one final call goes with the operation's own format and no tools.
 9. **Replay.** The prompt hash is taken before the loop; a recorded replay returns the accepted reply. Loop rounds are recorded in the trace, not replayed.
-10. **MCP.** The same registry is served over MCP's stdio transport for agents outside PDLt (`python -m pdl_taskmaster.host.mcp_server`; ADR-0023 section 7): a thin adapter with the same definitions, budgets, sandbox confinement and submission check, and no verdict.
+10. **MCP.** EXECUTE_UNCONFIRMED's tools (`run_python` and its checked submission) are served over MCP's stdio transport for agents outside PDLt (`python -m pdl_taskmaster.host.mcp_server`; ADR-0023 section 7): a thin adapter with the same definitions, budgets, sandbox confinement and submission check, and no verdict.
 
 ## Options considered
 
