@@ -29,6 +29,7 @@ Provider fact: Cerebras rejects `tools` together with `response_format`, so a to
 7. **Off by default.** A run setting (`agent_tools`, CLI `--agent-tools`, environment `PDLT_AGENT_TOOLS=1`) turns the loop on. With it off, every request is byte-identical to today's.
 8. **Provider handling.** Tool turns carry the tools and no response format; when the provider refuses the full output schema in the submission's parameters, the submission falls back to a plain object, still checked by the host. When the budgets are spent, the last submission stands as the reply (the host verifies and corrects it as any reply); with no submission, one final call goes with the operation's own format and no tools.
 9. **Replay.** The prompt hash is taken before the loop; a recorded replay returns the accepted reply. Loop rounds are recorded in the trace, not replayed.
+10. **MCP.** The same registry is served over MCP's stdio transport for agents outside PDLt (`python -m pdl_taskmaster.host.mcp_server`; ADR-0023 section 7): a thin adapter with the same definitions, budgets, sandbox confinement and submission check, and no verdict.
 
 ## Options considered
 
@@ -48,4 +49,4 @@ Provider fact: Cerebras rejects `tools` together with `response_format`, so a to
 - **Easier:** a failed program, an exhausted budget or a missing WITNESS line is found inside the call, before an attempt is counted.
 - **Harder:** a model call is several provider rounds; latency and token use grow with tool use (01-01 full runs: about $0.012 a run).
 - **Unchanged:** final verification, witness acceptance, L110 labelling, exit codes, confinement, System 1.
-- **Revisit:** a tool for other operations only with a measurement; the scratchpad if a task family shows failures that survive the in-call loop; MCP exposure of the registry.
+- **Revisit:** a tool for other operations only with a measurement; the scratchpad if a task family shows failures that survive the in-call loop; MCP clients beyond stdio.
