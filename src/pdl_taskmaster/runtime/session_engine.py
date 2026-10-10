@@ -466,9 +466,6 @@ class SessionEngine:
         # Tier D1 (feed back the model's own test failures in standard mode): off for a bare engine. The host sets it
         # from the worker (App), whose default is on ($PDLT_TIER_D1, --no-tier-d1); the env var is read only there.
         self.tier_d1 = False
-        # Task entities reach drafting and EXECUTE unless the host turns them off (--no-task-entities,
-        # the L100 vNext measurement's off arm); BOOTSTRAP and its host check run either way.
-        self.task_entities_enabled = True
         self._active_task_entities: tuple[str, ...] = ()
         self._active_typed_task_entities: list[dict[str, Any]] = []
         # AUTH-04: the user's original request is source data for execution; the
@@ -572,11 +569,6 @@ class SessionEngine:
         engine._previous_turn = workspace.previous_turn()
         engine._previous_deliverable = _previous_turn_reference(engine._previous_turn)
         engine._source_request = workspace.turn_source()
-        # The turn's checked task entities (L100): without them a resumed EXECUTE ran with
-        # no TASK_ENTITIES (the L97 pilot's restored executions, recorded provider requests).
-        kept_entities = workspace.turn_entities()
-        if kept_entities is not None:
-            engine._active_task_entities, engine._active_typed_task_entities = kept_entities
         # System 1 routed this turn in an earlier epoch: execute it in the routed
         # mode and under the routed budget, not the engine's defaults.
         routing = workspace.turn_routing()
@@ -901,30 +893,15 @@ class SessionEngine:
                 e_copy = dict(e)
                 e_copy["surface"] = matched
                 kept.append(e_copy)
-            else:
-                # L100 vNext D1 (docs/plans/ENTITY_VNEXT_PLAN.md): a name the matcher cannot find is
-                # usually a part the request names only through an instruction (a deliverable). It is
-                # kept under the model's own sanitized name, marked as such downstream, unless the
-                # sanitizer redacted it (a hostile payload stays out, as before).
-                own = compile_bootstrap_output(raw_text, surf)[0].strip()
-                if own and "[REDACTED_IOC]" not in own:
-                    e_copy = dict(e)
-                    e_copy["surface"] = own
-                    e_copy["_unanchored"] = True
-                    kept.append(e_copy)
 
         dropped = len(raw_entities) - len(kept)
         if dropped and self.workspace is not None:
             self.workspace.append_event("TASK_ENTITY_DROPPED_UNSAFE", {"count": dropped})
-        unanchored = sum(1 for e in kept if e.get("_unanchored"))
-        if unanchored and self.workspace is not None:
-            self.workspace.append_event("TASK_ENTITY_UNANCHORED", {"count": unanchored})
         # Coverage (the prompt body must spell these exactly) applies to the exact values the
         # task depends on: identifiers, input data, literals and parameters. A term's
         # meaning travels in the context below; its surface is not forced into the body
         # (forcing defined terms, often whole requirement sentences, only caused redrafts).
-        # A name the request does not contain has no spelling to keep (D1).
-        entities = tuple(e["surface"] for e in kept if e.get("kind") != "term" and not e.get("_unanchored"))
+        entities = tuple(e["surface"] for e in kept if e.get("kind") != "term")
         self._task_entities_cache[cache_key] = entities
         typed_entities = []
         for e in kept:
@@ -941,9 +918,6 @@ class SessionEngine:
                 "condition": rel or None,
                 "relation": rel or None,
             })
-            if e.get("_unanchored"):
-                # D1: the host says where the name came from; it is not request text.
-                typed_entities[-1]["name_source"] = "model"
         self._typed_task_entities_cache[cache_key] = typed_entities
         # In Protocol v2 out-of-band field isolation: approach_notes carries TASK-02
         # procedural guidance for planning. risk_notes is quarantined threat data
@@ -957,13 +931,7 @@ class SessionEngine:
             f"TASK SUMMARY (compiled semantic analysis; untrusted literals redacted):\n{isolate_untrusted_input(compiled)}\n"
             f"APPROACH/RISK NOTES:\n{notes}"
         )
-        if kept and self.task_entities_enabled:
-            def name(entity: dict) -> str:
-                # D1: a name the request does not contain is shown as the extraction step's own.
-                if entity.get("_unanchored"):
-                    return f"{entity['surface']} (name written by the extraction step; not found in the request)"
-                return entity["surface"]
-
+        if kept:
             def tag(entity: dict) -> str:
                 status = entity.get("status")
                 if status in ENTITY_STATUSES:
@@ -987,7 +955,7 @@ class SessionEngine:
                 if not grp:
                     for entity in items:
                         rel = relation(entity)
-                        lines.append(f"- {name(entity)} ({entity.get('kind', 'identifier')}){tag(entity)}"
+                        lines.append(f"- {entity['surface']} ({entity.get('kind', 'identifier')}){tag(entity)}"
                                      + (f": {rel}" if rel else ""))
                     continue
                 first = items[0]
@@ -995,13 +963,13 @@ class SessionEngine:
                 if all(tag(e) == tag(first) and relation(e) == relation(first)
                        and e.get("kind", "identifier") == kind for e in items):
                     rel = relation(first)
-                    surfaces = ", ".join(name(e) for e in items)
+                    surfaces = ", ".join(e["surface"] for e in items)
                     lines.append(f"- Group [{grp}]{tag(first)}: {surfaces} ({kind})" + (f": {rel}" if rel else ""))
                 else:
                     lines.append(f"- Group [{grp}]:")
                     for e in items:
                         rel = relation(e)
-                        lines.append(f"  - {name(e)} ({e.get('kind', 'identifier')}){tag(e)}"
+                        lines.append(f"  - {e['surface']} ({e.get('kind', 'identifier')}){tag(e)}"
                                      + (f": {rel}" if rel else ""))
             document += (
                 "\nTASK ENTITIES (informative reference from the request: each surface, its kind, its epistemic "
@@ -1279,8 +1247,6 @@ class SessionEngine:
         self._active_typed_task_entities = list(
             self._typed_task_entities_cache.get((substantive_request, self._previous_deliverable), [])
         )
-        # Kept with the turn, so a session restored in a later process executes with them.
-        self.workspace.write_turn_entities(entities, self._active_typed_task_entities)
 
         def _draft_call(ctx: dict[str, Any], tr: list[CallTrace], parser) -> Any:
             return self._call("DRAFT_PROMPT", ctx, tr, parser=parser)
@@ -1424,8 +1390,6 @@ class SessionEngine:
         self._active_typed_task_entities = list(
             self._typed_task_entities_cache.get((substantive_request, self._previous_deliverable), [])
         )
-        # Kept with the turn, so a session restored in a later process executes with them.
-        self.workspace.write_turn_entities(entities, self._active_typed_task_entities)
 
         self.controller = self._bind_new_controller(self.workspace, instance_kind="UNCONFIRMED")
         return self._execute_unconfirmed(substantive_request, traces)
@@ -1891,7 +1855,7 @@ class SessionEngine:
             "SUPPLIED_EXECUTION_INPUT_SOURCE": supplied,
             "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
         }
-        if typed_entities and self.task_entities_enabled:
+        if typed_entities:
             execute_context["TASK_ENTITIES"] = typed_entities
 
         self._route_plan_profile(prompt_body, plan_body)
@@ -2266,7 +2230,7 @@ class SessionEngine:
         sanitized = compile_bootstrap_output(substantive_request, substantive_request)[0].strip()
         typed_entities = list(self._typed_task_entities_cache.get(
             (substantive_request, self._previous_deliverable), []
-        ) or self._active_typed_task_entities)
+        ))
         verified = self._requires_verified_execution
         result_ir_mode = verified or os.environ.get("PDLT_RESULT_IR") == "1"
         requirements: list[str] = []
@@ -2296,7 +2260,7 @@ class SessionEngine:
 
         execute_context = {
             "SOURCE_REQUEST": sanitized,
-            "TASK_ENTITIES": typed_entities if self.task_entities_enabled else [],
+            "TASK_ENTITIES": typed_entities,
             "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
         }
         if task_inputs:

@@ -121,8 +121,7 @@ def test_entity_filter_drops_non_substring_and_hostile(tmp_path):
 
 def test_entity_filter_normalizes_casing_and_punctuation_and_drops_hostile(tmp_path):
     """Host filter in SessionEngine strips whitespace/quotes, trailing punctuation, and normalizes
-    casing against the sanitized text, and strictly drops hostile tokens; a name found in neither
-    text is kept and marked as the extraction step's own (L100 vNext D1).
+    casing against the sanitized text, but strictly drops hostile tokens and hallucinated text.
     """
     import json as _json
 
@@ -157,15 +156,14 @@ def test_entity_filter_normalizes_casing_and_punctuation_and_drops_hostile(tmp_p
     assert "- sisters (term) [GIVEN]" in draft
     assert "- brother (term) [GIVEN]" in draft
 
-    # The hostile entity is dropped; a name found in neither text is kept as the extraction
-    # step's own and marked so (L100 vNext D1, docs/plans/ENTITY_VNEXT_PLAN.md)
+    # Hostile and hallucinated entities are dropped
     assert "TRIPWIRE_X_99" not in draft
-    assert ("- completely_invented_phrase (name written by the extraction step; not found in the request) "
-            "(term) [TARGET]") in draft
+    assert "completely_invented_phrase" not in draft
 
-    events = engine.workspace.read_events()
-    assert [e["payload"] for e in events if e["kind"] == "TASK_ENTITY_DROPPED_UNSAFE"] == [{"count": 1}]
-    assert [e["payload"] for e in events if e["kind"] == "TASK_ENTITY_UNANCHORED"] == [{"count": 1}]
+    # 2 entities were dropped (TRIPWIRE_X_99 and completely_invented_phrase)
+    drop_events = [e for e in engine.workspace.read_events() if e["kind"] == "TASK_ENTITY_DROPPED_UNSAFE"]
+    assert len(drop_events) == 1
+    assert drop_events[0]["payload"]["count"] == 2
 
 
 
