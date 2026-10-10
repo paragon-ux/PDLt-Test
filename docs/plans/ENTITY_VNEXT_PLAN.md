@@ -212,7 +212,7 @@ Each prompt's 6 runs (L99 and stage 1) were read: the EXECUTE input's entities, 
   - Failing runs hit the 10M-step budget on every attempt (original r1, stage 1 r3), or printed a witness that does not check (stage 1 r2).
   - A passing payload (L99 r3: `a_i`, `b_i`, `c_i` as targets) has the same structure as a failing one (stage 1 r3).
   - The lever is the search's efficiency. GUARD-01 forbids the harness from suggesting one. So 01-01 is a model limit (REG-003), not an entity defect.
-  - Separately, stage 1 r1 printed a hard-coded list that is not a partition (35 twice), and the host logged `VERIFICATION_PASSED`. That is a referee gap, flagged as its own task.
+  - Separately, stage 1 r1 replied with a bare list display (corrected by the side session that investigated it). Its declared witness carries the same 15 triples, which are not a partition: 6 numbers appear twice. The host logged `VERIFICATION_PASSED` because, with no sandbox witness, `FallbackChecker` accepts any well-formed positive witness as a provisional pass (`session_engine.py:2657-2659`, `fallback.py:48-69`; static). That is a referee gap, drafted as ledger L104 by that session.
 - **04-06: the deliverable's own demo, not the entities.**
   - Stage 1 r2 and r3 ended with programs whose parser requires a `;` after the last statement. Their demos ran the request's example with a `;` added, so the host's run passed and the hidden tests failed.
   - Stage 1 r1 failed on the tests' other entry points. Original r3 had a syntax error.
@@ -267,7 +267,7 @@ Each prompt's 6 runs (L99 and stage 1) were read: the EXECUTE input's entities, 
   - **H2 (the meanings are dispensable): not supported.** C ≤ B in 5 of 6 cells. Dropping `relation` risks losing passes, so D2, if taken, keeps `relation` and drops only its duplicates.
   - **H1 stays open.** Testing it needs more 16-06 runs, or graded prompts like it.
   - This fits the user's premise: the original's model-written decomposition is what EXECUTE uses. The L100 versions removed those meanings and scored lower.
-  - The host accepted wrong partitions on 01-01 (8 runs across arms). This is the referee gap flagged in 5.3.
+  - The host accepted wrong partitions on 01-01 (8 runs across arms). This is likely the referee gap in 5.3 (L104); these runs' path has not been checked.
 
 ## 6. Decisions for the user
 
