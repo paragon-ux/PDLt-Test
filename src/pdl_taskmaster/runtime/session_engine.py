@@ -248,6 +248,10 @@ def _normalized_lines(body: str) -> list[str]:
     return [line for line in lines if line]
 
 
+# ADR-0029: operations whose calls get a submit-only tool host when agent tools are on (runtime/agent_tools.py).
+_SUBMIT_ONLY_OPERATIONS = ("BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN")
+
+
 def _python_blocks(body: str) -> list[str]:
     """The Python the host runs, decided by grammar, never by keywords.
 
@@ -475,7 +479,7 @@ class SessionEngine:
         # 0 = stop at the first failed EXECUTE (no repair, no retry of any kind).
         self.max_repairs: int | None = None
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
-        self.agent_tools = False  # ADR-0029: in-call tools on EXECUTE_UNCONFIRMED (--agent-tools)
+        self.agent_tools = False  # ADR-0029: in-call tools and checked submissions (--agent-tools)
         self._last_unconfirmed_body: str | None = None
         self._unconfirmed_attempts = 0
         self.representation = PDL  # the confirmed route's artifacts: PDL, or prose in the L97 pilot
@@ -682,8 +686,10 @@ class SessionEngine:
         operator correction so a sampling glitch (invalid JSON, dropped field)
         costs one extra call instead of fatally failing the session. A caller may
         supply ``operator_correction`` (factual host-side findings only) for the
-        first attempt; it travels outside the projection document. ``tools`` (ADR-0029)
-        travels with the request, never in the prompt."""
+        first attempt; it travels outside the projection document. ``tools`` (ADR-0029) is a
+        factory of the call's tool host, one per request (a wire retry gets a fresh one); with agent
+        tools on, a submit-only operation gets its host here. The host travels with the request,
+        never in the prompt."""
         if self.workspace is None:
             raise WorkspaceError("workspace_not_initialized")
         request = self.bridge.request(
@@ -694,8 +700,10 @@ class SessionEngine:
             operator_correction=operator_correction,
             modes=modes,
         )
+        if tools is None and self.agent_tools and operation in _SUBMIT_ONLY_OPERATIONS:
+            tools = lambda: self._submit_tool_host(operation)  # noqa: E731
         if tools is not None:
-            request = dataclasses.replace(request, tools=tools)
+            request = dataclasses.replace(request, tools=tools())
         try:
             model_text = self._invoke(request, traces)
             return model_text if parser is None else parser(model_text)
@@ -727,7 +735,7 @@ class SessionEngine:
                 modes=modes,
             )
             if tools is not None:
-                retry_request = dataclasses.replace(retry_request, tools=tools)
+                retry_request = dataclasses.replace(retry_request, tools=tools())
             try:
                 return parser(self._invoke(retry_request, traces))
             except Exception as retry_error:
@@ -2398,7 +2406,8 @@ class SessionEngine:
             outcome = self.bridge.parse_unconfirmed_execution(
                 self._call("EXECUTE_UNCONFIRMED", execute_context, traces,
                            operator_correction=correction, modes=modes,
-                           tools=self._agent_tool_host(execute_context, correction) if self.agent_tools else None)
+                           tools=(lambda: self._agent_tool_host(execute_context, correction))
+                           if self.agent_tools else None)
             )
         except Exception as exc:
             limit = getattr(exc, "output_limit", None)
@@ -2453,18 +2462,40 @@ class SessionEngine:
         budget = self._execution_budget
         witness_required = "WITNESS" in (execute_context.get("REQUIRED_TASK_INPUTS") or {})
         previous = self._last_unconfirmed_body if correction else None
-
-        def on_record(record: dict[str, Any]) -> None:
-            if self.workspace is not None:
-                self.workspace.append_event("AGENT_TOOL_CALL", agent_tools.event_view(record))
-
         return agent_tools.ToolHost(
             self.sandbox, budget.step_limit, budget.timeout_seconds, budget.memory_limit_bytes,
             _python_blocks(previous) if previous else [], correction or "",
             agent_tools.make_validator(self.bridge, self.sandbox, budget, witness_required, _python_blocks,
                                        _parse_sandbox_witness),
-            attempt=self._unconfirmed_attempts, on_record=on_record,
+            attempt=self._unconfirmed_attempts, on_record=self._record_tool_call,
         )
+
+    def _submit_tool_host(self, operation: str) -> Any:
+        """ADR-0029: a submit-only operation's tool host. Its submission is checked by the checks this engine applies
+        after the call, and only those: the wire model, and for a draft the pseudocode notation lint."""
+        from pdl_taskmaster.runtime import agent_tools
+        from pdl_taskmaster.verification.plan_soundness import validate_plan_soundness
+
+        def lint(text: str) -> Any:
+            return validate_plan_soundness(text, representation=self.representation)
+
+        if operation == "BOOTSTRAP_ANALYSIS":
+            validate = agent_tools.make_wire_validator(self.bridge.parse_bootstrap_analysis)
+        elif operation == "DRAFT_PROMPT":
+            validate = agent_tools.make_lint_validator(
+                self.bridge.parse_prompt_draft,
+                lambda o: ("prompt_body", o.prompt_body) if o.prompt_body is not None else None, lint)
+        else:
+            validate = agent_tools.make_lint_validator(
+                self.bridge.parse_plan_body, lambda body: ("neutral_plan_body", body), lint)
+        return agent_tools.ToolHost(None, 0, 0.0, 0, [], "", validate, on_record=self._record_tool_call,
+                                    operation=operation)
+
+    def _record_tool_call(self, record: dict[str, Any]) -> None:
+        from pdl_taskmaster.runtime import agent_tools
+
+        if self.workspace is not None:
+            self.workspace.append_event("AGENT_TOOL_CALL", agent_tools.event_view(record))
 
     def _run_deliverable_code(self, body: str) -> tuple[dict[str, Any] | None, list[str]]:
         """Run every declared Python block in the session sandbox.

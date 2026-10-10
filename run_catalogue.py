@@ -1014,8 +1014,8 @@ def main():
     parser.add_argument("--providers", default=None, metavar="A,B,C",
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
     parser.add_argument("--agent-tools", action="store_true",
-                        help="ADR-0029: in-call tools on EXECUTE_UNCONFIRMED (run Python in the sandbox, read the "
-                             "previous attempt, a checked submission); default off")
+                        help="ADR-0029: checked submissions on BOOTSTRAP_ANALYSIS, DRAFT_PROMPT, DRAFT_PLAN and "
+                             "EXECUTE_UNCONFIRMED, and in-call tools on EXECUTE_UNCONFIRMED; default off")
     parser.add_argument("--draft-execute", action="store_true",
                         help="run DRAFT_EXECUTE (a typed execution brief) before EXECUTE on tasks that are or need an algorithm or a calculation (A/B option)")
     parser.add_argument("--representation", choices=["pdl", "nl"], default="pdl",

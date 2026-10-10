@@ -102,7 +102,7 @@ def test_a_rejected_submission_is_corrected_in_the_call_and_the_host_verifies_th
 
     engine, response, requests, events = _engine(tmp_path, execute, agent_tools_on=True)
     assert response.closed and engine.controller.state.stage == Stage.CLOSED_SUCCESS
-    assert [r.tools is not None for r in requests] == [False, True]  # BOOTSTRAP carries none
+    assert requests[0].tools.tool_names() == ["submit_bootstrap_analysis"]  # BOOTSTRAP: its submission only
     tool_events = [e["payload"] for e in events if e["kind"] == "AGENT_TOOL_CALL"]
     assert [(p["tool"], p.get("accepted")) for p in tool_events] == [("run_python", None), (SUBMIT, False), (SUBMIT, True)]
     kinds = [e["kind"] for e in events]
@@ -180,11 +180,12 @@ def test_the_worker_with_tools_on_runs_the_loop(tmp_path, monkeypatch):
 # ---- the loop
 
 def test_tools_are_mcp_shaped_and_none_returns_a_verdict():
-    assert [t["name"] for t in TOOLS] == ["read_attempt", "run_python", SUBMIT]
+    assert [t["name"] for t in TOOLS] == ["read_attempt", "run_python", SUBMIT, "submit_bootstrap_analysis",
+                                         "submit_draft_prompt", "submit_draft_plan"]
     assert all(set(t) == {"name", "description", "inputSchema"} for t in TOOLS)
     text = json.dumps(TOOLS).lower().replace("verifies", "")
     assert "witness" not in text and "verif" not in text
-    assert agent_tools.TOOL_OPERATIONS == ("EXECUTE_UNCONFIRMED",)
+    assert agent_tools.TOOL_OPERATIONS == ("EXECUTE_UNCONFIRMED", "BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN")
 
 
 def test_budgets_hold(tmp_path):
@@ -219,3 +220,65 @@ def test_an_outcome_sent_unwrapped_or_wrapped_twice_is_the_outcome():
 def test_the_submission_check_is_the_hosts_structural_check(body, code):
     errors, _ = _validator()(outcome(body))
     assert errors[0]["code"] == code
+
+
+# ---- the submit-only operations (the user's decision: every measured loop)
+
+ANALYSIS = {"kind": "ANALYSIS", "task_summary": "Count the subsets of 1..10 that sum to 20.", "approach_notes": "",
+            "risk_notes": "", "task_entities": [{"surface": "20", "kind": "parameter", "status": "given"}]}
+
+
+def test_bootstrap_submissions_are_checked_by_the_wire_model_and_a_wire_retry_gets_a_fresh_host(tmp_path):
+    hosts = []
+
+    def model_call(req):
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            hosts.append(req.tools)
+            if len(hosts) == 1:
+                bad = {**ANALYSIS, "task_entities": [{"surface": "20", "kind": "task", "status": "given"}]}
+                envelope, accepted = req.tools.submit(json.dumps({"outcome": bad}))
+                assert accepted is None and envelope["errors"][0]["path"].endswith("task_entities.0.kind")
+                return json.dumps(bad)  # a spent loop would never return this; here it exercises the wire retry
+            return json.dumps(req.tools.submit(json.dumps({"outcome": ANALYSIS}))[1])
+        return json.dumps(outcome(GOOD))
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=Sys1("VERIFIED_EXECUTION"),
+                           no_review=True)
+    engine.agent_tools = True
+    engine.handle_user_message("Count the subsets of 1..10 that sum to 20.")
+    assert len(hosts) == 2 and hosts[0] is not hosts[1] and len(hosts[1].submissions) == 1
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+
+
+def test_draft_submissions_are_checked_by_the_lint(tmp_path):
+    from test_execution_phase import PLAN, PROMPT, _ir
+
+    seen = {}
+
+    def model_call(req):
+        if req.operation == "BOOTSTRAP_ANALYSIS":
+            return _bootstrap()
+        if req.operation == "DRAFT_PROMPT":
+            host = req.tools
+            seen["prompt"] = host.tool_names()
+            fielded = {"kind": "PROMPT", "prompt_body": "TASK: solve it\n" + PROMPT, "approach_handoff": "NONE"}
+            envelope, _ = host.submit(json.dumps({"outcome": fielded}))
+            seen["codes"] = [e["code"] for e in envelope["errors"]]
+            clean = {"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"}
+            return json.dumps(host.submit(json.dumps({"outcome": clean}))[1])
+        if req.operation == "DRAFT_PLAN":
+            seen["plan"] = req.tools.tool_names()
+            return json.dumps(req.tools.submit(json.dumps({"outcome": {"neutral_plan_body": PLAN}}))[1])
+        if req.operation == "EXECUTE":
+            assert req.tools is None  # the confirmed route's EXECUTE has no loop
+            return json.dumps({"kind": "RESULT", "body": "42", "result_ir": _ir()})
+        raise AssertionError(req.operation)
+
+    engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=Sys1())
+    engine.agent_tools = True
+    engine.handle_user_message("$confirm-with-pseudocode Solve the stated task.")
+    engine.handle_user_message("/confirm")
+    engine.handle_user_message("/confirm")
+    assert seen == {"prompt": ["submit_draft_prompt"], "codes": ["PDL_LINT"], "plan": ["submit_draft_plan"]}
+    kinds = [e["kind"] for e in engine.workspace.read_events()]
+    assert "PROMPT_LINT_RETRY" not in kinds  # the lint found nothing after the call: it was met inside it

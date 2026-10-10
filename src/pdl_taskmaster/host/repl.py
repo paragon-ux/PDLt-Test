@@ -945,8 +945,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--agent-tools",
         action="store_true",
-        help="ADR-0029: EXECUTE_UNCONFIRMED calls may run Python in the session sandbox, read the previous attempt, "
-        "and submit a reply the host checks before accepting it (default off; also PDLT_AGENT_TOOLS=1)",
+        help="ADR-0029: model calls submit replies the host checks before accepting them (BOOTSTRAP_ANALYSIS, "
+        "DRAFT_PROMPT, DRAFT_PLAN, EXECUTE_UNCONFIRMED); EXECUTE_UNCONFIRMED may also run Python in the session "
+        "sandbox and read the previous attempt (default off; also PDLT_AGENT_TOOLS=1)",
     )
     parser.add_argument(
         "--draft-execute",

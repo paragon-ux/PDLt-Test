@@ -15,13 +15,13 @@ Measured in the evaluation plane (all live, gpt-oss-120b on Cerebras through Ope
 - **Frozen 01-01 repairs** (12 recorded failures x 3): host-verified success 15/36 with the best repair-text variant; 11/35 with inspection tools alone; 22/31 once the loop ended in a validated submission; 31/36 after L110.
 - **Full 01-01 runs**, the loop on every EXECUTE_UNCONFIRMED call: 18/18, against 5/10 and 3/10 in the recorded full runs before it (historical). No host-side failure reached a repair: the submission check caught them inside the call.
 - **Code tasks without a witness** (04-02, 04-03, full runs): no measurable change against the recorded rates.
-- **Not adopted:** a scratchpad kept across attempts was never used (0 notes in 9 runs); a submit loop on BOOTSTRAP_ANALYSIS saved nothing (no BOOTSTRAP failure in its control arm) and showed an entity-extraction signal (L112 step 3); submit loops on DRAFT_PROMPT and DRAFT_PLAN with the PDL lint cut the engine's lint redrafts from 13 to 5 with no outcome change and more provider rounds (L112 step 4).
+- **Submit loops on other operations** (checked submission only, no work tools): on BOOTSTRAP_ANALYSIS it saved nothing, because the one wire retry already recovered every schema failure (5 of 83), and on 04-03 the replies were about 20% shorter with fewer literal entities, without a lower pass rate (L112 step 3); on DRAFT_PROMPT and DRAFT_PLAN with the PDL lint it cut the engine's lint redrafts from 13 to 5 with no outcome change and more provider rounds, lint not being on the failure path (L112 step 4). Adopted all the same (the user's decision, 2026-10-10: no reason to exclude a loop). A scratchpad kept across attempts was never used (0 notes in 9 runs) and is not adopted.
 
 Provider fact: Cerebras rejects `tools` together with `response_format`, so a tool turn cannot carry the operation's output format. A submission made as a tool call carries the output schema in its parameters instead.
 
 ## Decision
-1. **A registry of in-call tools per operation.** For EXECUTE_UNCONFIRMED: `run_python`, `read_attempt` (only when there is a previous attempt) and `submit_execute_unconfirmed`. No other operation gets tools until a measurement supports it.
-2. **The submission is the only way a loop ends with an accepted reply.** It is checked by the checks the host already runs after the call, and only those: the operation bridge's Pydantic parse, then the deliverable's programs run as the host will run them, at the attempt's budget. Every error comes back at once, in one envelope (`ok`, `errors` with `code`, `path`, `problem`, `expected`, `facts`). At most 3 submissions.
+1. **A registry of in-call tools per operation.** EXECUTE_UNCONFIRMED: `run_python`, `read_attempt` (only when there is a previous attempt) and `submit_execute_unconfirmed`. BOOTSTRAP_ANALYSIS, DRAFT_PROMPT and DRAFT_PLAN: their submission only (`submit_bootstrap_analysis`, `submit_draft_prompt`, `submit_draft_plan`). Work tools only where the host can run something; no other operation has tools.
+2. **The submission is the only way a loop ends with an accepted reply.** It is checked by the checks the host already runs after the call, and only those: the operation bridge's Pydantic parse; for EXECUTE_UNCONFIRMED the deliverable's programs run as the host will run them, at the attempt's budget; for a draft the pseudocode notation lint (`plan_soundness`). The host still runs its own post-call checks on the accepted reply. Every error comes back at once, in one envelope (`ok`, `errors` with `code`, `path`, `problem`, `expected`, `facts`). At most 3 submissions.
 3. **No verdict tool.** Submission checks are structural. The host verifies the accepted reply itself, in its own sandbox run, exactly as it verifies a reply today. Tool output is never evidence and never reaches the deliverable or the protocol state.
 4. **Inspection only.** `run_python` runs in the session's confined sandbox under the attempt's limits; it has no network, no project access and no effect that outlives the run. `read_attempt` returns the previous attempt's programs as the host ran them, numbered, with the host's correction.
 5. **Capabilities are stated, not taught** (ADR-0025 §6, GUARD-01). Tool descriptions and the capability note say what each tool does and its budget; they never suggest a method.
@@ -40,7 +40,7 @@ Provider fact: Cerebras rejects `tools` together with `response_format`, so a to
 **Pros:** one mechanism everywhere. **Cons:** unmeasured where the host has nothing to check before acceptance; the BOOTSTRAP measurement showed no benefit and an extraction signal.
 
 ### C. In-call inspection and a validated submission, per operation, behind a setting (chosen)
-**Pros:** removes the measured failure classes on EXECUTE_UNCONFIRMED; reuses the host's checks; no new rule; off by default. **Cons:** more provider rounds per call; the worker becomes stateful within one call.
+**Pros:** removes the measured failure classes on EXECUTE_UNCONFIRMED; one pattern on every operation the host checks; reuses the host's checks; no new rule; off by default. **Cons:** more provider rounds per call; the worker becomes stateful within one call.
 
 ### D. Expose the tools through an external MCP server only
 **Pros:** standard protocol. **Cons:** the worker's own model calls would still commit blind. An MCP server over the same registry stays possible (TOOL_EXTRACTION_PLAN.md step 6).
@@ -49,4 +49,4 @@ Provider fact: Cerebras rejects `tools` together with `response_format`, so a to
 - **Easier:** a failed program, an exhausted budget or a missing WITNESS line is found inside the call, before an attempt is counted.
 - **Harder:** a model call is several provider rounds; latency and token use grow with tool use (01-01 full runs: about $0.012 a run).
 - **Unchanged:** final verification, witness acceptance, L110 labelling, exit codes, confinement, System 1.
-- **Revisit:** a tool for other operations only with a measurement; the scratchpad if a task family shows failures that survive the in-call loop; MCP clients beyond stdio.
+- **Revisit:** the BOOTSTRAP entity signal if it recurs at a larger sample; work tools for other operations only with a measurement; the scratchpad if a task family shows failures that survive the in-call loop; MCP clients beyond stdio.

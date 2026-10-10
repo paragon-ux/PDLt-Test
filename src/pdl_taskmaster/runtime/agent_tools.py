@@ -1,11 +1,14 @@
 """In-call agent tools (ADR-0029): inside one model call, the worker may inspect before it commits, and its reply
 is a validated submission. Off by default (``--agent-tools``); measured in ledger L111/L112.
 
-The registry gives each operation its tools. Only EXECUTE_UNCONFIRMED has any:
-  read_attempt                 the previous attempt's programs as the host ran them, numbered, with the correction
-                               (only when there is a previous attempt);
-  run_python                   a run in the session's confined sandbox at the attempt's limits;
-  submit_execute_unconfirmed   the outcome, checked by the host's own post-call checks before it is accepted.
+The registry gives each operation its tools:
+  EXECUTE_UNCONFIRMED   read_attempt (the previous attempt's programs as the host ran them, numbered, with the
+                        correction; only when there is a previous attempt), run_python (a run in the session's confined
+                        sandbox at the attempt's limits) and submit_execute_unconfirmed;
+  BOOTSTRAP_ANALYSIS    submit_bootstrap_analysis (checked by the wire model);
+  DRAFT_PROMPT          submit_draft_prompt (the wire model, then the host's pseudocode notation lint);
+  DRAFT_PLAN            submit_draft_plan (the same).
+Every submission is checked by the host's own post-call checks before it is accepted, and only those.
 
 Integrity invariants, enforced here and not by the model:
   1. no tool returns a referee verdict: the submission check is structural (the wire model, the programs run as
@@ -31,7 +34,21 @@ MAX_SUBMISSIONS = 3
 OUTPUT_CHARS = 2000
 SUBMIT = "submit_execute_unconfirmed"
 WORK_TOOLS = ("read_attempt", "run_python")
-TOOL_OPERATIONS = ("EXECUTE_UNCONFIRMED",)  # the registry: operations whose calls may carry tools
+SUBMITS = {"EXECUTE_UNCONFIRMED": SUBMIT, "BOOTSTRAP_ANALYSIS": "submit_bootstrap_analysis",
+           "DRAFT_PROMPT": "submit_draft_prompt", "DRAFT_PLAN": "submit_draft_plan"}
+TOOL_OPERATIONS = tuple(SUBMITS)  # the registry: operations whose calls may carry tools
+SUBMIT_ONLY_OPERATIONS = ("BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN")
+_SCHEMA_SUBMIT_DESCRIPTION = (
+    "Submit this call's outcome: the object the output_schema in the input declares. The host checks it against that "
+    "schema. If the outcome cannot be accepted, the result lists each error with where it is, what was found and what "
+    "is required, and you may submit again (at most 3 submissions). An accepted outcome ends the call.")
+_DRAFT_SUBMIT_DESCRIPTION = (
+    "Submit this call's outcome: the object the output_schema in the input declares. The host checks it against that "
+    "schema and applies its pseudocode notation lint to the body (the same lint it applies after the call). If the "
+    "outcome cannot be accepted, the result lists each error with where it is, what was found and what is required, "
+    "and you may submit again (at most 3 submissions). An accepted outcome ends the call.")
+_OUTCOME_SCHEMA = {"type": "object", "properties": {"outcome": {"type": "object"}}, "required": ["outcome"],
+                   "additionalProperties": False}
 
 TOOLS = [
     {"name": "read_attempt",
@@ -52,8 +69,10 @@ TOOLS = [
                      "outcome cannot be accepted, the result lists each error with what was found and what is "
                      "required, and you may submit again (at most 3 submissions). An accepted outcome ends the "
                      "call; the host then verifies the deliverable itself."),
-     "inputSchema": {"type": "object", "properties": {"outcome": {"type": "object"}}, "required": ["outcome"],
-                     "additionalProperties": False}},
+     "inputSchema": _OUTCOME_SCHEMA},
+    {"name": "submit_bootstrap_analysis", "description": _SCHEMA_SUBMIT_DESCRIPTION, "inputSchema": _OUTCOME_SCHEMA},
+    {"name": "submit_draft_prompt", "description": _DRAFT_SUBMIT_DESCRIPTION, "inputSchema": _OUTCOME_SCHEMA},
+    {"name": "submit_draft_plan", "description": _DRAFT_SUBMIT_DESCRIPTION, "inputSchema": _OUTCOME_SCHEMA},
 ]
 
 Validator = Callable[[dict[str, Any]], tuple[list[dict[str, Any]], list[str]]]
@@ -71,7 +90,7 @@ def responses_tools(names: list[str], outcome_schema: dict[str, Any] | None = No
         if t["name"] not in names:
             continue
         params = t["inputSchema"]
-        if t["name"] == SUBMIT and outcome_schema is not None:
+        if t["name"] in SUBMITS.values() and outcome_schema is not None:
             params = {**params, "properties": {"outcome": outcome_schema}}
         tools.append({"type": "function", "name": t["name"], "description": t["description"], "parameters": params})
     return tools
@@ -79,8 +98,9 @@ def responses_tools(names: list[str], outcome_schema: dict[str, Any] | None = No
 
 @dataclass
 class ToolHost:
-    """Runs one model call's tools. ``sandbox`` is the session's confined sandbox; ``validate`` is the host's
-    submission check: (errors, facts) for an outcome; ``on_record`` receives every tool call and submission."""
+    """Runs one model call's tools. ``sandbox`` is the session's confined sandbox (unused by a submit-only operation);
+    ``validate`` is the host's submission check: (errors, facts) for an outcome; ``on_record`` receives every tool
+    call and submission."""
 
     sandbox: Any
     step_limit: int
@@ -91,15 +111,26 @@ class ToolHost:
     validate: Validator
     attempt: int = 1
     on_record: Callable[[dict[str, Any]], None] | None = None
+    operation: str = "EXECUTE_UNCONFIRMED"
     calls: list[dict[str, Any]] = field(default_factory=list)
     submissions: list[dict[str, Any]] = field(default_factory=list)
 
+    @property
+    def submit_name(self) -> str:
+        return SUBMITS[self.operation]
+
     def tool_names(self) -> list[str]:
-        """The tools this call exposes: read_attempt only when there is a previous attempt."""
+        """The tools this call exposes: on EXECUTE_UNCONFIRMED, read_attempt only when there is a previous attempt;
+        a submit-only operation exposes only its submission."""
+        if self.operation in SUBMIT_ONLY_OPERATIONS:
+            return [self.submit_name]
         return (["read_attempt"] if (self.attempt_programs or self.correction) else []) + ["run_python", SUBMIT]
 
     def capability_note(self) -> str:
         names = self.tool_names()
+        if self.operation in SUBMIT_ONLY_OPERATIONS:
+            return (f"TOOLS FOR THIS CALL: {self.submit_name} (see its description). Answer by calling "
+                    f"{self.submit_name} with the outcome. At most {MAX_SUBMISSIONS} submissions.")
         work = [n for n in names if n in WORK_TOOLS]
         return (f"TOOLS FOR THIS CALL: {_phrase(names)} (see their descriptions). Answer by calling {SUBMIT} with "
                 f"the outcome. At most {MAX_TOOL_CALLS} calls of {_phrase(work)}, and {MAX_SUBMISSIONS} submissions. "
@@ -136,7 +167,7 @@ class ToolHost:
             args = json.loads(arguments or "{}")
             if not isinstance(args, dict):
                 raise ValueError("arguments are not an object")
-            if name not in self.tool_names() or name == SUBMIT:
+            if name not in self.tool_names() or name in SUBMITS.values():
                 output = f"error: no tool named {name!r}; the tools are {_phrase(self.tool_names())}"
             elif name == "read_attempt":
                 output = self.read_attempt()
@@ -171,8 +202,9 @@ class ToolHost:
         envelope = {"ok": True, "result": "accepted; the host now verifies the deliverable", "facts": facts} if accepted \
             else {"ok": False, "errors": errors, "facts": facts,
                   "submissions_left": MAX_SUBMISSIONS - len(self.submissions) - 1}
-        record = {"n": len(self.submissions) + 1, "attempt": self.attempt, "tool": SUBMIT, "accepted": accepted,
-                  "envelope": envelope, "outcome": outcome, "ms": round((time.perf_counter() - started) * 1000, 1)}
+        record = {"n": len(self.submissions) + 1, "attempt": self.attempt, "tool": self.submit_name,
+                  "operation": self.operation, "accepted": accepted, "envelope": envelope, "outcome": outcome,
+                  "ms": round((time.perf_counter() - started) * 1000, 1)}
         self.submissions.append(record)
         self._record(record)
         return envelope, (outcome if accepted else None)
@@ -250,12 +282,13 @@ def run_loop(body: dict[str, Any], send: Callable[[dict[str, Any]], dict[str, An
             if accepted is not None:
                 return json.dumps(accepted, ensure_ascii=False), summary("message")
             items += [o for o in data.get("output") or [] if o.get("type") == "message"]
-            items.append({"type": "message", "role": "user", "content": f"{SUBMIT} result: {json.dumps(envelope)}"})
+            items.append({"type": "message", "role": "user",
+                          "content": f"{host.submit_name} result: {json.dumps(envelope)}"})
             continue
         items += data.get("output") or []
         for fc in function_calls:
             name, cid = fc.get("name", ""), fc.get("call_id")
-            if name == SUBMIT:
+            if name == host.submit_name:
                 if len(host.submissions) >= MAX_SUBMISSIONS:
                     output = "error: the submission budget is spent"
                 else:
@@ -333,6 +366,56 @@ def make_validator(bridge: Any, sandbox: Any, budget: Any, witness_required: boo
                            "expected": "a program that prints the WITNESS line, or the requirement declared open "
                                        "in result_ir.open_defects"})
         return errors, facts
+
+    return validate
+
+
+def _wire_errors(exc: Exception) -> list[dict[str, Any]]:
+    """Every error of one failed wire parse, one envelope entry each (the Pydantic errors when there are any)."""
+    validation = getattr(exc, "validation_error", None)
+    entries = validation.errors() if validation is not None and hasattr(validation, "errors") else []
+    errors = []
+    for e in entries[:20]:
+        path = ".".join(str(part) for part in ("outcome", *e.get("loc", ())))
+        found = e.get("input")
+        found_text = json.dumps(found, ensure_ascii=False, default=str) if found is not None else "nothing"
+        errors.append({"code": "OUTPUT_MALFORMED", "path": path, "problem": f"{e.get('msg')}; found {found_text[:200]}",
+                       "expected": "the value the output_schema declares at this path"})
+    return errors or [{"code": "OUTPUT_MALFORMED", "path": "outcome", "problem": str(exc)[:1200],
+                       "expected": "an object matching the output_schema in the input"}]
+
+
+def make_wire_validator(parse: Callable[[str], Any]) -> Validator:
+    """BOOTSTRAP_ANALYSIS: the operation's wire model (the operation bridge's parse, Pydantic), nothing else."""
+
+    def validate(outcome: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str]]:
+        try:
+            parse(json.dumps(outcome))
+        except Exception as exc:
+            return _wire_errors(exc), []
+        return [], []
+
+    return validate
+
+
+def make_lint_validator(parse: Callable[[str], Any], body_of: Callable[[Any], tuple[str, str] | None],
+                        lint: Callable[[str], Any]) -> Validator:
+    """DRAFT_PROMPT and DRAFT_PLAN: the wire model, then the host's pseudocode notation lint on the body ``body_of``
+    names ((field, text), or None for an outcome with no body, a blocked draft). Each violation is one error, in the
+    lint's own wording."""
+
+    def validate(outcome: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str]]:
+        try:
+            parsed = parse(json.dumps(outcome))
+        except Exception as exc:
+            return _wire_errors(exc), []
+        named = body_of(parsed)
+        if named is None:
+            return [], []
+        field_name, text = named
+        return [{"code": "PDL_LINT", "path": f"outcome.{field_name}", "problem": violation,
+                 "expected": "a body that meets the pseudocode notation requirement"}
+                for violation in lint(text).violations], []
 
     return validate
 
