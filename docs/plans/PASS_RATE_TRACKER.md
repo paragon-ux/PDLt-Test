@@ -66,6 +66,7 @@ Unconfirmed route; both arms run every EXECUTE_UNCONFIRMED call as a tool loop; 
 - **Pooled:** EXECUTE loop 5/15, + BOOTSTRAP loop 7/16 (not significant). False successes 9 and 9.
 - **Against the recorded L107 full runs** (historical; no tool loop): 04-02 baseline 1/10, scratchpad v1 3/10; 04-03 baseline 5/10, scratchpad v1 3/10. The EXECUTE loop did not change these prompts measurably (the 01-01 gain came from witness-checked submissions; these tasks have no witness).
 - **Entities with the BOOTSTRAP loop:** one run extracted none (it passed; 1 of 94 replies without the loop also had none); one run labelled all 16 entities as targets (none of 94 without the loop); fewer literals on 04-03 (54 against 87; mean count 19.4 against 24.4, permutation p 0.06).
+- **Diagnosis (static):** both arms' BOOTSTRAP requests were unconstrained (no output format); the loop adds a tool and a note, and its 04-03 outputs were about 20% shorter. The missing entities are the control's every-test-string-as-literal mode (4 of 8 control runs; 3 of those 4 failed). Pass rate not lower. Ledger L112, steps 3 and 4 diagnosis.
 
 ## Full runs, 09-06 and 14-04, confirmed route, draft submit loops (L112 step 4)
 
@@ -80,6 +81,7 @@ Confirmed route; `+draft` runs DRAFT_PROMPT and DRAFT_PLAN as loops ending in th
 
 - No outcome difference: every decided run reached the expected stage in both arms.
 - Lint redrafts fell from 13 to 5, not to 0. On 09-06 the model often did not reach a lint-clean body within 3 submissions, so the engine still redrafted, and the loop added provider rounds.
+- **Why no outcome gain (static):** lint is not on the failure path. A residual violation is published with a host note; in 504 graded confirmed-route runs, runs with a lint redraft passed 67%, runs without 67% (Fisher p 1.00). Ledger L112, steps 3 and 4 diagnosis.
 
 ## Catalogue check, 16 categories, agent tools promoted (L112 step 5)
 
