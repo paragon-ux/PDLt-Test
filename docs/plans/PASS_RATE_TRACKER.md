@@ -51,3 +51,18 @@ Nothing frozen: System 1 and BOOTSTRAP_ANALYSIS live, every EXECUTE_UNCONFIRMED 
 - **Scratchpad:** no run wrote or read a note (0 of 9), so the tool had no effect to measure. No host-side STEP_BUDGET or PROGRAM_FAILED correction occurred in either arm: the submission check caught them inside the call (rejections: STEP_BUDGET_EXCEEDED 7, NO_PROGRAM 5, OUTPUT_MALFORMED 1, WITNESS_NOT_PRINTED 1).
 - **Against the recorded L107 full 01-01 runs** (historical, not interleaved; engine `ec089e2d` without L110): baseline 5/10 PASS, 9 of 10 repaired; scratchpad v1 3/10. Tool loop, both arms: 18/18; Fisher p 0.0026 against the baseline, p < 0.001 against both L107 arms (8/20).
 - The literal-witness flag (L113) makes every success here provisional too.
+
+## Full runs, 04-02 and 04-03, BOOTSTRAP submit loop (L112 step 3)
+
+Unconfirmed route; both arms run every EXECUTE_UNCONFIRMED call as a tool loop; `+boot` also runs BOOTSTRAP_ANALYSIS as a loop ending in `submit_bootstrap_analysis`. ABBA blocks, 8 per arm per prompt, tag `full-step3`, $0.484 for 32 runs. On these code tasks the host has no witness to check, so a CLOSED_SUCCESS the grader fails counts as a false success.
+
+| Date | Arm | Ledger | Engine / branch | Prompt | Decided | Grader PASS | Host-verified | False success | BOOTSTRAP engine re-calls | Entities (mean) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-10-10 | EXECUTE loop | L112 step 3 | `f547a2d7` + `l112-bootstrap-submit` `4ccc9a29` | 04-02 | 7/8 (1 harness error) | 1 | 1 | 5 | 0 | 17.1 |
+| 2026-10-10 | EXECUTE loop | L112 step 3 | (same) | 04-03 | 8/8 | 4 | 4 | 4 | 0 | 24.4 |
+| 2026-10-10 | + BOOTSTRAP loop | L112 step 3 | (same) | 04-02 | 8/8 | 2 | 2 | 6 | 0 | 14.6 |
+| 2026-10-10 | + BOOTSTRAP loop | L112 step 3 | (same) | 04-03 | 8/8 | 5 | 5 | 3 | 0 | 19.4 |
+
+- **Pooled:** EXECUTE loop 5/15, + BOOTSTRAP loop 7/16 (not significant). False successes 9 and 9.
+- **Against the recorded L107 full runs** (historical; no tool loop): 04-02 baseline 1/10, scratchpad v1 3/10; 04-03 baseline 5/10, scratchpad v1 3/10. The EXECUTE loop did not change these prompts measurably (the 01-01 gain came from witness-checked submissions; these tasks have no witness).
+- **Entities with the BOOTSTRAP loop:** one run extracted none (it passed; 1 of 94 replies without the loop also had none); one run labelled all 16 entities as targets (none of 94 without the loop); fewer literals on 04-03 (54 against 87; mean count 19.4 against 24.4, permutation p 0.06).
