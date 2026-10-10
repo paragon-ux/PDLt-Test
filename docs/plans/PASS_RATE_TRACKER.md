@@ -94,3 +94,18 @@ The step 5 tree (`l112-promote-tools` `ec503bee`, ADR-0029) with and without `--
 
 - **Differences:** 01-01 FAIL to PASS; 14-01 PASS to FAIL (a CLOSED_SUCCESS the grader fails: the proof omits initialization and maintenance); 12-01 CLOSED_SUCCESS to CLOSED_CANCELLED (no ground truth; the program exits 1 on purpose and the host fails a non-zero exit, with or without the loop); 07-01 a provider 429 during BOOTSTRAP, which carries no tools.
 - **Recorded base rates without tools** (unconfirmed runs since 2026-10-06): 14-01 closed CLOSED_SUCCESS graded FAIL in 7 of 33 runs (21%), with the same reasons; 12-01 closed CLOSED_CANCELLED in 3 of 37 (8%).
+
+## Catalogue check, 16 categories, every loop (L112 step 5, the user's decision)
+
+Tree `l112-mcp-server` `4e0d990d` (every loop in the registry) with and without `--agent-tools`; each category's -01 prompt once per arm, alternating per prompt, on both routes; gpt-oss-120b low on Cerebras; $0.426 for 64 runs. Logs: `catalogue-runs/l112-all-loops-{unconfirmed,confirmed}-log.json`.
+
+| Date | Route | Arm | Grader PASS | FAIL | CLOSED_SUCCESS | False success | Harness error |
+|---|---|---|---|---|---|---|---|
+| 2026-10-10 | unconfirmed | flag off | 7 | 0 | 16 | 0 | 0 |
+| 2026-10-10 | unconfirmed | every loop | 7 | 0 | 16 | 0 | 0 |
+| 2026-10-10 | confirmed | flag off | 5 | 2 | 15 | 1 (02-01) | 0 |
+| 2026-10-10 | confirmed | every loop | 4 | 3 | 15 | 2 (01-01, 02-01) | 0 |
+
+- On the confirmed route the loops are BOOTSTRAP and the drafts only (EXECUTE has none).
+- **01-01:** a negative claim, published provisional and unverified (L110). Recorded base rate without tools on the confirmed route: CLOSED_SUCCESS graded FAIL in 10 of 33.
+- **13-01:** the EXECUTE reply was malformed (no loop on that call; every loop submission in the run was accepted first time). Base rate without tools: CLOSED_CANCELLED in 3 of 29.
