@@ -270,12 +270,24 @@ def _python_blocks(body: str) -> list[str]:
         # CPython's parser raises MemoryError, not SyntaxError, on long runs of
         # bare words (prose); either way the body is not a program.
         module = None
-    if module is not None and any(
-        not (isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant))
-        for node in module.body
-    ):
+    if module is not None and not all(_is_literal_statement(node) for node in module.body):
         return [text]
     return [block for block in fenced_blocks(text, ("python", "py")) if block.strip()]
+
+
+def _is_literal_statement(node) -> bool:
+    """A statement that is only a literal value (a string, number, list, tuple, set
+    or dict of literals): data, not a program (L104). Decided by the grammar
+    (``ast.literal_eval``), never by the values."""
+    import ast
+
+    if not isinstance(node, ast.Expr):
+        return False
+    try:
+        ast.literal_eval(node.value)
+    except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+        return False
+    return True
 
 
 def _stderr_summary(stderr: str | None) -> str:
@@ -2618,6 +2630,11 @@ class SessionEngine:
                     # search (even one labelled a proof) that no program run by the
                     # host produced is not evidence.
                     verdict = replace(verdict, valid=False, diagnostic="SEARCH_CLAIM_UNREPRODUCED")
+                elif verdict.valid and isinstance(model_witness, dict) and model_witness.get("polarity") == "positive":
+                    # L104: a claimed result is certified by a program the host runs
+                    # (WITNESS_NOT_PRINTED). A positive witness written only into the
+                    # Result IR waives nothing: it is treated as no witness printed.
+                    verdict = replace(verdict, valid=False, diagnostic="POSITIVE_WITNESS_UNREPRODUCED")
                 elif verdict.valid:
                     ir["witness"]["provisional"] = True
                     verdict = replace(verdict, provisional=True)
@@ -2643,13 +2660,16 @@ class SessionEngine:
                     "WITNESS_INVALID",
                     diagnostic=f"the WITNESS line printed by the program does not check: {verdict.diagnostic}",
                 ))
-            elif model_witness is None:
+            elif model_witness is None or verdict.diagnostic == "POSITIVE_WITNESS_UNREPRODUCED":
                 outputs = getattr(self, "_last_program_outputs", [])
                 observation = (
                     "; ".join(outputs) + "; no line of the form `WITNESS: <json>` was printed."
                     if outputs else "the deliverable contains no program that ran successfully."
                 )
-                diagnostic = str(verdict.diagnostic).rstrip(".") + "."
+                diagnostic = (
+                    "The witness in the Result IR was not printed by a program the host ran."
+                    if model_witness is not None else str(verdict.diagnostic).rstrip(".") + "."
+                )
                 errors.append(Finding("WITNESS_NOT_PRINTED", diagnostic=diagnostic, host_observation=observation))
             else:
                 errors.append(Finding("WITNESS_INVALID", diagnostic=verdict.diagnostic))

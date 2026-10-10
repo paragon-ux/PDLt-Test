@@ -212,7 +212,7 @@ The BYPASS environment sentence (`host/app.py`, `_bypass_environment`) changes f
 |---|---|
 | GUARD-01 | Call 2's instructions describe output structure only. Repairs carry registry facts through operator correction. `CARRIED_APPROACH_SOURCES` is not used. |
 | GUARD-02 | Routing is System 1 over environment state, as today. No keywords. |
-| GUARD-03 | Analytical deliverables are first-class. Code is never required, and a model witness stays provisional. |
+| GUARD-03 | Analytical deliverables are first-class: a proof or a symbolic answer is routed STANDARD, where code is never required. Under VERIFIED_EXECUTION a claimed result is certified by a program the host runs, so a positive witness written only into the Result IR is `WITNESS_NOT_PRINTED` (L104, the user's decision, 2026-10-09). A negative witness resting on an argument stays provisional. |
 | GUARD-04 | The host routes, validates, runs the sandbox and checks witnesses. It doesn't solve. |
 | GUARD-05 | The new operation's text and the UNC clauses enter the manifest and the anti-overfitting scan. |
 | ADR-0001 / 0003 / 0004 | Not invoked: the route opens an UNCONFIRMED instance, not a confirmation instance, and never claims confirmed artifacts. |

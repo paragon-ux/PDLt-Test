@@ -189,15 +189,16 @@ def test_sandbox_witness_is_authoritative(tmp_path):
     assert published["witness"]["provisional"] is False
 
 
-def test_unreproduced_witness_is_provisional(tmp_path):
+def test_unreproduced_positive_witness_is_not_printed(tmp_path):
+    """L104: a positive witness written only into the Result IR certifies nothing; it is
+    WITNESS_NOT_PRINTED, as an undeclared witness is (it was a provisional pass, exit 0)."""
     asserted = {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"answer": 9}}
-    engine, _, _, events = _run(
-        tmp_path, [{"kind": "RESULT", "body": "The answer is 9.", "result_ir": _ir(asserted)}],
-        problem_class="VERIFIED_EXECUTION",
-    )
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
-    passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
-    assert passed["provisional"] and not passed["sandbox_reproduced"]
+    reply = {"kind": "RESULT", "body": "The answer is 9.", "result_ir": _ir(asserted)}
+    engine, _, executes, events = _run(tmp_path, [reply] * 3, problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 3 and engine.controller.state.stage == Stage.CLOSED_CANCELLED
+    assert "VERIFICATION_PASSED" not in _kinds(events)
+    failed = next(e for e in events if e["kind"] == "VERIFICATION_FAILED")["payload"]
+    assert "WITNESS_NOT_PRINTED" in failed["codes"]
 
 
 def test_provisional_result_is_published_with_a_host_note(tmp_path):
@@ -206,13 +207,16 @@ def test_provisional_result_is_published_with_a_host_note(tmp_path):
     from pdl_taskmaster.runtime import presentation
     from pdl_taskmaster.runtime.text_blocks import split_published_ir
 
-    asserted = {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"answer": 9}}
+    # A negative witness resting on an argument is the unreproduced witness that stays
+    # provisional (GUARD-03); a positive one no longer does (L104).
+    asserted = {"polarity": "negative", "evidence": {"path": "execution://witness"}, "basis": "proof",
+                "argument": "The two constraints contradict each other."}
     engine, response, _, _ = _run(
-        tmp_path, [{"kind": "RESULT", "body": "The answer is 9.", "result_ir": _ir(asserted)}],
+        tmp_path, [{"kind": "RESULT", "body": "No such value exists.", "result_ir": _ir(asserted)}],
         problem_class="VERIFIED_EXECUTION",
     )
     text, ir = split_published_ir(response.text)
-    assert text == "The answer is 9.\n\n" + presentation.provisional_note()
+    assert text == "No such value exists.\n\n" + presentation.provisional_note()
     assert ir["witness"]["provisional"] is True
 
 
@@ -478,11 +482,12 @@ def test_non_ascii_output_runs_on_every_platform():
 
 
 def test_citation_bookkeeping_is_recorded_not_blocking(tmp_path):
-    ir = _ir({"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"answer": 9}})
+    ir = _ir()
     ir["reconciliation"] = [{"requirement": "R1", "status": "partial",
                              "evidence": {"path": "execution://body", "observed": "a quote that is nowhere"}}]
+    program = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'answer': 4 + 5}}))"
     engine, _, executes, events = _run(
-        tmp_path, [{"kind": "RESULT", "body": "The answer is 9.", "result_ir": ir}], problem_class="VERIFIED_EXECUTION"
+        tmp_path, [{"kind": "RESULT", "body": program, "result_ir": ir}], problem_class="VERIFIED_EXECUTION"
     )
     assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
     findings = next(e for e in events if e["kind"] == "RESULT_IR_CITATION_FINDINGS")["payload"]["findings"]
@@ -763,15 +768,15 @@ def test_positive_witness_with_search_provenance_is_accepted(tmp_path):
 
 def test_positive_witness_with_search_provenance_is_not_a_search_claim(tmp_path):
     """A positive witness reporting how it was found claims a result, not that none
-    exists: without a program run it is provisional, not SEARCH_CLAIM_UNREPRODUCED."""
+    exists: without a program run it is WITNESS_NOT_PRINTED (L104), not SEARCH_CLAIM_UNREPRODUCED."""
     witness = {"polarity": "positive", "evidence": {"path": "execution://witness"},
                "data": {"answer": 42}, "basis": "search", "search_exhausted": True,
                "nodes_explored": 9, "method": "enumeration"}
     reply = {"kind": "RESULT", "body": "The answer is 42.", "result_ir": _ir(witness)}
-    engine, _, executes, events = _run(tmp_path, [reply], problem_class="VERIFIED_EXECUTION")
-    assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
-    passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
-    assert passed["provisional"] and not passed["sandbox_reproduced"]
+    engine, _, executes, events = _run(tmp_path, [reply] * 3, problem_class="VERIFIED_EXECUTION")
+    assert engine.controller.state.stage == Stage.CLOSED_CANCELLED
+    codes = next(e for e in events if e["kind"] == "VERIFICATION_FAILED")["payload"]["codes"]
+    assert "WITNESS_NOT_PRINTED" in codes and "SEARCH_CLAIM_UNREPRODUCED" not in codes
 
 
 def test_draft_execute_omits_witness_instructions_from_its_inputs(tmp_path):
