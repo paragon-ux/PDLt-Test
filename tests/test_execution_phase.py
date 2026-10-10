@@ -342,7 +342,7 @@ def test_proof_is_a_first_class_negative_deliverable(tmp_path):
         tmp_path, [{"kind": "RESULT", "body": "No solution exists: parity.", "result_ir": _ir(proof)}],
         problem_class="VERIFIED_EXECUTION",
     )
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED  # L116: a negative claim is unchecked
     assert len(executes) == 1
 
 
@@ -438,7 +438,7 @@ def test_declared_incomplete_result_needs_no_witness(tmp_path):
     reply = {"kind": "RESULT", "body": body, "result_ir": _incomplete_ir()}
     engine, _, executes, events = _run(tmp_path, [reply], problem_class="VERIFIED_EXECUTION")
     assert len(executes) == 1
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED  # L116: it claims no result
     assert "VERIFICATION_NOT_APPLICABLE" in _kinds(events)
     assert "VERIFICATION_PASSED" not in _kinds(events)
 
@@ -512,7 +512,7 @@ def test_declared_incomplete_needs_only_a_defect_description(tmp_path):
     reply = {"kind": "RESULT", "body": body,
              "result_ir": {"open_defects": [{"description": "The search did not finish within the step budget."}]}}
     engine, _, executes, _ = _run(tmp_path, [reply], problem_class="VERIFIED_EXECUTION")
-    assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_UNVERIFIED  # L116
 
 
 def test_malformed_repair_reply_is_a_counted_attempt_whose_findings_reach_the_next(tmp_path):
@@ -584,7 +584,7 @@ def test_search_witness_printed_by_a_program_is_accepted(tmp_path):
             "'nodes_explored': nodes, 'method': 'enumeration'}))")
     engine, _, _, events = _run(tmp_path, [{"kind": "RESULT", "body": code, "result_ir": _ir()}],
                                 problem_class="VERIFIED_EXECUTION")
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED  # L116: a negative claim is unchecked
     passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
     assert passed["sandbox_reproduced"]
 

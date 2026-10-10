@@ -485,6 +485,8 @@ def _resolve_render_compact(args) -> bool:
 
 # Headless exit code for a run that ended on a harness/provider error (not a model outcome).
 EXIT_HARNESS_ERROR = 4
+# Headless exit code for a result published without the host establishing it (ADR-0019 amendment, L116).
+EXIT_UNVERIFIED = 5
 
 
 def _harness_error_record(exc: BaseException) -> dict:
@@ -710,7 +712,7 @@ def _handle_dev_command(
         print(
             "Dev Mode (Agentic Diagnostic & Control Plane):\n"
             "  /dev [on|off]              - Toggle verbose developer telemetry\n"
-            "  /dev exit-on-close [on|off]- Toggle auto-exit on protocol closure (CLOSED_SUCCESS/CANCELLED)\n"
+            "  /dev exit-on-close [on|off]- Toggle auto-exit on protocol closure (CLOSED_SUCCESS/UNVERIFIED/CANCELLED)\n"
             "  /dev status                - Full JSON snapshot of host, engine, controller, worker\n"
             "  /dev diagnose              - Run self-diagnostic checks (repo, standards, providers, API key)\n"
             "  /dev set <key> <val...>    - Mutate operational parameters on the fly:\n"
@@ -1140,7 +1142,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--exit-on-close",
         action="store_true",
-        help="Exit REPL when protocol reaches a closed state (CLOSED_SUCCESS or CLOSED_CANCELLED)",
+        help="Exit REPL when protocol reaches a closed state (CLOSED_SUCCESS, CLOSED_UNVERIFIED or CLOSED_CANCELLED)",
     )
     parser.add_argument(
         "--prompt-file",
@@ -1833,6 +1835,14 @@ def main() -> int:
                     flush=True,
                 )
                 return 1
+            if final_stage == "CLOSED_UNVERIFIED":
+                print(
+                    f"[headless close] Session closed with a result the host could not verify (stage "
+                    f"'{final_stage}'). Exiting (code {EXIT_UNVERIFIED}).",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                return EXIT_UNVERIFIED
             if final_stage == "WAITING_INPUT":
                 print(
                     f"[headless halt] Session paused at stage 'WAITING_INPUT' (input requested). Exiting (code 3).",

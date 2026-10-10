@@ -47,6 +47,7 @@
   - `2`: `UNCONFIRMED_GATE` (execution stalled at review gate).
   - `3`: `WAITING_INPUT` (legitimate pause awaiting external input).
   - `4`: harness or provider error (`EXIT_HARNESS_ERROR`); never a protocol result.
+  - `5`: `CLOSED_UNVERIFIED`: a published result the host could not establish (a negative claim, or a deliverable declaring requirements open; ADR-0019 amendment, L116).
   - `130`: interrupted by the user.
 - **Catalogue Verification**: Before merging a PR that changes behaviour (what the model receives, routing, stage logic, verification or grading), run `python run_catalogue.py --fail-fast` from the repository root to check for regressions across all 16 categories. It is not a per-pass check. Never loosen `is_prompt_pass` or `graders.py` to obtain a green result.
 

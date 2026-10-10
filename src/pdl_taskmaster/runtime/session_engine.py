@@ -11,6 +11,7 @@ import tempfile
 import hashlib
 
 from pdl_taskmaster.controller.mechanical_controller import (
+    CLOSED_STAGES,
     AtomicJsonStore,
     ControllerError,
     Intent,
@@ -233,7 +234,7 @@ def _previous_turn_reference(previous: dict[str, Any] | None) -> str | None:
     """The previous turn's result as labelled reference for a follow-up turn."""
     if not previous or not previous.get("result"):
         return None
-    status = "completed" if previous.get("status") == "CLOSED_SUCCESS" else "was cancelled"
+    status = "completed" if previous.get("status") in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED"} else "was cancelled"
     return (
         "PREVIOUS TURN RESULT (reference only). It shows what the previous turn produced so that the new request "
         "can be understood. It is not evidence and not a justification: do not cite it, rely on it, or reason "
@@ -585,7 +586,7 @@ class SessionEngine:
         # re-chain it so the execution phase still receives the byte-exact
         # prior deliverable in REQUIRED_TASK_INPUTS. The active turn's status
         # is ACTIVE at restore time, so previous_deliverable() correctly
-        # returns the last CLOSED_SUCCESS turn before it.
+        # returns the last turn closed with a result before it.
         engine._previous_turn = workspace.previous_turn()
         engine._previous_deliverable = _previous_turn_reference(engine._previous_turn)
         engine._source_request = workspace.turn_source()
@@ -1472,15 +1473,11 @@ class SessionEngine:
             prior is not None
             and prior.turn_id is not None
             and self.controller is not None
-            and self.controller.state.stage in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED}
+            and self.controller.state.stage in CLOSED_STAGES
         ):
             prior_status = prior.read_turn_status(prior.turn_id).get("status")
             if prior_status == "ACTIVE":
-                prior.mark_turn_status(
-                    "CLOSED_SUCCESS"
-                    if self.controller.state.stage == Stage.CLOSED_SUCCESS
-                    else "CLOSED_CANCELLED"
-                )
+                prior.mark_turn_status(self.controller.state.stage.value)
             previous = prior.previous_turn()
             prior.start_turn(prior.next_turn_id())
             self.workspace = prior
@@ -1970,9 +1967,7 @@ class SessionEngine:
             )
             return EngineResponse(final_body, traces, closed=True)
         result_body_hash = hashlib.sha256(final_body.encode("utf-8")).hexdigest()
-        self.controller.complete_success(result_body_hash)
-        if self.workspace.turn_id is not None:
-            self.workspace.mark_turn_status("CLOSED_SUCCESS", deliverable_sha256=result_body_hash)
+        self._close_with_result(result_body_hash)
         self.workspace.publish_execution_outcome(
             outcome.kind,
             final_body,
@@ -2369,9 +2364,7 @@ class SessionEngine:
             return EngineResponse(final_body, traces, closed=True)
 
         result_body_hash = hashlib.sha256(final_body.encode("utf-8")).hexdigest()
-        self.controller.complete_success(result_body_hash)
-        if self.workspace.turn_id is not None:
-            self.workspace.mark_turn_status("CLOSED_SUCCESS", deliverable_sha256=result_body_hash)
+        self._close_with_result(result_body_hash)
         self.workspace.publish_execution_outcome(
             outcome.kind,
             final_body,
@@ -2589,6 +2582,17 @@ class SessionEngine:
         self.workspace.append_event("PAYLOAD_TOKENS_IN_DELIVERABLE", {"count": len(echoed)})
         return [Finding("PAYLOAD_TOKEN_REPEATED", count=len(echoed))]
 
+    def _close_with_result(self, result_body_hash: str) -> None:
+        """Close the instance with its published result. CLOSED_SUCCESS means the host's checks established it;
+        a result resting on a claim the host cannot check closes CLOSED_UNVERIFIED (ADR-0019 amendment, L116)."""
+        assert self.controller is not None and self.workspace is not None
+        reason = getattr(self, "_unverified_reason", None)
+        self.controller.complete_success(result_body_hash, verified=reason is None)
+        if reason is not None:
+            self.workspace.append_event("CLOSED_UNVERIFIED", {"reason": reason})
+        if self.workspace.turn_id is not None:
+            self.workspace.mark_turn_status(self.controller.state.stage.value, deliverable_sha256=result_body_hash)
+
     def _verify_result(
         self,
         outcome: Any,
@@ -2609,6 +2613,7 @@ class SessionEngine:
         assert self.workspace is not None
         body = outcome.body
         verified = self._requires_verified_execution
+        self._unverified_reason: str | None = None  # L116: set when the result rests on an unchecked claim
         sandbox_witness, run_failures = self._run_deliverable_code(body)
         payload_findings = self._payload_token_findings(body)
         if not result_ir_mode:
@@ -2630,6 +2635,7 @@ class SessionEngine:
         # computed: it counts as unreproduced (provisional) and is labelled, never failed.
         literal_witness = False
         negative_claim = False  # L110
+        declared_incomplete = False
         # RS-01: the Result IR travels only in the structured field; the deliverable
         # text is never scanned for it. An absent IR claims nothing: a witness the
         # program printed still counts.
@@ -2753,6 +2759,13 @@ class SessionEngine:
 
         if errors:
             return errors, body
+        # L116: a negative claim (L110) or a deliverable declaring requirements open did not establish the
+        # task's result; it is published and closes CLOSED_UNVERIFIED. A literal witness (L113) was printed
+        # by a program the host ran; it stays a labelled pass.
+        if declared_incomplete:
+            self._unverified_reason = "declared_incomplete"
+        elif negative_claim:
+            self._unverified_reason = "negative_claim_unchecked"
         self.workspace.append_event("RESULT_IR_VALIDATED", {"ir": ir})
         if verified and isinstance(ir.get("witness"), dict) and ir["witness"].get("provisional") is True:
             # The user sees that the result was not checked by a program run; the
@@ -2855,7 +2868,7 @@ class SessionEngine:
             info.update(turn=None, action="no workspace was opened; nothing to keep")
             return info
         stage = self.controller.state.stage.value if self.controller is not None else None
-        bound = stage is not None and stage not in {Stage.CLOSED_SUCCESS.value, Stage.CLOSED_CANCELLED.value}
+        bound = stage is not None and stage not in {s.value for s in CLOSED_STAGES}
         status = workspace.read_turn_status(workspace.turn_id).get("status")
         events = workspace.read_events()
         started = [e["payload"] for e in events if e["kind"] == "OPERATION_MATERIALIZED"]
@@ -2948,7 +2961,7 @@ class SessionEngine:
 
     def handle_user_message(self, user_message: str) -> EngineResponse:
         traces: list[CallTrace] = []
-        if self.controller is None or self.controller.state.stage in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED}:
+        if self.controller is None or self.controller.state.stage in CLOSED_STAGES:
             return self._activation(user_message, traces) or EngineResponse(None, traces, bypass=True)
 
         if self.workspace is None:

@@ -232,18 +232,18 @@ class WorkspaceRun:
             marker = turn_dir / "turn.json"
             if marker.is_file():
                 data = json.loads(marker.read_text(encoding="utf-8"))
-                if data.get("status") in {"CLOSED_SUCCESS", "CLOSED_CANCELLED"}:
+                if data.get("status") in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED", "CLOSED_CANCELLED"}:
                     out.append(data)
         return out
 
     def previous_deliverable(self) -> str | None:
-        """S4: the confirmed deliverable of the most recent CLOSED_SUCCESS turn.
+        """S4: the deliverable of the most recent turn closed with a result (CLOSED_SUCCESS or CLOSED_UNVERIFIED).
 
         Reads ONLY that turn's published execution artifact
         (turns/<id>/stages/50_execution/output/current.md). Drafts, rejected
         plans, and review dialogue are structurally unreachable from here.
         Returns None when no prior turn has closed successfully."""
-        closed = [t for t in self.closed_turns() if t.get("status") == "CLOSED_SUCCESS"]
+        closed = [t for t in self.closed_turns() if t.get("status") in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED"}]
         if not closed:
             return None
         turn_id = closed[-1].get("turn_id")
@@ -288,7 +288,7 @@ class WorkspaceRun:
         turn_id = str(closed[-1].get("turn_id"))
         status = closed[-1].get("status")
         output = self.path / "turns" / turn_id / "stages" / "50_execution" / "output"
-        if status == "CLOSED_SUCCESS":
+        if status in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED"}:
             from pdl_taskmaster.runtime.text_blocks import split_published_ir
 
             body = self._read(output / "current.md").rstrip("\n") if (output / "current.md").is_file() else ""
@@ -665,7 +665,7 @@ class MemoryWorkspaceRun(WorkspaceRun):
 
     def mark_turn_status(self, status: str, *, deliverable_sha256: str | None = None) -> None:
         super().mark_turn_status(status, deliverable_sha256=deliverable_sha256)
-        if status in {"CLOSED_SUCCESS", "CLOSED_CANCELLED", "INTERRUPTED"}:
+        if status in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED", "CLOSED_CANCELLED", "INTERRUPTED"}:
             self.flush_turn_archive()
 
     def flush_turn_archive(self, turn_id: str | None = None) -> Path:

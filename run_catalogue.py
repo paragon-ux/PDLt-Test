@@ -115,6 +115,7 @@ EXIT_CANCELLED = 1
 EXIT_UNCONFIRMED = 2
 EXIT_WAITING_INPUT = 3
 EXIT_HARNESS_ERROR = 4  # a model call failed (provider/transport); not a model outcome
+EXIT_UNVERIFIED = 5  # a result published without the host establishing it (L116)
 
 
 def load_manifest(category_filter=None):
@@ -474,6 +475,8 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
         verdict = "CLOSED_SUCCESS"
     elif exit_code == EXIT_CANCELLED:
         verdict = "CLOSED_CANCELLED"
+    elif exit_code == EXIT_UNVERIFIED:
+        verdict = "CLOSED_UNVERIFIED"
     elif exit_code == EXIT_HARNESS_ERROR:
         verdict = "HARNESS_ERROR"
     elif exit_code == EXIT_WAITING_INPUT:
@@ -641,6 +644,9 @@ def stage_pass(r):
     exp = r.get("expected_stage", "CLOSED_SUCCESS")
     if exp == "WAITING_INPUT":
         return r.get("verdict") in {"WAITING_INPUT", "CLOSED_SUCCESS"}
+    if exp == "CLOSED_UNVERIFIED":
+        # The correct answer is one the host cannot check (L116); a host-verified closure is also accepted.
+        return r.get("verdict") in {"CLOSED_UNVERIFIED", "CLOSED_SUCCESS"}
     return r.get("verdict") == exp
 
 

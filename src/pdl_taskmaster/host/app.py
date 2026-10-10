@@ -208,7 +208,7 @@ class PDLtHost:
         """No protocol instance is open: the next request starts one."""
         if self.engine is None or self.engine.controller is None:
             return True
-        return self.engine.controller.state.stage.value in {"CLOSED_SUCCESS", "CLOSED_CANCELLED"}
+        return self.engine.controller.state.stage.value in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED", "CLOSED_CANCELLED"}
 
     def _ensure_protocol_entry(self, user_message: str) -> str:
         if self._at_protocol_entry():
