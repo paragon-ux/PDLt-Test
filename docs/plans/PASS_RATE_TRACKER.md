@@ -66,3 +66,17 @@ Unconfirmed route; both arms run every EXECUTE_UNCONFIRMED call as a tool loop; 
 - **Pooled:** EXECUTE loop 5/15, + BOOTSTRAP loop 7/16 (not significant). False successes 9 and 9.
 - **Against the recorded L107 full runs** (historical; no tool loop): 04-02 baseline 1/10, scratchpad v1 3/10; 04-03 baseline 5/10, scratchpad v1 3/10. The EXECUTE loop did not change these prompts measurably (the 01-01 gain came from witness-checked submissions; these tasks have no witness).
 - **Entities with the BOOTSTRAP loop:** one run extracted none (it passed; 1 of 94 replies without the loop also had none); one run labelled all 16 entities as targets (none of 94 without the loop); fewer literals on 04-03 (54 against 87; mean count 19.4 against 24.4, permutation p 0.06).
+
+## Full runs, 09-06 and 14-04, confirmed route, draft submit loops (L112 step 4)
+
+Confirmed route; `+draft` runs DRAFT_PROMPT and DRAFT_PLAN as loops ending in their submission, checked by the wire model and the host's PDL lint. No other loop in either arm. ABBA blocks, 8 per arm per prompt, tag `full-step4b` (the first attempt, `full-step4`, was stopped on a loop defect and is not counted), $0.309 for 32 runs. 09-06 has no ground truth (graded N/A; the expected stage is CLOSED_SUCCESS); 14-04 is graded MANUAL (every required part present; validity needs a human check).
+
+| Date | Arm | Ledger | Engine / branch | Prompt | Expected stage reached | MANUAL (parts complete) | Engine lint redrafts (runs) | Loop submissions (lint rejections) |
+|---|---|---|---|---|---|---|---|---|
+| 2026-10-10 | no loop | L112 step 4 | `f547a2d7` + `l112-draft-submit` `f4e4f57e` | 09-06 | 7/8 (1 provider 429) | – | 11 (7) | – |
+| 2026-10-10 | no loop | L112 step 4 | (same) | 14-04 | 8/8 | 8/8 | 2 (2) | – |
+| 2026-10-10 | + draft loops | L112 step 4 | (same) | 09-06 | 8/8 | – | 5 (5) | 65 (46) |
+| 2026-10-10 | + draft loops | L112 step 4 | (same) | 14-04 | 8/8 | 8/8 | 0 (0) | 22 (4) |
+
+- No outcome difference: every decided run reached the expected stage in both arms.
+- Lint redrafts fell from 13 to 5, not to 0. On 09-06 the model often did not reach a lint-clean body within 3 submissions, so the engine still redrafted, and the loop added provider rounds.
