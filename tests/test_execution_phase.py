@@ -216,7 +216,7 @@ def test_provisional_result_is_published_with_a_host_note(tmp_path):
         problem_class="VERIFIED_EXECUTION",
     )
     text, ir = split_published_ir(response.text)
-    assert text == "No such value exists.\n\n" + presentation.provisional_note()
+    assert text == "No such value exists.\n\n" + presentation.negative_claim_note()  # L110
     assert ir["witness"]["provisional"] is True
 
 

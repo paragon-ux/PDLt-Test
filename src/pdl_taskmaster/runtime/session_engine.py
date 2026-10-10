@@ -2562,6 +2562,7 @@ class SessionEngine:
         # A witness whose values the program states as literals was printed, not
         # computed: it counts as unreproduced (provisional) and is labelled, never failed.
         literal_witness = False
+        negative_claim = False  # L110
         # RS-01: the Result IR travels only in the structured field; the deliverable
         # text is never scanned for it. An absent IR claims nothing: a witness the
         # program printed still counts.
@@ -2614,6 +2615,12 @@ class SessionEngine:
                         literal_witness = True
                         sandbox_witness["provisional"] = True
                         self.workspace.append_event("WITNESS_LITERAL_IN_PROGRAM", {"block": block[0]})
+                    if sandbox_witness.get("polarity") == "negative":
+                        # L110: the host saw the program print the claim; it cannot check that
+                        # no result exists. The result is provisional, labelled, never "checked".
+                        negative_claim = True
+                        sandbox_witness["provisional"] = True
+                        self.workspace.append_event("NEGATIVE_CLAIM_UNCHECKED", {"basis": sandbox_witness.get("basis")})
                     ir["witness"] = sandbox_witness
             else:
                 errors.extend(run_failures)
@@ -2638,6 +2645,8 @@ class SessionEngine:
                 elif verdict.valid:
                     ir["witness"]["provisional"] = True
                     verdict = replace(verdict, provisional=True)
+                    if isinstance(model_witness, dict) and model_witness.get("polarity") == "negative":
+                        negative_claim = True  # L110
             if declared_incomplete:
                 pass
             elif verdict.valid:
@@ -2646,9 +2655,10 @@ class SessionEngine:
                     {
                         # §2.1: provisional means no sandbox run reproduced the witness;
                         # a program that prints literal values reproduces nothing.
-                        "provisional": sandbox_witness is None or literal_witness,
+                        "provisional": sandbox_witness is None or literal_witness or negative_claim,
                         "sandbox_reproduced": sandbox_witness is not None and not literal_witness,
-                        "domain_checked": not verdict.provisional,
+                        "domain_checked": not verdict.provisional and not negative_claim,
+                        "negative_claim_unchecked": negative_claim,
                         "details": verdict.details,
                     },
                 )
@@ -2680,7 +2690,8 @@ class SessionEngine:
         if verified and isinstance(ir.get("witness"), dict) and ir["witness"].get("provisional") is True:
             # The user sees that the result was not checked by a program run; the
             # deliverable text itself is unchanged (the note follows it).
-            note = presentation.literal_witness_note() if literal_witness else presentation.provisional_note()
+            note = (presentation.literal_witness_note() if literal_witness
+                    else presentation.negative_claim_note() if negative_claim else presentation.provisional_note())
             return [], _attach_result_ir(body.rstrip() + "\n\n" + note, ir)
         return [], _attach_result_ir(body, ir)
 
