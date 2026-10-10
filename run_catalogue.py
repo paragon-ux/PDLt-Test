@@ -377,6 +377,8 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
             setting_args += [flag, str(settings[key])]
     if settings.get("draft_execute"):
         setting_args.append("--draft-execute")
+    if settings.get("agent_tools"):
+        setting_args.append("--agent-tools")
     if settings.get("representation", "pdl") != "pdl":
         setting_args += ["--representation", settings["representation"]]
     if settings.get("route") != "control" and settings.get("tier_d1") is not None:
@@ -1011,6 +1013,9 @@ def main():
                         help="EXECUTE repairs after a failed verification; 0 stops at the first failure (no retries)")
     parser.add_argument("--providers", default=None, metavar="A,B,C",
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
+    parser.add_argument("--agent-tools", action="store_true",
+                        help="ADR-0029: in-call tools on EXECUTE_UNCONFIRMED (run Python in the sandbox, read the "
+                             "previous attempt, a checked submission); default off")
     parser.add_argument("--draft-execute", action="store_true",
                         help="run DRAFT_EXECUTE (a typed execution brief) before EXECUTE on tasks that are or need an algorithm or a calculation (A/B option)")
     parser.add_argument("--representation", choices=["pdl", "nl"], default="pdl",
@@ -1060,7 +1065,7 @@ def main():
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
                     "providers": args.providers, "draft_execute": args.draft_execute,
-                    "representation": args.representation,
+                    "agent_tools": args.agent_tools, "representation": args.representation,
                     "tier_d1": args.tier_d1 and args.route != "control",  # what the child will run with
                     "sandbox": args.sandbox, "route": args.route,
                     "theme": args.theme, "user_color": args.user_color, "assistant_color": args.assistant_color}
@@ -1102,6 +1107,8 @@ def main():
     route_tag = args.route
     if args.draft_execute:
         route_tag += "-draft-execute"
+    if args.agent_tools:
+        route_tag += "-agent-tools"
     if args.representation != "pdl":
         route_tag += f"-{args.representation}"
     if run_settings["tier_d1"]:

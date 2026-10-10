@@ -407,6 +407,7 @@ def _api_run_settings(args) -> dict:
         "max_call_seconds": getattr(args, "api_call_deadline", 300.0),
         "max_repairs": getattr(args, "max_repairs", None),
         "draft_execute": bool(getattr(args, "draft_execute", False)),
+        "agent_tools": bool(getattr(args, "agent_tools", False)) or os.environ.get("PDLT_AGENT_TOOLS") == "1",
         "representation": getattr(args, "representation", None) or "pdl",
         "tier_d1": bool(getattr(args, "tier_d1", True) if getattr(args, "tier_d1", None) is not None else (os.environ.get("PDLT_TIER_D1", "1") == "1")),
     }
@@ -940,6 +941,12 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="EXECUTE repairs after a failed verification (default: the routed tier's); 0 stops at the first "
         "failure with no retry of any kind",
+    )
+    parser.add_argument(
+        "--agent-tools",
+        action="store_true",
+        help="ADR-0029: EXECUTE_UNCONFIRMED calls may run Python in the session sandbox, read the previous attempt, "
+        "and submit a reply the host checks before accepting it (default off; also PDLT_AGENT_TOOLS=1)",
     )
     parser.add_argument(
         "--draft-execute",

@@ -140,6 +140,7 @@ def test_guard_no_mrv_or_algorithmic_coaching_in_harness():
         ROOT / "src" / "pdl_taskmaster" / "runtime" / "session_engine.py",
         ROOT / "src" / "pdl_taskmaster" / "runtime" / "result_ir.py",
         ROOT / "src" / "pdl_taskmaster" / "providers" / "api_worker.py",
+        ROOT / "src" / "pdl_taskmaster" / "runtime" / "agent_tools.py",
         ROOT / "src" / "pdl_taskmaster" / "verification" / "plan_soundness.py",
         ROOT / "src" / "pdl_taskmaster" / "verification" / "sandbox.py",
     ]
@@ -289,3 +290,17 @@ def test_routing_recipes_have_no_pattern_matching():
         assert "classify_text_deterministic" not in text, name
     worker = (ROOT / "src" / "pdl_taskmaster" / "providers" / "api_worker.py").read_text(encoding="utf-8")
     assert "classify_text_deterministic" not in worker
+
+
+def test_agent_tools_state_capabilities_and_return_no_verdict():
+    """ADR-0029, GUARD-01/04: the in-call tools say what they do, never a method; none is a referee."""
+    from pdl_taskmaster.runtime import agent_tools
+
+    host = agent_tools.ToolHost(None, 1, 1.0, 1, ["x = 1"], "OPERATOR CORRECTION: c", lambda o: ([], []))
+    text = (json.dumps(agent_tools.TOOLS) + host.capability_note()).lower()
+    for banned in ("backtracking", "dynamic programming", "brute force", "memoiz", "heuristic", "mrv", "you should",
+                   "try ", "consider "):
+        assert banned not in text, banned
+    names = [t["name"] for t in agent_tools.TOOLS]
+    assert not any(word in name for name in names for word in ("verify", "check", "grade", "witness", "judge"))
+    assert agent_tools.TOOL_OPERATIONS == ("EXECUTE_UNCONFIRMED",)  # no tool where nothing was measured

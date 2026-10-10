@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -474,6 +475,9 @@ class SessionEngine:
         # 0 = stop at the first failed EXECUTE (no repair, no retry of any kind).
         self.max_repairs: int | None = None
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
+        self.agent_tools = False  # ADR-0029: in-call tools on EXECUTE_UNCONFIRMED (--agent-tools)
+        self._last_unconfirmed_body: str | None = None
+        self._unconfirmed_attempts = 0
         self.representation = PDL  # the confirmed route's artifacts: PDL, or prose in the L97 pilot
         # Tier D1 (feed back the model's own test failures in standard mode): off for a bare engine. The host sets it
         # from the worker (App), whose default is on ($PDLT_TIER_D1, --no-tier-d1); the env var is read only there.
@@ -672,12 +676,14 @@ class SessionEngine:
         parser: Callable[[str], Any] | None = None,
         operator_correction: str | None = None,
         modes: frozenset[str] = frozenset(),
+        tools: Any = None,
     ) -> Any:
         """Invoke one operation. With a parser, retry ONCE on WireError with an
         operator correction so a sampling glitch (invalid JSON, dropped field)
         costs one extra call instead of fatally failing the session. A caller may
         supply ``operator_correction`` (factual host-side findings only) for the
-        first attempt; it travels outside the projection document."""
+        first attempt; it travels outside the projection document. ``tools`` (ADR-0029)
+        travels with the request, never in the prompt."""
         if self.workspace is None:
             raise WorkspaceError("workspace_not_initialized")
         request = self.bridge.request(
@@ -688,6 +694,8 @@ class SessionEngine:
             operator_correction=operator_correction,
             modes=modes,
         )
+        if tools is not None:
+            request = dataclasses.replace(request, tools=tools)
         try:
             model_text = self._invoke(request, traces)
             return model_text if parser is None else parser(model_text)
@@ -718,6 +726,8 @@ class SessionEngine:
                 operator_correction=correction,
                 modes=modes,
             )
+            if tools is not None:
+                retry_request = dataclasses.replace(retry_request, tools=tools)
             try:
                 return parser(self._invoke(retry_request, traces))
             except Exception as retry_error:
@@ -2284,6 +2294,8 @@ class SessionEngine:
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
         repairs_used = 0
         unmeasured_repairs = 0
+        self._last_unconfirmed_body = None
+        self._unconfirmed_attempts = 0
 
         outcome, errors, final_body, ran_program = self._execute_unconfirmed_attempt(
             execute_context, traces, sanitized, requirements, result_ir_mode,
@@ -2380,11 +2392,13 @@ class SessionEngine:
         *,
         correction: str | None = None,
     ) -> tuple[Any, list[str], str, bool]:
+        self._unconfirmed_attempts += 1
         try:
             modes = _execution_modes(execute_context, result_ir_mode)
             outcome = self.bridge.parse_unconfirmed_execution(
                 self._call("EXECUTE_UNCONFIRMED", execute_context, traces,
-                           operator_correction=correction, modes=modes)
+                           operator_correction=correction, modes=modes,
+                           tools=self._agent_tool_host(execute_context, correction) if self.agent_tools else None)
             )
         except Exception as exc:
             limit = getattr(exc, "output_limit", None)
@@ -2407,6 +2421,7 @@ class SessionEngine:
 
         if outcome.kind != "RESULT":
             return outcome, [], outcome.body, False
+        self._last_unconfirmed_body = outcome.body
 
         missing_entities = self._entity_coverage_missing(outcome.interpretation or "", self._active_task_entities)
         if missing_entities and self.workspace is not None:
@@ -2429,6 +2444,27 @@ class SessionEngine:
             outcome, sanitized_source, outcome.approach, requirements, result_ir_mode
         )
         return outcome, errors, final_body, getattr(self, "_last_programs_run", 0) > 0
+
+    def _agent_tool_host(self, execute_context: dict[str, Any], correction: str | None) -> Any:
+        """ADR-0029: the in-call tools of one EXECUTE_UNCONFIRMED attempt. They run in the session sandbox at the
+        attempt's budget; the submission is checked by this engine's own checks; every call is an event."""
+        from pdl_taskmaster.runtime import agent_tools
+
+        budget = self._execution_budget
+        witness_required = "WITNESS" in (execute_context.get("REQUIRED_TASK_INPUTS") or {})
+        previous = self._last_unconfirmed_body if correction else None
+
+        def on_record(record: dict[str, Any]) -> None:
+            if self.workspace is not None:
+                self.workspace.append_event("AGENT_TOOL_CALL", agent_tools.event_view(record))
+
+        return agent_tools.ToolHost(
+            self.sandbox, budget.step_limit, budget.timeout_seconds, budget.memory_limit_bytes,
+            _python_blocks(previous) if previous else [], correction or "",
+            agent_tools.make_validator(self.bridge, self.sandbox, budget, witness_required, _python_blocks,
+                                       _parse_sandbox_witness),
+            attempt=self._unconfirmed_attempts, on_record=on_record,
+        )
 
     def _run_deliverable_code(self, body: str) -> tuple[dict[str, Any] | None, list[str]]:
         """Run every declared Python block in the session sandbox.
