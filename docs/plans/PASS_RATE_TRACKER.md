@@ -27,7 +27,7 @@ The 12 recorded L107 turns whose first attempt ran a program and hit the step bu
 
 **Significance, host-verified (two-sided Fisher):**
 - submit vs v3: p = 0.026; submit vs the tool-loop pilot: p = 0.003.
-- L110 vs submit: p = 0.21 (not significant); L110 vs v3: p < 0.001.
+- L110 vs submit: p = 0.15 (not significant); L110 vs v3: p < 0.001.
 - The other contrasts are not significant.
 
 ## Full catalogue runs, L107 A/B
