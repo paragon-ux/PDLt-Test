@@ -80,3 +80,15 @@ Confirmed route; `+draft` runs DRAFT_PROMPT and DRAFT_PLAN as loops ending in th
 
 - No outcome difference: every decided run reached the expected stage in both arms.
 - Lint redrafts fell from 13 to 5, not to 0. On 09-06 the model often did not reach a lint-clean body within 3 submissions, so the engine still redrafted, and the loop added provider rounds.
+
+## Catalogue check, 16 categories, agent tools promoted (L112 step 5)
+
+The step 5 tree (`l112-promote-tools` `ec503bee`, ADR-0029) with and without `--agent-tools`; each category's -01 prompt once per arm, alternating per prompt; unconfirmed route, gpt-oss-120b low on Cerebras; $0.170 for 32 runs. Log: `catalogue-runs/l112-step5-catalogue-log.json`.
+
+| Date | Arm | Grader PASS | FAIL | N/A or MANUAL | CLOSED_SUCCESS | False success | Harness error |
+|---|---|---|---|---|---|---|---|
+| 2026-10-10 | baseline (flag off) | 6 | 1 (01-01, cancelled) | 9 | 15 | 0 | 0 |
+| 2026-10-10 | `--agent-tools` | 6 | 1 (14-01) | 9 | 14 | 1 (14-01) | 1 (07-01, provider 429 at BOOTSTRAP) |
+
+- **Differences:** 01-01 FAIL to PASS; 14-01 PASS to FAIL (a CLOSED_SUCCESS the grader fails: the proof omits initialization and maintenance); 12-01 CLOSED_SUCCESS to CLOSED_CANCELLED (no ground truth; the program exits 1 on purpose and the host fails a non-zero exit, with or without the loop); 07-01 a provider 429 during BOOTSTRAP, which carries no tools.
+- **Recorded base rates without tools** (unconfirmed runs since 2026-10-06): 14-01 closed CLOSED_SUCCESS graded FAIL in 7 of 33 runs (21%), with the same reasons; 12-01 closed CLOSED_CANCELLED in 3 of 37 (8%).
