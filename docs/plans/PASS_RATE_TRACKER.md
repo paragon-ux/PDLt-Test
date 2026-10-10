@@ -4,12 +4,12 @@ The user (2026-10-10): keep track of the pass rate of each addition. One row per
 
 **Metrics:**
 - **Grader PASS:** the catalogue grader on the published text.
-- **Host-verified:** CLOSED_SUCCESS, graded PASS, and not provisional.
+- **Host-verified:** CLOSED_SUCCESS, graded PASS, and not a negative result (L110).
 - **False success:** CLOSED_SUCCESS, graded FAIL, with no declared open defect. On 01-01 every one so far is a negative claim (L110).
 - **Honest open:** CLOSED_SUCCESS with a declared open defect (existing host policy).
+- **Bare witness:** a body that is only a `WITNESS:` line.
 
 One caveat: the host's literal-witness flag fires on every correct 01-01 witness, because the answer's values are all constants of the input list in the program (L113). So host-verified excludes only negative results, not that flag.
-- **Bare witness:** a body that is only a `WITNESS:` line.
 
 The frozen-repair numbers come from `frozen_repair.py target-report <tag>`.
 
