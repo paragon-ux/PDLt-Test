@@ -9,7 +9,7 @@ The user (2026-10-10): keep track of the pass rate of each addition. One row per
 - **Honest open:** CLOSED_SUCCESS with a declared open defect (existing host policy).
 - **Bare witness:** a body that is only a `WITNESS:` line.
 
-One caveat: the host's literal-witness flag fires on every correct 01-01 witness, because the answer's values are all constants of the input list in the program (L113). So host-verified excludes only negative results, not that flag.
+One caveat: the host's literal-witness flag fires on every correct 01-01 witness, because the answer's values are all constants of the input list in the program (L113). So host-verified excludes only negative results, not that flag. From L113 (`c950298a`, not merged yet) the flag fires only when the program writes the witness data out, and a flagged witness closes CLOSED_UNVERIFIED; the sections below that predate it keep their numbers.
 
 The frozen-repair numbers come from `frozen_repair.py target-report <tag>`.
 
@@ -109,3 +109,38 @@ Tree `l112-mcp-server` `4e0d990d` (every loop in the registry) with and without 
 - On the confirmed route the loops are BOOTSTRAP and the drafts only (EXECUTE has none).
 - **01-01:** a negative claim, published provisional and unverified (L110). Recorded base rate without tools on the confirmed route: CLOSED_SUCCESS graded FAIL in 10 of 33.
 - **13-01:** the EXECUTE reply was malformed (no loop on that call; every loop submission in the run was accepted first time). Base rate without tools: CLOSED_CANCELLED in 3 of 29.
+
+## False-success check, confirmed route (L116)
+
+Tree `l112-mcp-server` `51e7f1dc` (L116: a result the host cannot establish closes CLOSED_UNVERIFIED, exit 5), with and without `--agent-tools`; each category's -01 prompt once per arm, alternating per prompt; gpt-oss-120b low on Cerebras; $0.222 for 32 runs. Log: `catalogue-runs/l116-confirmed-log.json`. Compared with the 2026-10-10 confirmed rows above.
+
+| Date | Route | Arm | Grader PASS | FAIL | CLOSED_SUCCESS | CLOSED_UNVERIFIED | False success |
+|---|---|---|---|---|---|---|---|
+| 2026-10-10 | confirmed | flag off | 5 | 2 | 14 | 1 (13-01) | 1 (06-01) |
+| 2026-10-10 | confirmed | every loop | 4 | 3 | 14 | 1 (13-01) | 2 (04-01, 06-01) |
+
+- No false success rests on a negative claim or a declared-incomplete result (the falsifier fixed before the run).
+- **13-01** closed CLOSED_UNVERIFIED (`negative_claim_unchecked`) in both arms and graded PASS; its manifest row expects CLOSED_UNVERIFIED.
+- **01-01** closed CLOSED_CANCELLED in both arms.
+- **04-01 and 06-01** are STANDARD_EXECUTION code tasks within their recorded base rates (4/35 and 18/32); the host does not run their hidden tests (L115, deferred).
+
+## Literal-witness flag, recorded corpus (L113, static)
+
+`c950298a` re-evaluated on every recorded witness the old flag fired on (287, catalogue runs and live sessions; programs from the accepted model reply). No model call.
+
+| Prompt | Old flag | New flag | New flag, graded PASS |
+|---|---|---|---|
+| 01-01 | 41 | 0 | 0 |
+| 01-02 | 37 | 0 | 0 |
+| 01-03 | 41 | 33 | 32 |
+| 01-04 | 33 | 0 | 0 |
+| 01-05 | 39 | 3 | 3 |
+| 01-06 | 28 | 0 | 0 |
+| 01-07 | 40 | 2 | 2 |
+| 13-01 | 4 | 1 | 1 |
+| 16-07 | 22 | 4 | 4 |
+| live sessions | 2 | 2 | — |
+
+- Every witness the new flag fires on writes its answer out (colourings, Latin squares, arrangements, paths, the 183224 constant).
+- The wrong answers the old flag fired on: 01-03 (written out) stays flagged; 01-01, 01-06 (2) and 16-07 were computed and are cleared, so they remain CLOSED_SUCCESS graded FAIL, the provenance-only class.
+- **Scoring:** 41 recorded runs graded PASS on prompts expecting CLOSED_SUCCESS would now close CLOSED_UNVERIFIED and score catalogue FAIL. 01-03 carries 32 of them: 32 of its 40 correct flagged runs write the colouring out.
