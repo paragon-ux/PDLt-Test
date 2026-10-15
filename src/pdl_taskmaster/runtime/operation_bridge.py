@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -94,6 +94,9 @@ class ModelRequest:
     projection: CompiledProjection
     prompt: str
     workspace_invocation: WorkspaceInvocation
+    # ADR-0029: the call's in-call tools (an agent_tools.ToolHost), when the run enables them; never part of the
+    # prompt, so the prompt hash and replay are unchanged.
+    tools: Any = field(default=None, compare=False, repr=False)
 
     @property
     def operation(self) -> str:

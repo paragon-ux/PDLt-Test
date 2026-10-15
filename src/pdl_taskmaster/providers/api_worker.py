@@ -414,6 +414,7 @@ class ApiWorker:
         max_output_tokens: int | None = 16384,
         max_repairs: int | None = None,
         draft_execute: bool = False,
+        agent_tools: bool = False,
         representation: str = "pdl",
         tier_d1: bool | None = None,
         capture_tokens: bool = True,
@@ -440,6 +441,7 @@ class ApiWorker:
         self.max_output_tokens = int(max_output_tokens) if max_output_tokens else None
         self.max_repairs = max_repairs  # run setting read by the host (0 = stop at the first failure)
         self.draft_execute = draft_execute  # run setting read by the host (A/B option)
+        self.agent_tools = agent_tools  # ADR-0029: run the in-call tool loop for requests that carry tools
         self.representation = representation  # run setting read by the host (representation.py, L97)
         # run setting read by the host (Tier D1): an explicit value wins, $PDLT_TIER_D1 (default on) is only the default
         self.tier_d1 = (os.environ.get("PDLT_TIER_D1", "1") == "1") if tier_d1 is None else bool(tier_d1)
@@ -1046,6 +1048,8 @@ class ApiWorker:
                     pass
 
         body, union_wrapped, effort = self.build_request_body(request)
+        if self.agent_tools and getattr(request, "tools", None) is not None:
+            return self._tool_loop_call(request, body, union_wrapped, effort)
 
         api_key = self._resolve_api_key()
         req = self._responses_request(body, api_key)
@@ -1140,6 +1144,54 @@ class ApiWorker:
         }
         if self.capture_tokens and usage:
             metadata["usage"] = usage
+            metadata["usage_source"] = "responses_api"
+            metadata["usage_exact"] = True
+        return WorkerResult(text, metadata)
+
+    def _tool_loop_call(self, request: Any, body: dict[str, Any], union_wrapped: bool, effort: Any) -> WorkerResult:
+        """ADR-0029: the call as an in-call tool loop (runtime/agent_tools.py) ending in a validated submission.
+        Each provider round is a normal request; the engine verifies the returned reply as any reply."""
+        from pdl_taskmaster.runtime.agent_tools import run_loop
+
+        api_key = self._resolve_api_key()
+        started = time.perf_counter()
+        deadline = time.monotonic() + self.max_call_seconds * 3  # several rounds share one call's deadline
+        observed: dict[str, Any] = {}
+
+        def send(round_body: dict[str, Any]) -> dict[str, Any]:
+            data = self._send_json_with_retries(self._responses_request(round_body, api_key), deadline)
+            if data.get("error"):
+                raise ProviderError("PROVIDER_REJECTED_REQUEST", f"provider reported an error: {data['error']}")
+            self._record_reply(data, schema_constrained=False)
+            observed.update(model=data.get("model"), response_id=data.get("id"))
+            return data
+
+        try:
+            projection = json.JSONDecoder().raw_decode(body["input"])[0]
+        except (ValueError, TypeError):
+            projection = {}
+        schema = projection.get("output_schema") if isinstance(projection, dict) else None
+        text, summary = run_loop(body, send, request.tools, outcome_schema=schema)
+        if not text:
+            raise ProviderError("PROVIDER_RESPONSE_UNREADABLE", "tool loop: no reply")
+        if union_wrapped and summary["final"] == "formatted":
+            text = _unwrap_union_reply(text)
+        metadata: dict[str, Any] = {
+            "worker": "api",
+            "model": self.model,
+            "observed_model": observed.get("model"),
+            "mode": "live-api",
+            "reasoning_effort": effort if effort is not None else "provider_default",
+            "operation": getattr(request, "operation", None),
+            "not_a_qualified_measurement_condition": True,
+            "base_url": self.base_url,
+            "response_id": observed.get("response_id"),
+            "latency_ms": round((time.perf_counter() - started) * 1000.0, 3),
+            "token_telemetry": "enabled" if self.capture_tokens else "disabled",
+            "tool_loop": {k: v for k, v in summary.items() if k != "usage"},
+        }
+        if self.capture_tokens:
+            metadata["usage"] = dict(summary["usage"])
             metadata["usage_source"] = "responses_api"
             metadata["usage_exact"] = True
         return WorkerResult(text, metadata)

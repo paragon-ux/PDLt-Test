@@ -133,6 +133,11 @@ def literal_witness_note() -> str:
     return "[host] Witness values are written into the program, not computed; unverified."
 
 
+def negative_claim_note() -> str:
+    """Factual note on a negative result (L110): the host can run the program, not check that no result exists."""
+    return "[host] Negative result: the host cannot check that no result exists; unverified."
+
+
 def cancelled() -> str:
     return "Cancelled."
 

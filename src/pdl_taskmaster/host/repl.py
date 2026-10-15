@@ -407,6 +407,7 @@ def _api_run_settings(args) -> dict:
         "max_call_seconds": getattr(args, "api_call_deadline", 300.0),
         "max_repairs": getattr(args, "max_repairs", None),
         "draft_execute": bool(getattr(args, "draft_execute", False)),
+        "agent_tools": bool(getattr(args, "agent_tools", False)) or os.environ.get("PDLT_AGENT_TOOLS") == "1",
         "representation": getattr(args, "representation", None) or "pdl",
         "tier_d1": bool(getattr(args, "tier_d1", True) if getattr(args, "tier_d1", None) is not None else (os.environ.get("PDLT_TIER_D1", "1") == "1")),
     }
@@ -484,6 +485,8 @@ def _resolve_render_compact(args) -> bool:
 
 # Headless exit code for a run that ended on a harness/provider error (not a model outcome).
 EXIT_HARNESS_ERROR = 4
+# Headless exit code for a result published without the host establishing it (ADR-0019 amendment, L116).
+EXIT_UNVERIFIED = 5
 
 
 def _harness_error_record(exc: BaseException) -> dict:
@@ -709,7 +712,7 @@ def _handle_dev_command(
         print(
             "Dev Mode (Agentic Diagnostic & Control Plane):\n"
             "  /dev [on|off]              - Toggle verbose developer telemetry\n"
-            "  /dev exit-on-close [on|off]- Toggle auto-exit on protocol closure (CLOSED_SUCCESS/CANCELLED)\n"
+            "  /dev exit-on-close [on|off]- Toggle auto-exit on protocol closure (CLOSED_SUCCESS/UNVERIFIED/CANCELLED)\n"
             "  /dev status                - Full JSON snapshot of host, engine, controller, worker\n"
             "  /dev diagnose              - Run self-diagnostic checks (repo, standards, providers, API key)\n"
             "  /dev set <key> <val...>    - Mutate operational parameters on the fly:\n"
@@ -942,6 +945,13 @@ def _build_parser() -> argparse.ArgumentParser:
         "failure with no retry of any kind",
     )
     parser.add_argument(
+        "--agent-tools",
+        action="store_true",
+        help="ADR-0029: model calls submit replies the host checks before accepting them (BOOTSTRAP_ANALYSIS, "
+        "DRAFT_PROMPT, DRAFT_PLAN, EXECUTE_UNCONFIRMED); EXECUTE_UNCONFIRMED may also run Python in the session "
+        "sandbox and read the previous attempt (default off; also PDLT_AGENT_TOOLS=1)",
+    )
+    parser.add_argument(
         "--draft-execute",
         action="store_true",
         help="draft a typed execution brief (DRAFT_EXECUTE) before EXECUTE on tasks that are or need an algorithm or a calculation; one extra call per execution (A/B option)",
@@ -1132,7 +1142,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--exit-on-close",
         action="store_true",
-        help="Exit REPL when protocol reaches a closed state (CLOSED_SUCCESS or CLOSED_CANCELLED)",
+        help="Exit REPL when protocol reaches a closed state (CLOSED_SUCCESS, CLOSED_UNVERIFIED or CLOSED_CANCELLED)",
     )
     parser.add_argument(
         "--prompt-file",
@@ -1825,6 +1835,14 @@ def main() -> int:
                     flush=True,
                 )
                 return 1
+            if final_stage == "CLOSED_UNVERIFIED":
+                print(
+                    f"[headless close] Session closed with a result the host could not verify (stage "
+                    f"'{final_stage}'). Exiting (code {EXIT_UNVERIFIED}).",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                return EXIT_UNVERIFIED
             if final_stage == "WAITING_INPUT":
                 print(
                     f"[headless halt] Session paused at stage 'WAITING_INPUT' (input requested). Exiting (code 3).",

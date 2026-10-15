@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -10,6 +11,7 @@ import tempfile
 import hashlib
 
 from pdl_taskmaster.controller.mechanical_controller import (
+    CLOSED_STAGES,
     AtomicJsonStore,
     ControllerError,
     Intent,
@@ -232,7 +234,7 @@ def _previous_turn_reference(previous: dict[str, Any] | None) -> str | None:
     """The previous turn's result as labelled reference for a follow-up turn."""
     if not previous or not previous.get("result"):
         return None
-    status = "completed" if previous.get("status") == "CLOSED_SUCCESS" else "was cancelled"
+    status = "completed" if previous.get("status") in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED"} else "was cancelled"
     return (
         "PREVIOUS TURN RESULT (reference only). It shows what the previous turn produced so that the new request "
         "can be understood. It is not evidence and not a justification: do not cite it, rely on it, or reason "
@@ -245,6 +247,10 @@ def _normalized_lines(body: str) -> list[str]:
     """Non-empty lines, lowercased, with punctuation and whitespace runs collapsed."""
     lines = (" ".join(words(line)) for line in (body or "").splitlines())
     return [line for line in lines if line]
+
+
+# ADR-0029: operations whose calls get a submit-only tool host when agent tools are on (runtime/agent_tools.py).
+_SUBMIT_ONLY_OPERATIONS = ("BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN")
 
 
 def _python_blocks(body: str) -> list[str]:
@@ -474,6 +480,9 @@ class SessionEngine:
         # 0 = stop at the first failed EXECUTE (no repair, no retry of any kind).
         self.max_repairs: int | None = None
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
+        self.agent_tools = False  # ADR-0029: in-call tools and checked submissions (--agent-tools)
+        self._last_unconfirmed_body: str | None = None
+        self._unconfirmed_attempts = 0
         self.representation = PDL  # the confirmed route's artifacts: PDL, or prose in the L97 pilot
         # Tier D1 (feed back the model's own test failures in standard mode): off for a bare engine. The host sets it
         # from the worker (App), whose default is on ($PDLT_TIER_D1, --no-tier-d1); the env var is read only there.
@@ -577,7 +586,7 @@ class SessionEngine:
         # re-chain it so the execution phase still receives the byte-exact
         # prior deliverable in REQUIRED_TASK_INPUTS. The active turn's status
         # is ACTIVE at restore time, so previous_deliverable() correctly
-        # returns the last CLOSED_SUCCESS turn before it.
+        # returns the last turn closed with a result before it.
         engine._previous_turn = workspace.previous_turn()
         engine._previous_deliverable = _previous_turn_reference(engine._previous_turn)
         engine._source_request = workspace.turn_source()
@@ -672,12 +681,16 @@ class SessionEngine:
         parser: Callable[[str], Any] | None = None,
         operator_correction: str | None = None,
         modes: frozenset[str] = frozenset(),
+        tools: Any = None,
     ) -> Any:
         """Invoke one operation. With a parser, retry ONCE on WireError with an
         operator correction so a sampling glitch (invalid JSON, dropped field)
         costs one extra call instead of fatally failing the session. A caller may
         supply ``operator_correction`` (factual host-side findings only) for the
-        first attempt; it travels outside the projection document."""
+        first attempt; it travels outside the projection document. ``tools`` (ADR-0029) is a
+        factory of the call's tool host, one per request (a wire retry gets a fresh one); with agent
+        tools on, a submit-only operation gets its host here. The host travels with the request,
+        never in the prompt."""
         if self.workspace is None:
             raise WorkspaceError("workspace_not_initialized")
         request = self.bridge.request(
@@ -688,6 +701,10 @@ class SessionEngine:
             operator_correction=operator_correction,
             modes=modes,
         )
+        if tools is None and self.agent_tools and operation in _SUBMIT_ONLY_OPERATIONS:
+            tools = lambda: self._submit_tool_host(operation)  # noqa: E731
+        if tools is not None:
+            request = dataclasses.replace(request, tools=tools())
         try:
             model_text = self._invoke(request, traces)
             return model_text if parser is None else parser(model_text)
@@ -718,6 +735,8 @@ class SessionEngine:
                 operator_correction=correction,
                 modes=modes,
             )
+            if tools is not None:
+                retry_request = dataclasses.replace(retry_request, tools=tools())
             try:
                 return parser(self._invoke(retry_request, traces))
             except Exception as retry_error:
@@ -1454,15 +1473,11 @@ class SessionEngine:
             prior is not None
             and prior.turn_id is not None
             and self.controller is not None
-            and self.controller.state.stage in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED}
+            and self.controller.state.stage in CLOSED_STAGES
         ):
             prior_status = prior.read_turn_status(prior.turn_id).get("status")
             if prior_status == "ACTIVE":
-                prior.mark_turn_status(
-                    "CLOSED_SUCCESS"
-                    if self.controller.state.stage == Stage.CLOSED_SUCCESS
-                    else "CLOSED_CANCELLED"
-                )
+                prior.mark_turn_status(self.controller.state.stage.value)
             previous = prior.previous_turn()
             prior.start_turn(prior.next_turn_id())
             self.workspace = prior
@@ -1952,9 +1967,7 @@ class SessionEngine:
             )
             return EngineResponse(final_body, traces, closed=True)
         result_body_hash = hashlib.sha256(final_body.encode("utf-8")).hexdigest()
-        self.controller.complete_success(result_body_hash)
-        if self.workspace.turn_id is not None:
-            self.workspace.mark_turn_status("CLOSED_SUCCESS", deliverable_sha256=result_body_hash)
+        self._close_with_result(result_body_hash)
         self.workspace.publish_execution_outcome(
             outcome.kind,
             final_body,
@@ -2284,6 +2297,8 @@ class SessionEngine:
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
         repairs_used = 0
         unmeasured_repairs = 0
+        self._last_unconfirmed_body = None
+        self._unconfirmed_attempts = 0
 
         outcome, errors, final_body, ran_program = self._execute_unconfirmed_attempt(
             execute_context, traces, sanitized, requirements, result_ir_mode,
@@ -2349,9 +2364,7 @@ class SessionEngine:
             return EngineResponse(final_body, traces, closed=True)
 
         result_body_hash = hashlib.sha256(final_body.encode("utf-8")).hexdigest()
-        self.controller.complete_success(result_body_hash)
-        if self.workspace.turn_id is not None:
-            self.workspace.mark_turn_status("CLOSED_SUCCESS", deliverable_sha256=result_body_hash)
+        self._close_with_result(result_body_hash)
         self.workspace.publish_execution_outcome(
             outcome.kind,
             final_body,
@@ -2380,11 +2393,14 @@ class SessionEngine:
         *,
         correction: str | None = None,
     ) -> tuple[Any, list[str], str, bool]:
+        self._unconfirmed_attempts += 1
         try:
             modes = _execution_modes(execute_context, result_ir_mode)
             outcome = self.bridge.parse_unconfirmed_execution(
                 self._call("EXECUTE_UNCONFIRMED", execute_context, traces,
-                           operator_correction=correction, modes=modes)
+                           operator_correction=correction, modes=modes,
+                           tools=(lambda: self._agent_tool_host(execute_context, correction))
+                           if self.agent_tools else None)
             )
         except Exception as exc:
             limit = getattr(exc, "output_limit", None)
@@ -2407,6 +2423,7 @@ class SessionEngine:
 
         if outcome.kind != "RESULT":
             return outcome, [], outcome.body, False
+        self._last_unconfirmed_body = outcome.body
 
         missing_entities = self._entity_coverage_missing(outcome.interpretation or "", self._active_task_entities)
         if missing_entities and self.workspace is not None:
@@ -2429,6 +2446,49 @@ class SessionEngine:
             outcome, sanitized_source, outcome.approach, requirements, result_ir_mode
         )
         return outcome, errors, final_body, getattr(self, "_last_programs_run", 0) > 0
+
+    def _agent_tool_host(self, execute_context: dict[str, Any], correction: str | None) -> Any:
+        """ADR-0029: the in-call tools of one EXECUTE_UNCONFIRMED attempt. They run in the session sandbox at the
+        attempt's budget; the submission is checked by this engine's own checks; every call is an event."""
+        from pdl_taskmaster.runtime import agent_tools
+
+        budget = self._execution_budget
+        witness_required = "WITNESS" in (execute_context.get("REQUIRED_TASK_INPUTS") or {})
+        previous = self._last_unconfirmed_body if correction else None
+        return agent_tools.ToolHost(
+            self.sandbox, budget.step_limit, budget.timeout_seconds, budget.memory_limit_bytes,
+            _python_blocks(previous) if previous else [], correction or "",
+            agent_tools.make_validator(self.bridge, self.sandbox, budget, witness_required, _python_blocks,
+                                       _parse_sandbox_witness),
+            attempt=self._unconfirmed_attempts, on_record=self._record_tool_call,
+        )
+
+    def _submit_tool_host(self, operation: str) -> Any:
+        """ADR-0029: a submit-only operation's tool host. Its submission is checked by the checks this engine applies
+        after the call, and only those: the wire model, and for a draft the pseudocode notation lint."""
+        from pdl_taskmaster.runtime import agent_tools
+        from pdl_taskmaster.verification.plan_soundness import validate_plan_soundness
+
+        def lint(text: str) -> Any:
+            return validate_plan_soundness(text, representation=self.representation)
+
+        if operation == "BOOTSTRAP_ANALYSIS":
+            validate = agent_tools.make_wire_validator(self.bridge.parse_bootstrap_analysis)
+        elif operation == "DRAFT_PROMPT":
+            validate = agent_tools.make_lint_validator(
+                self.bridge.parse_prompt_draft,
+                lambda o: ("prompt_body", o.prompt_body) if o.prompt_body is not None else None, lint)
+        else:
+            validate = agent_tools.make_lint_validator(
+                self.bridge.parse_plan_body, lambda body: ("neutral_plan_body", body), lint)
+        return agent_tools.ToolHost(None, 0, 0.0, 0, [], "", validate, on_record=self._record_tool_call,
+                                    operation=operation)
+
+    def _record_tool_call(self, record: dict[str, Any]) -> None:
+        from pdl_taskmaster.runtime import agent_tools
+
+        if self.workspace is not None:
+            self.workspace.append_event("AGENT_TOOL_CALL", agent_tools.event_view(record))
 
     def _run_deliverable_code(self, body: str) -> tuple[dict[str, Any] | None, list[str]]:
         """Run every declared Python block in the session sandbox.
@@ -2522,6 +2582,17 @@ class SessionEngine:
         self.workspace.append_event("PAYLOAD_TOKENS_IN_DELIVERABLE", {"count": len(echoed)})
         return [Finding("PAYLOAD_TOKEN_REPEATED", count=len(echoed))]
 
+    def _close_with_result(self, result_body_hash: str) -> None:
+        """Close the instance with its published result. CLOSED_SUCCESS means the host's checks established it;
+        a result resting on a claim the host cannot check closes CLOSED_UNVERIFIED (ADR-0019 amendment, L116)."""
+        assert self.controller is not None and self.workspace is not None
+        reason = getattr(self, "_unverified_reason", None)
+        self.controller.complete_success(result_body_hash, verified=reason is None)
+        if reason is not None:
+            self.workspace.append_event("CLOSED_UNVERIFIED", {"reason": reason})
+        if self.workspace.turn_id is not None:
+            self.workspace.mark_turn_status(self.controller.state.stage.value, deliverable_sha256=result_body_hash)
+
     def _verify_result(
         self,
         outcome: Any,
@@ -2542,6 +2613,7 @@ class SessionEngine:
         assert self.workspace is not None
         body = outcome.body
         verified = self._requires_verified_execution
+        self._unverified_reason: str | None = None  # L116: set when the result rests on an unchecked claim
         sandbox_witness, run_failures = self._run_deliverable_code(body)
         payload_findings = self._payload_token_findings(body)
         if not result_ir_mode:
@@ -2562,6 +2634,8 @@ class SessionEngine:
         # A witness whose values the program states as literals was printed, not
         # computed: it counts as unreproduced (provisional) and is labelled, never failed.
         literal_witness = False
+        negative_claim = False  # L110
+        declared_incomplete = False
         # RS-01: the Result IR travels only in the structured field; the deliverable
         # text is never scanned for it. An absent IR claims nothing: a witness the
         # program printed still counts.
@@ -2614,6 +2688,12 @@ class SessionEngine:
                         literal_witness = True
                         sandbox_witness["provisional"] = True
                         self.workspace.append_event("WITNESS_LITERAL_IN_PROGRAM", {"block": block[0]})
+                    if sandbox_witness.get("polarity") == "negative":
+                        # L110: the host saw the program print the claim; it cannot check that
+                        # no result exists. The result is provisional, labelled, never "checked".
+                        negative_claim = True
+                        sandbox_witness["provisional"] = True
+                        self.workspace.append_event("NEGATIVE_CLAIM_UNCHECKED", {"basis": sandbox_witness.get("basis")})
                     ir["witness"] = sandbox_witness
             else:
                 errors.extend(run_failures)
@@ -2638,6 +2718,8 @@ class SessionEngine:
                 elif verdict.valid:
                     ir["witness"]["provisional"] = True
                     verdict = replace(verdict, provisional=True)
+                    if isinstance(model_witness, dict) and model_witness.get("polarity") == "negative":
+                        negative_claim = True  # L110
             if declared_incomplete:
                 pass
             elif verdict.valid:
@@ -2646,9 +2728,10 @@ class SessionEngine:
                     {
                         # §2.1: provisional means no sandbox run reproduced the witness;
                         # a program that prints literal values reproduces nothing.
-                        "provisional": sandbox_witness is None or literal_witness,
+                        "provisional": sandbox_witness is None or literal_witness or negative_claim,
                         "sandbox_reproduced": sandbox_witness is not None and not literal_witness,
-                        "domain_checked": not verdict.provisional,
+                        "domain_checked": not verdict.provisional and not negative_claim,
+                        "negative_claim_unchecked": negative_claim,
                         "details": verdict.details,
                     },
                 )
@@ -2676,11 +2759,19 @@ class SessionEngine:
 
         if errors:
             return errors, body
+        # L116: a negative claim (L110) or a deliverable declaring requirements open did not establish the
+        # task's result; it is published and closes CLOSED_UNVERIFIED. A literal witness (L113) was printed
+        # by a program the host ran; it stays a labelled pass.
+        if declared_incomplete:
+            self._unverified_reason = "declared_incomplete"
+        elif negative_claim:
+            self._unverified_reason = "negative_claim_unchecked"
         self.workspace.append_event("RESULT_IR_VALIDATED", {"ir": ir})
         if verified and isinstance(ir.get("witness"), dict) and ir["witness"].get("provisional") is True:
             # The user sees that the result was not checked by a program run; the
             # deliverable text itself is unchanged (the note follows it).
-            note = presentation.literal_witness_note() if literal_witness else presentation.provisional_note()
+            note = (presentation.literal_witness_note() if literal_witness
+                    else presentation.negative_claim_note() if negative_claim else presentation.provisional_note())
             return [], _attach_result_ir(body.rstrip() + "\n\n" + note, ir)
         return [], _attach_result_ir(body, ir)
 
@@ -2777,7 +2868,7 @@ class SessionEngine:
             info.update(turn=None, action="no workspace was opened; nothing to keep")
             return info
         stage = self.controller.state.stage.value if self.controller is not None else None
-        bound = stage is not None and stage not in {Stage.CLOSED_SUCCESS.value, Stage.CLOSED_CANCELLED.value}
+        bound = stage is not None and stage not in {s.value for s in CLOSED_STAGES}
         status = workspace.read_turn_status(workspace.turn_id).get("status")
         events = workspace.read_events()
         started = [e["payload"] for e in events if e["kind"] == "OPERATION_MATERIALIZED"]
@@ -2870,7 +2961,7 @@ class SessionEngine:
 
     def handle_user_message(self, user_message: str) -> EngineResponse:
         traces: list[CallTrace] = []
-        if self.controller is None or self.controller.state.stage in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED}:
+        if self.controller is None or self.controller.state.stage in CLOSED_STAGES:
             return self._activation(user_message, traces) or EngineResponse(None, traces, bypass=True)
 
         if self.workspace is None:

@@ -140,6 +140,7 @@ class PDLtHost:
         engine.bridge.contract_form = getattr(self.worker, "contract_form", None)
         engine.max_repairs = getattr(self.worker, "max_repairs", None)
         engine.draft_execute = bool(getattr(self.worker, "draft_execute", False))
+        engine.agent_tools = bool(getattr(self.worker, "agent_tools", False))
         engine.representation = getattr(self.worker, "representation", None) or "pdl"
         engine.tier_d1 = bool(getattr(self.worker, "tier_d1", engine.tier_d1))
         if self.observation_dir is not None:
@@ -207,7 +208,7 @@ class PDLtHost:
         """No protocol instance is open: the next request starts one."""
         if self.engine is None or self.engine.controller is None:
             return True
-        return self.engine.controller.state.stage.value in {"CLOSED_SUCCESS", "CLOSED_CANCELLED"}
+        return self.engine.controller.state.stage.value in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED", "CLOSED_CANCELLED"}
 
     def _ensure_protocol_entry(self, user_message: str) -> str:
         if self._at_protocol_entry():

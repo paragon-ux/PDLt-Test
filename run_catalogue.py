@@ -115,6 +115,7 @@ EXIT_CANCELLED = 1
 EXIT_UNCONFIRMED = 2
 EXIT_WAITING_INPUT = 3
 EXIT_HARNESS_ERROR = 4  # a model call failed (provider/transport); not a model outcome
+EXIT_UNVERIFIED = 5  # a result published without the host establishing it (L116)
 
 
 def load_manifest(category_filter=None):
@@ -377,6 +378,8 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
             setting_args += [flag, str(settings[key])]
     if settings.get("draft_execute"):
         setting_args.append("--draft-execute")
+    if settings.get("agent_tools"):
+        setting_args.append("--agent-tools")
     if settings.get("representation", "pdl") != "pdl":
         setting_args += ["--representation", settings["representation"]]
     if settings.get("route") != "control" and settings.get("tier_d1") is not None:
@@ -472,6 +475,8 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
         verdict = "CLOSED_SUCCESS"
     elif exit_code == EXIT_CANCELLED:
         verdict = "CLOSED_CANCELLED"
+    elif exit_code == EXIT_UNVERIFIED:
+        verdict = "CLOSED_UNVERIFIED"
     elif exit_code == EXIT_HARNESS_ERROR:
         verdict = "HARNESS_ERROR"
     elif exit_code == EXIT_WAITING_INPUT:
@@ -639,6 +644,9 @@ def stage_pass(r):
     exp = r.get("expected_stage", "CLOSED_SUCCESS")
     if exp == "WAITING_INPUT":
         return r.get("verdict") in {"WAITING_INPUT", "CLOSED_SUCCESS"}
+    if exp == "CLOSED_UNVERIFIED":
+        # The correct answer is one the host cannot check (L116); a host-verified closure is also accepted.
+        return r.get("verdict") in {"CLOSED_UNVERIFIED", "CLOSED_SUCCESS"}
     return r.get("verdict") == exp
 
 
@@ -1011,6 +1019,9 @@ def main():
                         help="EXECUTE repairs after a failed verification; 0 stops at the first failure (no retries)")
     parser.add_argument("--providers", default=None, metavar="A,B,C",
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
+    parser.add_argument("--agent-tools", action="store_true",
+                        help="ADR-0029: checked submissions on BOOTSTRAP_ANALYSIS, DRAFT_PROMPT, DRAFT_PLAN and "
+                             "EXECUTE_UNCONFIRMED, and in-call tools on EXECUTE_UNCONFIRMED; default off")
     parser.add_argument("--draft-execute", action="store_true",
                         help="run DRAFT_EXECUTE (a typed execution brief) before EXECUTE on tasks that are or need an algorithm or a calculation (A/B option)")
     parser.add_argument("--representation", choices=["pdl", "nl"], default="pdl",
@@ -1060,7 +1071,7 @@ def main():
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
                     "providers": args.providers, "draft_execute": args.draft_execute,
-                    "representation": args.representation,
+                    "agent_tools": args.agent_tools, "representation": args.representation,
                     "tier_d1": args.tier_d1 and args.route != "control",  # what the child will run with
                     "sandbox": args.sandbox, "route": args.route,
                     "theme": args.theme, "user_color": args.user_color, "assistant_color": args.assistant_color}
@@ -1102,6 +1113,8 @@ def main():
     route_tag = args.route
     if args.draft_execute:
         route_tag += "-draft-execute"
+    if args.agent_tools:
+        route_tag += "-agent-tools"
     if args.representation != "pdl":
         route_tag += f"-{args.representation}"
     if run_settings["tier_d1"]:

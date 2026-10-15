@@ -27,7 +27,14 @@ class Stage(str, Enum):
     WAITING_INPUT = "WAITING_INPUT"
     OUTCOME_UNCERTAIN = "OUTCOME_UNCERTAIN"
     CLOSED_SUCCESS = "CLOSED_SUCCESS"
+    CLOSED_UNVERIFIED = "CLOSED_UNVERIFIED"
     CLOSED_CANCELLED = "CLOSED_CANCELLED"
+
+
+# Closed with a published result: CLOSED_SUCCESS when the host established it, CLOSED_UNVERIFIED when it
+# rests on a claim the host cannot check (ADR-0019 amendment, L116).
+RESULT_STAGES = frozenset({Stage.CLOSED_SUCCESS, Stage.CLOSED_UNVERIFIED})
+CLOSED_STAGES = RESULT_STAGES | {Stage.CLOSED_CANCELLED}
 
 
 class Intent(str, Enum):
@@ -163,7 +170,7 @@ class ProtocolState:
             instance_kind=value.get("instance_kind", "CONFIRMATION"),
         )
         state.validate()
-        if state.in_flight_action and state.stage not in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED}:
+        if state.in_flight_action and state.stage not in CLOSED_STAGES:
             state.stage = Stage.OUTCOME_UNCERTAIN
         return state
 
@@ -180,13 +187,13 @@ class ProtocolState:
         if self.instance_kind == "UNCONFIRMED":
             if self.current_result and not self.current_result.artifact_id.startswith(f"{self.instance_id}-X"):
                 raise ControllerError("result_instance")
-            if self.stage == Stage.CLOSED_SUCCESS and not self.current_result:
+            if self.stage in RESULT_STAGES and not self.current_result:
                 raise ControllerError("closed_without_result")
             if self.stage == Stage.WAITING_INPUT and not self.pending_input:
                 raise ControllerError("waiting_descriptor")
             if self.stage != Stage.WAITING_INPUT and self.pending_input:
                 raise ControllerError("unexpected_pending_input")
-            if self.stage in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED} and (self.pending_change or self.pending_input):
+            if self.stage in CLOSED_STAGES and (self.pending_change or self.pending_input):
                 raise ControllerError("closed_pending_work")
             return
         if self.current_prompt and not self.current_prompt.artifact_id.startswith(f"{self.instance_id}-P"):
@@ -215,13 +222,13 @@ class ProtocolState:
                 raise ControllerError("result_source_prompt")
             if self.current_result.source_plan_id != self.current_plan.artifact_id:
                 raise ControllerError("result_source_plan")
-        if self.stage == Stage.CLOSED_SUCCESS and not self.current_result:
+        if self.stage in RESULT_STAGES and not self.current_result:
             raise ControllerError("closed_without_result")
         if self.stage == Stage.WAITING_INPUT and not self.pending_input:
             raise ControllerError("waiting_descriptor")
         if self.stage != Stage.WAITING_INPUT and self.pending_input:
             raise ControllerError("unexpected_pending_input")
-        if self.stage in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED} and (self.pending_change or self.pending_input):
+        if self.stage in CLOSED_STAGES and (self.pending_change or self.pending_input):
             raise ControllerError("closed_pending_work")
 
 
@@ -541,7 +548,8 @@ class MechanicalController:
         self._commit()
         return Transition(NextAction.EXECUTE, {"previous_action_committed": action_committed, "action_id": action_id})
 
-    def complete_success(self, result_body_hash: str) -> None:
+    def complete_success(self, result_body_hash: str, *, verified: bool = True) -> None:
+        """Close with the published result: CLOSED_SUCCESS when the host established it, else CLOSED_UNVERIFIED."""
         if not self.can_execute():
             raise ControllerError("success_stage")
         source_prompt_id = self.state.current_prompt.artifact_id if self.state.current_prompt else None
@@ -554,13 +562,13 @@ class MechanicalController:
             source_plan_id=source_plan_id,
         )
         self.state.current_result = result
-        self.state.stage = Stage.CLOSED_SUCCESS
+        self.state.stage = Stage.CLOSED_SUCCESS if verified else Stage.CLOSED_UNVERIFIED
         self.state.pending_change = None
         self.state.approach_sources = []
         self._commit()
 
     def cancel(self) -> None:
-        if self.state.stage in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED}:
+        if self.state.stage in CLOSED_STAGES:
             return
         self.state.pending_change = None
         self.state.approach_sources = []
@@ -569,7 +577,7 @@ class MechanicalController:
         self._commit()
 
     def new_instance(self, instance_id: Optional[str] = None) -> "MechanicalController":
-        if self.state.stage not in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED}:
+        if self.state.stage not in CLOSED_STAGES:
             raise ControllerError("new_instance_stage")
         return MechanicalController(ProtocolState.new(instance_id, instance_kind=self.state.instance_kind), self.store)
 
