@@ -329,19 +329,23 @@ def make_validator(bridge: Any, sandbox: Any, budget: Any, witness_required: boo
                      "expected": "an object matching the output_schema in the input"}], []
         if parsed.kind != "RESULT":
             return [], []
+        from pdl_taskmaster.runtime.witness_forms import argued_result, declared_certificate, with_certificate
+
         open_defects = bool((parsed.result_ir or {}).get("open_defects"))
+        argued = argued_result((parsed.result_ir or {}).get("witness"))  # L119: no program required
+        certificate = declared_certificate(parsed.result_ir) if witness_required else None
         blocks = python_blocks(parsed.body)
         errors: list[dict[str, Any]] = []
         facts: list[str] = []
         printed = False
-        if not blocks and witness_required and not open_defects:
+        if not blocks and witness_required and not open_defects and not argued:
             errors.append({"code": "NO_PROGRAM", "path": "outcome.body",
                            "problem": "the host would run no program from body: it is not a Python program and "
                                       "has no ```python block",
                            "expected": "a program in body that prints the WITNESS line"})
         for index, block in enumerate(blocks, 1):
-            run = sandbox.run_code(block, timeout=budget.timeout_seconds, memory_limit=budget.memory_limit_bytes,
-                                   step_limit=budget.step_limit)
+            run = sandbox.run_code(with_certificate(block, certificate), timeout=budget.timeout_seconds,
+                                   memory_limit=budget.memory_limit_bytes, step_limit=budget.step_limit)
             parsed_witness = parse_witness(run.stdout or "") if run.success else None
             witness = parsed_witness is not None
             printed |= witness
@@ -360,7 +364,7 @@ def make_validator(bridge: Any, sandbox: Any, budget: Any, witness_required: boo
                 errors.append({"code": "PROGRAM_FAILED", "path": f"outcome.body block {index}",
                                "problem": f"exit status {run.exit_code}; standard error: {(run.stderr or '')[-1200:]}",
                                "expected": "exit status 0"})
-        if witness_required and blocks and not printed and not open_defects and not errors:
+        if witness_required and blocks and not printed and not open_defects and not errors and not argued:
             errors.append({"code": "WITNESS_NOT_PRINTED", "path": "outcome.body",
                            "problem": "the programs ran, and none printed a line starting with 'WITNESS: '",
                            "expected": "a program that prints the WITNESS line, or the requirement declared open "

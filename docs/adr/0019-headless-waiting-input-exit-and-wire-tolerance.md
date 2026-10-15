@@ -41,13 +41,14 @@ A boundary refusal (policy scope, offline sandbox, post-cutoff knowledge) is a c
 - **Exit 130:** the user interrupted the run.
 
 ### Amendment (L116): a result the host cannot establish closes CLOSED_UNVERIFIED with exit 5
-`CLOSED_SUCCESS` (exit 0) means every check the host applies passed and none of them rests on a claim the host cannot check. Under `VERIFIED_EXECUTION` the result must be a positive witness printed by a program the host ran. No domain checker is registered, so this establishes provenance, not correctness.
+`CLOSED_SUCCESS` (exit 0) means every check the host applies passed and none of them rests on a claim the host cannot check. Under `VERIFIED_EXECUTION` the result must be a positive witness computed by a program the host ran, or a certificate a program the host ran checked ([ADR-0030](0030-positive-witness-forms.md)). No domain checker is registered, so this establishes provenance, not correctness.
 
 A result resting on a claim the host cannot check is still published, with its note. It closes in the terminal stage `CLOSED_UNVERIFIED` (exit 5):
 - a negative claim ("no result exists"), whether a program printed it or the Result IR declared a proof (L110);
-- a deliverable that declares requirements open (`open_defects`, no witness).
+- a deliverable that declares requirements open (`open_defects`, no witness);
+- a positive result established by an argument (`basis: "proof"`, ADR-0030, L119). A witness its program writes out instead of computing is a correction, never a closure (ADR-0030).
 
-The event `CLOSED_UNVERIFIED` records the reason. A failed verification and a malformed reply still close `CLOSED_CANCELLED` (exit 1). The literal-witness flag labels a result but does not decide its closure (L113).
+The event `CLOSED_UNVERIFIED` records the reason. A failed verification and a malformed reply still close `CLOSED_CANCELLED` (exit 1).
 
 The catalogue scores `CLOSED_UNVERIFIED` as the expected stage only where the manifest names it: 13-01, whose correct answer is a negative claim. There a host-verified closure is also accepted, as `WAITING_INPUT` accepts an answer.
 

@@ -664,13 +664,15 @@ class PositiveWitness(WireModel):
     provenance fields NegativeWitness declares); they are metadata only and
     never a claim that no solution exists: the host's search-claim rule reads
     them on a negative witness alone (session_engine._verify_result). Programs
-    that printed a correct result with them were rejected before (run 022105)."""
+    that printed a correct result with them were rejected before (run 022105).
+    Stated in the Result IR, ``basis`` names the form (L119): "certificate", data
+    a program checks; "proof", a result resting on ``argument``."""
 
     model_config = ConfigDict(extra="forbid")
     polarity: Literal["positive"] = "positive"
     evidence: Evidence = Field(default_factory=lambda: Evidence(path="execution://witness"))
     data: dict[str, Any]
-    basis: Optional[Literal["search", "proof"]] = None
+    basis: Optional[Literal["search", "proof", "certificate"]] = None
     search_exhausted: Optional[bool] = None
     nodes_explored: Optional[NonNegativeInt] = None
     method: Optional[str] = None

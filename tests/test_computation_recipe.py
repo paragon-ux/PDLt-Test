@@ -101,7 +101,7 @@ def _unconfirmed(tmp_path: Path, sys1: Sys1, *, draft_execute: bool = True):
             return json.dumps({"kind": "RESULT", "approach": "Compute the value from the inputs.", "data_structures": [], "step_estimate": {"iterations": 3, "steps_per_iteration": 10, "basis": "one pass over the given values"}, "invariants": [], "self_checks": [], "execution_entities": []})
         if req.operation == "EXECUTE_UNCONFIRMED":
             # A verified task needs a witness from a program; any other task closes on its text.
-            body = ("```python\nimport json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'x': 42}}))\n```"
+            body = ("```python\nimport json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'x': 6 * 7}}))\n```"
                     if sys1.problem_class == "VERIFIED_EXECUTION" else "The result is 42.")
             return json.dumps({"kind": "RESULT", "interpretation": "DETERMINE the result", "approach": "COMPUTE it",
                                "body": body, "result_ir": {}})

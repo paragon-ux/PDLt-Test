@@ -1,5 +1,6 @@
 """L116: CLOSED_SUCCESS means the host's checks established the result, not that the protocol completed. A result
-resting on a claim the host cannot check (a negative claim, L110; a deliverable declaring requirements open) is
+resting on a claim the host cannot check (a negative claim, L110; a deliverable declaring requirements open; a
+positive result established by an argument, L119) is
 published and closes CLOSED_UNVERIFIED (exit 5); a failed verification or a malformed reply closes CLOSED_CANCELLED
 (exit 1); a witness printed by a program the host ran still closes CLOSED_SUCCESS. All offline; no model call."""
 from __future__ import annotations
@@ -102,14 +103,13 @@ def test_a_witness_computed_on_the_unconfirmed_route_closes_success(tmp_path):
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS and not _unverified_reasons(events)
 
 
-def test_a_literal_witness_printed_by_a_program_stays_a_labelled_success(tmp_path):
-    """L113: the literal flag cannot tell a program that selects from its input from one that prints a remembered
-    answer, so it labels the result and does not decide the closure."""
-    engine, response, _, events = _run(tmp_path, [{"kind": "RESULT", "body": LITERAL, "result_ir": _ir()}],
+def test_a_witness_its_program_writes_out_is_never_a_verified_success(tmp_path):
+    """L113, L119: a witness the program writes out instead of computing is returned as a correction; repeated, it
+    closes CLOSED_CANCELLED. A result established by an argument closes CLOSED_UNVERIFIED (test_l119_witness_forms)."""
+    engine, _, executes, events = _run(tmp_path, [{"kind": "RESULT", "body": LITERAL, "result_ir": _ir()}] * 8,
                                        problem_class=VERIFIED)
-    assert "WITNESS_LITERAL_IN_PROGRAM" in _kinds(events)
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
-    assert presentation.literal_witness_note() in response.text
+    assert "WITNESS_LITERAL_IN_PROGRAM" in _kinds(events) and "[WITNESS_WRITTEN_IN_PROGRAM]" in executes[1].prompt
+    assert engine.controller.state.stage == Stage.CLOSED_CANCELLED and not _unverified_reasons(events)
 
 
 def test_a_task_without_verified_execution_closes_success_on_its_contract_checks(tmp_path):

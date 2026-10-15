@@ -339,7 +339,7 @@ _IR = {"files": [], "reconciliation": [{"requirement": "R1", "status": "satisfie
        "open_defects": []}
 _NO_WITNESS = {"kind": "RESULT", "body": "The answer is 9.", "result_ir": _IR}
 _STOPPED = {"kind": "RESULT", "body": "while True:\n    pass", "result_ir": _IR}
-_GOOD = {"kind": "RESULT", "body": "print('WITNESS: {\"answer\": 9}')", "result_ir": _IR}
+_GOOD = {"kind": "RESULT", "body": "print('WITNESS: {\"answer\": %d}' % (3 * 3))", "result_ir": _IR}
 
 
 def test_heavy_tier_allows_two_repairs_each_with_the_latest_findings(tmp_path, monkeypatch):
