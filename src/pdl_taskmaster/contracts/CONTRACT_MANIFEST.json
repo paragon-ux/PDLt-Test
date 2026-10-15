@@ -151,7 +151,7 @@
     },
     {
       "path": "contracts/EXECUTION_CONTRACT.json",
-      "sha256": "17359e17e87ff699f9fb9cafb739a1d74a3a1bca3234e73f0dc0588a4c711b81"
+      "sha256": "cb460286d051d3317815af75e3d3958f4578fd08f9ac04995612d516cb2ac233"
     },
     {
       "path": "contracts/IMPLEMENTATION_BOUNDARY.json",

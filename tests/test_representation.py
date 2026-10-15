@@ -40,7 +40,8 @@ PDL_WORDS = re.compile(r"(?i)pseudocode|\bPDL\b|PDL-0\d")
 # The one sentence of each NL format rule that names what not to write.
 FORMAT_RULE_MENTIONS = re.compile(r"(?i)do not express (?:it|the plan) as pseudocode")
 VALUES = {
-    "BOOTSTRAP_ANALYSIS": {"HOST_PROTOCOL_STATE": "SEMANTIC_READ", "RAW_UNTRUSTED_CONTENT": "Sum the list."},
+    "BOOTSTRAP_ANALYSIS": {"HOST_PROTOCOL_STATE": "SEMANTIC_READ", "RAW_UNTRUSTED_CONTENT": "Sum the list.",
+                           "AVAILABLE_EXECUTION_TOOLS": "python"},
     "DRAFT_PROMPT": {"HOST_PROTOCOL_STATE": "ACTIVE_BY_EXPLICIT_INVOCATION", "SUBSTANTIVE_REQUEST": "Sum the list."},
     "DRAFT_PLAN": {"CONFIRMED_PROMPT_BODY": "Sum the list.", "CARRIED_APPROACH_SOURCES": []},
     "EXECUTE": {"CONFIRMED_PROMPT_BODY": "Sum the list.", "CONFIRMED_PLAN_BODY": "Add each item.",
