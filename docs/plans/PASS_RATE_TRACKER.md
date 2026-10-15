@@ -9,7 +9,7 @@ The user (2026-10-10): keep track of the pass rate of each addition. One row per
 - **Honest open:** CLOSED_SUCCESS with a declared open defect (existing host policy).
 - **Bare witness:** a body that is only a `WITNESS:` line.
 
-One caveat: the host's literal-witness flag fires on every correct 01-01 witness, because the answer's values are all constants of the input list in the program (L113). So host-verified excludes only negative results, not that flag. From L113 (`c950298a`, not merged yet) the flag fires only when the program writes the witness data out, and a flagged witness closes CLOSED_UNVERIFIED; the sections below that predate it keep their numbers.
+One caveat: the host's literal-witness flag fires on every correct 01-01 witness, because the answer's values are all constants of the input list in the program (L113). So host-verified excludes only negative results, not that flag. From L113 (merged) the flag fires only when the program writes the witness data out; from L119 (ADR-0030, merged `fea5f8cd`) a flagged witness is never accepted and gets the WITNESS_WRITTEN_IN_PROGRAM correction. The sections below that predate it keep their numbers.
 
 The frozen-repair numbers come from `frozen_repair.py target-report <tag>`.
 
@@ -143,4 +143,26 @@ Tree `l112-mcp-server` `51e7f1dc` (L116: a result the host cannot establish clos
 
 - Every witness the new flag fires on writes its answer out (colourings, Latin squares, arrangements, paths, the 183224 constant).
 - The wrong answers the old flag fired on: 01-03 (written out) stays flagged; 01-01, 01-06 (2) and 16-07 were computed and are cleared, so they remain CLOSED_SUCCESS graded FAIL, the provenance-only class.
-- **Scoring:** 41 recorded runs graded PASS on prompts expecting CLOSED_SUCCESS would now close CLOSED_UNVERIFIED and score catalogue FAIL. 01-03 carries 32 of them: 32 of its 40 correct flagged runs write the colouring out.
+- **Scoring:** 41 recorded runs graded PASS on prompts expecting CLOSED_SUCCESS would now be flagged. 01-03 carries 32 of them: 32 of its 40 correct flagged runs write the colouring out. Under L119 a flagged witness gets a correction instead of closing; the one live check (01-03, Nemotron 3 Super free, 2026-10-15) recomputed it on the second attempt and closed CLOSED_SUCCESS, graded PASS.
+
+## With and without the agent tools (MCP): summary
+
+The agent tools are the in-call tools of ADR-0029 (`--agent-tools`), the same ones the MCP server exposes; directory: `docs/mcp/INTERNAL_TOOLS.md`. Each claim says how it was established. **Measured:** interleaved live arms in the sections above. **Historical:** against recorded runs, not interleaved. **Observed:** seen in recorded runs, not compared across arms.
+
+| Claim | Evidence | Result |
+|---|---|---|
+| A validated submission raises host-verified passes on 01-01 repairs | Measured (frozen repair) | 22/31 against 15/36 for scratchpad v3, p = 0.026 |
+| Work tools alone (`read_attempt`, `run_python`) do not | Measured (frozen repair) | 11/35 host-verified; 7 bare-witness bodies |
+| The submission check removes bare-witness bodies | Measured (frozen repair) | 7 → 0 |
+| Full 01-01 runs pass with the tool loop | Historical | 18/18 against 5/10 for the L107 baseline, p = 0.0026 |
+| No gain on code tasks without a witness (04-02, 04-03) | Measured | 5/15 against 7/16, not significant; false successes 9 and 9 |
+| The BOOTSTRAP loop changes nothing measurable | Measured | 7/16 against 5/15, not significant |
+| The draft loops change no outcome but cut lint redrafts | Measured | Every decided run reached the expected stage in both arms; redrafts 13 → 5 |
+| No catalogue-wide effect | Measured, one run per prompt: inconclusive | 6 against 6, then 7 against 7 and 5 against 4; every difference within recorded base rates |
+| The tools catch failures before they become counted attempts | Observed | STEP_BUDGET_EXCEEDED, NO_PROGRAM, OUTPUT_MALFORMED and WITNESS_NOT_PRINTED rejected inside the call; no host-side STEP_BUDGET or PROGRAM_FAILED correction in the 18 full 01-01 runs |
+
+**Why the tools stay even where the effect is unclear:** they enforce compliance. A submission must pass the host's own checks (wire schema, the programs as the host runs them, a printed witness) before the call ends, so a non-compliant reply is corrected inside the call instead of costing an attempt. That holds whether or not the pass rate moves; on witness tasks it did (01-01), elsewhere it did not measurably.
+
+**Open:** a safety review of the MCP interface (ledger L121). The static directories found unvalidated tool arguments, no data-not-instructions framing for tool results, no call log in the MCP server, a misleading acceptance text and no provenance on served artifacts (`docs/mcp/INTERNAL_TOOLS.md`, `docs/mcp/EXTERNAL_TOOLS.md`).
+
+No further live pass-rate arms are planned. From 2026-10-15 the default is deterministic evidence; live runs are small free smoke tests (the user).
