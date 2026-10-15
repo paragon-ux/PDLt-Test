@@ -516,6 +516,12 @@ class WorkspaceRun:
             return self._turn_base() / "stages" / "50_execution" / "output"
         raise WorkspaceError(f"artifact_kind:{kind}")
 
+    def write_program_output(self, runs: list[dict[str, Any]]) -> None:
+        """L117: the programs the host ran for the published result, as it ran them (block, exit code, captured
+        output), kept beside the result. Outside clients read it through the MCP server."""
+        output = self._artifact_stage("result")
+        self._write(output / "program-output.json", json.dumps({"runs": runs}, ensure_ascii=False, indent=2) + "\n")
+
     def publish_artifact(self, kind: str, artifact_id: str, body: str, *, confirmed: bool, source_prompt_id: str | None = None, confirmed_prompt_hash: str | None = None) -> None:
         output = self._artifact_stage(kind)
         versions = output / "versions"
