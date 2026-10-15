@@ -232,7 +232,7 @@ class Sys1:
 PRINTS = "```python\nprint(3 + 4 + 5)\n```"
 LOOPS = "```python\nwhile True:\n    pass\n```"
 # A verified task (ADR-0013) closes on a sandbox witness; a step-budget overrun there is a repair finding.
-WITNESS = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'sum': 12}}))"
+WITNESS = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'sum': 5 + 7}}))"
 VERIFIED = "VERIFIED_EXECUTION"
 
 

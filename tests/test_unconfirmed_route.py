@@ -390,7 +390,7 @@ def test_unconfirmed_route_with_draft_execute(tmp_path: Path):
                 "kind": "RESULT",
                 "interpretation": "DETERMINE identities of A, B, C",
                 "approach": "ASK god A first question",
-                "body": "```python\nimport json\nprint('WITNESS: {\"polarity\": \"positive\", \"data\": {\"identities\": [\"True\", \"Random\", \"False\"]}}')\n```",
+                "body": "```python\nimport json\nnames = ['False', 'Random', 'True']\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'identities': names[::-1]}}))\n```",
                 "result_ir": {},
             })
         raise AssertionError(f"unexpected operation: {req.operation}")

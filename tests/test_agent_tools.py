@@ -20,7 +20,7 @@ from test_computation_recipe import Sys1, _bootstrap
 
 ROOT = Path(__file__).resolve().parents[1]
 BUDGET = EXECUTION_BUDGETS["STANDARD"]
-GOOD = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'x': 42}}))"
+GOOD = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'x': 6 * 7}}))"
 SLOW = "while True:\n    pass"
 IR = {"files": [], "reconciliation": [], "open_defects": []}
 

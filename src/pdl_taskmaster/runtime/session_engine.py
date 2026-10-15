@@ -60,54 +60,38 @@ def _leaf_values(value: Any) -> list[Any]:
     return [value]
 
 
-def _program_constants(source: str) -> set[Any]:
-    """Every literal constant in the program's syntax tree, a signed number
-    (``-5``) included. Booleans are left out: ``True == 1`` in Python."""
-    import ast
-
+def _json_value(value: Any) -> str | None:
+    """A value as JSON compares it: tuples are lists and keys are strings."""
     try:
-        tree = ast.parse(source)
-    except (SyntaxError, ValueError, MemoryError, RecursionError):
-        return set()
-    constants: set[Any] = set()
-    signed: set[int] = set()  # operands of a sign, counted once with their sign
-    for node in ast.walk(tree):
-        if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.USub, ast.UAdd)) \
-                and isinstance(node.operand, ast.Constant) and isinstance(node.operand.value, (int, float)) \
-                and not isinstance(node.operand.value, bool):
-            constants.add(-node.operand.value if isinstance(node.op, ast.USub) else node.operand.value)
-            signed.add(id(node.operand))
-        elif isinstance(node, ast.Constant) and not isinstance(node.value, bool) and id(node) not in signed:
-            try:
-                constants.add(node.value)
-            except TypeError:
-                continue
-    return constants
+        return json.dumps(json.loads(json.dumps(value)), sort_keys=True)
+    except (TypeError, ValueError):
+        return None
 
 
 def _witness_written_in_program(witness: dict[str, Any], source: str | None) -> bool:
-    """Every non-trivial leaf value of the witness data is a literal constant of the
-    program that printed it, compared by Python value: the program states the
-    values instead of computing them. A string constant that is itself the printed
-    witness line (``print('WITNESS: {...}')``) states them too. Only trivial leaves
-    (or none) flag nothing."""
+    """L113: the program that printed the witness writes its data out instead of
+    computing it: an expression of the program, made of literals and names bound
+    once to them, has the data as its value, or one string written out in the
+    program is the printed witness line (``print('WITNESS: {...}')``). A value the
+    program derives is not written out, even when its operands are literals of the
+    program: selecting an answer from input data it contains computes the answer.
+    Only trivial leaves (or none) flag nothing."""
     if not source or not isinstance(witness, dict):
         return False
-    leaves = [leaf for leaf in _leaf_values(witness.get("data")) if not _is_trivial_leaf(leaf)]
-    if not leaves:
+    if not [leaf for leaf in _leaf_values(witness.get("data")) if not _is_trivial_leaf(leaf)]:
         return False
-    constants = _program_constants(source)
+    from pdl_taskmaster.verification.literal_witness import written_out_values
 
     def stated(w: dict[str, Any] | None) -> dict[str, Any] | None:
         return {k: v for k, v in w.items() if k != "provisional"} if isinstance(w, dict) else None
 
-    printed = stated(witness)
-    if any(isinstance(c, str) and stated(_parse_sandbox_witness(c)) == printed for c in constants):
-        return True
-    try:
-        return all(leaf in constants for leaf in leaves)
-    except TypeError:
-        return False
+    printed, data = stated(witness), _json_value(witness.get("data"))
+    for value in written_out_values(source):
+        if isinstance(value, str) and stated(_parse_sandbox_witness(value)) == printed:
+            return True
+        if data is not None and _json_value(value) == data:
+            return True
+    return False
 
 
 PROGRAM_OUTPUT_LIMIT = 65536  # characters kept of each captured stream (L117)
@@ -2777,13 +2761,15 @@ class SessionEngine:
 
         if errors:
             return errors, body
-        # L116: a negative claim (L110) or a deliverable declaring requirements open did not establish the
-        # task's result; it is published and closes CLOSED_UNVERIFIED. A literal witness (L113) was printed
-        # by a program the host ran; it stays a labelled pass.
+        # L116: a negative claim (L110), a deliverable declaring requirements open, or a witness its
+        # program writes out instead of computing (L113) did not establish the task's result; it is
+        # published and closes CLOSED_UNVERIFIED.
         if declared_incomplete:
             self._unverified_reason = "declared_incomplete"
         elif negative_claim:
             self._unverified_reason = "negative_claim_unchecked"
+        elif literal_witness:
+            self._unverified_reason = "witness_written_in_program"
         self.workspace.append_event("RESULT_IR_VALIDATED", {"ir": ir})
         if verified and isinstance(ir.get("witness"), dict) and ir["witness"].get("provisional") is True:
             # The user sees that the result was not checked by a program run; the
