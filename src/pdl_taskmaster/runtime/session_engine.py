@@ -846,6 +846,8 @@ class SessionEngine:
         bootstrap_values: dict[str, Any] = {
             "HOST_PROTOCOL_STATE": "SEMANTIC_READ",
             "RAW_UNTRUSTED_CONTENT": isolate_untrusted_input(raw_text),
+            # L118: the analysis is written knowing the environment the deliverable will run in, as EXECUTE does.
+            "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
         }
         if self._previous_deliverable:
             # S4: the prior turn's confirmed deliverable is host-published,

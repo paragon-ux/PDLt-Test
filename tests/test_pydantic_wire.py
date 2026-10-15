@@ -139,6 +139,7 @@ def test_precision_operator_correction_in_session_engine(tmp_path: Path) -> None
         {
             "HOST_PROTOCOL_STATE": "BOOTSTRAP_ANALYSIS",
             "RAW_UNTRUSTED_CONTENT": "Do work",
+            "AVAILABLE_EXECUTION_TOOLS": engine.available_execution_tools,
         },
         traces,
         parser=BRIDGE.parse_bootstrap_analysis,
