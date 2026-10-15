@@ -110,6 +110,17 @@ def _witness_written_in_program(witness: dict[str, Any], source: str | None) -> 
         return False
 
 
+PROGRAM_OUTPUT_LIMIT = 65536  # characters kept of each captured stream (L117)
+
+
+def _captured(stream: str, text: str | None) -> dict[str, Any]:
+    """One captured stream of a program run, cut at PROGRAM_OUTPUT_LIMIT characters."""
+    text = text or ""
+    if len(text) <= PROGRAM_OUTPUT_LIMIT:
+        return {stream: text}
+    return {stream: text[:PROGRAM_OUTPUT_LIMIT], f"{stream}_truncated": True}
+
+
 def _parse_sandbox_witness(stdout_text: str) -> dict[str, Any] | None:
     """Parse the host-reproduced witness from sandbox stdout (ADR-0018).
 
@@ -2501,6 +2512,7 @@ class SessionEngine:
         witness: dict[str, Any] | None = None
         failures: list[str] = []
         self._last_program_outputs: list[str] = []
+        self._last_program_runs: list[dict[str, Any]] = []  # L117: as the host ran them, kept with the result
         self._last_programs_run = 0
         self._last_witness_block: tuple[int, str] | None = None
         for index, block in enumerate(_python_blocks(body), 1):
@@ -2526,6 +2538,9 @@ class SessionEngine:
                     "duration_ms": round(run.duration_ms, 1),
                 },
             )
+            if not (run.error or "").startswith("sandbox_unavailable:"):
+                self._last_program_runs.append({"block": index, "exit_code": run.exit_code,
+                                                **_captured("stdout", run.stdout), **_captured("stderr", run.stderr)})
             if (run.error or "").startswith("sandbox_unavailable:"):
                 # Fail closed: nothing ran, and no later block can run either.
                 failures.append(Finding("SANDBOX_UNAVAILABLE", block=index,
@@ -2592,6 +2607,9 @@ class SessionEngine:
             self.workspace.append_event("CLOSED_UNVERIFIED", {"reason": reason})
         if self.workspace.turn_id is not None:
             self.workspace.mark_turn_status(self.controller.state.stage.value, deliverable_sha256=result_body_hash)
+            runs = getattr(self, "_last_program_runs", None)
+            if runs:
+                self.workspace.write_program_output(runs)
 
     def _verify_result(
         self,

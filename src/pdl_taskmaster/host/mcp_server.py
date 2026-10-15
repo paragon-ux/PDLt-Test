@@ -7,6 +7,10 @@ check are runtime/agent_tools.py's, unchanged; this module only speaks JSON-RPC 
 Served: initialize, ping, tools/list, tools/call. Every program runs in one confined session sandbox (ADR-0021) at
 the tier's limits; no tool returns a verdict; a submission is checked structurally and accepted or returned with
 errors, as inside the harness. Nothing here reads or writes the user's project.
+
+Also served, read-only (L117): resources/list and resources/read over the closed turns with a published result in
+one sessions folder (``--sessions``, default the REPL's): each turn's response, as published, and the output of the
+programs the host ran for it. A resource is found by listing; a client's URI is never joined into a path.
 """
 from __future__ import annotations
 
@@ -21,13 +25,70 @@ from pdl_taskmaster.runtime import agent_tools
 
 PROTOCOL_VERSION = "2025-06-18"
 SERVER_NAME = "pdlt-agent-tools"
+RESULT_STATUSES = frozenset({"CLOSED_SUCCESS", "CLOSED_UNVERIFIED"})
+URI_SCHEME = "pdlt://sessions/"
+PAGE_SIZE = 100
+RESOURCE_NOT_FOUND = -32002
+
+
+class ClosedSessions:
+    """The closed turns with a published result under one sessions folder, laid out as the REPL writes it:
+    ``<root>/<session>/workspaces/<workspace>/turns/<turn>/``. Read-only."""
+
+    def __init__(self, root: Path):
+        self.root = root
+
+    def resources(self) -> dict[str, tuple[Path, dict[str, Any]]]:
+        """URI -> (file, MCP resource) for every readable resource, in a stable order."""
+        found: dict[str, tuple[Path, dict[str, Any]]] = {}
+        if not self.root.is_dir():
+            return found
+        base = self.root.resolve()
+        for marker in sorted(self.root.glob("*/workspaces/*/turns/*/turn.json")):
+            try:
+                status = json.loads(marker.read_text(encoding="utf-8")).get("status")
+            except (OSError, ValueError):
+                continue
+            if status not in RESULT_STATUSES:
+                continue
+            turn = marker.parent
+            session, workspace = turn.parents[3].name, turn.parents[1].name
+            output = turn / "stages" / "50_execution" / "output"
+            for part, file, mime, what in (
+                    ("response", output / "current.md", "text/markdown", "the response as published"),
+                    ("program-output", output / "program-output.json", "application/json",
+                     "the output of the programs the host ran for the response")):
+                if not file.is_file() or not file.resolve().is_relative_to(base):
+                    continue
+                uri = f"{URI_SCHEME}{session}/{workspace}/{turn.name}/{part}"
+                found[uri] = (file, {"uri": uri, "name": f"{session} {turn.name} {part}", "mimeType": mime,
+                                     "description": f"{status}: {what}"})
+        return found
+
+    def list(self, cursor: str | None) -> dict[str, Any]:
+        entries = [resource for _, resource in self.resources().values()]
+        start = int(cursor) if cursor and cursor.isdigit() else 0
+        page: dict[str, Any] = {"resources": entries[start:start + PAGE_SIZE]}
+        if start + PAGE_SIZE < len(entries):
+            page["nextCursor"] = str(start + PAGE_SIZE)
+        return page
+
+    def read(self, uri: str) -> dict[str, Any] | None:
+        entry = self.resources().get(uri)
+        if entry is None:
+            return None
+        file, resource = entry
+        return {"contents": [{"uri": uri, "mimeType": resource["mimeType"],
+                              "text": file.read_text(encoding="utf-8")}]}
 
 
 class AgentToolServer:
-    """One MCP session over one tool host. ``host`` is an agent_tools.ToolHost."""
+    """One MCP session over one tool host. ``host`` is an agent_tools.ToolHost; ``sessions``, when given, serves
+    closed sessions' results as resources."""
 
-    def __init__(self, host: agent_tools.ToolHost):
+    def __init__(self, host: agent_tools.ToolHost, sessions: ClosedSessions | None = None):
         self.host = host
+        self.sessions = sessions
 
     def tools(self) -> list[dict[str, Any]]:
         names = self.host.tool_names()
@@ -52,7 +113,10 @@ class AgentToolServer:
         if mid is None:
             return None  # notifications (notifications/initialized, cancellations) need no answer
         if method == "initialize":
-            result: Any = {"protocolVersion": PROTOCOL_VERSION, "capabilities": {"tools": {"listChanged": False}},
+            capabilities: dict[str, Any] = {"tools": {"listChanged": False}}
+            if self.sessions is not None:
+                capabilities["resources"] = {"listChanged": False, "subscribe": False}
+            result: Any = {"protocolVersion": PROTOCOL_VERSION, "capabilities": capabilities,
                            "serverInfo": {"name": SERVER_NAME, "version": __version__},
                            "instructions": self.host.capability_note()}
         elif method == "ping":
@@ -64,6 +128,12 @@ class AgentToolServer:
             if name not in self.host.tool_names():
                 return _error(mid, -32602, f"unknown tool: {name!r}")
             result = self.call_tool(name, params.get("arguments"))
+        elif method == "resources/list" and self.sessions is not None:
+            result = self.sessions.list(params.get("cursor"))
+        elif method == "resources/read" and self.sessions is not None:
+            result = self.sessions.read(str(params.get("uri", "")))
+            if result is None:
+                return _error(mid, RESOURCE_NOT_FOUND, f"resource not found: {params.get('uri')!r}")
         else:
             return _error(mid, -32601, f"method not found: {method!r}")
         return {"jsonrpc": "2.0", "id": mid, "result": result}
@@ -120,13 +190,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--witness-required", action="store_true",
                         help="a submission must contain a program that prints a WITNESS line")
     parser.add_argument("--sandbox", default="auto", help="sandbox mode, as for the harness (default auto)")
+    parser.add_argument("--sessions", type=Path, default=None,
+                        help="the sessions folder whose closed results are served read-only (default: the REPL's)")
     args = parser.parse_args(argv)
+    if args.sessions is None:
+        from pdl_taskmaster.host.repl import _default_session_base
+
+        args.sessions = _default_session_base()
     for stream in (sys.stdin, sys.stdout):
         try:
             stream.reconfigure(encoding="utf-8")
         except Exception:
             pass
-    serve(AgentToolServer(build_host(args.tier, args.witness_required, args.sandbox)), sys.stdin, sys.stdout)
+    serve(AgentToolServer(build_host(args.tier, args.witness_required, args.sandbox), ClosedSessions(args.sessions)),
+          sys.stdin, sys.stdout)
     return 0
 
 
