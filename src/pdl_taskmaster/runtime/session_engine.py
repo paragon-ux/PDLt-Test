@@ -2485,13 +2485,18 @@ class SessionEngine:
         if self.workspace is not None:
             self.workspace.append_event("AGENT_TOOL_CALL", agent_tools.event_view(record))
 
-    def _run_deliverable_code(self, body: str) -> tuple[dict[str, Any] | None, list[str]]:
+    def _run_deliverable_code(self, body: str, certificate: dict[str, Any] | None = None
+                              ) -> tuple[dict[str, Any] | None, list[str]]:
         """Run every declared Python block in the session sandbox.
 
         Returns the host-reproduced witness (the last block that printed one wins)
         and one factual finding per block that did not run cleanly. The block that
         printed the witness is kept as (index, source) in ``_last_witness_block``.
+        A certificate the Result IR states is bound to WITNESS_DATA in every block
+        (L119); the kept source is the block as the model wrote it.
         """
+        from pdl_taskmaster.runtime.witness_forms import with_certificate
+
         assert self.workspace is not None
         witness: dict[str, Any] | None = None
         failures: list[str] = []
@@ -2502,7 +2507,7 @@ class SessionEngine:
         for index, block in enumerate(_python_blocks(body), 1):
             self._last_programs_run += 1
             run = self.sandbox.run_code(
-                block,
+                with_certificate(block, certificate),
                 timeout=self._execution_budget.timeout_seconds,
                 memory_limit=self._execution_budget.memory_limit_bytes,
                 step_limit=self._execution_budget.step_limit,
@@ -2610,13 +2615,15 @@ class SessionEngine:
         from dataclasses import replace
 
         from pdl_taskmaster.runtime.result_ir import validate_result_ir
+        from pdl_taskmaster.runtime.witness_forms import argued_result, declared_certificate
         from pdl_taskmaster.verification.output_verifier import OutputVerifier
 
         assert self.workspace is not None
         body = outcome.body
         verified = self._requires_verified_execution
         self._unverified_reason: str | None = None  # L116: set when the result rests on an unchecked claim
-        sandbox_witness, run_failures = self._run_deliverable_code(body)
+        certificate = declared_certificate(getattr(outcome, "result_ir", None)) if verified else None  # L119
+        sandbox_witness, run_failures = self._run_deliverable_code(body, certificate=certificate)
         payload_findings = self._payload_token_findings(body)
         if not result_ir_mode:
             if self.tier_d1:
@@ -2633,9 +2640,7 @@ class SessionEngine:
             return payload_findings, body
 
         errors: list[str] = list(payload_findings)
-        # A witness whose values the program states as literals was printed, not
-        # computed: it counts as unreproduced (provisional) and is labelled, never failed.
-        literal_witness = False
+        argued = False  # L119: a positive result resting on its stated argument
         negative_claim = False  # L110
         declared_incomplete = False
         # RS-01: the Result IR travels only in the structured field; the deliverable
@@ -2681,15 +2686,15 @@ class SessionEngine:
                 )
             elif sandbox_witness is not None:
                 verdict = verifier.check(sandbox_witness, constraints, domain=self._problem_domain, body=body)
+                block = getattr(self, "_last_witness_block", None)
+                if verdict.valid and block is not None and _witness_written_in_program(sandbox_witness, block[1]):
+                    # L113, L119: the program states the data it prints, neither computing nor checking it.
+                    self.workspace.append_event("WITNESS_LITERAL_IN_PROGRAM", {"block": block[0]})
+                    verdict = replace(verdict, valid=False, diagnostic="WITNESS_WRITTEN_IN_PROGRAM")
                 if verdict.valid:
                     sandbox_witness["provisional"] = False
                     if model_witness is not None and model_witness != sandbox_witness:
                         self.workspace.append_event("WITNESS_OVERRIDDEN_BY_SANDBOX", {})
-                    block = getattr(self, "_last_witness_block", None)
-                    if block is not None and _witness_written_in_program(sandbox_witness, block[1]):
-                        literal_witness = True
-                        sandbox_witness["provisional"] = True
-                        self.workspace.append_event("WITNESS_LITERAL_IN_PROGRAM", {"block": block[0]})
                     if sandbox_witness.get("polarity") == "negative":
                         # L110: the host saw the program print the claim; it cannot check that
                         # no result exists. The result is provisional, labelled, never "checked".
@@ -2712,6 +2717,13 @@ class SessionEngine:
                     # search (even one labelled a proof) that no program run by the
                     # host produced is not evidence.
                     verdict = replace(verdict, valid=False, diagnostic="SEARCH_CLAIM_UNREPRODUCED")
+                elif verdict.valid and argued_result(model_witness):
+                    # L119: a result established by an argument is a first-class deliverable (GUARD-03); the
+                    # host cannot check an argument, so it is published as unverified.
+                    argued = True
+                    ir["witness"]["provisional"] = True
+                    verdict = replace(verdict, provisional=True)
+                    self.workspace.append_event("POSITIVE_RESULT_ARGUED", {})
                 elif verdict.valid and isinstance(model_witness, dict) and model_witness.get("polarity") == "positive":
                     # L104: a claimed result is certified by a program the host runs
                     # (WITNESS_NOT_PRINTED). A positive witness written only into the
@@ -2728,17 +2740,21 @@ class SessionEngine:
                 self.workspace.append_event(
                     "VERIFICATION_PASSED",
                     {
-                        # §2.1: provisional means no sandbox run reproduced the witness;
-                        # a program that prints literal values reproduces nothing.
-                        "provisional": sandbox_witness is None or literal_witness or negative_claim,
-                        "sandbox_reproduced": sandbox_witness is not None and not literal_witness,
+                        # §2.1: provisional means no sandbox run reproduced the witness.
+                        "provisional": sandbox_witness is None or negative_claim,
+                        "sandbox_reproduced": sandbox_witness is not None,
                         "domain_checked": not verdict.provisional and not negative_claim,
                         "negative_claim_unchecked": negative_claim,
+                        "argued": argued,
+                        "certificate_checked": certificate is not None and sandbox_witness is not None
+                        and sandbox_witness.get("data") == certificate,
                         "details": verdict.details,
                     },
                 )
             elif verdict.diagnostic == "SEARCH_CLAIM_UNREPRODUCED":
                 errors.append(Finding("SEARCH_CLAIM_UNREPRODUCED"))
+            elif verdict.diagnostic == "WITNESS_WRITTEN_IN_PROGRAM":
+                errors.append(Finding("WITNESS_WRITTEN_IN_PROGRAM", block=self._last_witness_block[0]))
             elif sandbox_witness is not None:
                 # A program ran and printed a WITNESS line; the line itself fails the check.
                 errors.append(Finding(
@@ -2752,7 +2768,9 @@ class SessionEngine:
                     if outputs else "the deliverable contains no program that ran successfully."
                 )
                 diagnostic = (
-                    "The witness in the Result IR was not printed by a program the host ran."
+                    "The certificate in the Result IR was not printed by a program the host ran; every program "
+                    "receives it as WITNESS_DATA." if certificate is not None
+                    else "The witness in the Result IR was not printed by a program the host ran."
                     if model_witness is not None else str(verdict.diagnostic).rstrip(".") + "."
                 )
                 errors.append(Finding("WITNESS_NOT_PRINTED", diagnostic=diagnostic, host_observation=observation))
@@ -2761,20 +2779,20 @@ class SessionEngine:
 
         if errors:
             return errors, body
-        # L116: a negative claim (L110), a deliverable declaring requirements open, or a witness its
-        # program writes out instead of computing (L113) did not establish the task's result; it is
-        # published and closes CLOSED_UNVERIFIED.
+        # L116: a negative claim (L110), a deliverable declaring requirements open, or a positive result
+        # resting on its argument (L119) did not establish the task's result; it is published and closes
+        # CLOSED_UNVERIFIED.
         if declared_incomplete:
             self._unverified_reason = "declared_incomplete"
         elif negative_claim:
             self._unverified_reason = "negative_claim_unchecked"
-        elif literal_witness:
-            self._unverified_reason = "witness_written_in_program"
+        elif argued:
+            self._unverified_reason = "argued_result"
         self.workspace.append_event("RESULT_IR_VALIDATED", {"ir": ir})
         if verified and isinstance(ir.get("witness"), dict) and ir["witness"].get("provisional") is True:
             # The user sees that the result was not checked by a program run; the
             # deliverable text itself is unchanged (the note follows it).
-            note = (presentation.literal_witness_note() if literal_witness
+            note = (presentation.argued_result_note() if argued
                     else presentation.negative_claim_note() if negative_claim else presentation.provisional_note())
             return [], _attach_result_ir(body.rstrip() + "\n\n" + note, ir)
         return [], _attach_result_ir(body, ir)

@@ -1,7 +1,7 @@
 """L113: a witness is flagged as written into the program only when the program writes its data out (literals and
 names bound once to them), not when every value merely occurs in the program. A program that selects its answer
-from input data it contains computes the answer and closes CLOSED_SUCCESS; one that writes the answer out closes
-CLOSED_UNVERIFIED (L116). All offline; no model call."""
+from input data it contains computes the answer and closes CLOSED_SUCCESS; one that writes the answer out is returned
+as a correction (L119, ADR-0030). All offline; no model call."""
 from __future__ import annotations
 
 from pdl_taskmaster.controller.mechanical_controller import Stage
@@ -82,12 +82,12 @@ def test_a_selection_from_input_data_closes_success(tmp_path):
     assert passed["sandbox_reproduced"] is True and passed["provisional"] is False
 
 
-def test_an_answer_written_out_closes_unverified(tmp_path):
+def test_an_answer_written_out_is_returned_as_a_correction(tmp_path):
+    """L119 (ADR-0030): the flag is a form check; a written-out answer is never accepted as computed."""
     body = ("import json\ndef compute():\n    result = 3\n"
             "    print('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'answer': result}}))\ncompute()\n")
-    engine, _, _, events = _run(tmp_path, [{"kind": "RESULT", "body": body, "result_ir": _ir()}],
-                                problem_class="VERIFIED_EXECUTION")
+    engine, _, executes, events = _run(tmp_path, [{"kind": "RESULT", "body": body, "result_ir": _ir()}] * 8,
+                                       problem_class="VERIFIED_EXECUTION")
     assert "WITNESS_LITERAL_IN_PROGRAM" in _kinds(events)
-    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
-    assert [e["payload"]["reason"] for e in events if e["kind"] == "CLOSED_UNVERIFIED"] == [
-        "witness_written_in_program"]
+    assert "[WITNESS_WRITTEN_IN_PROGRAM]" in executes[1].prompt
+    assert engine.controller.state.stage == Stage.CLOSED_CANCELLED  # never accepted, however often repeated

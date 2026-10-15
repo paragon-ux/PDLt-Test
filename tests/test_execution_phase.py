@@ -248,19 +248,22 @@ def test_program_printing_its_literal_value_is_not_a_reproduced_witness(tmp_path
     from pdl_taskmaster.runtime import presentation
     from pdl_taskmaster.runtime.text_blocks import split_published_ir
 
+    computed = 'import json\nfrom fractions import Fraction\nprint("WITNESS: " + json.dumps({"probability": str(Fraction(1, 4))}))'
     engine, response, executes, events = _run(
-        tmp_path, [{"kind": "RESULT", "body": f"```python\n{_LITERAL_PROGRAM}```", "result_ir": _ir()}],
+        tmp_path, [{"kind": "RESULT", "body": f"```python\n{_LITERAL_PROGRAM}```", "result_ir": _ir()},
+                   {"kind": "RESULT", "body": f"```python\n{computed}\n```", "result_ir": _ir()}],
         problem_class="VERIFIED_EXECUTION",
     )
-    # Not a failure: one EXECUTE, published with its note, closed as a result the host did not establish (L113).
-    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED and len(executes) == 1
+    # L119: a correction, not a closure; the next attempt computes the value and closes as verified.
     flagged = next(e for e in events if e["kind"] == "WITNESS_LITERAL_IN_PROGRAM")["payload"]
     assert flagged == {"block": 1}
-    passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
-    assert passed["provisional"] is True and passed["sandbox_reproduced"] is False
+    assert len(executes) == 2 and "[WITNESS_WRITTEN_IN_PROGRAM]" in executes[1].prompt
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    passed = [e for e in events if e["kind"] == "VERIFICATION_PASSED"]
+    assert len(passed) == 1 and passed[0]["payload"]["sandbox_reproduced"] is True
     text, ir = split_published_ir(response.text)
-    assert text.endswith("\n\n" + presentation.literal_witness_note())
-    assert ir["witness"]["provisional"] is True and ir["witness"]["data"] == {"probability": "1/4"}
+    assert presentation.literal_witness_note() not in text
+    assert ir["witness"]["data"] == {"probability": "1/4"}
 
 
 def test_program_computing_its_value_is_a_reproduced_witness(tmp_path):
@@ -280,7 +283,8 @@ def test_literal_check_applies_to_the_block_that_printed_the_witness(tmp_path):
     stated = 'import json\nprint("WITNESS: " + json.dumps({"answer": 42}))'
     engine, _, _, events = _run(
         tmp_path, [{"kind": "RESULT", "body": f"```python\n{computed}\n```\n```python\n{stated}\n```",
-                    "result_ir": _ir()}],
+                    "result_ir": _ir()},
+                   {"kind": "RESULT", "body": f"```python\n{computed}\n```", "result_ir": _ir()}],
         problem_class="VERIFIED_EXECUTION",
     )
     assert next(e for e in events if e["kind"] == "WITNESS_LITERAL_IN_PROGRAM")["payload"] == {"block": 2}

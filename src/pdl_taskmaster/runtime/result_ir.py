@@ -43,12 +43,14 @@ def derive_requirements(prompt_body: str) -> list[str]:
     return reqs or ["COMPLETE confirmed task"]
 
 
-_WITNESS_INSTRUCTIONS = """WITNESS: this task requires verified execution. A claimed result is certified by a Python program in the deliverable that prints exactly one line to standard output: the text "WITNESS: " followed by a JSON object. Build the object as a Python dict in the program and print it with json.dumps; do not write the JSON by hand inside a string. The object's fields:
-- A result was found: "polarity" is "positive" and "data" is an object holding the result under descriptive keys.
+_WITNESS_INSTRUCTIONS = """WITNESS: this task requires verified execution. A claimed result is certified as a JSON object, the witness, in one of these forms:
+- A result a program computed: a Python program in the deliverable computes it and prints exactly one line to standard output: the text "WITNESS: " followed by the witness. Build the object as a Python dict in the program and print it with json.dumps; do not write the JSON by hand inside a string. "polarity" is "positive" and "data" is an object holding the result under descriptive keys.
+- A result stated as data that a program checks (a certificate): "witness" in "result_ir" has "polarity" "positive", "basis" "certificate" and the result in "data". The host gives that data to every Python program in the deliverable as the variable WITNESS_DATA. A program checks it against the task's constraints, exits with an error when a check fails, and prints it as the WITNESS line.
+- A result established by an argument rather than a computation: "witness" in "result_ir" has "polarity" "positive", "basis" "proof", the result in "data" and the argument in "argument". No program is required; the host publishes the result as not checked by a program.
 - The result is shown not to exist by a search the program ran: "polarity" is "negative", "basis" is "search", "search_exhausted" is true, "nodes_explored" is the number of states the program explored, and "method" names the search.
 - The result is shown not to exist by an argument rather than a computation: "polarity" is "negative", "basis" is "proof", and "argument" states the argument.
 If the result was not obtained, print no witness and describe what was not obtained in "open_defects".
-The host runs the program; the witness it prints replaces any witness written into "result_ir". A witness the host did not reproduce is reported as provisional."""
+The host runs the programs; a witness a program prints replaces any witness written into "result_ir". A printed witness whose data the program writes out itself, rather than computing or checking it, is not accepted. A witness the host did not reproduce is reported as provisional."""
 
 
 def render_instructions(
