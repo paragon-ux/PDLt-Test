@@ -1,4 +1,4 @@
-# Request-derived tests in the EXECUTE loop, with anti-hedging rules (2026-10-10, proposed; feasibility checked 2026-10-15: not viable as proposed)
+# Request-derived tests in the EXECUTE loop, with anti-hedging rules (2026-10-10, proposed; feasibility checked 2026-10-15: not viable as proposed; closed at option 3)
 
 **Origin.** The user (2026-10-10): a check that predicts failed runs "might lead to increased hedging (as before we instructed the model to continue when failure occurs and not assume that the solution is impossible). If you can figure a mechanism for that, we can try." Ledger L115.
 
@@ -93,4 +93,29 @@ behaviour failures are as frequent on passes as on false successes (36% against 
    this evidence no signal.
 3. **Stop here:** the provenance (L121 E-1) already labels these results `contract_checked`, with the caveat that
    the requested behaviour was not tested.
+
+## Option 1, signature-bound tests (2026-10-15): closed at option 3
+
+The user approved option 1 with a rule: if interface failures disappear and open readings remain the only noise,
+propose the next step; otherwise close at option 3. One free call per recorded deliverable (dots-3, 73 calls, none
+empty) wrote tests from the request plus the deliverable's public signatures (names and parameter names only, read
+with `ast`); each module then ran deterministically against its own deliverable (`bound_tests.py`,
+`report_bound.py`, `bound_results.json`, `bound_report.txt`).
+
+| Prompt | False successes failing a test | Passes failing a test | Behaviour failures | Interface failures |
+|---|---|---|---|---|
+| 04-02 | 16/22 | 8/10 | 8/22 against 5/10 | 10/22 against 3/10 |
+| 04-03 | 14/26 | 2/15 | 8/26 against 1/15 | 7/26 against 1/15 |
+| Both | 30/48 (63%) | 10/25 (40%) | | |
+
+- **Interface failures fell but did not disappear:** 04-03 went from 15/15 passes failing to 1/15, but 4 of 25 passes
+  still fail on assumptions the signatures do not settle (a text or a binary stream, a return shape to unpack, the
+  test's own mock).
+- **Open readings remain large on 04-02:** half the passes fail tests that require one reading of which callbacks
+  fire (`on_bool` alone, or `on_bool` and `on_value`).
+- **04-03 shows a signal** (54% of false successes caught against 13% of passes), but one prompt's signal does not
+  meet the rule.
+
+**Closed at option 3** (decided under the user's rule, 2026-10-15): no request tests in the loop. A STANDARD_EXECUTION
+result's provenance says `contract_checked`, with the caveat that the requested behaviour was not tested (L121 E-1).
 

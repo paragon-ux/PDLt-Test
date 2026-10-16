@@ -1,0 +1,37 @@
+prompt grade                  n        any failure  behaviour failure  interface failure  no runnable tests   no tests written
+04-02  FAIL                  22                 16                  8                 10                  6                  0
+04-02  PASS                  10                  8                  5                  3                  1                  0
+04-03  FAIL                  26                 14                  8                  7                  1                  0
+04-03  PASS                  15                  2                  1                  1                  0                  0
+
+Failures on graded-PASS deliverables (prompt, kind, message): count
+  15 ('04-03', 'interface', 'AssertionError: TypeError: cannot unpack non-iterable NFASimulator object')
+  12 ('04-02', 'interface', "AttributeError: 'str' object has no attribute 'decode'")
+  6 ('04-02', 'interface', "AssertionError: AttributeError: 'MockHandler' object has no attribute 'calls'")
+  3 ('04-02', 'behaviour', "AssertionError: -  'array_end']")
+  3 ('04-02', 'behaviour', "AssertionError: Expected [('object_start',), ('key', 'key'), ('string', 'value'), ('object_end',)], got [('obj")
+  2 ('04-02', 'behaviour', 'AssertionError: AssertionError: 0 != 2')
+  2 ('04-02', 'behaviour', 'AssertionError: ?  + +++           +++++')
+  2 ('04-02', 'behaviour', 'AssertionError: AssertionError: 0 != 1')
+  2 ('04-02', 'behaviour', "AssertionError:    'object_end']")
+  1 ('04-02', 'behaviour', "AssertionError:   Actual: on_string('val')")
+  1 ('04-02', 'behaviour', 'AssertionError: Calls: [call(), call()].')
+  1 ('04-03', 'behaviour', 'AssertionError: ?        ^')
+  1 ('04-03', 'behaviour', 'AssertionError: AssertionError: {<deliverable.State object at 0x00000203FE1C38D0>} != [<deliverable.State obje')
+  1 ('04-03', 'behaviour', 'AssertionError: ?             ^')
+  1 ('04-02', 'behaviour', "AssertionError: + ['a', 'b', 'c']")
+  1 ('04-02', 'behaviour', 'AssertionError: AssertionError: 0 != 3')
+  1 ('04-02', 'behaviour', 'AssertionError: AssertionError: 0 != 4')
+  1 ('04-02', 'behaviour', "AssertionError: -  'object_end']")
+  1 ('04-02', 'behaviour', "AssertionError: + [('string', 'hello\\nworld')]")
+  1 ('04-02', 'behaviour', "AssertionError: Expected [('null',), ('bool', True), ('bool', False), ('value', 42.0), ('string', 'text'), ('v")
+  1 ('04-02', 'behaviour', 'AssertionError: Expected max object depth 2, got 3')
+  1 ('04-02', 'behaviour', "AssertionError: Expected [('object_start',), ('key', 'name'), ('string', 'John'), ('key', 'age'), ('number', 3")
+  1 ('04-02', 'behaviour', "AssertionError: Expected [('array_start',), ('number', 1), ('number', 2), ('number', 3), ('array_end',)], got ")
+  1 ('04-02', 'behaviour', "AssertionError: Expected [('array_start',), ('number', 1), ('string', 'two'), ('bool', True), ('null',), ('arr")
+  1 ('04-02', 'behaviour', "AssertionError: Expected [('array_start',), ('array_start',), ('number', 1), ('number', 2), ('array_end',), ('")
+  1 ('04-02', 'behaviour', "AssertionError: Expected [('bool', False)], got [('bool', False), ('value', False)]")
+  1 ('04-02', 'behaviour', "AssertionError: Expected [('bool', True)], got [('bool', True), ('value', True)]")
+  1 ('04-02', 'behaviour', 'AssertionError: Expected 10 callbacks, got 15')
+  1 ('04-02', 'behaviour', "AssertionError: Expected [('string', '')], got [('string', ''), ('value', '')]")
+  1 ('04-02', 'behaviour', "AssertionError: Got [('string', 'A'), ('value', 'A')]")
