@@ -44,7 +44,8 @@ def _default_session_base() -> Path:
         return _REPO_ROOT / "runs" / "live-sessions"
     return Path.home() / ".pdlt" / "runs" / "live-sessions"
 
-from pdl_taskmaster.fileio import replace_text
+from pdl_taskmaster.api import outcome, providers as api_providers
+from pdl_taskmaster.api.session import POINTER, prepare_worker, stored_workspace, write_pointer
 from pdl_taskmaster.host.app import PDLtHost
 from pdl_taskmaster.host.console import (
     COLOR_NAMES,
@@ -56,8 +57,7 @@ from pdl_taskmaster.host.console import (
     reset_input,
     resolve_colors,
 )
-from pdl_taskmaster.providers.api_worker import ApiWorker, unknown_provider_warnings
-from pdl_taskmaster.providers.fixtures import build_recorded_fixture, build_recorded_fixture_from_vendored
+from pdl_taskmaster.providers.api_worker import unknown_provider_warnings
 
 
 def _create_codex_worker(
@@ -171,20 +171,7 @@ class SessionRuntime:
             self.host.close()
 
     def _refresh_pointer(self) -> None:
-        workspace_path = self.host.status().get("workspace_path")
-        if workspace_path:
-            relpath = None
-            try:
-                relpath = Path(workspace_path).relative_to(self.session_dir).as_posix()
-            except ValueError:
-                relpath = None
-            payload: dict[str, Any] = {
-                "session_id": self.session_id,
-                "workspace_path": str(workspace_path),
-            }
-            if relpath:
-                payload["workspace_relpath"] = relpath
-            replace_text(self.session_pointer, json.dumps(payload, indent=2) + "\n")
+        write_pointer(self.session_dir, self.session_id, self.host.status().get("workspace_path"))
 
     def handle(self, user_message: str):
         """Dispatch a user turn, then refresh the durable session pointer.
@@ -252,33 +239,12 @@ def open_session(
     session_dir.mkdir(parents=True, exist_ok=True)
     workspace_root = args.workspace_root or session_dir / "workspaces"
     observation_dir = args.observation_dir or session_dir / "observations"
-    if hasattr(worker, "workdir"):
-        worker.workdir = str(args.workdir or session_dir)
-    if hasattr(worker, "progress_path"):
-        # The worker's progress lines (the API worker's provider rejections
-        # included) go to this session's log, the path the REPL announces.
-        worker.progress_path = session_dir / "worker-progress.log"
-    if hasattr(worker, "trace_path"):
-        # Every model call's lifecycle (sent, acknowledged, received), interrupted ones included.
-        worker.trace_path = session_dir / "call-trace.jsonl"
-    pointer = session_dir / "session.json"
-    if pointer.is_file() and restore_path is None:
-        try:
-            data = json.loads(pointer.read_text(encoding="utf-8"))
-        except (OSError, ValueError) as exc:  # e.g. a pointer cut short before replace-on-write
-            print(f"[warn] session pointer unreadable ({exc}); starting fresh protocol state", flush=True)
-            data = {}
-        stored = data.get("workspace_path")
-        if stored and Path(stored).is_dir():
-            restore_path = Path(stored)
-        elif data.get("workspace_relpath"):
-            cand = (session_dir / data["workspace_relpath"]).resolve()
-            if cand.is_dir():
-                restore_path = cand
-        elif stored:
-            cand = (session_dir / "workspaces" / Path(stored).name).resolve()
-            if cand.is_dir():
-                restore_path = cand
+    # The worker's progress lines (provider rejections included) and every model call's lifecycle (sent,
+    # acknowledged, received; interrupted ones included) go to this session's folder, the paths the REPL announces.
+    prepare_worker(worker, session_dir, args.workdir)
+    pointer = session_dir / POINTER
+    if restore_path is None:
+        restore_path = stored_workspace(session_dir, lambda line: print(f"[warn] {line}", flush=True))
     host = PDLtHost(
         args.candidate_repo,
         worker=worker,
@@ -293,20 +259,7 @@ def open_session(
     if getattr(host, "restore_notice", None):
         print(f"[warn] {host.restore_notice}", flush=True)
     _announce_sandbox(host)
-    if host.status().get("workspace_path"):
-        wp = host.status()["workspace_path"]
-        relpath = None
-        try:
-            relpath = Path(wp).relative_to(session_dir).as_posix()
-        except ValueError:
-            relpath = None
-        payload: dict[str, Any] = {
-            "session_id": session_id,
-            "workspace_path": str(wp),
-        }
-        if relpath:
-            payload["workspace_relpath"] = relpath
-        replace_text(pointer, json.dumps(payload, indent=2) + "\n")
+    write_pointer(session_dir, session_id, host.status().get("workspace_path"))
     transcript_path = args.transcript or session_dir / "transcript.log"
     transcript_path.parent.mkdir(parents=True, exist_ok=True)
     # A session's own transcript holds its conversation verbatim; a --transcript
@@ -400,6 +353,25 @@ def _worker_profile(worker: Any) -> str:
     return str(profile) if profile else "api"
 
 
+def _api_worker_settings(args, capture_tokens: bool) -> dict:
+    """The API provider's settings from CLI flags: one set for the startup worker and /worker api."""
+    return dict(
+        model=args.model,
+        repo_root=args.candidate_repo,
+        base_url=args.api_base_url,
+        api_key_env=args.api_key_env,
+        timeout=args.worker_timeout,
+        capture_tokens=capture_tokens,
+        reasoning_effort=args.api_reasoning_effort,
+        reasoning_by_operation=_parse_reasoning_operations(args.api_reasoning_operation),
+        model_by_operation=_parse_model_operations(args.api_model_operation),
+        reorder_keys_for_cache=bool(getattr(args, "cache_order_render", False)),
+        structured_output=bool(getattr(args, "api_structured_output", True)),
+        **_api_run_settings(args),
+        on_progress=lambda line: print(f"[api] {line}", flush=True) if line.strip() else None,
+    )
+
+
 def _api_run_settings(args) -> dict:
     """Cost and latency settings for the API worker, from CLI flags."""
     settings: dict = {
@@ -483,10 +455,27 @@ def _resolve_render_compact(args) -> bool:
     return args.worker == "api"
 
 
-# Headless exit code for a run that ended on a harness/provider error (not a model outcome).
-EXIT_HARNESS_ERROR = 4
-# Headless exit code for a result published without the host establishing it (ADR-0019 amendment, L116).
-EXIT_UNVERIFIED = 5
+# Headless exit codes (ADR-0019 and its amendments): one mapping, in pdl_taskmaster.api.outcome.
+EXIT_HARNESS_ERROR = outcome.EXIT_HARNESS_ERROR  # a harness/provider error, not a model outcome
+EXIT_UNVERIFIED = outcome.EXIT_UNVERIFIED  # published without the host establishing it (L116)
+
+
+def _headless_exit_message(stage: str | None, refused: bool, code: int) -> str | None:
+    """What a headless run prints on stderr as it exits with ``code`` (none for a success)."""
+    if stage is None:
+        return ("[headless close] Session closed with a published refusal (closure=REFUSED, code 0)."
+                if refused else None)
+    if stage == "CLOSED_CANCELLED":
+        return f"[headless halt] Session ended with stage '{stage}'. Exiting fail-closed (code {code})."
+    if stage == "CLOSED_UNVERIFIED":
+        return (f"[headless close] Session closed with a result the host could not verify (stage "
+                f"'{stage}'). Exiting (code {code}).")
+    if stage == "WAITING_INPUT":
+        return f"[headless halt] Session paused at stage 'WAITING_INPUT' (input requested). Exiting (code {code})."
+    if stage != "CLOSED_SUCCESS":
+        return (f"[headless halt] Session ended at non-terminal stage '{stage}'. "
+                f"Exiting fail-closed (code {code}).")
+    return None
 
 
 def _harness_error_record(exc: BaseException) -> dict:
@@ -1197,21 +1186,10 @@ def main() -> int:
         if not args.evidence:
             raise SystemExit("--evidence is required for recorded worker")
         case_ids = [item.strip() for item in args.case_ids.split(",") if item.strip()] if args.case_ids else None
-        if args.evidence.name == "recorded-cases.json":
-            worker = build_recorded_fixture_from_vendored(
-                args.candidate_repo,
-                args.evidence,
-                case_ids=case_ids,
-            )
-        else:
-            if not args.eval_root:
-                raise SystemExit("--eval-root is required for non-vendored recorded evidence")
-            worker = build_recorded_fixture(
-                args.candidate_repo,
-                args.eval_root,
-                args.evidence,
-                case_ids=case_ids,
-            )
+        if args.evidence.name != "recorded-cases.json" and not args.eval_root:
+            raise SystemExit("--eval-root is required for non-vendored recorded evidence")
+        worker = api_providers.create_worker("recorded", repo_root=args.candidate_repo, evidence=args.evidence,
+                                             eval_root=args.eval_root, case_ids=case_ids)
     elif args.worker == "codex":
         try:
             worker = _create_codex_worker(args, session_dir, session_base)
@@ -1219,21 +1197,7 @@ def main() -> int:
             raise SystemExit(str(exc))
     elif args.worker == "api":
         _warn_unknown_providers(args)
-        worker = ApiWorker(
-            model=args.model,
-            repo_root=args.candidate_repo,
-            base_url=args.api_base_url,
-            api_key_env=args.api_key_env,
-            timeout=args.worker_timeout,
-            capture_tokens=not args.no_token_telemetry,
-            reasoning_effort=args.api_reasoning_effort,
-            reasoning_by_operation=_parse_reasoning_operations(args.api_reasoning_operation),
-            model_by_operation=_parse_model_operations(args.api_model_operation),
-            reorder_keys_for_cache=bool(getattr(args, "cache_order_render", False)),
-            structured_output=bool(getattr(args, "api_structured_output", True)),
-            **_api_run_settings(args),
-            on_progress=lambda line: print(f"[api] {line}", flush=True) if line.strip() else None,
-        )
+        worker = api_providers.create_worker("api", **_api_worker_settings(args, not args.no_token_telemetry))
     else:
         raise SystemExit(f"unsupported worker: {args.worker}")
 
@@ -1668,13 +1632,8 @@ def main() -> int:
                         if not case_ids and _is_interactive(args):
                             case_ids = input("case-ids (comma separated, optional): ").strip() or None
                         case_ids_list = [item.strip() for item in case_ids.split(",") if item.strip()] if case_ids else None
-                        if Path(evidence).name == "recorded-cases.json":
-                            new_worker = build_recorded_fixture_from_vendored(
-                                args.candidate_repo,
-                                Path(evidence),
-                                case_ids=case_ids_list,
-                            )
-                        else:
+                        eval_root = None
+                        if Path(evidence).name != "recorded-cases.json":
                             if not args.eval_root:
                                 if not _is_interactive(args):
                                     print("recorded worker requires --eval-root for non-vendored evidence in non-interactive mode", flush=True)
@@ -1682,27 +1641,12 @@ def main() -> int:
                                 eval_root = input("eval-root: ").strip()
                             else:
                                 eval_root = str(args.eval_root)
-                            new_worker = build_recorded_fixture(
-                                args.candidate_repo,
-                                Path(eval_root),
-                                Path(evidence),
-                                case_ids=case_ids_list,
-                            )
+                        new_worker = api_providers.create_worker("recorded", repo_root=args.candidate_repo,
+                                                                 evidence=evidence, eval_root=eval_root,
+                                                                 case_ids=case_ids_list)
                     elif target == "api":
-                        new_worker = ApiWorker(
-                            model=args.model,
-                            repo_root=args.candidate_repo,
-                            base_url=args.api_base_url,
-                            api_key_env=args.api_key_env,
-                            timeout=args.worker_timeout,
-                            capture_tokens=getattr(worker, "capture_tokens", True),
-                            reasoning_effort=args.api_reasoning_effort,
-                            reasoning_by_operation=_parse_reasoning_operations(args.api_reasoning_operation),
-                            model_by_operation=_parse_model_operations(args.api_model_operation),
-                            structured_output=bool(getattr(args, "api_structured_output", True)),
-                            **_api_run_settings(args),
-                            on_progress=lambda line: print(f"[api] {line}", flush=True) if line.strip() else None,
-                        )
+                        new_worker = api_providers.create_worker(
+                            "api", **_api_worker_settings(args, getattr(worker, "capture_tokens", True)))
                     else:
                         print(f"unknown worker: {target}", flush=True)
                         continue
@@ -1822,41 +1766,13 @@ def main() -> int:
     if not _is_interactive(args):
         status = runtime.host.status()
         ctrl = status.get("controller_state")
-        if ctrl is None and status.get("refused"):
-            # ADR-0019 amendment: a published boundary refusal is a complete answer.
-            print("[headless close] Session closed with a published refusal (closure=REFUSED, code 0).", file=sys.stderr, flush=True)
-            return 0
-        if ctrl is not None:
-            final_stage = ctrl.get("stage")
-            if final_stage == "CLOSED_CANCELLED":
-                print(
-                    f"[headless halt] Session ended with stage '{final_stage}'. Exiting fail-closed (code 1).",
-                    file=sys.stderr,
-                    flush=True,
-                )
-                return 1
-            if final_stage == "CLOSED_UNVERIFIED":
-                print(
-                    f"[headless close] Session closed with a result the host could not verify (stage "
-                    f"'{final_stage}'). Exiting (code {EXIT_UNVERIFIED}).",
-                    file=sys.stderr,
-                    flush=True,
-                )
-                return EXIT_UNVERIFIED
-            if final_stage == "WAITING_INPUT":
-                print(
-                    f"[headless halt] Session paused at stage 'WAITING_INPUT' (input requested). Exiting (code 3).",
-                    file=sys.stderr,
-                    flush=True,
-                )
-                return 3
-            if final_stage != "CLOSED_SUCCESS":
-                print(
-                    f"[headless halt] Session ended at non-terminal stage '{final_stage}'. Exiting fail-closed (code 2).",
-                    file=sys.stderr,
-                    flush=True,
-                )
-                return 2
+        final_stage = ctrl.get("stage") if ctrl is not None else None
+        refused = ctrl is None and bool(status.get("refused"))
+        code = outcome.exit_status(final_stage, refused=refused)
+        message = _headless_exit_message(final_stage, refused, code)
+        if message:
+            print(message, file=sys.stderr, flush=True)
+        return code
     return 0
 
 

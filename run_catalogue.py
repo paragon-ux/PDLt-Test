@@ -110,12 +110,10 @@ def refuse_dirty_tree(provenance: dict, allow_dirty: bool) -> None:
         raise SystemExit("The working tree has uncommitted changes, so this run could not be attributed "
                          "to a commit. Commit them, or pass --allow-dirty to record the difference with the run.")
 TIMEOUT_PER_PROMPT = 600  # heavy-tier tasks may make 3 execute attempts (2 repairs)
-EXIT_SUCCESS = 0
-EXIT_CANCELLED = 1
-EXIT_UNCONFIRMED = 2
-EXIT_WAITING_INPUT = 3
-EXIT_HARNESS_ERROR = 4  # a model call failed (provider/transport); not a model outcome
-EXIT_UNVERIFIED = 5  # a result published without the host establishing it (L116)
+# The headless exit codes, from the one mapping (ADR-0019; EXIT_HARNESS_ERROR: a model call failed, not a model
+# outcome; EXIT_UNVERIFIED: a result published without the host establishing it, L116).
+from pdl_taskmaster.api.outcome import (EXIT_CANCELLED, EXIT_HARNESS_ERROR, EXIT_SUCCESS,  # noqa: E402
+                                        EXIT_UNCONFIRMED, EXIT_UNVERIFIED, EXIT_WAITING_INPUT)
 
 
 def load_manifest(category_filter=None):
