@@ -29,6 +29,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+from pydantic import BaseModel, ConfigDict, ValidationError
+
 MAX_TOOL_CALLS = 6        # read_attempt and run_python, per model call
 MAX_SUBMISSIONS = 3
 OUTPUT_CHARS = 2000
@@ -76,6 +78,27 @@ TOOLS = [
 ]
 
 Validator = Callable[[dict[str, Any]], tuple[list[dict[str, Any]], list[str]]]
+
+
+class _ReadAttemptArguments(BaseModel):
+    """read_attempt's inputSchema: no arguments."""
+    model_config = ConfigDict(extra="forbid")
+
+
+class _RunPythonArguments(BaseModel):
+    """run_python's inputSchema: one string, code."""
+    model_config = ConfigDict(extra="forbid", strict=True)
+    code: str
+
+
+# Work-tool arguments are validated as strictly as replies (ADR-0018): an argument the inputSchema does not
+# declare, a missing one or a wrong type is refused and nothing runs (L121 flag I-2).
+ARGUMENT_MODELS: dict[str, type[BaseModel]] = {"read_attempt": _ReadAttemptArguments, "run_python": _RunPythonArguments}
+
+
+def _argument_problems(exc: ValidationError) -> str:
+    return "; ".join(f"{'.'.join(str(part) for part in error['loc']) or 'arguments'}: {error['msg']}"
+                     for error in exc.errors())
 
 
 def _phrase(names: list[str]) -> str:
@@ -163,20 +186,15 @@ class ToolHost:
 
     def dispatch(self, name: str, arguments: str) -> str:
         started = time.perf_counter()
-        try:
-            args = json.loads(arguments or "{}")
-            if not isinstance(args, dict):
-                raise ValueError("arguments are not an object")
-            if name not in self.tool_names() or name in SUBMITS.values():
-                output = f"error: no tool named {name!r}; the tools are {_phrase(self.tool_names())}"
-            elif name == "read_attempt":
-                output = self.read_attempt()
-            elif isinstance(args.get("code"), str):
-                output = self.run_python(args["code"])
+        if name not in self.tool_names() or name in SUBMITS.values():
+            output = f"error: no tool named {name!r}; the tools are {_phrase(self.tool_names())}"
+        else:
+            try:
+                args = ARGUMENT_MODELS[name].model_validate_json(arguments or "{}")
+            except ValidationError as exc:
+                output = f"error: the arguments do not match {name}'s input schema ({_argument_problems(exc)}); nothing ran"
             else:
-                output = "error: run_python needs a string argument 'code'"
-        except ValueError as exc:
-            output = f"error: the arguments are not valid JSON ({exc})"
+                output = self.read_attempt() if name == "read_attempt" else self.run_python(args.code)
         record = {"n": len(self.calls) + 1, "attempt": self.attempt, "tool": name, "arguments": arguments,
                   "output": output, "ms": round((time.perf_counter() - started) * 1000, 1)}
         self.calls.append(record)
@@ -188,12 +206,19 @@ class ToolHost:
         started = time.perf_counter()
         outcome: Any = None
         try:
-            outcome = _unwrap_outcome(json.loads(arguments or "{}"))
+            parsed = json.loads(arguments or "{}")
+            outcome = _unwrap_outcome(parsed)
         except ValueError as exc:
             errors, facts = [{"code": "OUTPUT_MALFORMED", "path": "arguments", "problem": f"not valid JSON ({exc})",
                               "expected": "an object with the field outcome"}], []
         else:
-            if not isinstance(outcome, dict):
+            extra = sorted(set(parsed) - {"outcome"}) if isinstance(parsed, dict) and "outcome" in parsed else []
+            if extra:  # as strict as the work tools' arguments (L121 flag I-2)
+                outcome = None
+                errors, facts = [{"code": "OUTPUT_MALFORMED", "path": "arguments",
+                                  "problem": f"fields beside outcome: {', '.join(extra)}",
+                                  "expected": "an object with the one field outcome"}], []
+            elif not isinstance(outcome, dict):
                 errors, facts = [{"code": "OUTPUT_MALFORMED", "path": "outcome", "problem": "missing or not an object",
                                   "expected": "the object the output_schema declares"}], []
             else:

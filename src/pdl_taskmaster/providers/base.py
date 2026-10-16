@@ -3,6 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+# PDLt's own identity on every request to OpenRouter, as its app attribution headers:
+# its real name and repository, never another application's (L122).
+ATTRIBUTION_HEADERS = {"HTTP-Referer": "https://github.com/paragon-ux/PDLt-Test", "X-Title": "PDLt"}
+
 
 @dataclass
 class WorkerResult:
