@@ -1,0 +1,36 @@
+module         grade   n  any fail  behaviour fail  every test: interface  incomplete
+04-02-s1.py    FAIL   22        22               8                     14           0
+04-02-s1.py    PASS   10        10               4                      6           0
+04-02-s2.py    FAIL   22        22               8                      0           0
+04-02-s2.py    PASS   10        10               4                      0           0
+04-03-s1.py    FAIL   26        25               0                     25           1
+04-03-s1.py    PASS   15        15               0                     15           0
+04-03-s2.py    FAIL   26        25               0                     25           1
+04-03-s2.py    PASS   15        15               0                     15           0
+
+Tests failing on graded-PASS deliverables (module, test, kind): count
+  ('04-03-s1.py', 'TestThompsonNFA.test_alternation', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_character_class', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_complex_regex_matches', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_complex_regex_non_matches', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_concatenation', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_digit_class_matches', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_digit_class_non_matches', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_dot', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_epsilon_transitions_exist', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_grouping', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_kleene_star', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_nfa_match_interface', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_optional', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_plus', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_regex_to_nfa_interface', 'interface') 15
+  ('04-03-s1.py', 'TestThompsonNFA.test_simultaneous_matching', 'interface') 15
+  ('04-03-s2.py', 'TestThompsonConstruction.test_character_class_match', 'interface') 15
+  ('04-03-s2.py', 'TestThompsonConstruction.test_character_class_non_match', 'interface') 15
+  ('04-03-s2.py', 'TestThompsonConstruction.test_concatenation_match', 'interface') 15
+  ('04-03-s2.py', 'TestThompsonConstruction.test_concatenation_non_match', 'interface') 15
+  ('04-03-s2.py', 'TestThompsonConstruction.test_concatenation_with_multiple_repetition', 'interface') 15
+  ('04-03-s2.py', 'TestThompsonConstruction.test_concatenation_with_repetition', 'interface') 15
+  ('04-03-s2.py', 'TestThompsonConstruction.test_regex_to_nfa_interface', 'interface') 15
+  ('04-02-s1.py', 'TestSAXJSONParser.test_streaming_large_array_memory_usage', 'interface') 10
+  ('04-02-s1.py', 'TestSAXJSONParser.test_nested_structures', 'interface') 6
