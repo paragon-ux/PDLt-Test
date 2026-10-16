@@ -15,7 +15,7 @@ from collections import deque
 from pathlib import Path
 from typing import Any
 
-from pdl_taskmaster.providers import model_capabilities
+from pdl_taskmaster.providers import model_adapters, model_capabilities
 from pdl_taskmaster.providers.base import ATTRIBUTION_HEADERS, TransportError, WorkerResult
 from pdl_taskmaster.providers.call_trace import AttemptTrace, CallTrace, tracking
 from pdl_taskmaster.runtime.output_contracts import (
@@ -1066,6 +1066,7 @@ class ApiWorker:
             shown = (getattr(getattr(request, "projection", None), "document", None) or {}).get("output_schema")
             sent_schema = grammar_view(shown) if shown is not None else grammar_schema(operation_name, form)
             union_wrapped = is_union_wrapped(sent_schema)
+            sent_schema = model_adapters.adapt_sent_schema(body["model"], sent_schema)  # L122: per-model only
             body["text"] = {"format": {"type": "json_schema", "name": output_kind, "schema": sent_schema}}
             if operation_name in JSON_MODE_OPERATIONS:
                 # L122: chosen from the model's metadata, so enforced exactly where the provider has a strict mode.
@@ -1238,7 +1239,9 @@ class ApiWorker:
                     self._progress(f"{operation_name}: the reply stalled in whitespace under the output schema "
                                    f"({trailing} trailing characters); later {operation_name} calls in this "
                                    "session are sent without the schema constraint")
-                raise OutputLimitError(self.max_output_tokens, partial_text=partial or None, whitespace_stall=stall)
+                # The cap this request carried (L122: no higher than the model's listed maximum).
+                raise OutputLimitError(body.get("max_output_tokens"), partial_text=partial or None,
+                                       whitespace_stall=stall)
             raise ProviderError("PROVIDER_RESPONSE_UNREADABLE", f"response status={status}: {details}")
 
         text = self._extract_output_text(data)
