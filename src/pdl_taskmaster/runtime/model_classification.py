@@ -249,11 +249,12 @@ def classify_model(
 
 
 def get_proportional_reasoning_mapping(model_id: str) -> dict[str, str | int]:
-    """Return the normative operational reasoning mapping per model class (ADR-0006).
+    """Return the normative operational reasoning mapping per model family (ADR-0006).
 
-    The effort per operation depends on the model class. For gpt-oss (ADR-0022,
+    Only families with a recorded profile have one. For gpt-oss (ADR-0022,
     amending ADR-0006) every pre-execution operation is HIGH and EXECUTE is LOW;
-    operations the mapping does not list use the worker's default effort.
+    operations the mapping does not list use the worker's default effort. Any
+    other model: an empty mapping, so no reasoning setting is sent (L122).
     """
     mid = model_id.lower()
     # Nemotron 3 Super reached this mapping through a bare "120b" match; it is named
@@ -313,30 +314,11 @@ def get_proportional_reasoning_mapping(model_id: str) -> dict[str, str | int]:
             "EXECUTE": "none",
             "EXECUTE_UNCONFIRMED": 4096,
         }
-    elif "thinking" in mid or "r1" in mid or "o1" in mid or "o3" in mid or "o4" in mid:
-        # Class C / Native thinking open-weights / reasoning
-        return {
-            "BOOTSTRAP_ANALYSIS": "high",
-            "DRAFT_PROMPT": "low",
-            "REVISE_PROMPT": "low",
-            "DRAFT_PLAN": "none",
-            "REVISE_PLAN": "none",
-            "EXECUTE": "none",
-            "EXECUTE_UNCONFIRMED": "medium",
-        }
-    else:
-        # Class D: Pure instruct / quantized models (Llama 3.3, Qwen Instruct, GPT-4o-mini)
-        # Native API reasoning disabled; deliberative compute provided in-band via schema.
-        return {
-            "BOOTSTRAP_ANALYSIS": "none",
-            "DRAFT_PROMPT": "none",
-            "REVISE_PROMPT": "none",
-            "DRAFT_PLAN": "none",
-            "REVISE_PLAN": "none",
-            "EXECUTE": "none",
-            "EXECUTE_UNCONFIRMED": "none",
-        }
-
+    # Any other model has no recorded profile and gets no reasoning setting: the
+    # provider's own default applies (L122). The guessed classes this replaced disabled
+    # reasoning on a model that requires it (liquid/lfm-2.5: HTTP 400 "Reasoning is
+    # mandatory") and matched "thinking" inside a lab's name (thinkingmachines/...).
+    return {}
 
 
 DEFAULT_REASONING_EFFORT = "low"
@@ -346,16 +328,18 @@ def resolve_reasoning(
     model_id: str,
     reasoning_effort: str | None = None,
     reasoning_by_operation: dict[str, str | int] | None = None,
-) -> tuple[str, dict[str, str | int]]:
+) -> tuple[str | None, dict[str, str | int]]:
     """The effective reasoning configuration: (default effort, per-operation efforts).
 
     Per-operation flags always win. An explicit effort applies to every other
     operation; with no effort given, the model's mapping is the default
-    (get_proportional_reasoning_mapping) and unlisted operations use LOW.
+    (get_proportional_reasoning_mapping) and unlisted operations use LOW. A model
+    without a mapping gets no effort unless one is given (None: nothing is sent).
     """
-    default = reasoning_effort if reasoning_effort is not None else DEFAULT_REASONING_EFFORT
+    mapping = get_proportional_reasoning_mapping(model_id) or {}
+    default = reasoning_effort if reasoning_effort is not None else (DEFAULT_REASONING_EFFORT if mapping else None)
     if reasoning_by_operation:
         return default, dict(reasoning_by_operation)
     if reasoning_effort is not None:
         return default, {}
-    return default, dict(get_proportional_reasoning_mapping(model_id) or {})
+    return default, dict(mapping)

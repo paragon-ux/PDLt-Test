@@ -37,4 +37,4 @@
 - **E-2 Misleading acceptance text.** An accepted submission says "accepted; the host now verifies the deliverable" (`agent_tools.py:202`). Through the MCP server nothing verifies afterwards, so an external client can mistake a structural acceptance for verification.
 - **E-3 No call log.** The server builds its tool host without a logger (`mcp_server.py:179`), so external tool calls and submissions are recorded nowhere. Inside the harness they are (`AGENT_TOOL_CALL`).
 - **E-4 Weaker sandbox on request.** `--sandbox audit-only` is accepted and runs external programs with Python audit hooks only, without OS confinement. For an externally exposed server this should be refused, or at least announced in `initialize`.
-- **E-5 Arguments not validated.** As internal flag I-2: work-tool arguments are not validated against `inputSchema`.
+- **E-5 Arguments not validated.** Fixed in L122, as internal flag I-2: arguments outside `inputSchema` are refused and nothing runs.

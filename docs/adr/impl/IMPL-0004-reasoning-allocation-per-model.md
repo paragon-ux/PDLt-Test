@@ -10,7 +10,7 @@ ADR-0006 bounds pre-execution reasoning. Its 2026-09-16 amendment and ADR-0022 d
 - **Where.** `runtime/model_classification.py`:
   - `get_proportional_reasoning_mapping(model_id)` returns per-operation efforts, chosen by substring of the model id;
   - `resolve_reasoning` applies per-operation flags first, then an explicit global effort, then the model mapping;
-  - `DEFAULT_REASONING_EFFORT = "low"` covers unlisted operations.
+  - `DEFAULT_REASONING_EFFORT = "low"` covers unlisted operations of a model with a profile.
 - **gpt-oss** (`"gpt-oss"`; Nemotron 3 Super also maps here, see below), from ADR-0022:
   - `high` for `BOOTSTRAP_ANALYSIS`, `DRAFT_PROMPT`, `REVISE_PROMPT`, `INTERPRET_PROMPT_REVIEW`, `DRAFT_PLAN`, `REVISE_PLAN`, `INTERPRET_PLAN_REVIEW`, `INTERPRET_EXECUTION_INPUT`, `DRAFT_EXECUTE` and `EMIT_RESULT_IR`;
   - `low` for `EXECUTE`;
@@ -21,6 +21,7 @@ ADR-0006 bounds pre-execution reasoning. Its 2026-09-16 amendment and ADR-0022 d
   - **Class B, explicit token budgets** (Claude): `BOOTSTRAP_ANALYSIS` 4096; prompt drafting 1024; planning and `EXECUTE` none.
   - **Class C, open-weights thinking models** (R1, Qwen Thinking): thinking on for bootstrap and prompt drafting, off for planning and `EXECUTE`.
   - **Class D, instruct models** (the default): reasoning disabled everywhere; deliberation is carried in-band by structured fields.
+  - **Amended 2026-10-15 (ledger L122):** Classes C and D are removed. They were chosen by substring guesses: Class D disabled reasoning on `liquid/lfm-2.5-2.6b:free`, which requires it (HTTP 400), and Class C matched "thinking" in `thinkingmachines/...`. A model without a named profile now gets no reasoning setting unless the user gives one, so the provider's default applies.
 - **Recording.** `RUN_META.json` carries `reasoning_effective`; every REPL session writes a `REASONING:` transcript line, plus a `[dev:telemetry]` line in dev mode.
 
 ## Evidence

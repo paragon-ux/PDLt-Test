@@ -15,7 +15,8 @@ from collections import deque
 from pathlib import Path
 from typing import Any
 
-from pdl_taskmaster.providers.base import TransportError, WorkerResult
+from pdl_taskmaster.providers import model_capabilities
+from pdl_taskmaster.providers.base import ATTRIBUTION_HEADERS, TransportError, WorkerResult
 from pdl_taskmaster.providers.call_trace import AttemptTrace, CallTrace, tracking
 from pdl_taskmaster.runtime.output_contracts import (
     NL_REPRESENTATION_MODE,
@@ -423,6 +424,7 @@ class ApiWorker:
         model_by_operation: dict[str, str] | None = None,
         reorder_keys_for_cache: bool = False,
         structured_output: bool = True,
+        capability_check: bool = True,
         provider_pinning: dict[str, Any] | None = None,
         safety_settings: list[dict[str, str]] | None = None,
         max_tokens: int = 4096,
@@ -456,6 +458,10 @@ class ApiWorker:
         self.model_by_operation = dict(model_by_operation or {})
         self.reorder_keys_for_cache = reorder_keys_for_cache
         self.structured_output = structured_output
+        # L122: before its first call, each model's supported parameters are checked against what the
+        # session will send it (providers/model_capabilities.py).
+        self.capability_check = capability_check
+        self._checked_models: set[str] = set()
         self.provider_pinning = provider_pinning if provider_pinning is not None else dict(DEFAULT_PROVIDER_PINNING)
         self.safety_settings = safety_settings if safety_settings is not None else list(DEFAULT_SAFETY_SETTINGS)
         self.on_progress = on_progress
@@ -565,6 +571,59 @@ class ApiWorker:
         return ContractForm(grammar=grammar,
                             strict_all_required=bool(keys & _STRICT_ALL_REQUIRED_PROVIDERS),
                             free_form_objects=_accepts_free_form_objects(self.provider_pinning))
+
+    def session_needs(self) -> dict[str, dict[str, list[str]]]:
+        """Every request parameter this session may send, per model, with the operations that send it:
+        reasoning (an effort other than 'none'), the output format, and tools under --agent-tools."""
+        from pdl_taskmaster.runtime.agent_tools import TOOL_OPERATIONS
+        from pdl_taskmaster.runtime.wire_payloads import OPERATION_PAYLOAD_MODELS
+
+        operations = sorted(set(OPERATION_PAYLOAD_MODELS) | {"BYPASS_ORDINARY"} | set(self.reasoning_by_operation)
+                            | set(self.model_by_operation))
+        needs: dict[str, dict[str, list[str]]] = {}
+        for operation in operations:
+            wanted = []
+            if self._reasoning_for(operation) not in (None, "none"):
+                wanted.append("reasoning")
+            fmt = model_capabilities.FORMAT_PARAMETERS.get(self.contract_form(operation).grammar)
+            if fmt:
+                wanted.append(fmt)
+            if self.agent_tools and operation in TOOL_OPERATIONS:
+                wanted.append("tools")
+            for parameter in wanted:
+                needs.setdefault(self._model_for(operation), {}).setdefault(parameter, []).append(operation)
+        return needs
+
+    def _check_capabilities(self, operation: str | None) -> None:
+        """Fail closed before the first call to each model (L122): the model must be in OpenRouter's list and
+        support every parameter the session will send it. Nothing is sent when it does not."""
+        if not self.capability_check or not model_capabilities.is_openrouter(self.base_url):
+            return
+        needs = self.session_needs()
+        model = self._model_for(operation)
+        pending = {m: n for m, n in needs.items() if m not in self._checked_models}
+        if model not in self._checked_models:
+            pending.setdefault(model, {})
+        if not pending:
+            return
+        try:
+            models = model_capabilities.model_list(self.base_url, self.timeout)
+        except (OSError, ValueError) as exc:
+            raise ProviderError("MODEL_CAPABILITY_UNKNOWN",
+                                f"could not read OpenRouter's model list to check {', '.join(sorted(pending))} "
+                                f"({exc}); no request was sent", operation=operation) from exc
+        problems = []
+        for name, need in sorted(pending.items()):
+            entry = model_capabilities.lookup(models, name)
+            if entry is None:
+                problems.append(f"{name} is not in OpenRouter's model list; check the model name")
+                continue
+            problems += [model_capabilities.describe(name, parameter, ops)
+                         for parameter, ops in sorted(model_capabilities.unsupported(entry, need).items())]
+        if problems:
+            raise ProviderError("MODEL_UNSUPPORTED", "; ".join(problems) + ". No request was sent.",
+                                operation=operation)
+        self._checked_models.update(pending)
 
     def _split_prompt(self, prompt: str) -> tuple[str, str]:
         """Split a rendered request.prompt back into (instructions, input).
@@ -743,6 +802,7 @@ class ApiWorker:
     def call(self, request: Any) -> WorkerResult:
         trace = self.begin_call(str(getattr(request, "operation", None) or "UNKNOWN"))
         try:
+            self._check_capabilities(getattr(request, "operation", None))
             result = self._call(request)
             trace.final = "completed"
             return result
@@ -1221,6 +1281,7 @@ class ApiWorker:
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
+                **ATTRIBUTION_HEADERS,
             },
             method="POST",
         )
