@@ -80,7 +80,7 @@ def test_unknown_methods_and_tools_notifications_and_bad_json():
     assert json.loads(out.getvalue())["error"]["code"] == -32700
 
 
-def test_the_server_process_speaks_mcp_over_stdio():
+def test_the_server_process_speaks_mcp_over_stdio(tmp_path):
     lines = [{"jsonrpc": "2.0", "id": 1, "method": "initialize",
               "params": {"protocolVersion": mcp_server.PROTOCOL_VERSION, "capabilities": {},
                          "clientInfo": {"name": "t", "version": "0"}}},
@@ -88,7 +88,8 @@ def test_the_server_process_speaks_mcp_over_stdio():
              {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
              {"jsonrpc": "2.0", "id": 3, "method": "tools/call",
               "params": {"name": "run_python", "arguments": {"code": "print(sum(range(10)))"}}}]
-    proc = subprocess.run([sys.executable, "-m", "pdl_taskmaster.host.mcp_server"], cwd=ROOT,
+    proc = subprocess.run([sys.executable, "-m", "pdl_taskmaster.host.mcp_server", "--sessions", str(tmp_path),
+                           "--log", str(tmp_path / "calls.jsonl")], cwd=ROOT,  # nothing written into the repo
                           input="".join(json.dumps(m) + "\n" for m in lines), capture_output=True, text=True,
                           encoding="utf-8", timeout=120,
                           env={**os.environ, "PYTHONPATH": str(ROOT / "src")})
