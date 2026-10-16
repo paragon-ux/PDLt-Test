@@ -57,8 +57,8 @@ def test_a_closed_result_is_listed_and_read_through_the_mcp_server(tmp_path):
     turn = engine.workspace.turn_id
     workspace = engine.workspace.path.name
     base = f"pdlt://sessions/session-1/{workspace}/{turn}/"
-    assert [r["uri"] for r in listed] == [base + "response", base + "program-output"]
-    assert all(r["description"].startswith("CLOSED_SUCCESS: ") for r in listed)
+    assert [r["uri"] for r in listed] == [base + "provenance", base + "response", base + "program-output"]
+    assert all(r["description"].startswith("CLOSED_SUCCESS, host_verified: ") for r in listed)  # L121 E-1
     read = _rpc(server, "resources/read", {"uri": base + "response"})["result"]["contents"][0]
     assert read["mimeType"] == "text/markdown" and read["text"].rstrip() == response.text.rstrip()
     programs = json.loads(_rpc(server, "resources/read", {"uri": base + "program-output"})["result"]["contents"][0]["text"])
@@ -72,7 +72,9 @@ def test_only_closed_turns_with_a_result_are_served(tmp_path):
     _turn(tmp_path, "s-open", "EXECUTING", "draft")
     listed = {r["uri"]: r for r in _rpc(_server(tmp_path), "resources/list")["result"]["resources"]}
     assert sorted(listed) == ["pdlt://sessions/s-success/W-1/turn_001/program-output",
+                              "pdlt://sessions/s-success/W-1/turn_001/provenance",
                               "pdlt://sessions/s-success/W-1/turn_001/response",
+                              "pdlt://sessions/s-unverified/W-1/turn_001/provenance",
                               "pdlt://sessions/s-unverified/W-1/turn_001/response"]
     assert listed["pdlt://sessions/s-unverified/W-1/turn_001/response"]["description"].startswith("CLOSED_UNVERIFIED")
 
@@ -93,8 +95,12 @@ def test_resources_are_listed_in_pages(tmp_path, monkeypatch):
     server = _server(tmp_path)
     first = _rpc(server, "resources/list")["result"]
     second = _rpc(server, "resources/list", {"cursor": first["nextCursor"]})["result"]
-    assert [r["name"] for r in first["resources"] + second["resources"]] == [
-        "s-a turn_001 response", "s-b turn_001 response"]
+    third = _rpc(server, "resources/list", {"cursor": second["nextCursor"]})["result"]
+    fourth = _rpc(server, "resources/list", {"cursor": third["nextCursor"]})["result"]
+    assert [r["name"] for r in first["resources"] + second["resources"] + third["resources"]
+            + fourth["resources"]] == ["s-a turn_001 provenance", "s-a turn_001 response",
+                                       "s-b turn_001 provenance", "s-b turn_001 response"]
+    second = fourth
     assert "nextCursor" not in second
 
 

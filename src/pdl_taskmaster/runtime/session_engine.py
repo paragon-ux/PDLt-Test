@@ -490,6 +490,8 @@ class SessionEngine:
         self._requires_verified_execution: bool = False
         self._problem_domain: Any = None
         self.refused: bool = False
+        # The model that serves the session, for the result's provenance (E-1); set by the host.
+        self.model_name: Callable[[], Any] | None = None
         if workspace_root is None:
             self.workspace_root = Path(tempfile.mkdtemp(prefix="pdl-c0-workspaces-"))
         else:
@@ -2601,6 +2603,21 @@ class SessionEngine:
             runs = getattr(self, "_last_program_runs", None)
             if runs:
                 self.workspace.write_program_output(runs)
+            if hasattr(self.workspace, "write_provenance"):
+                from datetime import datetime, timezone
+
+                from pdl_taskmaster.runtime import provenance
+
+                self.workspace.write_provenance(provenance.record(
+                    status=self.controller.state.stage.value,
+                    requires_verified_execution=self._requires_verified_execution,
+                    verification=getattr(self, "_last_verification", None),
+                    witness=getattr(self, "_last_witness", None),
+                    unverified_reason=reason,
+                    deliverable_sha256=result_body_hash,
+                    closed_at_utc=datetime.now(timezone.utc).isoformat(),
+                    model=self.model_name() if callable(self.model_name) else None,
+                ))
 
     def _verify_result(
         self,
@@ -2624,6 +2641,8 @@ class SessionEngine:
         body = outcome.body
         verified = self._requires_verified_execution
         self._unverified_reason: str | None = None  # L116: set when the result rests on an unchecked claim
+        self._last_verification: dict[str, Any] | None = None  # E-1: the VERIFICATION_PASSED facts
+        self._last_witness: Any = None
         certificate = declared_certificate(getattr(outcome, "result_ir", None)) if verified else None  # L119
         sandbox_witness, run_failures = self._run_deliverable_code(body, certificate=certificate)
         payload_findings = self._payload_token_findings(body)
@@ -2739,20 +2758,18 @@ class SessionEngine:
             if declared_incomplete:
                 pass
             elif verdict.valid:
-                self.workspace.append_event(
-                    "VERIFICATION_PASSED",
-                    {
-                        # §2.1: provisional means no sandbox run reproduced the witness.
-                        "provisional": sandbox_witness is None or negative_claim,
-                        "sandbox_reproduced": sandbox_witness is not None,
-                        "domain_checked": not verdict.provisional and not negative_claim,
-                        "negative_claim_unchecked": negative_claim,
-                        "argued": argued,
-                        "certificate_checked": certificate is not None and sandbox_witness is not None
-                        and sandbox_witness.get("data") == certificate,
-                        "details": verdict.details,
-                    },
-                )
+                self._last_verification = {
+                    # §2.1: provisional means no sandbox run reproduced the witness.
+                    "provisional": sandbox_witness is None or negative_claim,
+                    "sandbox_reproduced": sandbox_witness is not None,
+                    "domain_checked": not verdict.provisional and not negative_claim,
+                    "negative_claim_unchecked": negative_claim,
+                    "argued": argued,
+                    "certificate_checked": certificate is not None and sandbox_witness is not None
+                    and sandbox_witness.get("data") == certificate,
+                    "details": verdict.details,
+                }
+                self.workspace.append_event("VERIFICATION_PASSED", self._last_verification)
             elif verdict.diagnostic == "SEARCH_CLAIM_UNREPRODUCED":
                 errors.append(Finding("SEARCH_CLAIM_UNREPRODUCED"))
             elif verdict.diagnostic == "WITNESS_WRITTEN_IN_PROGRAM":
@@ -2791,6 +2808,7 @@ class SessionEngine:
         elif argued:
             self._unverified_reason = "argued_result"
         self.workspace.append_event("RESULT_IR_VALIDATED", {"ir": ir})
+        self._last_witness = ir.get("witness")
         if verified and isinstance(ir.get("witness"), dict) and ir["witness"].get("provisional") is True:
             # The user sees that the result was not checked by a program run; the
             # deliverable text itself is unchanged (the note follows it).

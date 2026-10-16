@@ -2,26 +2,35 @@
 TOOL_EXTRACTION_PLAN.md step 6). A thin adapter: the tool definitions, their handlers, budgets and the submission
 check are runtime/agent_tools.py's, unchanged; this module only speaks JSON-RPC 2.0, one message per line.
 
-    python -m pdl_taskmaster.host.mcp_server [--tier STANDARD] [--witness-required] [--sandbox auto]
+    python -m pdl_taskmaster.host.mcp_server [--tier STANDARD] [--witness-required] [--sandbox auto] [--log PATH]
 
 Served: initialize, ping, tools/list, tools/call. Every program runs in one confined session sandbox (ADR-0021) at
-the tier's limits; no tool returns a verdict; a submission is checked structurally and accepted or returned with
-errors, as inside the harness. Nothing here reads or writes the user's project.
+the tier's limits; the audit-only opt-out is refused. No tool returns a verdict; a submission is checked
+structurally and accepted or returned with errors, and nothing verifies it afterwards here. Nothing here reads or
+writes the user's project.
 
 Also served, read-only (L117): resources/list and resources/read over the closed turns with a published result in
-one sessions folder (``--sessions``, default the REPL's): each turn's response, as published, and the output of the
-programs the host ran for it. A resource is found by listing; a client's URI is never joined into a path.
+one sessions folder (``--sessions``, default the REPL's): each turn's response, as published, the output of the
+programs the host ran for it, and its provenance (L121 flag E-1): the status, what the verification rests on and
+what it does not establish. Every read of a turn's artifact returns its provenance with it. A resource is found by
+listing; a client's URI is never joined into a path.
+
+Every request is logged (L121 flag E-3): one JSON line before it runs and one after, plus each tool call and
+submission as the tool host records it. A log that cannot be written stops the request; nothing runs unlogged.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import time
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, TextIO
+from typing import Any, Callable, TextIO
 
 from pdl_taskmaster import __version__
-from pdl_taskmaster.runtime import agent_tools
+from pdl_taskmaster.runtime import agent_tools, provenance
 
 PROTOCOL_VERSION = "2025-06-18"
 SERVER_NAME = "pdlt-agent-tools"
@@ -29,6 +38,12 @@ RESULT_STATUSES = frozenset({"CLOSED_SUCCESS", "CLOSED_UNVERIFIED"})
 URI_SCHEME = "pdlt://sessions/"
 PAGE_SIZE = 100
 RESOURCE_NOT_FOUND = -32002
+INTERNAL_ERROR = -32603
+LOG_TEXT_CHARS = 20000
+# Outside the harness nothing verifies an accepted submission (L121 flag E-2).
+MCP_AFTER_ACCEPTANCE = ("An accepted outcome has passed these structural checks only; this server does not verify "
+                        "the deliverable afterwards.")
+MCP_ACCEPTED = "accepted: the structural checks passed; nothing verifies the deliverable afterwards here"
 
 
 class ClosedSessions:
@@ -38,9 +53,9 @@ class ClosedSessions:
     def __init__(self, root: Path):
         self.root = root
 
-    def resources(self) -> dict[str, tuple[Path, dict[str, Any]]]:
-        """URI -> (file, MCP resource) for every readable resource, in a stable order."""
-        found: dict[str, tuple[Path, dict[str, Any]]] = {}
+    def resources(self) -> dict[str, tuple[Callable[[], str], dict[str, Any], str]]:
+        """URI -> (reader, MCP resource, the turn's provenance URI) for every readable resource, in a stable order."""
+        found: dict[str, tuple[Callable[[], str], dict[str, Any], str]] = {}
         if not self.root.is_dir():
             return found
         base = self.root.resolve()
@@ -52,21 +67,43 @@ class ClosedSessions:
             if status not in RESULT_STATUSES:
                 continue
             turn = marker.parent
-            session, workspace = turn.parents[3].name, turn.parents[1].name
+            if not turn.resolve().is_relative_to(base):
+                continue
             output = turn / "stages" / "50_execution" / "output"
+            record = self._provenance(turn, output)
+            if record is None:
+                continue
+            prefix = f"{URI_SCHEME}{turn.parents[3].name}/{turn.parents[1].name}/{turn.name}/"
+            level = record["verification"]["level"]
+            text = json.dumps(record, ensure_ascii=False, indent=2)
+            found[prefix + "provenance"] = (lambda text=text: text, {
+                "uri": prefix + "provenance", "name": f"{turn.parents[3].name} {turn.name} provenance",
+                "mimeType": "application/json",
+                "description": f"{status}, {level}: what the result rests on and what it does not establish"},
+                prefix + "provenance")
             for part, file, mime, what in (
                     ("response", output / "current.md", "text/markdown", "the response as published"),
                     ("program-output", output / "program-output.json", "application/json",
                      "the output of the programs the host ran for the response")):
                 if not file.is_file() or not file.resolve().is_relative_to(base):
                     continue
-                uri = f"{URI_SCHEME}{session}/{workspace}/{turn.name}/{part}"
-                found[uri] = (file, {"uri": uri, "name": f"{session} {turn.name} {part}", "mimeType": mime,
-                                     "description": f"{status}: {what}"})
+                found[prefix + part] = (lambda file=file: file.read_text(encoding="utf-8"), {
+                    "uri": prefix + part, "name": f"{turn.parents[3].name} {turn.name} {part}", "mimeType": mime,
+                    "description": f"{status}, {level}: {what}"}, prefix + "provenance")
         return found
 
+    @staticmethod
+    def _provenance(turn: Path, output: Path) -> dict[str, Any] | None:
+        recorded = output / "provenance.json"
+        if recorded.is_file():
+            try:
+                return json.loads(recorded.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                return None
+        return provenance.derive(turn)
+
     def list(self, cursor: str | None) -> dict[str, Any]:
-        entries = [resource for _, resource in self.resources().values()]
+        entries = [resource for _, resource, _ in self.resources().values()]
         start = int(cursor) if cursor and cursor.isdigit() else 0
         page: dict[str, Any] = {"resources": entries[start:start + PAGE_SIZE]}
         if start + PAGE_SIZE < len(entries):
@@ -74,25 +111,64 @@ class ClosedSessions:
         return page
 
     def read(self, uri: str) -> dict[str, Any] | None:
-        entry = self.resources().get(uri)
+        """The resource, followed by its turn's provenance when the resource is an artifact (E-1)."""
+        found = self.resources()
+        entry = found.get(uri)
         if entry is None:
             return None
-        file, resource = entry
-        return {"contents": [{"uri": uri, "mimeType": resource["mimeType"],
-                              "text": file.read_text(encoding="utf-8")}]}
+        reader, resource, provenance_uri = entry
+        contents = [{"uri": uri, "mimeType": resource["mimeType"], "text": reader()}]
+        if provenance_uri != uri:
+            contents.append({"uri": provenance_uri, "mimeType": "application/json",
+                             "text": found[provenance_uri][0]()})
+        return {"contents": contents}
+
+
+class CallLog:
+    """Every request the server handles, as JSON lines (E-3). Opened when the server starts: a log that cannot be
+    opened stops the server, and one that cannot be written stops the request."""
+
+    def __init__(self, path: Path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self.path = path
+        self._file = path.open("a", encoding="utf-8")
+
+    def write(self, record: dict[str, Any]) -> None:
+        self._file.write(json.dumps(_clip({"at": datetime.now(timezone.utc).isoformat(), **record}),
+                                    ensure_ascii=False, default=str) + "\n")
+        self._file.flush()
+
+
+def _clip(value: Any) -> Any:
+    if isinstance(value, str):
+        return value if len(value) <= LOG_TEXT_CHARS else value[:LOG_TEXT_CHARS] + f"... [{len(value)} chars]"
+    if isinstance(value, dict):
+        return {k: _clip(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_clip(v) for v in value]
+    return value
 
 
 class AgentToolServer:
     """One MCP session over one tool host. ``host`` is an agent_tools.ToolHost; ``sessions``, when given, serves
-    closed sessions' results as resources."""
+    closed sessions' results as resources; ``log``, when given, records every request."""
 
-    def __init__(self, host: agent_tools.ToolHost, sessions: ClosedSessions | None = None):
+    def __init__(self, host: agent_tools.ToolHost, sessions: ClosedSessions | None = None,
+                 log: CallLog | None = None):
         self.host = host
         self.sessions = sessions
+        self.log = log
+        if log is not None and host.on_record is None:
+            host.on_record = lambda record: log.write({"event": "tool", **record})
 
     def tools(self) -> list[dict[str, Any]]:
         names = self.host.tool_names()
-        return [dict(t) for t in agent_tools.TOOLS if t["name"] in names]  # MCP's shape, as defined
+        tools = [dict(t) for t in agent_tools.TOOLS if t["name"] in names]  # MCP's shape, as defined
+        for tool in tools:
+            if tool["name"] == agent_tools.SUBMIT:
+                tool["description"] = tool["description"].replace(agent_tools.VERIFIED_AFTER_ACCEPTANCE,
+                                                                  MCP_AFTER_ACCEPTANCE)
+        return tools
 
     def call_tool(self, name: str, arguments: dict[str, Any] | None) -> dict[str, Any]:
         text = json.dumps(arguments or {})
@@ -108,7 +184,25 @@ class AgentToolServer:
         return _content(output, error=output.startswith("error:"))
 
     def handle(self, message: dict[str, Any]) -> dict[str, Any] | None:
-        """One JSON-RPC message: the response, or None for a notification."""
+        """One JSON-RPC message, logged before it runs and after: the response, or None for a notification."""
+        method, mid = message.get("method"), message.get("id")
+        if self.log is not None:
+            try:
+                self.log.write({"event": "request", "id": mid, "method": method, "params": message.get("params")})
+            except (OSError, ValueError) as exc:
+                return None if mid is None else _error(
+                    mid, INTERNAL_ERROR, f"the call log cannot be written ({exc}); nothing ran")
+        started = time.perf_counter()
+        response = self._handle(message)
+        if self.log is not None and mid is not None:
+            result = (response or {}).get("result")
+            self.log.write({"event": "response", "id": mid, "method": method,
+                            "ms": round((time.perf_counter() - started) * 1000, 1),
+                            "error": (response or {}).get("error"),
+                            "is_error": result.get("isError") if isinstance(result, dict) else None})
+        return response
+
+    def _handle(self, message: dict[str, Any]) -> dict[str, Any] | None:
         method, mid, params = message.get("method"), message.get("id"), message.get("params") or {}
         if mid is None:
             return None  # notifications (notifications/initialized, cancellations) need no answer
@@ -165,7 +259,8 @@ def serve(server: AgentToolServer, stdin: TextIO, stdout: TextIO) -> None:
 def build_host(tier: str = "STANDARD", witness_required: bool = False, sandbox_mode: str = "auto",
                repo_root: Path | None = None) -> agent_tools.ToolHost:
     """The tool host an outside agent gets: the session sandbox at ``tier``'s limits and the host's own
-    submission check; no previous attempt, so no read_attempt."""
+    submission check; no previous attempt, so no read_attempt. Programs from outside run only under OS-native
+    confinement: the audit-only opt-out is refused (L121 flag E-4)."""
     import pdl_taskmaster
     from pdl_taskmaster.runtime.operation_bridge import OperationBridge
     from pdl_taskmaster.runtime.session_engine import _parse_sandbox_witness, _python_blocks
@@ -173,11 +268,14 @@ def build_host(tier: str = "STANDARD", witness_required: bool = False, sandbox_m
 
     budget = EXECUTION_BUDGETS[tier]
     sandbox = ExecutionSandbox(mode=sandbox_mode, label="mcp")
+    if not sandbox.confined:
+        raise SystemExit("the MCP server runs programs only under OS-native confinement; "
+                         f"--sandbox {sandbox_mode} is refused")
     root = repo_root or Path(pdl_taskmaster.__file__).resolve().parents[2]
     validate = agent_tools.make_validator(OperationBridge(root), sandbox, budget, witness_required, _python_blocks,
                                           _parse_sandbox_witness)
     return agent_tools.ToolHost(sandbox, budget.step_limit, budget.timeout_seconds, budget.memory_limit_bytes,
-                                [], "", validate)
+                                [], "", validate, accepted_note=MCP_ACCEPTED)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -189,21 +287,32 @@ def main(argv: list[str] | None = None) -> int:
                         help="the execution budget every program runs under (default STANDARD)")
     parser.add_argument("--witness-required", action="store_true",
                         help="a submission must contain a program that prints a WITNESS line")
-    parser.add_argument("--sandbox", default="auto", help="sandbox mode, as for the harness (default auto)")
+    parser.add_argument("--sandbox", default="auto", choices=["auto", "native", "container"],
+                        help="sandbox backend, as for the harness; the audit-only opt-out is not offered "
+                             "(default auto)")
     parser.add_argument("--sessions", type=Path, default=None,
                         help="the sessions folder whose closed results are served read-only (default: the REPL's)")
+    parser.add_argument("--log", type=Path, default=None,
+                        help="the JSON-lines call log (default: a new file in mcp-server/ beside the sessions folder)")
     args = parser.parse_args(argv)
     if args.sessions is None:
         from pdl_taskmaster.host.repl import _default_session_base
 
         args.sessions = _default_session_base()
+    if args.log is None:
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        args.log = args.sessions.parent / "mcp-server" / f"calls-{stamp}-{os.getpid()}.jsonl"
+    try:
+        log = CallLog(args.log)
+    except OSError as exc:
+        raise SystemExit(f"the call log {args.log} cannot be opened ({exc}); the server does not run unlogged")
     for stream in (sys.stdin, sys.stdout):
         try:
             stream.reconfigure(encoding="utf-8")
         except Exception:
             pass
-    serve(AgentToolServer(build_host(args.tier, args.witness_required, args.sandbox), ClosedSessions(args.sessions)),
-          sys.stdin, sys.stdout)
+    serve(AgentToolServer(build_host(args.tier, args.witness_required, args.sandbox), ClosedSessions(args.sessions),
+                          log), sys.stdin, sys.stdout)
     return 0
 
 

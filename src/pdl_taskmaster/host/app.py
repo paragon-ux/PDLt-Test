@@ -143,6 +143,7 @@ class PDLtHost:
         engine.agent_tools = bool(getattr(self.worker, "agent_tools", False))
         engine.representation = getattr(self.worker, "representation", None) or "pdl"
         engine.tier_d1 = bool(getattr(self.worker, "tier_d1", engine.tier_d1))
+        engine.model_name = lambda: getattr(self.worker, "model", None)  # the result's provenance (E-1)
         if self.observation_dir is not None:
             session_id = f"{self.run_id}-{self.case_id or 'session'}"
             self.sink = JsonlSink(self.observation_dir, session_id)

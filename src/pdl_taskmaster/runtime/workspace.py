@@ -522,6 +522,12 @@ class WorkspaceRun:
         output = self._artifact_stage("result")
         self._write(output / "program-output.json", json.dumps({"runs": runs}, ensure_ascii=False, indent=2) + "\n")
 
+    def write_provenance(self, record: dict[str, Any]) -> None:
+        """E-1: what the published result rests on (runtime/provenance.py), kept beside it. Outside clients read it
+        through the MCP server."""
+        output = self._artifact_stage("result")
+        self._write(output / "provenance.json", json.dumps(record, ensure_ascii=False, indent=2) + "\n")
+
     def publish_artifact(self, kind: str, artifact_id: str, body: str, *, confirmed: bool, source_prompt_id: str | None = None, confirmed_prompt_hash: str | None = None) -> None:
         output = self._artifact_stage(kind)
         versions = output / "versions"

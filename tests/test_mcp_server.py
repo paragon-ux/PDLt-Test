@@ -41,7 +41,12 @@ def test_initialize_names_the_tools_capability_and_states_the_budgets():
 
 def test_tools_list_serves_the_registry_definitions_unchanged():
     tools = _rpc(_server(), "tools/list")["result"]["tools"]
-    assert tools == [t for t in agent_tools.TOOLS if t["name"] in ("run_python", SUBMIT)]  # no previous attempt
+    registry = [t for t in agent_tools.TOOLS if t["name"] in ("run_python", SUBMIT)]  # no previous attempt
+    assert [t["name"] for t in tools] == [t["name"] for t in registry]
+    assert tools[0] == registry[0] and tools[1]["inputSchema"] == registry[1]["inputSchema"]
+    # L121 E-2: outside the harness nothing verifies an accepted submission, and the description says so.
+    assert agent_tools.VERIFIED_AFTER_ACCEPTANCE not in tools[1]["description"]
+    assert tools[1]["description"].endswith(mcp_server.MCP_AFTER_ACCEPTANCE)
 
 
 def test_run_python_returns_the_hosts_output_and_holds_its_budget():
@@ -61,7 +66,7 @@ def test_a_submission_is_checked_structurally_and_never_returns_a_verdict():
     assert rejected["result"]["structuredContent"]["errors"][0]["code"] == "NO_PROGRAM"
     accepted = _rpc(server, "tools/call", {"name": SUBMIT, "arguments": {"outcome": outcome(GOOD)}})["result"]
     assert accepted["isError"] is False
-    assert accepted["structuredContent"]["result"] == "accepted; the host now verifies the deliverable"
+    assert accepted["structuredContent"]["result"] == mcp_server.MCP_ACCEPTED
     assert "verified" not in json.dumps(accepted).lower()
 
 
