@@ -23,9 +23,9 @@ class OutputVerifier:
         self._checkers: dict[str, BaseChecker] = {}
         self._fallback = FallbackChecker()
 
-    def register(self, checker: BaseChecker) -> None:
-        """Register a domain-specific checker."""
-        self._checkers[checker.name] = checker
+    def register(self, checker: BaseChecker, *, domain: str | None = None) -> None:
+        """Register a domain-specific checker under ``domain`` (default: the checker's name)."""
+        self._checkers[domain or checker.name] = checker
 
     def get_checker(self, domain: ProblemDomain | str | None) -> BaseChecker:
         """Retrieve the checker for a given domain, or fallback if unregistered."""
