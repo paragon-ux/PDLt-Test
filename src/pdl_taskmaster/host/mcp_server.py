@@ -30,11 +30,12 @@ from pathlib import Path
 from typing import Any, Callable, TextIO
 
 from pdl_taskmaster import __version__
-from pdl_taskmaster.runtime import agent_tools, provenance
+from pdl_taskmaster.api import closed_sessions
+from pdl_taskmaster.api.sandbox import SandboxNotConfined, create_sandbox
+from pdl_taskmaster.runtime import agent_tools
 
 PROTOCOL_VERSION = "2025-06-18"
 SERVER_NAME = "pdlt-agent-tools"
-RESULT_STATUSES = frozenset({"CLOSED_SUCCESS", "CLOSED_UNVERIFIED"})
 URI_SCHEME = "pdlt://sessions/"
 PAGE_SIZE = 100
 RESOURCE_NOT_FOUND = -32002
@@ -56,51 +57,24 @@ class ClosedSessions:
     def resources(self) -> dict[str, tuple[Callable[[], str], dict[str, Any], str]]:
         """URI -> (reader, MCP resource, the turn's provenance URI) for every readable resource, in a stable order."""
         found: dict[str, tuple[Callable[[], str], dict[str, Any], str]] = {}
-        if not self.root.is_dir():
-            return found
-        base = self.root.resolve()
-        for marker in sorted(self.root.glob("*/workspaces/*/turns/*/turn.json")):
-            try:
-                status = json.loads(marker.read_text(encoding="utf-8")).get("status")
-            except (OSError, ValueError):
-                continue
-            if status not in RESULT_STATUSES:
-                continue
-            turn = marker.parent
-            if not turn.resolve().is_relative_to(base):
-                continue
-            output = turn / "stages" / "50_execution" / "output"
-            record = self._provenance(turn, output)
+        for turn in closed_sessions.closed_turns(self.root):
+            record = turn.provenance()
             if record is None:
                 continue
-            prefix = f"{URI_SCHEME}{turn.parents[3].name}/{turn.parents[1].name}/{turn.name}/"
+            prefix = f"{URI_SCHEME}{turn.session}/{turn.workspace}/{turn.turn}/"
             level = record["verification"]["level"]
             text = json.dumps(record, ensure_ascii=False, indent=2)
             found[prefix + "provenance"] = (lambda text=text: text, {
-                "uri": prefix + "provenance", "name": f"{turn.parents[3].name} {turn.name} provenance",
+                "uri": prefix + "provenance", "name": f"{turn.session} {turn.turn} provenance",
                 "mimeType": "application/json",
-                "description": f"{status}, {level}: what the result rests on and what it does not establish"},
+                "description": f"{turn.status}, {level}: what the result rests on and what it does not establish"},
                 prefix + "provenance")
-            for part, file, mime, what in (
-                    ("response", output / "current.md", "text/markdown", "the response as published"),
-                    ("program-output", output / "program-output.json", "application/json",
-                     "the output of the programs the host ran for the response")):
-                if not file.is_file() or not file.resolve().is_relative_to(base):
-                    continue
+            for part, file in turn.artifacts().items():
+                _, mime, what = closed_sessions.ARTIFACTS[part]
                 found[prefix + part] = (lambda file=file: file.read_text(encoding="utf-8"), {
-                    "uri": prefix + part, "name": f"{turn.parents[3].name} {turn.name} {part}", "mimeType": mime,
-                    "description": f"{status}, {level}: {what}"}, prefix + "provenance")
+                    "uri": prefix + part, "name": f"{turn.session} {turn.turn} {part}", "mimeType": mime,
+                    "description": f"{turn.status}, {level}: {what}"}, prefix + "provenance")
         return found
-
-    @staticmethod
-    def _provenance(turn: Path, output: Path) -> dict[str, Any] | None:
-        recorded = output / "provenance.json"
-        if recorded.is_file():
-            try:
-                return json.loads(recorded.read_text(encoding="utf-8"))
-            except (OSError, ValueError):
-                return None
-        return provenance.derive(turn)
 
     def list(self, cursor: str | None) -> dict[str, Any]:
         entries = [resource for _, resource, _ in self.resources().values()]
@@ -261,17 +235,18 @@ def build_host(tier: str = "STANDARD", witness_required: bool = False, sandbox_m
     """The tool host an outside agent gets: the session sandbox at ``tier``'s limits and the host's own
     submission check; no previous attempt, so no read_attempt. Programs from outside run only under OS-native
     confinement: the audit-only opt-out is refused (L121 flag E-4)."""
-    import pdl_taskmaster
+    from pdl_taskmaster.api.session import default_repo_root
     from pdl_taskmaster.runtime.operation_bridge import OperationBridge
     from pdl_taskmaster.runtime.session_engine import _parse_sandbox_witness, _python_blocks
-    from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS, ExecutionSandbox
+    from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS
 
     budget = EXECUTION_BUDGETS[tier]
-    sandbox = ExecutionSandbox(mode=sandbox_mode, label="mcp")
-    if not sandbox.confined:
+    try:
+        sandbox = create_sandbox(sandbox_mode, label="mcp", require_confined=True)
+    except SandboxNotConfined:
         raise SystemExit("the MCP server runs programs only under OS-native confinement; "
-                         f"--sandbox {sandbox_mode} is refused")
-    root = repo_root or Path(pdl_taskmaster.__file__).resolve().parents[2]
+                         f"--sandbox {sandbox_mode} is refused") from None
+    root = repo_root or default_repo_root()
     validate = agent_tools.make_validator(OperationBridge(root), sandbox, budget, witness_required, _python_blocks,
                                           _parse_sandbox_witness)
     return agent_tools.ToolHost(sandbox, budget.step_limit, budget.timeout_seconds, budget.memory_limit_bytes,

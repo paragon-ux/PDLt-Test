@@ -1,6 +1,21 @@
 # API surface map: where the three target forms share code and where they bypass it
 
-The user (2026-10-15) named three target forms: the interactive REPL, headless runs and the MCP server. Planned but not built or versioned yet: a documented programmatic API/SDK that all three go through, with extension points for model providers, task types and verifiers (ledger L120). This map records today's paths (static read of `main` at `75bbfce6`). It is the input for that API, not a design.
+The user (2026-10-15) named three target forms: the interactive REPL, headless runs and the MCP server. Planned: a documented programmatic API/SDK that all three go through, with extension points for model providers, task types and verifiers (ledger L120). This map records today's paths (static read of `main` at `75bbfce6`). It is the input for that API, not a design.
+
+## Status (2026-10-16): batch B1 built (`pdl_taskmaster.api`, `docs/api.md`)
+
+The map below is the state it started from. What B1 changed:
+
+| Concern | Now |
+|---|---|
+| Session lifecycle | `api.Session`: open, restore, send, confirm, revise, stop, cancel, run, status, close. The REPL's `open_session` uses its folder helpers (`prepare_worker`, `stored_workspace`, `write_pointer`). |
+| Model providers | `api.providers` registry (`api`, `recorded`); both REPL chains (startup, `/worker`) create workers through it with one settings helper. Codex stays outside (L114 deprecation). |
+| Verifiers | The engine holds one `output_verifier`; `Session.open(output_verifier=...)` injects a registry. |
+| Sandbox | `api.create_sandbox`; the MCP server uses it with `require_confined=True`. |
+| Results and exit status | `api.outcome.exit_status` and `TurnResult`; the REPL's headless exit and `run_catalogue.py` use the one mapping. |
+| Reading closed sessions | `api.closed_turns`; the MCP resources are built on it. |
+
+Still open (B2): a typed settings object, the task-type extension point, System 1 as its own provider, and the direct-reply path that calls the worker from the host.
 
 ## The paths today
 

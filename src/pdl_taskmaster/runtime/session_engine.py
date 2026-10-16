@@ -492,6 +492,11 @@ class SessionEngine:
         self.refused: bool = False
         # The model that serves the session, for the result's provenance (E-1); set by the host.
         self.model_name: Callable[[], Any] | None = None
+        # The domain checker registry the result is verified against (L120): a library caller may replace it,
+        # or register checkers of its own (pdl_taskmaster.api.Session.open(output_verifier=...)).
+        from pdl_taskmaster.verification.output_verifier import OutputVerifier
+
+        self.output_verifier = OutputVerifier()
         if workspace_root is None:
             self.workspace_root = Path(tempfile.mkdtemp(prefix="pdl-c0-workspaces-"))
         else:
@@ -1080,7 +1085,7 @@ class SessionEngine:
         beyond = float(self._profile_distribution.get("BEYOND_100M_STEPS", 0.0))
         if beyond <= BEYOND_BUDGET_REFUSAL_PROBABILITY:
             return None
-        if OutputVerifier().get_checker(self._problem_domain).name != "fallback":
+        if self.output_verifier.get_checker(self._problem_domain).name != "fallback":
             return None
         largest = max(budget.step_limit for budget in EXECUTION_BUDGETS.values())
         assert self.workspace is not None
@@ -2680,7 +2685,7 @@ class SessionEngine:
             self.workspace.append_event("RESULT_IR_CITATION_FINDINGS", {"findings": citations})
 
         if verified:
-            verifier = OutputVerifier()
+            verifier = self.output_verifier
             constraints = {
                 "prompt_body": prompt_body,
                 "plan_body": plan_body,

@@ -357,7 +357,9 @@ def test_repl_reports_what_was_in_flight(monkeypatch, capsys, tmp_path):
         "turn_status_before": "ACTIVE", "last_operation": "DRAFT_PROMPT", "last_operation_output_recorded": False,
     }
     runtime._refresh_pointer = lambda: None
-    monkeypatch.setattr(repl, "build_recorded_fixture_from_vendored", lambda *a, **k: fake_worker)
+    from pdl_taskmaster.providers import fixtures
+
+    monkeypatch.setattr(fixtures, "build_recorded_fixture_from_vendored", lambda *a, **k: fake_worker)
     monkeypatch.setattr(sys, "argv", sys.argv + ["--dev"])
     with pytest.raises(KeyboardInterrupt):  # headless: an interrupt ends the run
         repl.main()

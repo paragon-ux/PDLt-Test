@@ -528,6 +528,14 @@ class WorkspaceRun:
         output = self._artifact_stage("result")
         self._write(output / "provenance.json", json.dumps(record, ensure_ascii=False, indent=2) + "\n")
 
+    def read_provenance(self) -> dict[str, Any] | None:
+        """The current turn's provenance as written at closure, or None."""
+        recorded = self._artifact_stage("result") / "provenance.json"
+        try:
+            return json.loads(recorded.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+
     def publish_artifact(self, kind: str, artifact_id: str, body: str, *, confirmed: bool, source_prompt_id: str | None = None, confirmed_prompt_hash: str | None = None) -> None:
         output = self._artifact_stage(kind)
         versions = output / "versions"
