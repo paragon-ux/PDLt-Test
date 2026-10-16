@@ -42,3 +42,7 @@ Every read of a turn's `response` or `program-output` returns the turn's provena
 - **E-4 Weaker sandbox on request.** `--sandbox audit-only` is accepted and runs external programs with Python audit hooks only, without OS confinement. For an externally exposed server this should be refused, or at least announced in `initialize`.
 - **E-1 to E-4, as fixed:** the `provenance` resource and the provenance returned with every read; the MCP-specific acceptance text and description; the JSON-lines call log, written before each request runs and after (a log that cannot be written stops the request; one that cannot be opened stops the server); `audit-only` refused.
 - **E-5 Arguments not validated.** Fixed in L122, as internal flag I-2: arguments outside `inputSchema` are refused and nothing runs.
+
+## Tested from outside
+
+`tests/test_mcp_external.py` (L123) starts the server process and drives it with the official MCP Python SDK client: the handshake, the published schemas, tool calls and their errors, budgets, resources with provenance, the call log and the refused `audit-only` start.
