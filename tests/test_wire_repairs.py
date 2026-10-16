@@ -713,7 +713,7 @@ def test_schema_rejection_retries_on_the_next_configured_provider(monkeypatch) -
     result = worker.call(_draft_request())
     assert len(sent) == 2
     assert sent[1]["provider"] == {"order": ["Baseten", "Amazon Bedrock"], "allow_fallbacks": True,
-                                   "ignore": ["Groq"]}
+                                   "require_parameters": True, "ignore": ["Groq"]}
     assert sent[1]["text"] == sent[0]["text"]  # still schema-constrained
     assert json.loads(result.text) == _INNER
 
@@ -1134,8 +1134,9 @@ def test_schema_operations_groq_rejects_are_still_sent_to_it_in_json_mode(monkey
 
 def test_other_operations_still_use_groq(monkeypatch) -> None:
     pinning = {"order": ["Groq", "Baseten"], "allow_fallbacks": True}
-    assert _sent_provider(monkeypatch, "DRAFT_PROMPT", pinning) == pinning
-    assert _sent_provider(monkeypatch, "DRAFT_EXECUTE", pinning) == pinning
+    # With the schema, only endpoints that support every parameter sent (L122).
+    assert _sent_provider(monkeypatch, "DRAFT_PROMPT", pinning) == {**pinning, "require_parameters": True}
+    assert _sent_provider(monkeypatch, "DRAFT_EXECUTE", pinning) == {**pinning, "require_parameters": True}
 
 
 def test_without_a_schema_groq_may_serve_execute(monkeypatch) -> None:

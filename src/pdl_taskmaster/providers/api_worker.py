@@ -157,6 +157,25 @@ DEFAULT_PROVIDER_PINNING: dict[str, Any] = {
     "allow_fallbacks": True,
 }
 
+# Model families whose request settings were recorded with their runs (L122): the provider order above and
+# JSON mode at EXECUTE (IMPL-0001's whitespace stall; IMPL-0003 keeps gpt-oss's EXECUTE on json). Any other
+# model gets no provider order unless one is configured, and its output format from OpenRouter's metadata.
+RECORDED_REQUEST_FAMILIES = ("gpt-oss", "nemotron-3-super")
+
+
+def _recorded_family(model: str) -> bool:
+    return any(family in model.lower() for family in RECORDED_REQUEST_FAMILIES)
+
+
+def _env_pinning() -> dict[str, Any] | None:
+    """A provider order set in the environment: a user setting, applied to every model."""
+    if os.environ.get("OPENROUTER_PROVIDER_ORDER") or os.environ.get("OPENROUTER_PROVIDER"):
+        return {"order": _default_provider_order(), "allow_fallbacks": True}
+    return None
+
+
+# Gemini's harm categories. Not a Responses API parameter (OpenRouter's OpenAPI spec) and in no model's
+# supported_parameters; sent only when configured (L122, IMPL-0002's parameter filter).
 DEFAULT_SAFETY_SETTINGS: list[dict[str, str]] = [
     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
     {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -196,9 +215,10 @@ _SCHEMA_REJECTED_OPERATIONS: dict[str, frozenset[str]] = {
     "groq": frozenset({"EXECUTE", "EMIT_RESULT_IR"}),
 }
 
-# Operations sent in JSON mode (no schema) whatever the provider: under the EXECUTE
-# schema Nemotron stalled in whitespace before closing result_ir (IMPL-0001); without
-# it the same request completed 14/14. Moves to the per-stage profile (IMPL-0003).
+# The EXECUTE operations. The recorded families (RECORDED_REQUEST_FAMILIES) send them in JSON mode: under
+# the EXECUTE schema Nemotron stalled in whitespace before closing result_ir (IMPL-0001); without it the same
+# request completed 14/14. Any other model gets the strict schema when its metadata lists structured_outputs
+# (L122).
 JSON_MODE_OPERATIONS = frozenset({"EXECUTE", "EXECUTE_UNCONFIRMED"})
 
 
@@ -462,8 +482,10 @@ class ApiWorker:
         # session will send it (providers/model_capabilities.py).
         self.capability_check = capability_check
         self._checked_models: set[str] = set()
-        self.provider_pinning = provider_pinning if provider_pinning is not None else dict(DEFAULT_PROVIDER_PINNING)
-        self.safety_settings = safety_settings if safety_settings is not None else list(DEFAULT_SAFETY_SETTINGS)
+        self._model_entries: dict[str, dict[str, Any]] = {}  # OpenRouter's metadata per model, once read
+        # None: each model's own order (pinning_for); a configured order applies to every model.
+        self._configured_pinning = provider_pinning if provider_pinning is not None else _env_pinning()
+        self.safety_settings = list(safety_settings) if safety_settings is not None else []
         self.on_progress = on_progress
         self.progress_path = Path(progress_path) if progress_path else None
         # Call lifecycle (providers/call_trace.py): the call in flight, the recent ones,
@@ -543,6 +565,45 @@ class ApiWorker:
             raise TransportError(f"could not resolve {self.api_key_env}: {detail}")
         return key
 
+    @property
+    def provider_pinning(self) -> dict[str, Any]:
+        """The provider preferences for the session's model (dev commands and the control route read it)."""
+        return self.pinning_for(self.model)
+
+    @provider_pinning.setter
+    def provider_pinning(self, value: dict[str, Any] | None) -> None:
+        self._configured_pinning = value
+
+    def pinning_for(self, model: str) -> dict[str, Any]:
+        """A configured order for every model; otherwise the order recorded with the model's family; otherwise
+        none, so OpenRouter routes by its own defaults (L122)."""
+        if self._configured_pinning is not None:
+            return dict(self._configured_pinning)
+        return dict(DEFAULT_PROVIDER_PINNING) if _recorded_family(model) else {}
+
+    def _model_entry(self, model: str) -> dict[str, Any] | None:
+        """OpenRouter's metadata for ``model``: read with the capability check, or here when a request is built
+        first. None when it is not checked (another endpoint, the check off) or cannot be read; the capability
+        check then fails the call closed."""
+        if model in self._model_entries:
+            return self._model_entries[model]
+        if not self.capability_check or not model_capabilities.is_openrouter(self.base_url):
+            return None
+        try:
+            entry = model_capabilities.lookup(model_capabilities.model_list(self.base_url, self.timeout), model)
+        except (OSError, ValueError):
+            return None
+        if entry is not None:
+            self._model_entries[model] = entry
+        return entry
+
+    def _output_cap(self, model: str) -> int | None:
+        """PDLt's output cap per response, no higher than the model's listed maximum (L122)."""
+        listed = ((self._model_entry(model) or {}).get("top_provider") or {}).get("max_completion_tokens")
+        if self.max_output_tokens and isinstance(listed, int) and listed > 0:
+            return min(self.max_output_tokens, listed)
+        return self.max_output_tokens
+
     def _reasoning_for(self, operation: str | None) -> str | int | None:
         """Per-operation effort wins over the global default; 'none' disables reasoning."""
         if operation is not None and operation in self.reasoning_by_operation:
@@ -559,18 +620,28 @@ class ApiWorker:
         """How this worker constrains an operation's output (ADR-0028 rules 1 and 5):
         the grammar mode and the schema form, from the configured providers. The
         host shows the model its output schema in this same form."""
-        keys = _order_keys(self.provider_pinning)
+        model = self._model_for(operation)
+        pinning = self.pinning_for(model)
+        keys = _order_keys(pinning)
         if (not self.structured_output or operation is None or operation in _SEMANTIC_READ_OPERATIONS
                 or operation in self.unconstrained_operations or contract_schema(operation) is None):
             grammar = "none"
-        elif operation in JSON_MODE_OPERATIONS or any(
+        elif (operation in JSON_MODE_OPERATIONS and _recorded_family(model)) or any(
                 operation in _SCHEMA_REJECTED_OPERATIONS.get(key, frozenset()) for key in keys):
             grammar = "json"
         else:
-            grammar = "schema"
+            # L122: what the model's metadata lists (ADR-0028 rule 5: adapted to, never excluded). Unknown
+            # metadata keeps the earlier forms: JSON mode at EXECUTE, the schema elsewhere.
+            supported = (self._model_entry(model) or {}).get("supported_parameters")
+            if supported is None:
+                grammar = "json" if operation in JSON_MODE_OPERATIONS else "schema"
+            elif "structured_outputs" in supported:
+                grammar = "schema"
+            else:
+                grammar = "json" if "response_format" in supported else "none"
         return ContractForm(grammar=grammar,
                             strict_all_required=bool(keys & _STRICT_ALL_REQUIRED_PROVIDERS),
-                            free_form_objects=_accepts_free_form_objects(self.provider_pinning))
+                            free_form_objects=_accepts_free_form_objects(pinning))
 
     def session_needs(self) -> dict[str, dict[str, list[str]]]:
         """Every request parameter this session may send, per model, with the operations that send it:
@@ -599,27 +670,31 @@ class ApiWorker:
         support every parameter the session will send it. Nothing is sent when it does not."""
         if not self.capability_check or not model_capabilities.is_openrouter(self.base_url):
             return
-        needs = self.session_needs()
-        model = self._model_for(operation)
-        pending = {m: n for m, n in needs.items() if m not in self._checked_models}
-        if model not in self._checked_models:
-            pending.setdefault(model, {})
+        from pdl_taskmaster.runtime.wire_payloads import OPERATION_PAYLOAD_MODELS
+
+        names = {self._model_for(op) for op in set(OPERATION_PAYLOAD_MODELS) | set(self.model_by_operation)}
+        pending = sorted((names | {self._model_for(operation)}) - self._checked_models)
         if not pending:
             return
         try:
             models = model_capabilities.model_list(self.base_url, self.timeout)
         except (OSError, ValueError) as exc:
             raise ProviderError("MODEL_CAPABILITY_UNKNOWN",
-                                f"could not read OpenRouter's model list to check {', '.join(sorted(pending))} "
+                                f"could not read OpenRouter's model list to check {', '.join(pending)} "
                                 f"({exc}); no request was sent", operation=operation) from exc
         problems = []
-        for name, need in sorted(pending.items()):
+        for name in pending:
             entry = model_capabilities.lookup(models, name)
             if entry is None:
                 problems.append(f"{name} is not in OpenRouter's model list; check the model name")
-                continue
-            problems += [model_capabilities.describe(name, parameter, ops)
-                         for parameter, ops in sorted(model_capabilities.unsupported(entry, need).items())]
+            else:
+                self._model_entries[name] = entry
+        needs = self.session_needs()  # the output formats follow the metadata just read
+        for name in pending:
+            if name in self._model_entries:
+                problems += [model_capabilities.describe(name, parameter, ops) for parameter, ops
+                             in sorted(model_capabilities.unsupported(self._model_entries[name],
+                                                                      needs.get(name, {})).items())]
         if problems:
             raise ProviderError("MODEL_UNSUPPORTED", "; ".join(problems) + ". No request was sent.",
                                 operation=operation)
@@ -964,8 +1039,9 @@ class ApiWorker:
             body["instructions"] = instructions + extra_guidance
         elif extra_guidance:
             body["instructions"] = extra_guidance.strip()
-        if self.max_output_tokens:
-            body["max_output_tokens"] = self.max_output_tokens
+        cap = self._output_cap(body["model"])
+        if cap:
+            body["max_output_tokens"] = cap
         effort = self._reasoning_for(getattr(request, "operation", None))
         if effort == "none":
             body["reasoning"] = {"enabled": False}
@@ -975,8 +1051,9 @@ class ApiWorker:
             else:
                 body["reasoning"] = {"effort": effort}
 
-        if self.provider_pinning:
-            body["provider"] = self.provider_pinning
+        pinning = self.pinning_for(body["model"])
+        if pinning:
+            body["provider"] = pinning
         if self.safety_settings:
             body["safety_settings"] = self.safety_settings
 
@@ -990,6 +1067,11 @@ class ApiWorker:
             sent_schema = grammar_view(shown) if shown is not None else grammar_schema(operation_name, form)
             union_wrapped = is_union_wrapped(sent_schema)
             body["text"] = {"format": {"type": "json_schema", "name": output_kind, "schema": sent_schema}}
+            if operation_name in JSON_MODE_OPERATIONS:
+                # L122: chosen from the model's metadata, so enforced exactly where the provider has a strict mode.
+                body["text"]["format"]["strict"] = True
+            # Only endpoints that support every parameter sent, so a fallback cannot drop the schema (L122).
+            body["provider"] = {**body.get("provider", {}), "require_parameters": True}
         elif form.grammar == "json":
             body["text"] = {"format": {"type": "json_object"}}
 
@@ -1346,7 +1428,10 @@ class ApiWorker:
                 error = exc
         self._progress("every configured provider rejected the output against the schema; "
                        "retrying once without the schema constraint")
-        trial = {key: value for key, value in body.items() if key != "text"}
+        trial = {key: value for key, value in body.items() if key not in ("text", "provider")}
+        provider = {k: v for k, v in (body.get("provider") or {}).items() if k != "require_parameters"}
+        if provider:
+            trial["provider"] = provider
         req = self._responses_request(trial, api_key)
         try:
             return self._send_json_with_retries(req, deadline), req, False
