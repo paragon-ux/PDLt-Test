@@ -819,14 +819,14 @@ def _handle_dev_command(
             for warning in unknown_provider_warnings(resolved):
                 print(f"[warn] {warning}", flush=True)
             if hasattr(worker, "provider_pinning") and isinstance(worker.provider_pinning, dict):
-                worker.provider_pinning["order"] = resolved
+                worker.provider_pinning = {**worker.provider_pinning, "order": resolved}
                 print(f"[dev] provider pinning order set to: {resolved}", flush=True)
             else:
                 print("[dev] current worker does not support provider pinning", flush=True)
         elif k in {"fallback", "fallbacks"}:
             val_bool = v.lower() in ("true", "1", "yes", "on")
             if hasattr(worker, "provider_pinning") and isinstance(worker.provider_pinning, dict):
-                worker.provider_pinning["allow_fallbacks"] = val_bool
+                worker.provider_pinning = {**worker.provider_pinning, "allow_fallbacks": val_bool}
                 print(f"[dev] provider allow_fallbacks set to: {val_bool}", flush=True)
             else:
                 print("[dev] current worker does not support provider pinning", flush=True)

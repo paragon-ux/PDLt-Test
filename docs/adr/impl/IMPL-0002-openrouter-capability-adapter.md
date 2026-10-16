@@ -1,7 +1,7 @@
 # IMPL-0002: OpenRouter Capability Adapter
 
 ## Status
-**Proposed.** Implements [ADR-0028](../0028-model-capability-boundary.md) rules 2 and 3. Date: 2026-10-03. Plan: Phases 2–3 of [`docs/plans/0028-model-capability-boundary-plan.md`](../../plans/0028-model-capability-boundary-plan.md).
+**Proposed; partly implemented (ledger L122, 2026-10-15)** without the intent object or the adapter module: the model list is read before each model's first call (`providers/model_capabilities.py`); the grammar is capped at what the metadata lists; `safety_settings` is no longer sent; the provider order comes from the profile; the output cap is capped at the listed maximum. Implements [ADR-0028](../0028-model-capability-boundary.md) rules 2 and 3. Date: 2026-10-03. Plan: Phases 2–3 of [`docs/plans/0028-model-capability-boundary-plan.md`](../../plans/0028-model-capability-boundary-plan.md).
 
 ## Context
 `ApiWorker._call` builds every request itself (`api_worker.py:1016-1135`; System 1 routing before that, from line 904):

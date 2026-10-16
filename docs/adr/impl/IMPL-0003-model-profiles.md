@@ -1,7 +1,7 @@
 # IMPL-0003: Model Profiles as Data
 
 ## Status
-**Proposed.** Implements [ADR-0028](../0028-model-capability-boundary.md) rule 4. Amends [ADR-0022](../0022-default-reasoning-high-pre-execution.md): the gpt-oss mapping moves into the profile file with the same values. Date: 2026-10-03. Plan: Phases 2 and 4 of [`docs/plans/0028-model-capability-boundary-plan.md`](../../plans/0028-model-capability-boundary-plan.md).
+**Proposed.** Until it lands, `api_worker.RECORDED_REQUEST_FAMILIES` holds the recorded profiles in code (ledger L122): gpt-oss and Nemotron 3 Super keep JSON mode at `EXECUTE` and the Baseten, Crusoe order with fallbacks they ran with (not this record's proposed Nvidia-only order for Nemotron). Implements [ADR-0028](../0028-model-capability-boundary.md) rule 4. Amends [ADR-0022](../0022-default-reasoning-high-pre-execution.md): the gpt-oss mapping moves into the profile file with the same values. Date: 2026-10-03. Plan: Phases 2 and 4 of [`docs/plans/0028-model-capability-boundary-plan.md`](../../plans/0028-model-capability-boundary-plan.md).
 
 ## Context
 Model and provider specifics are hardcoded in the request path:

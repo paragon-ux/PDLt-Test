@@ -132,7 +132,10 @@ def test_runner_settings_reach_the_wire(tmp_path):
         assert body.get("max_output_tokens") == 8000 and "max_tokens" not in body
         # Every operation goes to the configured providers (ADR-0028 rule 5): the ones
         # Groq rejects the schema of are sent in JSON mode, never routed past it.
-        assert body.get("provider") == {"order": ["Cerebras", "Groq", "SambaNova"], "allow_fallbacks": False}
+        # A request carrying a schema also asks for endpoints that support every parameter sent (L122).
+        schema = (body.get("text") or {}).get("format", {}).get("type") == "json_schema"
+        assert body.get("provider") == {"order": ["Cerebras", "Groq", "SambaNova"], "allow_fallbacks": False,
+                                        **({"require_parameters": True} if schema else {})}
         if op in {"EXECUTE", "EMIT_RESULT_IR"}:
             assert body.get("text") == {"format": {"type": "json_object"}}
 

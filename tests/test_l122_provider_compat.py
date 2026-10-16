@@ -29,7 +29,8 @@ MODEL_LIST = {
     LFM: {"id": LFM, "supported_parameters": [
         "frequency_penalty", "include_reasoning", "logprobs", "max_completion_tokens", "max_tokens", "min_p",
         "presence_penalty", "reasoning", "repetition_penalty", "response_format", "seed", "stop",
-        "structured_outputs", "temperature", "tool_choice", "tools", "top_k", "top_logprobs"]},
+        "structured_outputs", "temperature", "tool_choice", "tools", "top_k", "top_logprobs"],
+          "top_provider": {"max_completion_tokens": 8192}},
     INKLING: {"id": INKLING, "supported_parameters": [
         "frequency_penalty", "include_reasoning", "max_tokens", "presence_penalty", "reasoning",
         "reasoning_effort", "seed", "stop", "temperature", "tools", "top_p"]},
@@ -39,6 +40,7 @@ MODEL_LIST = {
     "plain/no-reasoning": {"id": "plain/no-reasoning", "supported_parameters": [
         "response_format", "structured_outputs", "tools"]},
     "plain/no-tools": {"id": "plain/no-tools", "supported_parameters": ["response_format", "structured_outputs"]},
+    "plain/json-only": {"id": "plain/json-only", "supported_parameters": ["response_format"]},
 }
 
 
@@ -130,14 +132,23 @@ def test_system1_requests_carry_them_too(monkeypatch):
 
 def test_a_model_that_lacks_a_parameter_fails_closed_before_any_request(monkeypatch):
     _listed(monkeypatch)
-    worker, sent = _worker(monkeypatch, INKLING)
+    worker, sent = _worker(monkeypatch, "plain/no-reasoning", reasoning_effort="high")
     with pytest.raises(ProviderError) as caught:
         worker.call(_request())
     assert caught.value.category == "MODEL_UNSUPPORTED" and caught.value.operation == "BOOTSTRAP_ANALYSIS"
     message = str(caught.value)
-    assert "'response_format'" in message and "'structured_outputs'" in message
-    assert "--no-structured-output" in message and "No request was sent" in message
+    assert "'reasoning'" in message and "--api-reasoning-effort" in message and "No request was sent" in message
     assert sent == []
+
+
+def test_a_model_without_output_formats_is_served_without_one(monkeypatch):
+    # Inkling lists neither response_format nor structured_outputs: adapted to, never excluded (ADR-0028 rule 5);
+    # the host still validates every reply.
+    _listed(monkeypatch)
+    worker, sent = _worker(monkeypatch, INKLING)
+    with pytest.raises(_Sent):
+        worker.call(_request("EXECUTE_UNCONFIRMED"))
+    assert "text" not in sent[0] and "provider" not in sent[0]
 
 
 def test_a_model_that_supports_the_session_passes(monkeypatch):
@@ -253,3 +264,95 @@ def test_a_submission_with_fields_beside_outcome_is_refused():
     assert "fields beside outcome: note" in envelope["errors"][0]["problem"]
     envelope, accepted = host.submit('{"outcome": {"kind": "RESULT"}}')
     assert accepted == {"kind": "RESULT"} and checked == [{"kind": "RESULT"}]
+
+
+# 5. Request settings per model: a recorded profile or the model's metadata, never one model's defaults for all.
+
+def _body(worker, operation):
+    return worker.build_request_body(_request(operation))[0]
+
+
+def test_a_structured_outputs_model_gets_a_strict_schema_at_execute(monkeypatch):
+    _listed(monkeypatch)
+    worker = ApiWorker(model=LFM, repo_root=ROOT)
+    for operation in ("EXECUTE_UNCONFIRMED", "EXECUTE"):
+        body = _body(worker, operation)
+        fmt = body["text"]["format"]
+        assert fmt["type"] == "json_schema" and fmt["strict"] is True, operation
+        assert body["provider"] == {"require_parameters": True}, operation  # no recorded order for this model
+    draft = _body(worker, "DRAFT_PROMPT")
+    assert draft["text"]["format"]["type"] == "json_schema" and "strict" not in draft["text"]["format"]
+    assert draft["provider"] == {"require_parameters": True}
+
+
+def test_a_json_only_model_keeps_json_mode(monkeypatch):
+    _listed(monkeypatch)
+    worker = ApiWorker(model="plain/json-only", repo_root=ROOT)
+    for operation in ("EXECUTE_UNCONFIRMED", "DRAFT_PROMPT"):
+        body = _body(worker, operation)
+        assert body["text"] == {"format": {"type": "json_object"}} and "provider" not in body, operation
+
+
+@pytest.mark.parametrize("model", [NEMOTRON, "openai/gpt-oss-120b"])
+def test_recorded_profiles_keep_json_mode_and_their_provider_order(monkeypatch, model):
+    from pdl_taskmaster.providers.api_worker import DEFAULT_PROVIDER_PINNING
+
+    _listed(monkeypatch, {**MODEL_LIST, "openai/gpt-oss-120b": {
+        "id": "openai/gpt-oss-120b", "supported_parameters": ["reasoning", "response_format", "structured_outputs"]}})
+    worker = ApiWorker(model=model, repo_root=ROOT)
+    body = _body(worker, "EXECUTE_UNCONFIRMED")
+    assert body["text"] == {"format": {"type": "json_object"}}
+    assert body["provider"] == DEFAULT_PROVIDER_PINNING  # no require_parameters without a schema
+    draft = _body(worker, "DRAFT_PLAN")
+    assert draft["provider"] == {**DEFAULT_PROVIDER_PINNING, "require_parameters": True}
+
+
+def test_unknown_metadata_keeps_the_earlier_forms():
+    worker = ApiWorker(model=LFM, repo_root=ROOT, base_url="https://example.invalid/v1")
+    assert _body(worker, "EXECUTE_UNCONFIRMED")["text"] == {"format": {"type": "json_object"}}
+    assert _body(worker, "DRAFT_PROMPT")["text"]["format"]["type"] == "json_schema"
+
+
+def test_safety_settings_are_sent_only_when_configured(monkeypatch):
+    from pdl_taskmaster.providers.api_worker import DEFAULT_SAFETY_SETTINGS
+
+    _listed(monkeypatch)
+    for model in (LFM, NEMOTRON):
+        assert "safety_settings" not in _body(ApiWorker(model=model, repo_root=ROOT), "BOOTSTRAP_ANALYSIS")
+    configured = ApiWorker(model=LFM, repo_root=ROOT, safety_settings=DEFAULT_SAFETY_SETTINGS)
+    assert _body(configured, "BOOTSTRAP_ANALYSIS")["safety_settings"] == DEFAULT_SAFETY_SETTINGS
+
+
+def test_the_output_cap_is_capped_at_the_listed_maximum(monkeypatch):
+    _listed(monkeypatch)
+    assert _body(ApiWorker(model=LFM, repo_root=ROOT), "BOOTSTRAP_ANALYSIS")["max_output_tokens"] == 8192
+    assert _body(ApiWorker(model=LFM, repo_root=ROOT, max_output_tokens=4000),
+                 "BOOTSTRAP_ANALYSIS")["max_output_tokens"] == 4000
+    assert _body(ApiWorker(model=NEMOTRON, repo_root=ROOT), "BOOTSTRAP_ANALYSIS")["max_output_tokens"] == 16384
+
+
+def test_a_configured_provider_order_applies_to_every_model(monkeypatch):
+    _listed(monkeypatch)
+    pinned = ApiWorker(model=LFM, repo_root=ROOT, provider_pinning={"order": ["Chutes"], "allow_fallbacks": False})
+    assert _body(pinned, "BOOTSTRAP_ANALYSIS")["provider"] == {"order": ["Chutes"], "allow_fallbacks": False}
+    monkeypatch.setenv("OPENROUTER_PROVIDER_ORDER", "Liquid")
+    from_env = ApiWorker(model=LFM, repo_root=ROOT)
+    assert _body(from_env, "BOOTSTRAP_ANALYSIS")["provider"]["order"] == ["Liquid"]
+    from_env.provider_pinning = {**from_env.provider_pinning, "allow_fallbacks": False}  # the dev command's form
+    assert _body(from_env, "BOOTSTRAP_ANALYSIS")["provider"] == {"order": ["Liquid"], "allow_fallbacks": False}
+
+
+def test_the_schema_fallback_drops_require_parameters_with_the_schema(monkeypatch):
+    _listed(monkeypatch)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+    worker = ApiWorker(model=LFM, repo_root=ROOT)
+    body = _body(worker, "EXECUTE_UNCONFIRMED")
+    sent = []
+
+    def fake_send(self, req, deadline=None):
+        sent.append(json.loads(req.data))
+        return {"output": []}
+
+    monkeypatch.setattr(ApiWorker, "_send_json_with_retries", fake_send)
+    worker._schema_rejection_fallback(body, "k", ProviderError("PROVIDER_REJECTED_REQUEST", "schema"), 0.0, True)
+    assert "text" not in sent[-1] and "provider" not in sent[-1]
