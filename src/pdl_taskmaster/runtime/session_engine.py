@@ -487,7 +487,11 @@ class SessionEngine:
         # AUTH-04: the user's original request is source data for execution; the
         # confirmed prompt governs task semantics where the two differ.
         self._source_request: str | None = None
-        self._requires_verified_execution: bool = False
+        # The turn's task type (L124): the safe default until a request selects one; a caller may pin one.
+        from pdl_taskmaster.extensions import task_types
+
+        self.task_type = task_types.REGISTRY.default
+        self.pinned_task_type: str | None = None
         self._problem_domain: Any = None
         self.refused: bool = False
         # The model that serves the session, for the result's provenance (E-1); set by the host.
@@ -605,6 +609,11 @@ class SessionEngine:
         return engine
 
     @property
+    def _requires_verified_execution(self) -> bool:
+        """Whether the turn's task type asks for, accepts and checks a witness (L124)."""
+        return self.task_type.requires_witness
+
+    @property
     def representation(self) -> str:
         return self._representation
 
@@ -616,10 +625,51 @@ class SessionEngine:
         self._representation = value
         self.bridge.session_modes = frozenset({NL_REPRESENTATION_MODE}) if value == NL else frozenset()
 
+    def _select_task_type(self, substantive_request: str, route: str) -> None:
+        """The turn's task type (L124, extensions/task_types.py): pinned, classified by System 1, or the safe
+        default. What System 1 decided is recorded whether or not it passed gating; the first classification keeps
+        its place at the top of the event."""
+        from pdl_taskmaster.extensions import task_types
+
+        selection = task_types.select(substantive_request, self.sys1_client, route, pinned=self.pinned_task_type)
+        self.task_type = selection.task_type
+        self._route_execution_profile(substantive_request)
+        # GUARD-02: the harness never infers a problem domain from request text. The domain is the task type's
+        # bound verifier's (GENERAL for witness reproduction); a witness may still declare a typed domain.
+        self._problem_domain = self.task_type.domain()
+        self._record_routing()
+        if self.workspace is not None:
+            first = selection.classifications[0] if selection.classifications else None
+            self.workspace.append_event("PROBLEM_CLASS_CLASSIFIED", {
+                "requires_verified_execution": self._requires_verified_execution,
+                "domain": getattr(self._problem_domain, "value", self._problem_domain),
+                **(first or {"verdict": None, "confidence": None, "passed_gating": False}),
+                "task_type": self.task_type.category,
+                "selected_by": selection.how,
+                **({"later_classifications": selection.classifications[1:]}
+                   if len(selection.classifications) > 1 else {}),
+            })
+
+    @staticmethod
+    def _routed_task_type(routing: TurnRouting) -> Any:
+        """The task type a turn was routed to. A routing recorded before task types names none: it was one of the
+        two problem classes. A task type not registered here, or one whose witness requirement changed since, is
+        never resumed under another: the restore fails closed."""
+        from pdl_taskmaster.extensions import task_types
+
+        name = routing.task_type or ("VERIFIED_EXECUTION" if routing.requires_verified_execution
+                                     else "STANDARD_EXECUTION")
+        if name not in task_types.REGISTRY:
+            raise ValueError(f"the turn was routed to task type {name!r}, which is not registered here")
+        task_type = task_types.REGISTRY.get(name)
+        if task_type.requires_witness != routing.requires_verified_execution:
+            raise ValueError(f"task type {name!r} no longer has the witness requirement the turn was routed with")
+        return task_type
+
     def _apply_routing(self, routing: TurnRouting) -> None:
         from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS
 
-        self._requires_verified_execution = routing.requires_verified_execution
+        self.task_type = self._routed_task_type(routing)
         self._problem_domain = routing.problem_domain
         self._profile_distribution = dict(routing.profile_distribution)
         self._execution_budget = EXECUTION_BUDGETS[routing.execution_tier]
@@ -631,6 +681,7 @@ class SessionEngine:
         self.workspace.write_turn_routing(TurnRouting(
             requires_verified_execution=self._requires_verified_execution,
             problem_domain=self._problem_domain,
+            task_type=self.task_type.category,
             execution_tier=self._execution_budget.tier,
             profile_distribution=self._profile_distribution,
         ))
@@ -1229,43 +1280,7 @@ class SessionEngine:
             self._previous_deliverable = None
         self._source_request = substantive_request
         self.workspace.write_turn_source(substantive_request)
-        from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
-        from pdl_taskmaster.verification.checkers.base import ProblemDomain
-        requires_verified = False
-        # What System 1 decided, recorded whether or not it passed gating: a
-        # STANDARD verdict and a VERIFIED one below the floor both route standard.
-        classification: dict[str, Any] = {"verdict": None, "confidence": None, "passed_gating": False}
-        if self.sys1_client and self.sys1_client.is_configured:
-            try:
-                recipe = ProblemClassRecipe()
-                sys1_req = recipe.build_request({"request": substantive_request})
-                resp_body, dur_ms = self.sys1_client.call(sys1_req)
-                res = recipe.parse_response(resp_body, duration_ms=dur_ms)
-                # Margin, entropy and distribution say which gate criterion failed.
-                classification = {"verdict": res.verdict, "confidence": round(res.confidence, 4),
-                                  "passed_gating": res.passed_gating, "margin": round(res.margin, 4),
-                                  "entropy": round(res.entropy, 4),
-                                  "distribution": {k: round(v, 4) for k, v in res.probabilities.items()}}
-                if res.passed_gating:
-                    requires_verified = (res.verdict == "VERIFIED_EXECUTION")
-            except Exception:
-                pass
-        self._requires_verified_execution = requires_verified
-        self._route_execution_profile(substantive_request)
-        # GUARD-02: the harness never infers a problem domain from request text.
-        # The domain stays GENERAL unless the witness itself declares a typed domain.
-        self._problem_domain = ProblemDomain.GENERAL if requires_verified else None
-        self._record_routing()
-
-        if self.workspace is not None:
-            self.workspace.append_event(
-                "PROBLEM_CLASS_CLASSIFIED",
-                {
-                    "requires_verified_execution": self._requires_verified_execution,
-                    "domain": self._problem_domain.value if self._problem_domain else None,
-                    **classification,
-                },
-            )
+        self._select_task_type(substantive_request, "confirmed")
         budget_refusal = self._budget_refusal()
         if budget_refusal is not None:
             return self._refuse(budget_refusal, traces, "budget")
@@ -1378,40 +1393,7 @@ class SessionEngine:
         self._source_request = substantive_request
         self.workspace.write_turn_source(substantive_request)
 
-        from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
-        from pdl_taskmaster.verification.checkers.base import ProblemDomain
-        requires_verified = False
-        classification: dict[str, Any] = {"verdict": None, "confidence": None, "passed_gating": False}
-        if self.sys1_client and self.sys1_client.is_configured:
-            try:
-                recipe = ProblemClassRecipe()
-                sys1_req = recipe.build_request({"request": substantive_request})
-                resp_body, dur_ms = self.sys1_client.call(sys1_req)
-                res = recipe.parse_response(resp_body, duration_ms=dur_ms)
-                classification = {
-                    "verdict": res.verdict, "confidence": round(res.confidence, 4),
-                    "passed_gating": res.passed_gating, "margin": round(res.margin, 4),
-                    "entropy": round(res.entropy, 4),
-                    "distribution": {k: round(v, 4) for k, v in res.probabilities.items()},
-                }
-                if res.passed_gating:
-                    requires_verified = (res.verdict == "VERIFIED_EXECUTION")
-            except Exception:
-                pass
-        self._requires_verified_execution = requires_verified
-        self._route_execution_profile(substantive_request)
-        self._problem_domain = ProblemDomain.GENERAL if requires_verified else None
-        self._record_routing()
-
-        if self.workspace is not None:
-            self.workspace.append_event(
-                "PROBLEM_CLASS_CLASSIFIED",
-                {
-                    "requires_verified_execution": self._requires_verified_execution,
-                    "domain": self._problem_domain.value if self._problem_domain else None,
-                    **classification,
-                },
-            )
+        self._select_task_type(substantive_request, "unconfirmed")
         budget_refusal = self._budget_refusal()
         if budget_refusal is not None:
             return self._refuse(budget_refusal, traces, "budget")
@@ -1850,8 +1832,9 @@ class SessionEngine:
         supplied_raw = transition.payload.get("execution_input_source") or self._source_request
         supplied = compile_bootstrap_output(supplied_raw, supplied_raw)[0].strip() if supplied_raw else None
 
-        verified = self._requires_verified_execution
-        result_ir_mode = verified or os.environ.get("PDLT_RESULT_IR") == "1"
+        # The task type's instruction channels (L124): the Result IR, and the witness within it.
+        verified = "witness" in self.task_type.instructions
+        result_ir_mode = self.task_type.result_ir or os.environ.get("PDLT_RESULT_IR") == "1"
         requirements: list[str] = []  # RESULT_STANDARD RS-02: not derived or rendered
         task_inputs: dict[str, str] = {}
         if self._previous_deliverable:
@@ -1989,7 +1972,7 @@ class SessionEngine:
         """Whether DRAFT_EXECUTE runs for this task (--draft-execute; ADR-0013 P6): a verified-execution
         task always gets one; any other does when System 1 says its deliverable is, or needs, an algorithm
         or a calculation."""
-        if not self.draft_execute:
+        if not self.draft_execute or "DRAFT_EXECUTE" not in self.task_type.operations:
             return False
         return self._requires_verified_execution or self._classify_computation()
 
@@ -2260,8 +2243,9 @@ class SessionEngine:
         typed_entities = list(self._typed_task_entities_cache.get(
             (substantive_request, self._previous_deliverable), []
         ))
-        verified = self._requires_verified_execution
-        result_ir_mode = verified or os.environ.get("PDLT_RESULT_IR") == "1"
+        # The task type's instruction channels (L124): the Result IR, and the witness within it.
+        verified = "witness" in self.task_type.instructions
+        result_ir_mode = self.task_type.result_ir or os.environ.get("PDLT_RESULT_IR") == "1"
         requirements: list[str] = []
         task_inputs: dict[str, str] = {}
         if self._previous_deliverable:
@@ -2616,6 +2600,8 @@ class SessionEngine:
                 self.workspace.write_provenance(provenance.record(
                     status=self.controller.state.stage.value,
                     requires_verified_execution=self._requires_verified_execution,
+                    task_type=self.task_type.category,
+                    verifier=self.task_type.verifier,
                     verification=getattr(self, "_last_verification", None),
                     witness=getattr(self, "_last_witness", None),
                     unverified_reason=reason,
@@ -2693,6 +2679,8 @@ class SessionEngine:
                 "domain": self._problem_domain,
             }
             model_witness = ir.get("witness")
+            judged = verifier.resolve_checker(sandbox_witness if sandbox_witness is not None else model_witness,
+                                              constraints, domain=self._problem_domain).name
             declared_incomplete = (  # RS-01: no witness, and what was not obtained is recorded
                 model_witness is None and sandbox_witness is None and bool(ir.get("open_defects"))
             )
@@ -2773,6 +2761,8 @@ class SessionEngine:
                     "certificate_checked": certificate is not None and sandbox_witness is not None
                     and sandbox_witness.get("data") == certificate,
                     "details": verdict.details,
+                    # The checker that judged the witness, when it is a registered domain checker (L124).
+                    **({"checker": judged} if judged != "fallback" else {}),
                 }
                 self.workspace.append_event("VERIFICATION_PASSED", self._last_verification)
             elif verdict.diagnostic == "SEARCH_CLAIM_UNREPRODUCED":
@@ -2801,6 +2791,14 @@ class SessionEngine:
             else:
                 errors.append(Finding("WITNESS_INVALID", diagnostic=verdict.diagnostic))
 
+        if verified and not errors and not declared_incomplete:
+            from pdl_taskmaster.runtime.provenance import witness_form
+
+            form = witness_form(ir.get("witness"), self._last_verification)
+            if form != "none" and form not in self.task_type.witness_forms:
+                # L124: a task type states the witness forms it accepts.
+                errors.append(Finding("WITNESS_FORM_NOT_ACCEPTED", form=form,
+                                      accepted=", ".join(sorted(self.task_type.witness_forms))))
         if errors:
             return errors, body
         # L116: a negative claim (L110), a deliverable declaring requirements open, or a positive result

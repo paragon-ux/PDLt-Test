@@ -88,13 +88,22 @@ class Session:
     @classmethod
     def open(cls, worker: Any, session_dir: str | Path, *, repo_root: str | Path | None = None,
              sandbox_mode: str | None = None, no_review: bool = False, restore: bool = True,
-             output_verifier: Any = None, run_id: str = "api") -> "Session":
+             output_verifier: Any = None, run_id: str = "api", task_type: str | None = None) -> "Session":
         """Open the session in ``session_dir``, resuming its workspace when ``restore`` and it has one.
 
         ``no_review`` runs the standard route (no prompt or plan review). ``output_verifier`` replaces the host's
         verifier registry (``verification.output_verifier.OutputVerifier``), for callers that register their own
-        domain checkers. ``sandbox_mode`` None means $PDLT_SANDBOX, else auto."""
+        domain checkers. ``sandbox_mode`` None means $PDLT_SANDBOX, else auto. ``task_type`` pins a registered task
+        type for every request (extensions/task_types.py); None lets System 1 classify each one."""
+        from pdl_taskmaster.extensions import task_types
         from pdl_taskmaster.host.app import PDLtHost
+
+        if task_type is not None:
+            route = "unconfirmed" if no_review else "confirmed"
+            if task_type not in task_types.REGISTRY:
+                raise ValueError(f"unknown task type {task_type!r}; registered: {', '.join(task_types.REGISTRY.names())}")
+            if route not in task_types.REGISTRY.get(task_type).routes:
+                raise ValueError(f"task type {task_type!r} does not run on the {route} route")
 
         session_dir = Path(session_dir).resolve()
         session_dir.mkdir(parents=True, exist_ok=True)
@@ -106,6 +115,7 @@ class Session:
                         sandbox_mode=sandbox_mode, no_review=no_review).start()
         if output_verifier is not None:
             host.engine.output_verifier = output_verifier
+        host.engine.pinned_task_type = task_type
         session = cls(host, session_dir)
         session._refresh_pointer()
         return session

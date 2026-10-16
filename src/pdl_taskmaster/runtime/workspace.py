@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 import json
 import os
 import re
@@ -28,7 +28,8 @@ class TurnRouting(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     requires_verified_execution: bool
-    problem_domain: Optional[ProblemDomain] = None
+    problem_domain: Optional[Union[ProblemDomain, str]] = None
+    task_type: Optional[str] = None  # L124; None in a routing recorded before task types
     execution_tier: str
     profile_distribution: dict[str, float] = Field(default_factory=dict)
 

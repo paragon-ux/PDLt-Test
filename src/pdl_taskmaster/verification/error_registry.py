@@ -110,6 +110,12 @@ _SPECS = (
         "recorded.",
     ),
     ErrorSpec(
+        "WITNESS_FORM_NOT_ACCEPTED",
+        "The witness is of the form '{form}'; this task accepts: {accepted}.",
+        "A task's type states the witness forms it accepts.",
+        "Return a witness of an accepted form, or mark the requirement open with the defect recorded.",
+    ),
+    ErrorSpec(
         "SEARCH_CLAIM_UNREPRODUCED",
         "The witness reports an exhausted search, but no program run by the host printed it.",
         "A claim of computation must come from computation: a search result is evidence only when a program "
