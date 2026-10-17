@@ -1,109 +1,38 @@
-# Getting Started
+# Get started
 
-This guide walks you through installation, running offline tests, launching the interactive REPL, and executing automated catalogue evaluation.
+Setting PDLt up takes five steps. Each step ends with a check, so you, or an agent doing the setup, can tell it worked before going on. Only the last step calls a model; the others need no API key and no network beyond the install itself.
 
----
+1. **Install** PDLt in a Python virtual environment.
+2. **Verify offline**: the version command, and the test suite if you installed from source.
+3. **Check the sandbox**: PDLt runs model-written programs only under the operating system's own confinement. If it is not available, PDLt runs no program at all.
+4. **Configure a model**: one OpenRouter API key.
+5. **Run a first task** through the Python API, the REPL or a headless command.
 
-## Installation
+## Choose your host
 
-PDLt requires Python 3.10 to 3.14.
+The commands and the sandbox differ by operating system, so each one has its own page with every step written out for it. Follow only the page for your machine.
 
-```bash
-# Upgrade pip
-python -m pip install --upgrade pip
+| Host | Sandbox backend | Shell used on the page | Tested in CI | Page |
+|---|---|---|---|---|
+| **Windows** 10 or 11 | AppContainer (built into Windows) | PowerShell | Full offline suite and confinement suite, Python 3.10 to 3.14 | [Windows](hosts/windows.md) |
+| **Linux** (kernel 5.13 or later) | Landlock (built into the kernel) | bash | Full offline suite and confinement suite, including the container backend, Python 3.10 to 3.14 | [Linux](hosts/linux.md) |
+| **macOS** | Seatbelt (`sandbox-exec`, built into macOS) | zsh or bash | Confinement and sandbox tests only, Python 3.10 to 3.14 | [macOS](hosts/macos.md) |
 
-# Clone the repository
-git clone https://github.com/paragon-ux/PDLt-Test.git
-cd PDLt-Test
+On any of them you can run programs in a Docker or Podman container instead of the native backend (`--sandbox container`). That is a sandbox mode, not a separate host: it is described on each host page.
 
-# Install in editable mode with development & test dependencies
-pip install -e ".[test]"
-```
+## What you have at the end
 
----
+- PDLt installed, with the `pdlt` command on your path.
+- A confirmed sandbox: a test program ran confined and printed `42`.
+- A first task run end to end, with its result, its exit code and its provenance (how far the host could check the result).
 
-## Offline Test Suite
+## After setup
 
-Before running live models, verify that the offline test suite and harness anti-overfitting gates pass 100%:
-
-```bash
-pytest -q
-```
-
-This verifies:
-- 85+ formal output contract schemas
-- 16+ harness anti-overfitting tests
-- Sandbox confinement barriers and environment allowlists
-
----
-
-## Interactive REPL
-
-Set your OpenRouter API key:
-
-=== "Linux / macOS"
-    ```bash
-    export OPENROUTER_API_KEY="sk-or-v1-..."
-    ```
-
-=== "Windows (PowerShell)"
-    ```powershell
-    $env:OPENROUTER_API_KEY = "sk-or-v1-..."
-    ```
-
-Launch the interactive REPL:
-
-```bash
-pdlt --new-session --dev
-```
-
-### REPL Commands & Workflow
-
-In a standard session, the harness guides interaction through deterministic review gates:
-
-```text
-USER> Write a Python function to compute the Collatz stopping time.
-ASSISTANT> Prompt Pseudocode:
-   PARSE input positive integer n
-   ITERATE: if even n/2, if odd 3n+1 until n == 1
-   COUNT steps and RETURN
-Confirm or correct this interpretation.
-```
-
-- `/confirm`: Approves pseudocode interpretation or plan.
-- `/revise <feedback>`: Feeds specific revisions to the model to update the artifact.
-- `/fast on|off`: Enables fast mode (automatically confirms when no host lint findings exist).
-- `/stop` or `/cancel`: Terminates the active session safely.
-- `/resume <session-id>`: Restores a prior session and displays the unconfirmed gate.
-
----
-
-## Evaluation Runner & Local Viewer
-
-Execute prompts across the 16-category catalogue:
-
-```bash
-# Validate manifest and list prompts (dry run)
-python run_catalogue.py --dry-run
-
-# Run a specific prompt
-python run_catalogue.py --prompt-id 06-04
-
-# Run pure sandboxed control baseline (raw unharnessed completions)
-python run_catalogue.py --route control --prompt-id 01-01 --theme bright
-
-# Sequential Five-Route Parity Sweep (Control + Arms 1-4)
-python run_catalogue.py --route control
-python run_catalogue.py --route unconfirmed
-python run_catalogue.py --route confirmed
-```
-
-
-### Local Web Viewer
-
-PDLt includes a localhost read-only browser viewer for inspecting sessions, scoreboards, and ground-truth artifacts:
-
-```bash
-python -m viewer
-```
-Opens `http://127.0.0.1:8090` in your default browser.
+| To | Read |
+|---|---|
+| Run tasks from your own Python code | [Python API](api.md) |
+| Add your own task types, verifiers or model providers | [Extensions SDK](extensions.md) |
+| Work interactively, or script PDLt from a shell | [REPL and headless runs](repl.md) |
+| Let another agent use PDLt's sandbox and results | [MCP server](mcp/EXTERNAL_TOOLS.md) |
+| Look up an environment variable, a file location or an exit code | [Reference](reference.md) |
+| Choose models and providers | [Providers and models](providers.md) |

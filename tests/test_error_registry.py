@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 _FACTS = {"block": 1, "step_limit": 10_000_000, "timeout_seconds": 30.0, "memory_mb": 256, "exit_code": 1,
           "stderr": "", "detail": "R1 is not reconciled", "diagnostic": "the witness is missing.",
           "host_observation": "python block 1 exited 0 and printed nothing", "count": 2,
-          "limit": 16384, "reason": "extra_fields"}
+          "limit": 16384, "reason": "extra_fields", "form": "argued", "accepted": "computed"}
 
 
 @pytest.mark.parametrize("code", sorted(REGISTRY))

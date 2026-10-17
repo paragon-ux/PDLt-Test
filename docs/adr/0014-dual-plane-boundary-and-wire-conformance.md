@@ -6,7 +6,7 @@
 - Date: 2026-09-27
 - Parent decision: [ADR-0001](0001-controller-gated-pseudocode-protocol.md)
 - Related decisions: [ADR-0004](0004-confirmed-artifacts-as-execution-boundary.md), [ADR-0007](0007-operationalize-negative-constraints-by-omission.md), [ADR-0010](0010-pydantic-wire-enforcement.md)
-- Related standards: [PDL_STANDARD](../../contracts/standards/PDL_STANDARD.md), [PROMPT_STANDARD](../../contracts/standards/PROMPT_STANDARD.md), [RESPONSE_PLAN_STANDARD](../../contracts/standards/RESPONSE_PLAN_STANDARD.md)
+- Related standards: [PDL_STANDARD](https://github.com/paragon-ux/PDLt-Test/blob/main/contracts/standards/PDL_STANDARD.md), [PROMPT_STANDARD](https://github.com/paragon-ux/PDLt-Test/blob/main/contracts/standards/PROMPT_STANDARD.md), [RESPONSE_PLAN_STANDARD](https://github.com/paragon-ux/PDLt-Test/blob/main/contracts/standards/RESPONSE_PLAN_STANDARD.md)
 - Implementation and evidence: [IMPL-0007](impl/IMPL-0007-wire-payloads-and-drafting-guidance.md)
 
 ## Context

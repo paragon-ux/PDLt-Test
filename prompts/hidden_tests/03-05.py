@@ -109,7 +109,7 @@ def test_no_locks(C):
     lock_types = (type(threading.Lock()), type(threading.RLock()), threading.Condition, threading.Semaphore,
                   threading.Event, queue.Queue)
     q = _make(C)
-    found = [k for k, v in vars(q).items() if isinstance(v, lock_types)]
+    found = [k for k, v in state_of(q).items() if isinstance(v, lock_types)]
     assert not found, f"lock-like attributes: {found}"
 
 

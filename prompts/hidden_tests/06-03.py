@@ -47,7 +47,7 @@ def _live_instances(exclude):
 def _storage(obj):
     """Entries held in the emitter's attributes, one level into dict values."""
     total = 0
-    for value in vars(obj).values():
+    for value in state_of(obj).values():
         try:
             items = list(value.values()) if hasattr(value, "values") and callable(value.values) else [value]
         except Exception:  # noqa: BLE001

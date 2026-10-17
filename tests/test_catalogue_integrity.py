@@ -91,11 +91,12 @@ def test_hung_prompt_is_killed_with_its_whole_process_tree(tmp_path):
         "time.sleep(120)\n"
     )
     started = time.monotonic()
+    # A 10-second deadline: long enough for the child to start and print under load, far short of its own sleep.
     code, timed_out, _ = run_catalogue.run_with_deadline(
-        [sys.executable, "-c", child], "", 3, tmp_path / "out.txt", tmp_path / "err.txt"
+        [sys.executable, "-c", child], "", 10, tmp_path / "out.txt", tmp_path / "err.txt"
     )
     assert timed_out and code == -1
-    assert time.monotonic() - started < 20
+    assert time.monotonic() - started < 60
     assert "started" in (tmp_path / "out.txt").read_text()  # progress is on disk, not lost in a pipe
     grandchild = int(pid_file.read_text())
     time.sleep(0.5)
@@ -216,8 +217,8 @@ def test_output_printed_before_a_timeout_is_kept_and_decoded(tmp_path):
         "sys.stdout.flush()\n"
         "time.sleep(120)\n"
     )
-    code, timed_out, _ = run_catalogue.run_with_deadline(
-        [sys.executable, "-c", child], "", 2, tmp_path / "out.txt", tmp_path / "err.txt"
+    code, timed_out, _ = run_catalogue.run_with_deadline(  # 10 s: time to start and print under load
+        [sys.executable, "-c", child], "", 10, tmp_path / "out.txt", tmp_path / "err.txt"
     )
     assert timed_out and code == -1
     out = (tmp_path / "out.txt").read_text(encoding="utf-8", errors="replace")

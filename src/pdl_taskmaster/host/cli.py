@@ -10,10 +10,12 @@ from pdl_taskmaster import __protocol_version__, __version__
 from pdl_taskmaster.runtime.normative_store import NormativeStore
 
 if sys.platform == "win32":
-    # stdin too: a prompt piped in UTF-8 would otherwise be read in the ANSI code page.
-    for _stream in (sys.stdin, sys.stdout, sys.stderr):
+    # stdin too: a prompt piped in UTF-8 would otherwise be read in the ANSI code page. utf-8-sig drops the
+    # byte-order mark Windows PowerShell puts before piped text when its console is set to UTF-8; kept, it
+    # turned a piped "/quit" into a task sent to the model.
+    for _stream, _encoding in ((sys.stdin, "utf-8-sig"), (sys.stdout, "utf-8"), (sys.stderr, "utf-8")):
         try:
-            _stream.reconfigure(encoding="utf-8")
+            _stream.reconfigure(encoding=_encoding)
         except Exception:
             pass
 

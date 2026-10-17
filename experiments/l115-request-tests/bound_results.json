@@ -1,0 +1,1539 @@
+[
+ {
+  "index": 0,
+  "module": "000.py",
+  "prompt": "04-03",
+  "run": "run-20261004-123121-confirmed",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self, id)\n    def add_transition(self, symbol, state)\nclass NFA:\n    def __init__(self, start, accept)\n    def epsilon_closure(self, states)\n    def move(self, states, symbol)\n    def matches(self, text)\nclass Lexer:\n    def __init__(self, pattern)\n    def next_token(self)\n    def peek(self)\nclass ASTNode:\nclass Literal:\n    def __init__(self, char)\nclass Dot:\nclass CharClass:\n    def __init__(self, chars)\nclass Concat:\n    def __init__(self, left, right)\nclass Alternation:\n    def __init__(self, left, right)\nclass Star:\n    def __init__(self, expr)\nclass Plus:\n    def __init__(self, expr)\nclass Optional:\n    def __init__(self, expr)\nclass Parser:\n    def __init__(self, pattern)\n    def eat(self, typ)\n    def parse(self)\n    def parse_expression(self)\n    def parse_term(self)\n    def parse_factor(self)\n    def parse_base(self)\ndef new_state()\ndef build_nfa(node)\ndef compile_regex(pattern)\ndef match_regex(pattern, text)\ndef run_tests()",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_alternation_basic": "ok",
+    "TestThompsonConstruction.test_character_class": "ok",
+    "TestThompsonConstruction.test_complex_pattern": "AssertionError: ValueError: Unexpected characters at end of pattern",
+    "TestThompsonConstruction.test_concatenation_basic": "ok",
+    "TestThompsonConstruction.test_dot_matches_any": "AssertionError: ValueError: Unexpected characters at end of pattern",
+    "TestThompsonConstruction.test_given_example_1": "ok",
+    "TestThompsonConstruction.test_given_example_2": "ok",
+    "TestThompsonConstruction.test_grouping": "ok",
+    "TestThompsonConstruction.test_kleene_star": "ok",
+    "TestThompsonConstruction.test_optional_operator": "ok",
+    "TestThompsonConstruction.test_plus_operator": "ok"
+   }
+  }
+ },
+ {
+  "index": 1,
+  "module": "001.py",
+  "prompt": "04-03",
+  "run": "run-20261004-123218-unconfirmed",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self)\n    def add_transition(self, symbol, dest)\nclass Fragment:\n    def __init__(self, start, accepts)\ndef escape_char(ch)\ndef tokenize(pattern)\ndef add_concat(tokens)\ndef to_postfix(tokens)\ndef literal_fragment(ch)\ndef dot_fragment()\ndef class_fragment(chars)\ndef concat(f1, f2)\ndef alternation(f1, f2)\ndef star(f)\ndef plus(f)\ndef optional(f)\ndef build_nfa(postfix)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef matches(fragment, string)\ndef compile_regex(pattern)\ndef run_tests()",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_alternation": "ok",
+    "TestThompsonConstruction.test_character_class": "ok",
+    "TestThompsonConstruction.test_concatenation": "ok",
+    "TestThompsonConstruction.test_dot": "AssertionError: IndexError: pop from empty list",
+    "TestThompsonConstruction.test_example_1_matches": "ok",
+    "TestThompsonConstruction.test_example_1_non_match": "ok",
+    "TestThompsonConstruction.test_example_2_matches": "ok",
+    "TestThompsonConstruction.test_example_2_non_match": "ok",
+    "TestThompsonConstruction.test_grouping": "ok",
+    "TestThompsonConstruction.test_kleene_star": "ok",
+    "TestThompsonConstruction.test_optional": "ok",
+    "TestThompsonConstruction.test_plus": "ok"
+   }
+  }
+ },
+ {
+  "index": 2,
+  "module": "002.py",
+  "prompt": "04-02",
+  "run": "run-20261006-232611-confirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "signatures": "class JSONHandler:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\n    def on_value(self, value)\ndef parse(stream, handler)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestJSONParser.test_boolean_and_null": "ok",
+    "TestJSONParser.test_empty_array": "ok",
+    "TestJSONParser.test_empty_object": "ok",
+    "TestJSONParser.test_large_array_streaming": "ok",
+    "TestJSONParser.test_mixed_types_in_array": "AssertionError:   Actual: on_string('val')",
+    "TestJSONParser.test_nested_structures": "AssertionError: Calls: [call(), call()].",
+    "TestJSONParser.test_number_parsing": "ok",
+    "TestJSONParser.test_string_with_escapes": "ok",
+    "TestJSONParser.test_unicode_escape": "ok"
+   }
+  }
+ },
+ {
+  "index": 3,
+  "module": "003.py",
+  "prompt": "04-03",
+  "run": "run-20261006-232611-confirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self)\ndef new_state()\nclass Fragment:\n    def __init__(self, start, ends)\ndef add_transition(s, ch, t)\ndef add_epsilon(s, t)\ndef tokenize(regex)\ndef insert_concat(tokens)\ndef to_postfix(regex)\ndef build_nfa(postfix)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef matches(start_state, string)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_0_9_plus_matches_123": "AssertionError: TypeError: object of type 'generator' has no len()",
+    "TestThompsonConstruction.test_0_9_plus_not_match_abc": "AssertionError: TypeError: object of type 'generator' has no len()",
+    "TestThompsonConstruction.test_a_b_c_star_d_matches_abcbcd": "AssertionError: TypeError: object of type 'generator' has no len()",
+    "TestThompsonConstruction.test_a_b_c_star_d_matches_abcd": "AssertionError: TypeError: object of type 'generator' has no len()",
+    "TestThompsonConstruction.test_a_b_c_star_d_matches_ad": "AssertionError: TypeError: object of type 'generator' has no len()",
+    "TestThompsonConstruction.test_a_b_c_star_d_not_match_aed": "AssertionError: TypeError: object of type 'generator' has no len()"
+   }
+  }
+ },
+ {
+  "index": 4,
+  "module": "004.py",
+  "prompt": "04-02",
+  "run": "run-20261006-234715-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "signatures": "def decode_string(s)\nclass JSONParseError:\ndef tokenize(stream, chunk_size)\ndef parse(stream, handler)\nclass RecordingHandler:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_decode_string_escapes": "AssertionError: ",
+    "test_decode_string_unicode": "AssertionError: ",
+    "test_parse_array": "AttributeError: 'RecordingHandler' object has no attribute 'calls'",
+    "test_parse_bool_null": "AttributeError: 'RecordingHandler' object has no attribute 'calls'",
+    "test_parse_deep_nesting": "AttributeError: 'RecordingHandler' object has no attribute 'calls'",
+    "test_parse_error": "ok",
+    "test_parse_nested": "AttributeError: 'RecordingHandler' object has no attribute 'calls'",
+    "test_parse_number": "AttributeError: 'RecordingHandler' object has no attribute 'calls'",
+    "test_parse_simple_object": "AttributeError: 'RecordingHandler' object has no attribute 'calls'",
+    "test_parse_string_escapes": "AttributeError: 'RecordingHandler' object has no attribute 'calls'",
+    "test_recording_handler": "AttributeError: 'RecordingHandler' object has no attribute 'calls'",
+    "test_streaming_1000_array": "AttributeError: 'RecordingHandler' object has no attribute 'calls'",
+    "test_tokenize_simple_object": "AssertionError: "
+   }
+  }
+ },
+ {
+  "index": 5,
+  "module": "005.py",
+  "prompt": "04-03",
+  "run": "run-20261006-234715-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self)\ndef new_state()\nclass NFA:\n    def __init__(self, start, accept)\ndef concat(nfa1, nfa2)\ndef alternate(nfa1, nfa2)\ndef star(nfa)\ndef plus(nfa)\ndef optional(nfa)\ndef symbol(ch)\ndef dot()\ndef char_class(chars)\ndef add_concat(tokens)\ndef tokenize(pattern)\ndef to_postfix(pattern)\ndef build_nfa(postfix)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef match(nfa, s)\ndef compile_regex(pattern)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_alternate_basic": "ok",
+    "TestThompsonConstruction.test_build_nfa_from_postfix": "ok",
+    "TestThompsonConstruction.test_char_class_matches_specified_chars": "ok",
+    "TestThompsonConstruction.test_compile_regex_returns_nfa": "ok",
+    "TestThompsonConstruction.test_concat_basic": "ok",
+    "TestThompsonConstruction.test_dot_matches_any_char": "ok",
+    "TestThompsonConstruction.test_epsilon_closure_empty_input": "ok",
+    "TestThompsonConstruction.test_move_with_matching_char": "ok",
+    "TestThompsonConstruction.test_move_with_non_matching_char": "ok",
+    "TestThompsonConstruction.test_optional_basic": "ok",
+    "TestThompsonConstruction.test_pattern_0_9_plus_matches_123": "ok",
+    "TestThompsonConstruction.test_pattern_0_9_plus_not_match_abc": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_abcbcd": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_abcd": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_ad": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_not_match_aed": "ok",
+    "TestThompsonConstruction.test_plus_basic": "ok",
+    "TestThompsonConstruction.test_star_basic": "ok",
+    "TestThompsonConstruction.test_to_postfix_basic_pattern": "ok",
+    "TestThompsonConstruction.test_tokenize_basic_pattern": "ok"
+   }
+  }
+ },
+ {
+  "index": 6,
+  "module": "006.py",
+  "prompt": "04-02",
+  "run": "run-20261007-003627-confirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "signatures": "def parse(stream, handler, chunk_size)\nclass MockHandler:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\ndef generate_large_array(n)\ndef stream_json_array(generator, chunk_size)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_basic_object_parsing": "ok",
+    "test_chunked_streaming": "ok",
+    "test_empty_object_and_array": "ok",
+    "test_large_array_streaming": "ok",
+    "test_mixed_types_in_array": "ok",
+    "test_nested_structures": "ok",
+    "test_null_value_parsing": "ok",
+    "test_string_escape_sequences": "ok",
+    "test_unicode_escape_sequences": "ok"
+   }
+  }
+ },
+ {
+  "index": 7,
+  "module": "007.py",
+  "prompt": "04-03",
+  "run": "run-20261007-003627-confirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "signatures": "class State:\n    def __init__(self)\n    def add_edge(self, symbol, state)\ndef epsilon_closure(states)\ndef move(states, symbol)\nclass RegexNode:\nclass Literal:\n    def __init__(self, char)\nclass Concat:\n    def __init__(self, left, right)\nclass Alternation:\n    def __init__(self, left, right)\nclass Star:\n    def __init__(self, node)\nclass Plus:\n    def __init__(self, node)\nclass OptionalNode:\n    def __init__(self, node)\nclass CharClass:\n    def __init__(self, chars)\nclass Dot:\nclass Parser:\n    def __init__(self, pattern)\n    def peek(self)\n    def consume(self)\n    def parse(self)\n    def parse_expression(self)\n    def parse_term(self)\n    def parse_factor(self)\n    def parse_base(self)\n    def parse_char_class(self)\nclass Fragment:\n    def __init__(self, start, accepts)\ndef build_nfa(node)\ndef nfa_match(pattern, text)\ndef run_tests()",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_pattern_0_9_plus_does_not_match_abc": "ok",
+    "TestThompsonConstruction.test_pattern_0_9_plus_matches_123": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_does_not_match_aed": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_abcbcd": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_abcd": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_ad": "ok"
+   }
+  }
+ },
+ {
+  "index": 8,
+  "module": "008.py",
+  "prompt": "04-03",
+  "run": "run-20261007-011904-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self)\n    def add_transition(self, ch, state)\nclass NFA:\n    def __init__(self, start, accept)\nclass RegexParser:\n    def __init__(self, pattern)\n    def peek(self)\n    def advance(self)\n    def parse(self)\n    def expression(self)\n    def term(self)\n    def factor(self)\n    def base(self)\n    def literal(self, ch)\n    def dot(self)\n    def char_class(self)\n    def concatenate(self, first, second)\n    def alternate(self, left, right)\n    def kleene_star(self, nfa)\n    def plus(self, nfa)\n    def optional(self, nfa)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef simulate(nfa, string)\ndef compile_regex(pattern)\ndef match(pattern, string)\ndef run_tests()",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_0_9_plus_does_not_match_abc": "ok",
+    "test_0_9_plus_matches_123": "ok",
+    "test_a_b_c_star_d_does_not_match_aed": "ok",
+    "test_a_b_c_star_d_matches_abcbcd": "ok",
+    "test_a_b_c_star_d_matches_abcd": "ok",
+    "test_a_b_c_star_d_matches_ad": "ok",
+    "test_character_class": "ok",
+    "test_dot_matches_any_character": "ok",
+    "test_epsilon_closure_with_single_state": "ok",
+    "test_grouping_with_parentheses": "ok",
+    "test_kleene_star_zero_or_more": "ok",
+    "test_move_with_matching_character": "ok",
+    "test_nfa_simulation_basic_match": "ok",
+    "test_nfa_simulation_no_match": "ok",
+    "test_optional_zero_or_one": "ok",
+    "test_plus_one_or_more": "ok",
+    "test_regex_parser_alternation": "ok",
+    "test_regex_parser_concatenation": "ok"
+   }
+  }
+ },
+ {
+  "index": 9,
+  "module": "009.py",
+  "prompt": "04-03",
+  "run": "run-20261007-013354-confirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self, id, is_accept)\n    def add_transition(self, symbols, target)\nclass NFA:\n    def __init__(self, start, accept)\n    def add_state(self, state)\ndef tokenize(pattern)\nclass ASTNode:\nclass Literal:\n    def __init__(self, chars)\nclass Dot:\nclass Concat:\n    def __init__(self, left, right)\nclass Alternation:\n    def __init__(self, left, right)\nclass Star:\n    def __init__(self, child)\nclass Plus:\n    def __init__(self, child)\nclass Optional:\n    def __init__(self, child)\ndef parse(tokens)\ndef new_state(is_accept)\ndef build_nfa(node)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef matches(pattern, text)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_matches_character_class": "AssertionError: AssertionError: False is not true : Should match '123'",
+    "TestThompsonConstruction.test_matches_pattern_with_grouping": "ok"
+   }
+  }
+ },
+ {
+  "index": 10,
+  "module": "010.py",
+  "prompt": "04-02",
+  "run": "run-20261007-084306-confirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class JSONSAXParser:\n    def __init__(self, handler, chunk_size)\n    def parse(self, stream)\nclass RecordingHandler:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\ndef stream_json_array(num_elements)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestJSONSAXParser.test_empty_structures": "AssertionError: ?   +++              ++ +",
+    "TestJSONSAXParser.test_large_array_streaming": "AssertionError: AssertionError: 2008 != 1002",
+    "TestJSONSAXParser.test_nested_structures": "AssertionError: ?   +++              ++ +",
+    "TestJSONSAXParser.test_null_and_numbers": "AssertionError: ?   +++              ++ +",
+    "TestJSONSAXParser.test_simple_object": "AssertionError: ?   +++              ++ +",
+    "TestJSONSAXParser.test_string_escapes": "AssertionError: ?   +++              ++ +"
+   }
+  }
+ },
+ {
+  "index": 11,
+  "module": "011.py",
+  "prompt": "04-02",
+  "run": "run-20261007-120236-unconfirmed",
+  "grade": "FAIL",
+  "signatures": "(no public functions or classes)",
+  "report": {
+   "load_errors": [
+    "SyntaxError: (unicode error) 'unicodeescape' codec can't decode bytes in position 8-9: truncated \\uXXXX escape (<deliverable 1>, line 143)"
+   ],
+   "tests": {
+    "test_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_large_array": "NameError: name 'parse' is not defined",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_simple_array": "NameError: name 'parse' is not defined",
+    "test_simple_object": "NameError: name 'parse' is not defined",
+    "test_string_escapes": "NameError: name 'parse' is not defined",
+    "test_string_escapes_all": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "index": 12,
+  "module": "012.py",
+  "prompt": "04-03",
+  "run": "run-20261007-120236-unconfirmed",
+  "grade": "PASS",
+  "signatures": "class State:\n    def __init__(self)\n    def add_edge(self, symbol, target)\nclass NFA:\n    def __init__(self, start, accept)\n    def epsilon_closure(self, states)\n    def move(self, states, char)\n    def matches(self, string)\ndef tokenize(pattern)\ndef insert_concat(tokens)\ndef to_postfix(tokens)\ndef make_literal(ch)\ndef make_dot()\ndef make_char_class(chars)\ndef concat(nfa1, nfa2)\ndef alternate(nfa1, nfa2)\ndef star(nfa)\ndef plus(nfa)\ndef optional(nfa)\ndef build_nfa(postfix)\ndef compile_regex(pattern)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_a_b_c_star_d_does_not_match_aed": "ok",
+    "TestThompsonConstruction.test_a_b_c_star_d_matches_abcbcd": "ok",
+    "TestThompsonConstruction.test_a_b_c_star_d_matches_abcd": "ok",
+    "TestThompsonConstruction.test_a_b_c_star_d_matches_ad": "ok",
+    "TestThompsonConstruction.test_char_class_0_9_plus_does_not_match_abc": "ok",
+    "TestThompsonConstruction.test_char_class_0_9_plus_matches_123": "ok"
+   }
+  }
+ },
+ {
+  "index": 13,
+  "module": "013.py",
+  "prompt": "04-02",
+  "run": "run-20261007-122846-confirmed",
+  "grade": "FAIL",
+  "signatures": "class JSONParseError:\ndef parse(stream, handler, chunk_size)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_boolean_and_null": "UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "test_chunked_streaming": "UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "test_empty_containers": "AssertionError: Expected [('on_object_start',), ('on_key', 'empty_obj'), ('on_object_start',), ('on_object_end',), ('on_key', 'empty_arr'), ('on_array_start',), ('on_array_end',), ('on_object_end',)], got [('on_objec",
+    "test_large_array_streaming": "UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "test_nested_structures": "UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "test_number_formats": "UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "test_simple_object": "UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "test_string_escapes": "AssertionError: Expected [('on_object_start',), ('on_key', 'text'), ('on_string', 'line1\\nline2\\ttab'), ('on_key', 'quote'), ('on_string', 'he said \"hello\"'), ('on_object_end',)], got [('on_object_start',), ('on_stri",
+    "test_unicode_escape": "AssertionError: Expected [('on_object_start',), ('on_key', 'greek'), ('on_string', '\u03b1\u03b2\u03b3'), ('on_object_end',)], got [('on_object_start',), ('on_string', 'greek'), ('on_value', 'greek'), ('on_key', 'greek'), ('on_stri"
+   }
+  }
+ },
+ {
+  "index": 14,
+  "module": "014.py",
+  "prompt": "04-03",
+  "run": "run-20261007-122846-confirmed",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self, id)\nclass NFA:\n    def __init__(self, start, accepts)\n    def epsilon_closure(self, states)\n    def move(self, states, symbol)\n    def matches(self, string)\nclass RegexParser:\n    def __init__(self, pattern)\n    def new_state(self)\n    def parse(self)\n    def parse_expression(self)\n    def parse_term(self)\n    def parse_factor(self)\n    def parse_base(self)\n    def parse_char_class(self)\n    def current(self)\n    def peek(self, offset)\n    def consume(self, ch)\nclass ThompsonBuilder:\n    def __init__(self, parser)\n    def new_state(self)\n    def build(self, ast)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_0_9_plus_does_not_match_abc": "TypeError: 'in <string>' requires string as left operand, not NoneType",
+    "test_0_9_plus_matches_123": "TypeError: 'in <string>' requires string as left operand, not NoneType",
+    "test_a_b_c_star_d_does_not_match_aed": "TypeError: 'in <string>' requires string as left operand, not NoneType",
+    "test_a_b_c_star_d_matches_abcbcd": "TypeError: 'in <string>' requires string as left operand, not NoneType",
+    "test_a_b_c_star_d_matches_abcd": "TypeError: 'in <string>' requires string as left operand, not NoneType",
+    "test_a_b_c_star_d_matches_ad": "TypeError: 'in <string>' requires string as left operand, not NoneType"
+   }
+  }
+ },
+ {
+  "index": 15,
+  "module": "015.py",
+  "prompt": "04-02",
+  "run": "run-20261007-225144-confirmed",
+  "grade": "FAIL",
+  "signatures": "(no public functions or classes)",
+  "report": {
+   "load_errors": [
+    "IndentationError: unexpected indent (<deliverable 1>, line 1)"
+   ],
+   "tests": {
+    "test_parse_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_escapes": "NameError: name 'parse' is not defined",
+    "test_stream_1000_element_array": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "index": 16,
+  "module": "016.py",
+  "prompt": "04-03",
+  "run": "run-20261007-225144-confirmed",
+  "grade": "FAIL",
+  "signatures": "class Token:\n    def __init__(self, typ, val)\ndef tokenize(pattern)\nclass ASTNode:\nclass Literal:\n    def __init__(self, char)\nclass Concat:\n    def __init__(self, left, right)\nclass Altern:\n    def __init__(self, left, right)\nclass Star:\n    def __init__(self, expr)\nclass Plus:\n    def __init__(self, expr)\nclass Optional:\n    def __init__(self, expr)\nclass CharClass:\n    def __init__(self, chars)\nclass Dot:\n    def __init__(self)\nclass Parser:\n    def __init__(self, tokens)\n    def peek(self)\n    def advance(self)\n    def parse(self)\n    def parse_expr(self)\n    def parse_term(self)\n    def parse_factor(self)\n    def parse_base(self)\n    def parse_char_class(self)\nclass State:\n    def __init__(self)\n    def add_edge(self, symbol, state)\ndef epsilon_closure(states)\ndef move(states, symbol)\nclass NFA:\n    def __init__(self, start, accept)\ndef build_nfa(node)\ndef matches(nfa, text)\ndef compile_regex(pattern)",
+  "report": {
+   "load_errors": [
+    "TypeError: type 'Optional' is not subscriptable"
+   ],
+   "tests": {
+    "TestThompsonConstruction.test_pattern_0_9_plus_matches_123": "AssertionError: NameError: name 'compile_regex' is not defined",
+    "TestThompsonConstruction.test_pattern_0_9_plus_not_match_abc": "AssertionError: NameError: name 'compile_regex' is not defined",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_abcbcd": "AssertionError: NameError: name 'compile_regex' is not defined",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_abcd": "AssertionError: NameError: name 'compile_regex' is not defined",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_ad": "AssertionError: NameError: name 'compile_regex' is not defined",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_not_match_aed": "AssertionError: NameError: name 'compile_regex' is not defined"
+   }
+  }
+ },
+ {
+  "index": 17,
+  "module": "017.py",
+  "prompt": "04-02",
+  "run": "run-20261008-044901-confirmed",
+  "grade": "FAIL",
+  "signatures": "class JSONStreamingParser:\n    def __init__(self, stream, handler, chunk_size)\ndef parse(stream, handler)\nclass CountingHandler:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\n    def on_value(self, v)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestJSONStreamingParser.test_boolean_and_null": "ok",
+    "TestJSONStreamingParser.test_chunked_reading_with_escapes": "AssertionError: AttributeError: 'JSONStreamingParser' object has no attribute 'parse'",
+    "TestJSONStreamingParser.test_counting_handler_functionality": "AssertionError: AttributeError: 'CountingHandler' object has no attribute 'object_count'",
+    "TestJSONStreamingParser.test_deep_nesting": "ok",
+    "TestJSONStreamingParser.test_empty_structures": "ok",
+    "TestJSONStreamingParser.test_nested_structures": "AssertionError: AssertionError: 4 != 3",
+    "TestJSONStreamingParser.test_number_formats": "ok",
+    "TestJSONStreamingParser.test_parse_simple_array": "ok",
+    "TestJSONStreamingParser.test_parse_simple_object": "ok",
+    "TestJSONStreamingParser.test_streaming_1000_element_array": "AssertionError: AttributeError: 'JSONStreamingParser' object has no attribute 'parse'",
+    "TestJSONStreamingParser.test_string_escapes": "ok",
+    "TestJSONStreamingParser.test_whitespace_handling": "ok"
+   }
+  }
+ },
+ {
+  "index": 18,
+  "module": "018.py",
+  "prompt": "04-03",
+  "run": "run-20261008-044901-confirmed",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self, is_accept)\n    def add_transition(self, symbol, state)\n    def add_epsilon(self, state)\nclass NFA:\n    def __init__(self, start, accept)\n    def epsilon_closure(self, states)\n    def move(self, states, symbol)\n    def matches(self, s)\nclass RegexParser:\n    def __init__(self, pattern)\n    def peek(self)\n    def get(self)\n    def parse(self)\n    def expression(self)\n    def term(self)\n    def factor(self)\n    def base(self)\n    def literal(self)\n    def dot(self)\n    def char_class(self)\n    def concatenate(self, left, right)\n    def alternate(self, left, right)\n    def kleene_star(self, nfa)\n    def plus(self, nfa)\n    def optional(self, nfa)\ndef wildcard_match(nfa, s)\ndef build_nfa(pattern)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "timeout"
+   }
+  }
+ },
+ {
+  "index": 19,
+  "module": "019.py",
+  "prompt": "04-02",
+  "run": "run-20261008-060545-control",
+  "grade": "FAIL",
+  "signatures": "class CharIter:\n    def __init__(self, stream, chunk_size, encoding)\n    def peek(self)\n    def next(self)\n    def unget(self, ch)\ndef read_string(it)\ndef read_number(it, first_char)\ndef skip_whitespace(it)\ndef parse(stream, handler, chunk_size, encoding)\nclass PrintHandler:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, k)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\n    def on_value(self, v)",
+  "report": {
+   "load_errors": [
+    "NameError: name 'on_object_start' is not defined",
+    "FileNotFoundError: [Errno 2] No such file or directory: 'big.json'"
+   ],
+   "tests": {
+    "TestStreamingJSONParser.test_boolean_and_null": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_nested_structures": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_number_parsing": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_streaming_array_1000": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_string_escapes": "AssertionError: AttributeError: 'str' object has no attribute 'decode'"
+   }
+  }
+ },
+ {
+  "index": 20,
+  "module": "020.py",
+  "prompt": "04-03",
+  "run": "run-20261008-060545-control",
+  "grade": "PASS",
+  "signatures": "class Expr:\n    def build(self, nfa)\nclass Literal:\n    def __init__(self, ch)\n    def build(self, nfa)\nclass Dot:\n    def build(self, nfa)\nclass CharClass:\n    def __init__(self, chars)\n    def build(self, nfa)\nclass Concat:\n    def __init__(self, left, right)\n    def build(self, nfa)\nclass Alt:\n    def __init__(self, left, right)\n    def build(self, nfa)\nclass Star:\n    def __init__(self, expr)\n    def build(self, nfa)\nclass Plus:\n    def __init__(self, expr)\n    def build(self, nfa)\nclass Opt:\n    def __init__(self, expr)\n    def build(self, nfa)\nclass NFA:\n    def __init__(self)\n    def new_state(self)\n    def add_transition(self, src, symbol, dst)\n    def add_epsilon(self, src, dst)\n    def from_expr(cls, expr)\n    def match(self, text)\nclass Parser:\n    def __init__(self, pattern)\n    def peek(self)\n    def consume(self)\n    def error(self, msg)\n    def parse(self)\n    def parse_term(self)\n    def parse_factor(self)\n    def parse_base(self)\n    def parse_char_class(self)\ndef compile_regex(pattern)",
+  "report": {
+   "load_errors": [
+    "SyntaxError: invalid syntax (<deliverable 2>, line 1)"
+   ],
+   "tests": {
+    "TestRegexNFA.test_0_9_plus_matches_123": "ok",
+    "TestRegexNFA.test_0_9_plus_not_match_abc": "ok",
+    "TestRegexNFA.test_a_b_c_star_d_matches_abcbcd": "ok",
+    "TestRegexNFA.test_a_b_c_star_d_matches_abcd": "ok",
+    "TestRegexNFA.test_a_b_c_star_d_matches_ad": "ok",
+    "TestRegexNFA.test_a_b_c_star_d_not_match_aed": "ok"
+   }
+  }
+ },
+ {
+  "index": 21,
+  "module": "021.py",
+  "prompt": "04-02",
+  "run": "run-20261008-063956-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class JSONToken:\nclass Tokenizer:\n    def __init__(self, stream, chunk_size)\n    def tokens(self)\nclass SAXParser:\n    def __init__(self, handler)\n    def parse(self, stream)\ndef parse(stream, handler)",
+  "report": {
+   "load_errors": [],
+   "tests": {},
+   "module_error": "SyntaxError: (unicode error) 'unicodeescape' codec can't decode bytes in position 58-59: truncated \\uXXXX escape (<request tests>, line 43)"
+  }
+ },
+ {
+  "index": 22,
+  "module": "022.py",
+  "prompt": "04-03",
+  "run": "run-20261008-070631-confirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class Token:\n    def __init__(self, typ, val)\ndef tokenize(pattern)\nclass Node:\nclass CharNode:\n    def __init__(self, chars, negate)\nclass DotNode:\nclass ConcatNode:\n    def __init__(self, left, right)\nclass AltNode:\n    def __init__(self, left, right)\nclass StarNode:\n    def __init__(self, child)\nclass PlusNode:\n    def __init__(self, child)\nclass QMarkNode:\n    def __init__(self, child)\nclass Parser:\n    def __init__(self, tokens)\n    def peek(self)\n    def advance(self)\n    def parse(self)\n    def regex(self)\n    def concat(self)\n    def repeat(self)\n    def atom(self)\nclass State:\n    def __init__(self)\n    def add_edge(self, symbol, state)\ndef epsilon_closure(states)\ndef move(states, symbol)\nclass ThompsonBuilder:\n    def build(self, node)\nclass NFASimulator:\n    def __init__(self, start, accept)\n    def matches(self, string)\ndef compile_regex(pattern)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_alternation": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_character_class_basic": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_character_class_range": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_compile_regex_returns_nfa": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_complex_pattern_example1": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_complex_pattern_example2": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_concatenation": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_dot_matches_any_character": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_empty_string_match": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_grouping": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_kleene_star": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_nested_operators": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_nfa_simulator_basic_match": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_optional": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object",
+    "TestThompsonConstruction.test_plus": "AssertionError: TypeError: cannot unpack non-iterable NFASimulator object"
+   }
+  }
+ },
+ {
+  "index": 23,
+  "module": "023.py",
+  "prompt": "04-03",
+  "run": "run-20261008-074156-confirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self)\n    def add_transition(self, symbol, state)\nclass NFAFragment:\n    def __init__(self, start, accepts)\nclass Token:\n    def __init__(self, typ, value)\ndef tokenize(pattern)\nclass ASTNode:\nclass CharNode:\n    def __init__(self, char)\nclass DotNode:\nclass ClassNode:\n    def __init__(self, chars)\nclass ConcatNode:\n    def __init__(self, left, right)\nclass OrNode:\n    def __init__(self, left, right)\nclass StarNode:\n    def __init__(self, child)\nclass PlusNode:\n    def __init__(self, child)\nclass QMarkNode:\n    def __init__(self, child)\ndef parse(pattern)\ndef build_nfa(node)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef simulate(nfa, text)\ndef nfa_to_string(fragment)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_character_class_0_9_plus_matches_123": "ok",
+    "TestThompsonNFA.test_character_class_0_9_plus_not_match_abc": "ok",
+    "TestThompsonNFA.test_pattern_a_b_c_star_d_matches_abcbcd": "ok",
+    "TestThompsonNFA.test_pattern_a_b_c_star_d_matches_abcd": "ok",
+    "TestThompsonNFA.test_pattern_a_b_c_star_d_matches_ad": "ok",
+    "TestThompsonNFA.test_pattern_a_b_c_star_d_not_match_aed": "ok"
+   }
+  }
+ },
+ {
+  "index": 24,
+  "module": "024.py",
+  "prompt": "04-02",
+  "run": "run-20261008-144213-control",
+  "grade": "FAIL",
+  "signatures": "def parse(stream, handler, bufsize)\nclass PrintHandler:\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\nclass CollectingHandler:\n    def __init__(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_key(self, key)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\n    def on_value(self, value)",
+  "report": {
+   "load_errors": [
+    "AttributeError: '_CharIter' object has no attribute '_bufsize'"
+   ],
+   "tests": {
+    "TestStreamingJSONParser.test_array_parsing": "AssertionError: AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "TestStreamingJSONParser.test_collecting_handler": "AssertionError: AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "TestStreamingJSONParser.test_large_array_streaming": "AssertionError: AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "TestStreamingJSONParser.test_nested_structures": "AssertionError: AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "TestStreamingJSONParser.test_number_bool_null": "AssertionError: AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "TestStreamingJSONParser.test_object_parsing": "AssertionError: AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "TestStreamingJSONParser.test_print_handler": "AssertionError: AssertionError: PrintHandler raised exception: '_CharIter' object has no attribute '_bufsize'",
+    "TestStreamingJSONParser.test_string_escapes": "AssertionError: AttributeError: '_CharIter' object has no attribute '_bufsize'"
+   }
+  }
+ },
+ {
+  "index": 25,
+  "module": "025.py",
+  "prompt": "04-03",
+  "run": "run-20261008-144213-control",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self)\n    def add_epsilon(self, other)\n    def add_char(self, ch, other)\nclass Fragment:\n    def __init__(self, start, outs)\ndef patch(states, target)\ndef regex_to_rpn(pattern)\ndef build_nfa(rpn)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef match(pattern, text)",
+  "report": {
+   "load_errors": [
+    "SyntaxError: invalid syntax (<deliverable 2>, line 1)"
+   ],
+   "tests": {
+    "test_match_0_9_plus_123": "KeyError: '-'",
+    "test_match_0_9_plus_abc": "KeyError: '-'",
+    "test_match_a_b_c_star_d_abcbcd": "ValueError: Malformed expression",
+    "test_match_a_b_c_star_d_abcd": "ValueError: Malformed expression",
+    "test_match_a_b_c_star_d_ad": "ValueError: Malformed expression",
+    "test_match_a_b_c_star_d_aed": "ValueError: Malformed expression"
+   }
+  }
+ },
+ {
+  "index": 26,
+  "module": "026.py",
+  "prompt": "04-03",
+  "run": "run-20261008-151209-unconfirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "signatures": "class State:\n    def __init__(self)\n    def add_transition(self, symbol, target)\nclass NFA:\n    def __init__(self, start, accepts)\ndef concatenate(nfa1, nfa2)\ndef alternate(nfa1, nfa2)\ndef star(nfa)\ndef plus(nfa)\ndef optional(nfa)\nclass Parser:\n    def __init__(self, pattern)\n    def peek(self)\n    def advance(self)\n    def parse(self)\n    def parse_expression(self)\n    def parse_term(self)\n    def parse_factor(self)\n    def parse_atom(self)\n    def parse_char_class(self)\ndef epsilon_closure(states)\ndef move(states, sym)\ndef matches(pattern, string)\ndef run_tests()",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_pattern_0_9_plus_does_not_match_abc": "ok",
+    "TestThompsonConstruction.test_pattern_0_9_plus_matches_123": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_does_not_match_aed": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_abcbcd": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_abcd": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_ad": "ok"
+   }
+  }
+ },
+ {
+  "index": 27,
+  "module": "027.py",
+  "prompt": "04-02",
+  "run": "run-20261008-210055-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "signatures": "(no public functions or classes)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestStreamingJSONParser.test_parse_boolean_and_null": "AssertionError: NameError: name 'parse' is not defined",
+    "TestStreamingJSONParser.test_parse_empty_object_and_array": "AssertionError: NameError: name 'parse' is not defined",
+    "TestStreamingJSONParser.test_parse_nested_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestStreamingJSONParser.test_parse_simple_array": "AssertionError: NameError: name 'parse' is not defined",
+    "TestStreamingJSONParser.test_parse_simple_object": "AssertionError: NameError: name 'parse' is not defined",
+    "TestStreamingJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestStreamingJSONParser.test_parse_unicode_escape": "AssertionError: NameError: name 'parse' is not defined",
+    "TestStreamingJSONParser.test_streaming_large_array": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "index": 28,
+  "module": "028.py",
+  "prompt": "04-03",
+  "run": "run-20261008-210055-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "signatures": "def tokenize(pattern)\ndef insert_concatenation(tokens)\ndef to_postfix(tokens)\nclass Node:\nclass Literal:\n    def __init__(self, char)\nclass Dot:\nclass CharClass:\n    def __init__(self, chars)\nclass Concat:\n    def __init__(self, left, right)\nclass Alt:\n    def __init__(self, left, right)\nclass Star:\n    def __init__(self, child)\nclass Plus:\n    def __init__(self, child)\nclass Question:\n    def __init__(self, child)\ndef build_syntax_tree(postfix)\nclass State:\n    def __init__(self)\n    def add_edge(self, symbol, target)\ndef thompson(node)\ndef epsilon_closure(states)\ndef match(nfa_start, nfa_accept, string)\nclass Regex:\n    def __init__(self, pattern)\n    def matches(self, text)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_regex_a_b_c_d_does_not_match_aed": "ok",
+    "test_regex_a_b_c_d_matches_abcbcd": "ok",
+    "test_regex_a_b_c_d_matches_abcd": "ok",
+    "test_regex_a_b_c_d_matches_ad": "ok",
+    "test_regex_char_class_does_not_match_abc": "ok",
+    "test_regex_char_class_matches_123": "ok"
+   }
+  }
+ },
+ {
+  "index": 29,
+  "module": "029.py",
+  "prompt": "04-03",
+  "run": "run-20261008-210055-unconfirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "signatures": "def tokenize(pattern)\ndef insert_concat(tokens)\ndef to_postfix(tokens)\nclass State:\n    def __init__(self, accept)\n    def add_transition(self, label, target)\ndef epsilon_closure(states)\ndef move(states, ch)\nclass Fragment:\n    def __init__(self, start, accept)\ndef thompson(postfix)\ndef matches(pattern, string)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestEpsilonClosure.test_epsilon_closure_single_state": "ok",
+    "TestEpsilonClosure.test_epsilon_closure_with_epsilon_transitions": "ok",
+    "TestFragmentClass.test_fragment_initialization": "ok",
+    "TestInsertConcat.test_insert_concat_implicit": "AssertionError: ?        ^",
+    "TestInsertConcat.test_insert_concat_with_operators": "ok",
+    "TestMoveFunction.test_move_basic": "ok",
+    "TestMoveFunction.test_move_no_transition": "ok",
+    "TestStateClass.test_add_transition": "AssertionError: AssertionError: {<deliverable.State object at 0x00000203FE1C38D0>} != [<deliverable.State object at 0x00000203FE1C38D0>]",
+    "TestStateClass.test_state_initialization": "ok",
+    "TestThompsonConstruction.test_matches_0_9_plus_123": "ok",
+    "TestThompsonConstruction.test_matches_0_9_plus_abc_not_match": "ok",
+    "TestThompsonConstruction.test_matches_a_b_c_star_d_abcbcd": "ok",
+    "TestThompsonConstruction.test_matches_a_b_c_star_d_abcd": "ok",
+    "TestThompsonConstruction.test_matches_a_b_c_star_d_ad": "ok",
+    "TestThompsonConstruction.test_matches_a_b_c_star_d_aed_not_match": "ok",
+    "TestThompsonConstructionFunction.test_thompson_simple_char": "ok",
+    "TestToPostfix.test_to_postfix_alternation": "ok",
+    "TestToPostfix.test_to_postfix_simple_concat": "AssertionError: ?             ^",
+    "TestTokenization.test_tokenize_basic_operators": "ok",
+    "TestTokenization.test_tokenize_character_class": "ok",
+    "TestTokenization.test_tokenize_parentheses": "ok"
+   }
+  }
+ },
+ {
+  "index": 30,
+  "module": "030.py",
+  "prompt": "04-02",
+  "run": "run-20261008-211256-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class JSONSAXParser:\n    def __init__(self, chunk_size)\n    def parse(self, stream, handler)\ndef generate_json_array(n)\ndef run_test()",
+  "report": {
+   "load_errors": [],
+   "tests": {},
+   "module_error": "SyntaxError: (unicode error) 'unicodeescape' codec can't decode bytes in position 46-47: truncated \\uXXXX escape (<request tests>, line 43)"
+  }
+ },
+ {
+  "index": 31,
+  "module": "031.py",
+  "prompt": "04-02",
+  "run": "run-20261008-211256-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class JSONTokenizer:\n    def __init__(self, stream, chunk_size)\n    def tokens(self)\nclass Parser:\n    def __init__(self, handler)\n    def parse(self, stream)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestJSONParser.test_basic_types": "AssertionError: + [('bool', True)] : Failed to parse boolean true",
+    "TestJSONParser.test_chunked_streaming": "AssertionError: +  'object_end'] : Failed to parse chunked stream",
+    "TestJSONParser.test_mixed_structures": "AssertionError: +  'object_end'] : Failed to parse mixed structures",
+    "TestJSONParser.test_nested_arrays": "AssertionError: +  'array_end'] : Failed to parse nested arrays",
+    "TestJSONParser.test_nested_objects": "AssertionError: +  'object_end'] : Failed to parse nested objects",
+    "TestJSONParser.test_streaming_large_array": "AssertionError: IndexError: list index out of range",
+    "TestJSONParser.test_string_escapes": "AssertionError: + [('string', 'hello\\nworld')] : Failed to parse \\n escape",
+    "TestJSONParser.test_unicode_escape": "AssertionError: + [('string', '\u00e9')] : Failed to parse \\u00e9 escape"
+   }
+  }
+ },
+ {
+  "index": 32,
+  "module": "032.py",
+  "prompt": "04-03",
+  "run": "run-20261008-211256-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class ASTNode:\n    def __init__(self, typ, children, value)\ndef tokenize(pattern)\nclass Parser:\n    def __init__(self, tokens)\n    def peek(self)\n    def consume(self)\n    def parse(self)\n    def parse_expr(self)\n    def parse_concat(self)\n    def parse_repeat(self)\n    def parse_atom(self)\nclass State:\n    def __init__(self, id_)\n    def add(self, symbol, target)\nclass NFA:\n    def __init__(self, start, accepts, states)\nclass ThompsonBuilder:\n    def __init__(self)\n    def new_state(self)\n    def build(self, node)\n    def construct_nfa(self, root)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef matches(nfa, text)\nclass RegexEngine:\n    def __init__(self)\n    def compile(self, pattern)\n    def match(self, pattern, text)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_123_matches": "ok",
+    "TestThompsonConstruction.test_abc_does_not_match": "ok",
+    "TestThompsonConstruction.test_abcbcd_matches": "ok",
+    "TestThompsonConstruction.test_abcd_matches": "ok",
+    "TestThompsonConstruction.test_ad_matches": "ok",
+    "TestThompsonConstruction.test_aed_does_not_match": "ok"
+   }
+  }
+ },
+ {
+  "index": 33,
+  "module": "033.py",
+  "prompt": "04-02",
+  "run": "run-20261008-212442-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class JSONSAXParser:\n    def __init__(self, chunk_size)\n    def parse(self, stream, handler)\nclass CallbackRecorder:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestJSONSAXParser.test_boolean_and_null": "AssertionError: AssertionError: 0 != 2",
+    "TestJSONSAXParser.test_chunked_parsing_consistency": "AssertionError: + ['a', 'b', 'c']",
+    "TestJSONSAXParser.test_empty_structures": "AssertionError: ?  + +++           +++++",
+    "TestJSONSAXParser.test_escape_sequences": "AssertionError: AssertionError: 0 != 2",
+    "TestJSONSAXParser.test_large_array_streaming": "AssertionError: AssertionError: 0 != 1",
+    "TestJSONSAXParser.test_nested_structures": "AssertionError: AssertionError: 0 != 3",
+    "TestJSONSAXParser.test_number_parsing": "AssertionError: AssertionError: 0 != 4",
+    "TestJSONSAXParser.test_simple_array_parsing": "AssertionError: -  'array_end']",
+    "TestJSONSAXParser.test_simple_object_parsing": "AssertionError: ?  + +++           +++++",
+    "TestJSONSAXParser.test_unicode_escape": "AssertionError: AssertionError: 0 != 1"
+   }
+  }
+ },
+ {
+  "index": 34,
+  "module": "034.py",
+  "prompt": "04-03",
+  "run": "run-20261008-212442-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class Token:\n    def __init__(self, typ, value)\ndef tokenize(regex)\ndef insert_concat(tokens)\ndef to_postfix(tokens)\nclass State:\n    def __init__(self)\nclass NFAFragment:\n    def __init__(self, start, accept)\ndef build_nfa(postfix_tokens)\ndef epsilon_closure(states)\ndef move(states, ch)\nclass Regex:\n    def __init__(self, pattern)\n    def matches(self, string)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_regex_0_9_plus_does_not_match_abc": "ok",
+    "TestThompsonConstruction.test_regex_0_9_plus_matches_123": "ok",
+    "TestThompsonConstruction.test_regex_a_b_c_star_d_does_not_match_aed": "ok",
+    "TestThompsonConstruction.test_regex_a_b_c_star_d_matches_abcbcd": "ok",
+    "TestThompsonConstruction.test_regex_a_b_c_star_d_matches_abcd": "ok",
+    "TestThompsonConstruction.test_regex_a_b_c_star_d_matches_ad": "ok"
+   }
+  }
+ },
+ {
+  "index": 35,
+  "module": "035.py",
+  "prompt": "04-03",
+  "run": "run-20261008-212442-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class Lexer:\n    def __init__(self, pattern)\n    def advance(self)\n    def peek(self)\n    def next_token(self)\nclass ASTNode:\nclass CharNode:\n    def __init__(self, ch)\nclass DotNode:\nclass ClassNode:\n    def __init__(self, charset, negate)\nclass ConcatNode:\n    def __init__(self, left, right)\nclass OrNode:\n    def __init__(self, left, right)\nclass StarNode:\n    def __init__(self, child)\nclass PlusNode:\n    def __init__(self, child)\nclass QuestionNode:\n    def __init__(self, child)\nclass Parser:\n    def __init__(self, lexer)\n    def eat(self, token_type)\n    def parse(self)\n    def parse_expr(self)\n    def parse_term(self)\n    def parse_factor(self)\n    def parse_base(self)\nclass State:\n    def __init__(self, id)\nclass NFA:\n    def __init__(self, start, accept, states)\ndef new_state(counter, states)\ndef build_nfa(node, counter, states)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef matches(nfa, string)\nclass Regex:\n    def __init__(self, pattern)\n    def match(self, string)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestRegexMatching.test_pattern_0_9_plus_does_not_match_abc": "ok",
+    "TestRegexMatching.test_pattern_0_9_plus_matches_123": "ok",
+    "TestRegexMatching.test_pattern_a_b_c_star_d_does_not_match_aed": "ok",
+    "TestRegexMatching.test_pattern_a_b_c_star_d_matches_abcbcd": "ok",
+    "TestRegexMatching.test_pattern_a_b_c_star_d_matches_abcd": "ok",
+    "TestRegexMatching.test_pattern_a_b_c_star_d_matches_ad": "ok"
+   }
+  }
+ },
+ {
+  "index": 36,
+  "module": "036.py",
+  "prompt": "04-02",
+  "run": "run-20261008-223418-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class JSONLexer:\n    def __init__(self, stream, chunk_size)\n    def tokens(self)\nclass JSONSAXParser:\n    def __init__(self, stream, handler)\n    def parse(self)\ndef parse(stream, handler)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestJSONSAXParser.test_basic_array": "AssertionError: -  'array_end']",
+    "TestJSONSAXParser.test_basic_object": "AssertionError: -  'object_end']",
+    "TestJSONSAXParser.test_boolean_and_null": "AssertionError: -  'array_end']",
+    "TestJSONSAXParser.test_chunked_reading": "AssertionError:    'object_end']",
+    "TestJSONSAXParser.test_large_array_streaming": "ok",
+    "TestJSONSAXParser.test_nested_structures": "AssertionError:    'object_end']",
+    "TestJSONSAXParser.test_string_escapes": "AssertionError: + [('string', 'hello\\nworld')]"
+   }
+  }
+ },
+ {
+  "index": 37,
+  "module": "037.py",
+  "prompt": "04-02",
+  "run": "run-20261008-223418-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class JSONSAXParser:\n    def __init__(self, handler)\n    def feed(self, data)\ndef parse(stream, handler, chunk_size)",
+  "report": {
+   "load_errors": [],
+   "tests": {},
+   "module_error": "SyntaxError: '[' was never closed (<request tests>, line 2087)"
+  }
+ },
+ {
+  "index": 38,
+  "module": "038.py",
+  "prompt": "04-03",
+  "run": "run-20261008-223418-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self, is_accept)\ndef epsilon(state, target)\ndef char(state, chars, target)\nclass NFAFragment:\n    def __init__(self, start, accept)\nclass RegexEngine:\n    def __init__(self)\n    def compile(self, pattern)\n    def match(self, string)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestRegexEngine.test_0_9_plus_does_not_match_abc": "ok",
+    "TestRegexEngine.test_0_9_plus_matches_123": "ok",
+    "TestRegexEngine.test_a_b_c_star_d_does_not_match_aed": "ok",
+    "TestRegexEngine.test_a_b_c_star_d_matches_abcbcd": "ok",
+    "TestRegexEngine.test_a_b_c_star_d_matches_abcd": "ok",
+    "TestRegexEngine.test_a_b_c_star_d_matches_ad": "ok"
+   }
+  }
+ },
+ {
+  "index": 39,
+  "module": "039.py",
+  "prompt": "04-02",
+  "run": "run-20261008-230639-control",
+  "grade": "FAIL",
+  "signatures": "def parse(stream, handler, chunk_size)\nclass RecordingHandler:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)",
+  "report": {
+   "load_errors": [
+    "ModuleNotFoundError: No module named 'json_sax'",
+    "ModuleNotFoundError: No module named 'json_sax'"
+   ],
+   "tests": {
+    "test_parse_bool_and_null": "ValueError: Invalid JSON token at pos 9",
+    "test_parse_nested_structures": "ok",
+    "test_parse_simple_array": "ok",
+    "test_parse_simple_object": "ok",
+    "test_parse_string_escapes": "ok",
+    "test_parse_unicode_escape": "IndexError: string index out of range",
+    "test_recording_handler_basic": "ok",
+    "test_streaming_large_array": "ValueError: Expected , or ] after array element"
+   }
+  }
+ },
+ {
+  "index": 40,
+  "module": "040.py",
+  "prompt": "04-02",
+  "run": "run-20261008-230639-control",
+  "grade": "FAIL",
+  "signatures": "class JSONHandler:\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\ndef parse(stream, handler, *, chunk_size)\nclass RecordingHandler:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\nclass MyAppHandler:\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)",
+  "report": {
+   "load_errors": [
+    "ModuleNotFoundError: No module named 'streaming_json_sax'",
+    "ModuleNotFoundError: No module named 'streaming_json_sax'"
+   ],
+   "tests": {
+    "test_array_primitives": "AssertionError: ",
+    "test_boolean": "AssertionError: Expected bool True",
+    "test_large_array": "AssertionError: ",
+    "test_nested_array": "AssertionError: ",
+    "test_nested_object": "AssertionError: ",
+    "test_null": "AssertionError: Expected null",
+    "test_number": "AssertionError: Expected number 123",
+    "test_simple_object": "AssertionError: Expected [('object_start',), ('key', 'key'), ('string', 'value'), ('value', 'value'), ('object_end',)], got []",
+    "test_string_escapes": "AssertionError: Expected string hello\nworld\t\"quoteA in events"
+   }
+  }
+ },
+ {
+  "index": 41,
+  "module": "041.py",
+  "prompt": "04-02",
+  "run": "run-20261008-230639-control",
+  "grade": "FAIL",
+  "signatures": "def parse(stream, handler, chunk_size)\nclass MyHandler:\n    def on_array_start(self)\n    def on_number(self, n)\n    def on_array_end(self)",
+  "report": {
+   "load_errors": [
+    "FileNotFoundError: [Errno 2] No such file or directory: 'big.json'"
+   ],
+   "tests": {},
+   "module_error": "SyntaxError: (unicode error) 'unicodeescape' codec can't decode bytes in position 46-47: truncated \\uXXXX escape (<request tests>, line 67)"
+  }
+ },
+ {
+  "index": 42,
+  "module": "042.py",
+  "prompt": "04-03",
+  "run": "run-20261008-230639-control",
+  "grade": "PASS",
+  "signatures": "class Token:\ndef tokenize(pattern)\nclass ASTNode:\n    def build(self, nfa_builder)\nclass Literal:\n    def build(self, b)\nclass Dot:\n    def build(self, b)\nclass CharClass:\n    def build(self, b)\nclass Concat:\n    def build(self, b)\nclass Alt:\n    def build(self, b)\nclass Star:\n    def build(self, b)\nclass Plus:\n    def build(self, b)\nclass Opt:\n    def build(self, b)\nclass Parser:\n    def __init__(self, tokens)\n    def peek(self)\n    def consume(self, typ)\n    def parse(self)\nclass Transition:\nclass Fragment:\nclass NFAFragmentBuilder:\n    def __init__(self)\n    def epsilon(self)\n    def literal(self, ch)\n    def dot(self)\n    def char_class(self, raw)\n    def concat(self, left, right)\n    def alt(self, left, right)\n    def star(self, frag)\n    def plus(self, frag)\n    def opt(self, frag)\ndef compile_regex(pattern)\ndef match(pattern, text)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_pattern_0_9_plus_does_not_match_abc": "ok",
+    "TestThompsonConstruction.test_pattern_0_9_plus_matches_123": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_does_not_match_aed": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_abcbcd": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_abcd": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_ad": "ok"
+   }
+  }
+ },
+ {
+  "index": 43,
+  "module": "043.py",
+  "prompt": "04-03",
+  "run": "run-20261008-230639-control",
+  "grade": "PASS",
+  "signatures": "class Token:\n    def __init__(self, typ, val)\ndef lex(pattern)\nclass Expr:\nclass Literal:\n    def __init__(self, char)\nclass Dot:\nclass CharClass:\n    def __init__(self, raw)\nclass Concat:\n    def __init__(self, left, right)\nclass Alt:\n    def __init__(self, left, right)\nclass Star:\n    def __init__(self, expr)\nclass Plus:\n    def __init__(self, expr)\nclass Opt:\n    def __init__(self, expr)\nclass Parser:\n    def __init__(self, tokens)\n    def cur(self)\n    def eat(self, typ)\n    def parse(self)\n    def alt(self)\n    def concat(self)\n    def repeat(self)\n    def atom(self)\nclass State:\n    def __init__(self)\n    def add_eps(self, s)\n    def set_trans(self, pred, dest)\nclass Fragment:\n    def __init__(self, start, accept)\ndef build_nfa(expr)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef nfa_match(fragment, text)\nclass Regex:\n    def __init__(self, pattern)\n    def match(self, text)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_pattern_0_9_plus_does_not_match_abc": "ok",
+    "test_pattern_0_9_plus_matches_123": "ok",
+    "test_pattern_a_b_c_star_d_does_not_match_aed": "ok",
+    "test_pattern_a_b_c_star_d_matches_abcbcd": "ok",
+    "test_pattern_a_b_c_star_d_matches_abcd": "ok",
+    "test_pattern_a_b_c_star_d_matches_ad": "ok"
+   }
+  }
+ },
+ {
+  "index": 44,
+  "module": "044.py",
+  "prompt": "04-03",
+  "run": "run-20261008-230639-control",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self)\n    def add_edge(self, symbol, target)\nclass Fragment:\n    def __init__(self, start, accepts)\n    def patch(self, target)\nclass RegexParser:\n    def __init__(self, pattern)\n    def peek(self)\n    def advance(self)\n    def is_meta(self, ch)\n    def parse(self)\nclass ThompsonNFA:\n    def __init__(self, pattern)\n    def matches(self, text)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_pattern_0_9_plus_does_not_match_abc": "ok",
+    "test_pattern_0_9_plus_matches_123": "ok",
+    "test_pattern_a_b_c_star_d_does_not_match_aed": "ok",
+    "test_pattern_a_b_c_star_d_matches_abcbcd": "ok",
+    "test_pattern_a_b_c_star_d_matches_abcd": "ok",
+    "test_pattern_a_b_c_star_d_matches_ad": "ok"
+   }
+  }
+ },
+ {
+  "index": 45,
+  "module": "045.py",
+  "prompt": "04-02",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "signatures": "(no public functions or classes)",
+  "report": {
+   "load_errors": [
+    "SyntaxError: (unicode error) 'unicodeescape' codec can't decode bytes in position 8-9: truncated \\uXXXX escape (<deliverable 1>, line 36)"
+   ],
+   "tests": {
+    "test_arrays": "NameError: name 'parse' is not defined",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_objects": "NameError: name 'parse' is not defined",
+    "test_simple_values": "NameError: name 'parse' is not defined",
+    "test_streaming_large_array": "NameError: name 'parse' is not defined",
+    "test_string_escapes": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "index": 46,
+  "module": "046.py",
+  "prompt": "04-02",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "signatures": "class JSONTokenizer:\n    def __init__(self, stream, chunk_size)\n    def tokens(self)\nclass JSONSAXParser:\n    def __init__(self, handler)\n    def parse(self, stream)\ndef parse(stream, handler)\nclass RecordingHandler:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestStreamingJSONParser.test_boolean_false": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_boolean_true": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_empty_array": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_empty_object": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_escaped_string": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_float": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_large_array_streaming": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_nested_structures": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_null": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_number": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_object_with_values": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_simple_string": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestStreamingJSONParser.test_unicode_escape": "AssertionError: AttributeError: 'str' object has no attribute 'decode'"
+   }
+  }
+ },
+ {
+  "index": 47,
+  "module": "047.py",
+  "prompt": "04-02",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "signatures": "class StreamingJSONParser:\n    def __init__(self, chunk_size)\n    def parse(self, stream, handler)\nclass RecordingHandler:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\n    def on_value(self, v)\ndef generate_large_json_array(n)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_basic_types": "ValueError: Invalid number: 1, \"b\": \"hello1",
+    "test_escape_sequences": "ValueError: Expected colon, got: }",
+    "test_large_array": "ValueError: Invalid number: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48",
+    "test_nested_structures": "ValueError: Invalid number: 1, {\"inner\"1",
+    "test_streaming_memory_efficiency": "ValueError: Invalid number: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 20"
+   }
+  }
+ },
+ {
+  "index": 48,
+  "module": "048.py",
+  "prompt": "04-03",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "signatures": "(no public functions or classes)",
+  "report": {
+   "load_errors": [
+    "SyntaxError: unmatched ')' (<deliverable 1>, line 85)"
+   ],
+   "tests": {
+    "test_a_b_c_star_d_does_not_match_aed": "NameError: name 'match' is not defined",
+    "test_a_b_c_star_d_matches_abcbcd": "NameError: name 'match' is not defined",
+    "test_a_b_c_star_d_matches_abcd": "NameError: name 'match' is not defined",
+    "test_a_b_c_star_d_matches_ad": "NameError: name 'match' is not defined",
+    "test_digit_plus_does_not_match_abc": "NameError: name 'match' is not defined",
+    "test_digit_plus_matches_123": "NameError: name 'match' is not defined"
+   }
+  }
+ },
+ {
+  "index": 49,
+  "module": "049.py",
+  "prompt": "04-03",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "signatures": "class Fragment:\n    def __init__(self, start, accepts)\nclass Parser:\n    def __init__(self, pattern)\n    def peek(self)\n    def advance(self)\n    def parse(self)\n    def parse_expr(self)\n    def parse_term(self)\n    def parse_factor(self)\n    def parse_base(self)\n    def parse_char_class(self)\nclass ThompsonBuilder:\n    def __init__(self)\n    def new_state(self)\n    def add_trans(self, src, sym, dst)\n    def build(self, ast)\ndef epsilon_closure(nfa, states)\ndef move(nfa, states, ch)\ndef matches(nfa, start, accepts, s)\nclass RegexNFA:\n    def __init__(self, pattern)\n    def match(self, string)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_epsilon_closure_exists": "ok",
+    "TestThompsonConstruction.test_example1_matches_abcbcd": "timeout"
+   }
+  }
+ },
+ {
+  "index": 50,
+  "module": "050.py",
+  "prompt": "04-03",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "signatures": "(no public functions or classes)",
+  "report": {
+   "load_errors": [
+    "SyntaxError: unmatched '}' (<deliverable 1>, line 265)"
+   ],
+   "tests": {
+    "test_regex_match_0_9_plus": "NameError: name 'match' is not defined",
+    "test_regex_match_a_b_or_c_star_d": "NameError: name 'match' is not defined"
+   }
+  }
+ },
+ {
+  "index": 51,
+  "module": "051.py",
+  "prompt": "04-03",
+  "run": "run-20261009-042907-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self)\ndef epsilon_closure(states)\ndef move(states, ch)\nclass Node:\nclass Literal:\n    def __init__(self, char)\n    def build(self, start, accept)\nclass Dot:\n    def build(self, start, accept)\nclass CharClass:\n    def __init__(self, chars)\n    def build(self, start, accept)\nclass Concat:\n    def __init__(self, left, right)\n    def build(self, start, accept)\nclass Alt:\n    def __init__(self, left, right)\n    def build(self, start, accept)\nclass Star:\n    def __init__(self, sub)\n    def build(self, start, accept)\nclass Plus:\n    def __init__(self, sub)\n    def build(self, start, accept)\nclass Optional:\n    def __init__(self, sub)\n    def build(self, start, accept)\nclass Parser:\n    def __init__(self, pattern)\n    def peek(self)\n    def advance(self)\n    def parse(self)\n    def parse_expr(self)\n    def parse_term(self)\n    def parse_factor(self)\n    def parse_base(self)\n    def parse_char_class(self)\ndef build_nfa(pattern)\ndef nfa_match(pattern, text)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestNFAMatching.test_a_b_c_star_d_does_not_match_aed": "ok",
+    "TestNFAMatching.test_a_b_c_star_d_matches_abcbcd": "ok",
+    "TestNFAMatching.test_a_b_c_star_d_matches_abcd": "ok",
+    "TestNFAMatching.test_a_b_c_star_d_matches_ad": "ok",
+    "TestNFAMatching.test_char_class_0_9_plus_does_not_match_abc": "ok",
+    "TestNFAMatching.test_char_class_0_9_plus_matches_123": "ok"
+   }
+  }
+ },
+ {
+  "index": 52,
+  "module": "052.py",
+  "prompt": "04-03",
+  "run": "run-20261009-042907-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class Lexer:\n    def __init__(self, pattern)\n    def advance(self)\n    def peek(self)\n    def next_token(self)\nclass ASTNode:\nclass Literal:\n    def __init__(self, char)\nclass Dot:\nclass CharClass:\n    def __init__(self, chars, negate)\nclass Concat:\n    def __init__(self, left, right)\nclass Alt:\n    def __init__(self, left, right)\nclass Star:\n    def __init__(self, expr)\nclass Plus:\n    def __init__(self, expr)\nclass Optional:\n    def __init__(self, expr)\nclass Parser:\n    def __init__(self, lexer)\n    def eat(self, token_type)\n    def parse(self)\n    def regex(self)\n    def concat(self)\n    def factor(self)\n    def base(self)\nclass State:\n    def __init__(self)\ndef new_state()\nclass NFAFragment:\n    def __init__(self, start, accept)\ndef build_nfa(ast)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef matches(nfa_frag, string)\ndef compile_regex(pattern)\ndef regex_match(pattern, string)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_a_b_c_star_d_does_not_match_aed": "ok",
+    "test_a_b_c_star_d_matches_abcbcd": "ok",
+    "test_a_b_c_star_d_matches_abcd": "ok",
+    "test_a_b_c_star_d_matches_ad": "ok",
+    "test_char_class_0_9_plus_does_not_match_abc": "ok",
+    "test_char_class_0_9_plus_matches_123": "ok"
+   }
+  }
+ },
+ {
+  "index": 53,
+  "module": "053.py",
+  "prompt": "04-03",
+  "run": "run-20261009-042907-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class State:\n    def __init__(self)\n    def add_edge(self, symbol, state)\nclass NFAFragment:\n    def __init__(self, start, accept)\nclass RegexNode:\nclass Literal:\n    def __init__(self, char)\nclass Dot:\nclass CharClass:\n    def __init__(self, chars)\nclass Concat:\n    def __init__(self, left, right)\nclass Alternate:\n    def __init__(self, left, right)\nclass Star:\n    def __init__(self, node)\nclass Plus:\n    def __init__(self, node)\nclass Optional:\n    def __init__(self, node)\nclass Parser:\n    def __init__(self, pattern)\n    def peek(self)\n    def advance(self)\n    def parse(self)\n    def parse_expr(self)\n    def parse_term(self)\n    def parse_factor(self)\n    def parse_base(self)\n    def parse_char_class(self)\ndef build_nfa(node)\ndef epsilon_closure(states)\ndef move(states, char)\ndef matches(nfa, s)\ndef compile_pattern(pattern)\ndef run_tests()",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_pattern_0_9_plus_matches_123": "ok",
+    "TestThompsonConstruction.test_pattern_0_9_plus_not_match_abc": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_or_c_star_d_matches_abcbcd": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_or_c_star_d_matches_abcd": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_or_c_star_d_matches_ad": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_or_c_star_d_not_match_aed": "ok"
+   }
+  }
+ },
+ {
+  "index": 54,
+  "module": "054.py",
+  "prompt": "04-02",
+  "run": "run-20261009-045255-control",
+  "grade": "PASS",
+  "signatures": "class CharBuffer:\n    def __init__(self, stream, chunk_size)\n    def read_char(self)\n    def pushback(self, ch)\ndef parse(stream, handler, chunk_size, *, on_object_start, on_object_end, on_array_start, on_array_end, on_key, on_value, on_string, on_number, on_bool, on_null)\nclass BaseJSONHandler:\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\nclass RecordingHandler:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)",
+  "report": {
+   "load_errors": [
+    "ModuleNotFoundError: No module named 'streaming_json'"
+   ],
+   "tests": {},
+   "module_error": "SyntaxError: (unicode error) 'unicodeescape' codec can't decode bytes in position 46-47: truncated \\uXXXX escape (<request tests>, line 23)"
+  }
+ },
+ {
+  "index": 55,
+  "module": "055.py",
+  "prompt": "04-02",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "signatures": "class JsonHandler:\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\ndef parse(stream, handler, chunk_size)\nclass TokenType:\nclass Token:\n    def __init__(self, typ, value, pos)\nclass JsonLexer:\n    def __init__(self, stream, chunk_size)\n    def peek(self)\n    def next(self)\n    def consume(self, expected_type)\nclass RecordingHandler:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)",
+  "report": {
+   "load_errors": [
+    "ImportError: attempted relative import with no known parent package",
+    "ImportError: attempted relative import with no known parent package",
+    "ModuleNotFoundError: No module named 'json_sax'"
+   ],
+   "tests": {
+    "test_bool_and_null": "NameError: name 'RecordingHandler' is not defined",
+    "test_chunk_size": "NameError: name 'RecordingHandler' is not defined",
+    "test_large_array": "NameError: name 'RecordingHandler' is not defined",
+    "test_nested_structures": "NameError: name 'RecordingHandler' is not defined",
+    "test_simple_array": "NameError: name 'RecordingHandler' is not defined",
+    "test_simple_object": "NameError: name 'RecordingHandler' is not defined",
+    "test_string_escapes": "NameError: name 'RecordingHandler' is not defined"
+   }
+  }
+ },
+ {
+  "index": 56,
+  "module": "056.py",
+  "prompt": "04-02",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "signatures": "class JSONSAXParser:\n    def __init__(self, handler, bufsize)\n    def parse(self, stream)\ndef parse(stream, handler, bufsize)",
+  "report": {
+   "load_errors": [],
+   "tests": {},
+   "module_error": "SyntaxError: expected '(' (<request tests>, line 116)"
+  }
+ },
+ {
+  "index": 57,
+  "module": "057.py",
+  "prompt": "04-03",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "signatures": "class Expr:\nclass Lit:\n    def __init__(self, c)\nclass Dot:\nclass CharClass:\n    def __init__(self, chars)\nclass Concat:\n    def __init__(self, left, right)\nclass Alt:\n    def __init__(self, left, right)\nclass Star:\n    def __init__(self, inner)\nclass Plus:\n    def __init__(self, inner)\nclass Opt:\n    def __init__(self, inner)\nclass Parser:\n    def __init__(self, pattern)\n    def peek(self)\n    def consume(self)\n    def parse(self)\n    def parse_alt(self)\n    def parse_concat(self)\n    def parse_repeat(self)\n    def parse_atom(self)\n    def parse_charclass(self)\nclass State:\n    def __init__(self, sid)\nclass NFA:\n    def __init__(self, start, accept)\nclass Builder:\n    def __init__(self)\n    def build(self, expr)\nclass Matcher:\n    def __init__(self, nfa)\n    def matches(self, text)\ndef compile_regex(pattern)",
+  "report": {
+   "load_errors": [
+    "SyntaxError: invalid syntax (<deliverable 2>, line 1)"
+   ],
+   "tests": {
+    "TestThompsonConstruction.test_alternation_simple": "AssertionError: IndexError: string index out of range",
+    "TestThompsonConstruction.test_character_class_basic": "AssertionError: IndexError: string index out of range",
+    "TestThompsonConstruction.test_character_class_range": "AssertionError: IndexError: string index out of range",
+    "TestThompsonConstruction.test_complex_pattern_example1": "AssertionError: IndexError: string index out of range",
+    "TestThompsonConstruction.test_complex_pattern_example2": "AssertionError: IndexError: string index out of range",
+    "TestThompsonConstruction.test_concat_basic": "AssertionError: IndexError: string index out of range",
+    "TestThompsonConstruction.test_dot_matches_any_character": "AssertionError: IndexError: string index out of range",
+    "TestThompsonConstruction.test_empty_pattern": "ok",
+    "TestThompsonConstruction.test_grouping_with_parentheses": "AssertionError: IndexError: string index out of range",
+    "TestThompsonConstruction.test_kleene_star_zero_or_more": "AssertionError: IndexError: string index out of range",
+    "TestThompsonConstruction.test_nested_operations": "AssertionError: IndexError: string index out of range",
+    "TestThompsonConstruction.test_optional_zero_or_one": "AssertionError: IndexError: string index out of range",
+    "TestThompsonConstruction.test_plus_one_or_more": "AssertionError: IndexError: string index out of range"
+   }
+  }
+ },
+ {
+  "index": 58,
+  "module": "058.py",
+  "prompt": "04-03",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "signatures": "class Expr:\nclass Literal:\n    def __init__(self, ch)\nclass Dot:\nclass CharClass:\n    def __init__(self, neg, chars)\nclass Concat:\n    def __init__(self, left, right)\nclass Alt:\n    def __init__(self, left, right)\nclass Star:\n    def __init__(self, sub)\nclass Plus:\n    def __init__(self, sub)\nclass Opt:\n    def __init__(self, sub)\nclass Parser:\n    def __init__(self, pattern)\n    def peek(self)\n    def advance(self)\n    def match(self, typ)\n    def parse(self)\n    def regex(self)\n    def alt(self)\n    def concat(self)\n    def repeat(self)\n    def atom(self)\nclass State:\n    def __init__(self)\n    def add_edge(self, label, target)\nclass Fragment:\n    def __init__(self, start, accept)\nclass ThompsonBuilder:\n    def build(self, expr)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef simulate(start, accept, text)\nclass Regex:\n    def __init__(self, pattern)\n    def match(self, text)",
+  "report": {
+   "load_errors": [
+    "SyntaxError: invalid syntax (<deliverable 2>, line 1)"
+   ],
+   "tests": {
+    "TestThompsonConstruction.test_alternation": "ok",
+    "TestThompsonConstruction.test_character_class": "ok",
+    "TestThompsonConstruction.test_complex_pattern": "ok",
+    "TestThompsonConstruction.test_concatenation": "ok",
+    "TestThompsonConstruction.test_digit_class_plus": "AssertionError: AttributeError: 'CharClass' object has no attribute 'sub'",
+    "TestThompsonConstruction.test_dot": "ok",
+    "TestThompsonConstruction.test_empty_string": "ok",
+    "TestThompsonConstruction.test_grouping": "ok",
+    "TestThompsonConstruction.test_kleene_star": "ok",
+    "TestThompsonConstruction.test_mixed_operators": "AssertionError: AssertionError: True is not false",
+    "TestThompsonConstruction.test_multiple_alternatives": "ok",
+    "TestThompsonConstruction.test_negated_character_class": "ok",
+    "TestThompsonConstruction.test_nested_operators": "ok",
+    "TestThompsonConstruction.test_optional": "ok",
+    "TestThompsonConstruction.test_plus": "AssertionError: AttributeError: 'Literal' object has no attribute 'sub'",
+    "TestThompsonConstruction.test_single_literal": "ok"
+   }
+  }
+ },
+ {
+  "index": 59,
+  "module": "059.py",
+  "prompt": "04-03",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self)\n    def add_edge(self, matcher, dest)\nclass Fragment:\n    def __init__(self, start, outs)\ndef patch(states, dest)\nclass Parser:\n    def __init__(self, pattern)\n    def peek(self)\n    def consume(self)\n    def match(self, ch)\n    def parse(self)\n    def expr(self)\n    def term(self)\n    def factor(self)\n    def base(self)\n    def char_class(self)\nclass NFA:\n    def __init__(self, start, accepts)\n    def from_regex(pattern)\n    def matches(self, text)\ndef run_tests()",
+  "report": {
+   "load_errors": [
+    "NameError: name 'State' is not defined",
+    "NameError: name 'State' is not defined",
+    "NameError: name 'State' is not defined",
+    "NameError: name 'Fragment' is not defined",
+    "NameError: name 'State' is not defined",
+    "ModuleNotFoundError: No module named 'thompson'"
+   ],
+   "tests": {
+    "TestThompsonNFA.test_regex_0_9_plus_does_not_match_abc": "AssertionError: NameError: name 'NFA' is not defined",
+    "TestThompsonNFA.test_regex_0_9_plus_matches_123": "AssertionError: NameError: name 'NFA' is not defined",
+    "TestThompsonNFA.test_regex_a_b_c_star_d_does_not_match_aed": "AssertionError: NameError: name 'NFA' is not defined",
+    "TestThompsonNFA.test_regex_a_b_c_star_d_matches_abcbcd": "AssertionError: NameError: name 'NFA' is not defined",
+    "TestThompsonNFA.test_regex_a_b_c_star_d_matches_abcd": "AssertionError: NameError: name 'NFA' is not defined",
+    "TestThompsonNFA.test_regex_a_b_c_star_d_matches_ad": "AssertionError: NameError: name 'NFA' is not defined"
+   }
+  }
+ },
+ {
+  "index": 60,
+  "module": "060.py",
+  "prompt": "04-02",
+  "run": "run-20261009-175714-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class SAXJSONParser:\n    def __init__(self, stream, handler, chunk_size)\n    def parse(self)\ndef generate_large_json_array(num_elements)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_chunked_parsing": "ok",
+    "test_empty_structures": "ok",
+    "test_large_array_streaming": "ok",
+    "test_mixed_types": "AssertionError: Expected [('null',), ('bool', True), ('bool', False), ('value', 42.0), ('string', 'text'), ('value', 3.14)], got [('null',), ('value', None), ('bool', True), ('value', True), ('bool', False), ('value'",
+    "test_nested_structures": "AssertionError: Expected max object depth 2, got 3",
+    "test_simple_object_parsing": "AssertionError: Expected [('object_start',), ('key', 'name'), ('string', 'John'), ('key', 'age'), ('number', 30.0), ('key', 'is_student'), ('bool', False), ('key', 'hobbies'), ('null',), ('object_end',)], got [('obje",
+    "test_string_escapes": "ok"
+   }
+  }
+ },
+ {
+  "index": 61,
+  "module": "061.py",
+  "prompt": "04-02",
+  "run": "run-20261009-190107-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class JsonHandler:\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\nclass CharIter:\n    def __init__(self, stream, chunk_size)\n    def push_back(self, ch)\n    def push_back(self, ch)\n    def pushback_char(self, ch)\n    def push_back(self, ch)\n    def push_back(self, ch)\n    def push_back(self, ch)\ndef parse(stream, handler)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_1000_element_array": "ok",
+    "test_1000_element_array_with_strings": "ok",
+    "test_array_with_elements": "AssertionError: Expected [('array_start',), ('number', 1), ('number', 2), ('number', 3), ('array_end',)], got [('array_start',), ('number', 1), ('value', 1), ('number', 2), ('value', 2), ('number', 3), ('value', 3), ",
+    "test_array_with_mixed_types": "AssertionError: Expected [('array_start',), ('number', 1), ('string', 'two'), ('bool', True), ('null',), ('array_end',)], got [('array_start',), ('number', 1), ('value', 1), ('string', 'two'), ('value', 'two'), ('boo",
+    "test_array_with_nested_array": "AssertionError: Expected [('array_start',), ('array_start',), ('number', 1), ('number', 2), ('array_end',), ('array_start',), ('number', 3), ('number', 4), ('array_end',), ('array_end',)], got [('array_start',), ('ar",
+    "test_bool_false_parsing": "AssertionError: Expected [('bool', False)], got [('bool', False), ('value', False)]",
+    "test_bool_true_parsing": "AssertionError: Expected [('bool', True)], got [('bool', True), ('value', True)]",
+    "test_custom_handler_receives_callbacks": "AssertionError: Expected 10 callbacks, got 15",
+    "test_deeply_nested_array": "ok",
+    "test_deeply_nested_object": "ok",
+    "test_empty_array": "ok",
+    "test_empty_object": "ok",
+    "test_empty_string": "AssertionError: Expected [('string', '')], got [('string', ''), ('value', '')]",
+    "test_escaped_unicode_boundary": "AssertionError: Got [('string', 'A'), ('value', 'A')]",
+    "test_float_number_parsing": "AssertionError: Expected [('number', 3.14)], got [('number', 3.14), ('value', 3.14)]",
+    "test_handler_callbacks_exist": "ok",
+    "test_max_int_boundary": "AssertionError: Got [('number', 9223372036854775807), ('value', 9223372036854775807)]",
+    "test_mixed_nested_structures": "ok",
+    "test_negative_number_parsing": "AssertionError: Expected [('number', -17)], got [('number', -17), ('value', -17)]",
+    "test_null_parsing": "AssertionError: Expected [('null',)], got [('null',), ('value', None)]",
+    "test_number_parsing": "AssertionError: Expected [('number', 42)], got [('number', 42), ('value', 42)]",
+    "test_object_with_multiple_keys": "AssertionError: Expected [('object_start',), ('key', 'a'), ('number', 1), ('key', 'b'), ('number', 2), ('object_end',)], got [('object_start',), ('key', 'a'), ('number', 1), ('value', 1), ('key', 'b'), ('number', 2),",
+    "test_object_with_nested_object": "AssertionError: Expected [('object_start',), ('key', 'outer'), ('object_start',), ('key', 'inner'), ('string', 'value'), ('object_end',), ('object_end',)], got [('object_start',), ('key', 'outer'), ('object_start',),",
+    "test_object_with_single_key": "AssertionError: Expected [('object_start',), ('key', 'key'), ('string', 'value'), ('object_end',)], got [('object_start',), ('key', 'key'), ('string', 'value'), ('value', 'value'), ('object_end',)]",
+    "test_streaming_with_chunk_size_1": "AssertionError: Expected [('object_start',), ('key', 'key'), ('string', 'value'), ('object_end',)], got [('object_start',), ('key', 'key'), ('string', 'value'), ('value', 'value'), ('object_end',)]",
+    "test_streaming_with_varying_chunk_sizes": "AssertionError: Chunk size 1: expected [('array_start',), ('number', 1), ('number', 2), ('string', 'three'), ('bool', True), ('array_end',)], got [('array_start',), ('number', 1), ('value', 1), ('number', 2), ('value",
+    "test_string_escape_backslash": "AssertionError: Got [('string', 'path\\\\to\\\\file'), ('value', 'path\\\\to\\\\file')]",
+    "test_string_escape_mixed": "AssertionError: Got [('string', 'A\\n\\tB'), ('value', 'A\\n\\tB')]",
+    "test_string_escape_newline": "AssertionError: Got [('string', 'line1\\nline2'), ('value', 'line1\\nline2')]",
+    "test_string_escape_quotes": "AssertionError: Got [('string', 'say \"hello\"'), ('value', 'say \"hello\"')]",
+    "test_string_escape_tab": "AssertionError: Got [('string', 'col1\\tcol2'), ('value', 'col1\\tcol2')]",
+    "test_string_escape_unicode": "AssertionError: Got [('string', 'ABC'), ('value', 'ABC')]",
+    "test_string_parsing": "AssertionError: Expected [('string', 'hello')], got [('string', 'hello'), ('value', 'hello')]",
+    "test_whitespace_handling": "AssertionError: Expected [('object_start',), ('key', 'key'), ('string', 'value'), ('object_end',)], got [('object_start',), ('key', 'key'), ('string', 'value'), ('value', 'value'), ('object_end',)]"
+   }
+  }
+ },
+ {
+  "index": 62,
+  "module": "062.py",
+  "prompt": "04-03",
+  "run": "run-20261009-190107-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class RegexEngine:\n    def __init__(self, pattern)\n    def match(self, text)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestRegexEngine.test_pattern_0_9_plus_does_not_match_abc": "ok",
+    "TestRegexEngine.test_pattern_0_9_plus_matches_123": "ok",
+    "TestRegexEngine.test_pattern_a_b_c_star_d_does_not_match_aed": "ok",
+    "TestRegexEngine.test_pattern_a_b_c_star_d_matches_abcbcd": "ok",
+    "TestRegexEngine.test_pattern_a_b_c_star_d_matches_abcd": "ok",
+    "TestRegexEngine.test_pattern_a_b_c_star_d_matches_ad": "ok"
+   }
+  }
+ },
+ {
+  "index": 63,
+  "module": "063.py",
+  "prompt": "04-03",
+  "run": "run-20261009-225823-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class State:\n    def __init__(self)\n    def add_transition(self, symbol, state)\nclass NFA:\n    def __init__(self, start, accept)\n    def concat(nfa1, nfa2)\n    def alternation(nfa1, nfa2)\n    def star(nfa)\n    def plus(nfa)\n    def optional(nfa)\n    def epsilon()\n    def symbol(sym)\n    def dot()\n    def char_class(chars)\n    def epsilon_closure(self, states)\n    def move(self, states, symbol)\n    def matches(self, string)\nclass Parser:\n    def __init__(self, pattern)\n    def peek(self)\n    def advance(self)\n    def parse(self)\n    def expression(self)\n    def term(self)\n    def factor(self)\n    def base(self)\n    def char_class(self)\n    def literal(self)\ndef compile_regex(pattern)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_basic_concatenation": "ok",
+    "TestThompsonConstruction.test_char_class_range": "ok",
+    "TestThompsonConstruction.test_dot_matches_any_char": "ok",
+    "TestThompsonConstruction.test_example1_matches_abcbcd": "ok",
+    "TestThompsonConstruction.test_example1_matches_abcd": "ok",
+    "TestThompsonConstruction.test_example1_matches_ad": "ok",
+    "TestThompsonConstruction.test_example1_not_match_aed": "ok",
+    "TestThompsonConstruction.test_example2_matches_123": "ok",
+    "TestThompsonConstruction.test_example2_not_match_abc": "ok",
+    "TestThompsonConstruction.test_kleene_star": "ok",
+    "TestThompsonConstruction.test_nested_grouping": "ok",
+    "TestThompsonConstruction.test_optional_operator": "ok",
+    "TestThompsonConstruction.test_plus_operator": "ok"
+   }
+  }
+ },
+ {
+  "index": 64,
+  "module": "064.py",
+  "prompt": "04-02",
+  "run": "run-20261009-230204-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class JSONParseError:\nclass JSONParser:\n    def __init__(self, stream, handler, chunk_size)\n    def parse(self)\nclass MockHandler:\n    def __init__(self)\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestJSONParser.test_array_parsing": "AssertionError: AttributeError: 'MockHandler' object has no attribute 'calls'",
+    "TestJSONParser.test_basic_types": "AssertionError: AttributeError: 'MockHandler' object has no attribute 'calls'",
+    "TestJSONParser.test_nested_structures": "AssertionError: AttributeError: 'MockHandler' object has no attribute 'calls'",
+    "TestJSONParser.test_object_parsing": "AssertionError: AttributeError: 'MockHandler' object has no attribute 'calls'",
+    "TestJSONParser.test_streaming_1000_element_array": "AssertionError: AttributeError: 'MockHandler' object has no attribute 'calls'",
+    "TestJSONParser.test_string_escapes": "AssertionError: AttributeError: 'MockHandler' object has no attribute 'calls'"
+   }
+  }
+ },
+ {
+  "index": 65,
+  "module": "065.py",
+  "prompt": "04-03",
+  "run": "run-20261009-230204-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class Token:\n    def __init__(self, typ, value)\ndef lexer(pattern)\nclass ASTNode:\nclass CharNode:\n    def __init__(self, char)\nclass DotNode:\nclass CharClassNode:\n    def __init__(self, chars)\nclass ConcatNode:\n    def __init__(self, left, right)\nclass AltNode:\n    def __init__(self, left, right)\nclass StarNode:\n    def __init__(self, child)\nclass PlusNode:\n    def __init__(self, child)\nclass QuestionNode:\n    def __init__(self, child)\nclass Parser:\n    def __init__(self, tokens)\n    def peek(self)\n    def advance(self)\n    def parse(self)\n    def parse_expr(self)\n    def parse_term(self)\n    def parse_factor(self)\n    def parse_base(self)\nclass State:\n    def __init__(self)\n    def add_eps(self, state)\n    def add_transition(self, label, state)\nclass NFA:\n    def __init__(self, start, accept)\ndef build_nfa(ast)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef matches(regex, string)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestRegexMatching.test_alternation": "ok",
+    "TestRegexMatching.test_character_class": "ok",
+    "TestRegexMatching.test_character_class_plus_example2": "ok",
+    "TestRegexMatching.test_complex_pattern_example1": "ok",
+    "TestRegexMatching.test_concatenation_basic": "ok",
+    "TestRegexMatching.test_dot": "ok",
+    "TestRegexMatching.test_empty_string_matching": "ok",
+    "TestRegexMatching.test_grouping": "ok",
+    "TestRegexMatching.test_kleene_star": "ok",
+    "TestRegexMatching.test_mixed_operators": "ok",
+    "TestRegexMatching.test_nested_operations": "ok",
+    "TestRegexMatching.test_optional": "ok",
+    "TestRegexMatching.test_plus": "ok"
+   }
+  }
+ },
+ {
+  "index": 66,
+  "module": "066.py",
+  "prompt": "04-03",
+  "run": "run-20261009-230334-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self)\ndef epsilon(s, target)\ndef symbol(s, sym, target)\nclass NFA:\n    def __init__(self, start, accept)\n    def epsilon_closure(self, states)\n    def move(self, states, char)\n    def matches(self, string)\ndef tokenize(pattern)\ndef add_concat(tokens)\ndef to_postfix(tokens)\ndef parse_regex(pattern)\nclass Fragment:\n    def __init__(self, start, accepts)\ndef patch(state, target)\ndef patch_multiple(states, target)\ndef thompson(postfix)\ndef compile_regex(pattern)\ndef match(pattern, string)",
+  "report": {
+   "incomplete": "step budget"
+  }
+ },
+ {
+  "index": 67,
+  "module": "067.py",
+  "prompt": "04-03",
+  "run": "run-20261009-230600-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class State:\n    def __init__(self)\nclass NFA:\n    def __init__(self, start, accept)\ndef epsilon_closure(states)\ndef move(states, ch)\ndef match(nfa, string)\nclass Parser:\n    def __init__(self, pattern)\n    def peek(self)\n    def consume(self)\n    def parse(self)\n    def parse_expression(self)\n    def parse_term(self)\n    def parse_factor(self)\n    def parse_base(self)\n    def parse_char_class(self)\ndef build_nfa(ast)\ndef compile_regex(pattern)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_pattern_0_9_plus_matches_123": "ok",
+    "TestThompsonConstruction.test_pattern_0_9_plus_not_match_abc": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_abcbcd": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_abcd": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_matches_ad": "ok",
+    "TestThompsonConstruction.test_pattern_a_b_c_star_d_not_match_aed": "ok"
+   }
+  }
+ },
+ {
+  "index": 68,
+  "module": "068.py",
+  "prompt": "04-03",
+  "run": "run-20261009-230801-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self)\nclass Fragment:\n    def __init__(self, start, accepts)\ndef tokenize(pattern)\ndef insert_concat(tokens)\ndef to_postfix(tokens)\ndef build_nfa(postfix)\ndef epsilon_closure(states)\ndef move(states, char)\ndef matches(regex, string)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_does_not_match_0_9_plus_abc": "ok",
+    "TestThompsonConstruction.test_does_not_match_a_b_c_star_d_aed": "ok",
+    "TestThompsonConstruction.test_matches_0_9_plus_123": "ok",
+    "TestThompsonConstruction.test_matches_a_b_c_star_d_abcbcd": "ok",
+    "TestThompsonConstruction.test_matches_a_b_c_star_d_abcd": "ok",
+    "TestThompsonConstruction.test_matches_a_b_c_star_d_ad": "ok"
+   }
+  }
+ },
+ {
+  "index": 69,
+  "module": "069.py",
+  "prompt": "04-02",
+  "run": "run-20261009-231307-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class JSONLexer:\n    def __init__(self, stream, chunk_size)\n    def next_token(self)\nclass JSONParser:\n    def __init__(self, lexer, handler)\n    def parse(self)\ndef parse(stream, handler)",
+  "report": {
+   "load_errors": [],
+   "tests": {},
+   "module_error": "SyntaxError: invalid syntax (<request tests>, line 144)"
+  }
+ },
+ {
+  "index": 70,
+  "module": "070.py",
+  "prompt": "04-03",
+  "run": "run-20261009-231307-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "signatures": "class State:\n    def __init__(self)\n    def add_transition(self, symbol, state)\nclass NFAFragment:\n    def __init__(self, start, accept)\nclass RegexEngine:\n    def __init__(self)\n    def compile(self, pattern)\n    def match(self, text)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_0_9_plus_does_not_match_abc": "ok",
+    "test_0_9_plus_matches_123": "ok",
+    "test_a_b_c_star_d_does_not_match_aed": "ok",
+    "test_a_b_c_star_d_matches_abcbcd": "ok",
+    "test_a_b_c_star_d_matches_abcd": "ok",
+    "test_a_b_c_star_d_matches_ad": "ok"
+   }
+  }
+ },
+ {
+  "index": 71,
+  "module": "071.py",
+  "prompt": "04-02",
+  "run": "run-20261009-231457-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class SAXHandler:\n    def on_object_start(self)\n    def on_object_end(self)\n    def on_array_start(self)\n    def on_array_end(self)\n    def on_key(self, key)\n    def on_value(self, value)\n    def on_string(self, s)\n    def on_number(self, n)\n    def on_bool(self, b)\n    def on_null(self)\ndef parse(stream, handler, chunk_size)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_boolean_and_null": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_chunk_size_handling": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_empty_array": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_empty_object": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_float_numbers": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_large_array_streaming": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_negative_numbers": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_nested_structure": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_simple_array": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_simple_object": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_string_escapes": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_unicode_escape": "AttributeError: 'str' object has no attribute 'decode'"
+   }
+  }
+ },
+ {
+  "index": 72,
+  "module": "072.py",
+  "prompt": "04-02",
+  "run": "run-20261009-231658-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "signatures": "class JSONSAXParser:\n    def __init__(self, handler)\n    def parse(self, stream, chunk_size)",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_array_of_1000_numbers": "NameError: name 'RecordingParser' is not defined",
+    "test_memory_bounded": "ok",
+    "test_nested_structures": "ok",
+    "test_simple_object": "ok",
+    "test_streaming_chunks": "ok",
+    "test_string_escapes": "ok"
+   }
+  }
+ }
+]

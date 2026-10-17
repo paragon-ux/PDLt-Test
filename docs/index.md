@@ -1,6 +1,28 @@
 # PDLt Taskmaster & The System 2 Catalogue
 
-**PDLt Taskmaster** is a controller-gated REPL harness and evaluation platform designed for verified, auditable agentic execution.
+**PDLt Taskmaster** is a protocol harness for verified, auditable model execution: a Python library first, with an extensions SDK, an MCP server, an interactive REPL and a headless CLI on top.
+
+## Entry points
+
+| Use | Entry point | Read |
+| :--- | :--- | :--- |
+| **Run tasks from Python** (primary) | `pdl_taskmaster.api`: `Session`, `TurnResult`, `create_worker`, `RunSettings` | [Python API](api.md) |
+| **Add task types, verifiers or model providers** (SDK) | `register_task_type`, `register_verifier`, `register_provider`, plus a conformance kit | [Extensions](extensions.md) |
+| **Use PDLt from another agent** | MCP server: `python -m pdl_taskmaster.host.mcp_server` | [MCP server](mcp/EXTERNAL_TOOLS.md) |
+| **Work interactively** | REPL: `pdlt --new-session` | [REPL and headless runs](repl.md) |
+| **Automate (CI, scripts)** | Headless: `pdlt --non-interactive`, with exit codes | [REPL and headless runs](repl.md#headless-runs) |
+
+## Set it up on your host
+
+Setup differs by operating system, because each has its own sandbox and shell. Each page takes you, or an agent, from nothing to a first verified task, with a check at the end of every step.
+
+| Host | Sandbox | Setup |
+| :--- | :--- | :--- |
+| Windows 10 or 11 | AppContainer | [Windows](hosts/windows.md) |
+| Linux, kernel 5.13 or later | Landlock | [Linux](hosts/linux.md) |
+| macOS | Seatbelt | [macOS](hosts/macos.md) |
+
+[Get started](getting-started.md) explains the steps and how to choose; [Reference](reference.md) holds the settings and file locations shared by all three.
 
 ---
 
@@ -10,7 +32,7 @@ Most agentic harnesses give large language models uncontrolled execution loops: 
 
 PDLt fundamentally shifts the paradigm:
 1. **Semantic Bootstrap Containment**: Raw user text and untrusted prompt data remain passive data. The model cannot execute until interpretation and planning phases are complete.
-2. **Controller-Gated Phases**: The model interprets user requests as short, human-readable pseudocode and waits for confirmation before execution begins.
+2. **Controller-Gated Phases**: The model interprets user requests as short, human-readable pseudocode; in review mode, the run waits for confirmation before execution begins.
 3. **OS-Native Confinement**: All generated code executes inside a restricted, session-scoped OS sandbox (Landlock on Linux, Seatbelt on macOS, AppContainers on Windows).
 4. **Deterministic Delivery Verification**: Code and results are checked against formal output contracts, verification suites, and witness projections.
 

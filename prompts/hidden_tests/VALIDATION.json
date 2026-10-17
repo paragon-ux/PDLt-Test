@@ -266,7 +266,7 @@
       "ok": true
     },
     "03-03": {
-      "tests_sha256": "0ebde61f62d3413258d893193638232dd2d4253217b90e4c07175e812326beff",
+      "tests_sha256": "dbd52aeeec8e9f696521941922978d0e4e68ae922130eb546a4ec9211d2fa539",
       "answers": {
         "alt_index_memoryview.py": {
           "sha256": "590eff10e18c41e796c549fbc6c8fce4ac9fc6db19dbbddb6624e854a03261ec",
@@ -300,7 +300,7 @@
       "ok": true
     },
     "03-05": {
-      "tests_sha256": "de750fa65d8e4f8477088932aa1648f5fd13d489422edb7eccff6e59fb51fe91",
+      "tests_sha256": "009bd98a751955ccf4191922cfa85d0035d5e8267d03104969d7457e7deb64d1",
       "answers": {
         "alt_one_empty_slot.py": {
           "sha256": "21168a2ca9056ccad3f12152443f12cdf173a4b52ec40ded9bf925c39987fa36",
@@ -348,14 +348,14 @@
           "passed": false,
           "expected": false,
           "ok": true,
-          "reason": "watch: test_detects_create_modify_delete_and_subdirectories: AssertionError: no modified edit.txt event; saw [('created', 'c:\\\\users\\\\user\\\\appdata\\\\local\\\\temp\\\\pdlt-sandboxes\\\\hidden-tests-drm8wjsf\\\\work\\\\run-0001-ad0733\\\\hidden_watch_10676\\\\new.txt')]"
+          "reason": "watch: test_detects_create_modify_delete_and_subdirectories: AssertionError: no modified edit.txt event; saw [('created', 'c:\\\\users\\\\user\\\\appdata\\\\local\\\\temp\\\\pdlt-sandboxes\\\\hidden-tests-pc7qcvse\\\\work\\\\run-0001-e2f796\\\\hidden_watch_14112\\\\new.txt')]"
         },
         "bug_top_level_only.py": {
           "sha256": "4d5350e3da497d00ac6d713b2a3ac34a9631ce6c9051840179a4eb418a232601",
           "passed": false,
           "expected": false,
           "ok": true,
-          "reason": "watch: test_detects_create_modify_delete_and_subdirectories: AssertionError: no created sub/ or sub/inner.txt event; saw [('created', 'c:\\\\users\\\\user\\\\appdata\\\\local\\\\temp\\\\pdlt-sandboxes\\\\hidden-tests-fziwg4zk\\\\work\\\\run-0001-f9e049\\\\hidden_watch_19044\\\\new.txt'), ('modified', 'c:\\\\users\\\\user\\\\ap"
+          "reason": "watch: test_detects_create_modify_delete_and_subdirectories: AssertionError: no created sub/ or sub/inner.txt event; saw [('created', 'c:\\\\users\\\\user\\\\appdata\\\\local\\\\temp\\\\pdlt-sandboxes\\\\hidden-tests-ra4tqgu4\\\\work\\\\run-0001-f9312a\\\\hidden_watch_19968\\\\new.txt'), ('modified', 'c:\\\\users\\\\user\\\\ap"
         },
         "ref.py": {
           "sha256": "2a57008ae0359ade0f312b2a5bf1d0cb3a40766ace076882f44f6ac141406699",
@@ -830,7 +830,7 @@
           "passed": false,
           "expected": false,
           "ok": true,
-          "reason": "transfer_ab/transfer_ba: test_forced_interleaving_finishes: AssertionError: 1 of 2 transfers recorded"
+          "reason": "transfer_ab/transfer_ba: test_forced_interleaving_finishes: AssertionError: 0 of 2 transfers recorded"
         },
         "ref.py": {
           "sha256": "72762b130a71be5dca79f08a5006ead89ef751da9790a9b463139016c80a4e6a",
@@ -843,7 +843,7 @@
       "ok": true
     },
     "06-03": {
-      "tests_sha256": "cc1c1a2eebe0d11a4b79c1df6c73bdee5b24765c299cca39dfdf6720f40fc0a4",
+      "tests_sha256": "eedf3f50dda861f03a83006f4f5f4d6d736de35d6e83ab15ddf33a7f7356e1c2",
       "answers": {
         "alt_weak_methods.py": {
           "sha256": "a4d63025715f08240039de5664751f8cd886c28e55dbc2a969e02489269d1318",
@@ -857,14 +857,14 @@
           "passed": false,
           "expected": false,
           "ok": true,
-          "reason": "process_batch/EventEmitter: test_no_growth_over_many_calls: AssertionError: emitter storage grew by 2000 entries after 2,000 calls"
+          "reason": "process_batch/EventEmitter: test_no_growth_over_many_calls: timed out after 40s"
         },
         "bug_original.py": {
           "sha256": "ff60c0bb911f76a40e3c1bea3dc890eb0c95f815fec735d89796f19b071ea780",
           "passed": false,
           "expected": false,
           "ok": true,
-          "reason": "process_batch/EventEmitter: test_no_growth_over_many_calls: AssertionError: 2000 more live deliverable objects after 2,000 calls"
+          "reason": "process_batch/EventEmitter: test_no_growth_over_many_calls: timed out after 40s"
         },
         "ref.py": {
           "sha256": "44d44c6a768b91a3de10a71d540746cc00fbc4c58566a0702929e979a3a240df",

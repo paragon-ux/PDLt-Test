@@ -29,24 +29,26 @@ The model drafts high-level pseudocode capturing its interpretation of the user'
 The model drafts high-level procedural pseudocode outlining the concrete algorithms, data structures, and edge cases to implement.
 
 ### 4. Stage 50: Execution (`EXECUTE`)
-The model writes executable code under OS sandbox confinement. In DRAFT-EXECUTE mode, a lean execution brief is generated to guide code synthesis.
+The model writes executable code under OS sandbox confinement. In DRAFT-EXECUTE mode, a typed execution brief (method, data structures, step estimate checked against the budget, invariants, self-checks, exact task strings) is drafted first for tasks that are or need an algorithm or a calculation, and passed to EXECUTE as its own input.
 
 ### 5. Stage 60: Verification & Repair (`Tier-D1`)
 The authored deliverable is executed in the isolated sandbox. If errors or assertion failures occur, structured diagnostic feedback is fed back to the model for up to $N$ repairs.
 
 ---
 
-## The Four Execution Arms
+## The Execution Routes
 
-PDLt supports four distinct execution topologies to balance auditability against execution latency:
+PDLt has four harness routes (Arms 1-4) and an unharnessed control, to balance auditability against execution latency. Calls and seconds per prompt are measured in the [benchmark sweep](benchmarks.md) (112 prompts, `openai/gpt-oss-120b`, reasoning `low`):
 
-| Arm | CLI Flags | Pipeline Structure | Model Calls | Use Case |
-| :--- | :--- | :--- | :--- | :--- |
-| **Control: Direct Model** | `--route control` | Raw single-turn completion (unharnessed) | 1 call | Baseline benchmark comparison & pure sandboxed harness |
-| **Arm 1: Unconfirmed** | `--route unconfirmed` | Direct execution without intermediate gates | 2 calls | Ultrafast baseline |
-| **Arm 2: Confirmed** | `--route confirmed` | Gated prompt pseudocode + gated plan pseudocode | 4–6 calls | Full human auditability |
-| **Arm 3: Confirmed + DRAFT-EXECUTE** | `--route confirmed --draft-execute --tier-d1` | Multi-stage gates + lean brief + Tier-D1 sandbox loop | 4–5 calls | High-assurance enterprise workflows |
-| **Arm 4: Unconfirmed + DRAFT-EXECUTE** | `--route unconfirmed --draft-execute --tier-d1` | Direct route + execution brief + Tier-D1 sandbox loop | 3 calls | **Pareto optimal autonomous agent mode** |
+| Route | CLI Flags | Pipeline Structure | Calls / prompt | Seconds / prompt | Use Case |
+| :--- | :--- | :--- | :---: | :---: | :--- |
+| **Control: Direct Model** | `--route control` | Raw single-turn completion (unharnessed) | 1.0 | 2.5 | Baseline for benchmark comparison & pure sandboxed grading of any model's completions |
+| **Arm 1: Unconfirmed** | `--route unconfirmed` | Direct execution without review gates | 2.0 | 12.7 | Lean autonomous default; on the benchmark's efficient frontier |
+| **Arm 2: Confirmed** | `--route confirmed` | Gated prompt pseudocode + gated plan pseudocode | 4.3 | 17.9 | Human-reviewed prompt and plan; full audit trail |
+| **Arm 3: Confirmed + DRAFT-EXECUTE** | `--route confirmed --draft-execute` | Arm 2 + execution brief (only for tasks that need verified execution) | 4.4 | 19.8 | Human-reviewed, with an execution brief |
+| **Arm 4: Unconfirmed + DRAFT-EXECUTE** | `--route unconfirmed --draft-execute` | Arm 1 + execution brief (only for tasks that need verified execution) | 2.1 | 13.2 | Same cost class as Arm 1 |
+
+**Tier D1 is on by default in every harness arm** (`--no-tier-d1` turns it off): the model's own failing self-tests are fed back as repair findings. It does not apply to the control route. On the benchmark the confirmed routes cost about twice the calls of the unconfirmed ones without a measured accuracy gain; what they add is the reviewable audit trail. The execution brief ran on only 9 of the 112 prompts, so the benchmark cannot say whether it helps. See [Benchmark & Four-Arm Parity](benchmarks.md) for the comparison and its caveats.
 
 ### Direct Control Baseline (`--route control`)
 Developers can use PDLt as an unharnessed evaluation harness for third-party models without protocol machinery:

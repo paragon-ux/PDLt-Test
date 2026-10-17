@@ -1,21 +1,40 @@
 [project]
-site_url = "https://paragon-ux.github.io/pdlt-test/"
+site_url = "https://paragon-ux.github.io/PDLt-Test/"
 site_name = "PDLt & The System 2 Catalogue"
-site_description = "A controller-gated REPL harness and evaluation catalogue for verified agentic execution"
+site_description = "A protocol harness for verified, auditable model execution: Python API, extensions SDK, REPL, headless CLI and MCP server"
 site_author = "paragon-ux"
-copyright = "Copyright &copy; 2026. Released under the Apache 2.0 / MIT License."
+copyright = "Copyright &copy; 2026 PDL-Standard contributors. Released under the MIT License."
 
 repo_url = "https://github.com/paragon-ux/PDLt-Test"
 repo_name = "paragon-ux/PDLt-Test"
 
 nav = [
   { "Overview" = "index.md" },
-  { "Getting Started" = "getting-started.md" },
-  { "Architecture & Routing" = "architecture.md" },
-  { "Benchmark & Four-Arm Parity" = "benchmarks.md" },
-  { "Catalogue & Evaluation" = "evaluation.md" },
-  { "OS Sandbox Confinement" = "SANDBOX.md" },
-  { "Providers & Models" = "providers.md" },
+  { "Get started" = [
+    { "Choose your host" = "getting-started.md" },
+    { "Windows" = "hosts/windows.md" },
+    { "Linux" = "hosts/linux.md" },
+    { "macOS" = "hosts/macos.md" },
+  ] },
+  { "Use PDLt" = [
+    { "Python API" = "api.md" },
+    { "Extensions SDK" = "extensions.md" },
+    { "REPL and headless runs" = "repl.md" },
+    { "MCP server" = "mcp/EXTERNAL_TOOLS.md" },
+  ] },
+  { "Reference" = [
+    { "Settings, files and failures" = "reference.md" },
+    { "Providers and models" = "providers.md" },
+    { "OS sandbox" = "SANDBOX.md" },
+  ] },
+  { "Design and evaluation" = [
+    { "Architecture and routing" = "architecture.md" },
+    { "Catalogue and evaluation" = "evaluation.md" },
+    { "Benchmarks" = "benchmarks.md" },
+  ] },
+  { "Maintainers" = [
+    { "Releasing" = "releasing.md" },
+  ] },
 ]
 
 [project.theme]

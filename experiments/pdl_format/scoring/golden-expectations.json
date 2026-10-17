@@ -1,0 +1,109 @@
+{
+  "study_id": "PDL-IR-vs-NL-CONFIRMED-PILOT-01",
+  "task_1_usage_reconciliation": {
+    "summary_rows": [
+      {
+        "account_id": "acct_A",
+        "usage_date_utc": "2026-10-09",
+        "net_units": "140",
+        "unit_price_usd": "0.02",
+        "amount_usd": "2.80"
+      },
+      {
+        "account_id": "acct_D",
+        "usage_date_utc": "2026-10-09",
+        "net_units": "200",
+        "unit_price_usd": "0.015",
+        "amount_usd": "3.00"
+      }
+    ],
+    "rejects": [
+      {"event_id": "evt-007", "reason_code": "UNKNOWN_ACCOUNT"},
+      {"event_id": "evt-conflict", "reason_code": "CONFLICTING_DUPLICATE_ID", "record_count": 2},
+      {"event_id": null, "reason_code": "INVALID_JSON", "line_number": 11}
+    ],
+    "excluded": [
+      {"event_id": "evt-004", "reason_code": "TRIAL_ACCOUNT"},
+      {"event_id": "evt-005", "reason_code": "INACTIVE_ACCOUNT"}
+    ],
+    "invariants": [
+      "summary sorted by account_id then UTC date",
+      "summary output byte-identical on repeated run",
+      "input files are not modified",
+      "reordering input records does not change the summary",
+      "neither duplicate evt-001 nor either evt-conflict record is double-billed",
+      "no secrets column or secret disclosure"
+    ]
+  },
+  "task_2_queue_cutover": {
+    "stage_schedule": [
+      {"id": 1, "regions": ["us-east"], "traffic_percent": 1, "duration_minutes": 15, "scope": "internal staff only"},
+      {"id": 2, "regions": ["us-east"], "traffic_percent": 5, "duration_minutes": 30},
+      {"id": 3, "regions": ["us-central"], "traffic_percent": 5, "duration_minutes": 30},
+      {"id": 4, "regions": ["us-west"], "traffic_percent": 5, "duration_minutes": 30},
+      {"id": 5, "regions": ["us-east", "us-central", "us-west"], "traffic_percent": 25, "duration_minutes": 60},
+      {"id": 6, "regions": ["us-east", "us-central", "us-west"], "traffic_percent": 50, "duration_minutes": 60}
+    ],
+    "initial_schedule_total_minutes": 225,
+    "initial_schedule_start_et": "2026-10-13T10:00:00-04:00",
+    "initial_schedule_end_et_if_uninterrupted": "2026-10-13T13:45:00-04:00",
+    "stage_7": {
+      "traffic_percent": 100,
+      "must_be_outside_initial_schedule": true,
+      "requires_separate_approval": true,
+      "minimum_healthy_hours_at_50_percent": 24
+    },
+    "feature_flag_default": false,
+    "v1_support_minimum_days_after_first_v2_traffic": 14,
+    "stop_thresholds": [
+      {"metric": "auth_401_403_rate", "threshold_percent": 0.5, "duration": "two consecutive 5-minute windows"},
+      {"metric": "http_5xx_rate", "threshold_percent": 1.0, "duration": "two consecutive 5-minute windows"},
+      {"metric": "p95_latency_vs_baseline", "threshold_percent_increase": 15, "duration": "two consecutive windows"},
+      {"metric": "queue_age_seconds", "threshold": 120, "duration": "five consecutive minutes"},
+      {"metric": "missing_audit_event_id", "threshold": "any occurrence", "duration": "immediate"},
+      {"metric": "dead_letter_queue_increase", "threshold_messages_above_baseline": 20, "duration": "during a stage"}
+    ],
+    "rollback_must": [
+      "set feature flag false",
+      "verify v1 succeeds",
+      "pause advancement",
+      "retain messages",
+      "preserve deduplication state",
+      "do not purge queue"
+    ]
+  },
+  "task_3_api_incident": {
+    "facts": {
+      "service": "api-gateway",
+      "region": "us-east",
+      "version_deployed": "2.14.0",
+      "requests_in_affected_interval": 12000,
+      "http_5xx_count": 504,
+      "http_5xx_rate_percent": 4.2,
+      "baseline_http_5xx_rate_percent": 0.3,
+      "support_sessions_reported_retrying": 37,
+      "queue_age_peak_seconds": 78,
+      "dead_letter_queue_before": 4,
+      "dead_letter_queue_snapshot_after": 4,
+      "root_cause_established": false
+    },
+    "required_timeline_events_utc": [
+      {"timestamp": "2026-10-06T14:02:00Z", "event_contains": "deployment"},
+      {"timestamp": "2026-10-06T14:03:00Z", "event_contains": "5xx crossed 4%"},
+      {"timestamp": "2026-10-06T14:05:00Z", "event_contains": "alert acknowledged"},
+      {"timestamp": "2026-10-06T14:08:00Z", "event_contains": "cache hit rate 91% to 63%"},
+      {"timestamp": "2026-10-06T14:11:00Z", "event_contains": "rollback initiated"},
+      {"timestamp": "2026-10-06T14:14:00Z", "event_contains": "rollback completed"},
+      {"timestamp": "2026-10-06T14:14:00Z", "event_contains": "next sample still elevated", "may_share_timestamp": true},
+      {"timestamp": "2026-10-06T14:16:00Z", "event_contains": "5xx returned to baseline"}
+    ],
+    "must_not_claim": [
+      "cache decline is proven root cause",
+      "no customer impact",
+      "no message loss is proven",
+      "exactly-once delivery",
+      "all 37 reports were unique customers"
+    ],
+    "recovery_delay_after_rollback_minutes": 2
+  }
+}

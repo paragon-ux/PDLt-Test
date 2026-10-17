@@ -11,7 +11,7 @@ Usage:
     python run_catalogue.py [--model MODEL] [--reasoning EFFORT] [--category CAT] [--dry-run]
 
 Outputs:
-    catalogue-runs/<timestamp>/
+    <runs>/<timestamp>/   (<runs>: catalogue_runs.py; outside the repository)
         +-- RUN_META.json           # Run configuration and environment
         +-- SCOREBOARD.json         # Aggregate results
         +-- SCOREBOARD.md           # Human-readable scoreboard
@@ -42,15 +42,14 @@ except ImportError:
     resource = None
 
 _script_dir = Path(__file__).resolve().parent
-if (_script_dir / "prompts").is_dir():
-    PDLT_TEST_ROOT = _script_dir
-    RUNS_DIR = _script_dir / "catalogue-runs"
-elif (_script_dir.parent / "prompts").is_dir():
+if (_script_dir.parent / "prompts").is_dir() and not (_script_dir / "prompts").is_dir():
     PDLT_TEST_ROOT = _script_dir.parent
     RUNS_DIR = _script_dir
 else:
     PDLT_TEST_ROOT = _script_dir
-    RUNS_DIR = _script_dir / "catalogue-runs"
+    # Runs are written outside the repository: $PDLT_CATALOGUE_RUNS, else PDLt-Catalogue-Archive beside it.
+    sys.path.insert(0, str(PDLT_TEST_ROOT))
+    from catalogue_runs import RUNS_DIR  # noqa: E402
 
 # The runner reads the harness's own sandbox definitions (graders, containment):
 # the same source tree the harness runs from, never another installed copy.
@@ -110,11 +109,10 @@ def refuse_dirty_tree(provenance: dict, allow_dirty: bool) -> None:
         raise SystemExit("The working tree has uncommitted changes, so this run could not be attributed "
                          "to a commit. Commit them, or pass --allow-dirty to record the difference with the run.")
 TIMEOUT_PER_PROMPT = 600  # heavy-tier tasks may make 3 execute attempts (2 repairs)
-EXIT_SUCCESS = 0
-EXIT_CANCELLED = 1
-EXIT_UNCONFIRMED = 2
-EXIT_WAITING_INPUT = 3
-EXIT_HARNESS_ERROR = 4  # a model call failed (provider/transport); not a model outcome
+# The headless exit codes, from the one mapping (ADR-0019; EXIT_HARNESS_ERROR: a model call failed, not a model
+# outcome; EXIT_UNVERIFIED: a result published without the host establishing it, L116).
+from pdl_taskmaster.api.outcome import (EXIT_CANCELLED, EXIT_HARNESS_ERROR, EXIT_SUCCESS,  # noqa: E402
+                                        EXIT_UNCONFIRMED, EXIT_UNVERIFIED, EXIT_WAITING_INPUT)
 
 
 def load_manifest(category_filter=None):
@@ -377,12 +375,19 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
             setting_args += [flag, str(settings[key])]
     if settings.get("draft_execute"):
         setting_args.append("--draft-execute")
-    if settings.get("tier_d1"):
-        setting_args.append("--tier-d1")
+    if settings.get("agent_tools"):
+        setting_args.append("--agent-tools")
+    if settings.get("representation", "pdl") != "pdl":
+        setting_args += ["--representation", settings["representation"]]
+    if settings.get("route") != "control" and settings.get("tier_d1") is not None:
+        # Always explicit: the harness's own default is on, so leaving the flag out does not mean off.
+        setting_args.append("--tier-d1" if settings["tier_d1"] else "--no-tier-d1")
     if settings.get("sandbox"):
         setting_args += ["--sandbox", settings["sandbox"]]
     if settings.get("route") == "unconfirmed":
         setting_args.append("--no-review")
+    elif settings.get("route") == "confirmed":
+        setting_args.append("--review")  # the REPL's default is no review (L94), so the confirmed route asks for it
     if settings.get("theme"):
         setting_args += ["--theme", settings["theme"]]
     if settings.get("user_color"):
@@ -467,6 +472,8 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
         verdict = "CLOSED_SUCCESS"
     elif exit_code == EXIT_CANCELLED:
         verdict = "CLOSED_CANCELLED"
+    elif exit_code == EXIT_UNVERIFIED:
+        verdict = "CLOSED_UNVERIFIED"
     elif exit_code == EXIT_HARNESS_ERROR:
         verdict = "HARNESS_ERROR"
     elif exit_code == EXIT_WAITING_INPUT:
@@ -573,14 +580,34 @@ def _first(value, key):
     return None
 
 
+def is_execute_operation(operation: str) -> bool:
+    """The model call that produces the deliverable: EXECUTE (confirmed routes), EXECUTE_UNCONFIRMED, or the control's one call."""
+    return operation in ("EXECUTE", "EXECUTE_UNCONFIRMED", "CONTROL_EXECUTE")
+
+
 def token_usage(result_dir: Path) -> dict:
     """Output and reported reasoning tokens, summed per operation. Some providers
     report no reasoning split for some operations (EXECUTE on gpt-oss: 0 reported
     while ~30K hidden tokens are billed as output, run 215232), so output tokens
-    are the effort a run actually got, whatever the requested label."""
+    are the effort a run actually got, whatever the requested label.
+
+    An observation record is one REPL turn and lists every call of that turn, so
+    every call counts. (Reading only the first call of a record, as this once did,
+    dropped all of an unconfirmed run's EXECUTE tokens.) The control writes its one
+    call's tokens into its event log instead of an observation record."""
     reasoning: dict[str, int] = {}
     output: dict[str, int] = {}
     inputs: dict[str, int] = {}
+    cached: dict[str, int] = {}
+
+    def add(operation, usage) -> None:
+        if not isinstance(operation, str) or not isinstance(usage, dict):
+            return
+        for totals, key in ((reasoning, "reasoning_tokens"), (output, "output_tokens"), (inputs, "input_tokens"),
+                            (cached, "cached_tokens")):
+            if isinstance(usage.get(key), (int, float)):
+                totals[operation] = totals.get(operation, 0) + int(usage[key])
+
     for path in Path(result_dir).rglob("observations/*.jsonl"):
         for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
             if '"reasoning_tokens"' not in line:
@@ -589,13 +616,24 @@ def token_usage(result_dir: Path) -> dict:
                 record = json.loads(line)
             except ValueError:
                 continue
-            operation, usage = _first(record, "operation"), _first(record, "usage")
-            if not isinstance(operation, str) or not isinstance(usage, dict):
-                continue
-            for totals, key in ((reasoning, "reasoning_tokens"), (output, "output_tokens"), (inputs, "input_tokens")):
-                if isinstance(usage.get(key), (int, float)):
-                    totals[operation] = totals.get(operation, 0) + int(usage[key])
-    return {"reasoning_tokens": reasoning, "output_tokens": output, "input_tokens": inputs}
+            calls = record.get("calls") if isinstance(record, dict) else None
+            if isinstance(calls, list):
+                for call in calls:
+                    if isinstance(call, dict):
+                        add(call.get("operation"), call.get("usage"))
+            else:  # an older record shape: one operation and its usage somewhere inside
+                add(_first(record, "operation"), _first(record, "usage"))
+    if not output:
+        for path in Path(result_dir).rglob("events.jsonl"):
+            for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+                if '"CONTROL_EXECUTE"' not in line:
+                    continue
+                try:
+                    payload = json.loads(line).get("payload") or {}
+                except ValueError:
+                    continue
+                add(payload.get("operation"), payload)
+    return {"reasoning_tokens": reasoning, "output_tokens": output, "input_tokens": inputs, "cached_tokens": cached}
 
 
 def stage_pass(r):
@@ -603,6 +641,9 @@ def stage_pass(r):
     exp = r.get("expected_stage", "CLOSED_SUCCESS")
     if exp == "WAITING_INPUT":
         return r.get("verdict") in {"WAITING_INPUT", "CLOSED_SUCCESS"}
+    if exp == "CLOSED_UNVERIFIED":
+        # The correct answer is one the host cannot check (L116); a host-verified closure is also accepted.
+        return r.get("verdict") in {"CLOSED_UNVERIFIED", "CLOSED_SUCCESS"}
     return r.get("verdict") == exp
 
 
@@ -747,11 +788,13 @@ def generate_scoreboard(results, run_dir, run_meta):
     calls = [(r.get("model_calls") or {}) for r in results]
     model_calls = {
         "total": sum(c.get("total", 0) for c in calls),
-        "execute": sum((c.get("by_operation") or {}).get("EXECUTE", 0) for c in calls),
+        "execute": sum(n for c in calls for op, n in (c.get("by_operation") or {}).items() if is_execute_operation(op)),
         "repairs": sum(c.get("repairs", 0) for c in calls),
     }
-    model_calls["execute_reasoning_tokens"] = sum((c.get("reasoning_tokens") or {}).get("EXECUTE", 0) for c in calls)
-    model_calls["execute_output_tokens"] = sum((c.get("output_tokens") or {}).get("EXECUTE", 0) for c in calls)
+    model_calls["execute_reasoning_tokens"] = sum(
+        n for c in calls for op, n in (c.get("reasoning_tokens") or {}).items() if is_execute_operation(op))
+    model_calls["execute_output_tokens"] = sum(
+        n for c in calls for op, n in (c.get("output_tokens") or {}).items() if is_execute_operation(op))
     repeat_pass_rates: dict = {}
     if any(r.get("repeat") for r in results):
         for r in results:
@@ -973,10 +1016,19 @@ def main():
                         help="EXECUTE repairs after a failed verification; 0 stops at the first failure (no retries)")
     parser.add_argument("--providers", default=None, metavar="A,B,C",
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
+    parser.add_argument("--agent-tools", action="store_true",
+                        help="ADR-0029: checked submissions on BOOTSTRAP_ANALYSIS, DRAFT_PROMPT, DRAFT_PLAN and "
+                             "EXECUTE_UNCONFIRMED, and in-call tools on EXECUTE_UNCONFIRMED; default off")
     parser.add_argument("--draft-execute", action="store_true",
-                        help="run DRAFT_EXECUTE before EXECUTE (A/B option)")
-    parser.add_argument("--tier-d1", action="store_true",
-                        help="enable Tier D1 in standard execution (feed sandbox failures back as repairs)")
+                        help="run DRAFT_EXECUTE (a typed execution brief) before EXECUTE on tasks that are or need an algorithm or a calculation (A/B option)")
+    parser.add_argument("--representation", choices=["pdl", "nl"], default="pdl",
+                        help="the confirmed route's prompt and plan artifacts: PDL pseudocode (default) or "
+                             "natural-language prose (the L97 pilot); --route confirmed only")
+    parser.add_argument("--tier-d1", action=argparse.BooleanOptionalAction,
+                        default=os.environ.get("PDLT_TIER_D1", "1") == "1",
+                        help="Tier D1 in standard execution: feed sandbox failures back as repairs "
+                             "(default: on, as the harness ships; --no-tier-d1 turns it off, PDLT_TIER_D1=0 flips the "
+                             "default). Not applicable to --route control")
     parser.add_argument("--sandbox", choices=["auto", "native", "container", "audit-only"], default=None,
                         help="confinement for model-authored programs, in the harness and the graders (default: "
                              "$PDLT_SANDBOX, else auto = native); audit-only opts out of OS-native confinement")
@@ -984,8 +1036,8 @@ def main():
                         help=f"memory cap for one prompt's harness process tree (default: {HARNESS_MEMORY_MB})")
     parser.add_argument("--repeat", type=int, default=1, metavar="N",
                         help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
-    parser.add_argument("--route", choices=["confirmed", "unconfirmed", "control"], default="confirmed",
-                        help="execution route: 'confirmed' (default, multi-stage with review), 'unconfirmed' (--no-review / ultrafast), or 'control' (unharnessed direct model baseline)")
+    parser.add_argument("--route", choices=["confirmed", "unconfirmed", "control"], default="unconfirmed",
+                        help="execution route: 'unconfirmed' (default: --no-review / ultrafast), 'confirmed' (multi-stage with review), or 'control' (unharnessed direct model baseline)")
     parser.add_argument("--theme", choices=THEME_NAMES, default=None,
                         help="Color theme for runner output and child process (default: $PDLT_THEME)")
     parser.add_argument("--user-color", choices=COLOR_NAMES, default=None,
@@ -1011,9 +1063,13 @@ def main():
         entries = [e for e in entries if e["id"] in target_pids]
     if args.repeat < 1:
         parser.error("--repeat must be at least 1")
+    if args.representation != "pdl" and args.route != "confirmed":
+        parser.error("--representation applies to the confirmed route's artifacts; use --route confirmed")
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
-                    "providers": args.providers, "draft_execute": args.draft_execute, "tier_d1": args.tier_d1,
+                    "providers": args.providers, "draft_execute": args.draft_execute,
+                    "agent_tools": args.agent_tools, "representation": args.representation,
+                    "tier_d1": args.tier_d1 and args.route != "control",  # what the child will run with
                     "sandbox": args.sandbox, "route": args.route,
                     "theme": args.theme, "user_color": args.user_color, "assistant_color": args.assistant_color}
     if args.sandbox:
@@ -1054,7 +1110,11 @@ def main():
     route_tag = args.route
     if args.draft_execute:
         route_tag += "-draft-execute"
-    if args.tier_d1:
+    if args.agent_tools:
+        route_tag += "-agent-tools"
+    if args.representation != "pdl":
+        route_tag += f"-{args.representation}"
+    if run_settings["tier_d1"]:
         route_tag += "-tier-d1"
     run_id = f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{route_tag}"
     run_dir = RUNS_DIR / run_id

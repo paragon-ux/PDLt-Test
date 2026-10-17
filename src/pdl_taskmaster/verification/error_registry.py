@@ -88,9 +88,19 @@ _SPECS = (
         "No witness was established: {diagnostic} Host observation: {host_observation}",
         "A result that must be certified is certified by a line of the form `WITNESS: <json>` printed by a "
         "program the host runs.",
-        "Include in the deliverable a Python program that prints its result as a `WITNESS: <json>` line; the "
-        "host runs it. If the result cannot be obtained, emit no witness and mark the requirement open with the "
-        "defect recorded.",
+        "Include in the deliverable a Python program that computes its result and prints it as a "
+        "`WITNESS: <json>` line; the host runs it. Or state the result in the Result IR's witness as a certificate "
+        "a program checks (basis \"certificate\") or as a result established by an argument (basis \"proof\"). If "
+        "the result cannot be obtained, emit no witness and mark the requirement open with the defect recorded.",
+    ),
+    ErrorSpec(
+        "WITNESS_WRITTEN_IN_PROGRAM",
+        "Python block {block} prints witness data that it writes out itself: the host saw no computation or check "
+        "produce it.",
+        "A witness a program prints certifies a result the program computed, or a certificate it checked.",
+        "Compute the result in the program; or state it in the Result IR's witness as a certificate (basis "
+        "\"certificate\"), which every program receives as WITNESS_DATA and a program checks; or state it as a "
+        "result established by an argument (basis \"proof\", with the argument).",
     ),
     ErrorSpec(
         "WITNESS_INVALID",
@@ -98,6 +108,12 @@ _SPECS = (
         "A witness is valid only if the host's checks confirm it against the task's constraints.",
         "Return a witness that satisfies the check named above, or mark the requirement open with the defect "
         "recorded.",
+    ),
+    ErrorSpec(
+        "WITNESS_FORM_NOT_ACCEPTED",
+        "The witness is of the form '{form}'; this task accepts: {accepted}.",
+        "A task's type states the witness forms it accepts.",
+        "Return a witness of an accepted form, or mark the requirement open with the defect recorded.",
     ),
     ErrorSpec(
         "SEARCH_CLAIM_UNREPRODUCED",

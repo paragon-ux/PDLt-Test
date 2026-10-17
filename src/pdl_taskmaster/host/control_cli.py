@@ -84,6 +84,10 @@ def main() -> int:
         body["max_output_tokens"] = worker.max_output_tokens
     if args.api_reasoning_effort:
         body["reasoning"] = {"effort": args.api_reasoning_effort}
+    # The harness sends this same provider order (ApiWorker.build_request_body). Without it OpenRouter picks
+    # any provider, and the control is no longer the same model served the same way.
+    if worker.provider_pinning:
+        body["provider"] = worker.provider_pinning
 
     trace = worker.begin_call("CONTROL_DIRECT")
     t0 = time.perf_counter()
@@ -133,6 +137,8 @@ def main() -> int:
             "input_tokens": usage.get("input_tokens", 0),
             "output_tokens": usage.get("output_tokens", 0),
             "reasoning_tokens": (usage.get("output_tokens_details") or {}).get("reasoning_tokens", 0),
+            "cached_tokens": (usage.get("input_tokens_details") or {}).get("cached_tokens", 0),
+            "response_id": (data or {}).get("id"),
         },
     }
     (events_dir / "events.jsonl").write_text(json.dumps(event) + "\n", encoding="utf-8")

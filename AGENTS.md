@@ -47,8 +47,10 @@
   - `2`: `UNCONFIRMED_GATE` (execution stalled at review gate).
   - `3`: `WAITING_INPUT` (legitimate pause awaiting external input).
   - `4`: harness or provider error (`EXIT_HARNESS_ERROR`); never a protocol result.
+  - `5`: `CLOSED_UNVERIFIED`: a published result the host could not establish (a negative claim, a deliverable declaring requirements open, or a positive result established by an argument; ADR-0019 amendment, L116, ADR-0030).
   - `130`: interrupted by the user.
 - **Catalogue Verification**: Before merging a PR that changes behaviour (what the model receives, routing, stage logic, verification or grading), run `python run_catalogue.py --fail-fast` from the repository root to check for regressions across all 16 categories. It is not a per-pass check. Never loosen `is_prompt_pass` or `graders.py` to obtain a green result.
+- **Runs live outside the repository**: catalogue and experiment runs are written to `$PDLT_CATALOGUE_RUNS`, else `PDLt-Catalogue-Archive` beside the checkout (`catalogue_runs.py`). Never commit run output.
 
 ## Post-Implementation Anti-Overfitting & Integrity Gate (MANDATORY / SSOT)
 - **The Referee Invariant (GUARD-01, GUARD-04)**: The harness is strictly an objective protocol referee and governor—NEVER an AI task solver. The harness MUST NEVER:

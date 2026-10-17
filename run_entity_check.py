@@ -9,7 +9,7 @@ Each request runs in a real headless REPL session up to the prompt review. Then:
 
     python run_entity_check.py
 
-Writes catalogue-runs/entity-check-<ts>/results.json. Exit 0 when every case holds,
+Writes <runs>/entity-check-<ts>/results.json (<runs>: catalogue_runs.py). Exit 0 when every case holds,
 1 otherwise, 4 without OPENROUTER_API_KEY.
 """
 from __future__ import annotations
@@ -23,6 +23,8 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
 
 IDENTIFIER_CASES = [
     ("Write a Python function parse_invoice_line(line) that splits one line of invoices_2026.csv on ';' and "
@@ -55,7 +57,7 @@ def run_session(prompt: str, workspace: Path) -> tuple[list[str], str, list[str]
     """(extracted entities, prompt pseudocode, entity events) for one request."""
     proc = subprocess.run(
         [sys.executable, "-m", "pdl_taskmaster.host.repl", "--worker", "api", "--dev", "--non-interactive",
-         "--new-session", "--workspace-root", str(workspace), "--prompt", prompt],
+         "--review", "--new-session", "--workspace-root", str(workspace), "--prompt", prompt],
         cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600,
         env={**os.environ, "PYTHONUTF8": "1"},
     )
@@ -74,7 +76,7 @@ def main() -> int:
     if not os.environ.get("OPENROUTER_API_KEY"):
         print("OPENROUTER_API_KEY is not set", file=sys.stderr)
         return 4
-    out = ROOT / "catalogue-runs" / f"entity-check-{datetime.now():%Y%m%d-%H%M%S}"
+    out = RUNS_DIR / f"entity-check-{datetime.now():%Y%m%d-%H%M%S}"
     rows = []
     for side, cases in (("identifiers", IDENTIFIER_CASES), ("narrative", NARRATIVE_CASES)):
         for index, (prompt, tokens) in enumerate(cases, 1):

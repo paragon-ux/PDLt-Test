@@ -44,7 +44,8 @@ def _default_session_base() -> Path:
         return _REPO_ROOT / "runs" / "live-sessions"
     return Path.home() / ".pdlt" / "runs" / "live-sessions"
 
-from pdl_taskmaster.fileio import replace_text
+from pdl_taskmaster.api import outcome, providers as api_providers
+from pdl_taskmaster.api.session import POINTER, prepare_worker, stored_workspace, write_pointer
 from pdl_taskmaster.host.app import PDLtHost
 from pdl_taskmaster.host.console import (
     COLOR_NAMES,
@@ -56,8 +57,7 @@ from pdl_taskmaster.host.console import (
     reset_input,
     resolve_colors,
 )
-from pdl_taskmaster.providers.api_worker import ApiWorker, unknown_provider_warnings
-from pdl_taskmaster.providers.fixtures import build_recorded_fixture, build_recorded_fixture_from_vendored
+from pdl_taskmaster.providers.api_worker import unknown_provider_warnings
 
 
 def _create_codex_worker(
@@ -171,20 +171,7 @@ class SessionRuntime:
             self.host.close()
 
     def _refresh_pointer(self) -> None:
-        workspace_path = self.host.status().get("workspace_path")
-        if workspace_path:
-            relpath = None
-            try:
-                relpath = Path(workspace_path).relative_to(self.session_dir).as_posix()
-            except ValueError:
-                relpath = None
-            payload: dict[str, Any] = {
-                "session_id": self.session_id,
-                "workspace_path": str(workspace_path),
-            }
-            if relpath:
-                payload["workspace_relpath"] = relpath
-            replace_text(self.session_pointer, json.dumps(payload, indent=2) + "\n")
+        write_pointer(self.session_dir, self.session_id, self.host.status().get("workspace_path"))
 
     def handle(self, user_message: str):
         """Dispatch a user turn, then refresh the durable session pointer.
@@ -252,33 +239,12 @@ def open_session(
     session_dir.mkdir(parents=True, exist_ok=True)
     workspace_root = args.workspace_root or session_dir / "workspaces"
     observation_dir = args.observation_dir or session_dir / "observations"
-    if hasattr(worker, "workdir"):
-        worker.workdir = str(args.workdir or session_dir)
-    if hasattr(worker, "progress_path"):
-        # The worker's progress lines (the API worker's provider rejections
-        # included) go to this session's log, the path the REPL announces.
-        worker.progress_path = session_dir / "worker-progress.log"
-    if hasattr(worker, "trace_path"):
-        # Every model call's lifecycle (sent, acknowledged, received), interrupted ones included.
-        worker.trace_path = session_dir / "call-trace.jsonl"
-    pointer = session_dir / "session.json"
-    if pointer.is_file() and restore_path is None:
-        try:
-            data = json.loads(pointer.read_text(encoding="utf-8"))
-        except (OSError, ValueError) as exc:  # e.g. a pointer cut short before replace-on-write
-            print(f"[warn] session pointer unreadable ({exc}); starting fresh protocol state", flush=True)
-            data = {}
-        stored = data.get("workspace_path")
-        if stored and Path(stored).is_dir():
-            restore_path = Path(stored)
-        elif data.get("workspace_relpath"):
-            cand = (session_dir / data["workspace_relpath"]).resolve()
-            if cand.is_dir():
-                restore_path = cand
-        elif stored:
-            cand = (session_dir / "workspaces" / Path(stored).name).resolve()
-            if cand.is_dir():
-                restore_path = cand
+    # The worker's progress lines (provider rejections included) and every model call's lifecycle (sent,
+    # acknowledged, received; interrupted ones included) go to this session's folder, the paths the REPL announces.
+    prepare_worker(worker, session_dir, args.workdir)
+    pointer = session_dir / POINTER
+    if restore_path is None:
+        restore_path = stored_workspace(session_dir, lambda line: print(f"[warn] {line}", flush=True))
     host = PDLtHost(
         args.candidate_repo,
         worker=worker,
@@ -287,26 +253,12 @@ def open_session(
         run_id=args.run_id,
         observation_dir=observation_dir,
         render_compact=bool(getattr(args, "render_compact", False)),
-        sandbox_mode=getattr(args, "sandbox", None),
-        no_review=bool(getattr(args, "no_review", False)),
+        settings=_run_settings(args, worker),
     ).start()
     if getattr(host, "restore_notice", None):
         print(f"[warn] {host.restore_notice}", flush=True)
     _announce_sandbox(host)
-    if host.status().get("workspace_path"):
-        wp = host.status()["workspace_path"]
-        relpath = None
-        try:
-            relpath = Path(wp).relative_to(session_dir).as_posix()
-        except ValueError:
-            relpath = None
-        payload: dict[str, Any] = {
-            "session_id": session_id,
-            "workspace_path": str(wp),
-        }
-        if relpath:
-            payload["workspace_relpath"] = relpath
-        replace_text(pointer, json.dumps(payload, indent=2) + "\n")
+    write_pointer(session_dir, session_id, host.status().get("workspace_path"))
     transcript_path = args.transcript or session_dir / "transcript.log"
     transcript_path.parent.mkdir(parents=True, exist_ok=True)
     # A session's own transcript holds its conversation verbatim; a --transcript
@@ -400,6 +352,55 @@ def _worker_profile(worker: Any) -> str:
     return str(profile) if profile else "api"
 
 
+def _provider_settings(args) -> dict:
+    """--provider-setting KEY=VALUE pairs; a value is JSON when it parses, else text."""
+    settings: dict = {}
+    for item in getattr(args, "provider_setting", None) or []:
+        key, sep, value = item.partition("=")
+        if not sep or not key.strip():
+            raise SystemExit(f"--provider-setting needs KEY=VALUE, got {item!r}")
+        try:
+            settings[key.strip()] = json.loads(value)
+        except ValueError:
+            settings[key.strip()] = value
+    return settings
+
+
+def _run_settings(args, worker):
+    """The engine's run settings from CLI flags (L124 D7). The flags' run settings reach the API worker's sessions;
+    a recorded replay and the codex worker run with the defaults their recordings were made with."""
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+    from pdl_taskmaster.runtime.run_settings import RunSettings
+
+    session = {"no_review": bool(getattr(args, "no_review", False)), "sandbox_mode": getattr(args, "sandbox", None),
+               "task_type": getattr(args, "task_type", None)}
+    if not isinstance(worker, ApiWorker):
+        return RunSettings(**session)
+    run = _api_run_settings(args)
+    return RunSettings(max_repairs=run["max_repairs"], draft_execute=run["draft_execute"],
+                       agent_tools=run["agent_tools"], representation=run["representation"], tier_d1=run["tier_d1"],
+                       **session)
+
+
+def _api_worker_settings(args, capture_tokens: bool) -> dict:
+    """The API provider's settings from CLI flags: one set for the startup worker and /worker api."""
+    return dict(
+        model=args.model,
+        repo_root=args.candidate_repo,
+        base_url=args.api_base_url,
+        api_key_env=args.api_key_env,
+        timeout=args.worker_timeout,
+        capture_tokens=capture_tokens,
+        reasoning_effort=args.api_reasoning_effort,
+        reasoning_by_operation=_parse_reasoning_operations(args.api_reasoning_operation),
+        model_by_operation=_parse_model_operations(args.api_model_operation),
+        reorder_keys_for_cache=bool(getattr(args, "cache_order_render", False)),
+        structured_output=bool(getattr(args, "api_structured_output", True)),
+        **_api_run_settings(args),
+        on_progress=lambda line: print(f"[api] {line}", flush=True) if line.strip() else None,
+    )
+
+
 def _api_run_settings(args) -> dict:
     """Cost and latency settings for the API worker, from CLI flags."""
     settings: dict = {
@@ -407,6 +408,8 @@ def _api_run_settings(args) -> dict:
         "max_call_seconds": getattr(args, "api_call_deadline", 300.0),
         "max_repairs": getattr(args, "max_repairs", None),
         "draft_execute": bool(getattr(args, "draft_execute", False)),
+        "agent_tools": bool(getattr(args, "agent_tools", False)) or os.environ.get("PDLT_AGENT_TOOLS") == "1",
+        "representation": getattr(args, "representation", None) or "pdl",
         "tier_d1": bool(getattr(args, "tier_d1", True) if getattr(args, "tier_d1", None) is not None else (os.environ.get("PDLT_TIER_D1", "1") == "1")),
     }
     providers = [p.strip() for p in (getattr(args, "api_providers", None) or "").split(",") if p.strip()]
@@ -481,8 +484,27 @@ def _resolve_render_compact(args) -> bool:
     return args.worker == "api"
 
 
-# Headless exit code for a run that ended on a harness/provider error (not a model outcome).
-EXIT_HARNESS_ERROR = 4
+# Headless exit codes (ADR-0019 and its amendments): one mapping, in pdl_taskmaster.api.outcome.
+EXIT_HARNESS_ERROR = outcome.EXIT_HARNESS_ERROR  # a harness/provider error, not a model outcome
+EXIT_UNVERIFIED = outcome.EXIT_UNVERIFIED  # published without the host establishing it (L116)
+
+
+def _headless_exit_message(stage: str | None, refused: bool, code: int) -> str | None:
+    """What a headless run prints on stderr as it exits with ``code`` (none for a success)."""
+    if stage is None:
+        return ("[headless close] Session closed with a published refusal (closure=REFUSED, code 0)."
+                if refused else None)
+    if stage == "CLOSED_CANCELLED":
+        return f"[headless halt] Session ended with stage '{stage}'. Exiting fail-closed (code {code})."
+    if stage == "CLOSED_UNVERIFIED":
+        return (f"[headless close] Session closed with a result the host could not verify (stage "
+                f"'{stage}'). Exiting (code {code}).")
+    if stage == "WAITING_INPUT":
+        return f"[headless halt] Session paused at stage 'WAITING_INPUT' (input requested). Exiting (code {code})."
+    if stage != "CLOSED_SUCCESS":
+        return (f"[headless halt] Session ended at non-terminal stage '{stage}'. "
+                f"Exiting fail-closed (code {code}).")
+    return None
 
 
 def _harness_error_record(exc: BaseException) -> dict:
@@ -708,7 +730,7 @@ def _handle_dev_command(
         print(
             "Dev Mode (Agentic Diagnostic & Control Plane):\n"
             "  /dev [on|off]              - Toggle verbose developer telemetry\n"
-            "  /dev exit-on-close [on|off]- Toggle auto-exit on protocol closure (CLOSED_SUCCESS/CANCELLED)\n"
+            "  /dev exit-on-close [on|off]- Toggle auto-exit on protocol closure (CLOSED_SUCCESS/UNVERIFIED/CANCELLED)\n"
             "  /dev status                - Full JSON snapshot of host, engine, controller, worker\n"
             "  /dev diagnose              - Run self-diagnostic checks (repo, standards, providers, API key)\n"
             "  /dev set <key> <val...>    - Mutate operational parameters on the fly:\n"
@@ -815,14 +837,14 @@ def _handle_dev_command(
             for warning in unknown_provider_warnings(resolved):
                 print(f"[warn] {warning}", flush=True)
             if hasattr(worker, "provider_pinning") and isinstance(worker.provider_pinning, dict):
-                worker.provider_pinning["order"] = resolved
+                worker.provider_pinning = {**worker.provider_pinning, "order": resolved}
                 print(f"[dev] provider pinning order set to: {resolved}", flush=True)
             else:
                 print("[dev] current worker does not support provider pinning", flush=True)
         elif k in {"fallback", "fallbacks"}:
             val_bool = v.lower() in ("true", "1", "yes", "on")
             if hasattr(worker, "provider_pinning") and isinstance(worker.provider_pinning, dict):
-                worker.provider_pinning["allow_fallbacks"] = val_bool
+                worker.provider_pinning = {**worker.provider_pinning, "allow_fallbacks": val_bool}
                 print(f"[dev] provider allow_fallbacks set to: {val_bool}", flush=True)
             else:
                 print("[dev] current worker does not support provider pinning", flush=True)
@@ -905,17 +927,32 @@ def _handle_dev_command(
 
 def _build_parser() -> argparse.ArgumentParser:
     """The REPL's command line (help strings are %-formatted by argparse)."""
-    parser = argparse.ArgumentParser(description="PDLt terminal REPL")
+    parser = argparse.ArgumentParser(
+        prog="pdlt",
+        formatter_class=argparse.RawDescriptionHelpFormatter,  # keeps the lines and the URL below unbroken
+        description="PDLt terminal REPL.\n\n"
+                    "With --non-interactive it runs headless: it reads tasks from standard input or\n"
+                    "--prompt/--prompt-file and exits with the outcome's code: 0 success, 1 cancelled,\n"
+                    "2 review gate, 3 waiting for input, 4 harness error, 5 unverified, 130 interrupted.",
+        epilog="other commands:\n"
+               "  pdlt version          print the version\n"
+               "  pdlt init [--local]   seed the operation contracts (~/.pdlt, or ./contracts)\n\n"
+               "documentation: https://paragon-ux.github.io/PDLt-Test/repl/",
+    )
     parser.add_argument(
         "--candidate-repo",
         type=Path,
         default=Path.cwd(),
         help="path to candidate repository (default: current working directory)",
     )
-    parser.add_argument("--workspace-root", type=Path, default=None)
-    parser.add_argument("--restore", type=Path, default=None)
-    parser.add_argument("--run-id", default="repl")
-    parser.add_argument("--observation-dir", type=Path, default=None)
+    parser.add_argument("--workspace-root", type=Path, default=None,
+                        help="folder that holds the sessions (default: runs/live-sessions in a source checkout, "
+                             "else ~/.pdlt/runs/live-sessions)")
+    parser.add_argument("--restore", type=Path, default=None,
+                        help="a stored workspace file to restore the session from (default: the session's own)")
+    parser.add_argument("--run-id", default="repl", help="label for this run's observation records (default: repl)")
+    parser.add_argument("--observation-dir", type=Path, default=None,
+                        help="where per-turn observation records are written (default: the session's observations/)")
     parser.add_argument(
         "--max-output-tokens",
         "--api-max-output-tokens",
@@ -941,9 +978,23 @@ def _build_parser() -> argparse.ArgumentParser:
         "failure with no retry of any kind",
     )
     parser.add_argument(
+        "--agent-tools",
+        action="store_true",
+        help="ADR-0029: model calls submit replies the host checks before accepting them (BOOTSTRAP_ANALYSIS, "
+        "DRAFT_PROMPT, DRAFT_PLAN, EXECUTE_UNCONFIRMED); EXECUTE_UNCONFIRMED may also run Python in the session "
+        "sandbox and read the previous attempt (default off; also PDLT_AGENT_TOOLS=1)",
+    )
+    parser.add_argument(
         "--draft-execute",
         action="store_true",
-        help="draft an execution brief (DRAFT_EXECUTE) before EXECUTE; one extra call per execution (A/B option)",
+        help="draft a typed execution brief (DRAFT_EXECUTE) before EXECUTE on tasks that are or need an algorithm or a calculation; one extra call per execution (A/B option)",
+    )
+    parser.add_argument(
+        "--representation",
+        choices=["pdl", "nl"],
+        default="pdl",
+        help="the confirmed route's prompt and plan artifacts: PDL pseudocode (default) or natural-language prose "
+        "(the L97 pilot); needs --review",
     )
     parser.add_argument(
         "--tier-d1",
@@ -959,25 +1010,26 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--worker",
-        choices=["recorded", "codex", "api"],
+        choices=sorted(set(api_providers.provider_names("worker")) | {"codex"}),
         default="api",
-        help="semantic worker to execute protocol operations (default: api)",
+        help="semantic worker to execute protocol operations: a registered worker provider, or codex (default: api)",
     )
     parser.add_argument(
         "--model",
         default="nvidia/nemotron-3-super-120b-a12b:free",
         help="model name to request from the worker (default: nvidia/nemotron-3-super-120b-a12b:free)",
     )
-    parser.add_argument("--eval-root", type=Path, default=None)
-    parser.add_argument("--evidence", type=Path, default=None)
-    parser.add_argument("--case-ids", default=None)
+    parser.add_argument("--eval-root", type=Path, default=None, help="recorded worker only: the evaluation root")
+    parser.add_argument("--evidence", type=Path, default=None,
+                        help="recorded worker only: the recorded-cases file to replay")
+    parser.add_argument("--case-ids", default=None, help="recorded worker only: comma-separated case ids to replay")
     parser.add_argument("--session-id", default=None, help="reuse a named session workspace across invocations")
     parser.add_argument("--new-session", action="store_true", help="skip the session selector and start a new session")
     parser.add_argument(
         "--non-interactive",
         action="store_true",
-        help="suppress all interactive prompts (session selection, MLflow, etc.); "
-             "suitable for SSH relays and piped input",
+        help="headless: never ask a question (no session selector), read tasks from standard input, and exit "
+             "with the outcome's code; for scripts, CI and piped input",
     )
     parser.add_argument("--transcript", type=Path, default=None, help="session-scoped transcript output file")
     parser.add_argument("--workdir", type=Path, default=None, help="writable session directory for the live worker")
@@ -1103,20 +1155,42 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Fast mode: confirm in advance. Every phase still runs and both pseudocode artifacts are shown; "
         "a review whose artifact has no host findings is accepted without waiting for /confirm, and one "
-        "with findings stops for you as usual. Toggle in the REPL with /fast [on|off]",
+        "with findings stops for you as usual. Implies --review. Toggle in the REPL with /fast [on|off]",
     )
     parser.add_argument(
         "--no-review",
         "--ultrafast",
         dest="no_review",
         action="store_true",
-        help="No-review mode: run through the governor in 2 task-model calls without review gates (ADR-0029). "
-        "Review is off and the interpretation is presented as unconfirmed. Toggle in the REPL with /no-review [on|off]",
+        help="No-review mode (the default): run through the governor in 2 task-model calls without review gates "
+        "(ADR-0029). The interpretation is presented as unconfirmed. Toggle in the REPL with /no-review [on|off]",
+    )
+    parser.add_argument(
+        "--review",
+        dest="no_review",
+        action="store_false",
+        help="Review mode: stop at the prompt and plan pseudocode for /confirm or /revise (the confirmed route). "
+        "Toggle in the REPL with /no-review [on|off]",
+    )
+    parser.set_defaults(no_review=True)  # the unconfirmed route is the standard (ledger L94)
+    parser.add_argument(
+        "--provider-setting",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="a setting for a registered worker provider other than api and recorded (repeatable; VALUE is read "
+        "as JSON when it parses, else as text)",
+    )
+    parser.add_argument(
+        "--task-type",
+        default=None,
+        help="pin a registered task type for every request (L124; e.g. STANDARD_EXECUTION). Default: System 1 "
+        "classifies each request",
     )
     parser.add_argument(
         "--exit-on-close",
         action="store_true",
-        help="Exit REPL when protocol reaches a closed state (CLOSED_SUCCESS or CLOSED_CANCELLED)",
+        help="Exit REPL when protocol reaches a closed state (CLOSED_SUCCESS, CLOSED_UNVERIFIED or CLOSED_CANCELLED)",
     )
     parser.add_argument(
         "--prompt-file",
@@ -1140,6 +1214,10 @@ def main() -> int:
         pass
 
     args = _build_parser().parse_args()
+    if args.fast:
+        args.no_review = False  # fast mode accepts reviews in advance, so it runs with review on
+    if args.representation != "pdl" and args.no_review:
+        raise SystemExit("pdlt: --representation applies to the confirmed route's artifacts; add --review")
 
     if args.worker != "codex":
         if args.config_override:
@@ -1167,21 +1245,10 @@ def main() -> int:
         if not args.evidence:
             raise SystemExit("--evidence is required for recorded worker")
         case_ids = [item.strip() for item in args.case_ids.split(",") if item.strip()] if args.case_ids else None
-        if args.evidence.name == "recorded-cases.json":
-            worker = build_recorded_fixture_from_vendored(
-                args.candidate_repo,
-                args.evidence,
-                case_ids=case_ids,
-            )
-        else:
-            if not args.eval_root:
-                raise SystemExit("--eval-root is required for non-vendored recorded evidence")
-            worker = build_recorded_fixture(
-                args.candidate_repo,
-                args.eval_root,
-                args.evidence,
-                case_ids=case_ids,
-            )
+        if args.evidence.name != "recorded-cases.json" and not args.eval_root:
+            raise SystemExit("--eval-root is required for non-vendored recorded evidence")
+        worker = api_providers.create_worker("recorded", repo_root=args.candidate_repo, evidence=args.evidence,
+                                             eval_root=args.eval_root, case_ids=case_ids)
     elif args.worker == "codex":
         try:
             worker = _create_codex_worker(args, session_dir, session_base)
@@ -1189,21 +1256,9 @@ def main() -> int:
             raise SystemExit(str(exc))
     elif args.worker == "api":
         _warn_unknown_providers(args)
-        worker = ApiWorker(
-            model=args.model,
-            repo_root=args.candidate_repo,
-            base_url=args.api_base_url,
-            api_key_env=args.api_key_env,
-            timeout=args.worker_timeout,
-            capture_tokens=not args.no_token_telemetry,
-            reasoning_effort=args.api_reasoning_effort,
-            reasoning_by_operation=_parse_reasoning_operations(args.api_reasoning_operation),
-            model_by_operation=_parse_model_operations(args.api_model_operation),
-            reorder_keys_for_cache=bool(getattr(args, "cache_order_render", False)),
-            structured_output=bool(getattr(args, "api_structured_output", True)),
-            **_api_run_settings(args),
-            on_progress=lambda line: print(f"[api] {line}", flush=True) if line.strip() else None,
-        )
+        worker = api_providers.create_worker("api", **_api_worker_settings(args, not args.no_token_telemetry))
+    elif args.worker in api_providers.provider_names("worker"):
+        worker = api_providers.create_worker(args.worker, **_provider_settings(args))
     else:
         raise SystemExit(f"unsupported worker: {args.worker}")
 
@@ -1243,7 +1298,7 @@ def main() -> int:
         print("[fast] Fast mode: ON (reviews without host findings are accepted on your advance "
               "confirmation; /fast off to review each one)", flush=True)
     if no_review:
-        print("[no-review] No-review mode: ON (review gates disabled; interpretation and approach are unconfirmed working notes; /no-review off to enable review)", flush=True)
+        print("[no-review] No-review mode: ON (review gates disabled; interpretation and approach are unconfirmed working notes; --review or /no-review off to enable review)", flush=True)
     show_resumed_history(runtime, colors)  # a session picked at startup resumes like /resume
     if args.allow_bypass:
         print(
@@ -1453,7 +1508,7 @@ def main() -> int:
                     "/model [name] -> show/set worker model\n"
                     "/config -> show/set Codex config overrides (codex worker only)\n"
                     "/sessions [prune <days>] -> list sessions; prune older than N days\n"
-                    "/worker [codex|recorded|api] -> switch worker\n"
+                    "/worker <name> -> switch worker: codex, or a registered worker provider\n"
                     "/sandbox [read-only|workspace-write] -> show/set worker sandbox mode (codex worker only)\n"
                     "/workdir [path] -> show/set worker workdir\n"
                     "/transcript [path] -> show/set transcript file\n"
@@ -1590,6 +1645,9 @@ def main() -> int:
                         fast_mode = not fast_mode
                     _write_transcript(f"FAST MODE: {'ON' if fast_mode else 'OFF'}")
                     print(f"fast mode: {'on' if fast_mode else 'off'}", flush=True)
+                    if fast_mode and no_review:
+                        print("fast mode applies to review gates, and review is off (/no-review off to turn it on)",
+                              flush=True)
                 elif cmd in {"/no-review", "/ultrafast"}:
                     if arg in {"on", "off"}:
                         no_review = arg == "on"
@@ -1635,13 +1693,8 @@ def main() -> int:
                         if not case_ids and _is_interactive(args):
                             case_ids = input("case-ids (comma separated, optional): ").strip() or None
                         case_ids_list = [item.strip() for item in case_ids.split(",") if item.strip()] if case_ids else None
-                        if Path(evidence).name == "recorded-cases.json":
-                            new_worker = build_recorded_fixture_from_vendored(
-                                args.candidate_repo,
-                                Path(evidence),
-                                case_ids=case_ids_list,
-                            )
-                        else:
+                        eval_root = None
+                        if Path(evidence).name != "recorded-cases.json":
                             if not args.eval_root:
                                 if not _is_interactive(args):
                                     print("recorded worker requires --eval-root for non-vendored evidence in non-interactive mode", flush=True)
@@ -1649,27 +1702,14 @@ def main() -> int:
                                 eval_root = input("eval-root: ").strip()
                             else:
                                 eval_root = str(args.eval_root)
-                            new_worker = build_recorded_fixture(
-                                args.candidate_repo,
-                                Path(eval_root),
-                                Path(evidence),
-                                case_ids=case_ids_list,
-                            )
+                        new_worker = api_providers.create_worker("recorded", repo_root=args.candidate_repo,
+                                                                 evidence=evidence, eval_root=eval_root,
+                                                                 case_ids=case_ids_list)
                     elif target == "api":
-                        new_worker = ApiWorker(
-                            model=args.model,
-                            repo_root=args.candidate_repo,
-                            base_url=args.api_base_url,
-                            api_key_env=args.api_key_env,
-                            timeout=args.worker_timeout,
-                            capture_tokens=getattr(worker, "capture_tokens", True),
-                            reasoning_effort=args.api_reasoning_effort,
-                            reasoning_by_operation=_parse_reasoning_operations(args.api_reasoning_operation),
-                            model_by_operation=_parse_model_operations(args.api_model_operation),
-                            structured_output=bool(getattr(args, "api_structured_output", True)),
-                            **_api_run_settings(args),
-                            on_progress=lambda line: print(f"[api] {line}", flush=True) if line.strip() else None,
-                        )
+                        new_worker = api_providers.create_worker(
+                            "api", **_api_worker_settings(args, getattr(worker, "capture_tokens", True)))
+                    elif target in api_providers.provider_names("worker"):
+                        new_worker = api_providers.create_worker(target, **_provider_settings(args))
                     else:
                         print(f"unknown worker: {target}", flush=True)
                         continue
@@ -1789,33 +1829,13 @@ def main() -> int:
     if not _is_interactive(args):
         status = runtime.host.status()
         ctrl = status.get("controller_state")
-        if ctrl is None and status.get("refused"):
-            # ADR-0019 amendment: a published boundary refusal is a complete answer.
-            print("[headless close] Session closed with a published refusal (closure=REFUSED, code 0).", file=sys.stderr, flush=True)
-            return 0
-        if ctrl is not None:
-            final_stage = ctrl.get("stage")
-            if final_stage == "CLOSED_CANCELLED":
-                print(
-                    f"[headless halt] Session ended with stage '{final_stage}'. Exiting fail-closed (code 1).",
-                    file=sys.stderr,
-                    flush=True,
-                )
-                return 1
-            if final_stage == "WAITING_INPUT":
-                print(
-                    f"[headless halt] Session paused at stage 'WAITING_INPUT' (input requested). Exiting (code 3).",
-                    file=sys.stderr,
-                    flush=True,
-                )
-                return 3
-            if final_stage != "CLOSED_SUCCESS":
-                print(
-                    f"[headless halt] Session ended at non-terminal stage '{final_stage}'. Exiting fail-closed (code 2).",
-                    file=sys.stderr,
-                    flush=True,
-                )
-                return 2
+        final_stage = ctrl.get("stage") if ctrl is not None else None
+        refused = ctrl is None and bool(status.get("refused"))
+        code = outcome.exit_status(final_stage, refused=refused)
+        message = _headless_exit_message(final_stage, refused, code)
+        if message:
+            print(message, file=sys.stderr, flush=True)
+        return code
     return 0
 
 

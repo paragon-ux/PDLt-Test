@@ -14,6 +14,7 @@ from typing import Any
 import urllib.error
 import urllib.request
 
+from pdl_taskmaster.providers.base import ATTRIBUTION_HEADERS
 from pdl_taskmaster.providers.sys1.schema import Sys1Request
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,7 @@ class Sys1Client:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
             "User-Agent": "PDL-Taskmaster/Sys1Client",
+            **ATTRIBUTION_HEADERS,
         }
 
         req = urllib.request.Request(

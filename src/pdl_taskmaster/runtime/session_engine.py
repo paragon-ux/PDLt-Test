@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -10,6 +11,7 @@ import tempfile
 import hashlib
 
 from pdl_taskmaster.controller.mechanical_controller import (
+    CLOSED_STAGES,
     AtomicJsonStore,
     ControllerError,
     Intent,
@@ -22,9 +24,12 @@ from pdl_taskmaster.controller.mechanical_controller import (
     Transition,
 )
 from pdl_taskmaster.runtime.operation_bridge import ActivationRoute, ModelRequest, OperationBridge, WireError
-from pdl_taskmaster.runtime.output_contracts import RESULT_IR_MODE
+from pdl_taskmaster.runtime.output_contracts import EXECUTION_BRIEF_MODE, NL_REPRESENTATION_MODE, RESULT_IR_MODE
+from pdl_taskmaster.runtime.representation import NL, PDL, REPRESENTATIONS
 from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output, isolate_untrusted_input
-from pdl_taskmaster.runtime.wire_payloads import ENTITY_POLARITIES, ENTITY_STATUSES
+from pdl_taskmaster.runtime.wire_payloads import (
+    ENTITY_POLARITIES, ENTITY_STATUSES, ExecutionDraftResultData, ExecutionEntity,
+)
 from pdl_taskmaster.verification.sandbox import ExecutionSandbox
 
 
@@ -55,54 +60,49 @@ def _leaf_values(value: Any) -> list[Any]:
     return [value]
 
 
-def _program_constants(source: str) -> set[Any]:
-    """Every literal constant in the program's syntax tree, a signed number
-    (``-5``) included. Booleans are left out: ``True == 1`` in Python."""
-    import ast
-
+def _json_value(value: Any) -> str | None:
+    """A value as JSON compares it: tuples are lists and keys are strings."""
     try:
-        tree = ast.parse(source)
-    except (SyntaxError, ValueError, MemoryError, RecursionError):
-        return set()
-    constants: set[Any] = set()
-    signed: set[int] = set()  # operands of a sign, counted once with their sign
-    for node in ast.walk(tree):
-        if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.USub, ast.UAdd)) \
-                and isinstance(node.operand, ast.Constant) and isinstance(node.operand.value, (int, float)) \
-                and not isinstance(node.operand.value, bool):
-            constants.add(-node.operand.value if isinstance(node.op, ast.USub) else node.operand.value)
-            signed.add(id(node.operand))
-        elif isinstance(node, ast.Constant) and not isinstance(node.value, bool) and id(node) not in signed:
-            try:
-                constants.add(node.value)
-            except TypeError:
-                continue
-    return constants
+        return json.dumps(json.loads(json.dumps(value)), sort_keys=True)
+    except (TypeError, ValueError):
+        return None
 
 
 def _witness_written_in_program(witness: dict[str, Any], source: str | None) -> bool:
-    """Every non-trivial leaf value of the witness data is a literal constant of the
-    program that printed it, compared by Python value: the program states the
-    values instead of computing them. A string constant that is itself the printed
-    witness line (``print('WITNESS: {...}')``) states them too. Only trivial leaves
-    (or none) flag nothing."""
+    """L113: the program that printed the witness writes its data out instead of
+    computing it: an expression of the program, made of literals and names bound
+    once to them, has the data as its value, or one string written out in the
+    program is the printed witness line (``print('WITNESS: {...}')``). A value the
+    program derives is not written out, even when its operands are literals of the
+    program: selecting an answer from input data it contains computes the answer.
+    Only trivial leaves (or none) flag nothing."""
     if not source or not isinstance(witness, dict):
         return False
-    leaves = [leaf for leaf in _leaf_values(witness.get("data")) if not _is_trivial_leaf(leaf)]
-    if not leaves:
+    if not [leaf for leaf in _leaf_values(witness.get("data")) if not _is_trivial_leaf(leaf)]:
         return False
-    constants = _program_constants(source)
+    from pdl_taskmaster.verification.literal_witness import written_out_values
 
     def stated(w: dict[str, Any] | None) -> dict[str, Any] | None:
         return {k: v for k, v in w.items() if k != "provisional"} if isinstance(w, dict) else None
 
-    printed = stated(witness)
-    if any(isinstance(c, str) and stated(_parse_sandbox_witness(c)) == printed for c in constants):
-        return True
-    try:
-        return all(leaf in constants for leaf in leaves)
-    except TypeError:
-        return False
+    printed, data = stated(witness), _json_value(witness.get("data"))
+    for value in written_out_values(source):
+        if isinstance(value, str) and stated(_parse_sandbox_witness(value)) == printed:
+            return True
+        if data is not None and _json_value(value) == data:
+            return True
+    return False
+
+
+PROGRAM_OUTPUT_LIMIT = 65536  # characters kept of each captured stream (L117)
+
+
+def _captured(stream: str, text: str | None) -> dict[str, Any]:
+    """One captured stream of a program run, cut at PROGRAM_OUTPUT_LIMIT characters."""
+    text = text or ""
+    if len(text) <= PROGRAM_OUTPUT_LIMIT:
+        return {stream: text}
+    return {stream: text[:PROGRAM_OUTPUT_LIMIT], f"{stream}_truncated": True}
 
 
 def _parse_sandbox_witness(stdout_text: str) -> dict[str, Any] | None:
@@ -148,6 +148,67 @@ def _is_wire_failure(exc: BaseException) -> bool:
     return isinstance(exc, WireError) or bool(getattr(exc, "wire_equivalent", False))
 
 
+def _execution_modes(execute_context: dict[str, Any], result_ir_mode: bool) -> frozenset[str]:
+    """The host modes of an EXECUTE call: the Result IR (RS-10) and a validated brief (EXEC-06)."""
+    modes = {RESULT_IR_MODE} if result_ir_mode else set()
+    if execute_context.get("EXECUTION_BRIEF") is not None:
+        modes.add(EXECUTION_BRIEF_MODE)
+    return frozenset(modes)
+
+
+_RESOURCE_STOPS = {"STEP_BUDGET_EXCEEDED": "step budget", "WALL_CLOCK_EXCEEDED": "wall-clock limit",
+                   "MEMORY_EXCEEDED": "memory limit"}
+
+
+def _occurs_as_token(value: str, text: str) -> bool:
+    """Whether value occurs in text with no name character (letter, digit, underscore) running on
+    at either end, so a fragment of a longer name ("total" in "total_of") is not a match."""
+    start = text.find(value)
+    while start != -1:
+        end = start + len(value)
+        before = text[start - 1] if start > 0 else ""
+        after = text[end] if end < len(text) else ""
+        if not ((before.isalnum() or before == "_") and (value[0].isalnum() or value[0] == "_")) and \
+                not ((after.isalnum() or after == "_") and (value[-1].isalnum() or value[-1] == "_")):
+            return True
+        start = text.find(value, start + 1)
+    return False
+
+
+def _ground_execution_entities(
+    entities: list[ExecutionEntity], task_text: list[Any],
+) -> tuple[list[dict[str, str]], list[str]]:
+    """Mechanical containment (as for task entities): an execution entity is kept only if its value
+    occurs as a whole token in one of the task texts, exactly or with whitespace runs folded (then the
+    folded form is kept); one matching pair of surrounding quotes is removed if only the inner text
+    occurs. Returns (kept entities, dropped values); duplicates are kept once."""
+    texts = [text for text in task_text if isinstance(text, str) and text]
+    folded = [" ".join(text.split()) for text in texts]
+
+    def grounded(value: str) -> str | None:
+        if any(_occurs_as_token(value, text) for text in texts):
+            return value
+        compact = " ".join(value.split())
+        if compact and any(_occurs_as_token(compact, text) for text in folded):
+            return compact
+        return None
+
+    kept: list[dict[str, str]] = []
+    dropped: list[str] = []
+    seen: set[tuple[str, str]] = set()
+    for entity in entities:
+        value = entity.value.strip()
+        match = grounded(value)
+        if match is None and len(value) > 2 and value[0] == value[-1] and value[0] in "'\"`":
+            match = grounded(value[1:-1])
+        if match is None:
+            dropped.append(entity.value)
+        elif (entity.kind, match) not in seen:
+            seen.add((entity.kind, match))
+            kept.append({"kind": entity.kind, "value": match})
+    return kept, dropped
+
+
 class _FailedExecution:
     """Stand-in outcome for an EXECUTE response that never parsed (cut off at the
     output cap, or malformed past its wire retry): a RESULT with nothing in it."""
@@ -168,7 +229,7 @@ def _previous_turn_reference(previous: dict[str, Any] | None) -> str | None:
     """The previous turn's result as labelled reference for a follow-up turn."""
     if not previous or not previous.get("result"):
         return None
-    status = "completed" if previous.get("status") == "CLOSED_SUCCESS" else "was cancelled"
+    status = "completed" if previous.get("status") in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED"} else "was cancelled"
     return (
         "PREVIOUS TURN RESULT (reference only). It shows what the previous turn produced so that the new request "
         "can be understood. It is not evidence and not a justification: do not cite it, rely on it, or reason "
@@ -181,6 +242,10 @@ def _normalized_lines(body: str) -> list[str]:
     """Non-empty lines, lowercased, with punctuation and whitespace runs collapsed."""
     lines = (" ".join(words(line)) for line in (body or "").splitlines())
     return [line for line in lines if line]
+
+
+# ADR-0029: operations whose calls get a submit-only tool host when agent tools are on (runtime/agent_tools.py).
+_SUBMIT_ONLY_OPERATIONS = ("BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN")
 
 
 def _python_blocks(body: str) -> list[str]:
@@ -206,12 +271,24 @@ def _python_blocks(body: str) -> list[str]:
         # CPython's parser raises MemoryError, not SyntaxError, on long runs of
         # bare words (prose); either way the body is not a program.
         module = None
-    if module is not None and any(
-        not (isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant))
-        for node in module.body
-    ):
+    if module is not None and not all(_is_literal_statement(node) for node in module.body):
         return [text]
     return [block for block in fenced_blocks(text, ("python", "py")) if block.strip()]
+
+
+def _is_literal_statement(node) -> bool:
+    """A statement that is only a literal value (a string, number, list, tuple, set
+    or dict of literals): data, not a program (L104). Decided by the grammar
+    (``ast.literal_eval``), never by the values."""
+    import ast
+
+    if not isinstance(node, ast.Expr):
+        return False
+    try:
+        ast.literal_eval(node.value)
+    except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+        return False
+    return True
 
 
 def _stderr_summary(stderr: str | None) -> str:
@@ -398,15 +475,35 @@ class SessionEngine:
         # 0 = stop at the first failed EXECUTE (no repair, no retry of any kind).
         self.max_repairs: int | None = None
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
-        self.tier_d1 = os.environ.get("PDLT_TIER_D1", "0") == "1"  # Tier D1: feed back model's own test failures in standard mode
+        self.agent_tools = False  # ADR-0029: in-call tools and checked submissions (--agent-tools)
+        self._last_unconfirmed_body: str | None = None
+        self._unconfirmed_attempts = 0
+        self.representation = PDL  # the confirmed route's artifacts: PDL, or prose in the L97 pilot
+        # Tier D1 (feed back the model's own test failures in standard mode): off for a bare engine. The host sets it
+        # from the worker (App), whose default is on ($PDLT_TIER_D1, --no-tier-d1); the env var is read only there.
+        self.tier_d1 = False
         self._active_task_entities: tuple[str, ...] = ()
         self._active_typed_task_entities: list[dict[str, Any]] = []
         # AUTH-04: the user's original request is source data for execution; the
         # confirmed prompt governs task semantics where the two differ.
         self._source_request: str | None = None
-        self._requires_verified_execution: bool = False
+        # The turn's task type (L124): the safe default until a request selects one; a caller may pin one.
+        from pdl_taskmaster.extensions import task_types
+
+        self.task_type = task_types.REGISTRY.default
+        self.pinned_task_type: str | None = None
+        # The direct reply to a request System 1 routes away from the protocol (L124 D7): set by the host to
+        # (the user's own text, the execution environment) -> text; None leaves the reply to the caller.
+        self.plain_reply: Callable[[str, str | None], str | None] | None = None
         self._problem_domain: Any = None
         self.refused: bool = False
+        # The model that serves the session, for the result's provenance (E-1); set by the host.
+        self.model_name: Callable[[], Any] | None = None
+        # The domain checker registry the result is verified against (L120): a library caller may replace it,
+        # or register checkers of its own (pdl_taskmaster.api.Session.open(output_verifier=...)).
+        from pdl_taskmaster.extensions import verifiers
+
+        self.output_verifier = verifiers.output_verifier()
         if workspace_root is None:
             self.workspace_root = Path(tempfile.mkdtemp(prefix="pdl-c0-workspaces-"))
         else:
@@ -498,7 +595,7 @@ class SessionEngine:
         # re-chain it so the execution phase still receives the byte-exact
         # prior deliverable in REQUIRED_TASK_INPUTS. The active turn's status
         # is ACTIVE at restore time, so previous_deliverable() correctly
-        # returns the last CLOSED_SUCCESS turn before it.
+        # returns the last turn closed with a result before it.
         engine._previous_turn = workspace.previous_turn()
         engine._previous_deliverable = _previous_turn_reference(engine._previous_turn)
         engine._source_request = workspace.turn_source()
@@ -514,10 +611,78 @@ class SessionEngine:
         )
         return engine
 
+    @property
+    def _requires_verified_execution(self) -> bool:
+        """Whether the turn's task type asks for, accepts and checks a witness (L124)."""
+        return self.task_type.requires_witness
+
+    @property
+    def representation(self) -> str:
+        return self._representation
+
+    @representation.setter
+    def representation(self, value: str) -> None:
+        """PDL or prose artifacts (representation.py): prose runs every call in NL_REPRESENTATION_MODE."""
+        if value not in REPRESENTATIONS:
+            raise ValueError(f"representation:{value}")
+        self._representation = value
+        self.bridge.session_modes = frozenset({NL_REPRESENTATION_MODE}) if value == NL else frozenset()
+
+    def _direct_reply_environment(self) -> str | None:
+        """The factual execution environment for a direct reply (the sandbox's own System 1 routing state), and
+        where programs actually run."""
+        try:
+            environment = self.sandbox.decision_state()["execution_environment"]
+        except Exception:
+            return None
+        return (f"{environment} Programs run only when a task is executed, "
+                "not during a direct reply.")
+
+    def _select_task_type(self, substantive_request: str, route: str) -> None:
+        """The turn's task type (L124, extensions/task_types.py): pinned, classified by System 1, or the safe
+        default. What System 1 decided is recorded whether or not it passed gating; the first classification keeps
+        its place at the top of the event."""
+        from pdl_taskmaster.extensions import task_types
+
+        selection = task_types.select(substantive_request, self.sys1_client, route, pinned=self.pinned_task_type)
+        self.task_type = selection.task_type
+        self._route_execution_profile(substantive_request)
+        # GUARD-02: the harness never infers a problem domain from request text. The domain is the task type's
+        # bound verifier's (GENERAL for witness reproduction); a witness may still declare a typed domain.
+        self._problem_domain = self.task_type.domain()
+        self._record_routing()
+        if self.workspace is not None:
+            first = selection.classifications[0] if selection.classifications else None
+            self.workspace.append_event("PROBLEM_CLASS_CLASSIFIED", {
+                "requires_verified_execution": self._requires_verified_execution,
+                "domain": getattr(self._problem_domain, "value", self._problem_domain),
+                **(first or {"verdict": None, "confidence": None, "passed_gating": False}),
+                "task_type": self.task_type.category,
+                "selected_by": selection.how,
+                **({"later_classifications": selection.classifications[1:]}
+                   if len(selection.classifications) > 1 else {}),
+            })
+
+    @staticmethod
+    def _routed_task_type(routing: TurnRouting) -> Any:
+        """The task type a turn was routed to. A routing recorded before task types names none: it was one of the
+        two problem classes. A task type not registered here, or one whose witness requirement changed since, is
+        never resumed under another: the restore fails closed."""
+        from pdl_taskmaster.extensions import task_types
+
+        name = routing.task_type or ("VERIFIED_EXECUTION" if routing.requires_verified_execution
+                                     else "STANDARD_EXECUTION")
+        if name not in task_types.REGISTRY:
+            raise ValueError(f"the turn was routed to task type {name!r}, which is not registered here")
+        task_type = task_types.REGISTRY.get(name)
+        if task_type.requires_witness != routing.requires_verified_execution:
+            raise ValueError(f"task type {name!r} no longer has the witness requirement the turn was routed with")
+        return task_type
+
     def _apply_routing(self, routing: TurnRouting) -> None:
         from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS
 
-        self._requires_verified_execution = routing.requires_verified_execution
+        self.task_type = self._routed_task_type(routing)
         self._problem_domain = routing.problem_domain
         self._profile_distribution = dict(routing.profile_distribution)
         self._execution_budget = EXECUTION_BUDGETS[routing.execution_tier]
@@ -529,6 +694,7 @@ class SessionEngine:
         self.workspace.write_turn_routing(TurnRouting(
             requires_verified_execution=self._requires_verified_execution,
             problem_domain=self._problem_domain,
+            task_type=self.task_type.category,
             execution_tier=self._execution_budget.tier,
             profile_distribution=self._profile_distribution,
         ))
@@ -581,12 +747,16 @@ class SessionEngine:
         parser: Callable[[str], Any] | None = None,
         operator_correction: str | None = None,
         modes: frozenset[str] = frozenset(),
+        tools: Any = None,
     ) -> Any:
         """Invoke one operation. With a parser, retry ONCE on WireError with an
         operator correction so a sampling glitch (invalid JSON, dropped field)
         costs one extra call instead of fatally failing the session. A caller may
         supply ``operator_correction`` (factual host-side findings only) for the
-        first attempt; it travels outside the projection document."""
+        first attempt; it travels outside the projection document. ``tools`` (ADR-0029) is a
+        factory of the call's tool host, one per request (a wire retry gets a fresh one); with agent
+        tools on, a submit-only operation gets its host here. The host travels with the request,
+        never in the prompt."""
         if self.workspace is None:
             raise WorkspaceError("workspace_not_initialized")
         request = self.bridge.request(
@@ -597,6 +767,10 @@ class SessionEngine:
             operator_correction=operator_correction,
             modes=modes,
         )
+        if tools is None and self.agent_tools and operation in _SUBMIT_ONLY_OPERATIONS:
+            tools = lambda: self._submit_tool_host(operation)  # noqa: E731
+        if tools is not None:
+            request = dataclasses.replace(request, tools=tools())
         try:
             model_text = self._invoke(request, traces)
             return model_text if parser is None else parser(model_text)
@@ -627,6 +801,8 @@ class SessionEngine:
                 operator_correction=correction,
                 modes=modes,
             )
+            if tools is not None:
+                retry_request = dataclasses.replace(retry_request, tools=tools())
             try:
                 return parser(self._invoke(retry_request, traces))
             except Exception as retry_error:
@@ -725,6 +901,8 @@ class SessionEngine:
         bootstrap_values: dict[str, Any] = {
             "HOST_PROTOCOL_STATE": "SEMANTIC_READ",
             "RAW_UNTRUSTED_CONTENT": isolate_untrusted_input(raw_text),
+            # L118: the analysis is written knowing the environment the deliverable will run in, as EXECUTE does.
+            "AVAILABLE_EXECUTION_TOOLS": self.available_execution_tools,
         }
         if self._previous_deliverable:
             # S4: the prior turn's confirmed deliverable is host-published,
@@ -971,7 +1149,7 @@ class SessionEngine:
         beyond = float(self._profile_distribution.get("BEYOND_100M_STEPS", 0.0))
         if beyond <= BEYOND_BUDGET_REFUSAL_PROBABILITY:
             return None
-        if OutputVerifier().get_checker(self._problem_domain).name != "fallback":
+        if self.output_verifier.get_checker(self._problem_domain).name != "fallback":
             return None
         largest = max(budget.step_limit for budget in EXECUTION_BUDGETS.values())
         assert self.workspace is not None
@@ -1115,46 +1293,12 @@ class SessionEngine:
             self._previous_deliverable = None
         self._source_request = substantive_request
         self.workspace.write_turn_source(substantive_request)
-        from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
-        from pdl_taskmaster.verification.checkers.base import ProblemDomain
-        requires_verified = False
-        # What System 1 decided, recorded whether or not it passed gating: a
-        # STANDARD verdict and a VERIFIED one below the floor both route standard.
-        classification: dict[str, Any] = {"verdict": None, "confidence": None, "passed_gating": False}
-        if self.sys1_client and self.sys1_client.is_configured:
-            try:
-                recipe = ProblemClassRecipe()
-                sys1_req = recipe.build_request({"request": substantive_request})
-                resp_body, dur_ms = self.sys1_client.call(sys1_req)
-                res = recipe.parse_response(resp_body, duration_ms=dur_ms)
-                # Margin, entropy and distribution say which gate criterion failed.
-                classification = {"verdict": res.verdict, "confidence": round(res.confidence, 4),
-                                  "passed_gating": res.passed_gating, "margin": round(res.margin, 4),
-                                  "entropy": round(res.entropy, 4),
-                                  "distribution": {k: round(v, 4) for k, v in res.probabilities.items()}}
-                if res.passed_gating:
-                    requires_verified = (res.verdict == "VERIFIED_EXECUTION")
-            except Exception:
-                pass
-        self._requires_verified_execution = requires_verified
-        self._route_execution_profile(substantive_request)
-        # GUARD-02: the harness never infers a problem domain from request text.
-        # The domain stays GENERAL unless the witness itself declares a typed domain.
-        self._problem_domain = ProblemDomain.GENERAL if requires_verified else None
-        self._record_routing()
-
-        if self.workspace is not None:
-            self.workspace.append_event(
-                "PROBLEM_CLASS_CLASSIFIED",
-                {
-                    "requires_verified_execution": self._requires_verified_execution,
-                    "domain": self._problem_domain.value if self._problem_domain else None,
-                    **classification,
-                },
-            )
+        self._select_task_type(substantive_request, "confirmed")
         budget_refusal = self._budget_refusal()
         if budget_refusal is not None:
             return self._refuse(budget_refusal, traces, "budget")
+        if self.representation != PDL:
+            self.workspace.append_event("REPRESENTATION_CONFIGURED", {"representation": self.representation})
         # Protocol v2: raw content is read by BOOTSTRAP_ANALYSIS only; the
         # compile op receives the sanitized compiled analysis.
         compiled = self._semantic_read(substantive_request, traces)
@@ -1189,7 +1333,7 @@ class SessionEngine:
             return self._refuse(outcome.response, traces, "prompt_draft")
         assert outcome.prompt_body is not None
         from pdl_taskmaster.verification.plan_soundness import validate_plan_soundness
-        prompt_lint = validate_plan_soundness(outcome.prompt_body)
+        prompt_lint = validate_plan_soundness(outcome.prompt_body, representation=self.representation)
         if not prompt_lint.valid:
             self.workspace.append_event("PROMPT_LINT_RETRY", {"violations": prompt_lint.violations})
             redraft = self._call(
@@ -1207,6 +1351,7 @@ class SessionEngine:
                 return self._refuse(redraft.response, traces, "prompt_draft")
             if redraft.prompt_body is not None:
                 outcome = redraft
+        res_verdict, res_failed = None, []  # the verdict of the redraft, when there is one
         fidelity_verdict, failed = self._judge_prompt_fidelity(compiled, outcome.prompt_body)
         if fidelity_verdict in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE", "ANSWER_LEAKAGE", "UNFAITHFUL"):
             self.workspace.append_event(
@@ -1218,7 +1363,7 @@ class SessionEngine:
                 {"HOST_PROTOCOL_STATE": protocol_state, "SUBSTANTIVE_REQUEST": compiled},
                 traces,
                 parser=self.bridge.parse_prompt_draft,
-                operator_correction="OPERATOR CORRECTION: " + presentation.prompt_fidelity_feedback(failed),
+                operator_correction="OPERATOR CORRECTION: " + presentation.prompt_fidelity_feedback(failed, self.representation),
             )
             if redraft.kind == "TASK_BLOCKED_BY_HIGHER_PRIORITY":
                 self.workspace.append_event(
@@ -1235,7 +1380,7 @@ class SessionEngine:
                         {"operation": "DRAFT_PROMPT", "host_note": True, "failed_checks": res_failed},
                     )
         host_note = self._residual_lint_note(outcome.prompt_body, "PROMPT", "DRAFT_PROMPT")
-        if locals().get("res_verdict") in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE", "ANSWER_LEAKAGE", "UNFAITHFUL"):
+        if res_verdict in ("UNPROMPTED_EVASION", "INCOMPLETE_COVERAGE", "ANSWER_LEAKAGE", "UNFAITHFUL"):
             host_note = "\n".join(filter(None, [host_note, presentation.prompt_fidelity_note(res_failed)]))
         self.controller = self._bind_new_controller(self.workspace)
         approach_source = substantive_request if outcome.approach_handoff == "CARRY_SOURCE_TO_PLAN" else None
@@ -1261,40 +1406,7 @@ class SessionEngine:
         self._source_request = substantive_request
         self.workspace.write_turn_source(substantive_request)
 
-        from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
-        from pdl_taskmaster.verification.checkers.base import ProblemDomain
-        requires_verified = False
-        classification: dict[str, Any] = {"verdict": None, "confidence": None, "passed_gating": False}
-        if self.sys1_client and self.sys1_client.is_configured:
-            try:
-                recipe = ProblemClassRecipe()
-                sys1_req = recipe.build_request({"request": substantive_request})
-                resp_body, dur_ms = self.sys1_client.call(sys1_req)
-                res = recipe.parse_response(resp_body, duration_ms=dur_ms)
-                classification = {
-                    "verdict": res.verdict, "confidence": round(res.confidence, 4),
-                    "passed_gating": res.passed_gating, "margin": round(res.margin, 4),
-                    "entropy": round(res.entropy, 4),
-                    "distribution": {k: round(v, 4) for k, v in res.probabilities.items()},
-                }
-                if res.passed_gating:
-                    requires_verified = (res.verdict == "VERIFIED_EXECUTION")
-            except Exception:
-                pass
-        self._requires_verified_execution = requires_verified
-        self._route_execution_profile(substantive_request)
-        self._problem_domain = ProblemDomain.GENERAL if requires_verified else None
-        self._record_routing()
-
-        if self.workspace is not None:
-            self.workspace.append_event(
-                "PROBLEM_CLASS_CLASSIFIED",
-                {
-                    "requires_verified_execution": self._requires_verified_execution,
-                    "domain": self._problem_domain.value if self._problem_domain else None,
-                    **classification,
-                },
-            )
+        self._select_task_type(substantive_request, "unconfirmed")
         budget_refusal = self._budget_refusal()
         if budget_refusal is not None:
             return self._refuse(budget_refusal, traces, "budget")
@@ -1360,15 +1472,11 @@ class SessionEngine:
             prior is not None
             and prior.turn_id is not None
             and self.controller is not None
-            and self.controller.state.stage in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED}
+            and self.controller.state.stage in CLOSED_STAGES
         ):
             prior_status = prior.read_turn_status(prior.turn_id).get("status")
             if prior_status == "ACTIVE":
-                prior.mark_turn_status(
-                    "CLOSED_SUCCESS"
-                    if self.controller.state.stage == Stage.CLOSED_SUCCESS
-                    else "CLOSED_CANCELLED"
-                )
+                prior.mark_turn_status(self.controller.state.stage.value)
             previous = prior.previous_turn()
             prior.start_turn(prior.next_turn_id())
             self.workspace = prior
@@ -1484,7 +1592,7 @@ class SessionEngine:
 
         assert self.workspace is not None
         body = self._call(operation, context, traces, parser=parser)
-        lint = validate_plan_soundness(body)
+        lint = validate_plan_soundness(body, representation=self.representation)
         if lint.valid:
             return body, None
         self.workspace.append_event(
@@ -1549,7 +1657,9 @@ class SessionEngine:
             "fallback": "sys1_unavailable",
         }
         if self.sys1_client is not None and self.sys1_client.is_configured:
-            recipe = PromptFidelityRecipe()
+            recipe = PromptFidelityRecipe(
+                artifact="prompt interpretation" if self.representation == NL else "prompt pseudocode"
+            )
             try:
                 body, duration_ms = self.sys1_client.call(
                     recipe.build_request({"source_request": source_request, "drafted_prompt": prompt_body})
@@ -1620,10 +1730,10 @@ class SessionEngine:
         from pdl_taskmaster.verification.plan_soundness import line_violations, validate_plan_soundness
 
         assert self.workspace is not None
-        residual = validate_plan_soundness(body)
+        residual = validate_plan_soundness(body, representation=self.representation)
         if residual.valid:
             return None
-        located = line_violations(body)
+        located = line_violations(body, self.representation)
         self.workspace.append_event(
             f"{artifact}_LINT_UNRESOLVED",
             {
@@ -1718,6 +1828,8 @@ class SessionEngine:
         assert self.controller is not None and self.workspace is not None
         if not self.controller.can_execute():
             raise ControllerError("execute_gate")
+        if self.representation != PDL:
+            self.workspace.append_event("REPRESENTATION_CONFIGURED", {"representation": self.representation})
         prompt = self.controller.state.current_prompt
         plan = self.controller.state.current_plan
         assert prompt is not None and plan is not None
@@ -1733,8 +1845,9 @@ class SessionEngine:
         supplied_raw = transition.payload.get("execution_input_source") or self._source_request
         supplied = compile_bootstrap_output(supplied_raw, supplied_raw)[0].strip() if supplied_raw else None
 
-        verified = self._requires_verified_execution
-        result_ir_mode = verified or os.environ.get("PDLT_RESULT_IR") == "1"
+        # The task type's instruction channels (L124): the Result IR, and the witness within it.
+        verified = "witness" in self.task_type.instructions
+        result_ir_mode = self.task_type.result_ir or os.environ.get("PDLT_RESULT_IR") == "1"
         requirements: list[str] = []  # RESULT_STANDARD RS-02: not derived or rendered
         task_inputs: dict[str, str] = {}
         if self._previous_deliverable:
@@ -1774,19 +1887,8 @@ class SessionEngine:
 
         self._route_plan_profile(prompt_body, plan_body)
         execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools
-        if self.draft_execute and self._requires_verified_execution:
-            brief = self._draft_execution_brief(execute_context, traces)
-            if brief:
-                # The model's own draft (GUARD-01: no harness feedback), drafted once.
-                if not execute_context.get("REQUIRED_TASK_INPUTS"):
-                    execute_context["REQUIRED_TASK_INPUTS"] = {}
-                if isinstance(execute_context["REQUIRED_TASK_INPUTS"], dict):
-                    execute_context["REQUIRED_TASK_INPUTS"]["DRAFT_EXECUTE"] = brief.strip()
-                else:
-                    execute_context["REQUIRED_TASK_INPUTS"] = (
-                        (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context["REQUIRED_TASK_INPUTS"] else "")
-                        + "EXECUTION BRIEF (your own draft for this task, written before this call):\n" + brief
-                    )
+        # The model's own draft (GUARD-01: no harness feedback), drafted once.
+        self._attach_execution_brief(execute_context, traces)
         stop_on_failure = self.max_repairs == 0
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
         repairs_used = 0
@@ -1822,6 +1924,7 @@ class SessionEngine:
                 correction=(
                     "OPERATOR CORRECTION (host-side verification findings): the previous "
                     "deliverable failed these checks:\n" + "\n".join(f"- {e}" for e in errors)
+                    + self._withdraw_brief_on_overrun(execute_context, errors)
                 ),
             )
             attempt_findings.append(list(errors))
@@ -1864,9 +1967,7 @@ class SessionEngine:
             )
             return EngineResponse(final_body, traces, closed=True)
         result_body_hash = hashlib.sha256(final_body.encode("utf-8")).hexdigest()
-        self.controller.complete_success(result_body_hash)
-        if self.workspace.turn_id is not None:
-            self.workspace.mark_turn_status("CLOSED_SUCCESS", deliverable_sha256=result_body_hash)
+        self._close_with_result(result_body_hash)
         self.workspace.publish_execution_outcome(
             outcome.kind,
             final_body,
@@ -1880,10 +1981,60 @@ class SessionEngine:
         )
         return EngineResponse(final_body, traces, closed=True)
 
-    def _draft_execution_brief(self, execute_context: dict[str, Any], traces: list[CallTrace]) -> str | None:
-        """DRAFT_EXECUTE (A/B option): the model drafts how its deliverable will meet
-        the confirmed prompt and plan within the stated environment. A draft that
-        fails to parse is skipped, never retried into EXECUTE."""
+    def _brief_wanted(self) -> bool:
+        """Whether DRAFT_EXECUTE runs for this task (--draft-execute; ADR-0013 P6): a verified-execution
+        task always gets one; any other does when System 1 says its deliverable is, or needs, an algorithm
+        or a calculation."""
+        if not self.draft_execute or "DRAFT_EXECUTE" not in self.task_type.operations:
+            return False
+        return self._requires_verified_execution or self._classify_computation()
+
+    def _classify_computation(self) -> bool:
+        """System 1's answer to 'is this an algorithm or a calculation?', recorded as COMPUTATION_CLASSIFIED.
+        Below the confidence floor, with no System 1, or on any error the answer is no: the brief is an
+        addition, so doubt leaves the task as it was."""
+        assert self.workspace is not None
+        from pdl_taskmaster.providers.sys1.recipes.computation import ComputationRecipe
+
+        record: dict[str, Any] = {"verdict": None, "confidence": None, "passed_gating": False, "fallback": None}
+        computational = False
+        client = self.sys1_client
+        if client is None or not client.is_configured or not self._source_request:
+            record["fallback"] = "sys1_unavailable"
+        else:
+            try:
+                recipe = ComputationRecipe()
+                body, duration_ms = client.call(recipe.build_request({"request": self._source_request}))
+                result = recipe.parse_response(body, duration_ms=duration_ms)
+                record.update(
+                    verdict=result.verdict, confidence=round(result.confidence, 4), passed_gating=result.passed_gating,
+                    margin=round(result.margin, 4), entropy=round(result.entropy, 4),
+                    distribution={k: round(v, 4) for k, v in result.probabilities.items()},
+                    fallback=None if result.passed_gating else "below_floor",
+                )
+                computational = bool(result.passed_gating and recipe.map_to_wire(result)["computational"])
+            except Exception:
+                record["fallback"] = "sys1_failed"
+        self.workspace.append_event("COMPUTATION_CLASSIFIED", {**record, "computational": computational})
+        return computational
+
+    def _attach_execution_brief(self, execute_context: dict[str, Any], traces: list[CallTrace]) -> None:
+        """DRAFT_EXECUTE, when wanted: the validated, host-checked brief goes to EXECUTE as its own
+        input, EXECUTION_BRIEF, read under EXEC-06. Without a brief (not wanted, invalid, blocked, or
+        over the step budget) the context stays exactly as it was."""
+        if not self._brief_wanted():
+            return
+        brief = self._draft_execution_brief(execute_context, traces)
+        if brief is not None:
+            execute_context["EXECUTION_BRIEF"] = brief
+
+    def _draft_execution_brief(self, execute_context: dict[str, Any], traces: list[CallTrace]) -> dict[str, Any] | None:
+        """DRAFT_EXECUTE (ADR-0013 P6): the model designs how its deliverable will compute the result
+        within the stated environment, as a typed brief (ExecutionDraftResultData). The host then checks
+        what it can check mechanically: the step_estimate product against the step budget (one re-draft
+        stating that fact, then the brief is rejected) and each execution entity against the task text
+        (one not found verbatim is dropped). A reply that fails validation after its one wire retry is
+        skipped, never passed on. Returns the brief EXECUTE receives, or None."""
         assert self.workspace is not None
         prompt_body = execute_context.get("CONFIRMED_PROMPT_BODY") or execute_context.get("SOURCE_REQUEST")
         plan_body = execute_context.get("CONFIRMED_PLAN_BODY") or "Implement the deliverable to satisfy all requirements and constraints of the task."
@@ -1916,18 +2067,128 @@ class SessionEngine:
                 if non_ir_inputs:
                     values["REQUIRED_TASK_INPUTS"] = "\n\n".join(non_ir_inputs)
         values["HOST_PROTOCOL_STATE"] = "EXECUTION_DRAFT"
+        draft = self._request_execution_brief(values, traces)
+        if draft is None:
+            return None
+        limit = self._execution_budget.step_limit
+        estimate = draft.step_estimate
+        problem = self._step_check(estimate, limit)
+        if problem is not None:
+            reason, correction = problem
+            self.workspace.append_event("EXECUTION_BRIEF_STEP_CHECK_FAILED", {
+                "reason": reason, "estimated_steps": None if estimate is None else estimate.estimated_steps,
+                "step_limit": limit})
+            draft = self._request_execution_brief(values, traces, correction)
+            if draft is None:
+                return None
+            estimate = draft.step_estimate
+            problem = self._step_check(estimate, limit)
+            if problem is not None:
+                self.workspace.append_event("EXECUTION_BRIEF_REJECTED", {
+                    "reason": problem[0], "estimated_steps": None if estimate is None else estimate.estimated_steps,
+                    "step_limit": limit})
+                return None
+        # The task text DRAFT_EXECUTE was shown (the host's default plan line for the unconfirmed
+        # route is not task text): an entity is grounded only in what the task itself says.
+        task_text = [execute_context.get(key) for key in (
+            "CONFIRMED_PROMPT_BODY", "CONFIRMED_PLAN_BODY", "SOURCE_REQUEST", "SUPPLIED_EXECUTION_INPUT_SOURCE")]
+        shown_inputs = values.get("REQUIRED_TASK_INPUTS")
+        task_text += list(shown_inputs.values()) if isinstance(shown_inputs, dict) else [shown_inputs]
+        entities, dropped = _ground_execution_entities(draft.execution_entities, task_text)
+        if dropped:
+            self.workspace.append_event("EXECUTION_ENTITY_DROPPED_UNGROUNDED", {"count": len(dropped), "values": dropped})
+        brief = {
+            "approach": draft.approach.strip(),
+            "data_structures": [item.strip() for item in draft.data_structures],
+            "step_estimate": None if estimate is None else {
+                "iterations": estimate.iterations,
+                "steps_per_iteration": estimate.steps_per_iteration,
+                "estimated_steps": estimate.estimated_steps,
+                "step_limit": limit,
+                "basis": estimate.basis.strip(),
+            },
+            "invariants": [item.strip() for item in draft.invariants],
+            "self_checks": [item.strip() for item in draft.self_checks],
+            "execution_entities": entities,
+        }
+        self.workspace.append_event("EXECUTION_BRIEF_DRAFTED", {
+            "estimated_steps": None if estimate is None else estimate.estimated_steps,
+            "step_limit": limit,
+            "entities_kept": len(entities),
+            "entities_dropped": len(dropped),
+            "data_structures": len(brief["data_structures"]),
+            "invariants": len(brief["invariants"]),
+            "self_checks": len(brief["self_checks"]),
+            "chars": len(json.dumps(brief, ensure_ascii=False)),
+        })
+        return brief
+
+    def _step_check(self, estimate: Any, limit: int) -> tuple[str, str] | None:
+        """The host's mechanical check of a brief's step_estimate: (reason, operator correction) when
+        it fails, else None. A verified task's result is certified by a program the sandbox runs, so
+        its brief must count that program; any brief's count must fit the step budget."""
+        if estimate is None:
+            if not self._requires_verified_execution:
+                return None
+            return "step_estimate_missing", (
+                "OPERATOR CORRECTION (host-side step check): step_estimate is null, but this task's result is "
+                "certified by a program the sandbox runs, so the brief must count that program's work on these "
+                "inputs. Draft the brief again."
+            )
+        if estimate.estimated_steps <= limit:
+            return None
+        return "step_estimate_over_budget", (
+            "OPERATOR CORRECTION (host-side step check): step_estimate gives "
+            f"{estimate.iterations:,} iterations x {estimate.steps_per_iteration:,} steps = "
+            f"{estimate.estimated_steps:,} steps, above this session's step budget of {limit:,} steps, "
+            "so the program the brief describes would be stopped before it finishes. Draft the brief "
+            "again; step_estimate must count the method the brief describes."
+        )
+
+    def _request_execution_brief(
+        self, values: dict[str, Any], traces: list[CallTrace], correction: str | None = None,
+    ) -> ExecutionDraftResultData | None:
+        """One DRAFT_EXECUTE call (with _call's one wire retry). An invalid, cut-off or blocked reply is
+        recorded as EXECUTION_BRIEF_SKIPPED with its reason and yields no brief."""
+        assert self.workspace is not None
         try:
-            draft = self._call("DRAFT_EXECUTE", values, traces, parser=self.bridge.parse_execution_draft)
+            draft = self._call("DRAFT_EXECUTE", values, traces, parser=self.bridge.parse_execution_draft,
+                               operator_correction=correction)
         except Exception as exc:
-            if not _is_wire_failure(exc):
+            limit = getattr(exc, "output_limit", None)
+            if limit is None and not _is_wire_failure(exc):
                 raise
-            self.workspace.append_event("EXECUTION_BRIEF_SKIPPED", {"reason": str(exc)})
+            self.workspace.append_event("EXECUTION_BRIEF_SKIPPED", {
+                "reason": "output_limit" if limit is not None else str(exc),
+                "feedback": getattr(exc, "operator_feedback", None)})
             return None
-        if draft.kind != "RESULT" or not draft.brief_body.strip():
-            self.workspace.append_event("EXECUTION_BRIEF_SKIPPED", {"reason": draft.kind})
+        if draft.brief is None:
+            self.workspace.append_event("EXECUTION_BRIEF_SKIPPED", {
+                "reason": draft.kind, "blocked_reason": draft.blocked_reason})
             return None
-        self.workspace.append_event("EXECUTION_BRIEF_DRAFTED", {"chars": len(draft.brief_body)})
-        return draft.brief_body.strip()
+        return draft.brief
+
+    def _withdraw_brief_on_overrun(self, execute_context: dict[str, Any], errors: list[str]) -> str:
+        """EXEC-06: a run the sandbox stopped at a step, time or memory limit contradicts the brief's
+        feasibility, so the brief leaves the context for the attempts that follow, and the repair's
+        correction states that fact (a host finding, never a method). Returns the correction line, or ""."""
+        brief = execute_context.get("EXECUTION_BRIEF")
+        stops = [code for code in finding_codes(errors) if code in _RESOURCE_STOPS]
+        if brief is None or not stops:
+            return ""
+        assert self.workspace is not None
+        del execute_context["EXECUTION_BRIEF"]
+        estimate = brief.get("step_estimate")
+        self.workspace.append_event("EXECUTION_BRIEF_WITHDRAWN", {
+            "reason": stops[0],
+            "estimated_steps": None if estimate is None else estimate["estimated_steps"],
+            "step_limit": None if estimate is None else estimate["step_limit"],
+        })
+        claim = (f"estimated {estimate['estimated_steps']:,} steps" if estimate is not None
+                 else "said the deliverable runs no program")
+        return (f"\n- The execution brief {claim}, but the sandbox stopped the program at its "
+                f"{_RESOURCE_STOPS[stops[0]]}: the run contradicts the brief, so the brief is withdrawn from "
+                "this attempt.")
 
     def _execute_attempt(
         self,
@@ -1946,7 +2207,7 @@ class SessionEngine:
         with a registry finding, never a hidden retry (each attempt cost up to two
         calls before, so a repair could cost four)."""
         try:
-            modes = frozenset({RESULT_IR_MODE}) if result_ir_mode else frozenset()
+            modes = _execution_modes(execute_context, result_ir_mode)
             outcome = self.bridge.parse_execution(self._call("EXECUTE", execute_context, traces,
                                                              operator_correction=correction, modes=modes))
         except Exception as exc:
@@ -1995,8 +2256,9 @@ class SessionEngine:
         typed_entities = list(self._typed_task_entities_cache.get(
             (substantive_request, self._previous_deliverable), []
         ))
-        verified = self._requires_verified_execution
-        result_ir_mode = verified or os.environ.get("PDLT_RESULT_IR") == "1"
+        # The task type's instruction channels (L124): the Result IR, and the witness within it.
+        verified = "witness" in self.task_type.instructions
+        result_ir_mode = self.task_type.result_ir or os.environ.get("PDLT_RESULT_IR") == "1"
         requirements: list[str] = []
         task_inputs: dict[str, str] = {}
         if self._previous_deliverable:
@@ -2030,23 +2292,14 @@ class SessionEngine:
         if task_inputs:
             execute_context["REQUIRED_TASK_INPUTS"] = task_inputs
 
-        if self.draft_execute and self._requires_verified_execution:
-            brief = self._draft_execution_brief(execute_context, traces)
-            if brief:
-                if not execute_context.get("REQUIRED_TASK_INPUTS"):
-                    execute_context["REQUIRED_TASK_INPUTS"] = {}
-                if isinstance(execute_context["REQUIRED_TASK_INPUTS"], dict):
-                    execute_context["REQUIRED_TASK_INPUTS"]["DRAFT_EXECUTE"] = brief.strip()
-                else:
-                    execute_context["REQUIRED_TASK_INPUTS"] = (
-                        (execute_context["REQUIRED_TASK_INPUTS"] + "\n\n" if execute_context.get("REQUIRED_TASK_INPUTS") else "")
-                        + "EXECUTION BRIEF (your own draft for this task, written before this call):\n" + brief
-                    )
+        self._attach_execution_brief(execute_context, traces)
 
         stop_on_failure = self.max_repairs == 0
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
         repairs_used = 0
         unmeasured_repairs = 0
+        self._last_unconfirmed_body = None
+        self._unconfirmed_attempts = 0
 
         outcome, errors, final_body, ran_program = self._execute_unconfirmed_attempt(
             execute_context, traces, sanitized, requirements, result_ir_mode,
@@ -2067,7 +2320,7 @@ class SessionEngine:
                 repairs_used += 1
             else:
                 unmeasured_repairs += 1
-            correction = "OPERATOR CORRECTION: " + "; ".join(errors)
+            correction = "OPERATOR CORRECTION: " + "; ".join(errors) + self._withdraw_brief_on_overrun(execute_context, errors)
             outcome, errors, final_body, ran_program = self._execute_unconfirmed_attempt(
                 execute_context, traces, sanitized, requirements, result_ir_mode,
                 correction=correction,
@@ -2112,9 +2365,7 @@ class SessionEngine:
             return EngineResponse(final_body, traces, closed=True)
 
         result_body_hash = hashlib.sha256(final_body.encode("utf-8")).hexdigest()
-        self.controller.complete_success(result_body_hash)
-        if self.workspace.turn_id is not None:
-            self.workspace.mark_turn_status("CLOSED_SUCCESS", deliverable_sha256=result_body_hash)
+        self._close_with_result(result_body_hash)
         self.workspace.publish_execution_outcome(
             outcome.kind,
             final_body,
@@ -2143,11 +2394,14 @@ class SessionEngine:
         *,
         correction: str | None = None,
     ) -> tuple[Any, list[str], str, bool]:
+        self._unconfirmed_attempts += 1
         try:
-            modes = frozenset({RESULT_IR_MODE}) if result_ir_mode else frozenset()
+            modes = _execution_modes(execute_context, result_ir_mode)
             outcome = self.bridge.parse_unconfirmed_execution(
                 self._call("EXECUTE_UNCONFIRMED", execute_context, traces,
-                           operator_correction=correction, modes=modes)
+                           operator_correction=correction, modes=modes,
+                           tools=(lambda: self._agent_tool_host(execute_context, correction))
+                           if self.agent_tools else None)
             )
         except Exception as exc:
             limit = getattr(exc, "output_limit", None)
@@ -2170,6 +2424,7 @@ class SessionEngine:
 
         if outcome.kind != "RESULT":
             return outcome, [], outcome.body, False
+        self._last_unconfirmed_body = outcome.body
 
         missing_entities = self._entity_coverage_missing(outcome.interpretation or "", self._active_task_entities)
         if missing_entities and self.workspace is not None:
@@ -2193,23 +2448,72 @@ class SessionEngine:
         )
         return outcome, errors, final_body, getattr(self, "_last_programs_run", 0) > 0
 
-    def _run_deliverable_code(self, body: str) -> tuple[dict[str, Any] | None, list[str]]:
+    def _agent_tool_host(self, execute_context: dict[str, Any], correction: str | None) -> Any:
+        """ADR-0029: the in-call tools of one EXECUTE_UNCONFIRMED attempt. They run in the session sandbox at the
+        attempt's budget; the submission is checked by this engine's own checks; every call is an event."""
+        from pdl_taskmaster.runtime import agent_tools
+
+        budget = self._execution_budget
+        witness_required = "WITNESS" in (execute_context.get("REQUIRED_TASK_INPUTS") or {})
+        previous = self._last_unconfirmed_body if correction else None
+        return agent_tools.ToolHost(
+            self.sandbox, budget.step_limit, budget.timeout_seconds, budget.memory_limit_bytes,
+            _python_blocks(previous) if previous else [], correction or "",
+            agent_tools.make_validator(self.bridge, self.sandbox, budget, witness_required, _python_blocks,
+                                       _parse_sandbox_witness),
+            attempt=self._unconfirmed_attempts, on_record=self._record_tool_call,
+        )
+
+    def _submit_tool_host(self, operation: str) -> Any:
+        """ADR-0029: a submit-only operation's tool host. Its submission is checked by the checks this engine applies
+        after the call, and only those: the wire model, and for a draft the pseudocode notation lint."""
+        from pdl_taskmaster.runtime import agent_tools
+        from pdl_taskmaster.verification.plan_soundness import validate_plan_soundness
+
+        def lint(text: str) -> Any:
+            return validate_plan_soundness(text, representation=self.representation)
+
+        if operation == "BOOTSTRAP_ANALYSIS":
+            validate = agent_tools.make_wire_validator(self.bridge.parse_bootstrap_analysis)
+        elif operation == "DRAFT_PROMPT":
+            validate = agent_tools.make_lint_validator(
+                self.bridge.parse_prompt_draft,
+                lambda o: ("prompt_body", o.prompt_body) if o.prompt_body is not None else None, lint)
+        else:
+            validate = agent_tools.make_lint_validator(
+                self.bridge.parse_plan_body, lambda body: ("neutral_plan_body", body), lint)
+        return agent_tools.ToolHost(None, 0, 0.0, 0, [], "", validate, on_record=self._record_tool_call,
+                                    operation=operation)
+
+    def _record_tool_call(self, record: dict[str, Any]) -> None:
+        from pdl_taskmaster.runtime import agent_tools
+
+        if self.workspace is not None:
+            self.workspace.append_event("AGENT_TOOL_CALL", agent_tools.event_view(record))
+
+    def _run_deliverable_code(self, body: str, certificate: dict[str, Any] | None = None
+                              ) -> tuple[dict[str, Any] | None, list[str]]:
         """Run every declared Python block in the session sandbox.
 
         Returns the host-reproduced witness (the last block that printed one wins)
         and one factual finding per block that did not run cleanly. The block that
         printed the witness is kept as (index, source) in ``_last_witness_block``.
+        A certificate the Result IR states is bound to WITNESS_DATA in every block
+        (L119); the kept source is the block as the model wrote it.
         """
+        from pdl_taskmaster.runtime.witness_forms import with_certificate
+
         assert self.workspace is not None
         witness: dict[str, Any] | None = None
         failures: list[str] = []
         self._last_program_outputs: list[str] = []
+        self._last_program_runs: list[dict[str, Any]] = []  # L117: as the host ran them, kept with the result
         self._last_programs_run = 0
         self._last_witness_block: tuple[int, str] | None = None
         for index, block in enumerate(_python_blocks(body), 1):
             self._last_programs_run += 1
             run = self.sandbox.run_code(
-                block,
+                with_certificate(block, certificate),
                 timeout=self._execution_budget.timeout_seconds,
                 memory_limit=self._execution_budget.memory_limit_bytes,
                 step_limit=self._execution_budget.step_limit,
@@ -2229,6 +2533,9 @@ class SessionEngine:
                     "duration_ms": round(run.duration_ms, 1),
                 },
             )
+            if not (run.error or "").startswith("sandbox_unavailable:"):
+                self._last_program_runs.append({"block": index, "exit_code": run.exit_code,
+                                                **_captured("stdout", run.stdout), **_captured("stderr", run.stderr)})
             if (run.error or "").startswith("sandbox_unavailable:"):
                 # Fail closed: nothing ran, and no later block can run either.
                 failures.append(Finding("SANDBOX_UNAVAILABLE", block=index,
@@ -2285,6 +2592,57 @@ class SessionEngine:
         self.workspace.append_event("PAYLOAD_TOKENS_IN_DELIVERABLE", {"count": len(echoed)})
         return [Finding("PAYLOAD_TOKEN_REPEATED", count=len(echoed))]
 
+    def _close_with_result(self, result_body_hash: str) -> None:
+        """Close the instance with its published result. CLOSED_SUCCESS means the host's checks established it;
+        a result resting on a claim the host cannot check closes CLOSED_UNVERIFIED (ADR-0019 amendment, L116)."""
+        assert self.controller is not None and self.workspace is not None
+        reason = getattr(self, "_unverified_reason", None)
+        self.controller.complete_success(result_body_hash, verified=reason is None)
+        if reason is not None:
+            self.workspace.append_event("CLOSED_UNVERIFIED", {"reason": reason})
+        if self.workspace.turn_id is not None:
+            self.workspace.mark_turn_status(self.controller.state.stage.value, deliverable_sha256=result_body_hash)
+            runs = getattr(self, "_last_program_runs", None)
+            if runs:
+                self.workspace.write_program_output(runs)
+            if hasattr(self.workspace, "write_provenance"):
+                from datetime import datetime, timezone
+
+                from pdl_taskmaster.runtime import provenance
+
+                self.workspace.write_provenance(provenance.record(
+                    status=self.controller.state.stage.value,
+                    requires_verified_execution=self._requires_verified_execution,
+                    task_type=self.task_type.category,
+                    verifier=self.task_type.verifier,
+                    verification=getattr(self, "_last_verification", None),
+                    witness=getattr(self, "_last_witness", None),
+                    unverified_reason=reason,
+                    deliverable_sha256=result_body_hash,
+                    closed_at_utc=datetime.now(timezone.utc).isoformat(),
+                    model=self.model_name() if callable(self.model_name) else None,
+                ))
+
+    def _check_witness(self, verifier: Any, witness: Any, constraints: dict[str, Any], body: str) -> Any:
+        """A checker judges a copy of the witness and of its constraints (L124): it cannot change what the host
+        records. A checker that raises, or answers with anything but a VerificationVerdict, stops the turn: no result
+        is published on it (fail-closed)."""
+        import copy
+
+        from pdl_taskmaster.extensions.profiles import ExtensionFailure
+        from pdl_taskmaster.verification.checkers.base import VerificationVerdict
+
+        try:
+            verdict = verifier.check(copy.deepcopy(witness), copy.deepcopy(constraints), domain=self._problem_domain,
+                                     body=body)
+        except Exception as exc:
+            raise ExtensionFailure(f"the checker for this witness failed ({type(exc).__name__}: {exc}); "
+                                   "no result is published") from exc
+        if not isinstance(verdict, VerificationVerdict):
+            raise ExtensionFailure(f"the checker for this witness answered {type(verdict).__name__}, not a "
+                                   "VerificationVerdict; no result is published")
+        return verdict
+
     def _verify_result(
         self,
         outcome: Any,
@@ -2300,12 +2658,17 @@ class SessionEngine:
         from dataclasses import replace
 
         from pdl_taskmaster.runtime.result_ir import validate_result_ir
+        from pdl_taskmaster.runtime.witness_forms import argued_result, declared_certificate
         from pdl_taskmaster.verification.output_verifier import OutputVerifier
 
         assert self.workspace is not None
         body = outcome.body
         verified = self._requires_verified_execution
-        sandbox_witness, run_failures = self._run_deliverable_code(body)
+        self._unverified_reason: str | None = None  # L116: set when the result rests on an unchecked claim
+        self._last_verification: dict[str, Any] | None = None  # E-1: the VERIFICATION_PASSED facts
+        self._last_witness: Any = None
+        certificate = declared_certificate(getattr(outcome, "result_ir", None)) if verified else None  # L119
+        sandbox_witness, run_failures = self._run_deliverable_code(body, certificate=certificate)
         payload_findings = self._payload_token_findings(body)
         if not result_ir_mode:
             if self.tier_d1:
@@ -2322,9 +2685,9 @@ class SessionEngine:
             return payload_findings, body
 
         errors: list[str] = list(payload_findings)
-        # A witness whose values the program states as literals was printed, not
-        # computed: it counts as unreproduced (provisional) and is labelled, never failed.
-        literal_witness = False
+        argued = False  # L119: a positive result resting on its stated argument
+        negative_claim = False  # L110
+        declared_incomplete = False
         # RS-01: the Result IR travels only in the structured field; the deliverable
         # text is never scanned for it. An absent IR claims nothing: a witness the
         # program printed still counts.
@@ -2341,7 +2704,7 @@ class SessionEngine:
             self.workspace.append_event("RESULT_IR_CITATION_FINDINGS", {"findings": citations})
 
         if verified:
-            verifier = OutputVerifier()
+            verifier = self.output_verifier
             constraints = {
                 "prompt_body": prompt_body,
                 "plan_body": plan_body,
@@ -2349,6 +2712,8 @@ class SessionEngine:
                 "domain": self._problem_domain,
             }
             model_witness = ir.get("witness")
+            judged = verifier.resolve_checker(sandbox_witness if sandbox_witness is not None else model_witness,
+                                              constraints, domain=self._problem_domain).name
             declared_incomplete = (  # RS-01: no witness, and what was not obtained is recorded
                 model_witness is None and sandbox_witness is None and bool(ir.get("open_defects"))
             )
@@ -2367,20 +2732,26 @@ class SessionEngine:
                      "programs_run": getattr(self, "_last_programs_run", 0)},
                 )
             elif sandbox_witness is not None:
-                verdict = verifier.check(sandbox_witness, constraints, domain=self._problem_domain, body=body)
+                verdict = self._check_witness(verifier, sandbox_witness, constraints, body)
+                block = getattr(self, "_last_witness_block", None)
+                if verdict.valid and block is not None and _witness_written_in_program(sandbox_witness, block[1]):
+                    # L113, L119: the program states the data it prints, neither computing nor checking it.
+                    self.workspace.append_event("WITNESS_LITERAL_IN_PROGRAM", {"block": block[0]})
+                    verdict = replace(verdict, valid=False, diagnostic="WITNESS_WRITTEN_IN_PROGRAM")
                 if verdict.valid:
                     sandbox_witness["provisional"] = False
                     if model_witness is not None and model_witness != sandbox_witness:
                         self.workspace.append_event("WITNESS_OVERRIDDEN_BY_SANDBOX", {})
-                    block = getattr(self, "_last_witness_block", None)
-                    if block is not None and _witness_written_in_program(sandbox_witness, block[1]):
-                        literal_witness = True
+                    if sandbox_witness.get("polarity") == "negative":
+                        # L110: the host saw the program print the claim; it cannot check that
+                        # no result exists. The result is provisional, labelled, never "checked".
+                        negative_claim = True
                         sandbox_witness["provisional"] = True
-                        self.workspace.append_event("WITNESS_LITERAL_IN_PROGRAM", {"block": block[0]})
+                        self.workspace.append_event("NEGATIVE_CLAIM_UNCHECKED", {"basis": sandbox_witness.get("basis")})
                     ir["witness"] = sandbox_witness
             else:
                 errors.extend(run_failures)
-                verdict = verifier.check(model_witness, constraints, domain=self._problem_domain, body=body)
+                verdict = self._check_witness(verifier, model_witness, constraints, body)
                 # Only a negative witness claims a search: on a positive one the same
                 # provenance fields are metadata about how a result was found.
                 claims_search =isinstance(model_witness, dict) and model_witness.get("polarity") == "negative" and (
@@ -2393,49 +2764,92 @@ class SessionEngine:
                     # search (even one labelled a proof) that no program run by the
                     # host produced is not evidence.
                     verdict = replace(verdict, valid=False, diagnostic="SEARCH_CLAIM_UNREPRODUCED")
+                elif verdict.valid and argued_result(model_witness):
+                    # L119: a result established by an argument is a first-class deliverable (GUARD-03); the
+                    # host cannot check an argument, so it is published as unverified.
+                    argued = True
+                    ir["witness"]["provisional"] = True
+                    verdict = replace(verdict, provisional=True)
+                    self.workspace.append_event("POSITIVE_RESULT_ARGUED", {})
+                elif verdict.valid and isinstance(model_witness, dict) and model_witness.get("polarity") == "positive":
+                    # L104: a claimed result is certified by a program the host runs
+                    # (WITNESS_NOT_PRINTED). A positive witness written only into the
+                    # Result IR waives nothing: it is treated as no witness printed.
+                    verdict = replace(verdict, valid=False, diagnostic="POSITIVE_WITNESS_UNREPRODUCED")
                 elif verdict.valid:
                     ir["witness"]["provisional"] = True
                     verdict = replace(verdict, provisional=True)
+                    if isinstance(model_witness, dict) and model_witness.get("polarity") == "negative":
+                        negative_claim = True  # L110
             if declared_incomplete:
                 pass
             elif verdict.valid:
-                self.workspace.append_event(
-                    "VERIFICATION_PASSED",
-                    {
-                        # §2.1: provisional means no sandbox run reproduced the witness;
-                        # a program that prints literal values reproduces nothing.
-                        "provisional": sandbox_witness is None or literal_witness,
-                        "sandbox_reproduced": sandbox_witness is not None and not literal_witness,
-                        "domain_checked": not verdict.provisional,
-                        "details": verdict.details,
-                    },
-                )
+                self._last_verification = {
+                    # §2.1: provisional means no sandbox run reproduced the witness.
+                    "provisional": sandbox_witness is None or negative_claim,
+                    "sandbox_reproduced": sandbox_witness is not None,
+                    "domain_checked": not verdict.provisional and not negative_claim,
+                    "negative_claim_unchecked": negative_claim,
+                    "argued": argued,
+                    "certificate_checked": certificate is not None and sandbox_witness is not None
+                    and sandbox_witness.get("data") == certificate,
+                    "details": verdict.details,
+                    # The checker that judged the witness, when it is a registered domain checker (L124).
+                    **({"checker": judged} if judged != "fallback" else {}),
+                }
+                self.workspace.append_event("VERIFICATION_PASSED", self._last_verification)
             elif verdict.diagnostic == "SEARCH_CLAIM_UNREPRODUCED":
                 errors.append(Finding("SEARCH_CLAIM_UNREPRODUCED"))
+            elif verdict.diagnostic == "WITNESS_WRITTEN_IN_PROGRAM":
+                errors.append(Finding("WITNESS_WRITTEN_IN_PROGRAM", block=self._last_witness_block[0]))
             elif sandbox_witness is not None:
                 # A program ran and printed a WITNESS line; the line itself fails the check.
                 errors.append(Finding(
                     "WITNESS_INVALID",
                     diagnostic=f"the WITNESS line printed by the program does not check: {verdict.diagnostic}",
                 ))
-            elif model_witness is None:
+            elif model_witness is None or verdict.diagnostic == "POSITIVE_WITNESS_UNREPRODUCED":
                 outputs = getattr(self, "_last_program_outputs", [])
                 observation = (
                     "; ".join(outputs) + "; no line of the form `WITNESS: <json>` was printed."
                     if outputs else "the deliverable contains no program that ran successfully."
                 )
-                diagnostic = str(verdict.diagnostic).rstrip(".") + "."
+                diagnostic = (
+                    "The certificate in the Result IR was not printed by a program the host ran; every program "
+                    "receives it as WITNESS_DATA." if certificate is not None
+                    else "The witness in the Result IR was not printed by a program the host ran."
+                    if model_witness is not None else str(verdict.diagnostic).rstrip(".") + "."
+                )
                 errors.append(Finding("WITNESS_NOT_PRINTED", diagnostic=diagnostic, host_observation=observation))
             else:
                 errors.append(Finding("WITNESS_INVALID", diagnostic=verdict.diagnostic))
 
+        if verified and not errors and not declared_incomplete:
+            from pdl_taskmaster.runtime.provenance import witness_form
+
+            form = witness_form(ir.get("witness"), self._last_verification)
+            if form != "none" and form not in self.task_type.witness_forms:
+                # L124: a task type states the witness forms it accepts.
+                errors.append(Finding("WITNESS_FORM_NOT_ACCEPTED", form=form,
+                                      accepted=", ".join(sorted(self.task_type.witness_forms))))
         if errors:
             return errors, body
+        # L116: a negative claim (L110), a deliverable declaring requirements open, or a positive result
+        # resting on its argument (L119) did not establish the task's result; it is published and closes
+        # CLOSED_UNVERIFIED.
+        if declared_incomplete:
+            self._unverified_reason = "declared_incomplete"
+        elif negative_claim:
+            self._unverified_reason = "negative_claim_unchecked"
+        elif argued:
+            self._unverified_reason = "argued_result"
         self.workspace.append_event("RESULT_IR_VALIDATED", {"ir": ir})
+        self._last_witness = ir.get("witness")
         if verified and isinstance(ir.get("witness"), dict) and ir["witness"].get("provisional") is True:
             # The user sees that the result was not checked by a program run; the
             # deliverable text itself is unchanged (the note follows it).
-            note = presentation.literal_witness_note() if literal_witness else presentation.provisional_note()
+            note = (presentation.argued_result_note() if argued
+                    else presentation.negative_claim_note() if negative_claim else presentation.provisional_note())
             return [], _attach_result_ir(body.rstrip() + "\n\n" + note, ir)
         return [], _attach_result_ir(body, ir)
 
@@ -2532,7 +2946,7 @@ class SessionEngine:
             info.update(turn=None, action="no workspace was opened; nothing to keep")
             return info
         stage = self.controller.state.stage.value if self.controller is not None else None
-        bound = stage is not None and stage not in {Stage.CLOSED_SUCCESS.value, Stage.CLOSED_CANCELLED.value}
+        bound = stage is not None and stage not in {s.value for s in CLOSED_STAGES}
         status = workspace.read_turn_status(workspace.turn_id).get("status")
         events = workspace.read_events()
         started = [e["payload"] for e in events if e["kind"] == "OPERATION_MATERIALIZED"]
@@ -2623,10 +3037,17 @@ class SessionEngine:
             self.workspace.publish_approach_sources(list(self.controller.state.approach_sources))
         return self._apply_transition(transition, msg, traces)
 
-    def handle_user_message(self, user_message: str) -> EngineResponse:
+    def handle_user_message(self, user_message: str, *, user_text: str | None = None) -> EngineResponse:
+        """``user_text`` is the user's own words when the host added an invocation to ``user_message``."""
         traces: list[CallTrace] = []
-        if self.controller is None or self.controller.state.stage in {Stage.CLOSED_SUCCESS, Stage.CLOSED_CANCELLED}:
-            return self._activation(user_message, traces) or EngineResponse(None, traces, bypass=True)
+        if self.controller is None or self.controller.state.stage in CLOSED_STAGES:
+            response = self._activation(user_message, traces) or EngineResponse(None, traces, bypass=True)
+            if response.bypass and response.text is None and self.plain_reply is not None:
+                from dataclasses import replace
+
+                text = user_text if user_text is not None else user_message
+                response = replace(response, text=self.plain_reply(text, self._direct_reply_environment()))
+            return response
 
         if self.workspace is None:
             raise WorkspaceError("active_controller_without_workspace")

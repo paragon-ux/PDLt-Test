@@ -140,6 +140,7 @@ def test_guard_no_mrv_or_algorithmic_coaching_in_harness():
         ROOT / "src" / "pdl_taskmaster" / "runtime" / "session_engine.py",
         ROOT / "src" / "pdl_taskmaster" / "runtime" / "result_ir.py",
         ROOT / "src" / "pdl_taskmaster" / "providers" / "api_worker.py",
+        ROOT / "src" / "pdl_taskmaster" / "runtime" / "agent_tools.py",
         ROOT / "src" / "pdl_taskmaster" / "verification" / "plan_soundness.py",
         ROOT / "src" / "pdl_taskmaster" / "verification" / "sandbox.py",
     ]
@@ -215,7 +216,7 @@ def test_benchmark_contamination_scan():
     prompt_id_pattern = re.compile(r"\b(0[1-9]|1[0-6])-(0[1-7])\b")
     word_tokens = [
         r"frostbite", r"schur", r"\bdlx\b", r"dancing\s+link", r"algorithm\s+x", r"backtrack",
-        r"\bmrv\b", r"nobel", r"hamiltonian", r"palindrome", r"wheel\s+graph", r"alice\s+has",
+        r"\bmrv\b", r"nobel", r"hamiltonian", r"palindrome", r"wheel\s+graph", r"\bcolou?ring\b", r"alice\s+has",
         r"catalogue_manifest", r"prompts/", r"solutions/", r"\btriples?\b",
         r"\bpartition(?:s|ed|ing)?\b(?!\()",
     ]
@@ -289,3 +290,32 @@ def test_routing_recipes_have_no_pattern_matching():
         assert "classify_text_deterministic" not in text, name
     worker = (ROOT / "src" / "pdl_taskmaster" / "providers" / "api_worker.py").read_text(encoding="utf-8")
     assert "classify_text_deterministic" not in worker
+
+
+def test_agent_tools_state_capabilities_and_return_no_verdict():
+    """ADR-0029, GUARD-01/04: the in-call tools say what they do, never a method; none is a referee."""
+    from pdl_taskmaster.runtime import agent_tools
+
+    host = agent_tools.ToolHost(None, 1, 1.0, 1, ["x = 1"], "OPERATOR CORRECTION: c", lambda o: ([], []))
+    text = (json.dumps(agent_tools.TOOLS) + host.capability_note()).lower()
+    for banned in ("backtracking", "dynamic programming", "brute force", "memoiz", "heuristic", "mrv", "you should",
+                   "try ", "consider "):
+        assert banned not in text, banned
+    names = [t["name"] for t in agent_tools.TOOLS]
+    assert not any(word in name for name in names for word in ("verify", "check", "grade", "witness", "judge"))
+    # in-call work tools only where the host can run something; elsewhere only a checked submission
+    assert agent_tools.TOOL_OPERATIONS == ("EXECUTE_UNCONFIRMED", "BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN")
+    for operation in agent_tools.SUBMIT_ONLY_OPERATIONS:
+        assert agent_tools.ToolHost(None, 0, 0.0, 0, [], "", lambda o: ([], []), operation=operation).tool_names() == [
+            agent_tools.SUBMITS[operation]]
+
+
+def test_the_harness_plane_registers_no_problem_specific_verifier():
+    """L124: extension points are open, but the harness itself ships only the structural witness check, and its
+    task types bind nothing else (ADR-0018, GUARD-02)."""
+    from pdl_taskmaster.extensions import task_types, verifiers
+    from pdl_taskmaster.verification.checkers.fallback import FallbackChecker
+
+    assert [(v.name, v.domain, type(v.checker)) for v in verifiers.REGISTRY.items()] == [
+        ("witness-reproduction", "general", FallbackChecker)]
+    assert {t.verifier for t in task_types.REGISTRY.items()} <= {"none", "witness-reproduction"}

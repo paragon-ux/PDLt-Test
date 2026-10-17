@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 import json
 import os
 import re
@@ -28,7 +28,8 @@ class TurnRouting(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     requires_verified_execution: bool
-    problem_domain: Optional[ProblemDomain] = None
+    problem_domain: Optional[Union[ProblemDomain, str]] = None
+    task_type: Optional[str] = None  # L124; None in a routing recorded before task types
     execution_tier: str
     profile_distribution: dict[str, float] = Field(default_factory=dict)
 
@@ -232,18 +233,18 @@ class WorkspaceRun:
             marker = turn_dir / "turn.json"
             if marker.is_file():
                 data = json.loads(marker.read_text(encoding="utf-8"))
-                if data.get("status") in {"CLOSED_SUCCESS", "CLOSED_CANCELLED"}:
+                if data.get("status") in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED", "CLOSED_CANCELLED"}:
                     out.append(data)
         return out
 
     def previous_deliverable(self) -> str | None:
-        """S4: the confirmed deliverable of the most recent CLOSED_SUCCESS turn.
+        """S4: the deliverable of the most recent turn closed with a result (CLOSED_SUCCESS or CLOSED_UNVERIFIED).
 
         Reads ONLY that turn's published execution artifact
         (turns/<id>/stages/50_execution/output/current.md). Drafts, rejected
         plans, and review dialogue are structurally unreachable from here.
         Returns None when no prior turn has closed successfully."""
-        closed = [t for t in self.closed_turns() if t.get("status") == "CLOSED_SUCCESS"]
+        closed = [t for t in self.closed_turns() if t.get("status") in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED"}]
         if not closed:
             return None
         turn_id = closed[-1].get("turn_id")
@@ -288,7 +289,7 @@ class WorkspaceRun:
         turn_id = str(closed[-1].get("turn_id"))
         status = closed[-1].get("status")
         output = self.path / "turns" / turn_id / "stages" / "50_execution" / "output"
-        if status == "CLOSED_SUCCESS":
+        if status in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED"}:
             from pdl_taskmaster.runtime.text_blocks import split_published_ir
 
             body = self._read(output / "current.md").rstrip("\n") if (output / "current.md").is_file() else ""
@@ -516,6 +517,26 @@ class WorkspaceRun:
             return self._turn_base() / "stages" / "50_execution" / "output"
         raise WorkspaceError(f"artifact_kind:{kind}")
 
+    def write_program_output(self, runs: list[dict[str, Any]]) -> None:
+        """L117: the programs the host ran for the published result, as it ran them (block, exit code, captured
+        output), kept beside the result. Outside clients read it through the MCP server."""
+        output = self._artifact_stage("result")
+        self._write(output / "program-output.json", json.dumps({"runs": runs}, ensure_ascii=False, indent=2) + "\n")
+
+    def write_provenance(self, record: dict[str, Any]) -> None:
+        """E-1: what the published result rests on (runtime/provenance.py), kept beside it. Outside clients read it
+        through the MCP server."""
+        output = self._artifact_stage("result")
+        self._write(output / "provenance.json", json.dumps(record, ensure_ascii=False, indent=2) + "\n")
+
+    def read_provenance(self) -> dict[str, Any] | None:
+        """The current turn's provenance as written at closure, or None."""
+        recorded = self._artifact_stage("result") / "provenance.json"
+        try:
+            return json.loads(recorded.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+
     def publish_artifact(self, kind: str, artifact_id: str, body: str, *, confirmed: bool, source_prompt_id: str | None = None, confirmed_prompt_hash: str | None = None) -> None:
         output = self._artifact_stage(kind)
         versions = output / "versions"
@@ -665,7 +686,7 @@ class MemoryWorkspaceRun(WorkspaceRun):
 
     def mark_turn_status(self, status: str, *, deliverable_sha256: str | None = None) -> None:
         super().mark_turn_status(status, deliverable_sha256=deliverable_sha256)
-        if status in {"CLOSED_SUCCESS", "CLOSED_CANCELLED", "INTERRUPTED"}:
+        if status in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED", "CLOSED_CANCELLED", "INTERRUPTED"}:
             self.flush_turn_archive()
 
     def flush_turn_archive(self, turn_id: str | None = None) -> Path:

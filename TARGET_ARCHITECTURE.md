@@ -1,6 +1,6 @@
 # PDL Taskmaster: Target Architecture
 
-**Status:** Direction, not implementation. Nothing in this document exists in 2.6.0rc1 unless the "Today" column says so.
+**Status:** Direction, not implementation. Nothing in this document exists in 2.6.0 unless the "Today" column says so.
 **Current architecture:** [`ARCHITECTURE.md`](ARCHITECTURE.md) describes what runs today.
 **Decisions:** [ADR-0023](docs/adr/0023-taskmaster-host-interface-and-event-contract.md), [ADR-0024](docs/adr/0024-operation-profiles.md), [ADR-0025](docs/adr/0025-agentic-capability-boundary.md) and [ADR-0026](docs/adr/0026-extension-and-workflow-model.md), all **Proposed**.
 **Source:** the architecture review of 2026-10-02, which examined token cost, sandbox capability, extensibility, deployment parity and interface trust before the first public release.
@@ -35,15 +35,15 @@ The target architecture extends the current one; it does not replace its core. T
 
 ## 3. Today and target
 
-| Area | Today (2.6.0rc1) | Target | ADR |
+| Area | Today (2.6.0) | Target | ADR |
 |---|---|---|---|
-| **Client interface** | A terminal REPL. Headless callers pipe text into stdin and read text and an exit code. Review gates are prose. `PDLtHost.handle()` is a clean per-turn API, but it is internal. | A versioned host contract: commands, a typed live event stream, a structured result envelope, review gates as approval objects that a human, a calling agent or a declared policy can answer, and an environment report. The REPL, a TUI, a JSONL headless mode and an agent-facing server are all clients of it. | 0023 |
+| **Client interface** | A library layer, `pdl_taskmaster.api` (v0, unversioned): `Session` (`send`, `confirm`, `revise`, `run`) returns a structured `TurnResult` (stage, exit status, provenance). The REPL, headless runs and the MCP server are its clients and pass one conformance suite. There is no live event stream, and review gates are answered by commands, not approval objects. | A versioned host contract: commands, a typed live event stream, a structured result envelope, review gates as approval objects that a human, a calling agent or a declared policy can answer, and an environment report. The REPL, a TUI, a JSONL headless mode and an agent-facing server are all clients of it. | 0023 |
 | **Observability** | Per-turn JSONL records written after the turn completes; in-turn progress goes to a log file; dev telemetry is printed text. | Live events for stage changes, model calls, sandbox and tool actions, pending approvals and verification verdicts, consumed by any presentation layer. | 0023 |
 | **Cost and latency** | Reasoning effort per model family is hardcoded (ADR-0022); model, reasoning and token caps are separate flags; repairs scale with the routed tier; each call has a deadline, the session has none. | Operation profiles that set reasoning depth, artifact length, verification depth and model routing as separate, declared axes; provider capability descriptors; session time and token budgets with an explicit unverified closure when a budget ends verification. | 0024 |
-| **System 1 dependency** | System 1 is OpenRouter's remote decisions endpoint. Without it, no boundary refusal runs and routing falls back to defaults. | System 1 is a declared capability like any other provider; each deployment states, and the session reports, what happens to boundary routing when it is absent. | 0024 |
+| **System 1 dependency** | System 1 is a registered provider role (`pdlt.provider/1`); the default is OpenRouter's remote decisions endpoint. Without it, no boundary refusal runs and routing falls back to defaults. | System 1 is a declared capability like any other provider; each deployment states, and the session reports, what happens to boundary routing when it is absent. | 0024 |
 | **Agentic capability** | Programs compute and print inside a per-run directory that is deleted afterwards. Nothing is written to the user's project; the Result IR's `files` list is descriptive. No tools. | Effects as reviewed change sets: programs run against a copy-on-write view of a declared project root, the host turns their effect into a diff, the diff is reviewed like any artifact, and only the host applies it. Other tools run through a broker with declared, visible permissions. | 0025 |
-| **Agent workers** | `codex` runs the Codex CLI with its own sandbox setting (`--worker-sandbox`), separate from PDLt's sandbox. | Workers that are themselves agents are either constrained to model-only use or their tool use is routed through the same broker and review gates. | 0025 |
-| **Customization** | Contracts can be overridden by directory precedence, which replaces the whole set and checks structure only. Operation prompts are Python strings. No packaging for workflows. | A closed core, versioned and validated contracts, and workflow packs (research, coding, mathematics, writing, Q&A, general) that bundle a profile, capability grants, checkers and prompt fragments as data, can tighten but never loosen core guarantees, and pass a conformance kit. | 0026 |
+| **Agent workers** | `codex` runs the Codex CLI with its own sandbox setting (`--worker-sandbox`), separate from PDLt's sandbox. It is deprecated, to be removed (ledger L114). | Workers that are themselves agents are either constrained to model-only use or their tool use is routed through the same broker and review gates. | 0025 |
+| **Customization** | Task types, verifiers and model providers register through versioned profiles and pass a conformance kit ([`docs/extensions.md`](docs/extensions.md)). Contracts can still be overridden only by directory precedence, which replaces the whole set and checks structure only. Operation prompts are Python strings. No packaging for workflows. | A closed core, versioned and validated contracts, and workflow packs (research, coding, mathematics, writing, Q&A, general) that bundle a profile, capability grants, checkers and prompt fragments as data, can tighten but never loosen core guarantees, and pass a conformance kit. | 0026 |
 
 ---
 
@@ -107,7 +107,7 @@ Three tiers, each with its own change process:
 
 ## 5. Evidence behind the direction
 
-**Output tokens and latency.** From 762 recorded catalogue sessions on `openai/gpt-oss-120b` (`catalogue-runs/`, 2026-10-02):
+**Output tokens and latency.** From 762 recorded catalogue sessions on `openai/gpt-oss-120b` (the catalogue runs archive, 2026-10-02):
 
 | | Output tokens per session | Model time per session |
 |---|---|---|

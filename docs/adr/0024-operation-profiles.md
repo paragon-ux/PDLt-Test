@@ -3,7 +3,7 @@
 ## Status
 **Proposed.** Future work; not implemented in 2.6.0rc1. Date: 2026-10-02. Deciders: project maintainers.
 
-- Direction: [`TARGET_ARCHITECTURE.md`](../../TARGET_ARCHITECTURE.md) §4.2 and §5. Current behaviour: [`ARCHITECTURE.md`](../../ARCHITECTURE.md) §2.1, §3.3, §6.
+- Direction: [`TARGET_ARCHITECTURE.md`](https://github.com/paragon-ux/PDLt-Test/blob/main/TARGET_ARCHITECTURE.md) §4.2 and §5. Current behaviour: [`ARCHITECTURE.md`](https://github.com/paragon-ux/PDLt-Test/blob/main/ARCHITECTURE.md) §2.1, §3.3, §6.
 - Would amend: [ADR-0022](0022-default-reasoning-high-pre-execution.md) (the per-model reasoning mapping becomes a profile default) and the model class matrix of [ADR-0006](0006-bounded-pre-execution-reasoning.md). Related: [ADR-0012](0012-system-1-decision-models-via-rlcd.md), [ADR-0020](0020-system-1-environment-conditioned-refusal-routing.md), [ADR-0023](0023-taskmaster-host-interface-and-event-contract.md) (carries budgets and the environment report).
 - Requirements: `PROF-*` in `REQUIREMENTS.md` (planned; this section will list them).
 

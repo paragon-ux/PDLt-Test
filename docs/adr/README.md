@@ -30,6 +30,8 @@
 | [ADR-0026](0026-extension-and-workflow-model.md) | Proposed (future) | Extension and workflow model: closed core, versioned and validated contracts, workflow packs. |
 | [ADR-0027](0027-typed-task-entity-extraction.md) | Accepted (provisional) | Typed task entities for every problem type (surface, kind, the request's own definition), contained against the sanitized request. IMPL-0012. |
 | [ADR-0028](0028-model-capability-boundary.md) | Proposed | Provider boundary: the protocol states what each operation needs; an adapter discovers each model's capabilities, translates, adjusts and reports; one output contract per operation; model specifics are data, not code. Implemented by IMPL-0001 to IMPL-0003. |
+| [ADR-0029](0029-in-call-agent-tools.md) | Proposed | In-call agent tools: a submission checked by the host's own post-call checks on BOOTSTRAP_ANALYSIS, DRAFT_PROMPT, DRAFT_PLAN and EXECUTE_UNCONFIRMED, and on EXECUTE_UNCONFIRMED inspection in the confined sandbox and the previous attempt; no verdict tool; off by default (`--agent-tools`). Amends ADR-0025 (in-call inspection is not an effect). |
+| [ADR-0030](0030-positive-witness-forms.md) | Accepted | Positive witness forms: computed, certificate (checked by a program from `WITNESS_DATA`), argued (`CLOSED_UNVERIFIED`); a written-out witness is a correction. Amends the ADR-0019 L116 amendment. |
 
 **Implementation records.** Decisions that carry out an ADR (modules, generators, provider endpoints, per-model values, and the evidence behind them) live in a separate set, [`impl/`](impl/README.md) (`IMPL-NNNN`), so this index stays at project scope.
 
@@ -37,4 +39,4 @@ The records are intentionally separated so UI, context construction, execution
 isolation, output representation, and reasoning policy can evolve without
 replacing the entire protocol decision.
 
-**Status values.** *Accepted* records a decision in force; notes in the table and in each record say where the code differs. *Proposed (future)* records a direction that is **not implemented** in the current release; see [`TARGET_ARCHITECTURE.md`](../../TARGET_ARCHITECTURE.md). Requirement documents cited by the early records (TRD-0001 to TRD-0003) are upstream documents that are not included in this repository.
+**Status values.** *Accepted* records a decision in force; notes in the table and in each record say where the code differs. *Proposed (future)* records a direction that is **not implemented** in the current release; see [`TARGET_ARCHITECTURE.md`](https://github.com/paragon-ux/PDLt-Test/blob/main/TARGET_ARCHITECTURE.md). Requirement documents cited by the early records (TRD-0001 to TRD-0003) are upstream documents that are not included in this repository.

@@ -156,6 +156,16 @@ def score_protocol(item: grading.Item, run: dict[str, Any], result_dir: Path) ->
 
 # --------------------------------------------------------------------------- running units
 
+def _review_args(spec: ArmSpec, extra_args: tuple[str, ...]) -> list[str]:
+    """Protocol arms drive the review gates through stdin. The REPL defaults to no review since L94, and code from
+    before L94 has no --review flag (it reviews by default), so the flag goes only to a worktree that knows it."""
+    if "--no-review" in (*spec.args, *extra_args):
+        return []
+    repl = spec.worktree / "src" / "pdl_taskmaster" / "host" / "repl.py" if spec.worktree else None
+    knows = repl is not None and repl.is_file() and '"--review"' in repl.read_text(encoding="utf-8")
+    return ["--review"] if knows else []
+
+
 def run_cli(spec: ArmSpec, model: dict[str, Any], out: Path, *, prompt_file: Path | None, restore: Path | None,
             stdin: str, extra_args: tuple[str, ...], timeout: float, exit_on_close: bool = True) -> dict[str, Any]:
     out.mkdir(parents=True, exist_ok=True)
@@ -167,7 +177,7 @@ def run_cli(spec: ArmSpec, model: dict[str, Any], out: Path, *, prompt_file: Pat
            "--workspace-root", str(session_dir), "--workdir", str(session_dir),
            "--candidate-repo", str(spec.worktree), "--model", model["model"],
            "--api-providers", ",".join(model["providers"]), "--api-structured-output",
-           *spec.args, *extra_args]
+           *_review_args(spec, extra_args), *spec.args, *extra_args]
     cmd += ["--restore", str(restore)] if restore is not None else ["--prompt-file", str(prompt_file)]
     env = {**os.environ, "PYTHONPATH": str(spec.worktree / "src"), "PYTHONIOENCODING": "utf-8"}
     started = time.monotonic()

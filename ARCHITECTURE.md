@@ -1,6 +1,6 @@
 # PDL Taskmaster: Current Architecture
 
-**Describes:** `pdl-taskmaster` 2.6.0rc1, the code in this repository.
+**Describes:** `pdl-taskmaster` 2.6.0, the code in this repository.
 **Scope:** what exists and runs today. Where the project is heading is in [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md); nothing in this document describes planned behaviour.
 **Normative authorities:** ADR-0001 through ADR-0022 ([`docs/adr/`](docs/adr/README.md)) and the guardrails in [`docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md`](docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md) (`GUARD-01` to `GUARD-05`). Where an ADR and the guardrails disagree, the guardrails win.
 
@@ -31,7 +31,12 @@ The harness never reads `prompts/` and contains no prompt IDs, fixture names or 
 
 ```
 src/pdl_taskmaster/
-├── host/            pdlt CLI (cli.py), REPL presentation (repl.py), PDLtHost turn API (app.py)
+├── api/             the library layer every interface uses: Session, TurnResult, workers,
+│                    run settings, closed sessions, sandboxes (docs/api.md)
+├── extensions/      versioned profiles (task type, verifier, provider), registries,
+│                    conformance kit (docs/extensions.md)
+├── host/            pdlt CLI (cli.py), REPL presentation (repl.py), PDLtHost turn API (app.py),
+│                    MCP server (mcp_server.py)
 ├── runtime/         SessionEngine orchestrator, workspace (in-memory VFS), context compiler,
 │                    operation bridge (wire parsing), Pydantic wire models, Result IR, quarantine,
 │                    normative store (contract resolution)
@@ -45,6 +50,7 @@ src/pdl_taskmaster/
 
 | Layer | Owns | Does not own |
 |---|---|---|
+| `api/` (`Session`) | The surface the REPL, headless runs and the MCP server share: sessions, review gates, results, exit status | Stage transitions |
 | `host/repl.py` | Terminal I/O, slash commands, paste handling, headless exit codes | Protocol state |
 | `host/app.py` (`PDLtHost`) | Process and session lifetime; one call per user turn (`handle`) | Stage transitions |
 | `runtime/session_engine.py` | Orchestrating operations, verification and sandbox runs | Terminal I/O (it never reads stdin or prints) |
@@ -256,12 +262,12 @@ Every response is capped by `--max-output-tokens` (default 16,384, reasoning inc
 
 ## 10. What this release does not do
 
-These are known limits of 2.6.0rc1. Each is captured as future work in [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md) and ADR-0023 to ADR-0026; none of them is implemented here. The full release audit, including smaller follow-ups, is [`docs/audits/RELEASE_AUDIT_2.6.0rc1.md`](docs/audits/RELEASE_AUDIT_2.6.0rc1.md).
+These are known limits of 2.6.0. Each is captured as future work in [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md) and ADR-0023 to ADR-0026; where part of one has since landed, its entry says what. The release audit of 2.6.0rc1, including smaller follow-ups, is [`docs/audits/RELEASE_AUDIT_2.6.0rc1.md`](docs/audits/RELEASE_AUDIT_2.6.0rc1.md).
 
-- **No structured client interface.** Callers drive the REPL through text on stdin and read text and exit codes; there is no machine-readable result, live event stream or delegated review-gate API (ADR-0023).
+- **The client interface is v0, with no live events.** `pdl_taskmaster.api` returns structured results (`TurnResult`: stage, exit status, provenance) and drives the review gates (`confirm`, `revise`, `run(..., confirm=True)`), but it is unversioned and has no live event stream (ADR-0023; [`docs/api.md`](docs/api.md)).
 - **One cost setting.** Reasoning depth, output length, verification depth and model choice are set separately by flags but not by a profile, and there is no session-level time or token budget (ADR-0024).
 - **No effects on the user's project.** Programs cannot create or edit project files, and there is no tool broker (ADR-0025).
-- **No extension model.** Operation prompts are part of the code, contract overrides replace the whole set without a compatibility check, and there are no workflow packs (ADR-0026).
+- **Extensions are profiles, not packs.** Task types, verifiers and model providers register through versioned profiles and pass a conformance kit ([`docs/extensions.md`](docs/extensions.md), L124). Operation prompts are still part of the code, contract overrides replace the whole set without a compatibility check, and there are no workflow packs (ADR-0026).
 - **System 1 is remote.** The default System 1 is OpenRouter's decisions endpoint; without it, boundary refusal does not run (§3.3).
 - **Groq gets `EXECUTE` and `EMIT_RESULT_IR` in JSON mode.** It rejects their schemas, so it serves them without one, and the host validates the reply (ADR-0028 rule 5); it is no longer routed past ([`PROVIDERS.md`](PROVIDERS.md) §3). This is covered by offline tests only, not yet run live on Groq. The provider tables are fixed in the worker until the per-stage profiles (IMPL-0003).
 - **`PDLT_SANDBOX_NETWORK` is routing state only.** Setting it to `true` changes what System 1 is told; the sandbox never grants network access.

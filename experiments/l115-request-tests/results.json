@@ -1,0 +1,3160 @@
+[
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261006-232611-confirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: Calls: [call(), call(), call()].",
+    "TestSAXJSONParser.test_parse_array_structure": "ok",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: Calls: [call('name'), call('age'), call('active')].",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError:   Actual: on_null()",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError:   Actual: on_string('unicodeA')",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'TrackingHandler' object has no attribute 'on_number'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261006-234715-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: Calls: [call(), call(), call()].",
+    "TestSAXJSONParser.test_parse_array_structure": "ok",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: Calls: [call('name'), call('age'), call('active')].",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError:   Actual: on_null()",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError:   Actual: on_string('unicodeA')",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'TrackingHandler' object has no attribute 'on_number'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261007-003627-confirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: Calls: [call(), call(), call()].",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: AssertionError: on_value(1) call not found",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: Calls: [call('name'), call('age'), call('active')].",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: ValueError: Invalid exponent in number",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError:   Actual: on_string('unicodeA')",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'TrackingHandler' object has no attribute 'on_number'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261007-084306-confirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261007-120236-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: (unicode error) 'unicodeescape' codec can't decode bytes in position 8-9: truncated \\uXXXX escape (<deliverable 1>, line 143)"
+   ],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261007-122846-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError:   Actual: on_string('unicodeA')",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261007-225144-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "IndentationError: unexpected indent (<deliverable 1>, line 1)"
+   ],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-044901-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: Calls: [call(), call(), call()].",
+    "TestSAXJSONParser.test_parse_array_structure": "ok",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: Calls: [call('name'), call('age'), call('active')].",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: ValueError: Invalid exponent",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError:   Actual: on_string('unicodeA')",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'TrackingHandler' object has no attribute 'on_number'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-060545-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "NameError: name 'on_object_start' is not defined",
+    "FileNotFoundError: [Errno 2] No such file or directory: 'big.json'"
+   ],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'str' object has no attribute 'decode'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-063956-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: Calls: [call(), call(), call()].",
+    "TestSAXJSONParser.test_parse_array_structure": "ok",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: Calls: [call('name'), call('John'), call('age'), call('active')].",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError:   Actual: on_null()",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError:   Actual: on_string('unicodeA')",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'TrackingHandler' object has no attribute 'on_number'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-144213-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "AttributeError: '_CharIter' object has no attribute '_bufsize'"
+   ],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: '_CharIter' object has no attribute '_bufsize'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-210055-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-211256-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-211256-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-212442-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-223418-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: Calls: [call(), call(), call()].",
+    "TestSAXJSONParser.test_parse_array_structure": "ok",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: Calls: [call('name'), call('age'), call('active')].",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError:   Actual: on_null()",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError:   Actual: on_string('unicodeA')",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'TrackingHandler' object has no attribute 'on_number'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-223418-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: Calls: [call(), call(), call()].",
+    "TestSAXJSONParser.test_parse_array_structure": "ok",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: Calls: [call('name'), call('age'), call('active')].",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError:   Actual: on_null()",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError:   Actual: on_string('unicodeA')",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'TrackingHandler' object has no attribute 'on_number'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-230639-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "ModuleNotFoundError: No module named 'json_sax'",
+    "ModuleNotFoundError: No module named 'json_sax'"
+   ],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: Calls: [call(), call(), call()].",
+    "TestSAXJSONParser.test_parse_array_structure": "ok",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: Calls: [call('name'), call('age'), call('active')].",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError:   Actual: on_null()",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError:   Actual: on_string('unicodeA')",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'TrackingHandler' object has no attribute 'on_number'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-230639-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "ModuleNotFoundError: No module named 'streaming_json_sax'",
+    "ModuleNotFoundError: No module named 'streaming_json_sax'"
+   ],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: TypeError: stream must return bytes",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: TypeError: stream must return bytes",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: TypeError: stream must return bytes",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: TypeError: stream must return bytes",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: TypeError: stream must return bytes",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: TypeError: stream must return bytes"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-230639-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "FileNotFoundError: [Errno 2] No such file or directory: 'big.json'"
+   ],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: ValueError: Unexpected colon",
+    "TestSAXJSONParser.test_parse_array_structure": "ok",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: ValueError: Unexpected colon",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError:   Actual: on_null()",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError:   Actual: on_string('unicodeA')",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'TrackingHandler' object has no attribute 'on_number'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: (unicode error) 'unicodeescape' codec can't decode bytes in position 8-9: truncated \\uXXXX escape (<deliverable 1>, line 36)"
+   ],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'str' object has no attribute 'decode'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261009-045255-control",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [
+    "ModuleNotFoundError: No module named 'streaming_json'"
+   ],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: TypeError: '<' not supported between instances of 'str' and 'int'",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: TypeError: '<' not supported between instances of 'str' and 'int'",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: TypeError: '<' not supported between instances of 'str' and 'int'",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: TypeError: '<' not supported between instances of 'str' and 'int'",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: TypeError: '<' not supported between instances of 'str' and 'int'",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: TypeError: '<' not supported between instances of 'str' and 'int'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "ImportError: attempted relative import with no known parent package",
+    "ImportError: attempted relative import with no known parent package",
+    "ModuleNotFoundError: No module named 'json_sax'"
+   ],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261009-175714-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261009-190107-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: Calls: [call(), call(), call()].",
+    "TestSAXJSONParser.test_parse_array_structure": "ok",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: Calls: [call('name'), call('age'), call('active')].",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError:   Actual: on_null()",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError:   Actual: on_string('unicodeA')",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'TrackingHandler' object has no attribute 'on_number'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261009-230204-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261009-231307-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: Calls: [call(), call(), call()].",
+    "TestSAXJSONParser.test_parse_array_structure": "ok",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: Calls: [call('name'), call('age'), call('active')].",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError:   Actual: on_null()",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError:   Actual: on_string('unicodeA')",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'TrackingHandler' object has no attribute 'on_number'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261009-231457-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: AttributeError: 'str' object has no attribute 'decode'",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: AttributeError: 'str' object has no attribute 'decode'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s1.py",
+  "prompt": "04-02",
+  "run": "run-20261009-231658-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestSAXJSONParser.test_nested_structures": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_array_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_object_structure": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_simple_types": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_parse_string_escapes": "AssertionError: NameError: name 'parse' is not defined",
+    "TestSAXJSONParser.test_streaming_large_array_memory_usage": "AssertionError: NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261006-232611-confirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "ok",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "ok",
+    "test_parse_bool_and_null": "AssertionError: Expected [('object_start',), ('key', 'true'), ('value', True), ('key', 'false'), ('value', False), ('key', 'null'), ('value', None), ('object_end',)], got [('object_start',), ('key', 'true'), ('bool',",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AssertionError: Expected [('object_start',), ('key', 'int'), ('value', 42), ('key', 'float'), ('value', 3.14), ('key', 'negative'), ('value', -17), ('object_end',)], got [('object_start',), ('key', 'int'), ('number',",
+    "test_parse_simple_array": "AssertionError: Expected [('array_start',), ('value', 1), ('value', 2), ('value', 3), ('array_end',)], got [('array_start',), ('number', 1), ('value', 1), ('number', 2), ('value', 2), ('number', 3), ('value', 3), ('a",
+    "test_parse_simple_object": "AssertionError: Expected [('object_start',), ('key', 'name'), ('value', 'John'), ('key', 'age'), ('value', 30), ('object_end',)], got [('object_start',), ('key', 'name'), ('string', 'John'), ('value', 'John'), ('key'",
+    "test_parse_string_with_escapes": "AssertionError: Expected [('object_start',), ('key', 'text'), ('value', 'Hello\\nWorld\\t\"QuoteA'), ('object_end',)], got [('object_start',), ('key', 'text'), ('string', 'Hello\\nWorld\\t\"QuoteA'), ('value', 'Hello\\nWorl",
+    "test_streaming_1000_element_array": "AssertionError: Parser held too many values in memory: 1000",
+    "test_unicode_strings": "ok"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261006-234715-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "ok",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "ok",
+    "test_parse_bool_and_null": "AssertionError: Expected [('object_start',), ('key', 'true'), ('value', True), ('key', 'false'), ('value', False), ('key', 'null'), ('value', None), ('object_end',)], got [('object_start',), ('key', 'true'), ('bool',",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AssertionError: Expected [('object_start',), ('key', 'int'), ('value', 42), ('key', 'float'), ('value', 3.14), ('key', 'negative'), ('value', -17), ('object_end',)], got [('object_start',), ('key', 'int'), ('number',",
+    "test_parse_simple_array": "AssertionError: Expected [('array_start',), ('value', 1), ('value', 2), ('value', 3), ('array_end',)], got [('array_start',), ('number', 1), ('value', 1), ('number', 2), ('value', 2), ('number', 3), ('value', 3), ('a",
+    "test_parse_simple_object": "AssertionError: Expected [('object_start',), ('key', 'name'), ('value', 'John'), ('key', 'age'), ('value', 30), ('object_end',)], got [('object_start',), ('key', 'name'), ('string', 'John'), ('value', 'John'), ('key'",
+    "test_parse_string_with_escapes": "AssertionError: Expected [('object_start',), ('key', 'text'), ('value', 'Hello\\nWorld\\t\"QuoteA'), ('object_end',)], got [('object_start',), ('key', 'text'), ('string', 'Hello\\nWorld\\t\"QuoteA'), ('value', 'Hello\\nWorl",
+    "test_streaming_1000_element_array": "AssertionError: Parser held too many values in memory: 1000",
+    "test_unicode_strings": "ok"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261007-003627-confirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "ok",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "ok",
+    "test_parse_bool_and_null": "AssertionError: Expected [('object_start',), ('key', 'true'), ('value', True), ('key', 'false'), ('value', False), ('key', 'null'), ('value', None), ('object_end',)], got [('object_start',), ('key', 'true'), ('bool',",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AssertionError: Expected [('object_start',), ('key', 'int'), ('value', 42), ('key', 'float'), ('value', 3.14), ('key', 'negative'), ('value', -17), ('object_end',)], got [('object_start',), ('key', 'int'), ('number',",
+    "test_parse_simple_array": "AssertionError: Expected [('array_start',), ('value', 1), ('value', 2), ('value', 3), ('array_end',)], got [('array_start',), ('number', 1), ('number', 2), ('number', 3), ('array_end',)]",
+    "test_parse_simple_object": "AssertionError: Expected [('object_start',), ('key', 'name'), ('value', 'John'), ('key', 'age'), ('value', 30), ('object_end',)], got [('object_start',), ('key', 'name'), ('string', 'John'), ('key', 'age'), ('number'",
+    "test_parse_string_with_escapes": "AssertionError: Expected [('object_start',), ('key', 'text'), ('value', 'Hello\\nWorld\\t\"QuoteA'), ('object_end',)], got [('object_start',), ('key', 'text'), ('string', 'Hello\\nWorld\\t\"QuoteA'), ('object_end',)]",
+    "test_streaming_1000_element_array": "AssertionError: Expected 1000 value events, got 0",
+    "test_unicode_strings": "AssertionError: Expected 2 value events, got 0"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261007-084306-confirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "NameError: name 'parse' is not defined",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_parse_function_exists": "NameError: name 'parse' is not defined",
+    "test_parse_number": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_with_escapes": "NameError: name 'parse' is not defined",
+    "test_streaming_1000_element_array": "NameError: name 'parse' is not defined",
+    "test_unicode_strings": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261007-120236-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: (unicode error) 'unicodeescape' codec can't decode bytes in position 8-9: truncated \\uXXXX escape (<deliverable 1>, line 143)"
+   ],
+   "tests": {
+    "test_empty_object_and_array": "NameError: name 'parse' is not defined",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_parse_function_exists": "NameError: name 'parse' is not defined",
+    "test_parse_number": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_with_escapes": "NameError: name 'parse' is not defined",
+    "test_streaming_1000_element_array": "NameError: name 'parse' is not defined",
+    "test_unicode_strings": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261007-122846-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "ok",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "test_parse_bool_and_null": "UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "test_parse_simple_array": "UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "test_parse_simple_object": "UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "test_parse_string_with_escapes": "AssertionError: Expected [('object_start',), ('key', 'text'), ('value', 'Hello\\nWorld\\t\"QuoteA'), ('object_end',)], got [('object_start',), ('string', 'text'), ('value', 'text'), ('key', 'text'), ('string', 'Hello\\nW",
+    "test_streaming_1000_element_array": "UnboundLocalError: cannot access local variable 'pos' where it is not associated with a value",
+    "test_unicode_strings": "AssertionError: Expected 2 value events, got 4"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261007-225144-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "IndentationError: unexpected indent (<deliverable 1>, line 1)"
+   ],
+   "tests": {
+    "test_empty_object_and_array": "NameError: name 'parse' is not defined",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_parse_function_exists": "NameError: name 'parse' is not defined",
+    "test_parse_number": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_with_escapes": "NameError: name 'parse' is not defined",
+    "test_streaming_1000_element_array": "NameError: name 'parse' is not defined",
+    "test_unicode_strings": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-044901-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "ok",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "ok",
+    "test_parse_bool_and_null": "AssertionError: Expected [('object_start',), ('key', 'true'), ('value', True), ('key', 'false'), ('value', False), ('key', 'null'), ('value', None), ('object_end',)], got [('object_start',), ('key', 'true'), ('bool',",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AssertionError: Expected [('object_start',), ('key', 'int'), ('value', 42), ('key', 'float'), ('value', 3.14), ('key', 'negative'), ('value', -17), ('object_end',)], got [('object_start',), ('key', 'int'), ('number',",
+    "test_parse_simple_array": "AssertionError: Expected [('array_start',), ('value', 1), ('value', 2), ('value', 3), ('array_end',)], got [('array_start',), ('number', 1), ('value', 1), ('number', 2), ('value', 2), ('number', 3), ('value', 3), ('a",
+    "test_parse_simple_object": "AssertionError: Expected [('object_start',), ('key', 'name'), ('value', 'John'), ('key', 'age'), ('value', 30), ('object_end',)], got [('object_start',), ('key', 'name'), ('string', 'John'), ('value', 'John'), ('key'",
+    "test_parse_string_with_escapes": "AssertionError: Expected [('object_start',), ('key', 'text'), ('value', 'Hello\\nWorld\\t\"QuoteA'), ('object_end',)], got [('object_start',), ('key', 'text'), ('string', 'Hello\\nWorld\\t\"QuoteA'), ('value', 'Hello\\nWorl",
+    "test_streaming_1000_element_array": "AssertionError: Parser held too many values in memory: 1000",
+    "test_unicode_strings": "ok"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-060545-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "NameError: name 'on_object_start' is not defined",
+    "FileNotFoundError: [Errno 2] No such file or directory: 'big.json'"
+   ],
+   "tests": {
+    "test_empty_object_and_array": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_bool_and_null": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_simple_array": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_simple_object": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_string_with_escapes": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_streaming_1000_element_array": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_unicode_strings": "AttributeError: 'str' object has no attribute 'decode'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-063956-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "ok",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "AssertionError: Expected keys ['users', 'name', 'scores', 'name', 'scores'], got ['users', 'name', 'Alice', 'scores', 'name', 'Bob', 'scores']",
+    "test_parse_bool_and_null": "AssertionError: Expected [('object_start',), ('key', 'true'), ('value', True), ('key', 'false'), ('value', False), ('key', 'null'), ('value', None), ('object_end',)], got [('object_start',), ('key', 'true'), ('bool',",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AssertionError: Expected [('object_start',), ('key', 'int'), ('value', 42), ('key', 'float'), ('value', 3.14), ('key', 'negative'), ('value', -17), ('object_end',)], got [('object_start',), ('key', 'int'), ('number',",
+    "test_parse_simple_array": "AssertionError: Expected [('array_start',), ('value', 1), ('value', 2), ('value', 3), ('array_end',)], got [('array_start',), ('number', 1), ('value', 1), ('number', 2), ('value', 2), ('number', 3), ('value', 3), ('a",
+    "test_parse_simple_object": "AssertionError: Expected [('object_start',), ('key', 'name'), ('value', 'John'), ('key', 'age'), ('value', 30), ('object_end',)], got [('object_start',), ('key', 'name'), ('key', 'John'), ('key', 'age'), ('number', 3",
+    "test_parse_string_with_escapes": "AssertionError: Expected [('object_start',), ('key', 'text'), ('value', 'Hello\\nWorld\\t\"QuoteA'), ('object_end',)], got [('object_start',), ('key', 'text'), ('key', 'Hello\\nWorld\\t\"QuoteA'), ('object_end',)]",
+    "test_streaming_1000_element_array": "AssertionError: Parser held too many values in memory: 1000",
+    "test_unicode_strings": "AssertionError: Expected keys ['greeting', 'emoji'], got ['greeting', 'Hello \u4e16\u754c', 'emoji', '\ud83d\ude00']"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-144213-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "AttributeError: '_CharIter' object has no attribute '_bufsize'"
+   ],
+   "tests": {
+    "test_empty_object_and_array": "AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "test_parse_bool_and_null": "AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "test_parse_simple_array": "AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "test_parse_simple_object": "AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "test_parse_string_with_escapes": "AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "test_streaming_1000_element_array": "AttributeError: '_CharIter' object has no attribute '_bufsize'",
+    "test_unicode_strings": "AttributeError: '_CharIter' object has no attribute '_bufsize'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-210055-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "NameError: name 'parse' is not defined",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_parse_function_exists": "NameError: name 'parse' is not defined",
+    "test_parse_number": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_with_escapes": "NameError: name 'parse' is not defined",
+    "test_streaming_1000_element_array": "NameError: name 'parse' is not defined",
+    "test_unicode_strings": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-211256-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "NameError: name 'parse' is not defined",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_parse_function_exists": "NameError: name 'parse' is not defined",
+    "test_parse_number": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_with_escapes": "NameError: name 'parse' is not defined",
+    "test_streaming_1000_element_array": "NameError: name 'parse' is not defined",
+    "test_unicode_strings": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-211256-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "NameError: name 'parse' is not defined",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_parse_function_exists": "NameError: name 'parse' is not defined",
+    "test_parse_number": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_with_escapes": "NameError: name 'parse' is not defined",
+    "test_streaming_1000_element_array": "NameError: name 'parse' is not defined",
+    "test_unicode_strings": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-212442-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "NameError: name 'parse' is not defined",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_parse_function_exists": "NameError: name 'parse' is not defined",
+    "test_parse_number": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_with_escapes": "NameError: name 'parse' is not defined",
+    "test_streaming_1000_element_array": "NameError: name 'parse' is not defined",
+    "test_unicode_strings": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-223418-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "ok",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "ok",
+    "test_parse_bool_and_null": "AssertionError: Expected [('object_start',), ('key', 'true'), ('value', True), ('key', 'false'), ('value', False), ('key', 'null'), ('value', None), ('object_end',)], got [('object_start',), ('key', 'true'), ('bool',",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AssertionError: Expected [('object_start',), ('key', 'int'), ('value', 42), ('key', 'float'), ('value', 3.14), ('key', 'negative'), ('value', -17), ('object_end',)], got [('object_start',), ('key', 'int'), ('number',",
+    "test_parse_simple_array": "AssertionError: Expected [('array_start',), ('value', 1), ('value', 2), ('value', 3), ('array_end',)], got [('array_start',), ('number', 1), ('value', 1), ('number', 2), ('value', 2), ('number', 3), ('value', 3), ('a",
+    "test_parse_simple_object": "AssertionError: Expected [('object_start',), ('key', 'name'), ('value', 'John'), ('key', 'age'), ('value', 30), ('object_end',)], got [('object_start',), ('key', 'name'), ('string', 'John'), ('value', 'John'), ('key'",
+    "test_parse_string_with_escapes": "AssertionError: Expected [('object_start',), ('key', 'text'), ('value', 'Hello\\nWorld\\t\"QuoteA'), ('object_end',)], got [('object_start',), ('key', 'text'), ('string', 'Hello\\nWorld\\t\"QuoteA'), ('value', 'Hello\\nWorl",
+    "test_streaming_1000_element_array": "AssertionError: Parser held too many values in memory: 1000",
+    "test_unicode_strings": "ok"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-223418-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "ok",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "ok",
+    "test_parse_bool_and_null": "AssertionError: Expected [('object_start',), ('key', 'true'), ('value', True), ('key', 'false'), ('value', False), ('key', 'null'), ('value', None), ('object_end',)], got [('object_start',), ('key', 'true'), ('bool',",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AssertionError: Expected [('object_start',), ('key', 'int'), ('value', 42), ('key', 'float'), ('value', 3.14), ('key', 'negative'), ('value', -17), ('object_end',)], got [('object_start',), ('key', 'int'), ('number',",
+    "test_parse_simple_array": "AssertionError: Expected [('array_start',), ('value', 1), ('value', 2), ('value', 3), ('array_end',)], got [('array_start',), ('number', 1), ('value', 1), ('number', 2), ('value', 2), ('number', 3), ('value', 3), ('a",
+    "test_parse_simple_object": "AssertionError: Expected [('object_start',), ('key', 'name'), ('value', 'John'), ('key', 'age'), ('value', 30), ('object_end',)], got [('object_start',), ('key', 'name'), ('string', 'John'), ('value', 'John'), ('key'",
+    "test_parse_string_with_escapes": "AssertionError: Expected [('object_start',), ('key', 'text'), ('value', 'Hello\\nWorld\\t\"QuoteA'), ('object_end',)], got [('object_start',), ('key', 'text'), ('string', 'Hello\\nWorld\\t\"QuoteA'), ('value', 'Hello\\nWorl",
+    "test_streaming_1000_element_array": "AssertionError: Parser held too many values in memory: 1000",
+    "test_unicode_strings": "ok"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-230639-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "ModuleNotFoundError: No module named 'json_sax'",
+    "ModuleNotFoundError: No module named 'json_sax'"
+   ],
+   "tests": {
+    "test_empty_object_and_array": "ok",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "ok",
+    "test_parse_bool_and_null": "AssertionError: Expected [('object_start',), ('key', 'true'), ('value', True), ('key', 'false'), ('value', False), ('key', 'null'), ('value', None), ('object_end',)], got [('object_start',), ('key', 'true'), ('bool',",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AssertionError: Expected [('object_start',), ('key', 'int'), ('value', 42), ('key', 'float'), ('value', 3.14), ('key', 'negative'), ('value', -17), ('object_end',)], got [('object_start',), ('key', 'int'), ('number',",
+    "test_parse_simple_array": "AssertionError: Expected [('array_start',), ('value', 1), ('value', 2), ('value', 3), ('array_end',)], got [('array_start',), ('number', 1), ('value', 1), ('number', 2), ('value', 2), ('number', 3), ('value', 3), ('a",
+    "test_parse_simple_object": "AssertionError: Expected [('object_start',), ('key', 'name'), ('value', 'John'), ('key', 'age'), ('value', 30), ('object_end',)], got [('object_start',), ('key', 'name'), ('string', 'John'), ('value', 'John'), ('key'",
+    "test_parse_string_with_escapes": "AssertionError: Expected [('object_start',), ('key', 'text'), ('value', 'Hello\\nWorld\\t\"QuoteA'), ('object_end',)], got [('object_start',), ('key', 'text'), ('string', 'Hello\\nWorld\\t\"QuoteA'), ('value', 'Hello\\nWorl",
+    "test_streaming_1000_element_array": "AssertionError: Parser held too many values in memory: 1000",
+    "test_unicode_strings": "ok"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-230639-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "ModuleNotFoundError: No module named 'streaming_json_sax'",
+    "ModuleNotFoundError: No module named 'streaming_json_sax'"
+   ],
+   "tests": {
+    "test_empty_object_and_array": "TypeError: stream must return bytes",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "TypeError: stream must return bytes",
+    "test_parse_bool_and_null": "TypeError: stream must return bytes",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "TypeError: stream must return bytes",
+    "test_parse_simple_array": "TypeError: stream must return bytes",
+    "test_parse_simple_object": "TypeError: stream must return bytes",
+    "test_parse_string_with_escapes": "TypeError: stream must return bytes",
+    "test_streaming_1000_element_array": "TypeError: stream must return bytes",
+    "test_unicode_strings": "TypeError: stream must return bytes"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-230639-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "FileNotFoundError: [Errno 2] No such file or directory: 'big.json'"
+   ],
+   "tests": {
+    "test_empty_object_and_array": "ValueError: Unexpected colon",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "ValueError: Unexpected colon",
+    "test_parse_bool_and_null": "ValueError: Unexpected colon",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "ValueError: Unexpected colon",
+    "test_parse_simple_array": "AssertionError: Expected [('array_start',), ('value', 1), ('value', 2), ('value', 3), ('array_end',)], got [('array_start',), ('number', 1), ('value', 1), ('number', 2), ('value', 2), ('number', 3), ('value', 3), ('a",
+    "test_parse_simple_object": "ValueError: Unexpected colon",
+    "test_parse_string_with_escapes": "ValueError: Unexpected colon",
+    "test_streaming_1000_element_array": "AssertionError: Parser held too many values in memory: 1000",
+    "test_unicode_strings": "ValueError: Unexpected colon"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: (unicode error) 'unicodeescape' codec can't decode bytes in position 8-9: truncated \\uXXXX escape (<deliverable 1>, line 36)"
+   ],
+   "tests": {
+    "test_empty_object_and_array": "NameError: name 'parse' is not defined",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_parse_function_exists": "NameError: name 'parse' is not defined",
+    "test_parse_number": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_with_escapes": "NameError: name 'parse' is not defined",
+    "test_streaming_1000_element_array": "NameError: name 'parse' is not defined",
+    "test_unicode_strings": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_bool_and_null": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_simple_array": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_simple_object": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_string_with_escapes": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_streaming_1000_element_array": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_unicode_strings": "AttributeError: 'str' object has no attribute 'decode'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "NameError: name 'parse' is not defined",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_parse_function_exists": "NameError: name 'parse' is not defined",
+    "test_parse_number": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_with_escapes": "NameError: name 'parse' is not defined",
+    "test_streaming_1000_element_array": "NameError: name 'parse' is not defined",
+    "test_unicode_strings": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261009-045255-control",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [
+    "ModuleNotFoundError: No module named 'streaming_json'"
+   ],
+   "tests": {
+    "test_empty_object_and_array": "TypeError: '<' not supported between instances of 'str' and 'int'",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "TypeError: '<' not supported between instances of 'str' and 'int'",
+    "test_parse_bool_and_null": "TypeError: '<' not supported between instances of 'str' and 'int'",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "TypeError: '<' not supported between instances of 'str' and 'int'",
+    "test_parse_simple_array": "TypeError: '<' not supported between instances of 'str' and 'int'",
+    "test_parse_simple_object": "TypeError: '<' not supported between instances of 'str' and 'int'",
+    "test_parse_string_with_escapes": "TypeError: '<' not supported between instances of 'str' and 'int'",
+    "test_streaming_1000_element_array": "TypeError: '<' not supported between instances of 'str' and 'int'",
+    "test_unicode_strings": "TypeError: '<' not supported between instances of 'str' and 'int'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "ImportError: attempted relative import with no known parent package",
+    "ImportError: attempted relative import with no known parent package",
+    "ModuleNotFoundError: No module named 'json_sax'"
+   ],
+   "tests": {
+    "test_empty_object_and_array": "NameError: name 'parse' is not defined",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_parse_function_exists": "NameError: name 'parse' is not defined",
+    "test_parse_number": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_with_escapes": "NameError: name 'parse' is not defined",
+    "test_streaming_1000_element_array": "NameError: name 'parse' is not defined",
+    "test_unicode_strings": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'",
+    "test_parse_bool_and_null": "AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'",
+    "test_parse_simple_array": "AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'",
+    "test_parse_simple_object": "AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'",
+    "test_parse_string_with_escapes": "AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'",
+    "test_streaming_1000_element_array": "AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'",
+    "test_unicode_strings": "AttributeError: '_JSONTokenizer' object has no attribute 'tokeniser'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261009-175714-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "NameError: name 'parse' is not defined",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_parse_function_exists": "NameError: name 'parse' is not defined",
+    "test_parse_number": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_with_escapes": "NameError: name 'parse' is not defined",
+    "test_streaming_1000_element_array": "NameError: name 'parse' is not defined",
+    "test_unicode_strings": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261009-190107-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "ok",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "ok",
+    "test_parse_bool_and_null": "AssertionError: Expected [('object_start',), ('key', 'true'), ('value', True), ('key', 'false'), ('value', False), ('key', 'null'), ('value', None), ('object_end',)], got [('object_start',), ('key', 'true'), ('bool',",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AssertionError: Expected [('object_start',), ('key', 'int'), ('value', 42), ('key', 'float'), ('value', 3.14), ('key', 'negative'), ('value', -17), ('object_end',)], got [('object_start',), ('key', 'int'), ('number',",
+    "test_parse_simple_array": "AssertionError: Expected [('array_start',), ('value', 1), ('value', 2), ('value', 3), ('array_end',)], got [('array_start',), ('number', 1), ('value', 1), ('number', 2), ('value', 2), ('number', 3), ('value', 3), ('a",
+    "test_parse_simple_object": "AssertionError: Expected [('object_start',), ('key', 'name'), ('value', 'John'), ('key', 'age'), ('value', 30), ('object_end',)], got [('object_start',), ('key', 'name'), ('string', 'John'), ('value', 'John'), ('key'",
+    "test_parse_string_with_escapes": "AssertionError: Expected [('object_start',), ('key', 'text'), ('value', 'Hello\\nWorld\\t\"QuoteA'), ('object_end',)], got [('object_start',), ('key', 'text'), ('string', 'Hello\\nWorld\\t\"QuoteA'), ('value', 'Hello\\nWorl",
+    "test_streaming_1000_element_array": "AssertionError: Parser held too many values in memory: 1000",
+    "test_unicode_strings": "ok"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261009-230204-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "NameError: name 'parse' is not defined",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_parse_function_exists": "NameError: name 'parse' is not defined",
+    "test_parse_number": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_with_escapes": "NameError: name 'parse' is not defined",
+    "test_streaming_1000_element_array": "NameError: name 'parse' is not defined",
+    "test_unicode_strings": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261009-231307-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "ok",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "ok",
+    "test_parse_bool_and_null": "AssertionError: Expected [('object_start',), ('key', 'true'), ('value', True), ('key', 'false'), ('value', False), ('key', 'null'), ('value', None), ('object_end',)], got [('object_start',), ('key', 'true'), ('bool',",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AssertionError: Expected [('object_start',), ('key', 'int'), ('value', 42), ('key', 'float'), ('value', 3.14), ('key', 'negative'), ('value', -17), ('object_end',)], got [('object_start',), ('key', 'int'), ('number',",
+    "test_parse_simple_array": "AssertionError: Expected [('array_start',), ('value', 1), ('value', 2), ('value', 3), ('array_end',)], got [('array_start',), ('number', 1), ('value', 1), ('number', 2), ('value', 2), ('number', 3), ('value', 3), ('a",
+    "test_parse_simple_object": "AssertionError: Expected [('object_start',), ('key', 'name'), ('value', 'John'), ('key', 'age'), ('value', 30), ('object_end',)], got [('object_start',), ('key', 'name'), ('string', 'John'), ('value', 'John'), ('key'",
+    "test_parse_string_with_escapes": "AssertionError: Expected [('object_start',), ('key', 'text'), ('value', 'Hello\\nWorld\\t\"QuoteA'), ('object_end',)], got [('object_start',), ('key', 'text'), ('string', 'Hello\\nWorld\\t\"QuoteA'), ('value', 'Hello\\nWorl",
+    "test_streaming_1000_element_array": "AssertionError: Parser held too many values in memory: 1000",
+    "test_unicode_strings": "ok"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261009-231457-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_bool_and_null": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_function_exists": "ok",
+    "test_parse_number": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_simple_array": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_simple_object": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_parse_string_with_escapes": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_streaming_1000_element_array": "AttributeError: 'str' object has no attribute 'decode'",
+    "test_unicode_strings": "AttributeError: 'str' object has no attribute 'decode'"
+   }
+  }
+ },
+ {
+  "module": "04-02-s2.py",
+  "prompt": "04-02",
+  "run": "run-20261009-231658-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "test_empty_object_and_array": "NameError: name 'parse' is not defined",
+    "test_handler_interface": "ok",
+    "test_nested_structures": "NameError: name 'parse' is not defined",
+    "test_parse_bool_and_null": "NameError: name 'parse' is not defined",
+    "test_parse_function_exists": "NameError: name 'parse' is not defined",
+    "test_parse_number": "NameError: name 'parse' is not defined",
+    "test_parse_simple_array": "NameError: name 'parse' is not defined",
+    "test_parse_simple_object": "NameError: name 'parse' is not defined",
+    "test_parse_string_with_escapes": "NameError: name 'parse' is not defined",
+    "test_streaming_1000_element_array": "NameError: name 'parse' is not defined",
+    "test_unicode_strings": "NameError: name 'parse' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261004-123121-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261004-123218-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261006-232611-confirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261006-234715-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261007-003627-confirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261007-011904-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261007-013354-confirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261007-120236-unconfirmed",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261007-122846-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261007-225144-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "TypeError: type 'Optional' is not subscriptable"
+   ],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-044901-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-060545-control",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [
+    "SyntaxError: invalid syntax (<deliverable 2>, line 1)"
+   ],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-070631-confirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-074156-confirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-144213-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: invalid syntax (<deliverable 2>, line 1)"
+   ],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-151209-unconfirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-210055-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-210055-unconfirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-211256-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-212442-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-212442-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-223418-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-230639-control",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-230639-control",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-230639-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: unmatched ')' (<deliverable 1>, line 85)"
+   ],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: unmatched '}' (<deliverable 1>, line 265)"
+   ],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261009-042907-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261009-042907-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261009-042907-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: invalid syntax (<deliverable 2>, line 1)"
+   ],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: invalid syntax (<deliverable 2>, line 1)"
+   ],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "NameError: name 'State' is not defined",
+    "NameError: name 'State' is not defined",
+    "NameError: name 'State' is not defined",
+    "NameError: name 'Fragment' is not defined",
+    "NameError: name 'State' is not defined",
+    "ModuleNotFoundError: No module named 'thompson'"
+   ],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261009-190107-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261009-225823-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261009-230204-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261009-230334-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "incomplete": "step budget"
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261009-230600-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261009-230801-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s1.py",
+  "prompt": "04-03",
+  "run": "run-20261009-231307-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonNFA.test_alternation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_character_class": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_complex_regex_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_concatenation": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_digit_class_non_matches": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_dot": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_epsilon_transitions_exist": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_grouping": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_kleene_star": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_nfa_match_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_optional": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_plus": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonNFA.test_simultaneous_matching": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261004-123121-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261004-123218-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261006-232611-confirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261006-234715-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261007-003627-confirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261007-011904-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261007-013354-confirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261007-120236-unconfirmed",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261007-122846-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261007-225144-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "TypeError: type 'Optional' is not subscriptable"
+   ],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-044901-confirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-060545-control",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [
+    "SyntaxError: invalid syntax (<deliverable 2>, line 1)"
+   ],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-070631-confirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-074156-confirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-144213-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: invalid syntax (<deliverable 2>, line 1)"
+   ],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-151209-unconfirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-210055-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-210055-unconfirmed-draft-execute-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-211256-unconfirmed-draft-execute-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-212442-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-212442-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-223418-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-230639-control",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-230639-control",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-230639-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: unmatched ')' (<deliverable 1>, line 85)"
+   ],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261008-231940-unconfirmed",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: unmatched '}' (<deliverable 1>, line 265)"
+   ],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261009-042907-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261009-042907-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261009-042907-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: invalid syntax (<deliverable 2>, line 1)"
+   ],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "SyntaxError: invalid syntax (<deliverable 2>, line 1)"
+   ],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261009-045255-control",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [
+    "NameError: name 'State' is not defined",
+    "NameError: name 'State' is not defined",
+    "NameError: name 'State' is not defined",
+    "NameError: name 'Fragment' is not defined",
+    "NameError: name 'State' is not defined",
+    "ModuleNotFoundError: No module named 'thompson'"
+   ],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261009-190107-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261009-225823-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261009-230204-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261009-230334-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "incomplete": "step budget"
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261009-230600-unconfirmed-tier-d1",
+  "grade": "PASS",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261009-230801-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ },
+ {
+  "module": "04-03-s2.py",
+  "prompt": "04-03",
+  "run": "run-20261009-231307-unconfirmed-tier-d1",
+  "grade": "FAIL",
+  "report": {
+   "load_errors": [],
+   "tests": {
+    "TestThompsonConstruction.test_character_class_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_character_class_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_non_match": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_multiple_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_concatenation_with_repetition": "AssertionError: NameError: name 'regex_to_nfa' is not defined",
+    "TestThompsonConstruction.test_regex_to_nfa_interface": "AssertionError: NameError: name 'regex_to_nfa' is not defined"
+   }
+  }
+ }
+]

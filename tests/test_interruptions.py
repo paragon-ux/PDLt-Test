@@ -345,7 +345,7 @@ def test_repl_reports_what_was_in_flight(monkeypatch, capsys, tmp_path):
     attempt.mark("request_sent")
     attempt.mark("acknowledged")
     attempt.status, attempt.outcome, attempt.interrupted_by = 200, "interrupted", "local"
-    fake_worker = SimpleNamespace(call_traces=[], capture_tokens=False)
+    fake_worker = SimpleNamespace(call_traces=[], capture_tokens=False, call=lambda request: None)  # never called
 
     def handle(line):
         fake_worker.call_traces.append(interrupted)
@@ -357,7 +357,9 @@ def test_repl_reports_what_was_in_flight(monkeypatch, capsys, tmp_path):
         "turn_status_before": "ACTIVE", "last_operation": "DRAFT_PROMPT", "last_operation_output_recorded": False,
     }
     runtime._refresh_pointer = lambda: None
-    monkeypatch.setattr(repl, "build_recorded_fixture_from_vendored", lambda *a, **k: fake_worker)
+    from pdl_taskmaster.providers import fixtures
+
+    monkeypatch.setattr(fixtures, "build_recorded_fixture_from_vendored", lambda *a, **k: fake_worker)
     monkeypatch.setattr(sys, "argv", sys.argv + ["--dev"])
     with pytest.raises(KeyboardInterrupt):  # headless: an interrupt ends the run
         repl.main()

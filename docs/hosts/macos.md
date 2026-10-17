@@ -1,0 +1,195 @@
+# macOS
+
+This page sets PDLt up on macOS, from nothing to a first verified task. Every command is for the **Terminal** app (zsh, the default shell; bash works the same). Lines starting with `#` are comments; you do not need to type them.
+
+**What it does here.** PDLt runs model-written programs under **Seatbelt**, macOS's built-in sandbox, through `/usr/bin/sandbox-exec`. Nothing extra is installed for it, and no administrator access is needed.
+
+**At the end you will have:** PDLt installed in a virtual environment, the `pdlt` command working, the sandbox confirmed, and one task run end to end.
+
+**Limits on macOS.** Read these before relying on PDLt here:
+
+- **Memory limits are not enforced** for programs: macOS does not apply `RLIMIT_AS`. Step budgets and time limits still apply. Use the container backend (below) when a memory limit matters.
+- `sandbox-exec` is deprecated by Apple, though still shipped and supported.
+- CI runs only the confinement and sandbox tests on macOS, not the full offline suite.
+
+## 1. Prerequisites
+
+| Need | Detail |
+|---|---|
+| macOS with `/usr/bin/sandbox-exec` | Present on current macOS releases. Step 4 checks it. CI uses GitHub's `macos-latest`. |
+| Python 3.10 to 3.14 | From [python.org](https://www.python.org/downloads/macos/) or Homebrew (`brew install python@3.12`). The Python Apple ships with the developer tools may be older than 3.10. |
+| git | Only to install from source: `xcode-select --install` installs it. |
+| An OpenRouter API key | Only for step 5. Steps 1 to 4 need none. |
+
+**Check:**
+
+```bash
+python3 --version     # 3.10 to 3.14
+ls -l /usr/bin/sandbox-exec
+```
+
+## 2. Install
+
+Pick one. Both create a virtual environment so PDLt does not touch your system Python.
+
+**From PyPI** (a released version; 2.6.0 or later has the Python API and the extensions SDK). Run this in the folder where you want the environment, for example your home folder:
+
+```bash
+cd ~
+python3 -m venv pdlt-env
+source pdlt-env/bin/activate
+python -m pip install --upgrade pip
+python -m pip install "pdl-taskmaster>=2.6.0"
+```
+
+**From source** (to run the test suite, the evaluation catalogue, or change the code):
+
+```bash
+cd ~
+git clone https://github.com/paragon-ux/PDLt-Test.git
+cd PDLt-Test
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e ".[test]"
+```
+
+After activation, your prompt starts with `(pdlt-env)` or `(.venv)`. Every later command on this page assumes that environment is active. In a new Terminal window, run the `source` line again first.
+
+**Check:**
+
+```bash
+pdlt version
+```
+
+Expected: one line such as `pdl-taskmaster 2.6.0 (protocol specification: v2, manifest: C0-R4-1.0)`.
+
+## 3. Verify offline
+
+**From source:** run the offline test suite and the integrity gate from the `PDLt-Test` folder. No API key or network is used: models are scripted or replayed from recordings. The deselected test checks a memory limit, which macOS does not enforce.
+
+```bash
+python -m pytest -q -n auto --deselect tests/test_sandbox.py::test_sandbox_memory_limit_oom
+python -m pytest tests/test_harness_anti_overfitting.py -W error
+```
+
+Expected: the first ends with a summary of `passed` and `skipped` counts and no `failed` or `error` (skips are backends this machine does not have, such as AppContainer). The second must report every test passed, with no warnings or skips. CI does not run the full suite on macOS, so a failure outside the sandbox tests may be a macOS-specific defect: report it with the output.
+
+**From PyPI:** the tests are not in the package. Run an empty headless session instead:
+
+```bash
+printf '/quit\n' | pdlt --non-interactive --new-session --workspace-root /tmp/pdlt-check
+echo $?
+```
+
+Expected: it prints a short start-up banner, then `0`.
+
+## 4. Check the sandbox
+
+```bash
+python -c "from pdl_taskmaster.api import create_sandbox; s = create_sandbox('auto', label='setup-check', require_confined=True); r = s.run_code('print(6 * 7)'); print(s.backend_name, r.exit_code, r.stdout.strip()); s.close()"
+```
+
+Expected: `seatbelt 0 42`.
+
+If it raises `SandboxNotConfined`, the message says why: `/usr/bin/sandbox-exec is not available`, or `sandbox-exec self-test failed` with the reason. From source, the full escape suite is `python -m pytest tests/test_confinement.py -v`.
+
+## 5. Configure a model
+
+PDLt calls models through [OpenRouter](https://openrouter.ai). Create a key at [openrouter.ai/keys](https://openrouter.ai/keys). The same key serves the task model and System 1, the small classifier that routes each request.
+
+```bash
+# This window only:
+export OPENROUTER_API_KEY="sk-or-v1-your-key"
+
+# Or for every new window (zsh; open a new window afterwards):
+echo 'export OPENROUTER_API_KEY="sk-or-v1-your-key"' >> ~/.zshrc
+```
+
+| Setting | Required? | Where |
+|---|---|---|
+| `OPENROUTER_API_KEY` | Yes, for any live run | Environment variable, as above. Never put it in a file you commit. |
+| The task model | No. The default is `nvidia/nemotron-3-super-120b-a12b:free` | `--model` (REPL, headless) or `create_worker("api", model=...)` (Python) |
+| Everything else | No | [Reference: environment variables](../reference.md#environment-variables) |
+
+**Credits.** Models whose name ends in `:free` cost nothing but are rate-limited, and OpenRouter can withdraw them. Other models, such as `openai/gpt-oss-120b`, need credit on your OpenRouter account.
+
+## 6. Run a first task
+
+This needs the key, network access and, for a paid model, credit. Run it from any folder: it writes a session folder there.
+
+**Python API.** Save this as `first_task.py`:
+
+```python
+from pdl_taskmaster.api import Session, create_worker
+
+worker = create_worker("api", model="nvidia/nemotron-3-super-120b-a12b:free")
+with Session.open(worker, "pdlt-sessions/first-task", no_review=True) as session:
+    result = session.send("Count the primes below 1000 and print the count.")
+    print(result.text)
+    print(result.stage, result.exit_status)
+    if result.provenance:  # present when a result was published
+        print(result.provenance["verification"]["level"])
+```
+
+```bash
+python first_task.py
+```
+
+Expected: the answer (168), then `CLOSED_SUCCESS 0`, then `host_verified` (the host ran the program itself and reproduced the result). A free model can also end in `CLOSED_CANCELLED 1` (its repairs failed) or `CLOSED_UNVERIFIED 5` (it published something the host could not establish). Those are honest outcomes, not setup failures.
+
+**Headless** (one task, then exit with a code your script can test):
+
+```bash
+printf '%s\n' "Count the primes below 1000 and print the count." | pdlt --non-interactive --new-session
+echo $?
+```
+
+**REPL** (interactive):
+
+```bash
+pdlt --new-session
+```
+
+Type the task at the `>` prompt and press Enter. Type `/help` for the commands and `/quit` to leave. See [REPL and headless runs](../repl.md).
+
+Sessions are kept in `runs/live-sessions/` inside a source checkout, otherwise in `~/.pdlt/runs/live-sessions/`.
+
+## Use the MCP server from another agent
+
+An MCP client starts the server itself. Give it the full path of the Python in your environment, for example:
+
+```json
+{
+  "mcpServers": {
+    "pdlt": {
+      "command": "/Users/you/pdlt-env/bin/python",
+      "args": ["-m", "pdl_taskmaster.host.mcp_server"]
+    }
+  }
+}
+```
+
+Find the path with `which python` while the environment is active. Tools, resources and flags: [MCP server](../mcp/EXTERNAL_TOOLS.md).
+
+## Run programs in a container instead (optional)
+
+Use this when a memory limit matters. Install Docker Desktop, start it, and pull the image matching your Python version (for Python 3.12: `docker pull python:3.12-slim`). Then pass `--sandbox container`, or `export PDLT_SANDBOX=container`. The sandbox check in step 4 with `'container'` in place of `'auto'` should print `container 0 42`. CI tests the container backend on Linux only; on macOS it has not been verified.
+
+## Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| `pdlt: command not found` | The environment is not active in this window. Run the `source` line from step 2. |
+| `python3 --version` shows 3.9 or older | That is Apple's developer-tools Python. Install Python from python.org or Homebrew, and create the environment with that one (for example `python3.12 -m venv pdlt-env`). |
+| `SandboxNotConfined`, or `[warn] code execution unavailable` when the REPL starts | `sandbox-exec` is missing or its self-test failed: see step 4. The container backend is the alternative. |
+| A program that allocates a lot of memory is not stopped | Expected on macOS (no memory limit); use the container backend. |
+| Exit code 4, or `[harness-error]` on the error output | A provider or harness error, not a task result. See [Reference: when something fails](../reference.md#when-something-fails). |
+
+## Next steps
+
+- [Python API](../api.md): sessions, review gates, results, providers and run settings.
+- [Extensions SDK](../extensions.md): your own task types, verifiers and model providers.
+- [REPL and headless runs](../repl.md): every command, flag and exit code.
+- [MCP server](../mcp/EXTERNAL_TOOLS.md): what other agents can call.
+- [Sandbox guide](../SANDBOX.md): what confinement covers, and its known gaps.

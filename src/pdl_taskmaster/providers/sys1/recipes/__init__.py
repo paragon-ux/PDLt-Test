@@ -2,6 +2,7 @@
 
 from pdl_taskmaster.providers.sys1.recipes.activation_route import ActivationRouteRecipe
 from pdl_taskmaster.providers.sys1.recipes.base import Sys1Recipe, as_decision_instruction
+from pdl_taskmaster.providers.sys1.recipes.computation import ComputationRecipe
 from pdl_taskmaster.providers.sys1.recipes.confirmation_match import ConfirmationMatchRecipe
 from pdl_taskmaster.providers.sys1.recipes.execution_profile import ExecutionProfileRecipe
 from pdl_taskmaster.providers.sys1.recipes.follow_up import FollowUpRecipe
@@ -12,6 +13,7 @@ from pdl_taskmaster.providers.sys1.recipes.review_facets import ReviewFacetsReci
 
 __all__ = [
     "ActivationRouteRecipe",
+    "ComputationRecipe",
     "ConfirmationMatchRecipe",
     "ExecutionProfileRecipe",
     "FollowUpRecipe",

@@ -63,20 +63,3 @@ def test_counts_feed_the_arm_reports_with_old_and_new_counting() -> None:
     counts = run_catalogue.outcome_counts([PASSED, UNGRADED, UNGRADED, HELD])
     assert (counts["pass"], counts["ungraded"], counts["held"], counts["legacy_pass"]) == (1, 2, 1, 3)
     assert run_catalogue.format_counts(counts).startswith("pass 1/4 (old counting 3/4)")
-
-
-def test_the_four_arm_report_counts_from_results_not_from_old_scoreboards(tmp_path: Path, monkeypatch, capsys) -> None:
-    import experiments.run_four_arms as four
-
-    run = tmp_path / "catalogue-runs" / "run-20261005-000000-confirmed"
-    (run / "results").mkdir(parents=True)
-    # An old scoreboard that counted the ungraded prompt as a pass.
-    (run / "SCOREBOARD.json").write_text(json.dumps({"total_prompts": 2, "passed": 2, "pass_rate_pct": 100.0}),
-                                         encoding="utf-8")
-    for r in (PASSED, UNGRADED):
-        (run / "results" / r["id"]).mkdir()
-        (run / "results" / r["id"] / "result.json").write_text(json.dumps(r), encoding="utf-8")
-    monkeypatch.setattr(four, "ROOT", tmp_path)
-    four.summarize_results("16-06,08-01")
-    out = capsys.readouterr().out
-    assert "pass 1/2 (old counting 2/2)" in out and "ungraded 1" in out

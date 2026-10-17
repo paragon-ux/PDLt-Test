@@ -13,10 +13,9 @@ tripartite confidence gating (ADR-0012).
 
 from __future__ import annotations
 
-import math
 from typing import Any
 
-from pdl_taskmaster.providers.sys1.gating import evaluate_confidence_gate
+from pdl_taskmaster.providers.sys1.gating import binary_entropy, evaluate_confidence_gate
 from pdl_taskmaster.providers.sys1.recipes.base import Sys1Recipe, as_decision_instruction
 from pdl_taskmaster.providers.sys1.schema import RecipeResult, Sys1Question, Sys1Request
 
@@ -25,15 +24,15 @@ CHOICES = ("true", "false")
 CONFIDENCE_FLOOR = 0.80
 
 
-def _binary_entropy(p: float) -> float:
-    return -(p * math.log2(p) + (1 - p) * math.log2(1 - p))
-
-
-_BINARY_ENTROPY_CEILING = _binary_entropy((1 + CONFIDENCE_FLOOR) / 2) + 1e-9
+_BINARY_ENTROPY_CEILING = binary_entropy((1 + CONFIDENCE_FLOOR) / 2) + 1e-9
 
 
 class PromptFidelityRecipe(Sys1Recipe):
     """Evaluates whether drafted Prompt Pseudocode avoids unprompted evasion, covers all requested deliverables, and stays neutral."""
+
+    def __init__(self, artifact: str = "prompt pseudocode") -> None:
+        # The natural-language arm (representation.py) asks the same question of a prose interpretation.
+        self.artifact = artifact
 
     @property
     def name(self) -> str:
@@ -47,7 +46,7 @@ class PromptFidelityRecipe(Sys1Recipe):
         questions = {
             "no_evasion": Sys1Question(
                 instructions=as_decision_instruction(
-                    "Compare the drafted prompt pseudocode against the user's source request. Does the prompt "
+                    f"Compare the drafted {self.artifact} against the user's source request. Does the prompt "
                     "direct execution to compute and produce what the user requested, rather than commanding "
                     "execution to withhold, omit, avoid computing, or placeholderize the requested deliverable, "
                     "solutions, or concrete values? If the user explicitly requested an abstract schema, interface "
@@ -63,7 +62,7 @@ class PromptFidelityRecipe(Sys1Recipe):
             ),
             "complete_coverage": Sys1Question(
                 instructions=as_decision_instruction(
-                    "Compare the drafted prompt pseudocode against the user's source request. Does the prompt "
+                    f"Compare the drafted {self.artifact} against the user's source request. Does the prompt "
                     "preserve all material deliverables, functional capabilities, and explicit constraints "
                     "requested by the user, without silently omitting or dropping parts of the requested work "
                     "(e.g. omitting required functions, test suites, edge case handling, or secondary deliverables)? "
@@ -78,7 +77,7 @@ class PromptFidelityRecipe(Sys1Recipe):
             ),
             "no_answer_leakage": Sys1Question(
                 instructions=as_decision_instruction(
-                    "Compare the drafted prompt pseudocode against the user's source request. Does the prompt "
+                    f"Compare the drafted {self.artifact} against the user's source request. Does the prompt "
                     "keep its operational directives neutral without answering the request, preselecting substantive "
                     "conclusions, locking unproven outcomes, or inserting the author's hypothesized answer into the "
                     "prompt body (PROMPT-02)? The prompt defines what is to be computed, deduced, or investigated, "

@@ -27,6 +27,7 @@ A rejected alternative added a new controller stage, bypassed `EXECUTE`, and cla
 | 2 | `UNCONFIRMED_GATE`: halted at a review gate |
 | 3 | `WAITING_INPUT`: paused for required input |
 | 4 | Harness or provider error (for example a missing key, an outage, a rejected schema); never a protocol result |
+| 5 | `CLOSED_UNVERIFIED`: a published result the host could not establish (amendment below) |
 | 130 | Interrupted by the user |
 
    Interactive sessions are unaffected: they wait for the user.
@@ -39,6 +40,18 @@ A boundary refusal (policy scope, offline sandbox, post-cutoff knowledge) is a c
 - **Exit 4:** the harness or a provider failed before the protocol could reach any of the stages above. A structured error record goes to stderr.
 - **Exit 130:** the user interrupted the run.
 
+### Amendment (L116): a result the host cannot establish closes CLOSED_UNVERIFIED with exit 5
+`CLOSED_SUCCESS` (exit 0) means every check the host applies passed and none of them rests on a claim the host cannot check. Under `VERIFIED_EXECUTION` the result must be a positive witness computed by a program the host ran, or a certificate a program the host ran checked ([ADR-0030](0030-positive-witness-forms.md)). No domain checker is registered, so this establishes provenance, not correctness.
+
+A result resting on a claim the host cannot check is still published, with its note. It closes in the terminal stage `CLOSED_UNVERIFIED` (exit 5):
+- a negative claim ("no result exists"), whether a program printed it or the Result IR declared a proof (L110);
+- a deliverable that declares requirements open (`open_defects`, no witness);
+- a positive result established by an argument (`basis: "proof"`, ADR-0030, L119). A witness its program writes out instead of computing is a correction, never a closure (ADR-0030).
+
+The event `CLOSED_UNVERIFIED` records the reason. A failed verification and a malformed reply still close `CLOSED_CANCELLED` (exit 1).
+
+The catalogue scores `CLOSED_UNVERIFIED` as the expected stage only where the manifest names it: 13-01, whose correct answer is a negative claim. There a host-verified closure is also accepted, as `WAITING_INPUT` accepts an answer.
+
 ## Consequences
 
 ### Positive
@@ -48,4 +61,4 @@ A boundary refusal (policy scope, offline sandbox, post-cutoff knowledge) is a c
 * Clarification is measured as clarification, not as a stuck gate.
 
 ### Trade-offs
-* Scripts that read exit codes must handle 3, 4 and 130 alongside 0, 1 and 2.
+* Scripts that read exit codes must handle 3, 4, 5 and 130 alongside 0, 1 and 2.

@@ -39,6 +39,10 @@ Each execution produces an authoritative verdict and grade:
 | **MANUAL** | Correctness requires semantic human inspection (e.g. open-ended riddles, design tasks). |
 | **UNGRADED / N/A** | Architectural categories evaluated on protocol adherence rather than single mathematical answers. |
 
+### Ground-truth coverage
+
+57 of the 112 prompts have a machine grader (`verified` in `prompts/CATALOGUE_MANIFEST.jsonl`): categories 01, 02, 05, 13, 14 and 16 in full, and 03 (4 of 7), 04 (6 of 7) and 06 (5 of 7). The other 55 are checked only for reaching the expected terminal stage, and benchmark reports show them at stage level. A *decided* pass rate counts PASS and FAIL and leaves MANUAL out; a prompt that is ungraded or awaiting a human check is never a pass.
+
 ---
 
 ## Anti-Overfitting Safeguards

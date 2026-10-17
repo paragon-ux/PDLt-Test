@@ -80,7 +80,7 @@ class ObservedSession:
         self.calls.append(call)
         return raw_text
 
-    def handle_user_message(self, user_message: str) -> Any:
+    def handle_user_message(self, user_message: str, **context: Any) -> Any:
         before = controller_snapshot(self.engine)
         events_before = read_events(self.engine.workspace)
         turn_before = turn_key(self.engine.workspace)
@@ -89,7 +89,7 @@ class ObservedSession:
         exception: dict[str, Any] | None = None
         response = None
         try:
-            response = self.engine.handle_user_message(user_message)
+            response = self.engine.handle_user_message(user_message, **context)
         except Exception as exc:
             exception = {"type": type(exc).__name__, "message": str(exc)}
             original_exception = exc

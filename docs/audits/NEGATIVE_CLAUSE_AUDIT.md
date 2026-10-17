@@ -1,6 +1,6 @@
 # Negative-Clause Audit (standards v2, harness at `767b606`)
 
-> **Historical snapshot.** This audit describes the harness at commit `767b606`. Function names, line numbers and document sections refer to that commit; several findings have since been fixed (for example, a gated `BYPASS` now produces a direct answer). The current design is in [`ARCHITECTURE.md`](../../ARCHITECTURE.md).
+> **Historical snapshot.** This audit describes the harness at commit `767b606`. Function names, line numbers and document sections refer to that commit; several findings have since been fixed (for example, a gated `BYPASS` now produces a direct answer). The current design is in [`ARCHITECTURE.md`](https://github.com/paragon-ux/PDLt-Test/blob/main/ARCHITECTURE.md).
 
 **Question.** ADR-0016 found that a prohibition written in prose depends on the model obeying it. Where is each `MUST NOT` / `NEVER` / `not` clause in `contracts/standards/` actually enforced?
 

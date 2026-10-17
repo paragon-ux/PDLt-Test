@@ -40,7 +40,7 @@ PROGRESS_PREFIX = "HIDDEN_TESTS_PROGRESS: "
 MAX_CANDIDATES = 6
 
 # Runs inside the sandbox before the test module. Helpers available to tests:
-# classes_with, functions_named, find_callable, construct, missing, approx.
+# classes_with, functions_named, find_callable, construct, missing, approx, state_of.
 _PRELUDE = r'''
 import inspect as _inspect, io as _io, json as _json, sys as _sys, threading as _threading, types as _types
 
@@ -50,7 +50,12 @@ import inspect as _inspect, io as _io, json as _json, sys as _sys, threading as 
 _REAL_STDOUT = _sys.stdout
 _sys.stdout = _io.StringIO()
 _LOAD_ERRORS = []
-NS = {"__name__": "deliverable", "__builtins__": __builtins__}
+# The deliverable is a module named "deliverable", registered in sys.modules as an imported one would be:
+# dataclasses, typing.get_type_hints and pickle find the defining module there by name.
+_MODULE = _types.ModuleType("deliverable")
+NS = _MODULE.__dict__
+NS["__builtins__"] = __builtins__
+_sys.modules["deliverable"] = _MODULE
 for _index, _block in enumerate(__BLOCKS__):
     try:
         exec(compile(_block, "<deliverable block %d>" % (_index + 1), "exec"), NS)
@@ -125,6 +130,24 @@ def missing(value):
 
 def approx(a, b, tol=1e-9):
     return abs(float(a) - float(b)) <= tol * max(1.0, abs(float(b)))
+
+
+def state_of(obj):
+    """The instance attributes of ``obj``: its __dict__ and every filled __slots__ entry
+    (vars() raises on a slotted class, which is not a reason to fail a correct one)."""
+    state = dict(getattr(obj, "__dict__", None) or {})
+    for klass in type(obj).__mro__:
+        slots = klass.__dict__.get("__slots__", ())
+        for name in ((slots,) if isinstance(slots, str) else slots):
+            if name in ("__dict__", "__weakref__"):
+                continue
+            if name.startswith("__") and not name.endswith("__"):
+                name = "_" + klass.__name__.lstrip("_") + name  # a private slot lives under its mangled name
+            try:
+                state[name] = getattr(obj, name)
+            except AttributeError:  # a slot that was never assigned
+                pass
+    return state
 
 
 def _run_test(test, candidate, seconds):
@@ -264,6 +287,9 @@ def run(prompt_id: str, deliverable: str, *, tier: str = TIER) -> dict[str, Any]
     report["reason"] = ("passed every hidden test" if report["passed"] else
                         "; ".join(f"{c['name']}: {', '.join(c['failures'][:3])}" for c in report["candidates"])
                         or report.get("select_error") or "no candidate implements the stated operations")
+    if not report["passed"] and report.get("load_errors"):
+        # A block that failed to load is the likeliest reason no candidate was found; say so.
+        report["reason"] += " [load errors: " + "; ".join(report["load_errors"]) + "]"
     return report
 
 

@@ -116,7 +116,7 @@ def test_holds_a_fixed_byte_buffer(C):
 
     pool = _make(C)
     sizes = []
-    for value in vars(pool).values():
+    for value in state_of(pool).values():
         if isinstance(value, (bytearray, memoryview)):
             sizes.append(value.nbytes if isinstance(value, memoryview) else len(value))
         elif isinstance(value, array.array):

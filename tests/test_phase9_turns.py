@@ -223,9 +223,11 @@ def test_follow_up_after_a_cancelled_turn_works_from_the_previous_request(tmp_pa
 
 
 def test_follow_up_after_a_successful_turn_gets_its_result_as_reference_only(tmp_path: Path) -> None:
-    witness = {"files": [], "reconciliation": [], "open_defects": [],
-               "witness": {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"answer": 6}}}
-    ok = [{"kind": "RESULT", "body": "The sum is 6.", "result_ir": witness}]
+    # The witness is printed by a program the host runs (L104: one written only into the
+    # Result IR no longer closes a verified turn).
+    program = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'answer': 1 + 2 + 3}}))"
+    witness = {"files": [], "reconciliation": [], "open_defects": []}
+    ok = [{"kind": "RESULT", "body": f"The sum is 6.\n\n```python\n{program}\n```", "result_ir": witness}]
     engine, first, calls, _ = _two_turn_session(tmp_path, ok, "now double it")
     assert first == "CLOSED_SUCCESS"
     execute = next(c for c in calls if c.operation == "EXECUTE")

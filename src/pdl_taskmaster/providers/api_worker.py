@@ -15,9 +15,11 @@ from collections import deque
 from pathlib import Path
 from typing import Any
 
-from pdl_taskmaster.providers.base import TransportError, WorkerResult
+from pdl_taskmaster.providers import model_adapters, model_capabilities
+from pdl_taskmaster.providers.base import ATTRIBUTION_HEADERS, TransportError, WorkerResult
 from pdl_taskmaster.providers.call_trace import AttemptTrace, CallTrace, tracking
 from pdl_taskmaster.runtime.output_contracts import (
+    NL_REPRESENTATION_MODE,
     UNION_WRAPPER,
     ContractForm,
     contract_schema,
@@ -25,6 +27,7 @@ from pdl_taskmaster.runtime.output_contracts import (
     grammar_view,
     is_union_wrapped,
 )
+from pdl_taskmaster.runtime.representation import nl_plan_guidance, nl_prompt_guidance
 
 _JSON_ONLY_SUFFIX = (
     "\n\nReturn only a JSON object. Do not include markdown fences, commentary, or extra text."
@@ -32,6 +35,66 @@ _JSON_ONLY_SUFFIX = (
 
 
 _SEMANTIC_READ_OPERATIONS = {"BOOTSTRAP_ANALYSIS", "INTERPRET_ACTIVATION"}
+
+
+def _nl_mode(request: Any) -> bool:
+    """Whether the call's projection runs in the natural-language arm (representation.py)."""
+    manifest = getattr(getattr(request, "projection", None), "manifest", None) or {}
+    return NL_REPRESENTATION_MODE in (manifest.get("modes") or ())
+
+# Drafting guidance for the confirmed route's two artifacts in PDL, the default representation.
+_PROMPT_GUIDANCE = (
+    "\n\nNORMATIVE GUIDELINES AND SPECIFICATION FOR PROMPT PSEUDOCODE (PDL-01 to PDL-09, PROMPT-01 to PROMPT-05):\n"
+    "PDL-01 — Structured English: Pseudocode MUST use readable structured English compatible with the project PDL profile.\n"
+    "PDL-02 — Operation layout: Each operation SHOULD appear on its own line; equally indented operations are read top to bottom; subordinate operations are indented beneath the operation that controls or qualifies them.\n"
+    "PDL-03 — Domain terminology: Pseudocode MUST use task-domain terminology rather than invent a separate task schema.\n"
+    "PDL-04 — Action/control casing: Common action verbs and control keywords MAY be uppercased when helpful for readability.\n"
+    "PDL-05 — No invented field schema: Pseudocode MUST NOT invent a fielded protocol schema.\n"
+    "PDL-06 — Prefer ordinary structured English: Pseudocode MUST NOT imitate programming syntax when ordinary structured English is clearer.\n"
+    "PDL-07 — Standard control forms: Standard-compatible IF/ELSE/ENDIF, WHILE/ENDWHILE, REPEAT/UNTIL, FOR/ENDFOR, and CASE/ENDCASE forms MAY be used when useful.\n"
+    "PDL-08 — Purpose-complete notation: Prompt and Response Plan Pseudocode MUST be complete for their protocol purpose without artificial expansion into implementation algorithms.\n"
+    "PDL-09 — Imperative construction and ingestion boundary: Prompt and Response Plan Pseudocode MUST NOT use data-reading verbs (READ, PARSE, ANALYZE, EXAMINE) with the user prompt, request, or task specification as the object. When the request asks to implement, create, or write software, pseudocode MUST retain active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and target language directives. READ MUST be reserved strictly for explicit runtime stream or file ingestion.\n"
+    "PROMPT-01 — Semantic fidelity: Prompt Pseudocode MUST represent all and only operative TASK-01 semantics that remain applicable to the requested work after the confirmation protocol is complete.\n"
+    "PROMPT-02 — No substantive solution: Prompt Pseudocode MUST NOT solve the task, research task facts, inspect task-specific resources, plan the response, or include substantive task findings.\n"
+    "PROMPT-03 — No invented requirements: Prompt Pseudocode MUST NOT invent missing requirements or silently improve the user's request.\n"
+    "PROMPT-04 — Unspecified details: If a detail is unspecified, Prompt Pseudocode MUST represent the request as currently understood. Prompt generation MUST NOT be replaced with clarification unless a higher-priority requirement makes the missing input genuinely blocking.\n"
+    "PROMPT-05 — Revision semantics: A Prompt revision MUST apply the user's changed TASK-01 semantics and preserve every current TASK-01 requirement not changed by the user.\n\n"
+    "OPERATIONAL GUIDELINES FOR PROMPT DRAFTING:\n"
+    "1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
+    "2. Active Construction Directives (PDL-09): When the user asks to implement, write, develop, or create software, data structures, algorithms, or tests, use active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and preserve the target language (e.g., 'in Python') and interface contracts.\n"
+    "3. No Metatask Ingestion (PDL-09): DO NOT use 'READ the task specification' or 'READ the request'. The user prompt is the communicative frame, not a runtime data stream to be read.\n"
+    "4. Parameter vs. Stream Discrimination (PDL-09): Use READ strictly for explicit runtime stream or file ingestion. Represent function parameters, mathematical constants, and data structure inputs as parameters to accept or take, not streams to read.\n"
+    "5. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n"
+    "6. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n"
+    "7. Zero Execution Prohibitions & Substantive Delivery: Prompt Pseudocode defines the substantive deliverable to be produced upon execution (PROMPT-01). PROMPT-02 means that Prompt Pseudocode itself does not leak or pre-solve the problem during drafting; it is an author-time constraint and MUST NEVER be projected into an execution-time prohibition. Prompt Pseudocode MUST specify that execution computes, solves, and produces the requested concrete solutions, entities, and outputs in full. NEVER command execution to omit, evade, placeholderize, or avoid computing the requested solution (e.g. do not write 'without providing the actual values', 'without computing a specific result', 'provide only specification', 'do not compute', 'insert placeholders', or 'no executable code') (PROMPT-01, PROMPT-02, PDL-08, PDL-09)."
+)
+_PLAN_GUIDANCE = (
+    "\n\nNORMATIVE GUIDELINES AND SPECIFICATION FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-09, PLAN-01 to PLAN-10):\n"
+    "PDL-01 — Structured English: Pseudocode MUST use readable structured English compatible with the project PDL profile.\n"
+    "PDL-02 — Operation layout: Each operation SHOULD appear on its own line; equally indented operations are read top to bottom; subordinate operations are indented beneath the operation that controls or qualifies them.\n"
+    "PDL-03 — Domain terminology: Pseudocode MUST use task-domain terminology rather than invent a separate task schema.\n"
+    "PDL-04 — Action/control casing: Common action verbs and control keywords MAY be uppercased when helpful for readability.\n"
+    "PDL-05 — No invented field schema: Pseudocode MUST NOT invent a fielded protocol schema.\n"
+    "PDL-06 — Prefer ordinary structured English: Pseudocode MUST NOT imitate programming syntax when ordinary structured English is clearer.\n"
+    "PDL-07 — Standard control forms: Standard-compatible IF/ELSE/ENDIF, WHILE/ENDWHILE, REPEAT/UNTIL, FOR/ENDFOR, and CASE/ENDCASE forms MAY be used when useful.\n"
+    "PDL-08 — Purpose-complete notation: Prompt and Response Plan Pseudocode MUST be complete for their protocol purpose without artificial expansion into implementation algorithms.\n"
+    "PDL-09 — Imperative construction and ingestion boundary: Prompt and Response Plan Pseudocode MUST NOT use data-reading verbs (READ, PARSE, ANALYZE, EXAMINE) with the user prompt, request, or task specification as the object. When the request asks to implement, create, or write software, pseudocode MUST retain active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and target language directives. READ MUST be reserved strictly for explicit runtime stream or file ingestion.\n"
+    "PLAN-01 — Coverage before minimization: For each material action or deliverable in the confirmed Prompt Pseudocode, the Response Plan MUST represent it with a high-level operation or cover it unambiguously with a broader operation.\n"
+    "PLAN-02 — Minimum sufficient procedure: The Response Plan MUST expose only enough procedure for the user to reject a materially undesirable response approach.\n"
+    "PLAN-03 — Neutrality: The Response Plan MUST remain neutral and high-level.\n"
+    "PLAN-04 — No answer leakage: The Response Plan MUST NOT answer the request, anticipate findings, choose winners, invent hypotheses, lock arguments, preselect substantive conclusions, or otherwise perform the requested task.\n"
+    "PLAN-05 — No unnecessary implementation commitment: The Response Plan MUST NOT choose unrequired sources or over-specify evidence, examples, calculations, sections, or low-level reasoning.\n"
+    "PLAN-06 — No substantive research: Response Plan generation MUST NOT research the substantive task.\n"
+    "PLAN-07 — Revision semantics: A Plan revision MUST keep the confirmed Prompt fixed, apply only changed TASK-02 semantics, and preserve PLAN-01 through PLAN-03.\n"
+    "PLAN-08 — Carried approach constraints: When ordered TASK-02 projections are supplied to a Plan operation, the Response Plan MUST incorporate their operative approach constraints while remaining consistent with the confirmed Prompt and the other Plan requirements.\n"
+    "PLAN-10 — Negative constraint operationalization by omission: When Prompt Pseudocode specifies negative constraints, exclusions, or unhandled conditions (e.g. 'do not do X', 'let unhandled exceptions propagate'), the Response Plan MUST operationalize them as structural omission rather than defensive assertions, catch-all wrappers, or redundant re-raises. In programming deliverables, native platform propagation and runtime defaults MUST be relied upon without generating active procedural steps for unrequested conditions.\n\n"
+    "OPERATIONAL GUIDELINES FOR RESPONSE PLAN DRAFTING:\n"
+    "1. Express the response plan in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
+    "2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n"
+    "3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n"
+    "4. Active Construction: Plan the concrete procedural steps that produce the deliverable itself (e.g. data structure design, method implementations, algorithm logic, unit test suite). Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue.\n"
+    "5. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04). PLAN-04 is a planner-time constraint and MUST NEVER be projected into an execution-time prohibition. The Plan MUST specify procedures that compute and produce the requested concrete deliverable upon execution. NEVER insert placeholder steps, evasive notes, or meta-prohibitions commanding execution to avoid calculating, omit concrete values, or withhold the answer (e.g. do not write 'without calculating or outputting a concrete result', 'insert placeholders without performing computation', 'do not implement', 'do not provide actual values', or 'contains no executable code') (PLAN-04, PLAN-10, PDL-08, PDL-09)."
+)
 
 def _default_provider_order() -> list[str]:
     env_order = os.environ.get("OPENROUTER_PROVIDER_ORDER")
@@ -94,6 +157,25 @@ DEFAULT_PROVIDER_PINNING: dict[str, Any] = {
     "allow_fallbacks": True,
 }
 
+# Model families whose request settings were recorded with their runs (L122): the provider order above and
+# JSON mode at EXECUTE (IMPL-0001's whitespace stall; IMPL-0003 keeps gpt-oss's EXECUTE on json). Any other
+# model gets no provider order unless one is configured, and its output format from OpenRouter's metadata.
+RECORDED_REQUEST_FAMILIES = ("gpt-oss", "nemotron-3-super")
+
+
+def _recorded_family(model: str) -> bool:
+    return any(family in model.lower() for family in RECORDED_REQUEST_FAMILIES)
+
+
+def _env_pinning() -> dict[str, Any] | None:
+    """A provider order set in the environment: a user setting, applied to every model."""
+    if os.environ.get("OPENROUTER_PROVIDER_ORDER") or os.environ.get("OPENROUTER_PROVIDER"):
+        return {"order": _default_provider_order(), "allow_fallbacks": True}
+    return None
+
+
+# Gemini's harm categories. Not a Responses API parameter (OpenRouter's OpenAPI spec) and in no model's
+# supported_parameters; sent only when configured (L122, IMPL-0002's parameter filter).
 DEFAULT_SAFETY_SETTINGS: list[dict[str, str]] = [
     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
     {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -133,9 +215,10 @@ _SCHEMA_REJECTED_OPERATIONS: dict[str, frozenset[str]] = {
     "groq": frozenset({"EXECUTE", "EMIT_RESULT_IR"}),
 }
 
-# Operations sent in JSON mode (no schema) whatever the provider: under the EXECUTE
-# schema Nemotron stalled in whitespace before closing result_ir (IMPL-0001); without
-# it the same request completed 14/14. Moves to the per-stage profile (IMPL-0003).
+# The EXECUTE operations. The recorded families (RECORDED_REQUEST_FAMILIES) send them in JSON mode: under
+# the EXECUTE schema Nemotron stalled in whitespace before closing result_ir (IMPL-0001); without it the same
+# request completed 14/14. Any other model gets the strict schema when its metadata lists structured_outputs
+# (L122).
 JSON_MODE_OPERATIONS = frozenset({"EXECUTE", "EXECUTE_UNCONFIRMED"})
 
 
@@ -352,13 +435,16 @@ class ApiWorker:
         max_output_tokens: int | None = 16384,
         max_repairs: int | None = None,
         draft_execute: bool = False,
-        tier_d1: bool = True,
+        agent_tools: bool = False,
+        representation: str = "pdl",
+        tier_d1: bool | None = None,
         capture_tokens: bool = True,
         reasoning_effort: str | None = None,
         reasoning_by_operation: dict[str, str] | None = None,
         model_by_operation: dict[str, str] | None = None,
         reorder_keys_for_cache: bool = False,
         structured_output: bool = True,
+        capability_check: bool = True,
         provider_pinning: dict[str, Any] | None = None,
         safety_settings: list[dict[str, str]] | None = None,
         max_tokens: int = 4096,
@@ -377,7 +463,10 @@ class ApiWorker:
         self.max_output_tokens = int(max_output_tokens) if max_output_tokens else None
         self.max_repairs = max_repairs  # run setting read by the host (0 = stop at the first failure)
         self.draft_execute = draft_execute  # run setting read by the host (A/B option)
-        self.tier_d1 = bool(tier_d1 and os.environ.get("PDLT_TIER_D1", "1") == "1")  # run setting read by the host (Tier D1 advantage mechanism)
+        self.agent_tools = agent_tools  # ADR-0029: run the in-call tool loop for requests that carry tools
+        self.representation = representation  # run setting read by the host (representation.py, L97)
+        # run setting read by the host (Tier D1): an explicit value wins, $PDLT_TIER_D1 (default on) is only the default
+        self.tier_d1 = (os.environ.get("PDLT_TIER_D1", "1") == "1") if tier_d1 is None else bool(tier_d1)
         self.capture_tokens = capture_tokens
         # An explicit effort applies to every operation (per-operation flags still
         # win); the per-model mapping is the default only when none is given.
@@ -389,8 +478,14 @@ class ApiWorker:
         self.model_by_operation = dict(model_by_operation or {})
         self.reorder_keys_for_cache = reorder_keys_for_cache
         self.structured_output = structured_output
-        self.provider_pinning = provider_pinning if provider_pinning is not None else dict(DEFAULT_PROVIDER_PINNING)
-        self.safety_settings = safety_settings if safety_settings is not None else list(DEFAULT_SAFETY_SETTINGS)
+        # L122: before its first call, each model's supported parameters are checked against what the
+        # session will send it (providers/model_capabilities.py).
+        self.capability_check = capability_check
+        self._checked_models: set[str] = set()
+        self._model_entries: dict[str, dict[str, Any]] = {}  # OpenRouter's metadata per model, once read
+        # None: each model's own order (pinning_for); a configured order applies to every model.
+        self._configured_pinning = provider_pinning if provider_pinning is not None else _env_pinning()
+        self.safety_settings = list(safety_settings) if safety_settings is not None else []
         self.on_progress = on_progress
         self.progress_path = Path(progress_path) if progress_path else None
         # Call lifecycle (providers/call_trace.py): the call in flight, the recent ones,
@@ -470,6 +565,45 @@ class ApiWorker:
             raise TransportError(f"could not resolve {self.api_key_env}: {detail}")
         return key
 
+    @property
+    def provider_pinning(self) -> dict[str, Any]:
+        """The provider preferences for the session's model (dev commands and the control route read it)."""
+        return self.pinning_for(self.model)
+
+    @provider_pinning.setter
+    def provider_pinning(self, value: dict[str, Any] | None) -> None:
+        self._configured_pinning = value
+
+    def pinning_for(self, model: str) -> dict[str, Any]:
+        """A configured order for every model; otherwise the order recorded with the model's family; otherwise
+        none, so OpenRouter routes by its own defaults (L122)."""
+        if self._configured_pinning is not None:
+            return dict(self._configured_pinning)
+        return dict(DEFAULT_PROVIDER_PINNING) if _recorded_family(model) else {}
+
+    def _model_entry(self, model: str) -> dict[str, Any] | None:
+        """OpenRouter's metadata for ``model``: read with the capability check, or here when a request is built
+        first. None when it is not checked (another endpoint, the check off) or cannot be read; the capability
+        check then fails the call closed."""
+        if model in self._model_entries:
+            return self._model_entries[model]
+        if not self.capability_check or not model_capabilities.is_openrouter(self.base_url):
+            return None
+        try:
+            entry = model_capabilities.lookup(model_capabilities.model_list(self.base_url, self.timeout), model)
+        except (OSError, ValueError):
+            return None
+        if entry is not None:
+            self._model_entries[model] = entry
+        return entry
+
+    def _output_cap(self, model: str) -> int | None:
+        """PDLt's output cap per response, no higher than the model's listed maximum (L122)."""
+        listed = ((self._model_entry(model) or {}).get("top_provider") or {}).get("max_completion_tokens")
+        if self.max_output_tokens and isinstance(listed, int) and listed > 0:
+            return min(self.max_output_tokens, listed)
+        return self.max_output_tokens
+
     def _reasoning_for(self, operation: str | None) -> str | int | None:
         """Per-operation effort wins over the global default; 'none' disables reasoning."""
         if operation is not None and operation in self.reasoning_by_operation:
@@ -486,18 +620,85 @@ class ApiWorker:
         """How this worker constrains an operation's output (ADR-0028 rules 1 and 5):
         the grammar mode and the schema form, from the configured providers. The
         host shows the model its output schema in this same form."""
-        keys = _order_keys(self.provider_pinning)
+        model = self._model_for(operation)
+        pinning = self.pinning_for(model)
+        keys = _order_keys(pinning)
         if (not self.structured_output or operation is None or operation in _SEMANTIC_READ_OPERATIONS
                 or operation in self.unconstrained_operations or contract_schema(operation) is None):
             grammar = "none"
-        elif operation in JSON_MODE_OPERATIONS or any(
+        elif (operation in JSON_MODE_OPERATIONS and _recorded_family(model)) or any(
                 operation in _SCHEMA_REJECTED_OPERATIONS.get(key, frozenset()) for key in keys):
             grammar = "json"
         else:
-            grammar = "schema"
+            # L122: what the model's metadata lists (ADR-0028 rule 5: adapted to, never excluded). Unknown
+            # metadata keeps the earlier forms: JSON mode at EXECUTE, the schema elsewhere.
+            supported = (self._model_entry(model) or {}).get("supported_parameters")
+            if supported is None:
+                grammar = "json" if operation in JSON_MODE_OPERATIONS else "schema"
+            elif "structured_outputs" in supported:
+                grammar = "schema"
+            else:
+                grammar = "json" if "response_format" in supported else "none"
         return ContractForm(grammar=grammar,
                             strict_all_required=bool(keys & _STRICT_ALL_REQUIRED_PROVIDERS),
-                            free_form_objects=_accepts_free_form_objects(self.provider_pinning))
+                            free_form_objects=_accepts_free_form_objects(pinning))
+
+    def session_needs(self) -> dict[str, dict[str, list[str]]]:
+        """Every request parameter this session may send, per model, with the operations that send it:
+        reasoning (an effort other than 'none'), the output format, and tools under --agent-tools."""
+        from pdl_taskmaster.runtime.agent_tools import TOOL_OPERATIONS
+        from pdl_taskmaster.runtime.wire_payloads import OPERATION_PAYLOAD_MODELS
+
+        operations = sorted(set(OPERATION_PAYLOAD_MODELS) | {"BYPASS_ORDINARY"} | set(self.reasoning_by_operation)
+                            | set(self.model_by_operation))
+        needs: dict[str, dict[str, list[str]]] = {}
+        for operation in operations:
+            wanted = []
+            if self._reasoning_for(operation) not in (None, "none"):
+                wanted.append("reasoning")
+            fmt = model_capabilities.FORMAT_PARAMETERS.get(self.contract_form(operation).grammar)
+            if fmt:
+                wanted.append(fmt)
+            if self.agent_tools and operation in TOOL_OPERATIONS:
+                wanted.append("tools")
+            for parameter in wanted:
+                needs.setdefault(self._model_for(operation), {}).setdefault(parameter, []).append(operation)
+        return needs
+
+    def _check_capabilities(self, operation: str | None) -> None:
+        """Fail closed before the first call to each model (L122): the model must be in OpenRouter's list and
+        support every parameter the session will send it. Nothing is sent when it does not."""
+        if not self.capability_check or not model_capabilities.is_openrouter(self.base_url):
+            return
+        from pdl_taskmaster.runtime.wire_payloads import OPERATION_PAYLOAD_MODELS
+
+        names = {self._model_for(op) for op in set(OPERATION_PAYLOAD_MODELS) | set(self.model_by_operation)}
+        pending = sorted((names | {self._model_for(operation)}) - self._checked_models)
+        if not pending:
+            return
+        try:
+            models = model_capabilities.model_list(self.base_url, self.timeout)
+        except (OSError, ValueError) as exc:
+            raise ProviderError("MODEL_CAPABILITY_UNKNOWN",
+                                f"could not read OpenRouter's model list to check {', '.join(pending)} "
+                                f"({exc}); no request was sent", operation=operation) from exc
+        problems = []
+        for name in pending:
+            entry = model_capabilities.lookup(models, name)
+            if entry is None:
+                problems.append(f"{name} is not in OpenRouter's model list; check the model name")
+            else:
+                self._model_entries[name] = entry
+        needs = self.session_needs()  # the output formats follow the metadata just read
+        for name in pending:
+            if name in self._model_entries:
+                problems += [model_capabilities.describe(name, parameter, ops) for parameter, ops
+                             in sorted(model_capabilities.unsupported(self._model_entries[name],
+                                                                      needs.get(name, {})).items())]
+        if problems:
+            raise ProviderError("MODEL_UNSUPPORTED", "; ".join(problems) + ". No request was sent.",
+                                operation=operation)
+        self._checked_models.update(pending)
 
     def _split_prompt(self, prompt: str) -> tuple[str, str]:
         """Split a rendered request.prompt back into (instructions, input).
@@ -676,6 +877,7 @@ class ApiWorker:
     def call(self, request: Any) -> WorkerResult:
         trace = self.begin_call(str(getattr(request, "operation", None) or "UNKNOWN"))
         try:
+            self._check_capabilities(getattr(request, "operation", None))
             result = self._call(request)
             trace.final = "completed"
             return result
@@ -802,66 +1004,17 @@ class ApiWorker:
             # direct reply claimed "I cannot execute code" in a session that runs it.
             extra_guidance = "Execution environment of this session (host fact): " + request.environment
         elif operation_name in ("DRAFT_PROMPT", "REVISE_PROMPT"):
-            extra_guidance = (
-                "\n\nNORMATIVE GUIDELINES AND SPECIFICATION FOR PROMPT PSEUDOCODE (PDL-01 to PDL-09, PROMPT-01 to PROMPT-05):\n"
-                "PDL-01 — Structured English: Pseudocode MUST use readable structured English compatible with the project PDL profile.\n"
-                "PDL-02 — Operation layout: Each operation SHOULD appear on its own line; equally indented operations are read top to bottom; subordinate operations are indented beneath the operation that controls or qualifies them.\n"
-                "PDL-03 — Domain terminology: Pseudocode MUST use task-domain terminology rather than invent a separate task schema.\n"
-                "PDL-04 — Action/control casing: Common action verbs and control keywords MAY be uppercased when helpful for readability.\n"
-                "PDL-05 — No invented field schema: Pseudocode MUST NOT invent a fielded protocol schema.\n"
-                "PDL-06 — Prefer ordinary structured English: Pseudocode MUST NOT imitate programming syntax when ordinary structured English is clearer.\n"
-                "PDL-07 — Standard control forms: Standard-compatible IF/ELSE/ENDIF, WHILE/ENDWHILE, REPEAT/UNTIL, FOR/ENDFOR, and CASE/ENDCASE forms MAY be used when useful.\n"
-                "PDL-08 — Purpose-complete notation: Prompt and Response Plan Pseudocode MUST be complete for their protocol purpose without artificial expansion into implementation algorithms.\n"
-                "PDL-09 — Imperative construction and ingestion boundary: Prompt and Response Plan Pseudocode MUST NOT use data-reading verbs (READ, PARSE, ANALYZE, EXAMINE) with the user prompt, request, or task specification as the object. When the request asks to implement, create, or write software, pseudocode MUST retain active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and target language directives. READ MUST be reserved strictly for explicit runtime stream or file ingestion.\n"
-                "PROMPT-01 — Semantic fidelity: Prompt Pseudocode MUST represent all and only operative TASK-01 semantics that remain applicable to the requested work after the confirmation protocol is complete.\n"
-                "PROMPT-02 — No substantive solution: Prompt Pseudocode MUST NOT solve the task, research task facts, inspect task-specific resources, plan the response, or include substantive task findings.\n"
-                "PROMPT-03 — No invented requirements: Prompt Pseudocode MUST NOT invent missing requirements or silently improve the user's request.\n"
-                "PROMPT-04 — Unspecified details: If a detail is unspecified, Prompt Pseudocode MUST represent the request as currently understood. Prompt generation MUST NOT be replaced with clarification unless a higher-priority requirement makes the missing input genuinely blocking.\n"
-                "PROMPT-05 — Revision semantics: A Prompt revision MUST apply the user's changed TASK-01 semantics and preserve every current TASK-01 requirement not changed by the user.\n\n"
-                "OPERATIONAL GUIDELINES FOR PROMPT DRAFTING:\n"
-                "1. Express the prompt in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
-                "2. Active Construction Directives (PDL-09): When the user asks to implement, write, develop, or create software, data structures, algorithms, or tests, use active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and preserve the target language (e.g., 'in Python') and interface contracts.\n"
-                "3. No Metatask Ingestion (PDL-09): DO NOT use 'READ the task specification' or 'READ the request'. The user prompt is the communicative frame, not a runtime data stream to be read.\n"
-                "4. Parameter vs. Stream Discrimination (PDL-09): Use READ strictly for explicit runtime stream or file ingestion. Represent function parameters, mathematical constants, and data structure inputs as parameters to accept or take, not streams to read.\n"
-                "5. Layout: Each distinct operation or requirement MUST appear on its own line (PDL-02).\n"
-                "6. No Invented Field Schemas: DO NOT use fielded prefixes like 'TASK:', 'OUTPUT:', 'INPUT:', 'INCLUDE:', 'CONSTRAINTS:' (PDL-05). State each operation directly.\n"
-                "7. Zero Execution Prohibitions & Substantive Delivery: Prompt Pseudocode defines the substantive deliverable to be produced upon execution (PROMPT-01). PROMPT-02 means that Prompt Pseudocode itself does not leak or pre-solve the problem during drafting; it is an author-time constraint and MUST NEVER be projected into an execution-time prohibition. Prompt Pseudocode MUST specify that execution computes, solves, and produces the requested concrete solutions, entities, and outputs in full. NEVER command execution to omit, evade, placeholderize, or avoid computing the requested solution (e.g. do not write 'without providing actual entity names', 'without computing a specific coloring solution', 'provide only specification', 'do not compute', 'insert placeholders', or 'no executable code') (PROMPT-01, PROMPT-02, PDL-08, PDL-09)."
-            )
+            extra_guidance = nl_prompt_guidance(_PROMPT_GUIDANCE) if _nl_mode(request) else _PROMPT_GUIDANCE
         elif operation_name in ("DRAFT_PLAN", "REVISE_PLAN"):
-            extra_guidance = (
-                "\n\nNORMATIVE GUIDELINES AND SPECIFICATION FOR RESPONSE PLAN PSEUDOCODE (PDL-01 to PDL-09, PLAN-01 to PLAN-10):\n"
-                "PDL-01 — Structured English: Pseudocode MUST use readable structured English compatible with the project PDL profile.\n"
-                "PDL-02 — Operation layout: Each operation SHOULD appear on its own line; equally indented operations are read top to bottom; subordinate operations are indented beneath the operation that controls or qualifies them.\n"
-                "PDL-03 — Domain terminology: Pseudocode MUST use task-domain terminology rather than invent a separate task schema.\n"
-                "PDL-04 — Action/control casing: Common action verbs and control keywords MAY be uppercased when helpful for readability.\n"
-                "PDL-05 — No invented field schema: Pseudocode MUST NOT invent a fielded protocol schema.\n"
-                "PDL-06 — Prefer ordinary structured English: Pseudocode MUST NOT imitate programming syntax when ordinary structured English is clearer.\n"
-                "PDL-07 — Standard control forms: Standard-compatible IF/ELSE/ENDIF, WHILE/ENDWHILE, REPEAT/UNTIL, FOR/ENDFOR, and CASE/ENDCASE forms MAY be used when useful.\n"
-                "PDL-08 — Purpose-complete notation: Prompt and Response Plan Pseudocode MUST be complete for their protocol purpose without artificial expansion into implementation algorithms.\n"
-                "PDL-09 — Imperative construction and ingestion boundary: Prompt and Response Plan Pseudocode MUST NOT use data-reading verbs (READ, PARSE, ANALYZE, EXAMINE) with the user prompt, request, or task specification as the object. When the request asks to implement, create, or write software, pseudocode MUST retain active construction verbs (IMPLEMENT, CONSTRUCT, DEFINE) and target language directives. READ MUST be reserved strictly for explicit runtime stream or file ingestion.\n"
-                "PLAN-01 — Coverage before minimization: For each material action or deliverable in the confirmed Prompt Pseudocode, the Response Plan MUST represent it with a high-level operation or cover it unambiguously with a broader operation.\n"
-                "PLAN-02 — Minimum sufficient procedure: The Response Plan MUST expose only enough procedure for the user to reject a materially undesirable response approach.\n"
-                "PLAN-03 — Neutrality: The Response Plan MUST remain neutral and high-level.\n"
-                "PLAN-04 — No answer leakage: The Response Plan MUST NOT answer the request, anticipate findings, choose winners, invent hypotheses, lock arguments, preselect substantive conclusions, or otherwise perform the requested task.\n"
-                "PLAN-05 — No unnecessary implementation commitment: The Response Plan MUST NOT choose unrequired sources or over-specify evidence, examples, calculations, sections, or low-level reasoning.\n"
-                "PLAN-06 — No substantive research: Response Plan generation MUST NOT research the substantive task.\n"
-                "PLAN-07 — Revision semantics: A Plan revision MUST keep the confirmed Prompt fixed, apply only changed TASK-02 semantics, and preserve PLAN-01 through PLAN-03.\n"
-                "PLAN-08 — Carried approach constraints: When ordered TASK-02 projections are supplied to a Plan operation, the Response Plan MUST incorporate their operative approach constraints while remaining consistent with the confirmed Prompt and the other Plan requirements.\n"
-                "PLAN-10 — Negative constraint operationalization by omission: When Prompt Pseudocode specifies negative constraints, exclusions, or unhandled conditions (e.g. 'do not do X', 'let unhandled exceptions propagate'), the Response Plan MUST operationalize them as structural omission rather than defensive assertions, catch-all wrappers, or redundant re-raises. In programming deliverables, native platform propagation and runtime defaults MUST be relied upon without generating active procedural steps for unrequested conditions.\n\n"
-                "OPERATIONAL GUIDELINES FOR RESPONSE PLAN DRAFTING:\n"
-                "1. Express the response plan in clean Structured English using uppercase action verbs (PDL-01, PDL-04).\n"
-                "2. Layout: Each step MUST appear on its own line (PDL-02). DO NOT invent prefixes like 'STEP 1:', 'ACTION:', 'RESULT:' (PDL-05).\n"
-                "3. Procedure to Deliverable: Specify the high-level procedural steps to execute and compute the concrete deliverable (PLAN-01, PLAN-02).\n"
-                "4. Active Construction: Plan the concrete procedural steps that produce the deliverable itself (e.g. data structure design, method implementations, algorithm logic, unit test suite). Do not plan steps that ask the user for input unless the prompt requests an interactive dialogue.\n"
-                "5. Neutrality & No Placeholders: Do not leak substantive answers into the plan (PLAN-04). PLAN-04 is a planner-time constraint and MUST NEVER be projected into an execution-time prohibition. The Plan MUST specify procedures that compute and produce the requested concrete deliverable upon execution. NEVER insert placeholder steps, evasive notes, or meta-prohibitions commanding execution to avoid calculating, omit concrete values, or withhold the answer (e.g. do not write 'without calculating or outputting a concrete assignment', 'insert placeholders without performing computation', 'do not implement', 'do not provide actual names', or 'contains no executable code') (PLAN-04, PLAN-10, PDL-08, PDL-09)."
-            )
+            extra_guidance = nl_plan_guidance(_PLAN_GUIDANCE) if _nl_mode(request) else _PLAN_GUIDANCE
         elif operation_name == "DRAFT_EXECUTE":
             extra_guidance = (
-                "\n\nDRAFT_EXECUTE: write an execution brief in plain text (brief_body): algorithmic choice, "
-                "data structures, and estimated step count against the step budget in AVAILABLE_EXECUTION_TOOLS. "
-                "Do not draft witness payloads, delivery markers, or hypothetical outcome branches; focus strictly "
-                "on computational feasibility. The brief is passed to the EXECUTE call that follows; do not write the "
-                "deliverable here."
+                "\n\nDRAFT_EXECUTE: write the execution brief in the output schema's fields, for these exact inputs "
+                "and the environment in AVAILABLE_EXECUTION_TOOLS: approach (your method, in the order it runs), "
+                "data_structures, step_estimate (count iterations from the input sizes the task gives), "
+                "invariants, self_checks, and execution_entities (exact strings copied from the task). The validated "
+                "brief is passed to the EXECUTE call that follows. Do not write code, the deliverable, witness "
+                "payloads or hypothetical outcome branches here."
             )
         elif operation_name == "EXECUTE":
             extra_guidance = (
@@ -886,8 +1039,9 @@ class ApiWorker:
             body["instructions"] = instructions + extra_guidance
         elif extra_guidance:
             body["instructions"] = extra_guidance.strip()
-        if self.max_output_tokens:
-            body["max_output_tokens"] = self.max_output_tokens
+        cap = self._output_cap(body["model"])
+        if cap:
+            body["max_output_tokens"] = cap
         effort = self._reasoning_for(getattr(request, "operation", None))
         if effort == "none":
             body["reasoning"] = {"enabled": False}
@@ -897,8 +1051,9 @@ class ApiWorker:
             else:
                 body["reasoning"] = {"effort": effort}
 
-        if self.provider_pinning:
-            body["provider"] = self.provider_pinning
+        pinning = self.pinning_for(body["model"])
+        if pinning:
+            body["provider"] = pinning
         if self.safety_settings:
             body["safety_settings"] = self.safety_settings
 
@@ -911,7 +1066,13 @@ class ApiWorker:
             shown = (getattr(getattr(request, "projection", None), "document", None) or {}).get("output_schema")
             sent_schema = grammar_view(shown) if shown is not None else grammar_schema(operation_name, form)
             union_wrapped = is_union_wrapped(sent_schema)
+            sent_schema = model_adapters.adapt_sent_schema(body["model"], sent_schema)  # L122: per-model only
             body["text"] = {"format": {"type": "json_schema", "name": output_kind, "schema": sent_schema}}
+            if operation_name in JSON_MODE_OPERATIONS:
+                # L122: chosen from the model's metadata, so enforced exactly where the provider has a strict mode.
+                body["text"]["format"]["strict"] = True
+            # Only endpoints that support every parameter sent, so a fallback cannot drop the schema (L122).
+            body["provider"] = {**body.get("provider", {}), "require_parameters": True}
         elif form.grammar == "json":
             body["text"] = {"format": {"type": "json_object"}}
 
@@ -1030,6 +1191,8 @@ class ApiWorker:
                     pass
 
         body, union_wrapped, effort = self.build_request_body(request)
+        if self.agent_tools and getattr(request, "tools", None) is not None:
+            return self._tool_loop_call(request, body, union_wrapped, effort)
 
         api_key = self._resolve_api_key()
         req = self._responses_request(body, api_key)
@@ -1076,7 +1239,9 @@ class ApiWorker:
                     self._progress(f"{operation_name}: the reply stalled in whitespace under the output schema "
                                    f"({trailing} trailing characters); later {operation_name} calls in this "
                                    "session are sent without the schema constraint")
-                raise OutputLimitError(self.max_output_tokens, partial_text=partial or None, whitespace_stall=stall)
+                # The cap this request carried (L122: no higher than the model's listed maximum).
+                raise OutputLimitError(body.get("max_output_tokens"), partial_text=partial or None,
+                                       whitespace_stall=stall)
             raise ProviderError("PROVIDER_RESPONSE_UNREADABLE", f"response status={status}: {details}")
 
         text = self._extract_output_text(data)
@@ -1128,6 +1293,54 @@ class ApiWorker:
             metadata["usage_exact"] = True
         return WorkerResult(text, metadata)
 
+    def _tool_loop_call(self, request: Any, body: dict[str, Any], union_wrapped: bool, effort: Any) -> WorkerResult:
+        """ADR-0029: the call as an in-call tool loop (runtime/agent_tools.py) ending in a validated submission.
+        Each provider round is a normal request; the engine verifies the returned reply as any reply."""
+        from pdl_taskmaster.runtime.agent_tools import run_loop
+
+        api_key = self._resolve_api_key()
+        started = time.perf_counter()
+        deadline = time.monotonic() + self.max_call_seconds * 3  # several rounds share one call's deadline
+        observed: dict[str, Any] = {}
+
+        def send(round_body: dict[str, Any]) -> dict[str, Any]:
+            data = self._send_json_with_retries(self._responses_request(round_body, api_key), deadline)
+            if data.get("error"):
+                raise ProviderError("PROVIDER_REJECTED_REQUEST", f"provider reported an error: {data['error']}")
+            self._record_reply(data, schema_constrained=False)
+            observed.update(model=data.get("model"), response_id=data.get("id"))
+            return data
+
+        try:
+            projection = json.JSONDecoder().raw_decode(body["input"])[0]
+        except (ValueError, TypeError):
+            projection = {}
+        schema = projection.get("output_schema") if isinstance(projection, dict) else None
+        text, summary = run_loop(body, send, request.tools, outcome_schema=schema)
+        if not text:
+            raise ProviderError("PROVIDER_RESPONSE_UNREADABLE", "tool loop: no reply")
+        if union_wrapped and summary["final"] == "formatted":
+            text = _unwrap_union_reply(text)
+        metadata: dict[str, Any] = {
+            "worker": "api",
+            "model": self.model,
+            "observed_model": observed.get("model"),
+            "mode": "live-api",
+            "reasoning_effort": effort if effort is not None else "provider_default",
+            "operation": getattr(request, "operation", None),
+            "not_a_qualified_measurement_condition": True,
+            "base_url": self.base_url,
+            "response_id": observed.get("response_id"),
+            "latency_ms": round((time.perf_counter() - started) * 1000.0, 3),
+            "token_telemetry": "enabled" if self.capture_tokens else "disabled",
+            "tool_loop": {k: v for k, v in summary.items() if k != "usage"},
+        }
+        if self.capture_tokens:
+            metadata["usage"] = dict(summary["usage"])
+            metadata["usage_source"] = "responses_api"
+            metadata["usage_exact"] = True
+        return WorkerResult(text, metadata)
+
     def _record_reply(self, data: dict[str, Any], *, schema_constrained: bool) -> None:
         """What the API reported for the call in flight (call-trace.jsonl): the
         response id (OpenRouter's generation id, for its TTFT and provider), status,
@@ -1153,6 +1366,7 @@ class ApiWorker:
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
+                **ATTRIBUTION_HEADERS,
             },
             method="POST",
         )
@@ -1217,7 +1431,10 @@ class ApiWorker:
                 error = exc
         self._progress("every configured provider rejected the output against the schema; "
                        "retrying once without the schema constraint")
-        trial = {key: value for key, value in body.items() if key != "text"}
+        trial = {key: value for key, value in body.items() if key not in ("text", "provider")}
+        provider = {k: v for k, v in (body.get("provider") or {}).items() if k != "require_parameters"}
+        if provider:
+            trial["provider"] = provider
         req = self._responses_request(trial, api_key)
         try:
             return self._send_json_with_retries(req, deadline), req, False

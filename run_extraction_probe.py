@@ -7,7 +7,7 @@ git worktree at an earlier commit) can be compared on the same prompts.
 
     python run_extraction_probe.py --label head
     python run_extraction_probe.py --root ../PDLt-armA --label original --workers 6
-    python run_extraction_probe.py --compare catalogue-runs/extraction-probe-a catalogue-runs/extraction-probe-b
+    python run_extraction_probe.py --compare <runs>/extraction-probe-a <runs>/extraction-probe-b
 
 Measures, per prompt (the metrics never see harness code):
 - literal_recall: of the request's literal tokens (numbers, quoted strings, code-like
@@ -31,6 +31,8 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
 MANIFEST = ROOT / "prompts" / "CATALOGUE_MANIFEST.jsonl"
 
 # Critical items a faithful prompt pseudocode must keep (a regex each, case-insensitive).
@@ -64,9 +66,11 @@ def run_one(root: Path, entry: dict, out: Path) -> dict:
     prompt_file = ROOT / "prompts" / entry["file"]
     workspace = out / "sessions" / entry["id"]
     env = {**os.environ, "PYTHONUTF8": "1", "PYTHONPATH": str(root / "src")}
+    # The probe stops at the prompt review. Trees from before L94 review by default and have no --review flag.
+    review = ["--review"] if '"--review"' in (root / "src/pdl_taskmaster/host/repl.py").read_text(encoding="utf-8") else []
     proc = subprocess.run(
         [sys.executable, "-m", "pdl_taskmaster.host.repl", "--candidate-repo", str(root), "--worker", "api",
-         "--non-interactive", "--new-session", "--workspace-root", str(workspace), "--prompt-file", str(prompt_file)],
+         "--non-interactive", *review, "--new-session", "--workspace-root", str(workspace), "--prompt-file", str(prompt_file)],
         cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=900, env=env,
         stdin=subprocess.DEVNULL,
     )
@@ -179,7 +183,7 @@ def main() -> int:
     if args.ids:
         wanted = set(args.ids.split(","))
         entries = [e for e in entries if e["id"] in wanted]
-    out = ROOT / "catalogue-runs" / f"extraction-probe-{args.label}-{datetime.now():%Y%m%d-%H%M%S}"
+    out = RUNS_DIR / f"extraction-probe-{args.label}-{datetime.now():%Y%m%d-%H%M%S}"
     out.mkdir(parents=True)
     root = args.root.resolve()
     with ThreadPoolExecutor(max_workers=args.workers) as pool:

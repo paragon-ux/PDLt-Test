@@ -168,3 +168,23 @@ class TestSys1Client:
             body, duration_ms = client.call(req)
             assert duration_ms >= 0.0
             assert body["answers"]["route"]["choice"] == "APPLY_PROTOCOL"
+
+
+class TestBinaryEntropy:
+    """The two-outcome entropy shared by the recipes that gate on a binary question."""
+
+    def test_known_values(self):
+        from pdl_taskmaster.providers.sys1.gating import binary_entropy
+
+        assert binary_entropy(0.5) == pytest.approx(1.0)
+        assert binary_entropy(0.9) == pytest.approx(0.4690, abs=1e-4)
+        assert binary_entropy(0.9) == pytest.approx(binary_entropy(0.1))
+
+    def test_both_recipes_use_it_for_their_ceiling(self):
+        from pdl_taskmaster.providers.sys1.gating import binary_entropy
+        from pdl_taskmaster.providers.sys1.recipes import plan_advancement, prompt_fidelity
+
+        for module in (plan_advancement, prompt_fidelity):
+            assert module._BINARY_ENTROPY_CEILING == pytest.approx(
+                binary_entropy((1 + module.CONFIDENCE_FLOOR) / 2) + 1e-9)
+            assert not hasattr(module, "_binary_entropy")

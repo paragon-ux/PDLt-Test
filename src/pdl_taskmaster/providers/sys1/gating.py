@@ -17,6 +17,11 @@ DEFAULT_MARGIN_FLOOR: float = 0.40
 DEFAULT_ENTROPY_CEILING: float = 0.35
 
 
+def binary_entropy(p: float) -> float:
+    """Shannon entropy, in bits, of a two-outcome distribution with probabilities p and 1 - p."""
+    return -(p * math.log2(p) + (1 - p) * math.log2(1 - p))
+
+
 @dataclass(frozen=True)
 class GatingResult:
     """Outcome of evaluating the tripartite confidence gate."""

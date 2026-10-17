@@ -10,7 +10,7 @@ over the prompts a machine grader decides (PASS or FAIL). The baseline only says
 what the shipped protocol achieved on these runs, graded the same way the gate
 will grade. It decides nothing.
 
-    python -m experiments.baseline catalogue-runs/run-20261002-012111 [more run dirs]
+    python -m experiments.baseline <runs>/run-20261002-012111 [more run dirs]
 """
 from __future__ import annotations
 

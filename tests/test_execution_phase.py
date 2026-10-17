@@ -64,6 +64,8 @@ def _run(tmp_path, execute_replies: list[dict], *, problem_class: str = "STANDAR
         if req.operation == "DRAFT_PLAN":
             return json.dumps({"neutral_plan_body": PLAN})
         if req.operation == "EXECUTE":
+            if not replies:  # a scripted attempt failed on this host: say what the host found
+                raise AssertionError("EXECUTE was asked again; its correction: " + req.prompt[-1200:])
             reply = replies.pop(0)
             return reply if isinstance(reply, str) else json.dumps(reply)
         raise AssertionError(f"unexpected operation {req.operation}")
@@ -189,15 +191,16 @@ def test_sandbox_witness_is_authoritative(tmp_path):
     assert published["witness"]["provisional"] is False
 
 
-def test_unreproduced_witness_is_provisional(tmp_path):
+def test_unreproduced_positive_witness_is_not_printed(tmp_path):
+    """L104: a positive witness written only into the Result IR certifies nothing; it is
+    WITNESS_NOT_PRINTED, as an undeclared witness is (it was a provisional pass, exit 0)."""
     asserted = {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"answer": 9}}
-    engine, _, _, events = _run(
-        tmp_path, [{"kind": "RESULT", "body": "The answer is 9.", "result_ir": _ir(asserted)}],
-        problem_class="VERIFIED_EXECUTION",
-    )
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
-    passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
-    assert passed["provisional"] and not passed["sandbox_reproduced"]
+    reply = {"kind": "RESULT", "body": "The answer is 9.", "result_ir": _ir(asserted)}
+    engine, _, executes, events = _run(tmp_path, [reply] * 3, problem_class="VERIFIED_EXECUTION")
+    assert len(executes) == 3 and engine.controller.state.stage == Stage.CLOSED_CANCELLED
+    assert "VERIFICATION_PASSED" not in _kinds(events)
+    failed = next(e for e in events if e["kind"] == "VERIFICATION_FAILED")["payload"]
+    assert "WITNESS_NOT_PRINTED" in failed["codes"]
 
 
 def test_provisional_result_is_published_with_a_host_note(tmp_path):
@@ -206,13 +209,16 @@ def test_provisional_result_is_published_with_a_host_note(tmp_path):
     from pdl_taskmaster.runtime import presentation
     from pdl_taskmaster.runtime.text_blocks import split_published_ir
 
-    asserted = {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"answer": 9}}
+    # A negative witness resting on an argument is the unreproduced witness that stays
+    # provisional (GUARD-03); a positive one no longer does (L104).
+    asserted = {"polarity": "negative", "evidence": {"path": "execution://witness"}, "basis": "proof",
+                "argument": "The two constraints contradict each other."}
     engine, response, _, _ = _run(
-        tmp_path, [{"kind": "RESULT", "body": "The answer is 9.", "result_ir": _ir(asserted)}],
+        tmp_path, [{"kind": "RESULT", "body": "No such value exists.", "result_ir": _ir(asserted)}],
         problem_class="VERIFIED_EXECUTION",
     )
     text, ir = split_published_ir(response.text)
-    assert text == "The answer is 9.\n\n" + presentation.provisional_note()
+    assert text == "No such value exists.\n\n" + presentation.negative_claim_note()  # L110
     assert ir["witness"]["provisional"] is True
 
 
@@ -244,19 +250,22 @@ def test_program_printing_its_literal_value_is_not_a_reproduced_witness(tmp_path
     from pdl_taskmaster.runtime import presentation
     from pdl_taskmaster.runtime.text_blocks import split_published_ir
 
+    computed = 'import json\nfrom fractions import Fraction\nprint("WITNESS: " + json.dumps({"probability": str(Fraction(1, 4))}))'
     engine, response, executes, events = _run(
-        tmp_path, [{"kind": "RESULT", "body": f"```python\n{_LITERAL_PROGRAM}```", "result_ir": _ir()}],
+        tmp_path, [{"kind": "RESULT", "body": f"```python\n{_LITERAL_PROGRAM}```", "result_ir": _ir()},
+                   {"kind": "RESULT", "body": f"```python\n{computed}\n```", "result_ir": _ir()}],
         problem_class="VERIFIED_EXECUTION",
     )
-    # A label, not a failure: the turn closes as before, with one EXECUTE.
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS and len(executes) == 1
+    # L119: a correction, not a closure; the next attempt computes the value and closes as verified.
     flagged = next(e for e in events if e["kind"] == "WITNESS_LITERAL_IN_PROGRAM")["payload"]
     assert flagged == {"block": 1}
-    passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
-    assert passed["provisional"] is True and passed["sandbox_reproduced"] is False
+    assert len(executes) == 2 and "[WITNESS_WRITTEN_IN_PROGRAM]" in executes[1].prompt
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    passed = [e for e in events if e["kind"] == "VERIFICATION_PASSED"]
+    assert len(passed) == 1 and passed[0]["payload"]["sandbox_reproduced"] is True
     text, ir = split_published_ir(response.text)
-    assert text.endswith("\n\n" + presentation.literal_witness_note())
-    assert ir["witness"]["provisional"] is True and ir["witness"]["data"] == {"probability": "1/4"}
+    assert presentation.literal_witness_note() not in text
+    assert ir["witness"]["data"] == {"probability": "1/4"}
 
 
 def test_program_computing_its_value_is_a_reproduced_witness(tmp_path):
@@ -276,7 +285,8 @@ def test_literal_check_applies_to_the_block_that_printed_the_witness(tmp_path):
     stated = 'import json\nprint("WITNESS: " + json.dumps({"answer": 42}))'
     engine, _, _, events = _run(
         tmp_path, [{"kind": "RESULT", "body": f"```python\n{computed}\n```\n```python\n{stated}\n```",
-                    "result_ir": _ir()}],
+                    "result_ir": _ir()},
+                   {"kind": "RESULT", "body": f"```python\n{computed}\n```", "result_ir": _ir()}],
         problem_class="VERIFIED_EXECUTION",
     )
     assert next(e for e in events if e["kind"] == "WITNESS_LITERAL_IN_PROGRAM")["payload"] == {"block": 2}
@@ -294,14 +304,15 @@ def test_literal_witness_detection_by_python_value():
     def written(data, source):
         return _witness_written_in_program({"polarity": "positive", "data": data}, source)
 
-    assert written({"probability": "1/4"}, 'p = "1/4"\nprint(p)')
-    assert written({"count": 6}, "n = 6\nprint(n)")
-    assert written({"offset": -5}, "x = -5\nprint(x)") and not written({"offset": 5}, "x = -5\nprint(x)")
+    assert written({"probability": "1/4"}, 'p = "1/4"\nprint({"probability": p})')
+    assert written({"count": 6}, 'n = 6\nprint({"count": n})')
+    assert written({"offset": -5}, 'x = -5\nprint({"offset": x})')
+    assert not written({"offset": 5}, 'x = -5\nprint({"offset": x})')
     # A computed value is not a literal, even when its operands are.
     assert not written({"probability": "1/4"}, "from fractions import Fraction\nprint(Fraction(1, 4))")
     assert not written({"count": 6}, "import math\nprint(math.comb(4, 2))")
-    # Every non-trivial leaf must be a literal for the witness to be flagged.
-    assert not written({"count": 6, "total": 45}, "n = 6\nprint(n, sum(range(10)))")
+    # The whole data must be written out for the witness to be flagged.
+    assert not written({"count": 6, "total": 45}, 'n = 6\nprint({"count": n, "total": sum(range(10))})')
     # The printed witness line written whole as one string literal.
     assert _witness_written_in_program(
         {"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"answer": 9},
@@ -317,7 +328,8 @@ def test_literal_witness_detection_ignores_trivial_leaves():
     data = {"ok": True, "n": 1, "z": 0, "m": None, "e": "", "neg": -1}
     assert not _witness_written_in_program({"data": data}, source)
     # Trivial leaves neither flag nor block a flag raised by the other leaves.
-    assert _witness_written_in_program({"data": {**data, "count": 6}}, source + "\nc = 6")
+    stated = '\nc = 6\nprint({"ok": ok, "n": n, "z": z, "m": m, "e": e, "neg": -1, "count": c})'
+    assert _witness_written_in_program({"data": {**data, "count": 6}}, source + stated)
     assert not _witness_written_in_program({"data": {}}, source)
 
 
@@ -325,9 +337,10 @@ def test_literal_witness_detection_handles_nested_data():
     from pdl_taskmaster.runtime.session_engine import _witness_written_in_program
 
     data = {"grid": [[2, 3], [3, 2]], "meta": {"size": 4, "name": "square"}}
-    literal = 'grid = [[2, 3], [3, 2]]\nmeta = {"size": 4, "name": "square"}\nprint(grid, meta)'
+    literal = 'grid = [[2, 3], [3, 2]]\nmeta = {"size": 4, "name": "square"}\nprint({"grid": grid, "meta": meta})'
     assert _witness_written_in_program({"data": data}, literal)
-    computed = 'grid = [[2, 3], [3, 2]]\nmeta = {"size": len(grid) * 2, "name": "square"}\nprint(grid, meta)'
+    computed = ('grid = [[2, 3], [3, 2]]\nmeta = {"size": len(grid) * 2, "name": "square"}\n'
+                'print({"grid": grid, "meta": meta})')
     assert not _witness_written_in_program({"data": data}, computed)
 
 
@@ -338,7 +351,7 @@ def test_proof_is_a_first_class_negative_deliverable(tmp_path):
         tmp_path, [{"kind": "RESULT", "body": "No solution exists: parity.", "result_ir": _ir(proof)}],
         problem_class="VERIFIED_EXECUTION",
     )
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED  # L116: a negative claim is unchecked
     assert len(executes) == 1
 
 
@@ -357,7 +370,7 @@ def test_contract_failure_gets_bounded_repairs_then_closes(tmp_path):
 
 def test_repair_that_succeeds_closes_success(tmp_path):
     bad = {"kind": "RESULT", "body": "The answer is 9.", "result_ir": _ir()}
-    good = {"kind": "RESULT", "body": "```python\nprint('WITNESS: {\"answer\": 9}')\n```", "result_ir": _ir()}
+    good = {"kind": "RESULT", "body": "```python\nprint('WITNESS: {\"answer\": %d}' % (3 * 3))\n```", "result_ir": _ir()}
     engine, _, executes, _ = _run(tmp_path, [bad, good], problem_class="VERIFIED_EXECUTION")
     assert len(executes) == 2
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
@@ -434,7 +447,7 @@ def test_declared_incomplete_result_needs_no_witness(tmp_path):
     reply = {"kind": "RESULT", "body": body, "result_ir": _incomplete_ir()}
     engine, _, executes, events = _run(tmp_path, [reply], problem_class="VERIFIED_EXECUTION")
     assert len(executes) == 1
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED  # L116: it claims no result
     assert "VERIFICATION_NOT_APPLICABLE" in _kinds(events)
     assert "VERIFICATION_PASSED" not in _kinds(events)
 
@@ -478,11 +491,12 @@ def test_non_ascii_output_runs_on_every_platform():
 
 
 def test_citation_bookkeeping_is_recorded_not_blocking(tmp_path):
-    ir = _ir({"polarity": "positive", "evidence": {"path": "execution://witness"}, "data": {"answer": 9}})
+    ir = _ir()
     ir["reconciliation"] = [{"requirement": "R1", "status": "partial",
                              "evidence": {"path": "execution://body", "observed": "a quote that is nowhere"}}]
+    program = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'answer': 4 + 5}}))"
     engine, _, executes, events = _run(
-        tmp_path, [{"kind": "RESULT", "body": "The answer is 9.", "result_ir": ir}], problem_class="VERIFIED_EXECUTION"
+        tmp_path, [{"kind": "RESULT", "body": program, "result_ir": ir}], problem_class="VERIFIED_EXECUTION"
     )
     assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
     findings = next(e for e in events if e["kind"] == "RESULT_IR_CITATION_FINDINGS")["payload"]["findings"]
@@ -492,7 +506,7 @@ def test_citation_bookkeeping_is_recorded_not_blocking(tmp_path):
 def test_execute_is_not_asked_for_per_line_bookkeeping(tmp_path):
     """Runs 2026-09-30..10-01: low-effort EXECUTE degenerated (runaway whitespace,
     copied "..." placeholders) inside the Result IR bookkeeping it was asked for."""
-    program = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'answer': 9}}))"
+    program = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'answer': 3 * 3}}))"
     good = {"kind": "RESULT", "body": program, "result_ir": {}}
     engine, _, executes, _ = _run(tmp_path, [good], problem_class="VERIFIED_EXECUTION")
     prompt = executes[0].prompt
@@ -507,7 +521,7 @@ def test_declared_incomplete_needs_only_a_defect_description(tmp_path):
     reply = {"kind": "RESULT", "body": body,
              "result_ir": {"open_defects": [{"description": "The search did not finish within the step budget."}]}}
     engine, _, executes, _ = _run(tmp_path, [reply], problem_class="VERIFIED_EXECUTION")
-    assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_UNVERIFIED  # L116
 
 
 def test_malformed_repair_reply_is_a_counted_attempt_whose_findings_reach_the_next(tmp_path):
@@ -515,7 +529,7 @@ def test_malformed_repair_reply_is_a_counted_attempt_whose_findings_reach_the_ne
     retry dropped the verification findings. EXECUTE no longer retries hidden: the
     malformed reply is a counted attempt and the next one carries its finding."""
     bad = {"kind": "RESULT", "body": "The answer is 9.", "result_ir": _ir()}  # witness missing
-    good = {"kind": "RESULT", "body": "```python\nprint('WITNESS: {\"answer\": 9}')\n```", "result_ir": _ir()}
+    good = {"kind": "RESULT", "body": "```python\nprint('WITNESS: {\"answer\": %d}' % (3 * 3))\n```", "result_ir": _ir()}
     engine, _, executes, _ = _run(tmp_path, [bad, '{"kind": "RESULT", "body": "unterminated', good],
                                   problem_class="VERIFIED_EXECUTION")
     assert len(executes) == 3
@@ -579,7 +593,7 @@ def test_search_witness_printed_by_a_program_is_accepted(tmp_path):
             "'nodes_explored': nodes, 'method': 'enumeration'}))")
     engine, _, _, events = _run(tmp_path, [{"kind": "RESULT", "body": code, "result_ir": _ir()}],
                                 problem_class="VERIFIED_EXECUTION")
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED  # L116: a negative claim is unchecked
     passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
     assert passed["sandbox_reproduced"]
 
@@ -644,6 +658,8 @@ def _run_raising(tmp_path, execute_results, **engine_settings):
             return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
         if req.operation == "DRAFT_PLAN":
             return json.dumps({"neutral_plan_body": PLAN})
+        if not replies:  # a scripted attempt failed on this host: say what the host found
+            raise AssertionError("EXECUTE was asked again; its correction: " + req.prompt[-1200:])
         reply = replies.pop(0)
         if isinstance(reply, BaseException):
             raise reply
@@ -719,7 +735,10 @@ def test_draft_execute_runs_once_and_feeds_its_brief_to_execute(tmp_path):
         if req.operation == "DRAFT_PLAN":
             return json.dumps({"neutral_plan_body": PLAN})
         if req.operation == "DRAFT_EXECUTE":
-            return json.dumps({"kind": "RESULT", "brief_body": "Enumerate 12 candidates; about 200 steps.",
+            return json.dumps({"kind": "RESULT", "approach": "Enumerate the 12 candidates and keep the valid one.",
+                               "data_structures": [], "invariants": [], "self_checks": [],
+                               "step_estimate": {"iterations": 12, "steps_per_iteration": 20,
+                                                 "basis": "12 candidates from the given values"},
                                "execution_entities": []})
         return json.dumps(replies.pop(0))
 
@@ -732,7 +751,9 @@ def test_draft_execute_runs_once_and_feeds_its_brief_to_execute(tmp_path):
     assert len(drafts) == 1 and len(executes) == 2  # drafted once, not per repair
     assert "3, 4, 5" in drafts[0].prompt and "steps" in drafts[0].prompt  # sees the data and the budget
     for execute in executes:
-        assert ("EXECUTION BRIEF" in execute.prompt or "DRAFT_EXECUTE" in execute.prompt) and "about 200 steps" in execute.prompt
+        brief = execute.projection.document["operation_inputs"]["EXECUTION_BRIEF"]
+        assert brief["approach"].startswith("Enumerate the 12 candidates")
+        assert brief["step_estimate"]["estimated_steps"] == 240
     assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
 
 
@@ -758,15 +779,15 @@ def test_positive_witness_with_search_provenance_is_accepted(tmp_path):
 
 def test_positive_witness_with_search_provenance_is_not_a_search_claim(tmp_path):
     """A positive witness reporting how it was found claims a result, not that none
-    exists: without a program run it is provisional, not SEARCH_CLAIM_UNREPRODUCED."""
+    exists: without a program run it is WITNESS_NOT_PRINTED (L104), not SEARCH_CLAIM_UNREPRODUCED."""
     witness = {"polarity": "positive", "evidence": {"path": "execution://witness"},
                "data": {"answer": 42}, "basis": "search", "search_exhausted": True,
                "nodes_explored": 9, "method": "enumeration"}
     reply = {"kind": "RESULT", "body": "The answer is 42.", "result_ir": _ir(witness)}
-    engine, _, executes, events = _run(tmp_path, [reply], problem_class="VERIFIED_EXECUTION")
-    assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
-    passed = next(e for e in events if e["kind"] == "VERIFICATION_PASSED")["payload"]
-    assert passed["provisional"] and not passed["sandbox_reproduced"]
+    engine, _, executes, events = _run(tmp_path, [reply] * 3, problem_class="VERIFIED_EXECUTION")
+    assert engine.controller.state.stage == Stage.CLOSED_CANCELLED
+    codes = next(e for e in events if e["kind"] == "VERIFICATION_FAILED")["payload"]["codes"]
+    assert "WITNESS_NOT_PRINTED" in codes and "SEARCH_CLAIM_UNREPRODUCED" not in codes
 
 
 def test_draft_execute_omits_witness_instructions_from_its_inputs(tmp_path):
@@ -786,7 +807,9 @@ def test_draft_execute_omits_witness_instructions_from_its_inputs(tmp_path):
         if req.operation == "DRAFT_PLAN":
             return json.dumps({"neutral_plan_body": PLAN})
         if req.operation == "DRAFT_EXECUTE":
-            return json.dumps({"kind": "RESULT", "brief_body": "Use DFS with pruning under 100k steps.",
+            return json.dumps({"kind": "RESULT", "approach": "Search the values in order and stop at the first fit.",
+                               "data_structures": [], "invariants": [], "self_checks": [],
+                               "step_estimate": {"iterations": 3, "steps_per_iteration": 10, "basis": "one pass over the given values"},
                                "execution_entities": []})
         return json.dumps(good)
 
@@ -841,3 +864,10 @@ def test_execute_wire_failure_includes_operator_feedback_in_finding(tmp_path):
     assert "Validation failed on field 'result_ir.witness.negative.nodes_explored'" in repair_prompt
     assert "Input should be greater than 0" in repair_prompt
 
+
+
+def test_a_bare_engine_has_tier_d1_off_whatever_the_environment_says(tmp_path, monkeypatch):
+    """The shipped default (on) is applied where the worker is built; the engine does not read the variable."""
+    monkeypatch.setenv("PDLT_TIER_D1", "1")
+    engine = SessionEngine(ROOT, lambda req: "", workspace_root=tmp_path)
+    assert engine.tier_d1 is False

@@ -29,6 +29,11 @@ CONTRACT_KEY = "x-contract"
 UNION_WRAPPER = "outcome"
 # The host reads the Result IR only in this mode (RESULT_STANDARD RS-10).
 RESULT_IR_MODE = "result_ir"
+# EXECUTE carries a validated EXECUTION_BRIEF in this mode (EXECUTION_STANDARD EXEC-06).
+EXECUTION_BRIEF_MODE = "execution_brief"
+# The confirmed route's artifacts are natural-language prose in this mode (representation.py, ledger L97):
+# descriptions name them as that arm does.
+NL_REPRESENTATION_MODE = "nl_representation"
 _NO_MODES: frozenset[str] = frozenset()
 
 # Keywords a decoding engine does not take; the grammar view drops them (the prompt
@@ -117,6 +122,19 @@ def _normalize(node: Any, defs: dict[str, Any], modes: frozenset[str]) -> Any:
     return result
 
 
+def _map_descriptions(node: Any, rewrite: Any) -> Any:
+    """``node`` with every ``description`` string passed through ``rewrite``; property names are data."""
+    if isinstance(node, list):
+        return [_map_descriptions(item, rewrite) for item in node]
+    if not isinstance(node, dict):
+        return node
+    return {key: rewrite(value) if key == "description" and isinstance(value, str)
+            else {name: _map_descriptions(spec, rewrite) for name, spec in value.items()}
+            if key == "properties" and isinstance(value, dict)
+            else _map_descriptions(value, rewrite)
+            for key, value in node.items()}
+
+
 def _active(spec: Any, modes: frozenset[str]) -> bool:
     when = ((spec or {}).get(CONTRACT_KEY) or {}).get("when") if isinstance(spec, dict) else None
     return when is None or when in modes
@@ -126,6 +144,10 @@ def prompt_schema(operation: str, form: ContractForm = DEFAULT_FORM,
                   modes: frozenset[str] = _NO_MODES) -> dict[str, Any] | None:
     """The output_schema the model reads, in the structural form of this call."""
     schema = contract_schema(operation, modes)
+    if schema is not None and NL_REPRESENTATION_MODE in modes:
+        from pdl_taskmaster.runtime.representation import nl_terms
+
+        schema = _map_descriptions(schema, nl_terms)
     if schema is None or form.grammar != "schema":
         return schema
     schema = _wrap_top_level_union(schema)

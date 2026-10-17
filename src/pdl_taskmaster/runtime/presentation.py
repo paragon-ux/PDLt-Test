@@ -79,7 +79,7 @@ def prompt_fidelity_note(failed_checks: list[str] | None = None) -> str:
     return "[host] PROMPT-01: prompt commands execution to omit or avoid computing the deliverable; /revise to ask for the complete solution"
 
 
-def prompt_fidelity_feedback(failed_checks: list[str] | None = None) -> str:
+def prompt_fidelity_feedback(failed_checks: list[str] | None = None, representation: str = "pdl") -> str:
     """Operator correction for a prompt that fails semantic fidelity."""
     failed = failed_checks or ["no_evasion"]
     reasons = []
@@ -98,10 +98,11 @@ def prompt_fidelity_feedback(failed_checks: list[str] | None = None) -> str:
             "staying neutral and defining what to compute or investigate (PROMPT-02)"
         )
     details = "; ".join(reasons)
+    artifact = "prompt interpretation" if representation == "nl" else "prompt pseudocode"
     return (
         f"Prompt requirement (PROMPT-01/PROMPT-02, semantic fidelity): {details}. "
         "Specify what execution must compute and produce for all requested requirements in full, stay neutral, "
-        "and do not state or preselect answers in prompt pseudocode."
+        f"and do not state or preselect answers in {artifact}."
     )
 
 
@@ -130,6 +131,16 @@ def provisional_note() -> str:
 def literal_witness_note() -> str:
     """Factual note on a result whose printed witness values are literals in the program."""
     return "[host] Witness values are written into the program, not computed; unverified."
+
+
+def argued_result_note() -> str:
+    """Factual note on a positive result stated with its argument (L119): no program checked it."""
+    return "[host] Result established by the stated argument; no program checked it; unverified."
+
+
+def negative_claim_note() -> str:
+    """Factual note on a negative result (L110): the host can run the program, not check that no result exists."""
+    return "[host] Negative result: the host cannot check that no result exists; unverified."
 
 
 def cancelled() -> str:

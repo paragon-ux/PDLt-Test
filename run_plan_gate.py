@@ -9,7 +9,7 @@ must not be rejected; a copied, paraphrased or mechanically expanded plan must b
     python run_plan_gate.py --repeat 3      # each decision three times (stability)
     python run_plan_gate.py --case 16-01
 
-Writes catalogue-runs/plan-gate-<ts>/results.json and SUMMARY.md. Exit 0 when every
+Writes <runs>/plan-gate-<ts>/results.json and SUMMARY.md (<runs>: catalogue_runs.py). Exit 0 when every
 decision matches its expectation, 1 otherwise, 4 when System 1 is not configured.
 """
 from __future__ import annotations
@@ -22,6 +22,8 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
 sys.path.insert(0, str(ROOT / "src"))
 
 from pdl_taskmaster.providers.sys1.client import Sys1Client  # noqa: E402
@@ -71,7 +73,7 @@ def main() -> int:
         print(f"{case_id} {kind:<11} expect {expect:<6} -> {str(verdict):<20} "
               f"{'ok' if ok else 'MISMATCH'}  {','.join(failed)}", flush=True)
 
-    out = ROOT / "catalogue-runs" / f"plan-gate-{datetime.now():%Y%m%d-%H%M%S}"
+    out = RUNS_DIR / f"plan-gate-{datetime.now():%Y%m%d-%H%M%S}"
     out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(json.dumps({"model": client.model, "rows": rows}, indent=2) + "\n",
                                       encoding="utf-8")

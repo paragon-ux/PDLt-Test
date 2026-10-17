@@ -60,7 +60,7 @@ def test_each_run_starts_in_a_fresh_empty_directory():
 
 
 def test_temporary_files_land_inside_the_run_directory():
-    with ExecutionSandbox() as sandbox:
+    with ExecutionSandbox(timeout_seconds=60.0) as sandbox:  # not a timing test: interpreter startup may be slow
         result = sandbox.run_code(
             "import os, tempfile\n"
             "fd, name = tempfile.mkstemp(); os.close(fd)\n"
@@ -71,7 +71,7 @@ def test_temporary_files_land_inside_the_run_directory():
 
 
 def test_close_is_idempotent_and_a_closed_sandbox_can_run_again():
-    sandbox = ExecutionSandbox()
+    sandbox = ExecutionSandbox(timeout_seconds=60.0)  # not a timing test: interpreter startup may be slow
     assert sandbox.run_code("print(1)").success
     first_root = Path(sandbox.session_info["root"])
     sandbox.close()
@@ -219,7 +219,7 @@ def test_audit_layer_allows_the_run_directory_and_the_standard_library():
         ) +
         "print(sorted(os.listdir('.')))"
     )
-    with ExecutionSandbox() as sandbox:
+    with ExecutionSandbox(timeout_seconds=60.0) as sandbox:  # not a timing test: startup is slow under load
         result = sandbox.run_code(code)
     assert result.success, result.stderr
     assert result.stdout.strip() == "['_entry.py', 'local.db', 'program.py', 'tmp']"
@@ -457,6 +457,7 @@ def _blocked(configuration, result) -> bool:
 
 def _open(configuration, **kwargs) -> ExecutionSandbox:
     mode, hooks = configuration
+    kwargs.setdefault("timeout_seconds", 60.0)  # not a timing test: startup is slow under load
     sandbox = ExecutionSandbox(mode=mode, label="escape", **kwargs)
     if not hooks:
         sandbox._policy_hooks = False  # the test-only switch: native layer alone
@@ -618,7 +619,7 @@ def test_backend_runs_standard_library_programs(mode):
         "print(json.dumps({'sum': total, 'd': str(decimal.Decimal('1.10') + decimal.Decimal('2.20')),\n"
         "                  'f': str(fractions.Fraction(1, 3) * 3), 'p': len(list(itertools.permutations(range(4))))}))"
     )
-    with ExecutionSandbox(mode=mode) as sandbox:
+    with ExecutionSandbox(mode=mode, timeout_seconds=60.0) as sandbox:  # not a timing test: startup is slow under load
         result = sandbox.run_code(code)
     assert result.success, result.stderr
     assert json.loads(result.stdout) == {"sum": 3, "d": "3.30", "f": "1", "p": 24}
@@ -633,7 +634,7 @@ def test_backend_allows_reading_and_writing_the_run_directory(mode):
         "with tempfile.NamedTemporaryFile('w', delete=False) as f:\n    f.write('t')\n"
         "print(os.path.commonpath([f.name, os.getcwd()]) == os.getcwd())"
     )
-    with ExecutionSandbox(mode=mode) as sandbox:
+    with ExecutionSandbox(mode=mode, timeout_seconds=60.0) as sandbox:  # not a timing test: startup is slow under load
         result = sandbox.run_code(code)
     assert result.success, result.stderr
     assert result.stdout.split() == ["hello", "True"]
@@ -643,7 +644,7 @@ def test_backend_allows_reading_and_writing_the_run_directory(mode):
 def test_backend_keeps_utf8_output_and_future_imports(mode, step_limit):
     text = "café ✓ 漢字"
     code = f'"""Doc."""\nfrom __future__ import annotations\ndef f(x: Undefined) -> None: ...\nprint({text!r})'
-    with ExecutionSandbox(mode=mode) as sandbox:
+    with ExecutionSandbox(mode=mode, timeout_seconds=60.0) as sandbox:  # not a timing test: startup is slow under load
         result = sandbox.run_code(code, step_limit=step_limit)
     assert result.success, result.stderr
     assert result.stdout == text + "\n"
@@ -656,8 +657,9 @@ def test_backend_enforces_the_step_budget(mode):
 
 
 def test_backend_times_out_and_keeps_partial_output(mode):
-    with ExecutionSandbox(mode=mode, timeout_seconds=1.5) as sandbox:
-        result = sandbox.run_code("import time\nprint('partial result')\ntime.sleep(30)")
+    # 10 s: time for the program to start and print under load, far short of its sleep.
+    with ExecutionSandbox(mode=mode, timeout_seconds=10.0) as sandbox:
+        result = sandbox.run_code("import time\nprint('partial result')\ntime.sleep(120)")
         after = sandbox.run_code("print('next run')")
     assert result.timed_out and "partial result" in result.stdout
     assert after.stdout == "next run\n"  # the session survives a killed program
@@ -666,7 +668,7 @@ def test_backend_times_out_and_keeps_partial_output(mode):
 def test_backend_detects_memory_exhaustion(mode):
     if sys.platform == "darwin" and mode != "container":
         pytest.skip("macOS does not enforce RLIMIT_AS (ADR-0021)")
-    with ExecutionSandbox(mode=mode, memory_limit_bytes=64 * 1024 * 1024) as sandbox:
+    with ExecutionSandbox(mode=mode, memory_limit_bytes=64 * 1024 * 1024, timeout_seconds=60.0) as sandbox:
         result = sandbox.run_code("x = bytearray(512 * 1024 * 1024)\nprint(len(x))")
     assert result.oom_killed and not result.success
 

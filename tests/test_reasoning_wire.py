@@ -40,7 +40,8 @@ def _stub_server(seen: list[tuple[str, object]], bodies: list | None = None):
             if bodies is not None:
                 bodies.append(body)
             if operation == "DRAFT_EXECUTE":
-                reply = {"kind": "RESULT", "brief_body": "Add the two numbers.", "execution_entities": []}
+                reply = {"kind": "RESULT", "approach": "Add the two numbers.", "data_structures": [],
+                         "step_estimate": None, "invariants": [], "self_checks": [], "execution_entities": []}
             else:
                 reply = _REPLIES_OVERRIDE.get(operation, _REPLIES.get(operation, {"kind": "RESULT", "body": "ok"}))
             text_reply = reply if isinstance(reply, str) else json.dumps(reply)
@@ -78,7 +79,7 @@ def test_runner_command_sends_the_requested_effort_per_operation(tmp_path, effor
     prompt = tmp_path / "prompt.txt"
     prompt.write_text("What is 2 + 3?", encoding="utf-8")
     cmd = run_catalogue.build_harness_command(prompt, "stub-session", tmp_path / "t.txt", tmp_path / "s",
-                                              "openai/gpt-oss-120b", effort, ops)
+                                              "openai/gpt-oss-120b", effort, ops, {"route": "confirmed"})
     cmd += ["--api-base-url", f"http://127.0.0.1:{server.server_address[1]}"]
     env = {k: v for k, v in os.environ.items() if not k.startswith(("SYS1", "OPENROUTER"))}
     env.update(OPENROUTER_API_KEY="stub", PYTHONPATH=str(ROOT / "src"))
@@ -97,6 +98,7 @@ def _run_stub(tmp_path, settings, replies=None):
 
     seen: list[tuple[str, object]] = []
     bodies: list[dict] = []
+    settings = {"route": "confirmed", **settings}  # these tests drive the review route; the REPL defaults to no review
     if replies:
         _REPLIES_OVERRIDE.update(replies)
     server = _stub_server(seen, bodies)
@@ -122,15 +124,18 @@ def test_runner_settings_reach_the_wire(tmp_path):
                                               "openai/gpt-oss-120b", "low", (), settings)
     assert "--draft-execute" in cmd
     ops, bodies = _run_stub(tmp_path, settings)
-    # ADR-0013 P6 (LEDGER L41): DRAFT_EXECUTE runs only for verified execution; this
-    # standard task goes straight to EXECUTE even with --draft-execute on.
+    # ADR-0013 P6 (LEDGER L41, L85): DRAFT_EXECUTE runs for verified execution or a confident
+    # 'computational' from System 1; this stub session has neither, so it goes straight to EXECUTE.
     assert "DRAFT_EXECUTE" not in ops and "EXECUTE" in ops
     assert len(ops) == len(bodies)
     for op, body in zip(ops, bodies):
         assert body.get("max_output_tokens") == 8000 and "max_tokens" not in body
         # Every operation goes to the configured providers (ADR-0028 rule 5): the ones
         # Groq rejects the schema of are sent in JSON mode, never routed past it.
-        assert body.get("provider") == {"order": ["Cerebras", "Groq", "SambaNova"], "allow_fallbacks": False}
+        # A request carrying a schema also asks for endpoints that support every parameter sent (L122).
+        schema = (body.get("text") or {}).get("format", {}).get("type") == "json_schema"
+        assert body.get("provider") == {"order": ["Cerebras", "Groq", "SambaNova"], "allow_fallbacks": False,
+                                        **({"require_parameters": True} if schema else {})}
         if op in {"EXECUTE", "EMIT_RESULT_IR"}:
             assert body.get("text") == {"format": {"type": "json_object"}}
 
@@ -166,7 +171,7 @@ def test_provider_error_ends_a_headless_run_as_a_harness_error(tmp_path):
     prompt = tmp_path / "prompt.txt"
     prompt.write_text("What is 2 + 3?", encoding="utf-8")
     cmd = run_catalogue.build_harness_command(prompt, "stub-session", tmp_path / "t.txt", tmp_path / "s",
-                                              "openai/gpt-oss-120b", "low", (), {})
+                                              "openai/gpt-oss-120b", "low", (), {"route": "confirmed"})
     cmd += ["--api-base-url", f"http://127.0.0.1:{server.server_address[1]}"]
     env = {k: v for k, v in os.environ.items() if not k.startswith(("SYS1", "OPENROUTER"))}
     env.update(OPENROUTER_API_KEY="stub", PYTHONPATH=str(ROOT / "src"))

@@ -1,0 +1,90 @@
+study_id: PDL-IR-vs-NL-CONFIRMED-PILOT-01
+status: proposed_not_run
+question: >-
+  In the same confirmed protocol, do PDL Prompt Pseudocode and Response Plan Pseudocode
+  preserve task requirements and stabilize execution better than natural-language
+  prompt interpretation and natural-language response plan artifacts?
+model: openai/gpt-oss-120b
+provider: Cerebras-via-OpenRouter
+reasoning: low
+concurrency: 1
+route: confirmed
+review: enabled
+confirmation: identical_scripted_auto_confirm
+repair_policy: fixed_same_across_arms
+include_draft_execute: false
+arms:
+  P:
+    name: PDL
+    prompt_artifact: Prompt Pseudocode in PDL/pseudocode
+    plan_artifact: Response Plan Pseudocode in PDL/pseudocode
+  N:
+    name: natural_language
+    prompt_artifact: Natural-language prompt interpretation
+    plan_artifact: Natural-language response plan
+invariants:
+    - same_original_request_and_source_material
+    - same_stage_count_and_stage_purpose
+    - same_confirmation_behavior
+    - same_authority_policy
+    - same_executor_guidance_except_representation_input
+    - same_model_provider_reasoning_timeout_and_repairs
+    - only_format_specific_instruction_may_differ
+    - no_DRAFT_EXECUTE
+tasks:
+  - T1_USAGE_RECONCILIATION
+  - T2_QUEUE_CUTOVER
+  - T3_API_INCIDENT
+independent_repeats_per_task_arm: 3
+full_sessions: 18
+frozen_artifacts: 6
+additional_frozen_artifact_replays: 12
+total_final_deliverable_executions: 30
+security_exposures_per_arm: 9
+primary_metrics:
+  - prompt_artifact_fidelity
+  - plan_artifact_fidelity
+  - final_deliverable_correctness
+  - fixed_artifact_requirement_level_flip_rate
+  - independent_session_requirement_coverage_variability
+  - injected_instruction_violation_count
+secondary_metrics:
+  - latency_seconds
+  - input_tokens
+  - output_tokens
+  - provider_cost_usd
+  - api_call_count
+  - repairs
+  - timeouts
+  - harness_errors
+subjective_priors_not_results:
+  pdl_requirement_coverage_delta_pp: [5, 10]
+  final_correctness_delta_pp: [0, 5]
+  fixed_artifact_flip_rate_relative_reduction_percent: [10, 20]
+  injection_violations_target_per_arm: 0
+decision_thresholds:
+  max_pdl_correctness_deficit_overall_pp: 5
+  max_pdl_correctness_deficit_single_task_pp: 10
+  min_fidelity_advantage_pp: 5
+  min_tasks_directionally_better_for_fidelity: 2
+  min_relative_flip_rate_reduction_percent: 10
+budget:
+  expected_provider_spend_usd: [2.0, 5.25]
+  hard_ceiling_usd: 6.0
+  estimated_provider_calls: [90, 120]
+  paid_judges_included: false
+run_policy:
+  paired_serial_order:
+    - [T1_USAGE_RECONCILIATION, 1, P, N]
+    - [T1_USAGE_RECONCILIATION, 2, N, P]
+    - [T1_USAGE_RECONCILIATION, 3, P, N]
+    - [T2_QUEUE_CUTOVER, 1, N, P]
+    - [T2_QUEUE_CUTOVER, 2, P, N]
+    - [T2_QUEUE_CUTOVER, 3, N, P]
+    - [T3_API_INCIDENT, 1, P, N]
+    - [T3_API_INCIDENT, 2, N, P]
+    - [T3_API_INCIDENT, 3, P, N]
+  inspect_performance_grades_before_completion: false
+  stop_early_for_favorable_results: false
+  stop_if_cost_forecast_exceeds_ceiling: true
+  do_not_tune_prompts_after_any_output: true

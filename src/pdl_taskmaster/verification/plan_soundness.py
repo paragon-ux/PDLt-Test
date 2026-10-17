@@ -73,20 +73,28 @@ class PlanSoundnessResult:
     valid: bool
     violations: list[str]
 
+    representation: str = "pdl"
+
     @property
     def feedback(self) -> str:
         if self.valid:
             return ""
-        return "Pseudocode notation requirement: " + "; ".join(self.violations)
+        prefix = "Artifact requirement: " if self.representation == "nl" else "Pseudocode notation requirement: "
+        return prefix + "; ".join(self.violations)
 
 
 def validate_plan_soundness(
     plan_body: str,
     *,
     requires_verified_execution: bool = True,
+    representation: str = "pdl",
 ) -> PlanSoundnessResult:
     """Lint pseudocode notation. ``requires_verified_execution`` is accepted for
-    call-site compatibility and deliberately ignored: the lint is task-neutral."""
+    call-site compatibility and deliberately ignored: the lint is task-neutral.
+    ``representation="nl"`` lints a prose artifact (representation.py): the same
+    content rules, no field-label rule (PDL-05), and no PDL clause cited."""
+    if representation == "nl":
+        return _lint_prose(plan_body)
     text = plan_body or ""
     violations: list[str] = []
 
@@ -135,6 +143,26 @@ def validate_plan_soundness(
     return PlanSoundnessResult(valid=not violations, violations=violations)
 
 
+def _lint_prose(body: str) -> PlanSoundnessResult:
+    """The content rules of the lint for a natural-language artifact: deferral, meta-rule,
+    placeholder and code fence; headings and labels are ordinary prose."""
+    text = body or ""
+    violations: list[str] = []
+    if not text.strip():
+        violations.append("The artifact is empty.")
+    for pattern, label, advice in (
+        (_DEFERRAL_PATTERNS, "deferral marker", "state the requirement directly"),
+        (_META_RULE_PATTERNS, "drafting meta-rule", "state what the result must be, not what this stage does"),
+        (_PLACEHOLDER_PATTERNS, "placeholder step", "state the step that produces the result"),
+    ):
+        match = pattern.search(text)
+        if match:
+            violations.append(f"Contains {label} '{match.group(0).strip()}'; {advice}.")
+    if _CODE_FENCE.search(text):
+        violations.append("Contains a code fence; write the artifact in ordinary prose.")
+    return PlanSoundnessResult(valid=not violations, violations=violations, representation="nl")
+
+
 @dataclass(frozen=True)
 class LineViolation:
     """One notation finding located on its line (1-based), for the host note at
@@ -146,7 +174,7 @@ class LineViolation:
     text: str
 
 
-def line_violations(body: str) -> list[LineViolation]:
+def line_violations(body: str, representation: str = "pdl") -> list[LineViolation]:
     """Every notation finding in ``body`` with its line, every match on every line.
 
     A line-level view of the same patterns ``validate_plan_soundness`` uses (whose
@@ -164,6 +192,8 @@ def line_violations(body: str) -> list[LineViolation]:
                 found.append(LineViolation(number, clause, kind, match.group(0).strip()))
         if _CODE_FENCE.match(line):
             found.append(LineViolation(number, "PDL-06", "fence", line.strip()))
+        if representation == "nl":
+            continue  # a prose artifact has no field-label rule
         fielded = _FIELDED_PREFIX.match(line)
         if fielded:
             found.append(LineViolation(number, "PDL-05", "field_label", fielded.group(1) + ":"))

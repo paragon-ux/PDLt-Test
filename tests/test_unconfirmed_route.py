@@ -372,21 +372,25 @@ def test_unconfirmed_route_with_draft_execute(tmp_path: Path):
         if req.operation == "DRAFT_EXECUTE":
             return json.dumps({
                 "kind": "RESULT",
-                "brief_body": "Use backtracking with MRV heuristic under 10M step budget.",
-                "execution_entities": [],
+                "approach": "Ask each of A, B and C one question in turn and read the answers.",
+                "data_structures": [],
+                "step_estimate": {"iterations": 3, "steps_per_iteration": 10, "basis": "one question each"},
+                "invariants": [],
+                "self_checks": [],
+                "execution_entities": [{"kind": "identifier", "value": "A"}],
             })
         if req.operation == "EXECUTE_UNCONFIRMED":
             inputs = req.projection.document.get("operation_inputs", {})
-            req_inputs = inputs.get("REQUIRED_TASK_INPUTS", "")
-            if isinstance(req_inputs, dict):
-                assert "DRAFT_EXECUTE" in req_inputs
-            else:
-                assert "EXECUTION BRIEF" in req_inputs
+            brief = inputs["EXECUTION_BRIEF"]  # its own input, never folded into REQUIRED_TASK_INPUTS
+            assert brief["approach"].startswith("Ask each of A, B and C")
+            assert brief["execution_entities"] == [{"kind": "identifier", "value": "A"}]
+            assert "DRAFT_EXECUTE" not in (inputs.get("REQUIRED_TASK_INPUTS") or {})
+            assert "EXEC-06" in [c["requirement_id"] for c in inputs["APPLICABLE_STANDARD_CLAUSES"]]
             return json.dumps({
                 "kind": "RESULT",
                 "interpretation": "DETERMINE identities of A, B, C",
                 "approach": "ASK god A first question",
-                "body": "```python\nimport json\nprint('WITNESS: {\"polarity\": \"positive\", \"data\": {\"identities\": [\"True\", \"Random\", \"False\"]}}')\n```",
+                "body": "```python\nimport json\nnames = ['False', 'Random', 'True']\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'identities': names[::-1]}}))\n```",
                 "result_ir": {},
             })
         raise AssertionError(f"unexpected operation: {req.operation}")

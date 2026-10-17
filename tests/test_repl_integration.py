@@ -111,6 +111,21 @@ def test_repl_headless_exit_fail_closed_on_unconfirmed_stage(tmp_path: Path) -> 
     assert "[headless halt] Session ended at non-terminal stage" in proc.stderr
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="pdlt reconfigures stdin on Windows only")
+def test_a_byte_order_mark_before_piped_input_is_not_part_of_the_command(tmp_path: Path) -> None:
+    # Windows PowerShell puts one before text it pipes to a program when its console is set to UTF-8. Kept,
+    # "/quit" was sent to the model as a task. No key can be found here, so a model call would fail the run.
+    env = {k: v for k, v in os.environ.items() if k not in {"OPENROUTER_API_KEY", "SYS1_API_KEY"}}
+    proc = subprocess.run(
+        [sys.executable, "-m", "pdl_taskmaster.host.cli", "--non-interactive", "--new-session",
+         "--workspace-root", str(tmp_path / "sessions"), "--api-key-env", "PDLT_TEST_KEY_THAT_IS_NEVER_SET"],
+        cwd=ROOT, input=b"\xef\xbb\xbf/quit\n", capture_output=True, timeout=120,
+        env={**env, "PYTHONPATH": str(ROOT / "src")},
+    )
+    assert proc.returncode == 0, proc.stderr.decode("utf-8", "replace")[-2000:]
+    assert not list((tmp_path / "sessions").rglob("call-trace.jsonl")), "no model call for a piped /quit"
+
+
 def test_headless_review_commands_after_closure_do_not_restart_the_task(tmp_path: Path) -> None:
     """Piped /confirm lines left over after CLOSED_SUCCESS are not a new request (FINDING-19)."""
     proc = _run_repl(tmp_path, _g06_turns() + ["/confirm", "/confirm"], "headless_leftover")

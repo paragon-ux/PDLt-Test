@@ -6,7 +6,13 @@ from pathlib import Path
 from typing import Any
 import json
 
-from pdl_taskmaster.runtime.output_contracts import DEFAULT_FORM, ContractForm, prompt_schema
+from pdl_taskmaster.runtime.output_contracts import (
+    DEFAULT_FORM,
+    NL_REPRESENTATION_MODE,
+    ContractForm,
+    prompt_schema,
+)
+from pdl_taskmaster.runtime.representation import is_format_clause, nl_terms
 from pdl_taskmaster.runtime.standard_registry import StandardRegistry
 
 
@@ -84,9 +90,13 @@ class ContextCompiler:
             for mode, ids in (spec.get("mode_requirements") or {}).items() if mode in modes
             for requirement_id in ids
         ]
+        nl = NL_REPRESENTATION_MODE in modes
+        if nl:
+            # The natural-language arm (representation.py): no notation clauses, artifacts named as prose.
+            requirement_ids = [rid for rid in requirement_ids if not is_format_clause(rid)]
         clauses = self.registry.select(requirement_ids)
         clause_values = [
-            {"requirement_id": clause.requirement_id, "clause": clause.text}
+            {"requirement_id": clause.requirement_id, "clause": nl_terms(clause.text) if nl else clause.text}
             for clause in clauses
         ]
         ordered_inputs: dict[str, Any] = {}
@@ -116,11 +126,11 @@ class ContextCompiler:
             "operation_inputs": ordered_inputs,
         }
         if spec.get("artifact_kind"):
-            document["artifact_kind"] = spec["artifact_kind"]
+            document["artifact_kind"] = nl_terms(spec["artifact_kind"]) if nl else spec["artifact_kind"]
 
         clause_digests = {
-            clause.requirement_id: sha256(clause.text.encode("utf-8")).hexdigest()
-            for clause in clauses
+            value["requirement_id"]: sha256(value["clause"].encode("utf-8")).hexdigest()
+            for value in clause_values
         }
         manifest = {
             "operation": operation,

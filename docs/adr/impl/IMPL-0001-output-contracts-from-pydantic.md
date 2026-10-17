@@ -54,7 +54,7 @@ All from 2026-10-03, on `nvidia/nemotron-3-super-120b-a12b`, through OpenRouter.
 - **Annotations moved into the models** (`contract(...)` in `runtime/wire_payloads.py`):
   - the 39 descriptions;
   - `minLength` 1 where the host already rejects empty strings, and `uniqueItems` where it deduplicates;
-  - the `required` sets the contract has always shown where Pydantic is deliberately more lenient (`result_ir` on a RESULT; `files`, `reconciliation`, `open_defects`; `approach_handoff`; `execution_entities`);
+  - the `required` sets the contract has always shown where Pydantic is deliberately more lenient (`result_ir` on a RESULT; `files`, `reconciliation`, `open_defects`; `approach_handoff`; `execution_entities` until LEDGER L93, which made every field of the brief required in Pydantic too);
   - closed result-record objects;
   - `DRAFT_EXECUTE`'s typed entity items.
 - **Hidden from the contract, still validated** (`SkipJsonSchema`):

@@ -74,3 +74,51 @@ def test_deliverable_body_drops_the_result_ir_and_host_notes():
     text = "Code:\n```python\nx = 1\n```\n[host] note\n\n```json\n{\"witness\": {}}\n```"
     body = hidden_tests.deliverable_body(text)
     assert "[host]" not in body and "witness" not in body and "x = 1" in body
+
+
+def test_a_dataclass_with_postponed_annotations_loads(monkeypatch, tmp_path):
+    """The deliverable is registered as a module, as an imported one is: dataclasses looks its module up by name."""
+    _with_tests(monkeypatch, tmp_path, _TESTS)
+    deliverable = (
+        "```python\nfrom __future__ import annotations\nfrom dataclasses import dataclass\n\n"
+        "@dataclass\nclass Box:\n    n: int\n\n"
+        "def right():\n    return Box(1).n\n```"
+    )
+    report = hidden_tests.run("X-01", deliverable)
+    assert report["passed"], report
+
+
+def test_a_block_that_fails_to_load_is_named_in_the_reason(monkeypatch, tmp_path):
+    _with_tests(monkeypatch, tmp_path, _TESTS)
+    report = hidden_tests.run("X-01", "```python\nraise ValueError('does not load')\n```")
+    assert not report["passed"]
+    assert report["reason"].startswith("no candidate implements the stated operations")
+    assert "[load errors: block 1: ValueError: does not load]" in report["reason"]
+
+
+_STATE_TESTS = """
+TEST_SECONDS = 2
+
+
+def CANDIDATES():
+    return classes_with("size")
+
+
+def test_state(C):
+    state = state_of(C())
+    assert state == EXPECTED, state
+
+
+TESTS = [test_state]
+"""
+
+
+def test_state_of_reads_slots_and_dicts(monkeypatch, tmp_path):
+    slotted = ("```python\nclass Q:\n    __slots__ = ('_n', 'items', '__private', 'unset')\n"
+               "    def __init__(self):\n        self._n = 3\n        self.items = []\n        self.__private = 1\n"
+               "    def size(self):\n        return 0\n```")
+    plain = "```python\nclass P:\n    def __init__(self):\n        self.a = 1\n    def size(self):\n        return 0\n```"
+    for deliverable, expected in ((slotted, "{'_n': 3, 'items': [], '_Q__private': 1}"), (plain, "{'a': 1}")):
+        _with_tests(monkeypatch, tmp_path, f"EXPECTED = {expected}\n" + _STATE_TESTS)
+        report = hidden_tests.run("X-01", deliverable)
+        assert report["passed"], report
