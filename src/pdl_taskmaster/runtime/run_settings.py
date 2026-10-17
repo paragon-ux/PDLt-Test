@@ -10,8 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, fields
 from typing import Any
 
-REPRESENTATIONS = ("pdl", "prose")
-SANDBOX_MODES = (None, "auto", "native", "container", "audit-only")
+from pdl_taskmaster.runtime.representation import REPRESENTATIONS
 
 
 @dataclass(frozen=True)
@@ -19,10 +18,10 @@ class RunSettings:
     max_repairs: int | None = None  # None: the routed tier's repairs; 0: stop at the first failed EXECUTE
     draft_execute: bool = False  # DRAFT_EXECUTE brief before EXECUTE (ADR-0013 P6)
     agent_tools: bool = False  # in-call tools and checked submissions (ADR-0029)
-    representation: str = "pdl"  # the confirmed route's artifacts: PDL, or prose (L97)
+    representation: str = "pdl"  # the confirmed route's artifacts: "pdl", or natural language "nl" (L97)
     tier_d1: bool | None = None  # feed back the model's own test failures in standard mode; None: the engine's default
     no_review: bool = False  # the unconfirmed route: no prompt or plan review
-    sandbox_mode: str | None = None  # None: $PDLT_SANDBOX, else auto
+    sandbox_mode: str | None = None  # None: $PDLT_SANDBOX, else auto; the sandbox resolves and announces it
     task_type: str | None = None  # a registered task type pinned for every request; None: System 1 classifies
 
     def __post_init__(self) -> None:
@@ -31,8 +30,8 @@ class RunSettings:
             problems.append(f"max_repairs: None or a non-negative integer, got {self.max_repairs!r}")
         if self.representation not in REPRESENTATIONS:
             problems.append(f"representation: one of {list(REPRESENTATIONS)}, got {self.representation!r}")
-        if self.sandbox_mode not in SANDBOX_MODES:
-            problems.append(f"sandbox_mode: one of {list(SANDBOX_MODES)}, got {self.sandbox_mode!r}")
+        if self.sandbox_mode is not None and not isinstance(self.sandbox_mode, str):
+            problems.append(f"sandbox_mode: None or a mode name, got {self.sandbox_mode!r}")
         for name in ("draft_execute", "agent_tools", "no_review"):
             if not isinstance(getattr(self, name), bool):
                 problems.append(f"{name}: a bool, got {getattr(self, name)!r}")

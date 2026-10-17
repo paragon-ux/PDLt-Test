@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_invalid_settings_are_refused_naming_each_field():
     with pytest.raises(ValueError) as caught:
-        RunSettings(max_repairs=-1, representation="html", sandbox_mode="none", draft_execute="yes")
+        RunSettings(max_repairs=-1, representation="html", sandbox_mode=3, draft_execute="yes")
     for name in ("max_repairs", "representation", "sandbox_mode", "draft_execute"):
         assert f"{name}:" in str(caught.value)
 
