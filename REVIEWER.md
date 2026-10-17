@@ -12,6 +12,9 @@ Two planes. The **harness** (`src/pdl_taskmaster/`) is a deterministic protocol 
 
 | Concern | Path |
 |---|---|
+| Library API (the primary entry point) | `src/pdl_taskmaster/api/`, `docs/api.md` |
+| Extensions SDK (task types, verifiers, providers) | `src/pdl_taskmaster/extensions/`, `docs/extensions.md` |
+| MCP server | `src/pdl_taskmaster/host/mcp_server.py`, `docs/mcp/EXTERNAL_TOOLS.md` |
 | Guardrails (GUARD-01..05) | `docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md` |
 | Current design | `ARCHITECTURE.md` |
 | Direction (not implemented) | `TARGET_ARCHITECTURE.md`, ADR-0023 to ADR-0026 |
@@ -28,7 +31,7 @@ Two planes. The **harness** (`src/pdl_taskmaster/`) is a deterministic protocol 
 
 ## 3. Ignore
 
-`catalogue-runs/` (run logs; load only to diagnose one run), `docs/adr/` (frozen history; the guardrail wins on conflict), `contracts/` and `src/pdl_taskmaster/contracts/` (hash-pinned data), `__pycache__/`, `.venv/`.
+`docs/adr/` (frozen history; the guardrail wins on conflict), `contracts/` and `src/pdl_taskmaster/contracts/` (hash-pinned data), `__pycache__/`, `.venv/`.
 
 ## 4. Invariants
 
@@ -40,7 +43,7 @@ Two planes. The **harness** (`src/pdl_taskmaster/`) is a deterministic protocol 
 ## 5. Order of evidence
 
 1. **Code first.** Cite `file:line`.
-2. **Recorded artifacts.** Those in `catalogue-runs/` and session folders (`call-trace.jsonl`, `events.jsonl`, `compiled-projection.json`, `model-response.txt`).
+2. **Recorded artifacts.** Those in the catalogue runs archive (outside the repository: `$PDLT_CATALOGUE_RUNS`, else `PDLt-Catalogue-Archive` beside the checkout; load one run at a time) and session folders (`call-trace.jsonl`, `events.jsonl`, `compiled-projection.json`, `model-response.txt`).
 3. **Offline tests.** These include recorded replays (`--worker recorded`).
 4. **A live run.** Only for model, provider or System 1 behaviour that the above cannot settle.
 

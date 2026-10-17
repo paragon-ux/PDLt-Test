@@ -64,6 +64,8 @@ def _run(tmp_path, execute_replies: list[dict], *, problem_class: str = "STANDAR
         if req.operation == "DRAFT_PLAN":
             return json.dumps({"neutral_plan_body": PLAN})
         if req.operation == "EXECUTE":
+            if not replies:  # a scripted attempt failed on this host: say what the host found
+                raise AssertionError("EXECUTE was asked again; its correction: " + req.prompt[-1200:])
             reply = replies.pop(0)
             return reply if isinstance(reply, str) else json.dumps(reply)
         raise AssertionError(f"unexpected operation {req.operation}")
@@ -656,6 +658,8 @@ def _run_raising(tmp_path, execute_results, **engine_settings):
             return json.dumps({"kind": "PROMPT", "prompt_body": PROMPT, "approach_handoff": "NONE"})
         if req.operation == "DRAFT_PLAN":
             return json.dumps({"neutral_plan_body": PLAN})
+        if not replies:  # a scripted attempt failed on this host: say what the host found
+            raise AssertionError("EXECUTE was asked again; its correction: " + req.prompt[-1200:])
         reply = replies.pop(0)
         if isinstance(reply, BaseException):
             raise reply

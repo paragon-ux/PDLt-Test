@@ -107,7 +107,7 @@ Three tiers, each with its own change process:
 
 ## 5. Evidence behind the direction
 
-**Output tokens and latency.** From 762 recorded catalogue sessions on `openai/gpt-oss-120b` (`catalogue-runs/`, 2026-10-02):
+**Output tokens and latency.** From 762 recorded catalogue sessions on `openai/gpt-oss-120b` (the catalogue runs archive, 2026-10-02):
 
 | | Output tokens per session | Model time per session |
 |---|---|---|

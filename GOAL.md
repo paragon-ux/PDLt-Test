@@ -2,9 +2,9 @@
 
 ## MISSION
 
-Execute the complete 105-prompt PDLt System 2 Prompt Catalogue through the live pdlt REPL
+Execute the complete 112-prompt PDLt System 2 Prompt Catalogue through the live pdlt REPL
 to produce a definitive scoreboard measuring protocol fidelity on `gpt-oss-120b` at the
-harness's default reasoning (high before execution, low at EXECUTE; ADR-0022). Results are written to `catalogue-runs/<run-timestamp>/`.
+harness's default reasoning (high before execution, low at EXECUTE; ADR-0022). Results are written to `<runs>/<run-timestamp>/`, where `<runs>` is `$PDLT_CATALOGUE_RUNS`, else `PDLt-Catalogue-Archive` beside the checkout (`catalogue_runs.py`).
 
 ---
 
@@ -16,7 +16,7 @@ No re-running a prompt "to see if it works this time." No modifying prompts mid-
 manifest is frozen at run start.
 
 ### 2. No Cherry-Picking
-All 105 prompts must be executed in manifest order. You may not skip prompts, reorder them
+All 112 prompts must be executed in manifest order. You may not skip prompts, reorder them
 to run easy ones first, or filter to only run categories you expect to pass.
 
 ### 3. No Prompt Modification
@@ -47,7 +47,7 @@ No switching models mid-run. No escalating reasoning effort for hard prompts.
 ```powershell
 python run_catalogue.py --dry-run
 ```
-Verify: 105 prompts listed, 21 marked VERIFIED (ground truth), manifest parses cleanly.
+Verify: 112 prompts listed, 57 marked VERIFIED (ground truth), manifest parses cleanly.
 
 ### Step 2: Single-Prompt Smoke Test
 ```powershell
@@ -63,7 +63,7 @@ python run_catalogue.py --model openai/gpt-oss-120b --timeout 180
 This will take approximately 30-60 minutes depending on API latency.
 
 ### Step 4: Review Scoreboard
-Open `catalogue-runs/<run-timestamp>/SCOREBOARD.md` and report:
+Open `<runs>/<run-timestamp>/SCOREBOARD.md` and report:
 1. Overall pass rate
 2. Pass rate by category
 3. Pass rate by difficulty tier
@@ -82,7 +82,7 @@ is substantively wrong (false positive).
 ## OUTPUT STRUCTURE
 
 ```
-PDLt-Test/catalogue-runs/
+PDLt-Catalogue-Archive/              # or $PDLT_CATALOGUE_RUNS
     run-YYYYMMDD-HHMMSS/
         RUN_META.json               # Frozen run configuration
         SCOREBOARD.json             # Machine-readable aggregate results
@@ -96,7 +96,7 @@ PDLt-Test/catalogue-runs/
                 session/            # pdlt session workspace directory
             01-02_exact_cover_dlx/
                 ...
-            ...                     # 105 result directories total
+            ...                     # 112 result directories total
 ```
 
 ---
@@ -115,7 +115,7 @@ PDLt-Test/catalogue-runs/
 ## WHAT SUCCESS LOOKS LIKE
 
 A successful run produces a scoreboard with:
-- **Every prompt attempted** (105 results, 0 skipped)
+- **Every prompt attempted** (112 results, 0 skipped)
 - **RUN_META.json confirms**: `retries_allowed: 0, do_overs_allowed: false`
 - **Regression prompts reported by id** (REG-001, REG-003, REG-011 to REG-014): a failure is reported, never tuned away
 - **Verified prompts spot-checked**: CLOSED_SUCCESS verdicts match ground truth

@@ -89,7 +89,17 @@ def test_the_prompt_is_the_same_with_tools_on(tmp_path):
 
 # ---- on: the engine's tool host
 
-def test_a_rejected_submission_is_corrected_in_the_call_and_the_host_verifies_the_accepted_one(tmp_path):
+def test_a_rejected_submission_is_corrected_in_the_call_and_the_host_verifies_the_accepted_one(tmp_path, monkeypatch):
+    # A small step budget: the step limit, not the wall clock, stops the endless loop, however loaded the machine
+    # (10 million traced steps can outlast the 30-second limit under parallel load). No prompt hash is compared here.
+    from dataclasses import replace
+
+    from pdl_taskmaster.verification import sandbox as sandbox_module
+
+    for tier, budget in list(sandbox_module.EXECUTION_BUDGETS.items()):
+        monkeypatch.setitem(sandbox_module.EXECUTION_BUDGETS, tier, replace(budget, step_limit=100_000))
+    monkeypatch.setattr(sandbox_module, "DEFAULT_BUDGET", sandbox_module.EXECUTION_BUDGETS["STANDARD"])
+
     def execute(req):
         host = req.tools
         assert host.tool_names() == ["run_python", SUBMIT]  # no previous attempt: no read_attempt

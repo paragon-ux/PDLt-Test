@@ -132,8 +132,10 @@ def test_run_with_confirm_accepts_each_review_as_a_standing_confirmation(tmp_pat
     worker = ScriptedWorker(POSITIVE, VERIFIED)
     with api.Session.open(worker, tmp_path / "s-1", repo_root=ROOT) as session:
         result = session.run(REQUEST, confirm=True)
-        events = [e["kind"] for e in session.host.engine.workspace.read_events()]
-    assert result.stage == "CLOSED_SUCCESS" and result.provenance["verification"]["level"] == "host_verified"
+        recorded = list(session.host.engine.workspace.read_events())
+        events = [e["kind"] for e in recorded]
+    assert result.stage == "CLOSED_SUCCESS", [e for e in recorded if e["kind"].startswith(("SANDBOX", "EXECUT"))]
+    assert result.provenance["verification"]["level"] == "host_verified"
     assert events.count("STANDING_CONFIRMATION") == 2
     assert worker.operations == ["BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN", "EXECUTE"]
 
