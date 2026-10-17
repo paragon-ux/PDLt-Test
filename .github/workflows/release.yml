@@ -1,0 +1,74 @@
+# Publish pdl-taskmaster to PyPI with trusted publishing (OIDC): no API token is stored anywhere.
+#
+# Trigger: publishing a GitHub release whose tag is v<version>, for example v2.6.0, where <version> is the
+# one in VERSION and src/pdl_taskmaster/__init__.py. The run tests every supported OS and interpreter
+# (ci.yml), builds the sdist and wheel once, checks them, installs the wheel outside the repository, and
+# only then publishes. Only the publish job can request an identity token, and only in the `pypi`
+# environment, which is what the PyPI trusted publisher is bound to.
+#
+# One-time setup (see docs/releasing.md): a trusted publisher on PyPI for this repository, workflow
+# release.yml and environment pypi; and the `pypi` environment in the repository's settings.
+name: release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    name: build and check distributions
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: The tag matches the package version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version="$(cat VERSION)"
+          init="$(cd src && python -c 'import pdl_taskmaster; print(pdl_taskmaster.__version__)')"
+          echo "tag=$TAG VERSION=$version __init__=$init"
+          test "$TAG" = "v$version" && test "$version" = "$init"
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade build twine
+          python -m build
+          python -m twine check --strict dist/*
+      - name: Install the wheel outside the repository and run it
+        run: |
+          python -m venv /tmp/wheel-venv
+          /tmp/wheel-venv/bin/pip install dist/*.whl
+          cd /tmp
+          /tmp/wheel-venv/bin/pdlt version
+          printf '/quit\n' | /tmp/wheel-venv/bin/pdlt --non-interactive --new-session --workspace-root /tmp/pdlt-ws
+          /tmp/wheel-venv/bin/python -c "from pdl_taskmaster.api import create_sandbox; s = create_sandbox('auto', label='release-check', require_confined=True); r = s.run_code('print(6 * 7)'); print(s.backend_name, r.exit_code, r.stdout.strip()); assert r.stdout.strip() == '42'; s.close()"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/pdl-taskmaster/
+    permissions:
+      id-token: write  # the OIDC token PyPI exchanges for a short-lived upload token
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

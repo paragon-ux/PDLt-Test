@@ -9,10 +9,20 @@
 | **Run tasks from Python** (primary) | `pdl_taskmaster.api`: `Session`, `TurnResult`, `create_worker`, `RunSettings` | [Python API](api.md) |
 | **Add task types, verifiers or model providers** (SDK) | `register_task_type`, `register_verifier`, `register_provider`, plus a conformance kit | [Extensions](extensions.md) |
 | **Use PDLt from another agent** | MCP server: `python -m pdl_taskmaster.host.mcp_server` | [MCP server](mcp/EXTERNAL_TOOLS.md) |
-| **Work interactively** | REPL: `pdlt --new-session` | [Getting started](getting-started.md) |
-| **Automate (CI, scripts)** | Headless: `pdlt --non-interactive`, with exit codes | [Getting started](getting-started.md) |
+| **Work interactively** | REPL: `pdlt --new-session` | [REPL and headless runs](repl.md) |
+| **Automate (CI, scripts)** | Headless: `pdlt --non-interactive`, with exit codes | [REPL and headless runs](repl.md#headless-runs) |
 
-Setting PDLt up, for agents and people alike: follow [Getting started](getting-started.md) step by step; each step ends with a check.
+## Set it up on your host
+
+Setup differs by operating system, because each has its own sandbox and shell. Each page takes you, or an agent, from nothing to a first verified task, with a check at the end of every step.
+
+| Host | Sandbox | Setup |
+| :--- | :--- | :--- |
+| Windows 10 or 11 | AppContainer | [Windows](hosts/windows.md) |
+| Linux, kernel 5.13 or later | Landlock | [Linux](hosts/linux.md) |
+| macOS | Seatbelt | [macOS](hosts/macos.md) |
+
+[Get started](getting-started.md) explains the steps and how to choose; [Reference](reference.md) holds the settings and file locations shared by all three.
 
 ---
 

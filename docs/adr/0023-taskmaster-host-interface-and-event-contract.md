@@ -3,7 +3,7 @@
 ## Status
 **Proposed.** Future work; not implemented in 2.6.0rc1. Date: 2026-10-02. Deciders: project maintainers.
 
-- Direction: [`TARGET_ARCHITECTURE.md`](../../TARGET_ARCHITECTURE.md) §4.1. Current behaviour: [`ARCHITECTURE.md`](../../ARCHITECTURE.md) §2, §3.4, §8.
+- Direction: [`TARGET_ARCHITECTURE.md`](https://github.com/paragon-ux/PDLt-Test/blob/main/TARGET_ARCHITECTURE.md) §4.1. Current behaviour: [`ARCHITECTURE.md`](https://github.com/paragon-ux/PDLt-Test/blob/main/ARCHITECTURE.md) §2, §3.4, §8.
 - Related: [ADR-0002](0002-controller-owned-artifact-controls.md) (controller-owned artifact controls), [ADR-0019](0019-headless-waiting-input-exit-and-wire-tolerance.md) (headless exit codes). Prerequisite for [ADR-0025](0025-agentic-capability-boundary.md) and [ADR-0026](0026-extension-and-workflow-model.md).
 - Requirements: `HOST-*` in `REQUIREMENTS.md` (planned; this section will list them).
 

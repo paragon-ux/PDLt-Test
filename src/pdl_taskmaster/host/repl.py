@@ -927,17 +927,32 @@ def _handle_dev_command(
 
 def _build_parser() -> argparse.ArgumentParser:
     """The REPL's command line (help strings are %-formatted by argparse)."""
-    parser = argparse.ArgumentParser(description="PDLt terminal REPL")
+    parser = argparse.ArgumentParser(
+        prog="pdlt",
+        formatter_class=argparse.RawDescriptionHelpFormatter,  # keeps the lines and the URL below unbroken
+        description="PDLt terminal REPL.\n\n"
+                    "With --non-interactive it runs headless: it reads tasks from standard input or\n"
+                    "--prompt/--prompt-file and exits with the outcome's code: 0 success, 1 cancelled,\n"
+                    "2 review gate, 3 waiting for input, 4 harness error, 5 unverified, 130 interrupted.",
+        epilog="other commands:\n"
+               "  pdlt version          print the version\n"
+               "  pdlt init [--local]   seed the operation contracts (~/.pdlt, or ./contracts)\n\n"
+               "documentation: https://paragon-ux.github.io/PDLt-Test/repl/",
+    )
     parser.add_argument(
         "--candidate-repo",
         type=Path,
         default=Path.cwd(),
         help="path to candidate repository (default: current working directory)",
     )
-    parser.add_argument("--workspace-root", type=Path, default=None)
-    parser.add_argument("--restore", type=Path, default=None)
-    parser.add_argument("--run-id", default="repl")
-    parser.add_argument("--observation-dir", type=Path, default=None)
+    parser.add_argument("--workspace-root", type=Path, default=None,
+                        help="folder that holds the sessions (default: runs/live-sessions in a source checkout, "
+                             "else ~/.pdlt/runs/live-sessions)")
+    parser.add_argument("--restore", type=Path, default=None,
+                        help="a stored workspace file to restore the session from (default: the session's own)")
+    parser.add_argument("--run-id", default="repl", help="label for this run's observation records (default: repl)")
+    parser.add_argument("--observation-dir", type=Path, default=None,
+                        help="where per-turn observation records are written (default: the session's observations/)")
     parser.add_argument(
         "--max-output-tokens",
         "--api-max-output-tokens",
@@ -1004,16 +1019,17 @@ def _build_parser() -> argparse.ArgumentParser:
         default="nvidia/nemotron-3-super-120b-a12b:free",
         help="model name to request from the worker (default: nvidia/nemotron-3-super-120b-a12b:free)",
     )
-    parser.add_argument("--eval-root", type=Path, default=None)
-    parser.add_argument("--evidence", type=Path, default=None)
-    parser.add_argument("--case-ids", default=None)
+    parser.add_argument("--eval-root", type=Path, default=None, help="recorded worker only: the evaluation root")
+    parser.add_argument("--evidence", type=Path, default=None,
+                        help="recorded worker only: the recorded-cases file to replay")
+    parser.add_argument("--case-ids", default=None, help="recorded worker only: comma-separated case ids to replay")
     parser.add_argument("--session-id", default=None, help="reuse a named session workspace across invocations")
     parser.add_argument("--new-session", action="store_true", help="skip the session selector and start a new session")
     parser.add_argument(
         "--non-interactive",
         action="store_true",
-        help="suppress all interactive prompts (session selection, MLflow, etc.); "
-             "suitable for SSH relays and piped input",
+        help="headless: never ask a question (no session selector), read tasks from standard input, and exit "
+             "with the outcome's code; for scripts, CI and piped input",
     )
     parser.add_argument("--transcript", type=Path, default=None, help="session-scoped transcript output file")
     parser.add_argument("--workdir", type=Path, default=None, help="writable session directory for the live worker")

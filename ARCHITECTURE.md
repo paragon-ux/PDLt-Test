@@ -1,6 +1,6 @@
 # PDL Taskmaster: Current Architecture
 
-**Describes:** `pdl-taskmaster` 2.6.0rc1, the code in this repository.
+**Describes:** `pdl-taskmaster` 2.6.0, the code in this repository.
 **Scope:** what exists and runs today. Where the project is heading is in [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md); nothing in this document describes planned behaviour.
 **Normative authorities:** ADR-0001 through ADR-0022 ([`docs/adr/`](docs/adr/README.md)) and the guardrails in [`docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md`](docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md) (`GUARD-01` to `GUARD-05`). Where an ADR and the guardrails disagree, the guardrails win.
 
@@ -262,7 +262,7 @@ Every response is capped by `--max-output-tokens` (default 16,384, reasoning inc
 
 ## 10. What this release does not do
 
-These are known limits of 2.6.0rc1. Each is captured as future work in [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md) and ADR-0023 to ADR-0026; where part of one has since landed, its entry says what. The full release audit, including smaller follow-ups, is [`docs/audits/RELEASE_AUDIT_2.6.0rc1.md`](docs/audits/RELEASE_AUDIT_2.6.0rc1.md).
+These are known limits of 2.6.0. Each is captured as future work in [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md) and ADR-0023 to ADR-0026; where part of one has since landed, its entry says what. The release audit of 2.6.0rc1, including smaller follow-ups, is [`docs/audits/RELEASE_AUDIT_2.6.0rc1.md`](docs/audits/RELEASE_AUDIT_2.6.0rc1.md).
 
 - **The client interface is v0, with no live events.** `pdl_taskmaster.api` returns structured results (`TurnResult`: stage, exit status, provenance) and drives the review gates (`confirm`, `revise`, `run(..., confirm=True)`), but it is unversioned and has no live event stream (ADR-0023; [`docs/api.md`](docs/api.md)).
 - **One cost setting.** Reasoning depth, output length, verification depth and model choice are set separately by flags but not by a profile, and there is no session-level time or token budget (ADR-0024).

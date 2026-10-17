@@ -3,7 +3,7 @@
 ## Status
 **Proposed.** Future work; not implemented in 2.6.0rc1. Date: 2026-10-02. Deciders: project maintainers.
 
-- Direction: [`TARGET_ARCHITECTURE.md`](../../TARGET_ARCHITECTURE.md) §4.3. Current behaviour: [`ARCHITECTURE.md`](../../ARCHITECTURE.md) §5.
+- Direction: [`TARGET_ARCHITECTURE.md`](https://github.com/paragon-ux/PDLt-Test/blob/main/TARGET_ARCHITECTURE.md) §4.3. Current behaviour: [`ARCHITECTURE.md`](https://github.com/paragon-ux/PDLt-Test/blob/main/ARCHITECTURE.md) §5.
 - Builds on: [ADR-0004](0004-confirmed-artifacts-as-execution-boundary.md) (confirmed artifacts as the execution boundary) and [ADR-0021](0021-session-scoped-os-native-confinement.md) (OS-native confinement). Would supersede the capability and MCP clauses of [ADR-0011](0011-in-memory-vfs-and-microvm-sandboxing.md), which were never implemented. Depends on [ADR-0023](0023-taskmaster-host-interface-and-event-contract.md) (approvals and events) and, for tools, [ADR-0024](0024-operation-profiles.md) (capability routing).
 - Requirements: `CAP-*` in `REQUIREMENTS.md` (planned; this section will list them).
 

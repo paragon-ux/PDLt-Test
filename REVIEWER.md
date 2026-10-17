@@ -12,9 +12,12 @@ Two planes. The **harness** (`src/pdl_taskmaster/`) is a deterministic protocol 
 
 | Concern | Path |
 |---|---|
+| Setup, by host | `docs/getting-started.md`, `docs/hosts/` (Windows, Linux, macOS), `docs/reference.md` |
 | Library API (the primary entry point) | `src/pdl_taskmaster/api/`, `docs/api.md` |
 | Extensions SDK (task types, verifiers, providers) | `src/pdl_taskmaster/extensions/`, `docs/extensions.md` |
+| REPL and headless runs | `src/pdl_taskmaster/host/repl.py`, `docs/repl.md` |
 | MCP server | `src/pdl_taskmaster/host/mcp_server.py`, `docs/mcp/EXTERNAL_TOOLS.md` |
+| Packaging and release | `pyproject.toml`, `.github/workflows/`, `docs/releasing.md` |
 | Guardrails (GUARD-01..05) | `docs/guardrails/ANTI_OVERFITTING_AND_BENCHMARK_INTEGRITY.md` |
 | Current design | `ARCHITECTURE.md` |
 | Direction (not implemented) | `TARGET_ARCHITECTURE.md`, ADR-0023 to ADR-0026 |

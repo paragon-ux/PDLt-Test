@@ -1,43 +1,48 @@
-# Providers, Models & Reasoning Controls
+# Providers and models
 
-PDLt interacts with upstream frontier LLMs via unified provider adapters, supporting multi-provider fallback, structured schema compliance, and fine-grained operation-level reasoning effort control.
+PDLt calls two kinds of model, both through [OpenRouter](https://openrouter.ai) by default, with one key (`OPENROUTER_API_KEY`):
 
----
+| Role | What it does | Default | Change it with |
+|---|---|---|---|
+| **Task model** (System 2) | Interprets the request, plans, and writes the deliverable and its programs | `nvidia/nemotron-3-super-120b-a12b:free` | `--model` (REPL, headless); `create_worker("api", model=...)` (Python) |
+| **System 1** | Routes each request and refuses out-of-bounds ones before any task-model call | `typesafe/jev-1.13`, on OpenRouter's decisions endpoint | `SYS1_MODEL`, `SYS1_ENDPOINT`, `SYS1_API_KEY`; or `create_system1(...)` in Python |
 
-## Provider Architecture
+## Which models work
 
-PDLt accesses models through OpenRouter or direct provider endpoints:
-- **System 1 (Routing & Guardrails)**: Lightweight routing model evaluating policy scopes, network permissions, and knowledge cutoffs.
-- **System 2 (Interpretation, Planning & Execution)**: Frontier reasoning models (e.g. `openai/gpt-oss-120b`, `nvidia/nemotron-3-super-120b-a12b`, Anthropic Claude, OpenAI o-series).
+PDLt's requests use structured output (a JSON schema the reply must follow) and reasoning effort settings. Its request setup was developed and measured on `openai/gpt-oss-120b` (the catalogue baseline model) and the default free model. Other models may reject the schema or the settings; such a rejection is reported as a provider error (exit 4), never as a task result. Try a model on one task before relying on it. Measurements by provider, and the providers known to reject the schemas, are in [PROVIDERS.md](https://github.com/paragon-ux/PDLt-Test/blob/main/PROVIDERS.md).
 
----
+## Provider order
 
-## Reasoning Effort Controls
+OpenRouter serves one model through several providers. Unless told otherwise, PDLt asks for **Baseten**, then **Crusoe**, and lets OpenRouter fall back to others. Both serve every operation with PDLt's schemas.
 
-PDLt allows setting global reasoning effort as well as per-operation overrides:
+| To | Use |
+|---|---|
+| Put another provider first | `OPENROUTER_PROVIDER=Name` |
+| Set the whole order | `OPENROUTER_PROVIDER_ORDER=A,B` |
+| Use only some providers, in order (REPL, headless) | `--api-providers A,B` |
 
-```bash
-# Global reasoning effort
-python run_catalogue.py --model openai/gpt-oss-120b --reasoning low
+A name PDLt does not know gets a warning, not a refusal, since OpenRouter adds providers.
 
-# Per-operation reasoning override
-python run_catalogue.py \
-  --model openai/gpt-oss-120b \
-  --reasoning low \
-  --reasoning-op EXECUTE=medium
-```
+## Reasoning effort
 
-### Supported Operations for Reasoning Control
+By default each operation gets the model's own mapping: for `gpt-oss`, high before execution and low or medium when writing the deliverable. To override it:
 
-- `BOOTSTRAP_ANALYSIS`: Initial prompt classification and semantic extraction.
-- `DRAFT_PROMPT`: High-level user intent interpretation in pseudocode.
-- `DRAFT_PLAN`: Algorithmic and structural planning in pseudocode.
-- `EXECUTE`: Deliverable code authoring.
-- `VERIFY_REPAIR`: Diagnostic analysis and error correction in the sandbox loop.
+| Where | Every operation | One operation |
+|---|---|---|
+| REPL, headless | `--api-reasoning-effort low` | `--api-reasoning-operation EXECUTE=medium` (repeatable) |
+| Catalogue runner | `--reasoning low` | `--reasoning-op EXECUTE=medium` (repeatable) |
 
----
+The operations: `BOOTSTRAP_ANALYSIS`, `DRAFT_PROMPT`, `REVISE_PROMPT`, `INTERPRET_PROMPT_REVIEW`, `DRAFT_PLAN`, `REVISE_PLAN`, `INTERPRET_PLAN_REVIEW`, `INTERPRET_EXECUTION_INPUT`, `DRAFT_EXECUTE`, `EXECUTE`, `EXECUTE_UNCONFIRMED`, `EMIT_RESULT_IR`.
 
-## Resilience & Retry Policies
+## Other limits per call
 
-- **Deterministic Evaluation**: In catalogue evaluation mode, retries and do-overs are strictly prohibited (1 attempt per prompt).
-- **HTTP / Provider Faults**: Network timeouts or transient 5xx errors from providers are captured and classified as `HARNESS_ERROR` rather than model failure outcomes.
+| Setting | Default | Flag |
+|---|---|---|
+| Output tokens per call, reasoning included | 16,384 | `--max-output-tokens` |
+| Wall-clock seconds per call, retries included | 300 | `--api-call-deadline` |
+
+A reply cut off at the output cap is a failed attempt. Network timeouts and provider errors are harness errors (exit 4), not model outcomes.
+
+## Your own provider
+
+Any OpenAI-compatible Responses API host: `--api-base-url URL --api-key-env NAME_OF_KEY_VARIABLE`. Anything else: register a provider through the [Extensions SDK](extensions.md#providers).

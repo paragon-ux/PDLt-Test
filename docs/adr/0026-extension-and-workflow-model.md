@@ -3,7 +3,7 @@
 ## Status
 **Proposed.** Future work; not implemented in 2.6.0rc1. Date: 2026-10-02. Deciders: project maintainers.
 
-- Direction: [`TARGET_ARCHITECTURE.md`](../../TARGET_ARCHITECTURE.md) §4.4. Current behaviour: [`ARCHITECTURE.md`](../../ARCHITECTURE.md) §7.
+- Direction: [`TARGET_ARCHITECTURE.md`](https://github.com/paragon-ux/PDLt-Test/blob/main/TARGET_ARCHITECTURE.md) §4.4. Current behaviour: [`ARCHITECTURE.md`](https://github.com/paragon-ux/PDLt-Test/blob/main/ARCHITECTURE.md) §7.
 - Builds on: [ADR-0008](0008-context-and-session-management.md) (normative store). Depends on [ADR-0023](0023-taskmaster-host-interface-and-event-contract.md), [ADR-0024](0024-operation-profiles.md) and [ADR-0025](0025-agentic-capability-boundary.md), whose seams a workflow pack bundles. Bound by the guardrails (`GUARD-01` to `GUARD-05`).
 - Requirements: `EXT-*` in `REQUIREMENTS.md` (planned; this section will list them).
 

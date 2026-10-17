@@ -39,4 +39,4 @@ The records are intentionally separated so UI, context construction, execution
 isolation, output representation, and reasoning policy can evolve without
 replacing the entire protocol decision.
 
-**Status values.** *Accepted* records a decision in force; notes in the table and in each record say where the code differs. *Proposed (future)* records a direction that is **not implemented** in the current release; see [`TARGET_ARCHITECTURE.md`](../../TARGET_ARCHITECTURE.md). Requirement documents cited by the early records (TRD-0001 to TRD-0003) are upstream documents that are not included in this repository.
+**Status values.** *Accepted* records a decision in force; notes in the table and in each record say where the code differs. *Proposed (future)* records a direction that is **not implemented** in the current release; see [`TARGET_ARCHITECTURE.md`](https://github.com/paragon-ux/PDLt-Test/blob/main/TARGET_ARCHITECTURE.md). Requirement documents cited by the early records (TRD-0001 to TRD-0003) are upstream documents that are not included in this repository.

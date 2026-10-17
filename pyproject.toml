@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "pdl-taskmaster"
 dynamic = ["version"]
-description = "Deterministic protocol governance and bounded AI agent harness"
+description = "A protocol harness for verified, auditable model execution: Python API, extensions SDK, REPL, headless CLI and MCP server"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -14,8 +14,12 @@ authors = [
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
+    "Environment :: Console",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -45,6 +49,12 @@ test = [
     "mcp>=1.10",  # L123: the external MCP tests drive the server with the official client
 ]
 
+[project.urls]
+Homepage = "https://github.com/paragon-ux/PDLt-Test"
+Documentation = "https://paragon-ux.github.io/PDLt-Test/"
+Source = "https://github.com/paragon-ux/PDLt-Test"
+Issues = "https://github.com/paragon-ux/PDLt-Test/issues"
+
 [project.scripts]
 pdlt = "pdl_taskmaster.host.cli:main"
 
@@ -65,7 +75,8 @@ exclude = [
 
 # Patterns are anchored with "/": an unanchored name such as "README.md" matches at any
 # depth, which pulled stray files (other tools' worktrees) into the sdist. The
-# evaluation plane is included because the shipped tests exercise it.
+# evaluation plane (with experiments/, catalogue_runs.py and hidden_tests.py, which it
+# and the tests import) is included because the shipped tests exercise it.
 [tool.hatch.build.targets.sdist]
 include = [
     "/src/pdl_taskmaster",
@@ -76,7 +87,10 @@ include = [
     "/scripts",
     "/docs",
     "/graders.py",
+    "/hidden_tests.py",
     "/run_catalogue.py",
+    "/catalogue_runs.py",
+    "/experiments",
     "/VERSION",
     "/NOTICE.md",
     "/LICENSE",

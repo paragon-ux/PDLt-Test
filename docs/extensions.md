@@ -130,7 +130,19 @@ worker = api.create_worker("mine", endpoint="...")
 - **Roles:** `worker` (`call(request) -> WorkerResult`) or `system1` (`is_configured`, and `call(request) -> (answer, milliseconds)`).
 - **Settings:** `"any"`, or the names the factory takes. Unknown ones are refused before the factory runs.
 - **Interface check:** whatever the factory makes is checked against its role before use.
-- **From the REPL:** a registered worker provider is reachable with `--worker mine --provider-setting endpoint=...`.
+- **From the REPL:** `pdlt` offers only the providers registered in its own process; there is no plugin discovery. To use yours from the REPL or a headless run, start `pdlt` from a launcher script that registers it first:
+
+    ```python
+    # my_pdlt.py
+    from pdl_taskmaster import api
+    from pdl_taskmaster.host.cli import main
+
+    api.register_provider({"profile": "pdlt.provider/1", "name": "mine", "role": "worker",
+                           "factory": lambda *, endpoint: MyWorker(endpoint), "settings": ["endpoint"]})
+    raise SystemExit(main())
+    ```
+
+    Then `python my_pdlt.py --worker mine --provider-setting endpoint=...` takes every `pdlt` flag, and `--help` lists `mine` among the workers. Task types and verifiers registered the same way are available to `--task-type`.
 
 ## Interfaces
 
