@@ -6,8 +6,11 @@ The REPL, headless runs and the MCP server go through this layer (ledger L120). 
 |---|---|
 | Run a task from Python | `Session.open(worker, folder)`, then `send`, `confirm`, `revise`, `stop`, `cancel` or `run` |
 | A worker for a model | `create_worker("api", model=...)`, or your own provider via `register_provider` |
+| System 1 apart from the worker | `create_system1("openrouter", ...)`, then `Session.open(..., sys1=...)` |
+| Run settings (repairs, brief, tools, representation, review, sandbox, task type) | `RunSettings(...)`, then `Session.open(..., settings=...)` |
 | The exit code a headless run would give | `TurnResult.exit_status`, or `exit_status(stage)` |
-| Your own domain checkers | `Session.open(..., output_verifier=...)` |
+| A task type of your own, or pinning one | `register_task_type(declaration)`; `Session.open(..., task_type=...)` ([extensions.md](extensions.md)) |
+| Your own domain checkers | `register_verifier(declaration)`, bound by a task type ([extensions.md](extensions.md)) |
 | Results of closed sessions | `closed_turns(folder)` |
 | A sandbox outside a session | `create_sandbox(mode, label=..., require_confined=True)` |
 
@@ -29,6 +32,10 @@ with Session.open(worker, "runs/sessions/demo") as session:
 - **`run(message, confirm=True)`** accepts each review as a standing confirmation, recorded as one (`STANDING_CONFIRMATION` events, as the REPL's fast mode). An artifact the host has findings on is left open for review.
 - **Errors:** a provider or transport error raises from `send` (a headless run exits 4 on it). The session stays usable.
 - **`repo_root`** defaults to the checkout this package runs from (it holds the Standard, the operations and their schemas).
+- **`task_type`** pins a registered task type for every request; without it System 1 classifies each request, and an unclassified one gets the default (STANDARD_EXECUTION).
+- **`settings`** is a `RunSettings`: `max_repairs`, `draft_execute`, `agent_tools`, `representation`, `tier_d1`, `no_review`, `sandbox_mode`, `task_type`. It is validated when made, and every invalid field is named. Without it, `no_review`, `sandbox_mode` and `task_type` come from the arguments and the rest from the worker's attributes (`RunSettings.from_worker`). With it, pass those three inside it, not as arguments.
+- **`sys1`** is the System 1 client the session asks (`create_system1`). Without it, the worker's is used; with it, a worker that has one uses the same.
+- **A direct reply** (a request System 1 routes away from the protocol) comes back as `text`, with `stage` None and exit 0. The engine produces it from the user's own words.
 
 ## The result of a message: `TurnResult`
 
@@ -59,12 +66,21 @@ One mapping, `api.outcome.exit_status(stage, refused=..., harness_error=...)`. T
 
 ## Providers
 
-A provider is a factory returning a worker: any object with `call(request) -> WorkerResult` (`providers/base.py`). If the worker has a `sys1_client`, System 1 uses it; without one, Phase 0 and the boundary refusal do not run (the engine never builds a network client itself).
+A provider is a named factory for one role, registered against provider profile v1 (`pdlt.provider/1`):
+- **`worker`:** returns an object with `call(request) -> WorkerResult` (`providers/base.py`).
+- **`system1`:** returns an object with `is_configured` and `call(request) -> (answer, milliseconds)`.
 
-| Name | Settings |
-|---|---|
-| `api` | `ApiWorker`'s keywords: `model`, `base_url`, `api_key_env`, `reasoning_effort`, `max_output_tokens`, `structured_output` and the rest. Request settings follow each model's OpenRouter metadata (L122). |
-| `recorded` | `repo_root`, `evidence` (a `recorded-cases.json` fixture, or recorded evidence with `eval_root`), `case_ids` |
+System 1 is the session's `sys1`, else the worker's `sys1_client`. Without either, Phase 0 and the boundary refusal do not run: the engine never builds a network client itself.
+
+A provider declares the settings it takes. An unknown setting is refused before the factory runs, and whatever the factory makes is checked against its role's interface before anything uses it (`ExtensionFailure`).
+
+| Name | Role | Settings |
+|---|---|---|
+| `api` | worker | `ApiWorker`'s keywords: `model`, `base_url`, `api_key_env`, `reasoning_effort`, `max_output_tokens`, `structured_output` and the rest. Request settings follow each model's OpenRouter metadata (L122). |
+| `recorded` | worker | `repo_root`, `evidence` (a `recorded-cases.json` fixture, or recorded evidence with `eval_root`), `case_ids` |
+| `openrouter` | system1 | `Sys1Client`'s keywords: `api_key`, `endpoint`, `model`, `timeout` |
+
+The REPL and headless runs take any registered worker provider: `--worker <name>`, with `--provider-setting KEY=VALUE` (repeatable; the value is read as JSON when it parses).
 
 ```python
 from pdl_taskmaster.api import register_provider, create_worker
@@ -73,21 +89,13 @@ register_provider("mine", lambda **settings: MyWorker(**settings))
 worker = create_worker("mine", endpoint="...")
 ```
 
-`create_worker` with an unknown name raises `ValueError` naming the known ones. `register_provider` refuses to replace a name unless `replace=True`.
+`create_worker` with an unknown name raises `ValueError` naming the known ones. `register_provider` refuses to replace a name unless `replace=True`. It also takes a full declaration: `{"profile": "pdlt.provider/1", "name", "role", "factory", "settings"}`.
 
-## Verifiers
+## Task types and verifiers
 
-The engine checks a result's witness against a registry of domain checkers (`verification/output_verifier.py`). PDLt ships none in the harness plane (ADR-0018): only the fallback runs. A caller may supply its own registry:
+Task types and verifiers are extension points defined by versioned profiles: `pdlt.task-type/1` and `pdlt.verifier/1`. Registration validates a declaration and names every problem (`ProfileViolation`). The built-ins register the same way, and a conformance kit checks an extension against the profile. See [extensions.md](extensions.md).
 
-```python
-from pdl_taskmaster.verification.output_verifier import OutputVerifier
-
-verifier = OutputVerifier()
-verifier.register(MyChecker())  # a BaseChecker whose name is the problem domain it checks
-session = Session.open(worker, folder, output_verifier=verifier)
-```
-
-A registered checker is the caller's own verification. It changes what a result's provenance may claim, so it must be deterministic and must not solve the task (GUARD-01).
+Each session's verifier registry is built from the registered verifiers. `Session.open(output_verifier=...)` still replaces it whole, for callers that build an `OutputVerifier` themselves.
 
 ## Closed sessions
 
@@ -97,9 +105,8 @@ A registered checker is the caller's own verification. It changes what a result'
 
 `create_sandbox(mode, label=..., require_confined=True)` returns an `ExecutionSandbox`. With `require_confined`, the audit-only opt-out raises `SandboxNotConfined`; the MCP server requires it. A session builds its own sandbox; pass `sandbox_mode` to `Session.open`.
 
-## Not covered yet (L120 batch B2)
+## What is not an extension point
 
-- A typed settings object: the REPL still copies run settings onto the engine from worker attributes (`app.py`).
-- A task-type extension point (problem class, route, operations, accepted witness forms).
-- System 1 as its own provider, apart from the worker.
-- The direct-reply path still calls the worker from the host, outside the engine.
+- **The core:** the stages, review gates and execution modes (`no_review`, standing confirmation), and the workspace structure.
+- **Interfaces** (REPL, headless, MCP, and any future one) are clients of `Session`, not extensions. Each must pass the interface conformance suite (`tests/test_interface_conformance.py`): the same scenarios, ending in the same state, with the same exit statuses and the same provenance served.
+- **The Python API** is v0 and unversioned. Profiles carry versions; the API does not.

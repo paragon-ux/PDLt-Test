@@ -17,14 +17,14 @@ Ledger L124. Plan set by the user, 2026-10-16 (main chat). They declined the ear
 
 | | Deliverable | Status |
 |---|---|---|
-| D1 | Task-type profile v1: schema, validation, routing design | done (summary sent 2026-10-16) |
-| D2 | Built-ins migrated; offline parity (worker requests, stages, exit codes, provenance) | done (`ecdd0b4c`; goldens `9de47683`) |
-| D3 | Invariants enforced at runtime; misbehaving-extension tests | drafted, not applied (see Resume) |
-| D4 | Task-type conformance kit; built-ins and an external sample pass; a broken sample fails | drafted, not applied (see Resume) |
-| D5 | Providers and verifiers on the same mechanism | open (verifier profile v1 built in D1) |
-| D6 | Interface conformance suite: REPL, headless, MCP | open |
-| D7 | Typed settings, System 1 as its own provider, direct reply inside the turn API | open |
-| D8 | docs/api.md, docs/extensions.md, ledger, where-PDLt-stands note | open |
+| D1 | Task-type profile v1: schema, validation, routing design | done (`78193691`): 25 tests, `tests/test_task_type_profile.py` |
+| D2 | Built-ins migrated; offline parity (worker requests, stages, exit codes, provenance) | done (`ecdd0b4c`; goldens `9de47683`): 10/10 parity scenarios, `tests/test_task_type_parity.py` |
+| D3 | Invariants enforced at runtime; misbehaving-extension tests | done (`aa30d3cf`): 13 tests, `tests/test_extension_invariants.py` |
+| D4 | Task-type conformance kit; built-ins and an external sample pass; a broken sample fails | done (`aa30d3cf`): 7 tests, `tests/test_task_type_conformance.py`; anti-overfitting check added |
+| D5 | Providers and verifiers on the same mechanism | done (`2f43c0e4`): 5 tests, `tests/test_provider_profile.py`; `tests/test_api.py` 24 pass |
+| D6 | Interface conformance suite: REPL, headless, MCP | done (`beb46654`): 28 tests, `tests/test_interface_conformance.py` |
+| D7 | Typed settings, System 1 as its own provider, direct reply inside the turn API | done (`eebe5787`, fix `bc26fdf0`): 7 tests, `tests/test_run_settings.py` |
+| D8 | docs/api.md, docs/extensions.md, ledger, where-PDLt-stands note | done: `docs/api.md`, `docs/extensions.md`, ledger L120/L124, surface map |
 
 ## D1 design (`src/pdl_taskmaster/extensions/`)
 
@@ -79,21 +79,21 @@ Invariants:
    - sandbox confinement;
    - provenance computed by the host and capped by the binding: `verifier: "none"` never yields more than contract_checked.
 
-## Resume here (2026-10-16, paused for a Claude Desktop restart)
+## Outcome (2026-10-17)
 
-- **Branch:** `b2-profiles`, worktree `scratchpad/b2` of the earlier session; `git worktree list` shows it. Commits so far: D1 `78193691`, goldens `9de47683`, D2 `ecdd0b4c`. Not merged.
-- **D2 evidence:**
-  - parity: 10/10 golden scenarios match. The goldens were recorded from the unchanged engine and also match the pre-B2 main tree.
-  - full suite under `-n 3` on a loaded machine: 1249 passed, 8 failed. Seven of the failures pass serially (catalogue timeouts, confinement, `test_api` standing confirmation, output cut-off), so they are load-dependent. The eighth was a missing sample fact in `test_error_registry` for the new `WITNESS_FORM_NOT_ACCEPTED`, now fixed.
-  - anti-overfitting: 17 passed with `-W error`.
-- **Drafts in `docs/plans/b2-drafts/`, untested:**
-  - `d3_engine_edit.py`: run from the worktree root. It builds the engine's verifier registry from the registered verifiers, makes checkers judge deep copies through `_check_witness` (failure raises `ExtensionFailure`), and adds `ExtensionFailure` to `profiles.py`.
-  - `conformance.py`: copy to `src/pdl_taskmaster/extensions/conformance.py`. Before it works:
-    - `TaskType` needs a `declaration` field (a snapshot copy of the declaration: dicts and lists copied, objects kept, `compare=False`), set in `_build`;
-    - `run_session` must accept `category=None` (no pin).
-  - `extension_samples.py` and `test_extension_invariants.py`: copy to `tests/`.
-- **Still to write:**
-  - **D4 tests:** built-ins pass `check_task_type`, with `POSITIVE_SAMPLE` for VERIFIED; `ROW_TOTALS` with `ROW_TOTALS_VERIFIER` passes; a broken sample fails with clear errors.
-  - **Anti-overfitting test:** the harness plane registers only `witness-reproduction`, and built-ins bind only `none` or `witness-reproduction`.
-  - **D5 to D8**, as planned above.
-- **Discovery:** use the waymark-engine MCP once it is connected; otherwise the CLI with `--daemon`.
+- **Merged** into `claude/final-five-arm-benchmark`; nothing pushed.
+- **Tests:** full suite 1318 passed, 42 skipped (`-n 3`); anti-overfitting 18 passed with `-W error`. A run on 2026-10-16 under machine load failed seven tests that pass serially (catalogue timeouts, confinement, the standing-confirmation API test, output cut-off). They are timing flakes, flagged separately as the user asked, alongside the two from B1.
+- **No catalogue run:** live runs are out of scope for B2. The parity goldens show the worker and System 1 requests for the built-ins unchanged, and the provider-layer request is untouched (the AGENTS.md "receives" trigger is not met).
+
+**Deviations from the plan, and why:**
+- **D1 also built the verifier profile** (planned for D5): validating a task type's `verifier` binding needs it.
+- **D2 adds one finding,** `WITNESS_FORM_NOT_ACCEPTED`, for a witness of a form the task type does not accept. The built-ins accept every form, so they never raise it (parity holds).
+- **D3 and D4 were written together:** the invariant tests drive sessions with the kit's scripted worker and System 1.
+- **D6 required a REPL change:** the REPL and headless runs now take any registered worker provider (`--worker <name>`, `--provider-setting KEY=VALUE`), so the suite drives them through the extension mechanism rather than by patching internals.
+- **D7 run settings:** flags apply to the API worker. Recorded replays and codex keep the defaults their recordings were made with, as before, so their prompts and replays do not change. `RunSettings.from_worker` stays for library callers (API v0).
+- **D7 direct reply:** the engine produces it through a hook the host sets (`plain_reply`), on the user's own words. The worker's request is unchanged and, as before, is not recorded in observations.
+- **Three existing tests changed,** each for an internal that moved:
+  - `test_api` isolates the provider registry with `scoped()`;
+  - a `test_interruptions` double gained `call`, since providers now check the interface;
+  - `test_error_registry` gained sample facts for the new finding.
+
