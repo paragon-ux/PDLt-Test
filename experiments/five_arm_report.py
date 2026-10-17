@@ -5,8 +5,8 @@ Every figure comes from the runs' own artifacts (result.json, RUN_META.json, KEY
 `run_catalogue.outcome_class(r) == "PASS"` (the expected stage and a grader PASS). Ungraded and pending
 prompts are never passes.
 
-    py -3.11 experiments/five_arm_report.py --runs-dir catalogue-runs --commit <sha> --md report.md --json report.json
-    py -3.11 experiments/five_arm_report.py --arm control=catalogue-runs/run-... --arm unconfirmed=...   (explicit runs)
+    py -3.11 experiments/five_arm_report.py --commit <sha> --md report.md --json report.json
+    py -3.11 experiments/five_arm_report.py --arm control=<runs>/run-... --arm unconfirmed=...   (explicit runs)
 """
 from __future__ import annotations
 
@@ -20,6 +20,8 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(os.environ.get("PDLT_TEST_ROOT") or Path(__file__).resolve().parent.parent)
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
 sys.path.insert(0, str(ROOT))
 
 import run_catalogue  # noqa: E402  (one definition of a pass, shared with the scoreboards)
@@ -554,7 +556,7 @@ def appendix(runs: dict[str, dict], metrics: dict[str, dict], names: list[str]) 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--runs-dir", type=Path, default=ROOT / "catalogue-runs")
+    parser.add_argument("--runs-dir", type=Path, default=RUNS_DIR)
     parser.add_argument("--commit", default=None, help="only runs of this commit (prefix)")
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--total", type=int, default=112, help="prompts a run must have")

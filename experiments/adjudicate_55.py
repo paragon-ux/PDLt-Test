@@ -11,14 +11,16 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
 sys.path.insert(0, str(ROOT))
 
 from experiments.judge import Rubric, Criterion, load_rubric, judge_prompt, parse_marks, openrouter_sender, JudgeSpec
 from experiments.grading import strip_for_adjudication
 
 RUNS = {
-    "arm3": ROOT / "catalogue-runs" / "run-20261007-020548-confirmed-draft-execute-tier-d1",
-    "arm4": ROOT / "catalogue-runs" / "run-20261007-015100-unconfirmed-draft-execute-tier-d1",
+    "arm3": RUNS_DIR / "run-20261007-020548-confirmed-draft-execute-tier-d1",
+    "arm4": RUNS_DIR / "run-20261007-015100-unconfirmed-draft-execute-tier-d1",
 }
 
 CACHE_DIR = ROOT / "experiments" / "adjudication_cache"

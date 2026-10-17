@@ -8,12 +8,14 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(r"C:\Users\USER\Desktop\Frameworks\PDLt-Test")
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
 sys.path[:0] = [str(ROOT), str(ROOT / "src")]
 from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from quotes import RequestText  # noqa: E402  (a copy of the L100 locator; vNext's runtime has none)
 
-RUN = ROOT / "catalogue-runs" / "run-20261009-042907-unconfirmed-tier-d1"
+RUN = RUNS_DIR / "run-20261009-042907-unconfirmed-tier-d1"
 REPLY_FORM = {"answer", "expression", "result", "output", "response", "solution", "explanation", "the answer"}
 
 

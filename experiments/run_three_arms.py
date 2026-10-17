@@ -17,6 +17,8 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
 PROMPTS = "01-01,02-01,03-01,04-01,05-01,06-01,07-01,08-01,09-01,10-01,11-01,12-01,13-01,14-01,15-01,16-01"
 MODEL = "openai/gpt-oss-120b"
 TIMEOUT = "90"
@@ -64,7 +66,7 @@ def run_arm(arm_info):
 
 
 def summarize_results():
-    runs_dir = ROOT / "catalogue-runs"
+    runs_dir = RUNS_DIR
     # Find newest run directories for each arm
     scoreboard_data = {}
     for arm in ARMS:

@@ -7,7 +7,7 @@ git worktree at an earlier commit) can be compared on the same prompts.
 
     python run_extraction_probe.py --label head
     python run_extraction_probe.py --root ../PDLt-armA --label original --workers 6
-    python run_extraction_probe.py --compare catalogue-runs/extraction-probe-a catalogue-runs/extraction-probe-b
+    python run_extraction_probe.py --compare <runs>/extraction-probe-a <runs>/extraction-probe-b
 
 Measures, per prompt (the metrics never see harness code):
 - literal_recall: of the request's literal tokens (numbers, quoted strings, code-like
@@ -31,6 +31,8 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
 MANIFEST = ROOT / "prompts" / "CATALOGUE_MANIFEST.jsonl"
 
 # Critical items a faithful prompt pseudocode must keep (a regex each, case-insensitive).
@@ -181,7 +183,7 @@ def main() -> int:
     if args.ids:
         wanted = set(args.ids.split(","))
         entries = [e for e in entries if e["id"] in wanted]
-    out = ROOT / "catalogue-runs" / f"extraction-probe-{args.label}-{datetime.now():%Y%m%d-%H%M%S}"
+    out = RUNS_DIR / f"extraction-probe-{args.label}-{datetime.now():%Y%m%d-%H%M%S}"
     out.mkdir(parents=True)
     root = args.root.resolve()
     with ThreadPoolExecutor(max_workers=args.workers) as pool:

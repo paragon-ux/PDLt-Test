@@ -34,10 +34,12 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
 sys.path[:0] = [str(ROOT), str(ROOT / "src"), str(HERE)]
 
-SWEEPS = {"orig": ROOT / "catalogue-runs" / "run-20261009-042907-unconfirmed-tier-d1",
-          "vnext": ROOT / "catalogue-runs" / "run-20261009-175714-unconfirmed-tier-d1"}
+SWEEPS = {"orig": RUNS_DIR / "run-20261009-042907-unconfirmed-tier-d1",
+          "vnext": RUNS_DIR / "run-20261009-175714-unconfirmed-tier-d1"}
 # Rule fixed before any result: per prompt, P = the earliest passing run and F = the earliest failing run,
 # the original's sweep (L99) first. 16-06 has no passing original run, so P is the earliest passing vNext run;
 # D1 did not fire in it, so the host built its EXECUTE input as the original would (checked in the dry run).

@@ -27,12 +27,14 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
 for entry in (ROOT, ROOT / "src"):
     if str(entry) not in sys.path:
         sys.path.insert(0, str(entry))
 
 FIXTURES = HERE / "tasks" / "fixtures" / "task-01"
-SESSIONS = ROOT / "catalogue-runs" / "pdl-format-pilot" / "sessions"
+SESSIONS = RUNS_DIR / "pdl-format-pilot" / "sessions"
 HEADER = "account_id,usage_date_utc,net_units,unit_price_usd,amount_usd"
 NETWORK_MODULES = {"socket", "ssl", "http", "urllib", "ftplib", "smtplib", "poplib", "imaplib", "telnetlib",
                    "xmlrpc", "requests", "httpx", "aiohttp", "asyncio"}

@@ -28,7 +28,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 TREE = HERE.parents[1]
-L99 = TREE / "catalogue-runs" / "run-20261009-042907-unconfirmed-tier-d1"
+sys.path.insert(0, str(TREE))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
+L99 = RUNS_DIR / "run-20261009-042907-unconfirmed-tier-d1"
 WORKER = dict(model="openai/gpt-oss-120b", provider_pinning={"order": ["Cerebras"], "allow_fallbacks": False},
               structured_output=True, reasoning_effort="low")
 

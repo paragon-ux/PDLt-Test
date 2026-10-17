@@ -11,7 +11,7 @@ Usage:
     python run_catalogue.py [--model MODEL] [--reasoning EFFORT] [--category CAT] [--dry-run]
 
 Outputs:
-    catalogue-runs/<timestamp>/
+    <runs>/<timestamp>/   (<runs>: catalogue_runs.py; outside the repository)
         +-- RUN_META.json           # Run configuration and environment
         +-- SCOREBOARD.json         # Aggregate results
         +-- SCOREBOARD.md           # Human-readable scoreboard
@@ -42,15 +42,14 @@ except ImportError:
     resource = None
 
 _script_dir = Path(__file__).resolve().parent
-if (_script_dir / "prompts").is_dir():
-    PDLT_TEST_ROOT = _script_dir
-    RUNS_DIR = _script_dir / "catalogue-runs"
-elif (_script_dir.parent / "prompts").is_dir():
+if (_script_dir.parent / "prompts").is_dir() and not (_script_dir / "prompts").is_dir():
     PDLT_TEST_ROOT = _script_dir.parent
     RUNS_DIR = _script_dir
 else:
     PDLT_TEST_ROOT = _script_dir
-    RUNS_DIR = _script_dir / "catalogue-runs"
+    # Runs are written outside the repository: $PDLT_CATALOGUE_RUNS, else PDLt-Catalogue-Archive beside it.
+    sys.path.insert(0, str(PDLT_TEST_ROOT))
+    from catalogue_runs import RUNS_DIR  # noqa: E402
 
 # The runner reads the harness's own sandbox definitions (graders, containment):
 # the same source tree the harness runs from, never another installed copy.

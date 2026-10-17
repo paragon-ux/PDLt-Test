@@ -23,7 +23,9 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-LOGS = ROOT / "catalogue-runs" / "sweep-logs"
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
+LOGS = RUNS_DIR / "sweep-logs"
 MODEL = "openai/gpt-oss-120b"
 ROUTES = {
     "control": ["--route", "control"],

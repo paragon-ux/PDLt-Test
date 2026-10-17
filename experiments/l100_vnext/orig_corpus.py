@@ -13,13 +13,15 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(r"C:\Users\USER\Desktop\Frameworks\PDLt-Test")
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
 sys.path[:0] = [str(ROOT), str(ROOT / "src")]
 from run_catalogue import outcome_class  # noqa: E402
 from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from quotes import RequestText  # noqa: E402  (a copy of the L100 locator; vNext's runtime has none)
 
-RUN = ROOT / "catalogue-runs" / sys.argv[1] if len(sys.argv) > 1 else ROOT / "catalogue-runs" / "run-20261009-042907-unconfirmed-tier-d1"
+RUN = RUNS_DIR / sys.argv[1] if len(sys.argv) > 1 else RUNS_DIR / "run-20261009-042907-unconfirmed-tier-d1"
 OUT = RUN / "entity-corpus.json"
 WORD = re.compile(r"[A-Za-z0-9_]+")
 

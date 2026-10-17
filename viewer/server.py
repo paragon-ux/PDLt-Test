@@ -2,7 +2,7 @@
 
 Read-only, localhost-only HTTP server that shows:
   * the newest live/catalogue session (stage, prompt, plan, code, witness, transcript),
-  * every catalogue run under ``catalogue-runs/`` with scoreboard and per-prompt results,
+  * every catalogue run (``$PDLT_CATALOGUE_RUNS``, else ``PDLt-Catalogue-Archive`` beside the root) with scoreboard and per-prompt results,
   * the 112-prompt catalogue.
 
 It imports nothing from the harness package: it only reads files the harness and
@@ -62,7 +62,7 @@ def session_candidates(root: Path) -> list[Path]:
     live = root / "runs" / "live-sessions"
     if live.is_dir():
         found += [p for p in live.iterdir() if p.is_dir()]
-    runs = root / "catalogue-runs"
+    runs = runs_dir(root)
     if runs.is_dir():
         found += [p for p in runs.glob("run-*/results/*") if p.is_dir()]
     return found
@@ -188,12 +188,30 @@ def read_session(session_dir: Path | None) -> dict[str, Any]:
 _FINISHED_RUN_ROWS: dict[Path, tuple[float, dict[str, Any]]] = {}
 
 
+def _shown(path: Path, root: Path) -> str:
+    """A path as the API reports it: relative to the root inside it, else absolute (the runs archive)."""
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.resolve().as_posix()
+
+
+def runs_dir(root: Path) -> Path:
+    """Where the catalogue runs are: $PDLT_CATALOGUE_RUNS, else a catalogue-runs/ the root holds itself, else
+    PDLt-Catalogue-Archive beside the root (catalogue_runs.py)."""
+    configured = os.environ.get("PDLT_CATALOGUE_RUNS")
+    if configured:
+        return Path(configured).expanduser()
+    local = root / "catalogue-runs"
+    return local if local.is_dir() else root.parent / "PDLt-Catalogue-Archive"
+
+
 def list_runs(root: Path) -> list[dict[str, Any]]:
-    runs_dir = root / "catalogue-runs"
+    runs_dir_ = runs_dir(root)
     out: list[dict[str, Any]] = []
-    if not runs_dir.is_dir():
+    if not runs_dir_.is_dir():
         return out
-    for run in sorted((p for p in runs_dir.glob("run-*") if p.is_dir()), reverse=True):
+    for run in sorted((p for p in runs_dir_.glob("run-*") if p.is_dir()), reverse=True):
         try:
             board_mtime = (run / "SCOREBOARD.json").stat().st_mtime
         except OSError:
@@ -222,8 +240,8 @@ def list_runs(root: Path) -> list[dict[str, Any]]:
 
 
 def read_run(root: Path, run_id: str) -> dict[str, Any] | None:
-    run = root / "catalogue-runs" / run_id
-    if not run.is_dir() or not _inside(root / "catalogue-runs", run):
+    run = runs_dir(root) / run_id
+    if not run.is_dir() or not _inside(runs_dir(root), run):
         return None
     items = []
     for f in sorted((run / "results").glob("*/result.json")):
@@ -233,7 +251,7 @@ def read_run(root: Path, run_id: str) -> dict[str, Any] | None:
             "id": r.get("id"), "category": r.get("category"), "verdict": r.get("verdict"),
             "expected_stage": r.get("expected_stage"), "elapsed_seconds": r.get("elapsed_seconds"),
             "grade": grade.get("grade"), "grade_reason": grade.get("reason"),
-            "path": f.parent.relative_to(root).as_posix(),
+            "path": _shown(f.parent, root),
         })
     return {"id": run_id, "scoreboard": _read_json(run / "SCOREBOARD.json"), "results": items}
 
@@ -358,7 +376,7 @@ def make_handler(root: Path):
                 if url.path == "/api/status":
                     if q.get("path"):
                         target = (root / q["path"]).resolve()
-                        allowed = [root / "catalogue-runs", root / "runs"]
+                        allowed = [runs_dir(root), root / "runs"]
                         if not any(_inside(a, target) for a in allowed):
                             return self._json({"error": "path outside viewer roots"}, 400)
                         return self._json(status.get(target, follow=False))
@@ -402,7 +420,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m viewer", description="PDLt local viewer (localhost only).")
     parser.add_argument("--port", "-p", type=int, default=8090, help="starting port (default 8090)")
     parser.add_argument("--no-open", action="store_true", help="do not open a browser")
-    parser.add_argument("--root", type=Path, default=DEFAULT_ROOT, help="repository root holding catalogue-runs/ and prompts/")
+    parser.add_argument("--root", type=Path, default=DEFAULT_ROOT, help="repository root holding prompts/ (runs: $PDLT_CATALOGUE_RUNS, else PDLt-Catalogue-Archive beside it)")
     args = parser.parse_args(argv)
     try:
         _, server, port = start_server(args.root, args.port)

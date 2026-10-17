@@ -27,11 +27,13 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
 for entry in (ROOT, ROOT / "src"):
     if str(entry) not in sys.path:
         sys.path.insert(0, str(entry))
 
-OUT = ROOT / "catalogue-runs" / "pdl-format-pilot"
+OUT = RUNS_DIR / "pdl-format-pilot"
 TASKS = {"T1": "T1_USAGE_RECONCILIATION", "T2": "T2_QUEUE_CUTOVER", "T3": "T3_API_INCIDENT"}
 SECURITY = {"T1": "T1-15", "T2": "T2-13", "T3": "T3-11"}
 ARMS = ("P", "N")

@@ -26,6 +26,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT))  # catalogue_runs.py lives at the repository root
+from catalogue_runs import RUNS_DIR  # noqa: E402  (runs live outside the repository)
 for entry in (ROOT, ROOT / "src"):
     if str(entry) not in sys.path:
         sys.path.insert(0, str(entry))
@@ -46,7 +48,7 @@ TASKS = {
 ORDER = [("T1", 1, "PN"), ("T1", 2, "NP"), ("T1", 3, "PN"), ("T2", 1, "NP"), ("T2", 2, "PN"), ("T2", 3, "NP"),
          ("T3", 1, "PN"), ("T3", 2, "NP"), ("T3", 3, "PN")]
 REPLAYS = (2, 3)  # extra executions of each task's repeat-1 artifacts, per arm
-OUT = ROOT / "catalogue-runs" / "pdl-format-pilot"
+OUT = RUNS_DIR / "pdl-format-pilot"
 # Lines of a task packet that address the experimenter, not the requester (removed by a fixed rule).
 _GRADER_LINES = re.compile(r"^(\*\*Task ID:\*\*|\*\*Evaluation:\*\*|## Original request shown to both arms)")
 _EXPERIMENT_CLAUSE = "; pass these files to both arms unchanged"
