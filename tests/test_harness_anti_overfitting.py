@@ -308,3 +308,14 @@ def test_agent_tools_state_capabilities_and_return_no_verdict():
     for operation in agent_tools.SUBMIT_ONLY_OPERATIONS:
         assert agent_tools.ToolHost(None, 0, 0.0, 0, [], "", lambda o: ([], []), operation=operation).tool_names() == [
             agent_tools.SUBMITS[operation]]
+
+
+def test_the_harness_plane_registers_no_problem_specific_verifier():
+    """L124: extension points are open, but the harness itself ships only the structural witness check, and its
+    task types bind nothing else (ADR-0018, GUARD-02)."""
+    from pdl_taskmaster.extensions import task_types, verifiers
+    from pdl_taskmaster.verification.checkers.fallback import FallbackChecker
+
+    assert [(v.name, v.domain, type(v.checker)) for v in verifiers.REGISTRY.items()] == [
+        ("witness-reproduction", "general", FallbackChecker)]
+    assert {t.verifier for t in task_types.REGISTRY.items()} <= {"none", "witness-reproduction"}

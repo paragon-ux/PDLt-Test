@@ -498,9 +498,9 @@ class SessionEngine:
         self.model_name: Callable[[], Any] | None = None
         # The domain checker registry the result is verified against (L120): a library caller may replace it,
         # or register checkers of its own (pdl_taskmaster.api.Session.open(output_verifier=...)).
-        from pdl_taskmaster.verification.output_verifier import OutputVerifier
+        from pdl_taskmaster.extensions import verifiers
 
-        self.output_verifier = OutputVerifier()
+        self.output_verifier = verifiers.output_verifier()
         if workspace_root is None:
             self.workspace_root = Path(tempfile.mkdtemp(prefix="pdl-c0-workspaces-"))
         else:
@@ -2610,6 +2610,26 @@ class SessionEngine:
                     model=self.model_name() if callable(self.model_name) else None,
                 ))
 
+    def _check_witness(self, verifier: Any, witness: Any, constraints: dict[str, Any], body: str) -> Any:
+        """A checker judges a copy of the witness and of its constraints (L124): it cannot change what the host
+        records. A checker that raises, or answers with anything but a VerificationVerdict, stops the turn: no result
+        is published on it (fail-closed)."""
+        import copy
+
+        from pdl_taskmaster.extensions.profiles import ExtensionFailure
+        from pdl_taskmaster.verification.checkers.base import VerificationVerdict
+
+        try:
+            verdict = verifier.check(copy.deepcopy(witness), copy.deepcopy(constraints), domain=self._problem_domain,
+                                     body=body)
+        except Exception as exc:
+            raise ExtensionFailure(f"the checker for this witness failed ({type(exc).__name__}: {exc}); "
+                                   "no result is published") from exc
+        if not isinstance(verdict, VerificationVerdict):
+            raise ExtensionFailure(f"the checker for this witness answered {type(verdict).__name__}, not a "
+                                   "VerificationVerdict; no result is published")
+        return verdict
+
     def _verify_result(
         self,
         outcome: Any,
@@ -2699,7 +2719,7 @@ class SessionEngine:
                      "programs_run": getattr(self, "_last_programs_run", 0)},
                 )
             elif sandbox_witness is not None:
-                verdict = verifier.check(sandbox_witness, constraints, domain=self._problem_domain, body=body)
+                verdict = self._check_witness(verifier, sandbox_witness, constraints, body)
                 block = getattr(self, "_last_witness_block", None)
                 if verdict.valid and block is not None and _witness_written_in_program(sandbox_witness, block[1]):
                     # L113, L119: the program states the data it prints, neither computing nor checking it.
@@ -2718,7 +2738,7 @@ class SessionEngine:
                     ir["witness"] = sandbox_witness
             else:
                 errors.extend(run_failures)
-                verdict = verifier.check(model_witness, constraints, domain=self._problem_domain, body=body)
+                verdict = self._check_witness(verifier, model_witness, constraints, body)
                 # Only a negative witness claims a search: on a positive one the same
                 # provenance fields are metadata about how a result was found.
                 claims_search =isinstance(model_witness, dict) and model_witness.get("polarity") == "negative" and (

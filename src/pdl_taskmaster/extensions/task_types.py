@@ -75,6 +75,8 @@ class TaskType:
     operations: frozenset[str]
     verifier: str  # a registered verifier's name, or "none"
     profile: str = PROFILE_ID
+    # The declaration as registered (a copy: later changes to the caller's mapping do not reach it).
+    declaration: Any = field(default=None, compare=False, repr=False)
 
     @property
     def requires_witness(self) -> bool:
@@ -285,6 +287,15 @@ SAFE_DEFAULT = ("the default task type is what an unclassified request gets: no 
                 "both routes, and no classification recipe")
 
 
+def _snapshot(value: Any) -> Any:
+    """Mappings and lists copied all the way down; any other object (a recipe) kept as it is."""
+    if isinstance(value, Mapping):
+        return {k: _snapshot(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_snapshot(v) for v in value]
+    return value
+
+
 def _build(d: Mapping[str, Any]) -> TaskType:
     classification = d["prompt"]["classification"]
     recipe, selects = None, None
@@ -295,7 +306,7 @@ def _build(d: Mapping[str, Any]) -> TaskType:
     return TaskType(category=d["category"], recipe=recipe, selects=selects,
                     instructions=frozenset(d["prompt"]["instructions"]), witness_forms=frozenset(d["witness_forms"]),
                     result_ir=d["deliverable"]["result_ir"] == "required", routes=frozenset(d["route"]),
-                    operations=frozenset(d["operations"]), verifier=d["verifier"])
+                    operations=frozenset(d["operations"]), verifier=d["verifier"], declaration=_snapshot(d))
 
 
 class TaskTypeRegistry(Registry[TaskType]):

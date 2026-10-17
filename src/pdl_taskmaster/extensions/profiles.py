@@ -83,6 +83,10 @@ class ProfileViolation(ValueError):
         super().__init__(f"{name!r} does not conform to {profile_id}:\n" + "\n".join(f"- {p}" for p in problems))
 
 
+class ExtensionFailure(RuntimeError):
+    """An extension failed while the core used it. The core stops what it was doing; it never passes on a failure."""
+
+
 class Registry(Generic[T]):
     """The extensions of one kind, in registration order. Every one, built-in or not, enters through register()."""
 

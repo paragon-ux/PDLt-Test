@@ -95,19 +95,19 @@ def test_a_checker_cannot_change_the_witness_the_host_records(tmp_path):
     assert result.provenance["verification"]["level"] == "host_verified"
     assert result.provenance["verification"]["checker"] == "lenient"  # the record names who judged it
     (validated,) = [e for e in _events(result) if e["kind"] == "RESULT_IR_VALIDATED"]
-    assert validated["payload"]["ir"]["witness"]["data"] == {"largest": 16}  # what the program printed
+    assert validated["payload"]["ir"]["witness"]["data"] == {"largest": 20}  # what the program printed (4 * 5)
     assert lenient.arguments and all(not isinstance(v, ExecutionSandbox)
                                      for witness, constraints, body in lenient.arguments
                                      for v in (witness, body, *constraints.values()))
 
 
 def test_a_form_the_type_does_not_accept_is_refused(tmp_path):
-    argued = {"polarity": "positive", "basis": "proof", "data": {"largest": 16},
-              "argument": "The largest product of the two ranges is 4 times 4."}
+    argued = {"polarity": "positive", "basis": "proof", "data": {"largest": 20},
+              "argument": "The largest product of the two ranges is 4 times 5."}
     with scoped():
         verifiers.register_verifier(verifier("lenient", Lenient()))
         api.register_task_type(witness_type("LENIENT_CHECKED", "lenient", forms=["computed"]))
-        probe = {"body": "The largest product is 16.", "result_ir": {**IR, "witness": argued}}
+        probe = {"body": "The largest product is 20.", "result_ir": {**IR, "witness": argued}}
         result, _ = run_session("LENIENT_CHECKED", "confirmed", probe, session_dir=tmp_path / "s", max_repairs=0)
     assert result.stage == "CLOSED_CANCELLED"
     assert "WITNESS_FORM_NOT_ACCEPTED" in json.dumps(_events(result))

@@ -109,7 +109,7 @@ class ScriptedWorker:
         return WorkerResult(json.dumps(replies[request.operation]))
 
 
-def run_session(category: str, route: str, execute: Mapping[str, Any], *, sys1: Any = None,
+def run_session(category: str | None, route: str, execute: Mapping[str, Any], *, sys1: Any = None,
                 session_dir: Path | None = None, **worker_attributes: Any) -> tuple[Any, ScriptedWorker]:
     """One request through a session pinned to ``category`` on ``route``, every review confirmed. Returns the last
     TurnResult and the worker."""
