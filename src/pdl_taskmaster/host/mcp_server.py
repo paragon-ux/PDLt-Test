@@ -281,9 +281,11 @@ def main(argv: list[str] | None = None) -> int:
         log = CallLog(args.log)
     except OSError as exc:
         raise SystemExit(f"the call log {args.log} cannot be opened ({exc}); the server does not run unlogged")
-    for stream in (sys.stdin, sys.stdout):
+    # utf-8-sig on stdin drops a leading byte-order mark (Windows PowerShell adds one to piped text), which
+    # would otherwise make the first request a parse error.
+    for stream, encoding in ((sys.stdin, "utf-8-sig"), (sys.stdout, "utf-8")):
         try:
-            stream.reconfigure(encoding="utf-8")
+            stream.reconfigure(encoding=encoding)
         except Exception:
             pass
     serve(AgentToolServer(build_host(args.tier, args.witness_required, args.sandbox), ClosedSessions(args.sessions),

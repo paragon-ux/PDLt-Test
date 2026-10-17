@@ -97,3 +97,18 @@ def test_the_server_process_speaks_mcp_over_stdio(tmp_path):
     assert [r["id"] for r in responses] == [1, 2, 3]
     assert [t["name"] for t in responses[1]["result"]["tools"]] == ["run_python", SUBMIT]
     assert "standard output:\n45" in responses[2]["result"]["content"][0]["text"]
+
+
+def test_a_byte_order_mark_before_the_first_request_is_ignored(tmp_path):
+    # Windows PowerShell puts one before text it pipes to a program when its console is set to UTF-8.
+    lines = [{"jsonrpc": "2.0", "id": 1, "method": "initialize",
+              "params": {"protocolVersion": mcp_server.PROTOCOL_VERSION, "capabilities": {},
+                         "clientInfo": {"name": "t", "version": "0"}}},
+             {"jsonrpc": "2.0", "id": 2, "method": "tools/list"}]
+    proc = subprocess.run([sys.executable, "-m", "pdl_taskmaster.host.mcp_server", "--sessions", str(tmp_path),
+                           "--log", str(tmp_path / "calls.jsonl")], cwd=ROOT,
+                          input=b"\xef\xbb\xbf" + "".join(json.dumps(m) + "\n" for m in lines).encode("utf-8"),
+                          capture_output=True, timeout=120, env={**os.environ, "PYTHONPATH": str(ROOT / "src")})
+    responses = [json.loads(x) for x in proc.stdout.decode("utf-8").splitlines() if x.strip()]
+    assert [r.get("id") for r in responses] == [1, 2], responses
+    assert all("error" not in r for r in responses), responses

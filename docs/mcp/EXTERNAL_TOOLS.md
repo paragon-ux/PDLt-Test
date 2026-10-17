@@ -6,6 +6,40 @@
 
 **Transport and permissions:** stdio only. The client is the process that starts the server, running as the local user. There is no network listener and no authentication beyond the right to start the process. The server needs read access to the sessions folder (`--sessions`, by default the REPL's `runs/live-sessions`); programs need the sandbox's confinement backend. It writes nothing outside the sandbox's run directories and its call log (`--log`, by default a new file in `mcp-server/` beside the sessions folder). Programs run only under OS-native confinement: `--sandbox` accepts `auto`, `native` or `container`, never `audit-only`.
 
+## Run and check the server
+
+The server needs no API key: it runs programs and reads closed sessions, and never calls a model. An MCP client starts it as `python -m pdl_taskmaster.host.mcp_server`, using the Python of the environment PDLt is installed in; the client configuration for each host is on the host pages ([Windows](../hosts/windows.md#use-the-mcp-server-from-another-agent), [Linux](../hosts/linux.md#use-the-mcp-server-from-another-agent), [macOS](../hosts/macos.md#use-the-mcp-server-from-another-agent)).
+
+To check it without a client, send it two requests on standard input, with the environment active.
+
+bash (Linux, macOS):
+
+```bash
+printf '%s\n' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"setup-check","version":"0"}}}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"run_python","arguments":{"code":"print(6 * 7)"}}}' \
+  | python -m pdl_taskmaster.host.mcp_server
+```
+
+PowerShell (Windows):
+
+```powershell
+@'
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"setup-check","version":"0"}}}
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"run_python","arguments":{"code":"print(6 * 7)"}}}
+'@ | python -m pdl_taskmaster.host.mcp_server
+```
+
+Expected: two JSON lines. The first names the server (`"serverInfo": {"name": "pdlt-agent-tools", ...}`); the second contains `standard output:\n42` and `"isError": false`. Every call is logged to `mcp-server/calls-<time>-<pid>.jsonl` beside the sessions folder (or to `--log`).
+
+| Flag | Effect |
+|---|---|
+| `--sessions FOLDER` | The sessions folder whose closed results are served read-only (default: the REPL's) |
+| `--tier MINIMAL\|STANDARD\|HEAVY_COMPUTE` | The execution budget every program runs under (default `STANDARD`) |
+| `--witness-required` | A submission must contain a program that prints a `WITNESS` line |
+| `--sandbox auto\|native\|container` | The sandbox backend; the audit-only opt-out is not offered (default `auto`) |
+| `--log FILE` | The JSON-lines call log (default: a new file in `mcp-server/` beside the sessions folder) |
+
 ## Tools
 
 | Tool | Returns | Verification evidence with it | What the client needs |

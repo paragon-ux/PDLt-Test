@@ -124,8 +124,10 @@ def _keywords(cls: type) -> list[str]:
 
 
 def _api(**settings: Any) -> Any:
+    from pdl_taskmaster.api.session import default_repo_root
     from pdl_taskmaster.providers.api_worker import ApiWorker
 
+    settings.setdefault("repo_root", default_repo_root())  # as Session.open defaults it
     return ApiWorker(**settings)
 
 

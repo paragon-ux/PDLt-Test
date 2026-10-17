@@ -87,6 +87,14 @@ def test_the_api_provider_passes_its_settings_to_the_worker():
     assert isinstance(worker, ApiWorker) and worker.model == "lab/model"
 
 
+def test_the_api_provider_needs_only_a_model():
+    # The documented first call: no repo_root, which defaults as it does for Session.open.
+    from pdl_taskmaster.api.session import default_repo_root
+
+    worker = api.create_worker("api", model="lab/model")
+    assert worker.model == "lab/model" and worker.repo_root == default_repo_root()
+
+
 def test_the_recorded_provider_needs_an_eval_root_except_for_a_vendored_fixture(monkeypatch):
     from pdl_taskmaster.providers import fixtures
 

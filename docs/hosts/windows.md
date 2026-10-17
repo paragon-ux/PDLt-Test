@@ -102,6 +102,8 @@ $env:OPENROUTER_API_KEY = "sk-or-v1-your-key"
 setx OPENROUTER_API_KEY "sk-or-v1-your-key"
 ```
 
+On Windows, when the current window does not have the key, PDLt also reads one saved for your user or the machine (as `setx` does), so a key saved once works in windows opened earlier too.
+
 | Setting | Required? | Where |
 |---|---|---|
 | `OPENROUTER_API_KEY` | Yes, for any live run | Environment variable, as above. Never put it in a file you commit. |
