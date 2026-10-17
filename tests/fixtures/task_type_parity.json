@@ -100,7 +100,7 @@
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
    "model": null,
-   "pdlt_version": "2.6.0rc1"
+   "pdlt_version": "2.6.0"
   }
  },
  "standard-at-review": {
@@ -227,7 +227,7 @@
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
    "model": null,
-   "pdlt_version": "2.6.0rc1"
+   "pdlt_version": "2.6.0"
   }
  },
  "no-system-1": {
@@ -305,7 +305,7 @@
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
    "model": null,
-   "pdlt_version": "2.6.0rc1"
+   "pdlt_version": "2.6.0"
   }
  },
  "verified-below-floor": {
@@ -409,7 +409,7 @@
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
    "model": null,
-   "pdlt_version": "2.6.0rc1"
+   "pdlt_version": "2.6.0"
   }
  },
  "verified-host-verified": {
@@ -518,7 +518,7 @@
    },
    "deliverable_sha256": "9d2675da07ebd8202c41310eed961b15371d3b9857f65de215dd53d665c6b214",
    "model": null,
-   "pdlt_version": "2.6.0rc1"
+   "pdlt_version": "2.6.0"
   }
  },
  "verified-negative": {
@@ -629,7 +629,7 @@
    },
    "deliverable_sha256": "e660bae5d68e903888692e92c460f519c709571e85c4c4d57269b8bef04b0209",
    "model": null,
-   "pdlt_version": "2.6.0rc1"
+   "pdlt_version": "2.6.0"
   }
  },
  "verified-cancelled": {
@@ -822,7 +822,7 @@
    },
    "deliverable_sha256": "9d2675da07ebd8202c41310eed961b15371d3b9857f65de215dd53d665c6b214",
    "model": null,
-   "pdlt_version": "2.6.0rc1"
+   "pdlt_version": "2.6.0"
   }
  },
  "verified-confirmed-brief": {
@@ -939,7 +939,7 @@
    },
    "deliverable_sha256": "9d2675da07ebd8202c41310eed961b15371d3b9857f65de215dd53d665c6b214",
    "model": null,
-   "pdlt_version": "2.6.0rc1"
+   "pdlt_version": "2.6.0"
   }
  }
 }

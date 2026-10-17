@@ -114,22 +114,28 @@ SCENARIOS = {
 
 def run(name: str, session_dir: Path) -> dict:
     from pdl_taskmaster.api import Session
+    from pdl_taskmaster.verification import sandbox
 
-    problem_class, confidence, review, execute, attributes, messages = SCENARIOS[name]
-    sys1 = Sys1(problem_class, confidence) if problem_class else None
-    worker = Worker(execute, sys1, **attributes)
-    steps = []
-    with Session.open(worker, session_dir, repo_root=ROOT, no_review=not review) as session:
-        for message in messages:
-            result = session.run(REQUEST, confirm=True) if message == "run" else session.send(REQUEST)
-            steps.append({"stage": result.stage, "exit_status": result.exit_status, "closed": result.closed,
-                          "review": result.review, "refused": result.refused})
-        workspace = session.host.engine.workspace
-        events = [e["kind"] for e in workspace.read_events()] if workspace is not None else []
-        provenance = dict(result.provenance or {})
-    provenance.pop("closed_at_utc", None)
-    return {"worker": worker.requests, "sys1": sys1.requests if sys1 else None, "steps": steps, "events": events,
-            "provenance": provenance or None}
+    orig_py = sandbox.PYTHON_VERSION
+    sandbox.PYTHON_VERSION = "3.11"
+    try:
+        problem_class, confidence, review, execute, attributes, messages = SCENARIOS[name]
+        sys1 = Sys1(problem_class, confidence) if problem_class else None
+        worker = Worker(execute, sys1, **attributes)
+        steps = []
+        with Session.open(worker, session_dir, repo_root=ROOT, no_review=not review) as session:
+            for message in messages:
+                result = session.run(REQUEST, confirm=True) if message == "run" else session.send(REQUEST)
+                steps.append({"stage": result.stage, "exit_status": result.exit_status, "closed": result.closed,
+                              "review": result.review, "refused": result.refused})
+            workspace = session.host.engine.workspace
+            events = [e["kind"] for e in workspace.read_events()] if workspace is not None else []
+            provenance = dict(result.provenance or {})
+        provenance.pop("closed_at_utc", None)
+        return {"worker": worker.requests, "sys1": sys1.requests if sys1 else None, "steps": steps, "events": events,
+                "provenance": provenance or None}
+    finally:
+        sandbox.PYTHON_VERSION = orig_py
 
 
 def run_all() -> dict:
