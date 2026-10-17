@@ -35,31 +35,37 @@ def witness_form(witness: Any, verification: dict[str, Any] | None) -> str:
 
 
 def verification_basis(status: str, requires_verified_execution: bool | None, verification: dict[str, Any] | None,
-                       witness: Any, unverified_reason: str | None) -> dict[str, Any]:
+                       witness: Any, unverified_reason: str | None, *, task_type: str | None = None,
+                       verifier: str | None = None) -> dict[str, Any]:
     """None for requires_verified_execution: the turn's routing is not recorded, so the problem class is unknown and
-    the level is never host_verified."""
+    the level is never host_verified. ``task_type`` names the problem class (L124); a task type bound to no verifier
+    ("none") is never host_verified, whatever the verification record says."""
     form = witness_form(witness, verification)
     reproduced = bool((verification or {}).get("sandbox_reproduced")) and form in ("computed", "certificate")
     if status != "CLOSED_SUCCESS":
         level = "unverified"
-    elif requires_verified_execution and reproduced and not (verification or {}).get("provisional"):
+    elif (requires_verified_execution and verifier != "none" and reproduced
+          and not (verification or {}).get("provisional")):
         level = "host_verified"
     else:
         level = "contract_checked"
     return {
         "level": level,
-        "problem_class": ("unknown" if requires_verified_execution is None
+        "problem_class": (task_type if task_type is not None else "unknown" if requires_verified_execution is None
                           else "VERIFIED_EXECUTION" if requires_verified_execution else "STANDARD_EXECUTION"),
         "witness_form": form,
         "reproduced_by_host": reproduced,
         "unverified_reason": unverified_reason if status != "CLOSED_SUCCESS" else None,
         "caveat": STANDARD_CAVEAT if level == "contract_checked" else None,
+        # A registered domain checker judged the witness (L124); the structural fallback is not named.
+        **({"checker": (verification or {})["checker"]} if (verification or {}).get("checker") else {}),
     }
 
 
 def record(*, status: str, requires_verified_execution: bool, verification: dict[str, Any] | None, witness: Any,
            unverified_reason: str | None, deliverable_sha256: str, closed_at_utc: str, model: Any = None,
-           pdlt_version: str | None = None) -> dict[str, Any]:
+           pdlt_version: str | None = None, task_type: str | None = None,
+           verifier: str | None = None) -> dict[str, Any]:
     """The provenance the host writes when it closes a turn with a result."""
     if pdlt_version is None:
         from pdl_taskmaster import __version__ as pdlt_version
@@ -68,12 +74,22 @@ def record(*, status: str, requires_verified_execution: bool, verification: dict
         "recorded_by": "host at closure",
         "status": status,
         "verification": verification_basis(status, requires_verified_execution, verification, witness,
-                                           unverified_reason),
+                                           unverified_reason, task_type=task_type, verifier=verifier),
         "deliverable_sha256": deliverable_sha256,
         "model": model,
         "pdlt_version": pdlt_version,
         "closed_at_utc": closed_at_utc,
     }
+
+
+def _bound_verifier(task_type: str | None) -> str | None:
+    """The verifier a task type registered here binds; None when the turn names no task type, or one not
+    registered here (the witness requirement in its routing still bounds the level)."""
+    if task_type is None:
+        return None
+    from pdl_taskmaster.extensions import task_types
+
+    return task_types.REGISTRY.get(task_type).verifier if task_type in task_types.REGISTRY else None
 
 
 def derive(turn: Path) -> dict[str, Any] | None:
@@ -111,7 +127,8 @@ def derive(turn: Path) -> dict[str, Any] | None:
         "status": status,
         "verification": verification_basis(
             status, None if routing is None else bool(routing.get("requires_verified_execution")), verification,
-            witness, reason),
+            witness, reason, task_type=(routing or {}).get("task_type"),
+            verifier=_bound_verifier((routing or {}).get("task_type"))),
         "deliverable_sha256": meta.get("deliverable_sha256"),
         "model": None,
         "pdlt_version": None,

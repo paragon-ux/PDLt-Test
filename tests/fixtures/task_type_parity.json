@@ -1,0 +1,945 @@
+{
+ "standard-confirmed": {
+  "worker": [
+   {
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "prompt": "769b330d2508694d",
+    "manifest": "cc8c8f52a5ac1ce6"
+   },
+   {
+    "operation": "DRAFT_PROMPT",
+    "prompt": "4043d211a667425b",
+    "manifest": "480e4664d751d48d"
+   },
+   {
+    "operation": "DRAFT_PLAN",
+    "prompt": "5e01f91d172e8e58",
+    "manifest": "70db00aa4efe0ff3"
+   },
+   {
+    "operation": "EXECUTE",
+    "prompt": "9034951104d186e2",
+    "manifest": "7ff2b92c3dc508b6"
+   }
+  ],
+  "sys1": [
+   {
+    "question": "route",
+    "request": "8876f4d16453997f"
+   },
+   {
+    "question": "problem_class",
+    "request": "2674150d2cc9ee89"
+   },
+   {
+    "question": "execution_profile",
+    "request": "5327269c3c87b90d"
+   },
+   {
+    "question": "no_evasion",
+    "request": "9eb546624e29cf12"
+   },
+   {
+    "question": "solution_actions",
+    "request": "69a7492ac291f231"
+   },
+   {
+    "question": "execution_profile",
+    "request": "b8b4c4e78f0ad148"
+   }
+  ],
+  "steps": [
+   {
+    "stage": "CLOSED_SUCCESS",
+    "exit_status": 0,
+    "closed": true,
+    "review": null,
+    "refused": false
+   }
+  ],
+  "events": [
+   "WORKSPACE_CREATED",
+   "EXPLICIT_INVOCATION_OBSERVED",
+   "ACTIVATION_ROUTED",
+   "EXECUTION_PROFILE_ROUTED",
+   "PROBLEM_CLASS_CLASSIFIED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PROMPT_FIDELITY",
+   "PROTOCOL_BOUND",
+   "ARTIFACT_PUBLISHED",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PLAN_ADVANCEMENT",
+   "ARTIFACT_PUBLISHED",
+   "PLAN_PROMPT_ECHO",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "PLAN_PROFILE_ROUTED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "EXECUTION_ATTEMPTS",
+   "TURN_STATUS",
+   "EXECUTION_OUTCOME_PUBLISHED"
+  ],
+  "provenance": {
+   "schema": "pdlt.provenance/1",
+   "recorded_by": "host at closure",
+   "status": "CLOSED_SUCCESS",
+   "verification": {
+    "level": "contract_checked",
+    "problem_class": "STANDARD_EXECUTION",
+    "witness_form": "none",
+    "reproduced_by_host": false,
+    "unverified_reason": null,
+    "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
+   },
+   "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
+   "model": null,
+   "pdlt_version": "2.6.0rc1"
+  }
+ },
+ "standard-at-review": {
+  "worker": [
+   {
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "prompt": "769b330d2508694d",
+    "manifest": "cc8c8f52a5ac1ce6"
+   },
+   {
+    "operation": "DRAFT_PROMPT",
+    "prompt": "4043d211a667425b",
+    "manifest": "480e4664d751d48d"
+   }
+  ],
+  "sys1": [
+   {
+    "question": "route",
+    "request": "8876f4d16453997f"
+   },
+   {
+    "question": "problem_class",
+    "request": "2674150d2cc9ee89"
+   },
+   {
+    "question": "execution_profile",
+    "request": "5327269c3c87b90d"
+   },
+   {
+    "question": "no_evasion",
+    "request": "9eb546624e29cf12"
+   }
+  ],
+  "steps": [
+   {
+    "stage": "PROMPT_REVIEW",
+    "exit_status": 2,
+    "closed": false,
+    "review": "prompt",
+    "refused": false
+   }
+  ],
+  "events": [
+   "WORKSPACE_CREATED",
+   "EXPLICIT_INVOCATION_OBSERVED",
+   "ACTIVATION_ROUTED",
+   "EXECUTION_PROFILE_ROUTED",
+   "PROBLEM_CLASS_CLASSIFIED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PROMPT_FIDELITY",
+   "PROTOCOL_BOUND",
+   "ARTIFACT_PUBLISHED"
+  ],
+  "provenance": null
+ },
+ "standard-unconfirmed": {
+  "worker": [
+   {
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "prompt": "769b330d2508694d",
+    "manifest": "cc8c8f52a5ac1ce6"
+   },
+   {
+    "operation": "EXECUTE_UNCONFIRMED",
+    "prompt": "009a223a26ac7e5e",
+    "manifest": "89d3b03ba1f1d35f"
+   }
+  ],
+  "sys1": [
+   {
+    "question": "route",
+    "request": "8876f4d16453997f"
+   },
+   {
+    "question": "problem_class",
+    "request": "2674150d2cc9ee89"
+   },
+   {
+    "question": "execution_profile",
+    "request": "5327269c3c87b90d"
+   },
+   {
+    "question": "execution_profile",
+    "request": "83ca03cb79a606b1"
+   }
+  ],
+  "steps": [
+   {
+    "stage": "CLOSED_SUCCESS",
+    "exit_status": 0,
+    "closed": true,
+    "review": null,
+    "refused": false
+   }
+  ],
+  "events": [
+   "WORKSPACE_CREATED",
+   "ACTIVATION_ROUTED",
+   "EXECUTION_PROFILE_ROUTED",
+   "PROBLEM_CLASS_CLASSIFIED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PROTOCOL_BOUND",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PLAN_PROFILE_ROUTED",
+   "TURN_STATUS",
+   "EXECUTION_OUTCOME_PUBLISHED"
+  ],
+  "provenance": {
+   "schema": "pdlt.provenance/1",
+   "recorded_by": "host at closure",
+   "status": "CLOSED_SUCCESS",
+   "verification": {
+    "level": "contract_checked",
+    "problem_class": "STANDARD_EXECUTION",
+    "witness_form": "none",
+    "reproduced_by_host": false,
+    "unverified_reason": null,
+    "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
+   },
+   "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
+   "model": null,
+   "pdlt_version": "2.6.0rc1"
+  }
+ },
+ "no-system-1": {
+  "worker": [
+   {
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "prompt": "769b330d2508694d",
+    "manifest": "cc8c8f52a5ac1ce6"
+   },
+   {
+    "operation": "DRAFT_PROMPT",
+    "prompt": "4043d211a667425b",
+    "manifest": "480e4664d751d48d"
+   },
+   {
+    "operation": "DRAFT_PLAN",
+    "prompt": "5e01f91d172e8e58",
+    "manifest": "70db00aa4efe0ff3"
+   },
+   {
+    "operation": "EXECUTE",
+    "prompt": "9034951104d186e2",
+    "manifest": "7ff2b92c3dc508b6"
+   }
+  ],
+  "sys1": null,
+  "steps": [
+   {
+    "stage": "CLOSED_SUCCESS",
+    "exit_status": 0,
+    "closed": true,
+    "review": null,
+    "refused": false
+   }
+  ],
+  "events": [
+   "WORKSPACE_CREATED",
+   "EXPLICIT_INVOCATION_OBSERVED",
+   "EXECUTION_PROFILE_ROUTED",
+   "PROBLEM_CLASS_CLASSIFIED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PROMPT_FIDELITY",
+   "PROTOCOL_BOUND",
+   "ARTIFACT_PUBLISHED",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PLAN_ADVANCEMENT",
+   "ARTIFACT_PUBLISHED",
+   "PLAN_PROMPT_ECHO",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "PLAN_PROFILE_ROUTED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "EXECUTION_ATTEMPTS",
+   "TURN_STATUS",
+   "EXECUTION_OUTCOME_PUBLISHED"
+  ],
+  "provenance": {
+   "schema": "pdlt.provenance/1",
+   "recorded_by": "host at closure",
+   "status": "CLOSED_SUCCESS",
+   "verification": {
+    "level": "contract_checked",
+    "problem_class": "STANDARD_EXECUTION",
+    "witness_form": "none",
+    "reproduced_by_host": false,
+    "unverified_reason": null,
+    "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
+   },
+   "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
+   "model": null,
+   "pdlt_version": "2.6.0rc1"
+  }
+ },
+ "verified-below-floor": {
+  "worker": [
+   {
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "prompt": "769b330d2508694d",
+    "manifest": "cc8c8f52a5ac1ce6"
+   },
+   {
+    "operation": "DRAFT_PROMPT",
+    "prompt": "4043d211a667425b",
+    "manifest": "480e4664d751d48d"
+   },
+   {
+    "operation": "DRAFT_PLAN",
+    "prompt": "5e01f91d172e8e58",
+    "manifest": "70db00aa4efe0ff3"
+   },
+   {
+    "operation": "EXECUTE",
+    "prompt": "9034951104d186e2",
+    "manifest": "7ff2b92c3dc508b6"
+   }
+  ],
+  "sys1": [
+   {
+    "question": "route",
+    "request": "8876f4d16453997f"
+   },
+   {
+    "question": "problem_class",
+    "request": "2674150d2cc9ee89"
+   },
+   {
+    "question": "execution_profile",
+    "request": "5327269c3c87b90d"
+   },
+   {
+    "question": "no_evasion",
+    "request": "9eb546624e29cf12"
+   },
+   {
+    "question": "solution_actions",
+    "request": "69a7492ac291f231"
+   },
+   {
+    "question": "execution_profile",
+    "request": "b8b4c4e78f0ad148"
+   }
+  ],
+  "steps": [
+   {
+    "stage": "CLOSED_SUCCESS",
+    "exit_status": 0,
+    "closed": true,
+    "review": null,
+    "refused": false
+   }
+  ],
+  "events": [
+   "WORKSPACE_CREATED",
+   "EXPLICIT_INVOCATION_OBSERVED",
+   "ACTIVATION_ROUTED",
+   "EXECUTION_PROFILE_ROUTED",
+   "PROBLEM_CLASS_CLASSIFIED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PROMPT_FIDELITY",
+   "PROTOCOL_BOUND",
+   "ARTIFACT_PUBLISHED",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PLAN_ADVANCEMENT",
+   "ARTIFACT_PUBLISHED",
+   "PLAN_PROMPT_ECHO",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "PLAN_PROFILE_ROUTED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "EXECUTION_ATTEMPTS",
+   "TURN_STATUS",
+   "EXECUTION_OUTCOME_PUBLISHED"
+  ],
+  "provenance": {
+   "schema": "pdlt.provenance/1",
+   "recorded_by": "host at closure",
+   "status": "CLOSED_SUCCESS",
+   "verification": {
+    "level": "contract_checked",
+    "problem_class": "STANDARD_EXECUTION",
+    "witness_form": "none",
+    "reproduced_by_host": false,
+    "unverified_reason": null,
+    "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
+   },
+   "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
+   "model": null,
+   "pdlt_version": "2.6.0rc1"
+  }
+ },
+ "verified-host-verified": {
+  "worker": [
+   {
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "prompt": "769b330d2508694d",
+    "manifest": "cc8c8f52a5ac1ce6"
+   },
+   {
+    "operation": "DRAFT_PROMPT",
+    "prompt": "4043d211a667425b",
+    "manifest": "480e4664d751d48d"
+   },
+   {
+    "operation": "DRAFT_PLAN",
+    "prompt": "5e01f91d172e8e58",
+    "manifest": "70db00aa4efe0ff3"
+   },
+   {
+    "operation": "EXECUTE",
+    "prompt": "f8d1eb4d5caedbff",
+    "manifest": "345c8aa052b651a2"
+   }
+  ],
+  "sys1": [
+   {
+    "question": "route",
+    "request": "8876f4d16453997f"
+   },
+   {
+    "question": "problem_class",
+    "request": "2674150d2cc9ee89"
+   },
+   {
+    "question": "execution_profile",
+    "request": "5327269c3c87b90d"
+   },
+   {
+    "question": "no_evasion",
+    "request": "9eb546624e29cf12"
+   },
+   {
+    "question": "solution_actions",
+    "request": "69a7492ac291f231"
+   },
+   {
+    "question": "execution_profile",
+    "request": "b8b4c4e78f0ad148"
+   }
+  ],
+  "steps": [
+   {
+    "stage": "CLOSED_SUCCESS",
+    "exit_status": 0,
+    "closed": true,
+    "review": null,
+    "refused": false
+   }
+  ],
+  "events": [
+   "WORKSPACE_CREATED",
+   "EXPLICIT_INVOCATION_OBSERVED",
+   "ACTIVATION_ROUTED",
+   "EXECUTION_PROFILE_ROUTED",
+   "PROBLEM_CLASS_CLASSIFIED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PROMPT_FIDELITY",
+   "PROTOCOL_BOUND",
+   "ARTIFACT_PUBLISHED",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PLAN_ADVANCEMENT",
+   "ARTIFACT_PUBLISHED",
+   "PLAN_PROMPT_ECHO",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "PLAN_PROFILE_ROUTED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "SANDBOX_SESSION",
+   "SANDBOX_RUN",
+   "RESULT_IR_CITATION_FINDINGS",
+   "VERIFICATION_PASSED",
+   "RESULT_IR_VALIDATED",
+   "EXECUTION_ATTEMPTS",
+   "TURN_STATUS",
+   "EXECUTION_OUTCOME_PUBLISHED"
+  ],
+  "provenance": {
+   "schema": "pdlt.provenance/1",
+   "recorded_by": "host at closure",
+   "status": "CLOSED_SUCCESS",
+   "verification": {
+    "level": "host_verified",
+    "problem_class": "VERIFIED_EXECUTION",
+    "witness_form": "computed",
+    "reproduced_by_host": true,
+    "unverified_reason": null,
+    "caveat": null
+   },
+   "deliverable_sha256": "9d2675da07ebd8202c41310eed961b15371d3b9857f65de215dd53d665c6b214",
+   "model": null,
+   "pdlt_version": "2.6.0rc1"
+  }
+ },
+ "verified-negative": {
+  "worker": [
+   {
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "prompt": "769b330d2508694d",
+    "manifest": "cc8c8f52a5ac1ce6"
+   },
+   {
+    "operation": "DRAFT_PROMPT",
+    "prompt": "4043d211a667425b",
+    "manifest": "480e4664d751d48d"
+   },
+   {
+    "operation": "DRAFT_PLAN",
+    "prompt": "5e01f91d172e8e58",
+    "manifest": "70db00aa4efe0ff3"
+   },
+   {
+    "operation": "EXECUTE",
+    "prompt": "f8d1eb4d5caedbff",
+    "manifest": "345c8aa052b651a2"
+   }
+  ],
+  "sys1": [
+   {
+    "question": "route",
+    "request": "8876f4d16453997f"
+   },
+   {
+    "question": "problem_class",
+    "request": "2674150d2cc9ee89"
+   },
+   {
+    "question": "execution_profile",
+    "request": "5327269c3c87b90d"
+   },
+   {
+    "question": "no_evasion",
+    "request": "9eb546624e29cf12"
+   },
+   {
+    "question": "solution_actions",
+    "request": "69a7492ac291f231"
+   },
+   {
+    "question": "execution_profile",
+    "request": "b8b4c4e78f0ad148"
+   }
+  ],
+  "steps": [
+   {
+    "stage": "CLOSED_UNVERIFIED",
+    "exit_status": 5,
+    "closed": true,
+    "review": null,
+    "refused": false
+   }
+  ],
+  "events": [
+   "WORKSPACE_CREATED",
+   "EXPLICIT_INVOCATION_OBSERVED",
+   "ACTIVATION_ROUTED",
+   "EXECUTION_PROFILE_ROUTED",
+   "PROBLEM_CLASS_CLASSIFIED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PROMPT_FIDELITY",
+   "PROTOCOL_BOUND",
+   "ARTIFACT_PUBLISHED",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PLAN_ADVANCEMENT",
+   "ARTIFACT_PUBLISHED",
+   "PLAN_PROMPT_ECHO",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "PLAN_PROFILE_ROUTED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "SANDBOX_SESSION",
+   "SANDBOX_RUN",
+   "RESULT_IR_CITATION_FINDINGS",
+   "NEGATIVE_CLAIM_UNCHECKED",
+   "VERIFICATION_PASSED",
+   "RESULT_IR_VALIDATED",
+   "EXECUTION_ATTEMPTS",
+   "CLOSED_UNVERIFIED",
+   "TURN_STATUS",
+   "EXECUTION_OUTCOME_PUBLISHED"
+  ],
+  "provenance": {
+   "schema": "pdlt.provenance/1",
+   "recorded_by": "host at closure",
+   "status": "CLOSED_UNVERIFIED",
+   "verification": {
+    "level": "unverified",
+    "problem_class": "VERIFIED_EXECUTION",
+    "witness_form": "negative",
+    "reproduced_by_host": false,
+    "unverified_reason": "negative_claim_unchecked",
+    "caveat": null
+   },
+   "deliverable_sha256": "e660bae5d68e903888692e92c460f519c709571e85c4c4d57269b8bef04b0209",
+   "model": null,
+   "pdlt_version": "2.6.0rc1"
+  }
+ },
+ "verified-cancelled": {
+  "worker": [
+   {
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "prompt": "769b330d2508694d",
+    "manifest": "cc8c8f52a5ac1ce6"
+   },
+   {
+    "operation": "DRAFT_PROMPT",
+    "prompt": "4043d211a667425b",
+    "manifest": "480e4664d751d48d"
+   },
+   {
+    "operation": "DRAFT_PLAN",
+    "prompt": "5e01f91d172e8e58",
+    "manifest": "70db00aa4efe0ff3"
+   },
+   {
+    "operation": "EXECUTE",
+    "prompt": "f8d1eb4d5caedbff",
+    "manifest": "345c8aa052b651a2"
+   },
+   {
+    "operation": "EXECUTE",
+    "prompt": "f13855667e76cb1c",
+    "manifest": "345c8aa052b651a2"
+   },
+   {
+    "operation": "EXECUTE",
+    "prompt": "f13855667e76cb1c",
+    "manifest": "345c8aa052b651a2"
+   }
+  ],
+  "sys1": [
+   {
+    "question": "route",
+    "request": "8876f4d16453997f"
+   },
+   {
+    "question": "problem_class",
+    "request": "2674150d2cc9ee89"
+   },
+   {
+    "question": "execution_profile",
+    "request": "5327269c3c87b90d"
+   },
+   {
+    "question": "no_evasion",
+    "request": "9eb546624e29cf12"
+   },
+   {
+    "question": "solution_actions",
+    "request": "69a7492ac291f231"
+   },
+   {
+    "question": "execution_profile",
+    "request": "b8b4c4e78f0ad148"
+   }
+  ],
+  "steps": [
+   {
+    "stage": "CLOSED_CANCELLED",
+    "exit_status": 1,
+    "closed": true,
+    "review": null,
+    "refused": false
+   }
+  ],
+  "events": [
+   "WORKSPACE_CREATED",
+   "EXPLICIT_INVOCATION_OBSERVED",
+   "ACTIVATION_ROUTED",
+   "EXECUTION_PROFILE_ROUTED",
+   "PROBLEM_CLASS_CLASSIFIED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PROMPT_FIDELITY",
+   "PROTOCOL_BOUND",
+   "ARTIFACT_PUBLISHED",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PLAN_ADVANCEMENT",
+   "ARTIFACT_PUBLISHED",
+   "PLAN_PROMPT_ECHO",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "PLAN_PROFILE_ROUTED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "RESULT_IR_CITATION_FINDINGS",
+   "VERIFICATION_REPAIR",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "RESULT_IR_CITATION_FINDINGS",
+   "VERIFICATION_REPAIR",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "RESULT_IR_CITATION_FINDINGS",
+   "EXECUTION_ATTEMPTS",
+   "VERIFICATION_FAILED",
+   "TURN_STATUS",
+   "EXECUTION_OUTCOME_PUBLISHED"
+  ],
+  "provenance": null
+ },
+ "verified-unconfirmed-brief": {
+  "worker": [
+   {
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "prompt": "769b330d2508694d",
+    "manifest": "cc8c8f52a5ac1ce6"
+   },
+   {
+    "operation": "DRAFT_EXECUTE",
+    "prompt": "654f2d71d1df56a0",
+    "manifest": "fe8561917134d4c7"
+   },
+   {
+    "operation": "EXECUTE_UNCONFIRMED",
+    "prompt": "f938af74b3e0c858",
+    "manifest": "b79a9ea82e8238b0"
+   }
+  ],
+  "sys1": [
+   {
+    "question": "route",
+    "request": "8876f4d16453997f"
+   },
+   {
+    "question": "problem_class",
+    "request": "2674150d2cc9ee89"
+   },
+   {
+    "question": "execution_profile",
+    "request": "5327269c3c87b90d"
+   },
+   {
+    "question": "execution_profile",
+    "request": "83ca03cb79a606b1"
+   }
+  ],
+  "steps": [
+   {
+    "stage": "CLOSED_SUCCESS",
+    "exit_status": 0,
+    "closed": true,
+    "review": null,
+    "refused": false
+   }
+  ],
+  "events": [
+   "WORKSPACE_CREATED",
+   "ACTIVATION_ROUTED",
+   "EXECUTION_PROFILE_ROUTED",
+   "PROBLEM_CLASS_CLASSIFIED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PROTOCOL_BOUND",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "EXECUTION_BRIEF_DRAFTED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "SANDBOX_SESSION",
+   "SANDBOX_RUN",
+   "RESULT_IR_CITATION_FINDINGS",
+   "VERIFICATION_PASSED",
+   "RESULT_IR_VALIDATED",
+   "PLAN_PROFILE_ROUTED",
+   "TURN_STATUS",
+   "EXECUTION_OUTCOME_PUBLISHED"
+  ],
+  "provenance": {
+   "schema": "pdlt.provenance/1",
+   "recorded_by": "host at closure",
+   "status": "CLOSED_SUCCESS",
+   "verification": {
+    "level": "host_verified",
+    "problem_class": "VERIFIED_EXECUTION",
+    "witness_form": "computed",
+    "reproduced_by_host": true,
+    "unverified_reason": null,
+    "caveat": null
+   },
+   "deliverable_sha256": "9d2675da07ebd8202c41310eed961b15371d3b9857f65de215dd53d665c6b214",
+   "model": null,
+   "pdlt_version": "2.6.0rc1"
+  }
+ },
+ "verified-confirmed-brief": {
+  "worker": [
+   {
+    "operation": "BOOTSTRAP_ANALYSIS",
+    "prompt": "769b330d2508694d",
+    "manifest": "cc8c8f52a5ac1ce6"
+   },
+   {
+    "operation": "DRAFT_PROMPT",
+    "prompt": "4043d211a667425b",
+    "manifest": "480e4664d751d48d"
+   },
+   {
+    "operation": "DRAFT_PLAN",
+    "prompt": "5e01f91d172e8e58",
+    "manifest": "70db00aa4efe0ff3"
+   },
+   {
+    "operation": "DRAFT_EXECUTE",
+    "prompt": "0c29288abda69b82",
+    "manifest": "642ccbe15e3b6b86"
+   },
+   {
+    "operation": "EXECUTE",
+    "prompt": "42356eda2103ba54",
+    "manifest": "04b89f7370657daa"
+   }
+  ],
+  "sys1": [
+   {
+    "question": "route",
+    "request": "8876f4d16453997f"
+   },
+   {
+    "question": "problem_class",
+    "request": "2674150d2cc9ee89"
+   },
+   {
+    "question": "execution_profile",
+    "request": "5327269c3c87b90d"
+   },
+   {
+    "question": "no_evasion",
+    "request": "9eb546624e29cf12"
+   },
+   {
+    "question": "solution_actions",
+    "request": "69a7492ac291f231"
+   },
+   {
+    "question": "execution_profile",
+    "request": "b8b4c4e78f0ad148"
+   }
+  ],
+  "steps": [
+   {
+    "stage": "CLOSED_SUCCESS",
+    "exit_status": 0,
+    "closed": true,
+    "review": null,
+    "refused": false
+   }
+  ],
+  "events": [
+   "WORKSPACE_CREATED",
+   "EXPLICIT_INVOCATION_OBSERVED",
+   "ACTIVATION_ROUTED",
+   "EXECUTION_PROFILE_ROUTED",
+   "PROBLEM_CLASS_CLASSIFIED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PROMPT_FIDELITY",
+   "PROTOCOL_BOUND",
+   "ARTIFACT_PUBLISHED",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "PLAN_ADVANCEMENT",
+   "ARTIFACT_PUBLISHED",
+   "PLAN_PROMPT_ECHO",
+   "STANDING_CONFIRMATION",
+   "ARTIFACT_CONFIRMED",
+   "PLAN_PROFILE_ROUTED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "EXECUTION_BRIEF_DRAFTED",
+   "OPERATION_MATERIALIZED",
+   "MODEL_OUTPUT_RECORDED",
+   "SANDBOX_SESSION",
+   "SANDBOX_RUN",
+   "RESULT_IR_CITATION_FINDINGS",
+   "VERIFICATION_PASSED",
+   "RESULT_IR_VALIDATED",
+   "EXECUTION_ATTEMPTS",
+   "TURN_STATUS",
+   "EXECUTION_OUTCOME_PUBLISHED"
+  ],
+  "provenance": {
+   "schema": "pdlt.provenance/1",
+   "recorded_by": "host at closure",
+   "status": "CLOSED_SUCCESS",
+   "verification": {
+    "level": "host_verified",
+    "problem_class": "VERIFIED_EXECUTION",
+    "witness_form": "computed",
+    "reproduced_by_host": true,
+    "unverified_reason": null,
+    "caveat": null
+   },
+   "deliverable_sha256": "9d2675da07ebd8202c41310eed961b15371d3b9857f65de215dd53d665c6b214",
+   "model": null,
+   "pdlt_version": "2.6.0rc1"
+  }
+ }
+}

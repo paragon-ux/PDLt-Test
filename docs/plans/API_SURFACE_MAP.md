@@ -15,7 +15,14 @@ The map below is the state it started from. What B1 changed:
 | Results and exit status | `api.outcome.exit_status` and `TurnResult`; the REPL's headless exit and `run_catalogue.py` use the one mapping. |
 | Reading closed sessions | `api.closed_turns`; the MCP resources are built on it. |
 
-Still open (B2): a typed settings object, the task-type extension point, System 1 as its own provider, and the direct-reply path that calls the worker from the host.
+**B2 (2026-10-17, L124): every gap in the map below is closed.**
+- **Extension points** are defined by versioned profiles (`src/pdl_taskmaster/extensions/`): task types (`pdlt.task-type/1`), verifiers (`pdlt.verifier/1`) and providers (`pdlt.provider/1`, worker and system1 roles).
+- **Configuration:** typed `RunSettings` replace the host's attribute copying.
+- **System 1** is a provider of its own.
+- **The direct reply** is produced by the engine.
+- **Interfaces** pass one conformance suite.
+
+Not extensible by design: stages, review gates, execution modes and the workspace structure. See `docs/extensions.md`.
 
 ## The paths today
 

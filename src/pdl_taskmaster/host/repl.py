@@ -253,8 +253,7 @@ def open_session(
         run_id=args.run_id,
         observation_dir=observation_dir,
         render_compact=bool(getattr(args, "render_compact", False)),
-        sandbox_mode=getattr(args, "sandbox", None),
-        no_review=bool(getattr(args, "no_review", False)),
+        settings=_run_settings(args, worker),
     ).start()
     if getattr(host, "restore_notice", None):
         print(f"[warn] {host.restore_notice}", flush=True)
@@ -351,6 +350,36 @@ def _worker_profile(worker: Any) -> str:
     """Worker identity for MLflow telemetry (best-effort; default api)."""
     profile = getattr(worker, "worker_profile", None)
     return str(profile) if profile else "api"
+
+
+def _provider_settings(args) -> dict:
+    """--provider-setting KEY=VALUE pairs; a value is JSON when it parses, else text."""
+    settings: dict = {}
+    for item in getattr(args, "provider_setting", None) or []:
+        key, sep, value = item.partition("=")
+        if not sep or not key.strip():
+            raise SystemExit(f"--provider-setting needs KEY=VALUE, got {item!r}")
+        try:
+            settings[key.strip()] = json.loads(value)
+        except ValueError:
+            settings[key.strip()] = value
+    return settings
+
+
+def _run_settings(args, worker):
+    """The engine's run settings from CLI flags (L124 D7). The flags' run settings reach the API worker's sessions;
+    a recorded replay and the codex worker run with the defaults their recordings were made with."""
+    from pdl_taskmaster.providers.api_worker import ApiWorker
+    from pdl_taskmaster.runtime.run_settings import RunSettings
+
+    session = {"no_review": bool(getattr(args, "no_review", False)), "sandbox_mode": getattr(args, "sandbox", None),
+               "task_type": getattr(args, "task_type", None)}
+    if not isinstance(worker, ApiWorker):
+        return RunSettings(**session)
+    run = _api_run_settings(args)
+    return RunSettings(max_repairs=run["max_repairs"], draft_execute=run["draft_execute"],
+                       agent_tools=run["agent_tools"], representation=run["representation"], tier_d1=run["tier_d1"],
+                       **session)
 
 
 def _api_worker_settings(args, capture_tokens: bool) -> dict:
@@ -966,9 +995,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--worker",
-        choices=["recorded", "codex", "api"],
+        choices=sorted(set(api_providers.provider_names("worker")) | {"codex"}),
         default="api",
-        help="semantic worker to execute protocol operations (default: api)",
+        help="semantic worker to execute protocol operations: a registered worker provider, or codex (default: api)",
     )
     parser.add_argument(
         "--model",
@@ -1129,6 +1158,20 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.set_defaults(no_review=True)  # the unconfirmed route is the standard (ledger L94)
     parser.add_argument(
+        "--provider-setting",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="a setting for a registered worker provider other than api and recorded (repeatable; VALUE is read "
+        "as JSON when it parses, else as text)",
+    )
+    parser.add_argument(
+        "--task-type",
+        default=None,
+        help="pin a registered task type for every request (L124; e.g. STANDARD_EXECUTION). Default: System 1 "
+        "classifies each request",
+    )
+    parser.add_argument(
         "--exit-on-close",
         action="store_true",
         help="Exit REPL when protocol reaches a closed state (CLOSED_SUCCESS, CLOSED_UNVERIFIED or CLOSED_CANCELLED)",
@@ -1198,6 +1241,8 @@ def main() -> int:
     elif args.worker == "api":
         _warn_unknown_providers(args)
         worker = api_providers.create_worker("api", **_api_worker_settings(args, not args.no_token_telemetry))
+    elif args.worker in api_providers.provider_names("worker"):
+        worker = api_providers.create_worker(args.worker, **_provider_settings(args))
     else:
         raise SystemExit(f"unsupported worker: {args.worker}")
 
@@ -1447,7 +1492,7 @@ def main() -> int:
                     "/model [name] -> show/set worker model\n"
                     "/config -> show/set Codex config overrides (codex worker only)\n"
                     "/sessions [prune <days>] -> list sessions; prune older than N days\n"
-                    "/worker [codex|recorded|api] -> switch worker\n"
+                    "/worker <name> -> switch worker: codex, or a registered worker provider\n"
                     "/sandbox [read-only|workspace-write] -> show/set worker sandbox mode (codex worker only)\n"
                     "/workdir [path] -> show/set worker workdir\n"
                     "/transcript [path] -> show/set transcript file\n"
@@ -1647,6 +1692,8 @@ def main() -> int:
                     elif target == "api":
                         new_worker = api_providers.create_worker(
                             "api", **_api_worker_settings(args, getattr(worker, "capture_tokens", True)))
+                    elif target in api_providers.provider_names("worker"):
+                        new_worker = api_providers.create_worker(target, **_provider_settings(args))
                     else:
                         print(f"unknown worker: {target}", flush=True)
                         continue

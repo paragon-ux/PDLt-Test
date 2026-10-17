@@ -23,9 +23,9 @@ class OutputVerifier:
         self._checkers: dict[str, BaseChecker] = {}
         self._fallback = FallbackChecker()
 
-    def register(self, checker: BaseChecker) -> None:
-        """Register a domain-specific checker."""
-        self._checkers[checker.name] = checker
+    def register(self, checker: BaseChecker, *, domain: str | None = None) -> None:
+        """Register a domain-specific checker under ``domain`` (default: the checker's name)."""
+        self._checkers[domain or checker.name] = checker
 
     def get_checker(self, domain: ProblemDomain | str | None) -> BaseChecker:
         """Retrieve the checker for a given domain, or fallback if unregistered."""
@@ -69,6 +69,18 @@ class OutputVerifier:
     ) -> VerificationVerdict:
         """Check the witness using the appropriate domain checker."""
         effective_constraints = constraints or {}
+        checker = self.resolve_checker(witness, effective_constraints, domain=domain)
+        return checker.check(witness, effective_constraints, body=body)
+
+    def resolve_checker(
+        self,
+        witness: dict[str, Any] | Any,
+        constraints: dict[str, Any] | None = None,
+        *,
+        domain: ProblemDomain | str | None = None,
+    ) -> BaseChecker:
+        """The checker check() uses: the domain's, else the witness's declared domain's, else the fallback."""
+        effective_constraints = constraints or {}
         resolved_domain = None
         if domain is not None:
             resolved_domain = domain.value if isinstance(domain, ProblemDomain) else str(domain)
@@ -79,5 +91,4 @@ class OutputVerifier:
         if not resolved_domain:
             resolved_domain = self.detect_domain(effective_constraints)
 
-        checker = self.get_checker(resolved_domain)
-        return checker.check(witness, effective_constraints, body=body)
+        return self.get_checker(resolved_domain)

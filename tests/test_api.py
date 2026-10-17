@@ -71,8 +71,9 @@ def test_the_repl_and_the_catalogue_use_the_one_mapping():
 # Providers: a registry, not an if-chain.
 
 @pytest.fixture
-def registry(monkeypatch):
-    monkeypatch.setattr(providers, "_FACTORIES", dict(providers._FACTORIES))
+def registry():
+    with providers.REGISTRY.scoped():
+        yield
 
 
 def test_the_built_in_providers_are_registered():
@@ -89,10 +90,10 @@ def test_the_api_provider_passes_its_settings_to_the_worker():
 def test_the_recorded_provider_needs_an_eval_root_except_for_a_vendored_fixture(monkeypatch):
     from pdl_taskmaster.providers import fixtures
 
-    seen = []
+    seen, made = [], ScriptedWorker()
     monkeypatch.setattr(fixtures, "build_recorded_fixture_from_vendored",
-                        lambda repo, path, case_ids=None: seen.append((repo, path.name, case_ids)) or "worker")
-    assert api.create_worker("recorded", repo_root=ROOT, evidence="x/recorded-cases.json", case_ids=["a"]) == "worker"
+                        lambda repo, path, case_ids=None: seen.append((repo, path.name, case_ids)) or made)
+    assert api.create_worker("recorded", repo_root=ROOT, evidence="x/recorded-cases.json", case_ids=["a"]) is made
     assert seen == [(ROOT, "recorded-cases.json", ["a"])]
     with pytest.raises(ValueError, match="eval_root"):
         api.create_worker("recorded", repo_root=ROOT, evidence="evidence.jsonl")
@@ -103,8 +104,9 @@ def test_a_provider_can_be_registered_and_an_unknown_one_is_named(registry):
     assert isinstance(api.create_worker("scripted", body="x"), ScriptedWorker)
     with pytest.raises(ValueError, match="already registered"):
         api.register_provider("scripted", ScriptedWorker)
-    api.register_provider("scripted", lambda **settings: "replaced", replace=True)
-    assert api.create_worker("scripted") == "replaced"
+    replacement = ScriptedWorker()
+    api.register_provider("scripted", lambda **settings: replacement, replace=True)
+    assert api.create_worker("scripted") is replacement
     with pytest.raises(ValueError, match=r"unknown provider 'nope'; known: .*api.*recorded"):
         api.create_worker("nope")
 
