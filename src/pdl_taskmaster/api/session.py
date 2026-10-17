@@ -88,16 +88,27 @@ class Session:
     @classmethod
     def open(cls, worker: Any, session_dir: str | Path, *, repo_root: str | Path | None = None,
              sandbox_mode: str | None = None, no_review: bool = False, restore: bool = True,
-             output_verifier: Any = None, run_id: str = "api", task_type: str | None = None) -> "Session":
+             output_verifier: Any = None, run_id: str = "api", task_type: str | None = None,
+             settings: Any = None, sys1: Any = None) -> "Session":
         """Open the session in ``session_dir``, resuming its workspace when ``restore`` and it has one.
 
         ``no_review`` runs the standard route (no prompt or plan review). ``output_verifier`` replaces the host's
         verifier registry (``verification.output_verifier.OutputVerifier``), for callers that register their own
         domain checkers. ``sandbox_mode`` None means $PDLT_SANDBOX, else auto. ``task_type`` pins a registered task
-        type for every request (extensions/task_types.py); None lets System 1 classify each one."""
+        type for every request (extensions/task_types.py); None lets System 1 classify each one. ``settings`` is a
+        RunSettings (runtime/run_settings.py) carrying these and the other run settings; without it they are read
+        from the arguments and the worker's attributes. ``sys1`` is a System 1 client (api.create_system1); None:
+        the worker's."""
         from pdl_taskmaster.extensions import task_types
         from pdl_taskmaster.host.app import PDLtHost
+        from pdl_taskmaster.runtime.run_settings import RunSettings
 
+        if settings is None:
+            settings = RunSettings.from_worker(worker, no_review=no_review, sandbox_mode=sandbox_mode,
+                                               task_type=task_type)
+        elif (no_review, sandbox_mode, task_type) != (False, None, None):
+            raise ValueError("pass no_review, sandbox_mode and task_type in settings when settings is given")
+        no_review, task_type = settings.no_review, settings.task_type
         if task_type is not None:
             route = "unconfirmed" if no_review else "confirmed"
             if task_type not in task_types.REGISTRY:
@@ -112,10 +123,9 @@ class Session:
                         workspace_root=session_dir / "workspaces",
                         restore_path=stored_workspace(session_dir) if restore else None,
                         run_id=run_id, observation_dir=session_dir / "observations",
-                        sandbox_mode=sandbox_mode, no_review=no_review).start()
+                        settings=settings, sys1_client=sys1).start()
         if output_verifier is not None:
             host.engine.output_verifier = output_verifier
-        host.engine.pinned_task_type = task_type
         session = cls(host, session_dir)
         session._refresh_pointer()
         return session

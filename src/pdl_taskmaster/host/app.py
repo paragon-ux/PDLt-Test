@@ -76,6 +76,8 @@ class PDLtHost:
         higher_priority_constraints: str | None = None,
         sandbox_mode: str | None = None,
         no_review: bool = False,
+        settings: Any = None,
+        sys1_client: Any = None,
     ):
         self.candidate_repo = Path(candidate_repo).resolve()
         self.worker = worker
@@ -89,6 +91,13 @@ class PDLtHost:
         self.higher_priority_constraints = higher_priority_constraints or DEFAULT_HIGHER_PRIORITY_CONSTRAINTS
         self.sandbox_mode = sandbox_mode  # None: $PDLT_SANDBOX, else auto (native confinement)
         self.no_review = no_review
+        # L124 D7: the engine's run settings (runtime/run_settings.py). None: read from the worker's attributes.
+        self.settings = settings
+        if settings is not None:
+            self.no_review = settings.no_review
+            self.sandbox_mode = settings.sandbox_mode
+        # System 1 as its own provider; None: the worker's (an API worker builds one with its key).
+        self.sys1_client = sys1_client
         self.engine: Any = None
         self.observed: ObservedSession | None = None
         self.sink: JsonlSink | None = None
@@ -100,7 +109,12 @@ class PDLtHost:
 
     def start(self) -> "PDLtHost":
         self._load_candidate()
+        from pdl_taskmaster.runtime.run_settings import RunSettings
         from pdl_taskmaster.runtime.session_engine import SessionEngine
+
+        if self.sys1_client is not None and hasattr(self.worker, "sys1_client"):
+            self.worker.sys1_client = self.sys1_client  # one System 1 for the engine and the worker
+        sys1_client = self.sys1_client if self.sys1_client is not None else getattr(self.worker, "sys1_client", None)
 
         self.restore_notice: str | None = None
         engine: SessionEngine | None = None
@@ -113,7 +127,7 @@ class PDLtHost:
                     higher_priority_constraints=self.higher_priority_constraints,
                     available_execution_tools=None,
                     render_compact=self.render_compact,
-                    sys1_client=getattr(self.worker, "sys1_client", None),
+                    sys1_client=sys1_client,
                     sandbox_mode=self.sandbox_mode,
                     no_review=self.no_review,
                 )
@@ -131,18 +145,17 @@ class PDLtHost:
                 available_execution_tools=None,
                 workspace_root=self.workspace_root,
                 render_compact=self.render_compact,
-                sys1_client=getattr(self.worker, "sys1_client", None),
+                sys1_client=sys1_client,
                 sandbox_mode=self.sandbox_mode,
                 no_review=self.no_review,
             )
         self.engine = engine
         # Show each operation's output schema in the form the worker will enforce it.
         engine.bridge.contract_form = getattr(self.worker, "contract_form", None)
-        engine.max_repairs = getattr(self.worker, "max_repairs", None)
-        engine.draft_execute = bool(getattr(self.worker, "draft_execute", False))
-        engine.agent_tools = bool(getattr(self.worker, "agent_tools", False))
-        engine.representation = getattr(self.worker, "representation", None) or "pdl"
-        engine.tier_d1 = bool(getattr(self.worker, "tier_d1", engine.tier_d1))
+        settings = self.settings or RunSettings.from_worker(self.worker, no_review=self.no_review,
+                                                            sandbox_mode=self.sandbox_mode)
+        settings.apply(engine)
+        engine.plain_reply = self._plain_reply  # a direct reply is the engine's turn too (L124 D7)
         engine.model_name = lambda: getattr(self.worker, "model", None)  # the result's provenance (E-1)
         if self.observation_dir is not None:
             session_id = f"{self.run_id}-{self.case_id or 'session'}"
@@ -167,15 +180,7 @@ class PDLtHost:
             return HostTurn(text=NO_OPEN_REVIEW, bypass=False, closed=False,
                             state_after=controller_snapshot(self.engine))
         routed_message = self._ensure_protocol_entry(user_message)
-        response = self.observed.handle_user_message(routed_message)
-        if response.bypass and response.text is None:
-            plain = self.worker.call(_PlainRequest(user_message, environment=self._bypass_environment()))
-            return HostTurn(
-                text=_plain_reply_text(plain.text),
-                bypass=True,
-                closed=False,
-                state_after=controller_snapshot(self.engine),
-            )
+        response = self.observed.handle_user_message(routed_message, user_text=user_message)
         return HostTurn(
             text=response.text,
             bypass=bool(response.bypass),
@@ -192,18 +197,9 @@ class PDLtHost:
         self.engine.record_standing_confirmation()
         return self.handle("/confirm")
 
-    def _bypass_environment(self) -> str | None:
-        """The factual execution environment for a direct reply (the sandbox's
-        own System 1 routing state), and where programs actually run."""
-        sandbox = getattr(self.engine, "sandbox", None)
-        if sandbox is None:
-            return None
-        try:
-            environment = sandbox.decision_state()["execution_environment"]
-        except Exception:
-            return None
-        return (f"{environment} Programs run only when a task is executed, "
-                "not during a direct reply.")
+    def _plain_reply(self, user_text: str, environment: str | None) -> str | None:
+        """The worker's direct reply to the user's own text (no invocation prefix), as text."""
+        return _plain_reply_text(self.worker.call(_PlainRequest(user_text, environment=environment)).text)
 
     def _at_protocol_entry(self) -> bool:
         """No protocol instance is open: the next request starts one."""

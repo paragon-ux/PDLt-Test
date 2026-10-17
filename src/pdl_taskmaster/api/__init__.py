@@ -15,15 +15,16 @@ from pdl_taskmaster.api.outcome import (
     TurnResult,
     exit_status,
 )
-from pdl_taskmaster.api.providers import create_worker, provider_names, register_provider
+from pdl_taskmaster.api.providers import create_system1, create_worker, provider_names, register_provider
 from pdl_taskmaster.api.sandbox import SandboxNotConfined, create_sandbox
 from pdl_taskmaster.api.session import Session
+from pdl_taskmaster.runtime.run_settings import RunSettings
 
 __all__ = [
     "ClosedTurn", "closed_turns",
     "EXIT_CANCELLED", "EXIT_HARNESS_ERROR", "EXIT_INTERRUPTED", "EXIT_SUCCESS", "EXIT_UNCONFIRMED", "EXIT_UNVERIFIED",
     "EXIT_WAITING_INPUT", "TurnResult", "exit_status",
-    "create_worker", "provider_names", "register_provider",
+    "create_system1", "create_worker", "provider_names", "register_provider", "RunSettings",
     "SandboxNotConfined", "create_sandbox",
     "Session",
     "ProfileViolation", "register_task_type", "register_verifier",

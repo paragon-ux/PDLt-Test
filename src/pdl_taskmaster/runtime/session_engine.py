@@ -492,6 +492,9 @@ class SessionEngine:
 
         self.task_type = task_types.REGISTRY.default
         self.pinned_task_type: str | None = None
+        # The direct reply to a request System 1 routes away from the protocol (L124 D7): set by the host to
+        # (the user's own text, the execution environment) -> text; None leaves the reply to the caller.
+        self.plain_reply: Callable[[str, str | None], str | None] | None = None
         self._problem_domain: Any = None
         self.refused: bool = False
         # The model that serves the session, for the result's provenance (E-1); set by the host.
@@ -624,6 +627,16 @@ class SessionEngine:
             raise ValueError(f"representation:{value}")
         self._representation = value
         self.bridge.session_modes = frozenset({NL_REPRESENTATION_MODE}) if value == NL else frozenset()
+
+    def _direct_reply_environment(self) -> str | None:
+        """The factual execution environment for a direct reply (the sandbox's own System 1 routing state), and
+        where programs actually run."""
+        try:
+            environment = self.sandbox.decision_state()["execution_environment"]
+        except Exception:
+            return None
+        return (f"{environment} Programs run only when a task is executed, "
+                "not during a direct reply.")
 
     def _select_task_type(self, substantive_request: str, route: str) -> None:
         """The turn's task type (L124, extensions/task_types.py): pinned, classified by System 1, or the safe
@@ -3024,10 +3037,17 @@ class SessionEngine:
             self.workspace.publish_approach_sources(list(self.controller.state.approach_sources))
         return self._apply_transition(transition, msg, traces)
 
-    def handle_user_message(self, user_message: str) -> EngineResponse:
+    def handle_user_message(self, user_message: str, *, user_text: str | None = None) -> EngineResponse:
+        """``user_text`` is the user's own words when the host added an invocation to ``user_message``."""
         traces: list[CallTrace] = []
         if self.controller is None or self.controller.state.stage in CLOSED_STAGES:
-            return self._activation(user_message, traces) or EngineResponse(None, traces, bypass=True)
+            response = self._activation(user_message, traces) or EngineResponse(None, traces, bypass=True)
+            if response.bypass and response.text is None and self.plain_reply is not None:
+                from dataclasses import replace
+
+                text = user_text if user_text is not None else user_message
+                response = replace(response, text=self.plain_reply(text, self._direct_reply_environment()))
+            return response
 
         if self.workspace is None:
             raise WorkspaceError("active_controller_without_workspace")

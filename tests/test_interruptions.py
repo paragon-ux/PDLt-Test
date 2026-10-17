@@ -345,7 +345,7 @@ def test_repl_reports_what_was_in_flight(monkeypatch, capsys, tmp_path):
     attempt.mark("request_sent")
     attempt.mark("acknowledged")
     attempt.status, attempt.outcome, attempt.interrupted_by = 200, "interrupted", "local"
-    fake_worker = SimpleNamespace(call_traces=[], capture_tokens=False)
+    fake_worker = SimpleNamespace(call_traces=[], capture_tokens=False, call=lambda request: None)  # never called
 
     def handle(line):
         fake_worker.call_traces.append(interrupted)
