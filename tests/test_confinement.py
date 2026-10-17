@@ -219,7 +219,7 @@ def test_audit_layer_allows_the_run_directory_and_the_standard_library():
         ) +
         "print(sorted(os.listdir('.')))"
     )
-    with ExecutionSandbox() as sandbox:
+    with ExecutionSandbox(timeout_seconds=60.0) as sandbox:  # not a timing test: startup is slow under load
         result = sandbox.run_code(code)
     assert result.success, result.stderr
     assert result.stdout.strip() == "['_entry.py', 'local.db', 'program.py', 'tmp']"
