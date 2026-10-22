@@ -18,8 +18,9 @@ import run_catalogue
 from pdl_taskmaster.controller.mechanical_controller import Stage
 from pdl_taskmaster.host import repl
 from pdl_taskmaster.providers.api_worker import ApiWorker
+from pdl_taskmaster.providers.sys1.recipes import stage_scope
 from pdl_taskmaster.providers.sys1.recipes.stage_scope import (
-    CONCLUSIVE, IN_SCOPE, SCOPES, UNCERTAIN, Item, StageScopeRecipe, verdict_from,
+    CONCLUSIVE, IN_SCOPE, NONE, SCOPES, UNCERTAIN, Item, StageScopeRecipe, verdict_from,
 )
 from pdl_taskmaster.runtime.run_settings import RunSettings
 from pdl_taskmaster.runtime.session_engine import STAGE_CONCLUSIVE_KIND, SessionEngine
@@ -60,7 +61,7 @@ class Sys1:
             for question in request.questions:
                 key = question[: -len("_scope")]
                 scope = SCOPE_OF[key]
-                wanted = self.scripted.get(key, next(iter(SCOPES[scope].in_scope)))
+                wanted = self.scripted.get(key, NONE)
                 probabilities = wanted if isinstance(wanted, dict) else _probabilities(scope, wanted)
                 choice = max(probabilities, key=probabilities.get)
                 answers[question] = {"choice": choice, "confidence": probabilities[choice],
@@ -123,8 +124,9 @@ def test_each_artifact_gets_one_question_with_its_scope_categories():
         {"source_request": "R", "other": "x"})
     assert request.state == {"source_request": "R", "interpretation": "I", "approach": "A"}
     assert list(request.questions) == ["interpretation_scope", "approach_scope"]
-    assert list(request.questions["interpretation_scope"].choices) == SCOPES["prompt"].choices
-    assert "NAMES_METHOD" in SCOPES["prompt"].out_of_scope and "NAMES_METHOD" in SCOPES["plan"].in_scope
+    assert list(request.questions["interpretation_scope"].choices) == [*SCOPES["prompt"].out_of_scope, NONE]
+    assert "NAMES_METHOD" in SCOPES["prompt"].out_of_scope and "NAMES_METHOD" not in SCOPES["plan"].out_of_scope
+    assert "Any amount counts" in request.questions["approach_scope"].instructions  # what is present, not dominant
     with pytest.raises(ValueError):
         StageScopeRecipe([Item("x", "execute", "")])
 
@@ -132,12 +134,35 @@ def test_each_artifact_gets_one_question_with_its_scope_categories():
 @pytest.mark.parametrize("probabilities,verdict", [
     ({"STATES_RESULT": 0.9, "NAMES_METHOD": 0.1}, CONCLUSIVE),
     ({"STATES_RESULT": 0.45, "ASSUMES_RESULT": 0.4, "NAMES_METHOD": 0.15}, CONCLUSIVE),  # a split between two outs
-    ({"NAMES_METHOD": 0.6, "NAMES_CHECK": 0.3, "STATES_RESULT": 0.1}, IN_SCOPE),
-    ({"NAMES_METHOD": 0.5, "STATES_RESULT": 0.5}, UNCERTAIN),  # a real split between in and out
+    ({"NONE": 0.9, "STATES_RESULT": 0.1}, IN_SCOPE),
+    ({"NONE": 0.5, "STATES_RESULT": 0.5}, UNCERTAIN),  # a real split between none and out of scope
 ])
-def test_the_gate_sums_each_set(probabilities, verdict):
+def test_the_gate_sums_the_out_of_scope_set(probabilities, verdict):
     choice = max(probabilities, key=probabilities.get)
-    assert verdict_from({"choice": choice, "probabilities": probabilities}, SCOPES["plan"])["verdict"] == verdict
+    answer = {"choice": choice, "probabilities": probabilities}
+    assert verdict_from(answer, SCOPES["plan"], stage_filter=1.01)["verdict"] == verdict  # the gate alone
+
+
+def test_the_stage_filter_marks_another_stage_s_content_above_its_threshold():
+    """The user's deterministic filter: any other stage's mass at the calibrated threshold is conclusive, below the
+    0.80 gate too; the bootstrap's own-stage category (a misread) counts only toward the gate."""
+    mixed = {"choice": "NONE", "probabilities": {"NONE": 0.7, "STATES_RESULT": 0.2, "ASSUMES_RESULT": 0.1}}
+    assert verdict_from(mixed, SCOPES["plan"], stage_filter=0.25)["verdict"] == CONCLUSIVE  # EXECUTE mass 0.3
+    assert verdict_from(mixed, SCOPES["plan"], stage_filter=0.35)["verdict"] == UNCERTAIN
+    split = {"choice": "NONE", "probabilities": {"NONE": 0.6, "NAMES_METHOD": 0.2, "STATES_RESULT": 0.2}}
+    assert verdict_from(split, SCOPES["prompt"], stage_filter=0.25)["verdict"] == UNCERTAIN  # 0.2 PLAN, 0.2 EXECUTE
+    misread = {"choice": "NONE", "probabilities": {"NONE": 0.6, "MISREADS_ENTITY": 0.4}}
+    assert verdict_from(misread, SCOPES["bootstrap"], stage_filter=0.05)["verdict"] == UNCERTAIN
+    assert SCOPES["bootstrap"].stage_of["MISREADS_ENTITY"] == "OWN"
+
+
+def test_the_shipped_filter_is_the_calibrated_threshold():
+    """L148 calibration 2: the smallest grid value with at most 1% false halts on the Study A set is 0.55."""
+    assert stage_scope.STAGE_FILTER == 0.55
+    at = {"choice": "NONE", "probabilities": {"NONE": 0.45, "STATES_RESULT": 0.3, "PREVIEWS_PARTIAL": 0.25}}
+    below = {"choice": "NONE", "probabilities": {"NONE": 0.5, "STATES_RESULT": 0.3, "PREVIEWS_PARTIAL": 0.2}}
+    assert verdict_from(at, SCOPES["plan"])["verdict"] == CONCLUSIVE
+    assert verdict_from(below, SCOPES["plan"])["verdict"] == UNCERTAIN
 
 
 def test_an_answer_outside_the_categories_or_without_probabilities_is_uncertain():
@@ -149,7 +174,7 @@ def test_an_answer_outside_the_categories_or_without_probabilities_is_uncertain(
 def test_one_conclusive_artifact_makes_the_decision_conclusive():
     recipe = StageScopeRecipe([Item("interpretation", "prompt", "I"), Item("approach", "plan", "A")])
     body = {"answers": {
-        "interpretation_scope": {"choice": "RESTATES_TASK", "probabilities": _probabilities("prompt", "RESTATES_TASK")},
+        "interpretation_scope": {"choice": NONE, "probabilities": _probabilities("prompt", NONE)},
         "approach_scope": {"choice": "STATES_RESULT", "probabilities": _probabilities("plan", "STATES_RESULT")}}}
     result = recipe.parse_response(body)
     assert result.verdict == CONCLUSIVE
@@ -190,7 +215,7 @@ def test_outside_a_test_run_every_stage_is_recorded_and_the_run_continues(tmp_pa
 
 
 @pytest.mark.parametrize("sys1,fallback", [
-    (Sys1({"approach": {c: 0.5 if c in ("NAMES_METHOD", "STATES_RESULT") else 0.0 for c in SCOPES["plan"].choices}}),
+    (Sys1({"approach": {c: 0.5 if c in (NONE, "STATES_RESULT") else 0.0 for c in SCOPES["plan"].choices}}),
      None),
     (Sys1(fail=True), "sys1_error:RuntimeError"),
 ])
