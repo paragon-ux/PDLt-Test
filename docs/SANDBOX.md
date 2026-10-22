@@ -9,9 +9,9 @@ Yes, by default. A program either runs confined or it does not run at all. The o
 | Situation | What happens |
 |---|---|
 | Default (no flag, `PDLT_SANDBOX` unset) | Mode `auto`, which means native confinement: Landlock on Linux, Seatbelt on macOS, AppContainer on Windows. |
-| `--sandbox container` | A docker or podman container. Opt-in. |
+| `--sandbox container` | A docker or podman container. Opt-in ([Container mode](#container-mode)). |
 | Native confinement cannot apply (Linux before 5.13, no `sandbox-exec`, AppContainer setup failed, Microsoft Store Python, unknown mode) | **Fails closed.** No program runs. The deliverable gets a `SANDBOX_UNAVAILABLE` finding, which is never repaired, because a repair cannot fix the machine. The model is told that code execution is unavailable, and the REPL prints `[warn] code execution unavailable: ...` at session start. |
-| `--sandbox audit-only` or `PDLT_SANDBOX=audit-only` | **The only opt-out.** Programs run under the in-process audit hook and the resource limits only. The REPL prints a loud `WARNING`. |
+| `--sandbox audit-only` or `PDLT_SANDBOX=audit-only` | **The only opt-out.** Programs run under the in-process audit hook and the resource limits only, as the user, with no kernel boundary: native code or an unaudited path can reach whatever the user can. The REPL prints a loud `WARNING`. The MCP server refuses it (L121 flag E-4). There is no `off` mode: `--sandbox off` is rejected by the parser, and `PDLT_SANDBOX=off` is an unknown mode, which fails closed. |
 
 ### What it covers
 
@@ -111,6 +111,23 @@ The per-tier budgets are unchanged: the step budget, the wall-clock limit and th
 
 Each outcome becomes a finding: `STEP_BUDGET_EXCEEDED`, `WALL_CLOCK_EXCEEDED`, `MEMORY_EXCEEDED`, `PROGRAM_FAILED` or `SANDBOX_UNAVAILABLE`. Every run logs a `SANDBOX_RUN` event that includes the backend.
 
+## Container mode
+
+`--sandbox container`, `PDLT_SANDBOX=container`, or in the API `Session.open(..., sandbox_mode="container")` runs every program of a session in one container (`verification/confinement/container.py`).
+
+| Variable | Default |
+|---|---|
+| `PDLT_CONTAINER_RUNTIME` | The first of `docker` and `podman` on `PATH` |
+| `PDLT_CONTAINER_IMAGE` | `python:<major>.<minor>-slim`, the host's own Python version, so the standard library matches |
+
+- **Start.** On the session's first run the backend checks the runtime (`version --format {{.Server.Version}}`, 15 s), removes this machine's containers whose owner process is gone (by their `pdlt.sandbox` and `pdlt.owner` labels), and starts one with `run -d --rm --network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory <the largest tier's memory budget> --user <user> -v <work>:/work <image> sleep infinity`. The start may pull the image and is allowed 600 s; on a machine without network, pull it beforehand (`docker pull python:3.12-slim`).
+- **User.** On Linux, the host user's uid and gid, so files in `work/` stay the host user's. Elsewhere `65534:65534` (nobody); Docker Desktop maps the mount's ownership itself.
+- **Each run** is an `exec` in that container under `timeout -s KILL`. The run's own memory budget is set inside the program (`RLIMIT_AS`), so memory limits hold on a macOS host too. Host-only variables (`PATH`, `PATHEXT`, `COMSPEC`, `SYSTEMROOT`, `WINDIR`, `SYSTEMDRIVE`) are not passed in.
+- **At close**, the container is removed (`rm -f`).
+- **On a Windows or macOS host** the program runs on Linux in the container: host paths and Windows APIs are not the program's.
+- **When to choose it:** memory limits on macOS (Seatbelt enforces none); Linux without Landlock (before 5.13, or not in the `lsm=` list); unattended catalogue runs and CI.
+- **Where it is tested:** `sandbox.yml` runs the confinement suite against it on Linux, Python 3.10 to 3.14. On Windows 11 with Docker Desktop (Linux engine) the suite passed locally (L135). On macOS it has not been run.
+
 ## Checking it on your machine
 
 **At REPL start:**
@@ -135,5 +152,4 @@ Expected result: the file is unchanged, and the run fails with `PermissionError`
 - **Landlock:** UDP, pathname UNIX sockets and `fork` are blocked by the audit hook only. Kernels before 5.13 fail closed.
 - **macOS:** relies on `sandbox-exec`, which is deprecated but still supported, and Apple's `system.sb`. Memory limits are not enforced.
 - **Windows:** programs cannot open `NUL`. Each session creates an AppContainer profile, which is deleted at close or by the sweep. A per-user Python install gets a one-time read grant.
-- **Python 3.12+:** the step budget is not enforced. This predates the sandbox.
 - **Not covered:** CPU and memory side channels, and kernel exploits. Use `--sandbox container` when stronger isolation is needed.

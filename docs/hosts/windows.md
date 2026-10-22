@@ -172,7 +172,9 @@ Backslashes are doubled in JSON. Find the path with `(Get-Command python).Source
 
 ## Run programs in a container instead (optional)
 
-Install Docker Desktop, start it, and pull the image matching your Python version (for Python 3.12: `docker pull python:3.12-slim`). Then pass `--sandbox container`, or set `$env:PDLT_SANDBOX = "container"`. The sandbox check in step 4 with `'container'` in place of `'auto'` should print `container 0 42`. CI tests the container backend on Linux only; on Windows it has not been verified.
+Install Docker Desktop, start it, and pull the image matching your Python version (for Python 3.12: `docker pull python:3.12-slim`). Then pass `--sandbox container`, or set `$env:PDLT_SANDBOX = "container"`. The sandbox check in step 4 with `'container'` in place of `'auto'` should print `container 0 42`. CI (`sandbox.yml`) tests the container backend on Linux only; on Windows 11 with Docker Desktop (Linux engine) the confinement suite passed locally (L135). The program runs on Linux in the container, so Windows paths and APIs are not its own. `PDLT_CONTAINER_RUNTIME` and `PDLT_CONTAINER_IMAGE` choose the runtime and the image ([Sandbox guide](../SANDBOX.md#container-mode)).
+
+To run without the OS sandbox, for diagnostics only, pass `--sandbox audit-only` or set `$env:PDLT_SANDBOX = "audit-only"`: programs then run with the in-process audit hook and the resource limits only, and PDLt prints a warning. There is no `off` mode.
 
 ## Troubleshooting
 

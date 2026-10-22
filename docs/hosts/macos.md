@@ -174,7 +174,9 @@ Find the path with `which python` while the environment is active. Tools, resour
 
 ## Run programs in a container instead (optional)
 
-Use this when a memory limit matters. Install Docker Desktop, start it, and pull the image matching your Python version (for Python 3.12: `docker pull python:3.12-slim`). Then pass `--sandbox container`, or `export PDLT_SANDBOX=container`. The sandbox check in step 4 with `'container'` in place of `'auto'` should print `container 0 42`. CI tests the container backend on Linux only; on macOS it has not been verified.
+Use this when a memory limit matters. Install Docker Desktop, start it, and pull the image matching your Python version (for Python 3.12: `docker pull python:3.12-slim`). Then pass `--sandbox container`, or `export PDLT_SANDBOX=container`. The sandbox check in step 4 with `'container'` in place of `'auto'` should print `container 0 42`. CI (`sandbox.yml`) tests the container backend on Linux only; on macOS it has not been verified. `PDLT_CONTAINER_RUNTIME` and `PDLT_CONTAINER_IMAGE` choose the runtime and the image ([Sandbox guide](../SANDBOX.md#container-mode)).
+
+To run without the OS sandbox, for diagnostics only, pass `--sandbox audit-only` or `export PDLT_SANDBOX=audit-only`: programs then run with the in-process audit hook and the resource limits only, and PDLt prints a warning. There is no `off` mode.
 
 ## Troubleshooting
 

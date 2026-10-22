@@ -11,8 +11,8 @@ Only `OPENROUTER_API_KEY` is required, and only for live runs. Every other varia
 | `OPENROUTER_API_KEY` | For live runs | The key for the task model and, unless overridden below, System 1 |
 | `SYS1_API_KEY`, `SYS1_MODEL`, `SYS1_ENDPOINT` | No | System 1's own key, model or endpoint |
 | `OPENROUTER_PROVIDER`, `OPENROUTER_PROVIDER_ORDER` | No | Pin the OpenRouter providers that serve requests ([Providers](providers.md)) |
-| `PDLT_SANDBOX` | No | Sandbox mode: `auto` (the default: the host's native backend), `native`, `container`, or `audit-only` (no OS confinement; prints a warning) |
-| `PDLT_CONTAINER_RUNTIME`, `PDLT_CONTAINER_IMAGE` | No | The container backend's runtime (default `docker`, else `podman`) and image (default `python:<major.minor>-slim`) |
+| `PDLT_SANDBOX` | No | Sandbox mode: `auto` (the default: the host's native backend), `native`, `container`, or `audit-only` (no OS confinement; prints a warning). Any other value, `off` included, fails closed: no program runs ([Sandbox guide](SANDBOX.md)) |
+| `PDLT_CONTAINER_RUNTIME`, `PDLT_CONTAINER_IMAGE` | No | The container backend's runtime (default: the first of `docker`, `podman` on `PATH`) and image (default `python:<major.minor>-slim`) |
 | `PDLT_SANDBOX_NETWORK`, `PDLT_POLICY_SCOPE`, `PDLT_KNOWLEDGE_CUTOFF` | No | What System 1 is told about the environment when it decides whether a request is in bounds (ADR-0020). `PDLT_SANDBOX_NETWORK` never gives programs network access. |
 | `PDLT_TIER_D1` | No | `0` stops feeding the model its own sandbox failures as repairs (default on) |
 | `PDLT_AGENT_TOOLS` | No | `1` turns on in-call tools (ADR-0029) |
@@ -41,7 +41,9 @@ The same codes come from a headless run, from `TurnResult.exit_status` in the Py
 
 | Symptom | Look at |
 |---|---|
-| `[warn] code execution unavailable` when the REPL starts, or `SandboxNotConfined` | No OS-native sandbox on this machine: your host's page, step 4, and the [Sandbox guide](SANDBOX.md) |
+| `[warn] code execution unavailable` when the REPL starts, or `SandboxNotConfined` | No OS-native sandbox on this machine (for example Linux before 5.13, a Microsoft Store Python on Windows, no `sandbox-exec` on macOS), or an unknown `PDLT_SANDBOX` value: your host's page, step 4, and the [Sandbox guide](SANDBOX.md). The MCP server refuses `audit-only`. |
+| `no container runtime found` or `cannot start the sandbox container` | Docker or Podman is not installed, not on `PATH`, or its daemon is not running: check `docker version`, or set `PDLT_CONTAINER_RUNTIME` ([Sandbox guide](SANDBOX.md#container-mode)) |
+| `invalid choice: 'off'` for `--sandbox` | There is no `off` mode; the only opt-out is `--sandbox audit-only` |
 | `OPENROUTER_API_KEY` errors, or exit 4 on the first model call | The key is not set in this shell, or is wrong. Print whether it is set without showing it: `python -c "import os; print(bool(os.environ.get('OPENROUTER_API_KEY')))"` |
 | Exit 4, or `[harness-error]` on standard error | The session's `worker-progress.log` and `call-trace.jsonl`. Common causes: a model that rejects the request format (try another; [Providers](providers.md)), a rate-limited free model, no credit for a paid model, or a provider timeout. |
 | Exit 2 in a headless run | It stopped at a review gate: pipe `/confirm` lines, or run without `--review` |

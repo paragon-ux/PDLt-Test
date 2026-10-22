@@ -29,7 +29,7 @@ The model drafts high-level pseudocode capturing its interpretation of the user'
 The model drafts high-level procedural pseudocode outlining the concrete algorithms, data structures, and edge cases to implement.
 
 ### 4. Stage 50: Execution (`EXECUTE`)
-The model writes executable code under OS sandbox confinement. In DRAFT-EXECUTE mode, a typed execution brief (method, data structures, step estimate checked against the budget, invariants, self-checks, exact task strings) is drafted first for tasks that are or need an algorithm or a calculation, and passed to EXECUTE as its own input.
+The model writes executable code under sandbox confinement (OS-native Landlock, Seatbelt or AppContainer, or a Docker or Podman container; [Sandbox guide](SANDBOX.md)). If confinement cannot be applied, execution fails closed and no program runs. In DRAFT-EXECUTE mode, a typed execution brief (method, data structures, step estimate checked against the budget, invariants, self-checks, exact task strings) is drafted first for tasks that are or need an algorithm or a calculation, and passed to EXECUTE as its own input.
 
 ### 5. Stage 60: Verification & Repair (`Tier-D1`)
 The authored deliverable is executed in the isolated sandbox. If errors or assertion failures occur, structured diagnostic feedback is fed back to the model for up to $N$ repairs.
