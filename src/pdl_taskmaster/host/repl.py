@@ -390,7 +390,6 @@ def _run_settings(args, worker):
     return RunSettings(max_repairs=run["max_repairs"], draft_execute=run["draft_execute"],
                        agent_tools=run["agent_tools"], representation=run["representation"], tier_d1=run["tier_d1"],
                        agent_tools_exclude=tuple(sorted(getattr(args, "agent_tools_exclude", None) or ())),
-                       stop_on_conclusive=bool(getattr(args, "stop_on_conclusive", False)),
                        withhold_execution_context=bool(getattr(args, "withhold_execution_context", False)),
                        **session)
 
@@ -1005,14 +1004,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help="with --agent-tools, withhold these tools for an ablation (L145): read_attempt, run_python, "
         "submit_execute_unconfirmed, submit_bootstrap_analysis, submit_draft_prompt, submit_draft_plan. A withheld "
         "submission tool means that operation answers in its message, checked by the host after the call",
-    )
-    parser.add_argument(
-        "--stop-on-conclusive",
-        action="store_true",
-        help="test runs (L147, L148): stop fail-closed when System 1 judges an artifact to be outside its stage's "
-        "scope (a bootstrap analysis beyond faithful extraction, a prompt that names a method or the result, a plan "
-        "or the unconfirmed approach that names the result, an unconfirmed interpretation that names a method or "
-        "the result); the catalogue runner sets it. Otherwise the decision is only recorded",
     )
     parser.add_argument(
         "--withhold-execution-context",

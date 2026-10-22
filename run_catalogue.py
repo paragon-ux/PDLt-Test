@@ -392,11 +392,8 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
                             else "--no-api-structured-output")
     if settings.get("sandbox"):
         setting_args += ["--sandbox", settings["sandbox"]]
-    if settings.get("route") != "control":
-        if settings.get("stop_on_conclusive"):
-            setting_args.append("--stop-on-conclusive")
-        if settings.get("withhold_execution_context"):
-            setting_args.append("--withhold-execution-context")
+    if settings.get("route") != "control" and settings.get("withhold_execution_context"):
+        setting_args.append("--withhold-execution-context")
     if settings.get("route") == "unconfirmed":
         setting_args.append("--no-review")
     elif settings.get("route") == "confirmed":
@@ -531,7 +528,6 @@ def run_single_prompt(entry, run_dir, model, reasoning_effort, timeout, repeat_i
         "transcript_file": str(transcript_path.relative_to(run_dir)),
         "ground_truth_check": ground_truth_check,
         "ground_truth_grade": grade,
-        "stage_conclusive": graders.published_outcome(result_dir)[0] == CONCLUSIVE_HALT_KIND,
         "pdl_rules_stressed": entry.get("pdl_rules_stressed", []),
         "tags": entry.get("tags", []),
         "regression_ref": entry.get("regression_ref"),
@@ -666,10 +662,6 @@ def gt_grade(r):
 
 HOLD_VERDICT = "UNCONFIRMED_GATE"  # exit 2: a gate left for a human (ADR-0019; D3 holds)
 ADVERSARIAL_CATEGORY = "adversarial_and_injection"
-# L147, L148: a prompt stopped at an artifact outside its stage's scope halts the whole run: the failure is systemic,
-# not the prompt's (16-06 failed this way in every arm). The runner exits with this code; a study driver halts on it.
-CONCLUSIVE_HALT_KIND = "STAGE_CONCLUSIVE"
-CONCLUSIVE_HALT_EXIT = 6
 
 
 def outcome_class(r):
@@ -1046,9 +1038,6 @@ def main():
                              "EXECUTE_UNCONFIRMED, and in-call tools on EXECUTE_UNCONFIRMED; default off")
     parser.add_argument("--agent-tools-exclude", default=None, metavar="TOOL[,TOOL]",
                         help="with --agent-tools, withhold these tools (an ablation, L145); passed to the harness")
-    parser.add_argument("--stop-on-conclusive", action=argparse.BooleanOptionalAction, default=True,
-                        help="L147, L148: a test run stops fail-closed, and the whole run halts, when System 1 "
-                             "judges an artifact to be outside its stage's scope (default on; not Control)")
     parser.add_argument("--withhold-execution-context", action="store_true",
                         help="L148 A/B: the stages before EXECUTE receive only their own instructions; passed to "
                              "the harness")
@@ -1121,7 +1110,6 @@ def main():
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
                     "providers": args.providers, "draft_execute": args.draft_execute,
                     "agent_tools": args.agent_tools, "agent_tools_exclude": excluded or None,
-                    "stop_on_conclusive": args.stop_on_conclusive and args.route != "control",
                     "withhold_execution_context": args.withhold_execution_context and args.route != "control",
                     "representation": args.representation,
                     "tier_d1": args.tier_d1 and args.route != "control",  # what the child will run with
@@ -1208,7 +1196,6 @@ def main():
             "dev_mode": True,
             "structured_output": run_settings["structured_output"],  # the effective value (Control: false)
             "agent_tools_exclude": excluded,
-            "stop_on_conclusive": run_settings["stop_on_conclusive"],
             "withhold_execution_context": run_settings["withhold_execution_context"],
             "gate_policy": "evaluator_confirms_via_stdin",
         },
@@ -1218,7 +1205,6 @@ def main():
     )
 
     results = []
-    halted = None
     for i, (entry, repeat_index) in enumerate(runs, 1):
         prompt_id = entry["id"]
         label = prompt_id + (f" r{repeat_index}" if repeat_index else "")
@@ -1231,23 +1217,9 @@ def main():
         memory = f", {peak:.0f} MB" if peak is not None else ""
         print(f"{icon} {result['verdict']:20s} gt={gt_grade(result):7s} ({result['elapsed_seconds']:.1f}s{memory})")
 
-        if result.get("stage_conclusive"):
-            halted = {"prompt": label, "after": i, "of": len(runs), "result": result["transcript_file"]}
-            print(f"\n[HALT] {label}: System 1 judged an artifact outside its stage's scope (L148). The whole run "
-                  f"stops: {len(runs) - i} run(s) not started.")
-            break
         if args.fail_fast and stops_fail_fast(result):
             print(f"\n[FAIL-FAST] Stopping execution immediately after failure on {prompt_id} ({result['verdict']}).")
             break
-
-    if halted is not None:
-        run_meta["halted"] = halted
-        (run_dir / "RUN_META.json").write_text(json.dumps(run_meta, indent=2), encoding="utf-8")
-        (run_dir / "HALTED.md").write_text(
-            f"# Halted (L148)\n\n{halted['prompt']} stopped at an artifact System 1 judged outside its stage's scope, "
-            f"after {halted['after']} of {halted['of']} runs. A conclusive stop halts the whole run: the cause is "
-            f"systemic, not the prompt's. Diagnose it before running again.\n\nResult: `{halted['result']}`\n",
-            encoding="utf-8")
 
     print()
     print(f"{'=' * 50}")
@@ -1308,9 +1280,6 @@ def main():
         or scoreboard["false_positives"]
         or (args.fail_fast and scoreboard.get("failed", 0) > 0)
     ) else 0
-    if halted is not None:
-        print(f"HALTED: {halted['prompt']} (an artifact outside its stage's scope); see {run_dir / 'HALTED.md'}")
-        exit_code = CONCLUSIVE_HALT_EXIT
     sys.exit(exit_code)
 
 

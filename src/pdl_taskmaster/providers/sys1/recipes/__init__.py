@@ -10,7 +10,6 @@ from pdl_taskmaster.providers.sys1.recipes.plan_advancement import PlanAdvanceme
 from pdl_taskmaster.providers.sys1.recipes.problem_class import ProblemClassRecipe
 from pdl_taskmaster.providers.sys1.recipes.prompt_fidelity import PromptFidelityRecipe
 from pdl_taskmaster.providers.sys1.recipes.review_facets import ReviewFacetsRecipe
-from pdl_taskmaster.providers.sys1.recipes.stage_scope import StageScopeRecipe
 
 __all__ = [
     "ActivationRouteRecipe",
@@ -22,7 +21,6 @@ __all__ = [
     "ProblemClassRecipe",
     "PromptFidelityRecipe",
     "ReviewFacetsRecipe",
-    "StageScopeRecipe",
     "Sys1Recipe",
     "as_decision_instruction",
 ]

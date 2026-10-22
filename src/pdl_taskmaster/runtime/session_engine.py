@@ -249,22 +249,6 @@ def _normalized_lines(body: str) -> list[str]:
 # ADR-0029: operations whose calls get a submit-only tool host when agent tools are on (runtime/agent_tools.py).
 _SUBMIT_ONLY_OPERATIONS = ("BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN")
 
-# L148: the stage scope each operation's output is judged against (the unconfirmed notes are judged in their call).
-_STAGE_SCOPES = {"BOOTSTRAP_ANALYSIS": "bootstrap", "DRAFT_PROMPT": "prompt", "REVISE_PROMPT": "prompt",
-                 "DRAFT_PLAN": "plan", "REVISE_PLAN": "plan"}
-STAGE_CONCLUSIVE_KIND = "STAGE_CONCLUSIVE"  # the published outcome of a test run stopped at a conclusive artifact
-
-
-class StageConclusiveStop(BaseException):
-    """L148: a test run stops at an artifact outside its stage's scope. A BaseException so that no recovery
-    handler on the way (wire retries, repairs) can swallow it; the engine's public entry points turn it into the
-    fail-closed response."""
-
-    def __init__(self, operation: str, decision: dict[str, Any], traces: list[CallTrace],
-                 withheld: dict[str, Any] | None = None) -> None:
-        super().__init__(operation)
-        self.operation, self.decision, self.traces, self.withheld = operation, decision, traces, withheld or {}
-
 
 def _python_blocks(body: str) -> list[str]:
     """The Python the host runs, decided by grammar, never by keywords.
@@ -495,9 +479,6 @@ class SessionEngine:
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
         self.agent_tools = False  # ADR-0029: in-call tools and checked submissions (--agent-tools)
         self.agent_tools_exclude: frozenset[str] = frozenset()  # L145: tools withheld (--agent-tools-exclude)
-        # L147, L148: a test run stops at the first artifact System 1 judges outside its stage's scope
-        # (--stop-on-conclusive); otherwise the decision is only recorded
-        self.stop_on_conclusive = False
         self._withhold_execution_context = False  # L148 A/B: earlier stages without EXECUTE's environment and clauses
         self._last_unconfirmed_body: str | None = None
         self._unconfirmed_attempts = 0
@@ -814,9 +795,7 @@ class SessionEngine:
             request = dataclasses.replace(request, tools=host)
         try:
             model_text = self._invoke(request, traces)
-            if parser is None:
-                return model_text
-            return self._scope_checked(operation, values, parser(model_text), traces)
+            return model_text if parser is None else parser(model_text)
         except Exception as first_error:
             if parser is None or not _is_wire_failure(first_error):
                 raise
@@ -848,7 +827,7 @@ class SessionEngine:
             if retry_host is not None and retry_host.tool_names():
                 retry_request = dataclasses.replace(retry_request, tools=retry_host)
             try:
-                return self._scope_checked(operation, values, parser(self._invoke(retry_request, traces)), traces)
+                return parser(self._invoke(retry_request, traces))
             except Exception as retry_error:
                 if _is_wire_failure(retry_error):
                     raise first_error from None
@@ -1767,73 +1746,6 @@ class SessionEngine:
         self.workspace.append_event("PLAN_ADVANCEMENT", decision)
         return decision["verdict"], list(decision["failed_checks"])
 
-    def _judge_stage_scope(
-        self, operation: str, items: list[Any], source_request: str, confirmed_prompt: str | None = None
-    ) -> dict[str, Any]:
-        """One StageScopeRecipe decision (L148) on the artifacts a stage produced, recorded as STAGE_SCOPE.
-        System 1 absent or failing yields no verdict, which is recorded and acted on by nothing."""
-        from pdl_taskmaster.providers.sys1.recipes.stage_scope import StageScopeRecipe
-
-        assert self.workspace is not None
-        decision: dict[str, Any] = {"operation": operation, "verdict": None, "items": {},
-                                    "fallback": "sys1_unavailable"}
-        if self.sys1_client is not None and self.sys1_client.is_configured:
-            recipe = StageScopeRecipe(items)
-            try:
-                body, duration_ms = self.sys1_client.call(recipe.build_request(
-                    {"source_request": source_request, "confirmed_prompt": confirmed_prompt}))
-                wire = recipe.map_to_wire(recipe.parse_response(body, duration_ms=duration_ms))
-                decision.update(verdict=wire["verdict"], items=wire["items"], fallback=None)
-            except Exception as exc:
-                decision["fallback"] = f"sys1_error:{type(exc).__name__}"
-        self.workspace.append_event("STAGE_SCOPE", decision)
-        return decision
-
-    def _scope_checked(self, operation: str, values: dict[str, Any], parsed: Any, traces: list[CallTrace]) -> Any:
-        """L148: every artifact BOOTSTRAP_ANALYSIS, DRAFT_PROMPT, DRAFT_PLAN and their revisions return is judged
-        against its stage's scope; a test run stops at a conclusive one. Returns ``parsed`` unchanged."""
-        from pdl_taskmaster.providers.sys1.recipes.stage_scope import CONCLUSIVE, Item, entities_of
-
-        scope = _STAGE_SCOPES.get(operation)
-        if scope is None or self.workspace is None:
-            return parsed
-        if operation == "BOOTSTRAP_ANALYSIS":
-            if not isinstance(parsed, dict) or parsed.get("kind") != "ANALYSIS":
-                return parsed
-            text = json.dumps({key: parsed.get(key) for key in ("task_summary", "approach_notes", "task_entities")},
-                              ensure_ascii=False)
-            source = str(values.get("RAW_UNTRUSTED_CONTENT") or "")
-            entities = entities_of(parsed.get("task_entities"))
-        else:
-            text = parsed if isinstance(parsed, str) else getattr(parsed, "prompt_body", None)
-            if not text:
-                return parsed
-            source = getattr(self, "_source_request", None) or ""
-            entities = ()
-        artifact = {"bootstrap": "analysis", "prompt": "prompt", "plan": "plan"}[scope]
-        confirmed = (values.get("CONFIRMED_PROMPT_BODY") or values.get("CURRENT_PROMPT_BODY")) if scope == "plan" else None
-        decision = self._judge_stage_scope(operation, [Item(artifact, scope, text, entities)], source, confirmed)
-        if decision["verdict"] == CONCLUSIVE and self.stop_on_conclusive:
-            raise StageConclusiveStop(operation, decision, traces, withheld={artifact: text})
-        return parsed
-
-    def _stop_on_conclusive(self, stop: "StageConclusiveStop") -> EngineResponse:
-        """L147, L148: a test run stops fail-closed at the first artifact System 1 judges outside its stage's scope.
-        Nothing the stage produced is published; it is kept in the outcome record."""
-        assert self.workspace is not None
-        if self.controller is None or self.controller.state.stage in CLOSED_STAGES:
-            # A stop before the instance opened (BOOTSTRAP, DRAFT_PROMPT) still closes one, cancelled: exit 1.
-            self.controller = self._bind_new_controller(
-                self.workspace, instance_kind="UNCONFIRMED" if getattr(self, "no_review", False) else "CONFIRMATION")
-        self.controller.cancel()
-        if self.workspace.turn_id is not None:
-            self.workspace.mark_turn_status("CLOSED_CANCELLED")
-        text = (f"The run stopped: System 1 judged the output of {stop.operation} to be outside its stage's scope "
-                "(L148). A test run stops here, and nothing it produced is published.")
-        self.workspace.publish_execution_outcome(STAGE_CONCLUSIVE_KIND, text, {
-            "operation": stop.operation, "decision": stop.decision, "withheld": stop.withheld})
-        return EngineResponse(text, stop.traces, closed=True)
-
     def _residual_lint_note(self, body: str, artifact: str, operation: str) -> str | None:
         """After the one redraft: a body that still fails the lint is published
         unchanged (AUTH-05, no host rewrite) with a factual note at the review
@@ -2537,16 +2449,6 @@ class SessionEngine:
             return outcome, [], outcome.body, False
         self._last_unconfirmed_body = outcome.body
 
-        from pdl_taskmaster.providers.sys1.recipes.stage_scope import CONCLUSIVE, Item
-
-        # L148: the interpretation is judged as a prompt, the approach as a plan.
-        notes = [Item("interpretation", "prompt", outcome.interpretation or ""),
-                 Item("approach", "plan", outcome.approach or "")]
-        notes_decision = self._judge_stage_scope("EXECUTE_UNCONFIRMED", notes, sanitized_source)
-        if notes_decision["verdict"] == CONCLUSIVE and self.stop_on_conclusive:
-            raise StageConclusiveStop("EXECUTE_UNCONFIRMED", notes_decision, traces, withheld={
-                "interpretation": outcome.interpretation, "approach": outcome.approach, "body": outcome.body})
-
         missing_entities = self._entity_coverage_missing(outcome.interpretation or "", self._active_task_entities)
         if missing_entities and self.workspace is not None:
             self.workspace.append_event(
@@ -3125,12 +3027,6 @@ class SessionEngine:
         self.workspace.append_event("STANDING_CONFIRMATION", {"kind": kind, "artifact_id": artifact_id})
 
     def handle_explicit_review(self, intent: Intent, feedback: str | None = None) -> EngineResponse:
-        try:
-            return self._handle_explicit_review(intent, feedback)
-        except StageConclusiveStop as stop:
-            return self._stop_on_conclusive(stop)
-
-    def _handle_explicit_review(self, intent: Intent, feedback: str | None = None) -> EngineResponse:
         """Directly apply a review intent without LLM interpretation overhead (fast-path)."""
         traces: list[CallTrace] = []
         if self.workspace is None:
@@ -3174,12 +3070,6 @@ class SessionEngine:
 
     def handle_user_message(self, user_message: str, *, user_text: str | None = None) -> EngineResponse:
         """``user_text`` is the user's own words when the host added an invocation to ``user_message``."""
-        try:
-            return self._handle_user_message(user_message, user_text=user_text)
-        except StageConclusiveStop as stop:
-            return self._stop_on_conclusive(stop)
-
-    def _handle_user_message(self, user_message: str, *, user_text: str | None = None) -> EngineResponse:
         traces: list[CallTrace] = []
         if self.controller is None or self.controller.state.stage in CLOSED_STAGES:
             response = self._activation(user_message, traces) or EngineResponse(None, traces, bypass=True)

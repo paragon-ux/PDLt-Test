@@ -50,7 +50,6 @@ KEY_URL = "https://openrouter.ai/api/v1/key"
 UNIT_TIMEOUT_S = 1200  # the runner enforces the prompt's own timeout; this only catches a hung runner
 OUTAGE_BACKOFF_S = 120
 MAX_FAILED_BLOCKS_IN_A_ROW = 3
-CONCLUSIVE_HALT_EXIT = 6  # L147, L148: as run_catalogue.py
 
 
 # ---------------------------------------------------------------------------- config and schedule
@@ -107,11 +106,6 @@ def out_dir(config: dict[str, Any]) -> Path:
     return path if path.is_absolute() else RUNS_DIR / path
 
 
-def halt_path(config: dict[str, Any]) -> Path:
-    """L147, L148: written when a unit stops at a conclusive artifact; the study does not run while it exists."""
-    return out_dir(config) / "HALTED.md"
-
-
 def worktree(config: dict[str, Any], arm: str) -> Path:
     path = Path(config["arms"][arm]["worktree"]).expanduser()
     return path if path.is_absolute() else (Path(config["_path"]).parent / path).resolve()
@@ -163,8 +157,6 @@ def preflight(config: dict[str, Any], *, check_key: bool = True) -> list[str]:
         problems.append(f"environment variables that change a run are set: {', '.join(stray)}")
     if git(ROOT, "status", "--porcelain"):
         problems.append(f"the driver's checkout {ROOT} has uncommitted changes")
-    if halt_path(config).is_file():
-        problems.append(f"the study halted at a conclusive artifact (L148): {halt_path(config)}")
     committed = schedule_path(config)
     if not committed.is_file() or committed.read_text(encoding="utf-8") != schedule_json(schedule(config)):
         problems.append(f"{committed.name} is missing or differs from the schedule the config gives")
@@ -235,7 +227,7 @@ def classify(run_dir: Path | None, arm_args: list[str]) -> dict[str, Any]:
         return {"outage": f"{len(results)} result files"}
     result = json.loads(results[0].read_text(encoding="utf-8"))
     record = {"verdict": result.get("verdict"), "grade": (result.get("ground_truth_grade") or {}).get("grade"),
-              "result_dir": str(results[0].parent), "conclusive_halt": bool(result.get("stage_conclusive"))}
+              "result_dir": str(results[0].parent)}
     error = result.get("harness_error") or {}
     if result.get("verdict") == "HARNESS_ERROR" and error.get("category") == "PROVIDER_UNAVAILABLE":
         record["outage"] = f"provider unavailable ({error.get('status')})"
@@ -358,15 +350,6 @@ def cmd_run(config: dict[str, Any], args: argparse.Namespace) -> int:
                 ledger.append({**row, "kept_after_reruns": bool(row.get("outage")) and last})
                 print(f"{block.block_id} {arm} a{attempt}: {row.get('verdict')} {row.get('grade')} "
                       f"{row['wall_s']}s" + (f" OUTAGE {row['outage']}" if row.get("outage") else ""), flush=True)
-                if row.get("conclusive_halt"):
-                    halt_path(config).write_text(
-                        f"# Halted (L148)\n\n{block.block_id} {arm}: System 1 judged an artifact outside its stage's "
-                        f"scope. The whole study stops; the cause is systemic, not the prompt's or the arm's. "
-                        f"Diagnose it, then remove this file to resume.\n\nResult: `{row.get('result_dir')}`\n",
-                        encoding="utf-8")
-                    print(f"HALT: {block.block_id} {arm}: a conclusive artifact; see {halt_path(config)}",
-                          flush=True)
-                    return CONCLUSIVE_HALT_EXIT
             if outage is None:
                 failed_in_a_row = 0 if not any(r.get("kept_after_reruns") for r in ledger.results()
                                                if r["block_id"] == block.block_id) else failed_in_a_row + 1

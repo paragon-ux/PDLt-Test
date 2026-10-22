@@ -36,20 +36,8 @@
     "request": "5327269c3c87b90d"
    },
    {
-    "question": "analysis_scope",
-    "request": "4817f690e101c08b"
-   },
-   {
-    "question": "prompt_scope",
-    "request": "fecfbebc45abfbfb"
-   },
-   {
     "question": "no_evasion",
     "request": "9eb546624e29cf12"
-   },
-   {
-    "question": "plan_scope",
-    "request": "442ed7330c758201"
    },
    {
     "question": "solution_actions",
@@ -77,10 +65,8 @@
    "PROBLEM_CLASS_CLASSIFIED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PROMPT_FIDELITY",
    "PROTOCOL_BOUND",
    "ARTIFACT_PUBLISHED",
@@ -88,7 +74,6 @@
    "ARTIFACT_CONFIRMED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PLAN_ADVANCEMENT",
    "ARTIFACT_PUBLISHED",
    "PLAN_PROMPT_ECHO",
@@ -145,14 +130,6 @@
     "request": "5327269c3c87b90d"
    },
    {
-    "question": "analysis_scope",
-    "request": "4817f690e101c08b"
-   },
-   {
-    "question": "prompt_scope",
-    "request": "fecfbebc45abfbfb"
-   },
-   {
     "question": "no_evasion",
     "request": "9eb546624e29cf12"
    }
@@ -174,10 +151,8 @@
    "PROBLEM_CLASS_CLASSIFIED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PROMPT_FIDELITY",
    "PROTOCOL_BOUND",
    "ARTIFACT_PUBLISHED"
@@ -211,14 +186,6 @@
     "request": "5327269c3c87b90d"
    },
    {
-    "question": "analysis_scope",
-    "request": "4817f690e101c08b"
-   },
-   {
-    "question": "interpretation_scope",
-    "request": "4dd6f531487e71ff"
-   },
-   {
     "question": "execution_profile",
     "request": "83ca03cb79a606b1"
    }
@@ -239,11 +206,9 @@
    "PROBLEM_CLASS_CLASSIFIED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PROTOCOL_BOUND",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PLAN_PROFILE_ROUTED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
@@ -305,10 +270,8 @@
    "PROBLEM_CLASS_CLASSIFIED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PROMPT_FIDELITY",
    "PROTOCOL_BOUND",
    "ARTIFACT_PUBLISHED",
@@ -316,7 +279,6 @@
    "ARTIFACT_CONFIRMED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PLAN_ADVANCEMENT",
    "ARTIFACT_PUBLISHED",
    "PLAN_PROMPT_ECHO",
@@ -383,20 +345,8 @@
     "request": "5327269c3c87b90d"
    },
    {
-    "question": "analysis_scope",
-    "request": "4817f690e101c08b"
-   },
-   {
-    "question": "prompt_scope",
-    "request": "fecfbebc45abfbfb"
-   },
-   {
     "question": "no_evasion",
     "request": "9eb546624e29cf12"
-   },
-   {
-    "question": "plan_scope",
-    "request": "442ed7330c758201"
    },
    {
     "question": "solution_actions",
@@ -424,10 +374,8 @@
    "PROBLEM_CLASS_CLASSIFIED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PROMPT_FIDELITY",
    "PROTOCOL_BOUND",
    "ARTIFACT_PUBLISHED",
@@ -435,7 +383,6 @@
    "ARTIFACT_CONFIRMED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PLAN_ADVANCEMENT",
    "ARTIFACT_PUBLISHED",
    "PLAN_PROMPT_ECHO",
@@ -502,20 +449,8 @@
     "request": "5327269c3c87b90d"
    },
    {
-    "question": "analysis_scope",
-    "request": "4817f690e101c08b"
-   },
-   {
-    "question": "prompt_scope",
-    "request": "fecfbebc45abfbfb"
-   },
-   {
     "question": "no_evasion",
     "request": "9eb546624e29cf12"
-   },
-   {
-    "question": "plan_scope",
-    "request": "442ed7330c758201"
    },
    {
     "question": "solution_actions",
@@ -543,10 +478,8 @@
    "PROBLEM_CLASS_CLASSIFIED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PROMPT_FIDELITY",
    "PROTOCOL_BOUND",
    "ARTIFACT_PUBLISHED",
@@ -554,7 +487,6 @@
    "ARTIFACT_CONFIRMED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PLAN_ADVANCEMENT",
    "ARTIFACT_PUBLISHED",
    "PLAN_PROMPT_ECHO",
@@ -626,20 +558,8 @@
     "request": "5327269c3c87b90d"
    },
    {
-    "question": "analysis_scope",
-    "request": "4817f690e101c08b"
-   },
-   {
-    "question": "prompt_scope",
-    "request": "fecfbebc45abfbfb"
-   },
-   {
     "question": "no_evasion",
     "request": "9eb546624e29cf12"
-   },
-   {
-    "question": "plan_scope",
-    "request": "442ed7330c758201"
    },
    {
     "question": "solution_actions",
@@ -667,10 +587,8 @@
    "PROBLEM_CLASS_CLASSIFIED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PROMPT_FIDELITY",
    "PROTOCOL_BOUND",
    "ARTIFACT_PUBLISHED",
@@ -678,7 +596,6 @@
    "ARTIFACT_CONFIRMED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PLAN_ADVANCEMENT",
    "ARTIFACT_PUBLISHED",
    "PLAN_PROMPT_ECHO",
@@ -762,20 +679,8 @@
     "request": "5327269c3c87b90d"
    },
    {
-    "question": "analysis_scope",
-    "request": "4817f690e101c08b"
-   },
-   {
-    "question": "prompt_scope",
-    "request": "fecfbebc45abfbfb"
-   },
-   {
     "question": "no_evasion",
     "request": "9eb546624e29cf12"
-   },
-   {
-    "question": "plan_scope",
-    "request": "442ed7330c758201"
    },
    {
     "question": "solution_actions",
@@ -803,10 +708,8 @@
    "PROBLEM_CLASS_CLASSIFIED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PROMPT_FIDELITY",
    "PROTOCOL_BOUND",
    "ARTIFACT_PUBLISHED",
@@ -814,7 +717,6 @@
    "ARTIFACT_CONFIRMED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PLAN_ADVANCEMENT",
    "ARTIFACT_PUBLISHED",
    "PLAN_PROMPT_ECHO",
@@ -871,14 +773,6 @@
     "request": "5327269c3c87b90d"
    },
    {
-    "question": "analysis_scope",
-    "request": "4817f690e101c08b"
-   },
-   {
-    "question": "interpretation_scope",
-    "request": "4dd6f531487e71ff"
-   },
-   {
     "question": "execution_profile",
     "request": "83ca03cb79a606b1"
    }
@@ -899,14 +793,12 @@
    "PROBLEM_CLASS_CLASSIFIED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PROTOCOL_BOUND",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
    "EXECUTION_BRIEF_DRAFTED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "SANDBOX_SESSION",
    "SANDBOX_RUN",
    "RESULT_IR_CITATION_FINDINGS",
@@ -975,20 +867,8 @@
     "request": "5327269c3c87b90d"
    },
    {
-    "question": "analysis_scope",
-    "request": "4817f690e101c08b"
-   },
-   {
-    "question": "prompt_scope",
-    "request": "fecfbebc45abfbfb"
-   },
-   {
     "question": "no_evasion",
     "request": "9eb546624e29cf12"
-   },
-   {
-    "question": "plan_scope",
-    "request": "442ed7330c758201"
    },
    {
     "question": "solution_actions",
@@ -1016,10 +896,8 @@
    "PROBLEM_CLASS_CLASSIFIED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PROMPT_FIDELITY",
    "PROTOCOL_BOUND",
    "ARTIFACT_PUBLISHED",
@@ -1027,7 +905,6 @@
    "ARTIFACT_CONFIRMED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
-   "STAGE_SCOPE",
    "PLAN_ADVANCEMENT",
    "ARTIFACT_PUBLISHED",
    "PLAN_PROMPT_ECHO",
