@@ -1,0 +1,170 @@
+[
+ {
+  "arms": [
+   "NOTE",
+   "BASE",
+   "NORM",
+   "FRAME",
+   "ORDER"
+  ],
+  "block_id": "L149-ablation:16-06:r1",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-ablation",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "FRAME",
+   "ORDER",
+   "NOTE",
+   "BASE",
+   "NORM"
+  ],
+  "block_id": "L149-ablation:16-06:r2",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-ablation",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "NOTE",
+   "NORM",
+   "FRAME",
+   "BASE",
+   "ORDER"
+  ],
+  "block_id": "L149-ablation:16-06:r3",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-ablation",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "NORM",
+   "ORDER",
+   "BASE",
+   "FRAME",
+   "NOTE"
+  ],
+  "block_id": "L149-ablation:16-06:r4",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-ablation",
+  "rep": 4
+ },
+ {
+  "arms": [
+   "BASE",
+   "FRAME",
+   "NORM",
+   "ORDER",
+   "NOTE"
+  ],
+  "block_id": "L149-ablation:16-06:r5",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-ablation",
+  "rep": 5
+ },
+ {
+  "arms": [
+   "BASE",
+   "NOTE",
+   "FRAME",
+   "ORDER",
+   "NORM"
+  ],
+  "block_id": "L149-ablation:16-06:r6",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-ablation",
+  "rep": 6
+ },
+ {
+  "arms": [
+   "NORM",
+   "NOTE",
+   "FRAME",
+   "ORDER",
+   "BASE"
+  ],
+  "block_id": "L149-ablation:16-06:r7",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-ablation",
+  "rep": 7
+ },
+ {
+  "arms": [
+   "ORDER",
+   "BASE",
+   "NOTE",
+   "NORM",
+   "FRAME"
+  ],
+  "block_id": "L149-ablation:16-06:r8",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-ablation",
+  "rep": 8
+ },
+ {
+  "arms": [
+   "NOTE",
+   "ORDER",
+   "BASE",
+   "NORM",
+   "FRAME"
+  ],
+  "block_id": "L149-ablation:16-06:r9",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-ablation",
+  "rep": 9
+ },
+ {
+  "arms": [
+   "NOTE",
+   "ORDER",
+   "NORM",
+   "BASE",
+   "FRAME"
+  ],
+  "block_id": "L149-ablation:16-06:r10",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-ablation",
+  "rep": 10
+ },
+ {
+  "arms": [
+   "FRAME",
+   "ORDER",
+   "BASE",
+   "NOTE",
+   "NORM"
+  ],
+  "block_id": "L149-ablation:16-06:r11",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-ablation",
+  "rep": 11
+ },
+ {
+  "arms": [
+   "NORM",
+   "ORDER",
+   "BASE",
+   "FRAME",
+   "NOTE"
+  ],
+  "block_id": "L149-ablation:16-06:r12",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-ablation",
+  "rep": 12
+ }
+]

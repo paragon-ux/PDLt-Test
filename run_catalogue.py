@@ -394,6 +394,8 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
         setting_args += ["--sandbox", settings["sandbox"]]
     if settings.get("route") != "control" and settings.get("withhold_execution_context"):
         setting_args.append("--withhold-execution-context")
+    if settings.get("route") != "control" and settings.get("ablate_unconfirmed"):
+        setting_args += ["--ablate-unconfirmed", ",".join(settings["ablate_unconfirmed"])]
     if settings.get("route") == "unconfirmed":
         setting_args.append("--no-review")
     elif settings.get("route") == "confirmed":
@@ -1038,6 +1040,9 @@ def main():
                              "EXECUTE_UNCONFIRMED, and in-call tools on EXECUTE_UNCONFIRMED; default off")
     parser.add_argument("--agent-tools-exclude", default=None, metavar="TOOL[,TOOL]",
                         help="with --agent-tools, withhold these tools (an ablation, L145); passed to the harness")
+    parser.add_argument("--ablate-unconfirmed", default=None, metavar="PART[,PART]",
+                        help="L149 ablation (a measurement): change what EXECUTE_UNCONFIRMED receives (normative, "
+                             "framing, notation, order); passed to the harness")
     parser.add_argument("--withhold-execution-context", action="store_true",
                         help="L148 A/B: the stages before EXECUTE receive only their own instructions; passed to "
                              "the harness")
@@ -1111,6 +1116,8 @@ def main():
                     "providers": args.providers, "draft_execute": args.draft_execute,
                     "agent_tools": args.agent_tools, "agent_tools_exclude": excluded or None,
                     "withhold_execution_context": args.withhold_execution_context and args.route != "control",
+                    "ablate_unconfirmed": ([p.strip() for p in (args.ablate_unconfirmed or "").split(",") if p.strip()]
+                                           if args.route != "control" else []),
                     "representation": args.representation,
                     "tier_d1": args.tier_d1 and args.route != "control",  # what the child will run with
                     # likewise: Control sends no output format, whatever the option says
@@ -1197,6 +1204,7 @@ def main():
             "structured_output": run_settings["structured_output"],  # the effective value (Control: false)
             "agent_tools_exclude": excluded,
             "withhold_execution_context": run_settings["withhold_execution_context"],
+            "ablate_unconfirmed": run_settings["ablate_unconfirmed"],
             "gate_policy": "evaluator_confirms_via_stdin",
         },
     }

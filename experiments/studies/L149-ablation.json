@@ -1,0 +1,106 @@
+{
+ "_comment": "L149: which part of what EXECUTE_UNCONFIRMED receives drives the 16-06 failure (the user, 2026-10-22). A measurement: nothing ships from it; the order arm is measured only (architecture held). Study A's C-OFF settings; 16-06 only, 12 repeats per arm; the panel follows only for arms that move 16-06.",
+ "study": "L149-ablation",
+ "seed": 20261024,
+ "repeats": 12,
+ "prompts": [
+  "16-06"
+ ],
+ "out_dir": "C:/Users/USER/Desktop/Frameworks/PDLt-Catalogue-Archive/L149-ablation",
+ "shared_args": [
+  "--model",
+  "openai/gpt-oss-120b",
+  "--reasoning",
+  "low",
+  "--providers",
+  "Cerebras",
+  "--timeout",
+  "300",
+  "--route",
+  "unconfirmed",
+  "--tier-d1",
+  "--api-structured-output"
+ ],
+ "same_files": [
+  "prompts/CATALOGUE_MANIFEST.jsonl",
+  "contracts/CONTRACT_MANIFEST.json",
+  "src/pdl_taskmaster/runtime/worker-bootstrap.txt",
+  "prompts/16_logic_and_reasoning/sibling_count.txt"
+ ],
+ "arms": {
+  "BASE": {
+   "worktree": "C:/Users/USER/Desktop/Frameworks/PDLt-L149-worktree",
+   "commit": "self",
+   "args": []
+  },
+  "NORM": {
+   "worktree": "C:/Users/USER/Desktop/Frameworks/PDLt-L149-worktree",
+   "commit": "self",
+   "args": [
+    "--ablate-unconfirmed",
+    "normative"
+   ]
+  },
+  "FRAME": {
+   "worktree": "C:/Users/USER/Desktop/Frameworks/PDLt-L149-worktree",
+   "commit": "self",
+   "args": [
+    "--ablate-unconfirmed",
+    "framing"
+   ]
+  },
+  "NOTE": {
+   "worktree": "C:/Users/USER/Desktop/Frameworks/PDLt-L149-worktree",
+   "commit": "self",
+   "args": [
+    "--ablate-unconfirmed",
+    "notation"
+   ]
+  },
+  "ORDER": {
+   "worktree": "C:/Users/USER/Desktop/Frameworks/PDLt-L149-worktree",
+   "commit": "self",
+   "args": [
+    "--ablate-unconfirmed",
+    "order"
+   ]
+  }
+ },
+ "budget": {
+  "cap_usd": 0.4,
+  "reserve_usd": 0.25,
+  "per_run_usd": {
+   "BASE": 0.004,
+   "NORM": 0.004,
+   "FRAME": 0.004,
+   "NOTE": 0.004,
+   "ORDER": 0.004
+  }
+ },
+ "analysis": {
+  "provider": "Cerebras",
+  "seed": 20261024,
+  "contrasts": [
+   {
+    "label": "NORM against BASE",
+    "a": "NORM",
+    "b": "BASE"
+   },
+   {
+    "label": "FRAME against BASE",
+    "a": "FRAME",
+    "b": "BASE"
+   },
+   {
+    "label": "NOTE against BASE",
+    "a": "NOTE",
+    "b": "BASE"
+   },
+   {
+    "label": "ORDER against BASE",
+    "a": "ORDER",
+    "b": "BASE"
+   }
+  ]
+ }
+}

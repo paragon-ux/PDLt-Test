@@ -25,7 +25,7 @@ from pdl_taskmaster.controller.mechanical_controller import (
 )
 from pdl_taskmaster.runtime.operation_bridge import ActivationRoute, ModelRequest, OperationBridge, WireError
 from pdl_taskmaster.runtime.output_contracts import (
-    EXECUTION_BRIEF_MODE, NL_REPRESENTATION_MODE, RESULT_IR_MODE, WITHHOLD_EXECUTION_MODE,
+    ABLATIONS, EXECUTION_BRIEF_MODE, NL_REPRESENTATION_MODE, RESULT_IR_MODE, WITHHOLD_EXECUTION_MODE,
 )
 from pdl_taskmaster.runtime.representation import NL, PDL, REPRESENTATIONS
 from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output, isolate_untrusted_input
@@ -480,6 +480,7 @@ class SessionEngine:
         self.agent_tools = False  # ADR-0029: in-call tools and checked submissions (--agent-tools)
         self.agent_tools_exclude: frozenset[str] = frozenset()  # L145: tools withheld (--agent-tools-exclude)
         self._withhold_execution_context = False  # L148 A/B: earlier stages without EXECUTE's environment and clauses
+        self._ablate_unconfirmed: frozenset[str] = frozenset()  # L149 ablation of what EXECUTE_UNCONFIRMED receives
         self._last_unconfirmed_body: str | None = None
         self._unconfirmed_attempts = 0
         self.representation = PDL  # the confirmed route's artifacts: PDL, or prose in the L97 pilot
@@ -643,10 +644,25 @@ class SessionEngine:
         self._withhold_execution_context = bool(value)
         self._refresh_session_modes()
 
+    @property
+    def ablate_unconfirmed(self) -> frozenset[str]:
+        return self._ablate_unconfirmed
+
+    @ablate_unconfirmed.setter
+    def ablate_unconfirmed(self, parts: Any) -> None:
+        """L149 ablation (a measurement): the parts of what EXECUTE_UNCONFIRMED receives that are removed or
+        changed, from output_contracts.ABLATIONS."""
+        unknown = set(parts) - set(ABLATIONS)
+        if unknown:
+            raise ValueError(f"ablate_unconfirmed: unknown parts {sorted(unknown)}")
+        self._ablate_unconfirmed = frozenset(parts)
+        self._refresh_session_modes()
+
     def _refresh_session_modes(self) -> None:
         modes = {NL_REPRESENTATION_MODE} if getattr(self, "_representation", PDL) == NL else set()
         if getattr(self, "_withhold_execution_context", False):
             modes.add(WITHHOLD_EXECUTION_MODE)
+        modes |= {ABLATIONS[part] for part in getattr(self, "_ablate_unconfirmed", ())}
         self.bridge.session_modes = frozenset(modes)
 
     def _direct_reply_environment(self) -> str | None:

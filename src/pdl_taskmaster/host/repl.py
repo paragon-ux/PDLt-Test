@@ -376,6 +376,11 @@ def _tool_exclusions(text: str) -> frozenset:
         raise argparse.ArgumentTypeError(str(exc)) from exc
 
 
+def _ablation_parts(value: str | None) -> tuple[str, ...]:
+    """``--ablate-unconfirmed``: comma-separated parts; RunSettings validates them."""
+    return tuple(part.strip() for part in (value or "").split(",") if part.strip())
+
+
 def _run_settings(args, worker):
     """The engine's run settings from CLI flags (L124 D7). The flags' run settings reach the API worker's sessions;
     a recorded replay and the codex worker run with the defaults their recordings were made with."""
@@ -391,6 +396,7 @@ def _run_settings(args, worker):
                        agent_tools=run["agent_tools"], representation=run["representation"], tier_d1=run["tier_d1"],
                        agent_tools_exclude=tuple(sorted(getattr(args, "agent_tools_exclude", None) or ())),
                        withhold_execution_context=bool(getattr(args, "withhold_execution_context", False)),
+                       ablate_unconfirmed=_ablation_parts(getattr(args, "ablate_unconfirmed", None)),
                        **session)
 
 
@@ -1004,6 +1010,14 @@ def _build_parser() -> argparse.ArgumentParser:
         help="with --agent-tools, withhold these tools for an ablation (L145): read_attempt, run_python, "
         "submit_execute_unconfirmed, submit_bootstrap_analysis, submit_draft_prompt, submit_draft_plan. A withheld "
         "submission tool means that operation answers in its message, checked by the host after the call",
+    )
+    parser.add_argument(
+        "--ablate-unconfirmed",
+        default=None,
+        metavar="PART[,PART]",
+        help="L149 ablation (a measurement): change what EXECUTE_UNCONFIRMED receives. normative: no standard "
+        "clauses or guidance; framing: no execution environment, EXEC-* clauses, or code, tool and witness wording; "
+        "notation: the working notes in plain prose; order: the deliverable before the working notes",
     )
     parser.add_argument(
         "--withhold-execution-context",

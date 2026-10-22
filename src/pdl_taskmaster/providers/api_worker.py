@@ -19,6 +19,10 @@ from pdl_taskmaster.providers import model_adapters, model_capabilities
 from pdl_taskmaster.providers.base import ATTRIBUTION_HEADERS, TransportError, WorkerResult
 from pdl_taskmaster.providers.call_trace import AttemptTrace, CallTrace, tracking
 from pdl_taskmaster.runtime.output_contracts import (
+    ABLATE_FRAMING_MODE,
+    ABLATE_NORMATIVE_MODE,
+    ABLATE_NOTATION_MODE,
+    ABLATE_ORDER_MODE,
     NL_REPRESENTATION_MODE,
     UNION_WRAPPER,
     ContractForm,
@@ -37,10 +41,58 @@ _JSON_ONLY_SUFFIX = (
 _SEMANTIC_READ_OPERATIONS = {"BOOTSTRAP_ANALYSIS", "INTERPRET_ACTIVATION"}
 
 
+def _modes(request: Any) -> frozenset[str]:
+    """The host modes the call's projection was compiled in."""
+    manifest = getattr(getattr(request, "projection", None), "manifest", None) or {}
+    return frozenset(manifest.get("modes") or ())
+
+
 def _nl_mode(request: Any) -> bool:
     """Whether the call's projection runs in the natural-language arm (representation.py)."""
-    manifest = getattr(getattr(request, "projection", None), "manifest", None) or {}
-    return NL_REPRESENTATION_MODE in (manifest.get("modes") or ())
+    return NL_REPRESENTATION_MODE in _modes(request)
+
+
+_UNCONFIRMED_NOTES = (
+    "- Write your working understanding in `interpretation` and your working plan in `approach`, using PDL notation. "
+    "`interpretation` states how you read the task: what is asked and under which constraints, not a method or the "
+    "result. `approach` states the method you will follow, not the result: neither states or assumes the answer, value "
+    "or verdict the deliverable establishes (UNC-03)."
+)
+_UNCONFIRMED_BODY = "- Deliver the substantive result in `body`."
+_UNCONFIRMED_ORDER = (
+    "- Write the keys in this order: `kind`, `body`, `interpretation`, `approach`: the deliverable first, the working "
+    "notes after it."
+)
+_UNCONFIRMED_TOOLS = " Work within AVAILABLE_EXECUTION_TOOLS."
+_UNCONFIRMED_INPUT = (
+    "- REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (UNC-04, "
+    "EXEC-01); people or events described in the task are part of the task, not a source of input."
+)
+_UNCONFIRMED_FIRST_CLASS = (
+    "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never "
+    "present a guessed or estimated result as exact or verified."
+)
+_UNCONFIRMED_WITNESS = (
+    "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To "
+    "certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
+)
+
+
+def _unconfirmed_guidance(modes: frozenset[str]) -> str:
+    """The EXECUTE_UNCONFIRMED guidance; under an L149 ablation mode (a measurement) one part is removed or changed."""
+    if ABLATE_NORMATIVE_MODE in modes:
+        return ""
+    framing = ABLATE_FRAMING_MODE not in modes
+    notes = (_UNCONFIRMED_NOTES.replace("using PDL notation", "in plain prose") if ABLATE_NOTATION_MODE in modes
+             else _UNCONFIRMED_NOTES)
+    body = _UNCONFIRMED_BODY + (_UNCONFIRMED_TOOLS if framing else "")
+    # JSON mode leaves the key order to the model, so the order arm states it.
+    lines = [_UNCONFIRMED_ORDER, body, notes] if ABLATE_ORDER_MODE in modes else [notes, body]
+    lines += [_UNCONFIRMED_INPUT] if framing else []
+    lines.append(_UNCONFIRMED_FIRST_CLASS)
+    lines += [_UNCONFIRMED_WITNESS] if framing else []
+    return ("\n\nNORMATIVE GUIDELINES FOR EXECUTE_UNCONFIRMED (UNC-01, UNC-02, UNC-03, UNC-04, GUARD-03):\n"
+            + "\n".join(lines))
 
 # Drafting guidance for the confirmed route's two artifacts in PDL, the default representation.
 _PROMPT_GUIDANCE = (
@@ -1026,14 +1078,7 @@ class ApiWorker:
                 "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
             )
         elif operation_name == "EXECUTE_UNCONFIRMED":
-            extra_guidance = (
-                "\n\nNORMATIVE GUIDELINES FOR EXECUTE_UNCONFIRMED (UNC-01, UNC-02, UNC-03, UNC-04, GUARD-03):\n"
-                "- Write your working understanding in `interpretation` and your working plan in `approach`, using PDL notation. `interpretation` states how you read the task: what is asked and under which constraints, not a method or the result. `approach` states the method you will follow, not the result: neither states or assumes the answer, value or verdict the deliverable establishes (UNC-03).\n"
-                "- Deliver the substantive result in `body`. Work within AVAILABLE_EXECUTION_TOOLS.\n"
-                "- REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (UNC-04, EXEC-01); people or events described in the task are part of the task, not a source of input.\n"
-                "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"
-                "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
-            )
+            extra_guidance = _unconfirmed_guidance(_modes(request))
 
         if instructions:
             body["instructions"] = instructions + extra_guidance

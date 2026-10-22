@@ -25,6 +25,7 @@ class RunSettings:
     sandbox_mode: str | None = None  # None: $PDLT_SANDBOX, else auto; the sandbox resolves and announces it
     task_type: str | None = None  # a registered task type pinned for every request; None: System 1 classifies
     withhold_execution_context: bool = False  # L148 A/B: earlier stages without EXECUTE's instructions
+    ablate_unconfirmed: tuple[str, ...] = ()  # L149 ablation: parts of what EXECUTE_UNCONFIRMED receives
 
     def __post_init__(self) -> None:
         problems = []
@@ -40,6 +41,10 @@ class RunSettings:
             parse_exclusions(self.agent_tools_exclude)
         except (ValueError, TypeError) as exc:
             problems.append(f"agent_tools_exclude: {exc}")
+        from pdl_taskmaster.runtime.output_contracts import ABLATIONS
+
+        if not isinstance(self.ablate_unconfirmed, tuple) or set(self.ablate_unconfirmed) - set(ABLATIONS):
+            problems.append(f"ablate_unconfirmed: a tuple of {sorted(ABLATIONS)}, got {self.ablate_unconfirmed!r}")
         for name in ("draft_execute", "agent_tools", "no_review", "withhold_execution_context"):
             if not isinstance(getattr(self, name), bool):
                 problems.append(f"{name}: a bool, got {getattr(self, name)!r}")
@@ -71,6 +76,7 @@ class RunSettings:
             engine.tier_d1 = self.tier_d1
         engine.pinned_task_type = self.task_type
         engine.withhold_execution_context = self.withhold_execution_context
+        engine.ablate_unconfirmed = self.ablate_unconfirmed
 
     def as_dict(self) -> dict[str, Any]:
         return {f.name: getattr(self, f.name) for f in fields(self)}
