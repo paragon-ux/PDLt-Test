@@ -174,6 +174,48 @@ def test_run_meta_and_the_run_name_state_the_tier_d1_the_harness_gets(
     assert run_dir.name.endswith(suffix)
 
 
+@pytest.mark.parametrize("route", ["unconfirmed", "confirmed"])
+@pytest.mark.parametrize("structured", [True, False])
+def test_the_recorded_structured_output_is_what_the_harness_runs_with(tmp_path: Path, route, structured) -> None:
+    """L137: the runner always sends the option on a protocol route, so RUN_META cannot disagree with the
+    worker the child builds."""
+    from pdl_taskmaster.host import repl
+
+    cmd = run_catalogue.build_harness_command(
+        tmp_path / "p.txt", "s", tmp_path / "t.txt", tmp_path / "d", "m", "low",
+        run_settings={"route": route, "structured_output": structured})
+    assert ("--api-structured-output" in cmd, "--no-api-structured-output" in cmd) == (structured, not structured)
+    assert repl._api_worker_settings(repl._build_parser().parse_args(cmd[3:]), False)["structured_output"] is structured
+
+
+def test_control_gets_no_structured_output_option(tmp_path: Path) -> None:
+    """Control sends no output format (control_cli parses the option and never uses it): the runner sends none."""
+    base = (tmp_path / "p.txt", "s", tmp_path / "t.txt", tmp_path / "d", "m", "low")
+    for structured in (True, False):
+        cmd = run_catalogue.build_harness_command(*base, run_settings={"route": "control",
+                                                                      "structured_output": structured})
+        assert not any("structured-output" in arg for arg in cmd)
+
+
+@pytest.mark.parametrize("argv, expected, suffix", [
+    ([], True, "-unconfirmed-tier-d1"),
+    (["--no-api-structured-output"], False, "-unconfirmed-tier-d1-no-structured-output"),
+    (["--no-structured-output"], False, "-unconfirmed-tier-d1-no-structured-output"),
+    (["--route", "confirmed", "--api-structured-output"], True, "-confirmed-tier-d1"),
+    (["--route", "control"], False, "-control"),
+    (["--route", "control", "--no-structured-output"], False, "-control"),
+])
+def test_run_meta_states_the_structured_output_the_harness_gets(
+        monkeypatch, repo: Path, tmp_path: Path, argv, expected, suffix) -> None:
+    """L137: RUN_META records the effective value; before it, every run recorded true, Control included."""
+    monkeypatch.delenv("PDLT_TIER_D1", raising=False)
+    run_dir = _start_run(monkeypatch, tmp_path, repo, argv)
+    meta = json.loads((run_dir / "RUN_META.json").read_text(encoding="utf-8"))
+    assert meta["run_settings"]["structured_output"] is expected
+    assert meta["rules"]["structured_output"] is expected
+    assert run_dir.name.endswith(suffix)
+
+
 def test_tier_d1_environment_is_a_default_not_an_override(monkeypatch, tmp_path: Path) -> None:
     from pdl_taskmaster.providers.api_worker import ApiWorker
 

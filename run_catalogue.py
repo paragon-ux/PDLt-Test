@@ -382,6 +382,10 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
     if settings.get("route") != "control" and settings.get("tier_d1") is not None:
         # Always explicit: the harness's own default is on, so leaving the flag out does not mean off.
         setting_args.append("--tier-d1" if settings["tier_d1"] else "--no-tier-d1")
+    if settings.get("route") != "control":
+        # Always explicit, for the same reason. Control parses the flag but sends no output format, so it gets none.
+        setting_args.append("--api-structured-output" if settings.get("structured_output", True)
+                            else "--no-api-structured-output")
     if settings.get("sandbox"):
         setting_args += ["--sandbox", settings["sandbox"]]
     if settings.get("route") == "unconfirmed":
@@ -408,7 +412,6 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
         "--model", model,
         *reasoning_args,
         *setting_args,
-        "--api-structured-output",
         "--prompt-file", str(prompt_file),
     ]
     return cmd
@@ -1029,6 +1032,12 @@ def main():
                         help="Tier D1 in standard execution: feed sandbox failures back as repairs "
                              "(default: on, as the harness ships; --no-tier-d1 turns it off, PDLT_TIER_D1=0 flips the "
                              "default). Not applicable to --route control")
+    parser.add_argument("--api-structured-output", action=argparse.BooleanOptionalAction, default=True,
+                        help="the API worker's output constraint for each operation, a JSON schema or JSON mode as "
+                             "the worker chooses it (default: on, as pdlt ships). Not applicable to --route control, "
+                             "which sends no output format")
+    parser.add_argument("--no-structured-output", action="store_false", dest="api_structured_output",
+                        help="alias for --no-api-structured-output, as in pdlt")
     parser.add_argument("--sandbox", choices=["auto", "native", "container", "audit-only"], default=None,
                         help="confinement for model-authored programs, in the harness and the graders (default: "
                              "$PDLT_SANDBOX, else auto = native); audit-only opts out of OS-native confinement")
@@ -1070,6 +1079,8 @@ def main():
                     "providers": args.providers, "draft_execute": args.draft_execute,
                     "agent_tools": args.agent_tools, "representation": args.representation,
                     "tier_d1": args.tier_d1 and args.route != "control",  # what the child will run with
+                    # likewise: Control sends no output format, whatever the option says
+                    "structured_output": args.api_structured_output and args.route != "control",
                     "sandbox": args.sandbox, "route": args.route,
                     "theme": args.theme, "user_color": args.user_color, "assistant_color": args.assistant_color}
     if args.sandbox:
@@ -1116,6 +1127,8 @@ def main():
         route_tag += f"-{args.representation}"
     if run_settings["tier_d1"]:
         route_tag += "-tier-d1"
+    if args.route != "control" and not run_settings["structured_output"]:
+        route_tag += "-no-structured-output"
     run_id = f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{route_tag}"
     run_dir = RUNS_DIR / run_id
     (run_dir / "results").mkdir(parents=True)
@@ -1144,7 +1157,7 @@ def main():
             "non_interactive": True,
             "exit_on_close": True,
             "dev_mode": True,
-            "structured_output": True,
+            "structured_output": run_settings["structured_output"],  # the effective value (Control: false)
             "gate_policy": "evaluator_confirms_via_stdin",
         },
     }
