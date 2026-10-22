@@ -17,6 +17,7 @@ Only `OPENROUTER_API_KEY` is required, and only for live runs. Every other varia
 | `PDLT_TIER_D1` | No | `0` stops feeding the model its own sandbox failures as repairs (default on) |
 | `PDLT_AGENT_TOOLS` | No | `1` turns on in-call tools (ADR-0029) |
 | `PDLT_RESULT_IR` | No | `1` asks for a Result IR on every task, not only verified ones |
+| `PDLT_STANDARDS_PATH` | No | A folder of operation contracts to use instead of the repository's, the `pdlt init` store or the bundled copies (it must hold `CONTRACT_MANIFEST.json`) |
 | `PDLT_CATALOGUE_RUNS` | No | Where catalogue runs are written (default: `PDLt-Catalogue-Archive` beside the checkout) |
 | `PDLT_THEME`, `PDLT_USER_COLOR`, `PDLT_ASSISTANT_COLOR`, `NO_COLOR` | No | REPL colours; `NO_COLOR` turns them off |
 | `PDLT_VIEWER_ROOT` | No | The root the local viewer reads (`python -m viewer`, source checkout only) |

@@ -40,6 +40,7 @@ dev = [
     "anyio>=4.0.0",
     "jsonschema>=4.0.0",
     "mcp>=1.10",  # L123: the external MCP tests drive the server with the official client
+    "pyyaml>=6.0",
 ]
 test = [
     "pytest>=8.0.0",
@@ -47,6 +48,7 @@ test = [
     "anyio>=4.0.0",
     "jsonschema>=4.0.0",
     "mcp>=1.10",  # L123: the external MCP tests drive the server with the official client
+    "pyyaml>=6.0",
 ]
 
 [project.urls]
