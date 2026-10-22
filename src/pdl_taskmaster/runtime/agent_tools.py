@@ -396,6 +396,13 @@ def make_validator(bridge: Any, sandbox: Any, budget: Any, witness_required: boo
                            "problem": "the host would run no program from body: it is not a Python program and "
                                       "has no ```python block",
                            "expected": "a program in body that prints the WITNESS line"})
+        if not blocks and witness_required and open_defects and (parsed.result_ir or {}).get("witness") is None:
+            # L143: the host's RS-01 rule (session_engine.py, declared incomplete): "not obtained" rests on an attempt
+            from pdl_taskmaster.verification.error_registry import REGISTRY
+
+            spec = REGISTRY["INCOMPLETE_WITHOUT_ATTEMPT"]
+            errors.append({"code": spec.code, "path": "outcome.body", "problem": spec.observed,
+                           "expected": f"{spec.rule} {spec.next_attempt}"})
         for index, block in enumerate(blocks, 1):
             run = sandbox.run_code(with_certificate(block, certificate), timeout=budget.timeout_seconds,
                                    memory_limit=budget.memory_limit_bytes, step_limit=budget.step_limit)

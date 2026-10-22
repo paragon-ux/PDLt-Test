@@ -110,3 +110,23 @@ def test_a_session_gets_the_rejection_in_the_call_and_closes_on_a_computed_resub
                    if e["kind"] == "AGENT_TOOL_CALL" and e["payload"]["tool"] == SUBMIT]
     assert submissions == [False, True]
     assert "WITNESS_LITERAL_IN_PROGRAM" not in _kinds(events) and "VERIFICATION_PASSED" in _kinds(events)
+
+
+# L143 (found in run 01-01 r3's trace): a declared-incomplete outcome with no program, accepted in the call, was
+# returned by the host with INCOMPLETE_WITHOUT_ATTEMPT. The in-call check now applies the same rule.
+OPEN = {**_ir(), "open_defects": [{"description": "The search did not finish within the step budget."}]}
+INCOMPLETE_CASES = {  # name: (body, rejected)
+    "declared open with no program": ("The search did not finish.", True),
+    "declared open after a program ran": ("print('searched 10 states')", False),
+}
+
+
+@pytest.mark.parametrize("name", sorted(INCOMPLETE_CASES))
+def test_a_declared_incomplete_outcome_needs_an_attempt_in_the_call_as_after_it(name, tmp_path):
+    body, rejected = INCOMPLETE_CASES[name]
+    errors, _ = _validator()({**outcome(body), "result_ir": OPEN})
+    assert _codes(errors) == (["INCOMPLETE_WITHOUT_ATTEMPT"] if rejected else [])
+    _, _, executes, _ = _run(tmp_path, [{"kind": "RESULT", "body": body, "result_ir": OPEN}] * 3,
+                             problem_class="VERIFIED_EXECUTION")
+    host_rejected = len(executes) > 1 and "this attempt runs no program" in executes[1].prompt
+    assert host_rejected is rejected
