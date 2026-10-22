@@ -34,6 +34,11 @@ EXECUTION_BRIEF_MODE = "execution_brief"
 # The confirmed route's artifacts are natural-language prose in this mode (representation.py, ledger L97):
 # descriptions name them as that arm does.
 NL_REPRESENTATION_MODE = "nl_representation"
+# L148 A/B: the stages before EXECUTE receive only their own instructions (no execution environment or clauses).
+WITHHOLD_EXECUTION_MODE = "withhold_execution_context"
+EARLIER_STAGE_OPERATIONS = frozenset({"BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "REVISE_PROMPT", "DRAFT_PLAN",
+                                      "REVISE_PLAN"})
+EXECUTION_CONTEXT_SYMBOLS = frozenset({"AVAILABLE_EXECUTION_TOOLS"})
 _NO_MODES: frozenset[str] = frozenset()
 
 # Keywords a decoding engine does not take; the grammar view drops them (the prompt

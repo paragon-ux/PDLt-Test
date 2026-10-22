@@ -219,7 +219,7 @@
     },
     {
       "path": "contracts/standards/UNCONFIRMED_STANDARD.md",
-      "sha256": "0a1c78a87ef35c7871805a994e7f33b6ca83ec6e98e6702b41487e03f9403dff"
+      "sha256": "8cfbe324094ca2172a270db9bb43ddf3781f8b3a2a983c1f308a032274c52ddb"
     }
   ],
   "standard_semantics_changed_from_finalized_source_substrate": true,
