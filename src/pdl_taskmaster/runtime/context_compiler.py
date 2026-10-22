@@ -7,6 +7,7 @@ from typing import Any
 import json
 
 from pdl_taskmaster.runtime.output_contracts import (
+    ABLATE_ENTITIES_MODE,
     ABLATE_FRAMING_MODE,
     ABLATE_NORMATIVE_MODE,
     ABLATION_OPERATION,
@@ -84,6 +85,8 @@ class ContextCompiler:
         # L149 ablation (a measurement): EXECUTE_UNCONFIRMED without its standard clauses, or its execution framing.
         if operation == ABLATION_OPERATION and ABLATE_NORMATIVE_MODE in modes:
             withheld.add("APPLICABLE_STANDARD_CLAUSES")
+        if operation == ABLATION_OPERATION and ABLATE_ENTITIES_MODE in modes:
+            withheld.add("TASK_ENTITIES")
         if operation == ABLATION_OPERATION and ABLATE_FRAMING_MODE in modes:
             withheld |= EXECUTION_CONTEXT_SYMBOLS
             drop_exec_clauses = True

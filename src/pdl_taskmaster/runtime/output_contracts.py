@@ -46,8 +46,9 @@ ABLATE_NORMATIVE_MODE = "ablate_normative"  # no standard clauses and no provide
 ABLATE_FRAMING_MODE = "ablate_framing"  # no execution environment, EXEC-* clauses, or code, tool and witness wording
 ABLATE_NOTATION_MODE = "ablate_notation"  # the working notes in plain prose instead of PDL notation
 ABLATE_ORDER_MODE = "ablate_order"  # the deliverable before the working notes
+ABLATE_ENTITIES_MODE = "ablate_entities"  # no TASK_ENTITIES (the bootstrap's extraction)
 ABLATIONS = {"normative": ABLATE_NORMATIVE_MODE, "framing": ABLATE_FRAMING_MODE,
-             "notation": ABLATE_NOTATION_MODE, "order": ABLATE_ORDER_MODE}
+             "notation": ABLATE_NOTATION_MODE, "order": ABLATE_ORDER_MODE, "entities": ABLATE_ENTITIES_MODE}
 _NOTES_FIELDS = ("interpretation", "approach")
 _PDL_NOTES = "in PDL pseudocode notation"
 _NO_MODES: frozenset[str] = frozenset()

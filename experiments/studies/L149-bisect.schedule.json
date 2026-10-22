@@ -1,0 +1,134 @@
+[
+ {
+  "arms": [
+   "BASE",
+   "STRIP"
+  ],
+  "block_id": "L149-bisect:16-06:r1",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-bisect",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "BASE",
+   "STRIP"
+  ],
+  "block_id": "L149-bisect:16-06:r2",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-bisect",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "STRIP",
+   "BASE"
+  ],
+  "block_id": "L149-bisect:16-06:r3",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-bisect",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "STRIP",
+   "BASE"
+  ],
+  "block_id": "L149-bisect:16-06:r4",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-bisect",
+  "rep": 4
+ },
+ {
+  "arms": [
+   "BASE",
+   "STRIP"
+  ],
+  "block_id": "L149-bisect:16-06:r5",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-bisect",
+  "rep": 5
+ },
+ {
+  "arms": [
+   "STRIP",
+   "BASE"
+  ],
+  "block_id": "L149-bisect:16-06:r6",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-bisect",
+  "rep": 6
+ },
+ {
+  "arms": [
+   "BASE",
+   "STRIP"
+  ],
+  "block_id": "L149-bisect:16-06:r7",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-bisect",
+  "rep": 7
+ },
+ {
+  "arms": [
+   "BASE",
+   "STRIP"
+  ],
+  "block_id": "L149-bisect:16-06:r8",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-bisect",
+  "rep": 8
+ },
+ {
+  "arms": [
+   "STRIP",
+   "BASE"
+  ],
+  "block_id": "L149-bisect:16-06:r9",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-bisect",
+  "rep": 9
+ },
+ {
+  "arms": [
+   "STRIP",
+   "BASE"
+  ],
+  "block_id": "L149-bisect:16-06:r10",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-bisect",
+  "rep": 10
+ },
+ {
+  "arms": [
+   "STRIP",
+   "BASE"
+  ],
+  "block_id": "L149-bisect:16-06:r11",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-bisect",
+  "rep": 11
+ },
+ {
+  "arms": [
+   "BASE",
+   "STRIP"
+  ],
+  "block_id": "L149-bisect:16-06:r12",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L149-bisect",
+  "rep": 12
+ }
+]

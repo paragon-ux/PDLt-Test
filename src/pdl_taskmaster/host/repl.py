@@ -1017,7 +1017,8 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="PART[,PART]",
         help="L149 ablation (a measurement): change what EXECUTE_UNCONFIRMED receives. normative: no standard "
         "clauses or guidance; framing: no execution environment, EXEC-* clauses, or code, tool and witness wording; "
-        "notation: the working notes in plain prose; order: the deliverable before the working notes",
+        "notation: the working notes in plain prose; order: the deliverable before the working notes; entities: no "
+        "TASK_ENTITIES (the bootstrap's extraction)",
     )
     parser.add_argument(
         "--withhold-execution-context",

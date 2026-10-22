@@ -78,7 +78,7 @@ def baseline(tmp_path_factory):
     return _requests(tmp_path_factory.mktemp("base"))
 
 
-@pytest.mark.parametrize("part", ["normative", "framing", "notation", "order"])
+@pytest.mark.parametrize("part", ["normative", "framing", "notation", "order", "entities"])
 def test_only_execute_unconfirmed_changes(tmp_path: Path, baseline, part):
     ablated = _requests(tmp_path, (part,))
     assert ablated["BOOTSTRAP_ANALYSIS"].prompt == baseline["BOOTSTRAP_ANALYSIS"].prompt
@@ -129,6 +129,19 @@ def test_order_puts_the_deliverable_first(tmp_path: Path, baseline):
     guidance = _body(cut)["instructions"]
     assert guidance.index("`kind`, `body`, `interpretation`, `approach`") < guidance.index("Deliver the substantive")
     assert guidance.index("Deliver the substantive") < guidance.index("Write your working understanding")
+
+
+def test_entities_withholds_the_bootstrap_extraction(tmp_path: Path, baseline):
+    base, cut = baseline["EXECUTE_UNCONFIRMED"], _requests(tmp_path, ("entities",))["EXECUTE_UNCONFIRMED"]
+    assert "TASK_ENTITIES" in base.prompt and "TASK_ENTITIES" not in cut.prompt
+    assert "SOURCE_REQUEST" in cut.prompt and _body(cut)["instructions"] == _body(base)["instructions"]
+
+
+def test_every_part_together_leaves_the_request(tmp_path: Path):
+    cut = _requests(tmp_path, ("normative", "framing", "notation", "order", "entities"))["EXECUTE_UNCONFIRMED"]
+    for symbol in ("TASK_ENTITIES", "AVAILABLE_EXECUTION_TOOLS", "APPLICABLE_STANDARD_CLAUSES"):
+        assert symbol not in cut.prompt
+    assert "SOURCE_REQUEST" in cut.prompt and "NORMATIVE GUIDELINES" not in _body(cut).get("instructions", "")
 
 
 def test_parts_combine_and_unknown_parts_are_refused(tmp_path: Path):

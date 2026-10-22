@@ -1042,7 +1042,7 @@ def main():
                         help="with --agent-tools, withhold these tools (an ablation, L145); passed to the harness")
     parser.add_argument("--ablate-unconfirmed", default=None, metavar="PART[,PART]",
                         help="L149 ablation (a measurement): change what EXECUTE_UNCONFIRMED receives (normative, "
-                             "framing, notation, order); passed to the harness")
+                             "framing, notation, order, entities); passed to the harness")
     parser.add_argument("--withhold-execution-context", action="store_true",
                         help="L148 A/B: the stages before EXECUTE receive only their own instructions; passed to "
                              "the harness")
