@@ -20,7 +20,8 @@ from pdl_taskmaster.host import repl
 from pdl_taskmaster.providers.api_worker import ApiWorker
 from pdl_taskmaster.providers.sys1.recipes import stage_scope
 from pdl_taskmaster.providers.sys1.recipes.stage_scope import (
-    CONCLUSIVE, IN_SCOPE, NONE, SCOPES, UNCERTAIN, Item, StageScopeRecipe, verdict_from,
+    CONCLUSIVE, GIVEN, IN_SCOPE, NONE, SCOPES, TARGET, UNCERTAIN, Entity, Item, StageScopeRecipe, entity_status_from,
+    verdict_from,
 )
 from pdl_taskmaster.runtime.run_settings import RunSettings
 from pdl_taskmaster.runtime.session_engine import STAGE_CONCLUSIVE_KIND, SessionEngine
@@ -59,6 +60,12 @@ class Sys1:
                 raise RuntimeError("System 1 unavailable")
             answers = {}
             for question in request.questions:
+                if "_entity_" in question:  # an entity's status: scripted by question name, else an even split
+                    probabilities = self.scripted.get(question, {GIVEN: 0.5, TARGET: 0.5})
+                    choice = max(probabilities, key=probabilities.get)
+                    answers[question] = {"choice": choice, "confidence": probabilities[choice],
+                                         "probabilities": probabilities}
+                    continue
                 key = question[: -len("_scope")]
                 scope = SCOPE_OF[key]
                 wanted = self.scripted.get(key, NONE)
@@ -73,7 +80,7 @@ class Sys1:
                                    "probabilities": {choice: 0.97, other: 0.03}}}}, 1.0
 
 
-def _model(calls: list, requests: list | None = None):
+def _model(calls: list, requests: list | None = None, entities: list | None = None):
     def model_call(req):
         calls.append(req.operation)
         if requests is not None:
@@ -82,7 +89,7 @@ def _model(calls: list, requests: list | None = None):
             return json.dumps({"route": "APPLY_PROTOCOL", "response": None})
         if req.operation == "BOOTSTRAP_ANALYSIS":
             return json.dumps({"kind": "ANALYSIS", "task_summary": "Find x from the two equations.",
-                               "approach_notes": "", "risk_notes": "", "task_entities": []})
+                               "approach_notes": "", "risk_notes": "", "task_entities": entities or []})
         if req.operation == "EXECUTE_UNCONFIRMED":
             return json.dumps({"kind": "RESULT", "interpretation": "DETERMINE x from the two given equations",
                                "approach": "ADD the equations; SOLVE for x", "body": BODY})
@@ -95,9 +102,9 @@ def _model(calls: list, requests: list | None = None):
 
 
 def _engine(tmp_path: Path, sys1: Sys1, *, stop: bool, no_review: bool = True, withhold: bool = False,
-            requests: list | None = None):
+            requests: list | None = None, entities: list | None = None):
     calls: list = []
-    engine = SessionEngine(ROOT, _model(calls, requests), workspace_root=tmp_path, sys1_client=sys1,
+    engine = SessionEngine(ROOT, _model(calls, requests, entities), workspace_root=tmp_path, sys1_client=sys1,
                            no_review=no_review)
     engine.stop_on_conclusive = stop
     engine.withhold_execution_context = withhold
@@ -163,6 +170,56 @@ def test_the_shipped_filter_is_the_calibrated_threshold():
     below = {"choice": "NONE", "probabilities": {"NONE": 0.5, "STATES_RESULT": 0.3, "PREVIEWS_PARTIAL": 0.2}}
     assert verdict_from(at, SCOPES["plan"])["verdict"] == CONCLUSIVE
     assert verdict_from(below, SCOPES["plan"])["verdict"] == UNCERTAIN
+
+
+# The bootstrap's entity status check (the user, after the bootstrap calibration).
+
+def _entity(surface: str, status: str, relation: str = "") -> dict:
+    return {"surface": surface, "kind": "identifier", "status": status, "group": None, "relation": relation}
+
+
+def test_each_listed_entity_gets_a_status_question_unless_listed_both_ways():
+    entities = (Entity("x", "target", "the value to find"), Entity("10", "given"), Entity("y", "given"),
+                Entity("y", "target"))
+    request = StageScopeRecipe([Item("analysis", "bootstrap", "A", entities)]).build_request({"source_request": "R"})
+    assert list(request.questions) == ["analysis_scope", "analysis_entity_0", "analysis_entity_1"]
+    question = request.questions["analysis_entity_0"]
+    assert list(question.choices) == [GIVEN, TARGET] and set(question.criteria) == {GIVEN, TARGET}
+    assert "'x', described as 'the value to find'" in question.instructions
+    assert "never by solving" in question.instructions
+
+
+def test_a_contrary_status_at_the_gate_is_a_misread():
+    answer = {"choice": TARGET, "probabilities": {GIVEN: 0.1, TARGET: 0.9}}
+    assert entity_status_from(answer, Entity("x", "given"), gate=0.85)["misread"] is True
+    assert entity_status_from(answer, Entity("x", "given"), gate=0.95)["misread"] is False
+    assert entity_status_from(answer, Entity("x", "target"), gate=0.5)["misread"] is False  # it agrees
+    assert entity_status_from({}, Entity("x", "given"), gate=0.05)["misread"] is False  # no answer, no misread
+
+
+def test_one_misread_entity_makes_the_analysis_conclusive(monkeypatch):
+    recipe = StageScopeRecipe([Item("analysis", "bootstrap", "A", (Entity("x", "given"), Entity("10", "given")))])
+    body = {"answers": {"analysis_scope": {"choice": NONE, "probabilities": _probabilities("bootstrap", NONE)},
+                        "analysis_entity_0": {"choice": TARGET, "probabilities": {GIVEN: 0.1, TARGET: 0.9}},
+                        "analysis_entity_1": {"choice": GIVEN, "probabilities": {GIVEN: 0.9, TARGET: 0.1}}}}
+    monkeypatch.setattr(stage_scope, "ENTITY_GATE", None)
+    assert recipe.parse_response(body).verdict == IN_SCOPE  # uncalibrated: recorded only
+    monkeypatch.setattr(stage_scope, "ENTITY_GATE", 0.85)
+    item = recipe.map_to_wire(recipe.parse_response(body))["items"]["analysis"]
+    assert item["verdict"] == CONCLUSIVE and item["category"] == "MISREADS_ENTITY"
+    assert [check["misread"] for check in item["entities"]] == [True, False]
+
+
+def test_a_test_run_stops_at_a_bootstrap_that_misreads_an_entity(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(stage_scope, "ENTITY_GATE", 0.85)
+    sys1 = Sys1({"analysis_entity_0": {GIVEN: 0.05, TARGET: 0.95}})
+    engine, calls = _engine(tmp_path, sys1, stop=True, entities=[_entity("x", "given", "the value to find")])
+    response = engine.handle_user_message(REQUEST)
+    events, _published, _ = _record(tmp_path)
+    assert calls == ["BOOTSTRAP_ANALYSIS"] and response.closed
+    assert engine.controller.state.stage == Stage.CLOSED_CANCELLED
+    assert _scopes(events) == [("BOOTSTRAP_ANALYSIS", CONCLUSIVE)]
+    assert "analysis_entity_0" in sys1.scope_requests[0].questions
 
 
 def test_an_answer_outside_the_categories_or_without_probabilities_is_uncertain():

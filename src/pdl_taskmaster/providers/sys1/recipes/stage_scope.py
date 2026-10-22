@@ -6,7 +6,10 @@ asked which out-of-scope content the artifact contains, if any: one of its scope
 (the user, after calibration 1: ask what is present). Each category belongs to another stage, or to the bootstrap's
 own; the host sums System 1's probabilities. The artifact is conclusive when the out-of-scope total reaches GATE, or
 when the content of any other stage reaches STAGE_FILTER (the user's deterministic filter, its threshold
-calibrated); in scope when NONE reaches GATE; uncertain otherwise.
+calibrated); in scope when NONE reaches GATE; uncertain otherwise. A bootstrap analysis also has each entity's status
+checked (the user, after the bootstrap calibration): System 1 states from the request whether the entity is given or
+asked, and the host compares that with the model's label; a contrary answer at ENTITY_GATE is a misread entity, so the
+analysis is conclusive.
 
 Adheres to GUARD-01, GUARD-02, GUARD-04: no regex pattern matching, no task keywords, System 1 decisions only.
 """
@@ -20,9 +23,17 @@ from pdl_taskmaster.providers.sys1.recipes.base import Sys1Recipe, as_decision_i
 from pdl_taskmaster.providers.sys1.schema import RecipeResult, Sys1Question, Sys1Request
 
 GATE = 0.80  # the user's gate on the out-of-scope total and on NONE (L148)
+ENTITY_GATE: float | None = None  # the calibrated threshold on a contrary entity status (L148); None: recorded only
 STAGE_FILTER: float | None = 0.55  # any other stage's content at this mass halts (L148: calibration 2, pre-registered rule)
 CONCLUSIVE, IN_SCOPE, UNCERTAIN = "CONCLUSIVE", "IN_SCOPE", "UNCERTAIN"
 NONE = "NONE"
+GIVEN, TARGET = "GIVEN", "TARGET"  # System 1's choices for an entity's status; the wire's are "given" and "target"
+STATUS_CRITERIA = {
+    GIVEN: "The request states it as supplied fact: a value, a name, a symbol with a stated meaning, a definition, a "
+           "condition or a rule the task uses as it is.",
+    TARGET: "The request asks for it to be found, determined, computed, chosen, counted, decided, produced or "
+            "explained, and does not state its value; a deliverable the request names is asked for.",
+}
 PROMPT, PLAN, EXECUTE, OWN = "PROMPT", "PLAN", "EXECUTE", "OWN"
 
 
@@ -82,12 +93,52 @@ SCOPES: dict[str, Scope] = {
 
 
 @dataclass(frozen=True)
+class Entity:
+    """One entity a bootstrap analysis lists: its surface, the model's status for it and its relation text."""
+
+    surface: str
+    status: str
+    relation: str = ""
+
+
+@dataclass(frozen=True)
 class Item:
-    """One artifact to judge: its key in the request state, its stage scope and its text."""
+    """One artifact to judge: its key in the request state, its stage scope, its text and (a bootstrap analysis) its
+    entities."""
 
     key: str
     scope: str
     text: str
+    entities: tuple[Entity, ...] = ()
+
+    def checked_entities(self) -> list[tuple[int, Entity]]:
+        """The entities whose status is checked: a surface listed both given and asked is allowed by the contract
+        (the request uses one word for both), so neither listing of it is checked."""
+        statuses: dict[str, set[str]] = {}
+        for entity in self.entities:
+            statuses.setdefault(entity.surface, set()).add(entity.status)
+        return [(n, e) for n, e in enumerate(self.entities)
+                if e.surface and e.status in ("given", "target") and len(statuses[e.surface]) == 1]
+
+
+def entities_of(task_entities: Any) -> tuple[Entity, ...]:
+    """The entities of a parsed BOOTSTRAP_ANALYSIS, as the engine and the calibration build them."""
+    if not isinstance(task_entities, list):
+        return ()
+    return tuple(Entity(str(e.get("surface") or ""), str(e.get("status") or ""), str(e.get("relation") or ""))
+                 for e in task_entities if isinstance(e, dict))
+
+
+def entity_status_from(answer: dict[str, Any], entity: Entity, gate: float | None = None) -> dict[str, Any]:
+    """System 1's status for one entity against the model's; a contrary status at the gate is a misread."""
+    gate = ENTITY_GATE if gate is None else gate
+    probabilities = answer.get("probabilities") if isinstance(answer, dict) else None
+    contrary = TARGET if entity.status == "given" else GIVEN
+    p_contrary = float(probabilities.get(contrary) or 0.0) if isinstance(probabilities, dict) else None
+    return {"surface": entity.surface, "status": entity.status,
+            "sys1": answer.get("choice") if isinstance(answer, dict) else None,
+            "p_contrary": None if p_contrary is None else round(p_contrary, 4),
+            "misread": gate is not None and p_contrary is not None and p_contrary >= gate}
 
 
 def verdict_from(answer: dict[str, Any], scope: Scope, stage_filter: float | None = None) -> dict[str, Any]:
@@ -142,6 +193,17 @@ class StageScopeRecipe(Sys1Recipe):
                 criteria={**scope.out_of_scope, NONE: scope.in_scope},
                 choices=scope.choices,
             )
+            for n, entity in item.checked_entities():
+                described = f", described as '{entity.relation}'" if entity.relation else ""
+                questions[f"{item.key}_entity_{n}"] = Sys1Question(
+                    instructions=as_decision_instruction(
+                        f"The supplied '{item.key}' lists the entity '{entity.surface}'{described}. Decide only from "
+                        f"the user's source request, never by solving anything: does the request supply it as "
+                        f"given, or ask for it?"
+                    ),
+                    criteria=STATUS_CRITERIA,
+                    choices=[GIVEN, TARGET],
+                )
         return Sys1Request(
             state={"source_request": state.get("source_request", ""),
                    **({"confirmed_prompt": state["confirmed_prompt"]} if state.get("confirmed_prompt") else {}),
@@ -151,9 +213,16 @@ class StageScopeRecipe(Sys1Recipe):
 
     def parse_response(self, response_body: dict[str, Any], *, duration_ms: float = 0.0) -> RecipeResult:
         answers = response_body.get("answers") or {}
-        per_item = {item.key: {"scope": item.scope,
-                               **verdict_from(answers.get(f"{item.key}_scope") or {}, SCOPES[item.scope])}
-                    for item in self.items}
+        per_item = {}
+        for item in self.items:
+            decision = {"scope": item.scope, **verdict_from(answers.get(f"{item.key}_scope") or {}, SCOPES[item.scope])}
+            if item.entities:
+                checks = [entity_status_from(answers.get(f"{item.key}_entity_{n}") or {}, entity)
+                          for n, entity in item.checked_entities()]
+                decision["entities"] = checks
+                if any(check["misread"] for check in checks) and decision["verdict"] != CONCLUSIVE:
+                    decision.update(verdict=CONCLUSIVE, category="MISREADS_ENTITY", entity_misread=True)
+            per_item[item.key] = decision
         verdicts = [d["verdict"] for d in per_item.values()]
         verdict = CONCLUSIVE if CONCLUSIVE in verdicts else UNCERTAIN if UNCERTAIN in verdicts else IN_SCOPE
         totals = [d["out_total"] for d in per_item.values() if d["out_total"] is not None]

@@ -1792,7 +1792,7 @@ class SessionEngine:
     def _scope_checked(self, operation: str, values: dict[str, Any], parsed: Any, traces: list[CallTrace]) -> Any:
         """L148: every artifact BOOTSTRAP_ANALYSIS, DRAFT_PROMPT, DRAFT_PLAN and their revisions return is judged
         against its stage's scope; a test run stops at a conclusive one. Returns ``parsed`` unchanged."""
-        from pdl_taskmaster.providers.sys1.recipes.stage_scope import CONCLUSIVE, Item
+        from pdl_taskmaster.providers.sys1.recipes.stage_scope import CONCLUSIVE, Item, entities_of
 
         scope = _STAGE_SCOPES.get(operation)
         if scope is None or self.workspace is None:
@@ -1803,14 +1803,16 @@ class SessionEngine:
             text = json.dumps({key: parsed.get(key) for key in ("task_summary", "approach_notes", "task_entities")},
                               ensure_ascii=False)
             source = str(values.get("RAW_UNTRUSTED_CONTENT") or "")
+            entities = entities_of(parsed.get("task_entities"))
         else:
             text = parsed if isinstance(parsed, str) else getattr(parsed, "prompt_body", None)
             if not text:
                 return parsed
             source = getattr(self, "_source_request", None) or ""
+            entities = ()
         artifact = {"bootstrap": "analysis", "prompt": "prompt", "plan": "plan"}[scope]
         confirmed = (values.get("CONFIRMED_PROMPT_BODY") or values.get("CURRENT_PROMPT_BODY")) if scope == "plan" else None
-        decision = self._judge_stage_scope(operation, [Item(artifact, scope, text)], source, confirmed)
+        decision = self._judge_stage_scope(operation, [Item(artifact, scope, text, entities)], source, confirmed)
         if decision["verdict"] == CONCLUSIVE and self.stop_on_conclusive:
             raise StageConclusiveStop(operation, decision, traces, withheld={artifact: text})
         return parsed
