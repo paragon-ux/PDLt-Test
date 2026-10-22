@@ -1,0 +1,590 @@
+[
+ {
+  "arms": [
+   "C-OFF",
+   "C-OFF-NF",
+   "G-OFF",
+   "C-ON-no-read",
+   "CTRL",
+   "G-ON",
+   "C-ON",
+   "C-ON-no-py",
+   "C-ON-no-boot",
+   "C-ON-no-submit"
+  ],
+  "block_id": "L145-A:13-01:r1",
+  "branches": {},
+  "item_id": "13-01",
+  "model": "L145-A",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "C-ON",
+   "G-OFF",
+   "CTRL",
+   "C-ON-no-read",
+   "C-ON-no-py",
+   "C-ON-no-boot",
+   "C-OFF-NF",
+   "G-ON",
+   "C-ON-no-submit",
+   "C-OFF"
+  ],
+  "block_id": "L145-A:14-01:r1",
+  "branches": {},
+  "item_id": "14-01",
+  "model": "L145-A",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "G-ON",
+   "C-OFF-NF",
+   "C-ON-no-read",
+   "C-ON-no-submit",
+   "C-ON",
+   "CTRL",
+   "G-OFF",
+   "C-ON-no-boot",
+   "C-ON-no-py",
+   "C-OFF"
+  ],
+  "block_id": "L145-A:06-01:r1",
+  "branches": {},
+  "item_id": "06-01",
+  "model": "L145-A",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "G-OFF",
+   "C-ON-no-submit",
+   "C-ON-no-boot",
+   "CTRL",
+   "C-OFF-NF",
+   "C-ON-no-read",
+   "C-ON",
+   "C-ON-no-py",
+   "G-ON",
+   "C-OFF"
+  ],
+  "block_id": "L145-A:01-01:r1",
+  "branches": {},
+  "item_id": "01-01",
+  "model": "L145-A",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "G-ON",
+   "C-ON-no-boot",
+   "CTRL",
+   "C-ON-no-submit",
+   "C-OFF-NF",
+   "G-OFF",
+   "C-ON",
+   "C-OFF",
+   "C-ON-no-read",
+   "C-ON-no-py"
+  ],
+  "block_id": "L145-A:02-01:r1",
+  "branches": {},
+  "item_id": "02-01",
+  "model": "L145-A",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "C-ON-no-boot",
+   "G-OFF",
+   "C-ON",
+   "G-ON",
+   "CTRL",
+   "C-ON-no-py",
+   "C-ON-no-submit",
+   "C-ON-no-read",
+   "C-OFF",
+   "C-OFF-NF"
+  ],
+  "block_id": "L145-A:16-01:r1",
+  "branches": {},
+  "item_id": "16-01",
+  "model": "L145-A",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "C-ON-no-py",
+   "G-ON",
+   "C-ON-no-boot",
+   "C-ON-no-read",
+   "CTRL",
+   "C-OFF-NF",
+   "C-ON-no-submit",
+   "C-OFF",
+   "C-ON",
+   "G-OFF"
+  ],
+  "block_id": "L145-A:01-03:r1",
+  "branches": {},
+  "item_id": "01-03",
+  "model": "L145-A",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "C-OFF-NF",
+   "C-ON",
+   "G-OFF",
+   "G-ON",
+   "C-ON-no-read",
+   "C-ON-no-submit",
+   "C-ON-no-boot",
+   "CTRL",
+   "C-OFF",
+   "C-ON-no-py"
+  ],
+  "block_id": "L145-A:05-01:r1",
+  "branches": {},
+  "item_id": "05-01",
+  "model": "L145-A",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "C-OFF-NF",
+   "G-ON",
+   "C-OFF",
+   "C-ON-no-py",
+   "C-ON-no-submit",
+   "G-OFF",
+   "CTRL",
+   "C-ON-no-boot",
+   "C-ON",
+   "C-ON-no-read"
+  ],
+  "block_id": "L145-A:13-03:r1",
+  "branches": {},
+  "item_id": "13-03",
+  "model": "L145-A",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "C-ON-no-read",
+   "C-ON-no-submit",
+   "C-ON-no-boot",
+   "C-OFF",
+   "C-ON",
+   "G-ON",
+   "C-ON-no-py",
+   "CTRL",
+   "G-OFF",
+   "C-OFF-NF"
+  ],
+  "block_id": "L145-A:03-02:r1",
+  "branches": {},
+  "item_id": "03-02",
+  "model": "L145-A",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "C-ON-no-submit",
+   "C-ON-no-py",
+   "G-ON",
+   "C-OFF-NF",
+   "C-OFF",
+   "C-ON-no-boot",
+   "G-OFF",
+   "C-ON",
+   "CTRL",
+   "C-ON-no-read"
+  ],
+  "block_id": "L145-A:16-06:r1",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L145-A",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "C-ON",
+   "C-ON-no-submit",
+   "C-OFF-NF",
+   "C-ON-no-boot",
+   "G-OFF",
+   "C-ON-no-py",
+   "G-ON",
+   "C-OFF",
+   "CTRL",
+   "C-ON-no-read"
+  ],
+  "block_id": "L145-A:04-01:r1",
+  "branches": {},
+  "item_id": "04-01",
+  "model": "L145-A",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "G-OFF",
+   "C-OFF",
+   "C-ON",
+   "CTRL",
+   "C-OFF-NF",
+   "G-ON"
+  ],
+  "block_id": "L145-A:05-01:r2",
+  "branches": {},
+  "item_id": "05-01",
+  "model": "L145-A",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "C-OFF",
+   "G-ON",
+   "C-OFF-NF",
+   "CTRL",
+   "G-OFF",
+   "C-ON"
+  ],
+  "block_id": "L145-A:06-01:r2",
+  "branches": {},
+  "item_id": "06-01",
+  "model": "L145-A",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL",
+   "G-OFF",
+   "C-OFF",
+   "G-ON",
+   "C-OFF-NF",
+   "C-ON"
+  ],
+  "block_id": "L145-A:16-06:r2",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L145-A",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL",
+   "C-ON",
+   "C-OFF-NF",
+   "G-ON",
+   "G-OFF",
+   "C-OFF"
+  ],
+  "block_id": "L145-A:14-01:r2",
+  "branches": {},
+  "item_id": "14-01",
+  "model": "L145-A",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL",
+   "C-OFF-NF",
+   "C-ON",
+   "C-OFF",
+   "G-ON",
+   "G-OFF"
+  ],
+  "block_id": "L145-A:13-01:r2",
+  "branches": {},
+  "item_id": "13-01",
+  "model": "L145-A",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "C-ON",
+   "C-OFF-NF",
+   "CTRL",
+   "C-OFF",
+   "G-ON",
+   "G-OFF"
+  ],
+  "block_id": "L145-A:02-01:r2",
+  "branches": {},
+  "item_id": "02-01",
+  "model": "L145-A",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "G-OFF",
+   "C-OFF",
+   "C-ON",
+   "G-ON",
+   "CTRL",
+   "C-OFF-NF"
+  ],
+  "block_id": "L145-A:03-02:r2",
+  "branches": {},
+  "item_id": "03-02",
+  "model": "L145-A",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "C-OFF",
+   "G-OFF",
+   "C-OFF-NF",
+   "CTRL",
+   "C-ON",
+   "G-ON"
+  ],
+  "block_id": "L145-A:04-01:r2",
+  "branches": {},
+  "item_id": "04-01",
+  "model": "L145-A",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "C-ON",
+   "C-OFF",
+   "CTRL",
+   "C-OFF-NF",
+   "G-OFF",
+   "G-ON"
+  ],
+  "block_id": "L145-A:01-01:r2",
+  "branches": {},
+  "item_id": "01-01",
+  "model": "L145-A",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "C-OFF-NF",
+   "C-OFF",
+   "C-ON",
+   "G-ON",
+   "G-OFF",
+   "CTRL"
+  ],
+  "block_id": "L145-A:13-03:r2",
+  "branches": {},
+  "item_id": "13-03",
+  "model": "L145-A",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "C-OFF",
+   "G-ON",
+   "C-OFF-NF",
+   "CTRL",
+   "C-ON",
+   "G-OFF"
+  ],
+  "block_id": "L145-A:16-01:r2",
+  "branches": {},
+  "item_id": "16-01",
+  "model": "L145-A",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "C-ON",
+   "G-OFF",
+   "C-OFF",
+   "G-ON",
+   "C-OFF-NF",
+   "CTRL"
+  ],
+  "block_id": "L145-A:01-03:r2",
+  "branches": {},
+  "item_id": "01-03",
+  "model": "L145-A",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "C-OFF-NF",
+   "G-OFF",
+   "CTRL",
+   "C-ON",
+   "C-OFF",
+   "G-ON"
+  ],
+  "block_id": "L145-A:13-01:r3",
+  "branches": {},
+  "item_id": "13-01",
+  "model": "L145-A",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "C-OFF-NF",
+   "C-ON",
+   "G-OFF",
+   "G-ON",
+   "C-OFF",
+   "CTRL"
+  ],
+  "block_id": "L145-A:13-03:r3",
+  "branches": {},
+  "item_id": "13-03",
+  "model": "L145-A",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "C-ON",
+   "G-OFF",
+   "C-OFF",
+   "G-ON",
+   "CTRL",
+   "C-OFF-NF"
+  ],
+  "block_id": "L145-A:05-01:r3",
+  "branches": {},
+  "item_id": "05-01",
+  "model": "L145-A",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "G-OFF",
+   "C-ON",
+   "C-OFF-NF",
+   "C-OFF",
+   "G-ON",
+   "CTRL"
+  ],
+  "block_id": "L145-A:16-06:r3",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L145-A",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "C-OFF-NF",
+   "C-ON",
+   "G-OFF",
+   "G-ON",
+   "C-OFF",
+   "CTRL"
+  ],
+  "block_id": "L145-A:03-02:r3",
+  "branches": {},
+  "item_id": "03-02",
+  "model": "L145-A",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "G-ON",
+   "G-OFF",
+   "C-ON",
+   "C-OFF",
+   "CTRL",
+   "C-OFF-NF"
+  ],
+  "block_id": "L145-A:02-01:r3",
+  "branches": {},
+  "item_id": "02-01",
+  "model": "L145-A",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "C-OFF",
+   "C-OFF-NF",
+   "G-OFF",
+   "G-ON",
+   "CTRL",
+   "C-ON"
+  ],
+  "block_id": "L145-A:04-01:r3",
+  "branches": {},
+  "item_id": "04-01",
+  "model": "L145-A",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "C-OFF",
+   "G-ON",
+   "C-ON",
+   "C-OFF-NF",
+   "G-OFF",
+   "CTRL"
+  ],
+  "block_id": "L145-A:06-01:r3",
+  "branches": {},
+  "item_id": "06-01",
+  "model": "L145-A",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "C-ON",
+   "CTRL",
+   "G-OFF",
+   "C-OFF-NF",
+   "G-ON",
+   "C-OFF"
+  ],
+  "block_id": "L145-A:16-01:r3",
+  "branches": {},
+  "item_id": "16-01",
+  "model": "L145-A",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "C-OFF-NF",
+   "G-OFF",
+   "C-ON",
+   "CTRL",
+   "G-ON",
+   "C-OFF"
+  ],
+  "block_id": "L145-A:14-01:r3",
+  "branches": {},
+  "item_id": "14-01",
+  "model": "L145-A",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "C-OFF-NF",
+   "G-OFF",
+   "G-ON",
+   "C-OFF",
+   "C-ON",
+   "CTRL"
+  ],
+  "block_id": "L145-A:01-01:r3",
+  "branches": {},
+  "item_id": "01-01",
+  "model": "L145-A",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "G-OFF",
+   "G-ON",
+   "CTRL",
+   "C-OFF-NF",
+   "C-OFF",
+   "C-ON"
+  ],
+  "block_id": "L145-A:01-03:r3",
+  "branches": {},
+  "item_id": "01-03",
+  "model": "L145-A",
+  "rep": 3
+ }
+]

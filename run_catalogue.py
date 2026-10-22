@@ -115,7 +115,9 @@ from pdl_taskmaster.api.outcome import (EXIT_CANCELLED, EXIT_HARNESS_ERROR, EXIT
                                         EXIT_UNCONFIRMED, EXIT_UNVERIFIED, EXIT_WAITING_INPUT)
 
 
-def load_manifest(category_filter=None):
+def load_manifest(category_filter=None, path=None):
+    """The manifest's entries (``path``: another manifest of the same form, such as the held-out set of L145;
+    its prompt files are relative to the prompts folder like the catalogue's)."""
     entries = []
     cats = set()
     if category_filter:
@@ -126,7 +128,7 @@ def load_manifest(category_filter=None):
                 if c.isdigit():
                     cats.add(f"{int(c):02d}")
 
-    with open(MANIFEST_PATH, encoding="utf-8-sig") as f:
+    with open(path or MANIFEST_PATH, encoding="utf-8-sig") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -951,9 +953,18 @@ def generate_scoreboard(results, run_dir, run_meta):
     return scoreboard
 
 
+def _manifest_path(name):
+    """A manifest named relative to this checkout (as RUN_META records it), or None for the catalogue's."""
+    if not name:
+        return None
+    path = Path(name)
+    return path if path.is_absolute() else PDLT_TEST_ROOT / path
+
+
 def regrade_run(run_dir: Path) -> int:
     """Apply the current graders to a finished run (no model calls)."""
-    manifest = {e["id"]: e for e in load_manifest()}
+    run_meta = json.loads((run_dir / "RUN_META.json").read_text(encoding="utf-8"))
+    manifest = {e["id"]: e for e in load_manifest(path=_manifest_path(run_meta.get("manifest")))}
     results = []
     for result_file in sorted((run_dir / "results").glob("*/result.json")):
         result = json.loads(result_file.read_text(encoding="utf-8"))
@@ -965,7 +976,6 @@ def regrade_run(run_dir: Path) -> int:
         result["model_calls"] = call_accounting(result_file.parent)
         result_file.write_text(json.dumps(result, indent=2), encoding="utf-8")
         results.append(result)
-    run_meta = json.loads((run_dir / "RUN_META.json").read_text(encoding="utf-8"))
     scoreboard = generate_scoreboard(results, run_dir, run_meta)
     for r in results:
         icon = outcome_label(r)
@@ -1060,6 +1070,9 @@ def main():
     parser.add_argument("--allow-dirty", action="store_true",
                         help="run from a working tree with uncommitted changes; the difference is stored with "
                              "the run as WORKTREE.diff (without it, such a run is refused)")
+    parser.add_argument("--manifest", default=None, metavar="PATH",
+                        help="another prompt manifest of the catalogue's form, relative to this checkout (the "
+                             "held-out set of L145, prompts/HELDOUT_MANIFEST.jsonl); default the catalogue")
     parser.add_argument("--regrade", metavar="RUN_DIR", default=None,
                         help="re-grade a finished run with the current graders and rewrite its scoreboard")
     args = parser.parse_args()
@@ -1070,7 +1083,7 @@ def main():
     if args.regrade:
         sys.exit(regrade_run(Path(args.regrade)))
 
-    entries = load_manifest(category_filter=args.category)
+    entries = load_manifest(category_filter=args.category, path=_manifest_path(args.manifest))
     if args.prompt_id:
         target_pids = {p.strip() for p in args.prompt_id.split(",") if p.strip()}
         entries = [e for e in entries if e["id"] in target_pids]
@@ -1161,6 +1174,7 @@ def main():
         "run_settings": run_settings,
         "category_filter": args.category,
         "prompt_id_filter": args.prompt_id,
+        "manifest": args.manifest,
         "total_prompts": len(runs),
         "repeat": args.repeat,
         "timeout_per_prompt": args.timeout,

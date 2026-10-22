@@ -1,0 +1,4094 @@
+[
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:02-06:r1",
+  "branches": {},
+  "item_id": "02-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:07-07:r1",
+  "branches": {},
+  "item_id": "07-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-05:r1",
+  "branches": {},
+  "item_id": "04-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:03-06:r1",
+  "branches": {},
+  "item_id": "03-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:16-02:r1",
+  "branches": {},
+  "item_id": "16-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:08-02:r1",
+  "branches": {},
+  "item_id": "08-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-07:r1",
+  "branches": {},
+  "item_id": "04-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:08-06:r1",
+  "branches": {},
+  "item_id": "08-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:09-04:r1",
+  "branches": {},
+  "item_id": "09-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-07:r1",
+  "branches": {},
+  "item_id": "06-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-04:r1",
+  "branches": {},
+  "item_id": "06-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-06:r1",
+  "branches": {},
+  "item_id": "HO-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:09-02:r1",
+  "branches": {},
+  "item_id": "09-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:06-03:r1",
+  "branches": {},
+  "item_id": "06-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-12:r1",
+  "branches": {},
+  "item_id": "HO-12",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-01:r1",
+  "branches": {},
+  "item_id": "14-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:05-01:r1",
+  "branches": {},
+  "item_id": "05-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:02-02:r1",
+  "branches": {},
+  "item_id": "02-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:08-04:r1",
+  "branches": {},
+  "item_id": "08-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:02-07:r1",
+  "branches": {},
+  "item_id": "02-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:03-01:r1",
+  "branches": {},
+  "item_id": "03-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:16-07:r1",
+  "branches": {},
+  "item_id": "16-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-03:r1",
+  "branches": {},
+  "item_id": "04-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:12-03:r1",
+  "branches": {},
+  "item_id": "12-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:01-02:r1",
+  "branches": {},
+  "item_id": "01-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:13-05:r1",
+  "branches": {},
+  "item_id": "13-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:04-01:r1",
+  "branches": {},
+  "item_id": "04-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:13-03:r1",
+  "branches": {},
+  "item_id": "13-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:13-04:r1",
+  "branches": {},
+  "item_id": "13-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:10-07:r1",
+  "branches": {},
+  "item_id": "10-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:12-04:r1",
+  "branches": {},
+  "item_id": "12-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:01-07:r1",
+  "branches": {},
+  "item_id": "01-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:16-03:r1",
+  "branches": {},
+  "item_id": "16-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:03-03:r1",
+  "branches": {},
+  "item_id": "03-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-03:r1",
+  "branches": {},
+  "item_id": "11-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:09-06:r1",
+  "branches": {},
+  "item_id": "09-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:05-02:r1",
+  "branches": {},
+  "item_id": "05-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-02:r1",
+  "branches": {},
+  "item_id": "HO-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:12-05:r1",
+  "branches": {},
+  "item_id": "12-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:13-02:r1",
+  "branches": {},
+  "item_id": "13-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:07-04:r1",
+  "branches": {},
+  "item_id": "07-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:16-01:r1",
+  "branches": {},
+  "item_id": "16-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-04:r1",
+  "branches": {},
+  "item_id": "HO-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-06:r1",
+  "branches": {},
+  "item_id": "04-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:11-07:r1",
+  "branches": {},
+  "item_id": "11-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:05-06:r1",
+  "branches": {},
+  "item_id": "05-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:09-01:r1",
+  "branches": {},
+  "item_id": "09-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:01-01:r1",
+  "branches": {},
+  "item_id": "01-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:03-02:r1",
+  "branches": {},
+  "item_id": "03-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:07-05:r1",
+  "branches": {},
+  "item_id": "07-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-04:r1",
+  "branches": {},
+  "item_id": "10-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:15-05:r1",
+  "branches": {},
+  "item_id": "15-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-07:r1",
+  "branches": {},
+  "item_id": "14-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:12-01:r1",
+  "branches": {},
+  "item_id": "12-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-04:r1",
+  "branches": {},
+  "item_id": "14-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:13-06:r1",
+  "branches": {},
+  "item_id": "13-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:01-04:r1",
+  "branches": {},
+  "item_id": "01-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:15-06:r1",
+  "branches": {},
+  "item_id": "15-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:10-06:r1",
+  "branches": {},
+  "item_id": "10-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-01:r1",
+  "branches": {},
+  "item_id": "06-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:08-01:r1",
+  "branches": {},
+  "item_id": "08-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-01:r1",
+  "branches": {},
+  "item_id": "11-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:05-04:r1",
+  "branches": {},
+  "item_id": "05-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-01:r1",
+  "branches": {},
+  "item_id": "10-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:02-04:r1",
+  "branches": {},
+  "item_id": "02-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-05:r1",
+  "branches": {},
+  "item_id": "HO-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:15-04:r1",
+  "branches": {},
+  "item_id": "15-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-04:r1",
+  "branches": {},
+  "item_id": "11-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:13-01:r1",
+  "branches": {},
+  "item_id": "13-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:09-03:r1",
+  "branches": {},
+  "item_id": "09-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:06-06:r1",
+  "branches": {},
+  "item_id": "06-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:12-06:r1",
+  "branches": {},
+  "item_id": "12-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:16-05:r1",
+  "branches": {},
+  "item_id": "16-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:01-05:r1",
+  "branches": {},
+  "item_id": "01-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-03:r1",
+  "branches": {},
+  "item_id": "14-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:05-03:r1",
+  "branches": {},
+  "item_id": "05-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:13-07:r1",
+  "branches": {},
+  "item_id": "13-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:16-04:r1",
+  "branches": {},
+  "item_id": "16-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-10:r1",
+  "branches": {},
+  "item_id": "HO-10",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:03-04:r1",
+  "branches": {},
+  "item_id": "03-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:15-02:r1",
+  "branches": {},
+  "item_id": "15-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:15-03:r1",
+  "branches": {},
+  "item_id": "15-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-08:r1",
+  "branches": {},
+  "item_id": "HO-08",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:03-05:r1",
+  "branches": {},
+  "item_id": "03-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-01:r1",
+  "branches": {},
+  "item_id": "HO-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:08-05:r1",
+  "branches": {},
+  "item_id": "08-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:01-06:r1",
+  "branches": {},
+  "item_id": "01-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-09:r1",
+  "branches": {},
+  "item_id": "HO-09",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-02:r1",
+  "branches": {},
+  "item_id": "06-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:07-01:r1",
+  "branches": {},
+  "item_id": "07-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:07-06:r1",
+  "branches": {},
+  "item_id": "07-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:05-05:r1",
+  "branches": {},
+  "item_id": "05-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:05-07:r1",
+  "branches": {},
+  "item_id": "05-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-05:r1",
+  "branches": {},
+  "item_id": "11-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:09-07:r1",
+  "branches": {},
+  "item_id": "09-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:08-07:r1",
+  "branches": {},
+  "item_id": "08-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:09-05:r1",
+  "branches": {},
+  "item_id": "09-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-11:r1",
+  "branches": {},
+  "item_id": "HO-11",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-06:r1",
+  "branches": {},
+  "item_id": "14-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:03-07:r1",
+  "branches": {},
+  "item_id": "03-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:15-07:r1",
+  "branches": {},
+  "item_id": "15-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:08-03:r1",
+  "branches": {},
+  "item_id": "08-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:07-03:r1",
+  "branches": {},
+  "item_id": "07-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:12-02:r1",
+  "branches": {},
+  "item_id": "12-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-02:r1",
+  "branches": {},
+  "item_id": "10-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-03:r1",
+  "branches": {},
+  "item_id": "HO-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-03:r1",
+  "branches": {},
+  "item_id": "10-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:07-02:r1",
+  "branches": {},
+  "item_id": "07-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:02-05:r1",
+  "branches": {},
+  "item_id": "02-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-02:r1",
+  "branches": {},
+  "item_id": "11-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-07:r1",
+  "branches": {},
+  "item_id": "HO-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:14-05:r1",
+  "branches": {},
+  "item_id": "14-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:02-01:r1",
+  "branches": {},
+  "item_id": "02-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:15-01:r1",
+  "branches": {},
+  "item_id": "15-01",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:16-06:r1",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:10-05:r1",
+  "branches": {},
+  "item_id": "10-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-04:r1",
+  "branches": {},
+  "item_id": "04-04",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:01-03:r1",
+  "branches": {},
+  "item_id": "01-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:12-07:r1",
+  "branches": {},
+  "item_id": "12-07",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-05:r1",
+  "branches": {},
+  "item_id": "06-05",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:02-03:r1",
+  "branches": {},
+  "item_id": "02-03",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-02:r1",
+  "branches": {},
+  "item_id": "14-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:04-02:r1",
+  "branches": {},
+  "item_id": "04-02",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-06:r1",
+  "branches": {},
+  "item_id": "11-06",
+  "model": "L145-B",
+  "rep": 1
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:15-01:r2",
+  "branches": {},
+  "item_id": "15-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:02-03:r2",
+  "branches": {},
+  "item_id": "02-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:08-05:r2",
+  "branches": {},
+  "item_id": "08-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:14-04:r2",
+  "branches": {},
+  "item_id": "14-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-08:r2",
+  "branches": {},
+  "item_id": "HO-08",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:01-04:r2",
+  "branches": {},
+  "item_id": "01-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:16-01:r2",
+  "branches": {},
+  "item_id": "16-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-01:r2",
+  "branches": {},
+  "item_id": "04-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:12-03:r2",
+  "branches": {},
+  "item_id": "12-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:12-06:r2",
+  "branches": {},
+  "item_id": "12-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:07-07:r2",
+  "branches": {},
+  "item_id": "07-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:01-03:r2",
+  "branches": {},
+  "item_id": "01-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:01-07:r2",
+  "branches": {},
+  "item_id": "01-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-02:r2",
+  "branches": {},
+  "item_id": "HO-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:13-03:r2",
+  "branches": {},
+  "item_id": "13-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:07-06:r2",
+  "branches": {},
+  "item_id": "07-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:07-04:r2",
+  "branches": {},
+  "item_id": "07-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:14-03:r2",
+  "branches": {},
+  "item_id": "14-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:01-06:r2",
+  "branches": {},
+  "item_id": "01-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-02:r2",
+  "branches": {},
+  "item_id": "14-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:01-02:r2",
+  "branches": {},
+  "item_id": "01-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:02-04:r2",
+  "branches": {},
+  "item_id": "02-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-01:r2",
+  "branches": {},
+  "item_id": "10-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-10:r2",
+  "branches": {},
+  "item_id": "HO-10",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:08-02:r2",
+  "branches": {},
+  "item_id": "08-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:08-01:r2",
+  "branches": {},
+  "item_id": "08-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:03-07:r2",
+  "branches": {},
+  "item_id": "03-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:12-02:r2",
+  "branches": {},
+  "item_id": "12-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-07:r2",
+  "branches": {},
+  "item_id": "11-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:09-06:r2",
+  "branches": {},
+  "item_id": "09-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:15-04:r2",
+  "branches": {},
+  "item_id": "15-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-06:r2",
+  "branches": {},
+  "item_id": "11-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:08-07:r2",
+  "branches": {},
+  "item_id": "08-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:01-01:r2",
+  "branches": {},
+  "item_id": "01-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:07-05:r2",
+  "branches": {},
+  "item_id": "07-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:02-07:r2",
+  "branches": {},
+  "item_id": "02-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:13-05:r2",
+  "branches": {},
+  "item_id": "13-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:15-02:r2",
+  "branches": {},
+  "item_id": "15-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:09-01:r2",
+  "branches": {},
+  "item_id": "09-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:11-03:r2",
+  "branches": {},
+  "item_id": "11-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:03-05:r2",
+  "branches": {},
+  "item_id": "03-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:09-05:r2",
+  "branches": {},
+  "item_id": "09-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:13-06:r2",
+  "branches": {},
+  "item_id": "13-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:05-03:r2",
+  "branches": {},
+  "item_id": "05-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:08-04:r2",
+  "branches": {},
+  "item_id": "08-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:12-01:r2",
+  "branches": {},
+  "item_id": "12-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-03:r2",
+  "branches": {},
+  "item_id": "04-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:09-07:r2",
+  "branches": {},
+  "item_id": "09-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:16-06:r2",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-06:r2",
+  "branches": {},
+  "item_id": "HO-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:04-07:r2",
+  "branches": {},
+  "item_id": "04-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:06-07:r2",
+  "branches": {},
+  "item_id": "06-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-06:r2",
+  "branches": {},
+  "item_id": "04-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-01:r2",
+  "branches": {},
+  "item_id": "14-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:03-04:r2",
+  "branches": {},
+  "item_id": "03-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-07:r2",
+  "branches": {},
+  "item_id": "10-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:05-02:r2",
+  "branches": {},
+  "item_id": "05-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:08-03:r2",
+  "branches": {},
+  "item_id": "08-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:02-05:r2",
+  "branches": {},
+  "item_id": "02-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-01:r2",
+  "branches": {},
+  "item_id": "11-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:11-05:r2",
+  "branches": {},
+  "item_id": "11-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:16-07:r2",
+  "branches": {},
+  "item_id": "16-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:02-02:r2",
+  "branches": {},
+  "item_id": "02-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:15-07:r2",
+  "branches": {},
+  "item_id": "15-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:08-06:r2",
+  "branches": {},
+  "item_id": "08-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-05:r2",
+  "branches": {},
+  "item_id": "06-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:01-05:r2",
+  "branches": {},
+  "item_id": "01-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-03:r2",
+  "branches": {},
+  "item_id": "HO-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:09-04:r2",
+  "branches": {},
+  "item_id": "09-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:09-02:r2",
+  "branches": {},
+  "item_id": "09-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-06:r2",
+  "branches": {},
+  "item_id": "06-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-01:r2",
+  "branches": {},
+  "item_id": "HO-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:05-07:r2",
+  "branches": {},
+  "item_id": "05-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:10-02:r2",
+  "branches": {},
+  "item_id": "10-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-12:r2",
+  "branches": {},
+  "item_id": "HO-12",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:13-04:r2",
+  "branches": {},
+  "item_id": "13-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-09:r2",
+  "branches": {},
+  "item_id": "HO-09",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:16-03:r2",
+  "branches": {},
+  "item_id": "16-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-04:r2",
+  "branches": {},
+  "item_id": "06-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:03-06:r2",
+  "branches": {},
+  "item_id": "03-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-11:r2",
+  "branches": {},
+  "item_id": "HO-11",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:15-03:r2",
+  "branches": {},
+  "item_id": "15-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-07:r2",
+  "branches": {},
+  "item_id": "HO-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-07:r2",
+  "branches": {},
+  "item_id": "14-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-03:r2",
+  "branches": {},
+  "item_id": "10-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:03-03:r2",
+  "branches": {},
+  "item_id": "03-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:12-04:r2",
+  "branches": {},
+  "item_id": "12-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:05-06:r2",
+  "branches": {},
+  "item_id": "05-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:02-06:r2",
+  "branches": {},
+  "item_id": "02-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-03:r2",
+  "branches": {},
+  "item_id": "06-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:03-01:r2",
+  "branches": {},
+  "item_id": "03-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:05-01:r2",
+  "branches": {},
+  "item_id": "05-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:12-07:r2",
+  "branches": {},
+  "item_id": "12-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:02-01:r2",
+  "branches": {},
+  "item_id": "02-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-02:r2",
+  "branches": {},
+  "item_id": "06-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:09-03:r2",
+  "branches": {},
+  "item_id": "09-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-04:r2",
+  "branches": {},
+  "item_id": "HO-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-01:r2",
+  "branches": {},
+  "item_id": "06-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:07-03:r2",
+  "branches": {},
+  "item_id": "07-03",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-04:r2",
+  "branches": {},
+  "item_id": "10-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:13-01:r2",
+  "branches": {},
+  "item_id": "13-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:10-06:r2",
+  "branches": {},
+  "item_id": "10-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:04-04:r2",
+  "branches": {},
+  "item_id": "04-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:16-02:r2",
+  "branches": {},
+  "item_id": "16-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-05:r2",
+  "branches": {},
+  "item_id": "04-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:05-04:r2",
+  "branches": {},
+  "item_id": "05-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:15-05:r2",
+  "branches": {},
+  "item_id": "15-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:16-05:r2",
+  "branches": {},
+  "item_id": "16-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:14-05:r2",
+  "branches": {},
+  "item_id": "14-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:07-02:r2",
+  "branches": {},
+  "item_id": "07-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:07-01:r2",
+  "branches": {},
+  "item_id": "07-01",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:16-04:r2",
+  "branches": {},
+  "item_id": "16-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:05-05:r2",
+  "branches": {},
+  "item_id": "05-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:13-02:r2",
+  "branches": {},
+  "item_id": "13-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:13-07:r2",
+  "branches": {},
+  "item_id": "13-07",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-02:r2",
+  "branches": {},
+  "item_id": "11-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-05:r2",
+  "branches": {},
+  "item_id": "HO-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:12-05:r2",
+  "branches": {},
+  "item_id": "12-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-05:r2",
+  "branches": {},
+  "item_id": "10-05",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-02:r2",
+  "branches": {},
+  "item_id": "04-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:11-04:r2",
+  "branches": {},
+  "item_id": "11-04",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-06:r2",
+  "branches": {},
+  "item_id": "14-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:15-06:r2",
+  "branches": {},
+  "item_id": "15-06",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:03-02:r2",
+  "branches": {},
+  "item_id": "03-02",
+  "model": "L145-B",
+  "rep": 2
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:13-04:r3",
+  "branches": {},
+  "item_id": "13-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:16-03:r3",
+  "branches": {},
+  "item_id": "16-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:01-01:r3",
+  "branches": {},
+  "item_id": "01-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:05-05:r3",
+  "branches": {},
+  "item_id": "05-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:13-02:r3",
+  "branches": {},
+  "item_id": "13-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:13-01:r3",
+  "branches": {},
+  "item_id": "13-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:09-03:r3",
+  "branches": {},
+  "item_id": "09-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:13-06:r3",
+  "branches": {},
+  "item_id": "13-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-07:r3",
+  "branches": {},
+  "item_id": "HO-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:06-02:r3",
+  "branches": {},
+  "item_id": "06-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:05-04:r3",
+  "branches": {},
+  "item_id": "05-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:12-05:r3",
+  "branches": {},
+  "item_id": "12-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:11-01:r3",
+  "branches": {},
+  "item_id": "11-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:15-03:r3",
+  "branches": {},
+  "item_id": "15-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:01-07:r3",
+  "branches": {},
+  "item_id": "01-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-05:r3",
+  "branches": {},
+  "item_id": "14-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:08-03:r3",
+  "branches": {},
+  "item_id": "08-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:16-06:r3",
+  "branches": {},
+  "item_id": "16-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:16-04:r3",
+  "branches": {},
+  "item_id": "16-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:06-06:r3",
+  "branches": {},
+  "item_id": "06-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-11:r3",
+  "branches": {},
+  "item_id": "HO-11",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-02:r3",
+  "branches": {},
+  "item_id": "11-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-03:r3",
+  "branches": {},
+  "item_id": "HO-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:01-03:r3",
+  "branches": {},
+  "item_id": "01-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:02-06:r3",
+  "branches": {},
+  "item_id": "02-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-04:r3",
+  "branches": {},
+  "item_id": "10-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:13-07:r3",
+  "branches": {},
+  "item_id": "13-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:13-05:r3",
+  "branches": {},
+  "item_id": "13-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:11-04:r3",
+  "branches": {},
+  "item_id": "11-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:02-05:r3",
+  "branches": {},
+  "item_id": "02-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-05:r3",
+  "branches": {},
+  "item_id": "04-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:15-02:r3",
+  "branches": {},
+  "item_id": "15-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:15-04:r3",
+  "branches": {},
+  "item_id": "15-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:16-05:r3",
+  "branches": {},
+  "item_id": "16-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:08-06:r3",
+  "branches": {},
+  "item_id": "08-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:10-05:r3",
+  "branches": {},
+  "item_id": "10-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:15-06:r3",
+  "branches": {},
+  "item_id": "15-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:16-07:r3",
+  "branches": {},
+  "item_id": "16-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:07-03:r3",
+  "branches": {},
+  "item_id": "07-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:09-06:r3",
+  "branches": {},
+  "item_id": "09-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:03-05:r3",
+  "branches": {},
+  "item_id": "03-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:07-06:r3",
+  "branches": {},
+  "item_id": "07-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:01-04:r3",
+  "branches": {},
+  "item_id": "01-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:05-02:r3",
+  "branches": {},
+  "item_id": "05-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:16-02:r3",
+  "branches": {},
+  "item_id": "16-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-10:r3",
+  "branches": {},
+  "item_id": "HO-10",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:02-03:r3",
+  "branches": {},
+  "item_id": "02-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-06:r3",
+  "branches": {},
+  "item_id": "14-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-01:r3",
+  "branches": {},
+  "item_id": "10-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-02:r3",
+  "branches": {},
+  "item_id": "HO-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-05:r3",
+  "branches": {},
+  "item_id": "11-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:11-06:r3",
+  "branches": {},
+  "item_id": "11-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:03-06:r3",
+  "branches": {},
+  "item_id": "03-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:15-07:r3",
+  "branches": {},
+  "item_id": "15-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:16-01:r3",
+  "branches": {},
+  "item_id": "16-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:08-07:r3",
+  "branches": {},
+  "item_id": "08-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:04-02:r3",
+  "branches": {},
+  "item_id": "04-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:14-02:r3",
+  "branches": {},
+  "item_id": "14-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:08-01:r3",
+  "branches": {},
+  "item_id": "08-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:15-01:r3",
+  "branches": {},
+  "item_id": "15-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-06:r3",
+  "branches": {},
+  "item_id": "10-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:12-01:r3",
+  "branches": {},
+  "item_id": "12-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:01-02:r3",
+  "branches": {},
+  "item_id": "01-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:05-03:r3",
+  "branches": {},
+  "item_id": "05-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-03:r3",
+  "branches": {},
+  "item_id": "10-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-05:r3",
+  "branches": {},
+  "item_id": "HO-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:07-05:r3",
+  "branches": {},
+  "item_id": "07-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-09:r3",
+  "branches": {},
+  "item_id": "HO-09",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:08-04:r3",
+  "branches": {},
+  "item_id": "08-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-01:r3",
+  "branches": {},
+  "item_id": "14-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:12-03:r3",
+  "branches": {},
+  "item_id": "12-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:07-04:r3",
+  "branches": {},
+  "item_id": "07-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:05-01:r3",
+  "branches": {},
+  "item_id": "05-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-07:r3",
+  "branches": {},
+  "item_id": "11-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:11-03:r3",
+  "branches": {},
+  "item_id": "11-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:07-01:r3",
+  "branches": {},
+  "item_id": "07-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:09-04:r3",
+  "branches": {},
+  "item_id": "09-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-07:r3",
+  "branches": {},
+  "item_id": "04-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:06-05:r3",
+  "branches": {},
+  "item_id": "06-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-07:r3",
+  "branches": {},
+  "item_id": "14-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:03-04:r3",
+  "branches": {},
+  "item_id": "03-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:02-01:r3",
+  "branches": {},
+  "item_id": "02-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:01-05:r3",
+  "branches": {},
+  "item_id": "01-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:09-05:r3",
+  "branches": {},
+  "item_id": "09-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-03:r3",
+  "branches": {},
+  "item_id": "04-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-04:r3",
+  "branches": {},
+  "item_id": "HO-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:03-07:r3",
+  "branches": {},
+  "item_id": "03-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:12-02:r3",
+  "branches": {},
+  "item_id": "12-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:14-03:r3",
+  "branches": {},
+  "item_id": "14-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:02-07:r3",
+  "branches": {},
+  "item_id": "02-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-07:r3",
+  "branches": {},
+  "item_id": "10-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-07:r3",
+  "branches": {},
+  "item_id": "06-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-01:r3",
+  "branches": {},
+  "item_id": "06-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:13-03:r3",
+  "branches": {},
+  "item_id": "13-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:12-07:r3",
+  "branches": {},
+  "item_id": "12-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:03-02:r3",
+  "branches": {},
+  "item_id": "03-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:05-06:r3",
+  "branches": {},
+  "item_id": "05-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:08-05:r3",
+  "branches": {},
+  "item_id": "08-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:10-02:r3",
+  "branches": {},
+  "item_id": "10-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:04-04:r3",
+  "branches": {},
+  "item_id": "04-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:09-07:r3",
+  "branches": {},
+  "item_id": "09-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:04-06:r3",
+  "branches": {},
+  "item_id": "04-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:09-01:r3",
+  "branches": {},
+  "item_id": "09-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:14-04:r3",
+  "branches": {},
+  "item_id": "14-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:09-02:r3",
+  "branches": {},
+  "item_id": "09-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:07-07:r3",
+  "branches": {},
+  "item_id": "07-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:03-01:r3",
+  "branches": {},
+  "item_id": "03-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:15-05:r3",
+  "branches": {},
+  "item_id": "15-05",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-08:r3",
+  "branches": {},
+  "item_id": "HO-08",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:04-01:r3",
+  "branches": {},
+  "item_id": "04-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:06-03:r3",
+  "branches": {},
+  "item_id": "06-03",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:08-02:r3",
+  "branches": {},
+  "item_id": "08-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:07-02:r3",
+  "branches": {},
+  "item_id": "07-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-01:r3",
+  "branches": {},
+  "item_id": "HO-01",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:HO-06:r3",
+  "branches": {},
+  "item_id": "HO-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:12-06:r3",
+  "branches": {},
+  "item_id": "12-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:02-04:r3",
+  "branches": {},
+  "item_id": "02-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:HO-12:r3",
+  "branches": {},
+  "item_id": "HO-12",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:01-06:r3",
+  "branches": {},
+  "item_id": "01-06",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:05-07:r3",
+  "branches": {},
+  "item_id": "05-07",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:02-02:r3",
+  "branches": {},
+  "item_id": "02-02",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:06-04:r3",
+  "branches": {},
+  "item_id": "06-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "CTRL-L",
+   "PDLt"
+  ],
+  "block_id": "L145-B:12-04:r3",
+  "branches": {},
+  "item_id": "12-04",
+  "model": "L145-B",
+  "rep": 3
+ },
+ {
+  "arms": [
+   "PDLt",
+   "CTRL-L"
+  ],
+  "block_id": "L145-B:03-03:r3",
+  "branches": {},
+  "item_id": "03-03",
+  "model": "L145-B",
+  "rep": 3
+ }
+]
