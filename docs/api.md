@@ -31,9 +31,11 @@ with Session.open(worker, "runs/sessions/demo") as session:
 - **Review commands** are messages: `confirm()` is `send("/confirm")`; `revise(feedback)` is `send("/revise feedback")`. With no open review they are answered as such, never started as a request.
 - **`run(message, confirm=True)`** accepts each review as a standing confirmation, recorded as one (`STANDING_CONFIRMATION` events, as the REPL's fast mode). An artifact the host has findings on is left open for review.
 - **Errors:** a provider or transport error raises from `send` (a headless run exits 4 on it). The session stays usable.
+- **One thread at a time.** A `Session` holds one engine and one workspace and has no locking: never call `send` or `run` on the same session from two threads or tasks at once. Concurrent tasks each get their own `Session.open`, with their own folder.
+- **Review defaults differ by interface:** `Session.open` reviews (`no_review=False`), while `pdlt` starts without review (ledger L94). Name the route when moving a task between them.
 - **`repo_root`** defaults to the folder this package runs from: the checkout's root in a source install. `create_worker("api", ...)` defaults it the same way. The Standard, the operations and their schemas resolve from `$PDLT_STANDARDS_PATH`, else `<repo_root>/contracts/`, else contracts seeded with `pdlt init`, else the copies bundled in the package, so a PyPI install needs nothing here.
 - **`task_type`** pins a registered task type for every request; without it System 1 classifies each request, and an unclassified one gets the default (STANDARD_EXECUTION).
-- **`settings`** is a `RunSettings`: `max_repairs`, `draft_execute`, `agent_tools`, `representation`, `tier_d1`, `no_review`, `sandbox_mode`, `task_type`. It is validated when made, and every invalid field is named. Without it, `no_review`, `sandbox_mode` and `task_type` come from the arguments and the rest from the worker's attributes (`RunSettings.from_worker`). With it, pass those three inside it, not as arguments.
+- **`settings`** is a `RunSettings`: `max_repairs`, `draft_execute`, `agent_tools`, `representation`, `tier_d1`, `no_review`, `sandbox_mode`, `task_type`. It is validated when made, and every invalid field is named. Without it, `no_review`, `sandbox_mode` and `task_type` come from the arguments and the rest from the worker's attributes (`RunSettings.from_worker`). With it, pass those three inside it, not as arguments. Left unset, `sandbox_mode` comes from `$PDLT_SANDBOX` (default `auto`), and an API worker's `tier_d1` from `$PDLT_TIER_D1` (default on).
 - **`sys1`** is the System 1 client the session asks (`create_system1`). Without it, the worker's is used; with it, a worker that has one uses the same.
 - **A direct reply** (a request System 1 routes away from the protocol) comes back as `text`, with `stage` None and exit 0. The engine produces it from the user's own words.
 
@@ -63,6 +65,8 @@ One mapping, `api.outcome.exit_status(stage, refused=..., harness_error=...)`. T
 | 4 | `EXIT_HARNESS_ERROR` | a harness or provider error; never a protocol result |
 | 5 | `EXIT_UNVERIFIED` | `CLOSED_UNVERIFIED`: published without the host establishing it |
 | 130 | `EXIT_INTERRUPTED` | interrupted by the user |
+
+Exit 0 is not a verification claim: a STANDARD_EXECUTION result that passed only the contract checks, a direct reply and a refusal all exit 0. What a published result rests on is `provenance["verification"]["level"]` (`host_verified`, `contract_checked` or `unverified`).
 
 ## Providers
 
@@ -103,10 +107,18 @@ Each session's verifier registry is built from the registered verifiers. `Sessio
 
 ## Sandbox
 
-`create_sandbox(mode, label=..., require_confined=True)` returns an `ExecutionSandbox`. With `require_confined`, the audit-only opt-out raises `SandboxNotConfined`; the MCP server requires it. A session builds its own sandbox; pass `sandbox_mode` to `Session.open`.
+```python
+from pdl_taskmaster.api import create_sandbox
+
+with create_sandbox("auto", label="my-tool", require_confined=True) as sandbox:
+    run = sandbox.run_code("print(6 * 7)")
+print(run.success, run.exit_code, run.stdout)  # True 0 42
+```
+
+`create_sandbox(mode, label=..., require_confined=False)` returns an `ExecutionSandbox` ([Sandbox guide](SANDBOX.md)). The modes are `auto` (the host's native backend), `native`, `container` and `audit-only`. With `require_confined`, the audit-only opt-out raises `SandboxNotConfined`; the MCP server requires it. When confinement cannot apply, `run_code` runs nothing and returns a result whose `error` starts with `sandbox_unavailable:`; in a session that becomes the `SANDBOX_UNAVAILABLE` finding, which is never repaired. A session builds its own sandbox; pass `sandbox_mode` to `Session.open`.
 
 ## What is not an extension point
 
 - **The core:** the stages, review gates and execution modes (`no_review`, standing confirmation), and the workspace structure.
-- **Interfaces** (REPL, headless, MCP, and any future one) are clients of `Session`, not extensions. Each must pass the interface conformance suite (`tests/test_interface_conformance.py`): the same scenarios, ending in the same state, with the same exit statuses and the same provenance served.
+- **Interfaces** (REPL, headless, MCP, and any future one) are clients of `pdl_taskmaster.api`, not extensions. The ones that run sessions (`Session`, the REPL, headless) must pass the interface conformance suite (`tests/test_interface_conformance.py`): the same scenarios, ending in the same state, with the same exit statuses and the same provenance. The MCP server runs no session; the suite checks that it serves the same provenance.
 - **The Python API** is v0 and unversioned. Profiles carry versions; the API does not.

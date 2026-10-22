@@ -82,7 +82,7 @@ What comes back depends on the request:
 
 ## Headless runs
 
-Headless mode never asks a question. It reads lines from standard input, treats each as a message, and exits when the input ends. The exit code is the outcome of the last task.
+Headless mode never asks a question. It reads lines from standard input, treats each as a message, and exits when the input ends. The exit code is the outcome of the last task: an earlier task that was cancelled does not change it. A harness or provider error ends the run at once (exit 4), and so does a pause the input does not answer (a review gate, exit 2; a request for input, exit 3). When each task must pass on its own, run one task per process.
 
 **One task from a pipe:**
 
@@ -128,7 +128,7 @@ printf '%s\n' "Count the primes below 1000 and print the count." /confirm /confi
 
 | Code | Meaning | What to do |
 |---|---|---|
-| 0 | Closed with a result the host established or contract-checked (`CLOSED_SUCCESS`); a direct reply; or a published boundary refusal | Nothing |
+| 0 | Closed with a result the host established or contract-checked (`CLOSED_SUCCESS`); a direct reply; or a published boundary refusal | Nothing, unless the result must be verified: then check its provenance (below) |
 | 1 | Cancelled, or failed closed after its repairs (`CLOSED_CANCELLED`) | Read the transcript for the findings |
 | 2 | Stopped at a review gate, or at another non-terminal stage | Pipe `/confirm` lines, or run without `--review` |
 | 3 | Waiting for input the task needs (`WAITING_INPUT`) | Supply it in a follow-up message |
@@ -137,6 +137,37 @@ printf '%s\n' "Count the primes below 1000 and print the count." /confirm /confi
 | 130 | Interrupted (Ctrl+C) | Nothing |
 
 A headless run that ends anywhere but `CLOSED_SUCCESS` also prints a `[headless halt]` or `[headless close]` line on standard error naming the stage.
+
+### Check the verification level in CI
+
+Exit 0 also covers a result that passed only the contract checks, a direct reply and a refusal. A CI step that needs more checks the published result's `provenance.json` as well: its `verification.level` is `host_verified`, `contract_checked` or `unverified`, and a direct reply or a refusal publishes none. Run one task per process in a fresh `--workspace-root`, so the folder holds that task's provenance only. These steps require `host_verified`; use the level your step needs.
+
+bash:
+
+```bash
+root=$(mktemp -d)
+printf '%s\n' "Count the primes below 1000 and print the count." | pdlt --non-interactive --new-session --workspace-root "$root"
+code=$?
+[ "$code" -eq 0 ] || exit "$code"
+prov=$(find "$root" -name provenance.json | head -n 1)
+[ -n "$prov" ] || { echo "no published result (a direct reply or a refusal)" >&2; exit 1; }
+level=$(python -c "import json, sys; print(json.load(open(sys.argv[1], encoding='utf-8'))['verification']['level'])" "$prov")
+[ "$level" = host_verified ] || { echo "not host-verified: $level" >&2; exit 1; }
+```
+
+PowerShell:
+
+```powershell
+$root = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid())
+"Count the primes below 1000 and print the count." | pdlt --non-interactive --new-session --workspace-root $root
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+$prov = Get-ChildItem $root -Recurse -Filter provenance.json | Select-Object -First 1
+if (-not $prov) { Write-Error "no published result (a direct reply or a refusal)"; exit 1 }
+$level = (Get-Content $prov.FullName -Raw -Encoding utf8 | ConvertFrom-Json).verification.level
+if ($level -ne "host_verified") { Write-Error "not host-verified: $level"; exit 1 }
+```
+
+From Python, the same level is `result.provenance["verification"]["level"]` ([Python API](api.md)).
 
 ## Frequently used flags
 
@@ -150,7 +181,7 @@ A headless run that ends anywhere but `CLOSED_SUCCESS` also prints a `[headless 
 | `--exit-on-close` | Exit as soon as a task closes, without waiting for more input |
 | `--model NAME` | The task model (any OpenRouter model id) |
 | `--review`, `--fast`, `--no-review` | Review mode (above) |
-| `--sandbox auto\|native\|container\|audit-only` | Program confinement; `audit-only` turns the OS sandbox off and prints a warning ([Sandbox guide](SANDBOX.md)) |
+| `--sandbox auto\|native\|container\|audit-only` | Program confinement; `audit-only` turns the OS sandbox off and prints a warning; there is no `off` ([Sandbox guide](SANDBOX.md)) |
 | `--task-type NAME` | Pin a registered task type instead of letting System 1 classify each request ([Extensions SDK](extensions.md)) |
 | `--max-repairs N` | Repair attempts after a failed check; `0` stops at the first failure |
 | `--no-tier-d1` | Do not feed sandbox failures back to the model as repairs |
@@ -159,6 +190,12 @@ A headless run that ends anywhere but `CLOSED_SUCCESS` also prints a `[headless 
 | `--workspace-root PATH` | Where sessions are kept (default below) |
 | `--transcript PATH` | Where the transcript is written |
 | `--dev` | Developer mode: per-call telemetry |
+| `--agent-tools` | In-call tools inside model operations: `run_python` and `read_attempt` on EXECUTE_UNCONFIRMED, and checked submissions ([MCP and in-call tools](mcp/EXTERNAL_TOOLS.md)) |
+| `--draft-execute` | Draft a typed execution brief before EXECUTE on tasks that are or need an algorithm or a calculation |
+| `--no-api-structured-output` (alias `--no-structured-output`) | Send no output-format constraint to the provider. On by default: each operation gets a JSON schema or JSON mode, as the API worker chooses |
+| `--api-reasoning-operation OP=EFFORT`, `--api-model-operation OP=MODEL` | Reasoning effort or model for one operation; repeatable |
+| `--max-output-tokens N` | Output-token cap per call, reasoning included (default 16384) |
+| `--worker-timeout SECONDS` | Worker timeout (default 600) |
 
 Two subcommands sit beside the REPL: `pdlt version` prints the version, and `pdlt init` seeds the operation contracts into `~/.pdlt` (`--local` for `./contracts`), which you only need to customise them.
 

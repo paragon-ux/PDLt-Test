@@ -2,13 +2,14 @@
 
 **A protocol harness for verified, auditable model execution: a Python library first, with an extensions SDK, an interactive REPL, a headless CLI and an MCP server on top.**
 
+[![PyPI](https://img.shields.io/pypi/v/pdl-taskmaster.svg)](https://pypi.org/project/pdl-taskmaster/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/paragon-ux/PDLt-Test/blob/main/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-Zensical-purple.svg)](https://paragon-ux.github.io/PDLt-Test/)
 [![Python](https://img.shields.io/badge/python-3.10%20--%203.14-blue.svg)](https://github.com/paragon-ux/PDLt-Test/blob/main/pyproject.toml)
 
 PDLt sits between a request and a model.
 - **Interpretation:** the model restates the request as short pseudocode. In review mode, the run stops for your confirmation before anything executes.
-- **Sandboxing:** programs the model writes run under the operating system's own confinement (AppContainer on Windows, Landlock on Linux, Seatbelt on macOS). Without it, no program runs.
+- **Sandboxing:** programs the model writes run under the operating system's own confinement (AppContainer on Windows, Landlock on Linux, Seatbelt on macOS), or in a Docker or Podman container you opt into. Without it, no program runs; the one opt-out, `--sandbox audit-only`, says so loudly ([Sandbox guide](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/SANDBOX.md)).
 - **Checking:** the host checks every reply against its contract and runs the programs itself.
 - **Provenance:** every published result says what it rests on: `host_verified`, `contract_checked` or `unverified`.
 
@@ -24,7 +25,7 @@ The harness is a referee, never a solver: it adds no hints, keyword gates or fab
 | **Automate (CI, scripts)** | Headless: `pdlt --non-interactive`, with exit codes | [Headless runs](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/repl.md#headless-runs) |
 | **Use PDLt from another agent** | MCP server: `python -m pdl_taskmaster.host.mcp_server` | [MCP server](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/mcp/EXTERNAL_TOOLS.md) |
 
-All of them go through the same library layer, and one conformance suite (`tests/test_interface_conformance.py`) checks that they agree on sessions, reviews, exit codes and provenance.
+All of them go through the same library layer. One conformance suite (`tests/test_interface_conformance.py`) checks that `Session`, the REPL and headless runs agree on sessions, reviews, exit codes and provenance, and that the MCP server serves the same provenance.
 
 ## Install
 
@@ -59,7 +60,7 @@ with Session.open(worker, "pdlt-sessions/demo", no_review=True) as session:
         print(result.provenance["verification"]["level"])
 ```
 
-`Session.open` defaults to the review route (`no_review=False`): `send` then stops at the prompt review, and `confirm()` moves on, or `run(message, confirm=True)` accepts each review for you. [docs/api.md](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/api.md) covers results, exit codes, providers, run settings, closed sessions and the sandbox.
+`Session.open` defaults to the review route (`no_review=False`): `send` then stops at the prompt review, and `confirm()` moves on, or `run(message, confirm=True)` accepts each review for you. **`pdlt` defaults the other way**, to no review (ledger L94), so a script moved between the two should name its route (`no_review=True`, or `pdlt --review`). [docs/api.md](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/api.md) covers results, exit codes, providers, run settings, closed sessions and the sandbox.
 
 ## Extensions SDK
 
@@ -113,9 +114,9 @@ echo $?
 | 5 | Published, but not established by the host (`CLOSED_UNVERIFIED`) |
 | 130 | Interrupted |
 
-The PowerShell form and file input are in [docs/repl.md](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/repl.md#headless-runs).
+Exit 0 is not by itself a verification: it also covers a result that passed only the contract checks, a direct reply and a refusal. When a CI step needs a verified result, check the provenance level too ([CI recipe](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/repl.md#check-the-verification-level-in-ci)). The PowerShell form and file input are in [docs/repl.md](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/repl.md#headless-runs).
 
-**The MCP server** (`python -m pdl_taskmaster.host.mcp_server`, stdio) lets another agent run programs in PDLt's sandbox, have a deliverable checked, and read closed sessions' results with their provenance. Client configuration for each host is on the host pages; tools and resources are in [docs/mcp/EXTERNAL_TOOLS.md](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/mcp/EXTERNAL_TOOLS.md).
+**The MCP server** (`python -m pdl_taskmaster.host.mcp_server`, stdio) lets another agent run programs in PDLt's sandbox, have a deliverable checked, and read closed sessions' results with their provenance. It is a narrow service, not a remote session: it runs no PDLt session, and nothing verifies an accepted submission afterwards. One server process is one MCP session with its own budgets. Client configuration for each host is on the host pages; tools and resources are in [docs/mcp/EXTERNAL_TOOLS.md](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/mcp/EXTERNAL_TOOLS.md).
 
 ## Repository map
 

@@ -1163,7 +1163,7 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="no_review",
         action="store_true",
         help="No-review mode (the default): run through the governor in 2 task-model calls without review gates "
-        "(ADR-0029). The interpretation is presented as unconfirmed. Toggle in the REPL with /no-review [on|off]",
+        "(ledger L94). The interpretation is presented as unconfirmed. Toggle in the REPL with /no-review [on|off]",
     )
     parser.add_argument(
         "--review",
@@ -1310,7 +1310,7 @@ def main() -> int:
     if fast_mode:
         _write_transcript("FAST MODE: ON")
     if no_review:
-        _write_transcript("NO-REVIEW MODE: ON (ADR-0029 ultrafast route)")
+        _write_transcript("NO-REVIEW MODE: ON (ultrafast route, ledger L94)")
     reasoning = _reasoning_record(worker)
     if reasoning:
         # The effective effort per operation, so drift from the catalogue's
@@ -1502,7 +1502,7 @@ def main() -> int:
                     "/status -> read-only host state\n"
                     "/session -> current session directory\n"
                     "/fast [on|off] -> fast mode: accept reviews without findings on your advance confirmation\n"
-                    "/no-review [on|off] -> no-review mode: execute without confirmation gates (ADR-0029)\n"
+                    "/no-review [on|off] -> no-review mode: execute without confirmation gates (ledger L94)\n"
                     "/tokens [on|off] -> toggle token telemetry\n"
                     "/timeout [seconds] -> show/set worker timeout\n"
                     "/model [name] -> show/set worker model\n"
