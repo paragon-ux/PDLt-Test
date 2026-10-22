@@ -192,6 +192,7 @@ From Python, the same level is `result.provenance["verification"]["level"]` ([Py
 | `--dev` | Developer mode: per-call telemetry |
 | `--agent-tools` | In-call tools inside model operations: `run_python` and `read_attempt` on EXECUTE_UNCONFIRMED, and checked submissions ([MCP and in-call tools](mcp/EXTERNAL_TOOLS.md)) |
 | `--agent-tools-exclude TOOL[,TOOL]` | With `--agent-tools`, withhold the named tools, for an ablation. A withheld submission tool means the operation answers in its message, and the host checks the reply after the call; an operation with every tool withheld makes a plain call |
+| `--stop-on-preconclusive-notes` | Test runs (L147): on the unconfirmed route, System 1 judges each attempt's working notes; when it finds them stating the result before the deliverable (UNC-03), the session stops fail-closed (`CLOSED_CANCELLED`, exit 1) and the deliverable is not published. Without the flag the decision is only recorded (`WORKING_NOTES_CONCLUSION`). The catalogue runner sets it, and its run halts entirely at the first such stop (exit 6, `HALTED.md`) |
 | `--draft-execute` | Draft a typed execution brief before EXECUTE on tasks that are or need an algorithm or a calculation |
 | `--no-api-structured-output` (alias `--no-structured-output`) | Send no output-format constraint to the provider. On by default: each operation gets a JSON schema or JSON mode, as the API worker chooses |
 | `--api-reasoning-operation OP=EFFORT`, `--api-model-operation OP=MODEL` | Reasoning effort or model for one operation; repeatable |

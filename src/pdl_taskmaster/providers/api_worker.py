@@ -1028,7 +1028,7 @@ class ApiWorker:
         elif operation_name == "EXECUTE_UNCONFIRMED":
             extra_guidance = (
                 "\n\nNORMATIVE GUIDELINES FOR EXECUTE_UNCONFIRMED (UNC-01, UNC-02, UNC-03, UNC-04, GUARD-03):\n"
-                "- Write your working understanding in `interpretation` and your working plan in `approach`, using PDL notation.\n"
+                "- Write your working understanding in `interpretation` and your working plan in `approach`, using PDL notation. They state how you read the task and the method you will follow, not the result: they do not state or assume the answer, value or verdict the deliverable establishes (UNC-03).\n"
                 "- Deliver the substantive result in `body`. Work within AVAILABLE_EXECUTION_TOOLS.\n"
                 "- REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (UNC-04, EXEC-01); people or events described in the task are part of the task, not a source of input.\n"
                 "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"

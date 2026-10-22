@@ -168,8 +168,8 @@
    },
    {
     "operation": "EXECUTE_UNCONFIRMED",
-    "prompt": "009a223a26ac7e5e",
-    "manifest": "89d3b03ba1f1d35f"
+    "prompt": "ac6b1465597b55b5",
+    "manifest": "0bb64f7c49722523"
    }
   ],
   "sys1": [
@@ -184,6 +184,10 @@
    {
     "question": "execution_profile",
     "request": "5327269c3c87b90d"
+   },
+   {
+    "question": "no_conclusion",
+    "request": "d1f60a6c634c779d"
    },
    {
     "question": "execution_profile",
@@ -209,6 +213,7 @@
    "PROTOCOL_BOUND",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
+   "WORKING_NOTES_CONCLUSION",
    "PLAN_PROFILE_ROUTED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
@@ -755,8 +760,8 @@
    },
    {
     "operation": "EXECUTE_UNCONFIRMED",
-    "prompt": "f938af74b3e0c858",
-    "manifest": "b79a9ea82e8238b0"
+    "prompt": "a3c043b4d56561b4",
+    "manifest": "e2f5b24051452b13"
    }
   ],
   "sys1": [
@@ -771,6 +776,10 @@
    {
     "question": "execution_profile",
     "request": "5327269c3c87b90d"
+   },
+   {
+    "question": "no_conclusion",
+    "request": "d1f60a6c634c779d"
    },
    {
     "question": "execution_profile",
@@ -799,6 +808,7 @@
    "EXECUTION_BRIEF_DRAFTED",
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
+   "WORKING_NOTES_CONCLUSION",
    "SANDBOX_SESSION",
    "SANDBOX_RUN",
    "RESULT_IR_CITATION_FINDINGS",

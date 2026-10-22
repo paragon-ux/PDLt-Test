@@ -24,6 +24,7 @@ class RunSettings:
     no_review: bool = False  # the unconfirmed route: no prompt or plan review
     sandbox_mode: str | None = None  # None: $PDLT_SANDBOX, else auto; the sandbox resolves and announces it
     task_type: str | None = None  # a registered task type pinned for every request; None: System 1 classifies
+    stop_on_preconclusive_notes: bool = False  # test runs: stop at pre-conclusive working notes (L147)
 
     def __post_init__(self) -> None:
         problems = []
@@ -39,7 +40,7 @@ class RunSettings:
             parse_exclusions(self.agent_tools_exclude)
         except (ValueError, TypeError) as exc:
             problems.append(f"agent_tools_exclude: {exc}")
-        for name in ("draft_execute", "agent_tools", "no_review"):
+        for name in ("draft_execute", "agent_tools", "no_review", "stop_on_preconclusive_notes"):
             if not isinstance(getattr(self, name), bool):
                 problems.append(f"{name}: a bool, got {getattr(self, name)!r}")
         if problems:
@@ -69,6 +70,7 @@ class RunSettings:
         if self.tier_d1 is not None:
             engine.tier_d1 = self.tier_d1
         engine.pinned_task_type = self.task_type
+        engine.stop_on_preconclusive_notes = self.stop_on_preconclusive_notes
 
     def as_dict(self) -> dict[str, Any]:
         return {f.name: getattr(self, f.name) for f in fields(self)}

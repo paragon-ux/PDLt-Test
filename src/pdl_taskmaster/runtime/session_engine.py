@@ -477,6 +477,9 @@ class SessionEngine:
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
         self.agent_tools = False  # ADR-0029: in-call tools and checked submissions (--agent-tools)
         self.agent_tools_exclude: frozenset[str] = frozenset()  # L145: tools withheld (--agent-tools-exclude)
+        # L147: a test run stops at working notes System 1 judges pre-conclusive (--stop-on-preconclusive-notes)
+        self.stop_on_preconclusive_notes = False
+        self._notes_stop: dict[str, Any] | None = None
         self._last_unconfirmed_body: str | None = None
         self._unconfirmed_attempts = 0
         self.representation = PDL  # the confirmed route's artifacts: PDL, or prose in the L97 pilot
@@ -1726,6 +1729,47 @@ class SessionEngine:
         self.workspace.append_event("PLAN_ADVANCEMENT", decision)
         return decision["verdict"], list(decision["failed_checks"])
 
+    def _judge_working_notes(
+        self, source_request: str, interpretation: str | None, approach: str | None
+    ) -> dict[str, Any]:
+        """One WorkingNotesRecipe decision on an unconfirmed attempt's notes (L147, UNC-03), recorded as an event.
+        System 1 absent, failing or below its floor yields no verdict (UNCERTAIN is recorded and acted on by
+        nothing)."""
+        from pdl_taskmaster.providers.sys1.recipes.working_notes import WorkingNotesRecipe
+
+        assert self.workspace is not None
+        decision: dict[str, Any] = {
+            "attempt": self._unconfirmed_attempts,
+            "verdict": None,
+            "confidence": None,
+            "margin": None,
+            "entropy": None,
+            "channels": {},
+            "fallback": "sys1_unavailable",
+        }
+        if self.sys1_client is not None and self.sys1_client.is_configured:
+            recipe = WorkingNotesRecipe()
+            try:
+                body, duration_ms = self.sys1_client.call(recipe.build_request({
+                    "source_request": source_request,
+                    "interpretation": interpretation or "",
+                    "approach": approach or "",
+                }))
+                result = recipe.parse_response(body, duration_ms=duration_ms)
+                wire = recipe.map_to_wire(result)
+                decision.update(
+                    verdict=wire["verdict"],
+                    channels=wire.get("channels", {}),
+                    confidence=round(result.confidence, 4),
+                    margin=round(result.margin, 4),
+                    entropy=round(result.entropy, 4),
+                    fallback=None if result.passed_gating else "below_floor",
+                )
+            except Exception as exc:
+                decision["fallback"] = f"sys1_error:{type(exc).__name__}"
+        self.workspace.append_event("WORKING_NOTES_CONCLUSION", decision)
+        return decision
+
     def _residual_lint_note(self, body: str, artifact: str, operation: str) -> str | None:
         """After the one redraft: a body that still fails the lint is published
         unchanged (AUTH-05, no host rewrite) with a factual note at the review
@@ -2303,10 +2347,13 @@ class SessionEngine:
         unmeasured_repairs = 0
         self._last_unconfirmed_body = None
         self._unconfirmed_attempts = 0
+        self._notes_stop = None
 
         outcome, errors, final_body, ran_program = self._execute_unconfirmed_attempt(
             execute_context, traces, sanitized, requirements, result_ir_mode,
         )
+        if self._notes_stop is not None:
+            return self._stop_on_preconclusive_notes(outcome, traces)
 
         if outcome.kind == "RESULT" and getattr(outcome, "approach", None):
             self._route_plan_profile(sanitized, outcome.approach)
@@ -2328,6 +2375,8 @@ class SessionEngine:
                 execute_context, traces, sanitized, requirements, result_ir_mode,
                 correction=correction,
             )
+            if self._notes_stop is not None:
+                return self._stop_on_preconclusive_notes(outcome, traces)
             if outcome.kind == "RESULT" and getattr(outcome, "approach", None):
                 self._route_plan_profile(sanitized, outcome.approach)
                 execute_context["AVAILABLE_EXECUTION_TOOLS"] = self.available_execution_tools
@@ -2387,6 +2436,23 @@ class SessionEngine:
         published_text = f"{final_body}\n\n{notes}" if notes else final_body
         return EngineResponse(published_text, traces, closed=True)
 
+    def _stop_on_preconclusive_notes(self, outcome: Any, traces: list[CallTrace]) -> EngineResponse:
+        """L147: a test run stops fail-closed at the first attempt whose working notes System 1 judges
+        pre-conclusive (UNC-03). The deliverable is withheld from publication and kept in the outcome record."""
+        assert self.controller is not None and self.workspace is not None
+        self.controller.cancel()
+        if self.workspace.turn_id is not None:
+            self.workspace.mark_turn_status("CLOSED_CANCELLED")
+        text = ("The run stopped: System 1 judged that the working notes state the result before the deliverable "
+                "(UNC-03). A test run stops here (L147), and the deliverable is not published.")
+        self.workspace.publish_execution_outcome("NOTES_PRECONCLUSIVE", text, {
+            "decision": self._notes_stop,
+            "interpretation": getattr(outcome, "interpretation", None),
+            "approach": getattr(outcome, "approach", None),
+            "withheld_body": getattr(outcome, "body", None),
+        })
+        return EngineResponse(text, traces, closed=True)
+
     def _execute_unconfirmed_attempt(
         self,
         execute_context: dict[str, Any],
@@ -2428,6 +2494,11 @@ class SessionEngine:
         if outcome.kind != "RESULT":
             return outcome, [], outcome.body, False
         self._last_unconfirmed_body = outcome.body
+
+        notes_decision = self._judge_working_notes(sanitized_source, outcome.interpretation, outcome.approach)
+        if notes_decision["verdict"] == "PRE_CONCLUSIVE" and self.stop_on_preconclusive_notes:
+            self._notes_stop = notes_decision
+            return outcome, [], outcome.body, False
 
         missing_entities = self._entity_coverage_missing(outcome.interpretation or "", self._active_task_entities)
         if missing_entities and self.workspace is not None:

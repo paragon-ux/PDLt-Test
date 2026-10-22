@@ -390,6 +390,7 @@ def _run_settings(args, worker):
     return RunSettings(max_repairs=run["max_repairs"], draft_execute=run["draft_execute"],
                        agent_tools=run["agent_tools"], representation=run["representation"], tier_d1=run["tier_d1"],
                        agent_tools_exclude=tuple(sorted(getattr(args, "agent_tools_exclude", None) or ())),
+                       stop_on_preconclusive_notes=bool(getattr(args, "stop_on_preconclusive_notes", False)),
                        **session)
 
 
@@ -1003,6 +1004,13 @@ def _build_parser() -> argparse.ArgumentParser:
         help="with --agent-tools, withhold these tools for an ablation (L145): read_attempt, run_python, "
         "submit_execute_unconfirmed, submit_bootstrap_analysis, submit_draft_prompt, submit_draft_plan. A withheld "
         "submission tool means that operation answers in its message, checked by the host after the call",
+    )
+    parser.add_argument(
+        "--stop-on-preconclusive-notes",
+        action="store_true",
+        help="test runs (L147): on the unconfirmed route, stop fail-closed when System 1 judges an attempt's "
+        "working notes (interpretation, approach) to state the result before the deliverable (UNC-03); the "
+        "catalogue runner sets it. Otherwise the decision is only recorded",
     )
     parser.add_argument(
         "--draft-execute",
