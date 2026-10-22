@@ -50,9 +50,12 @@ ABLATE_ENTITIES_MODE = "ablate_entities"  # no TASK_ENTITIES (the bootstrap's ex
 # L151 step 2 (the user, 2026-10-22): the reply in headed plain-text sections instead of a JSON object; the host
 # converts it to the outcome object before validation. Only the answer's format changes, not what is asked.
 ABLATE_FREETEXT_MODE = "ablate_freetext"
+# L151 step 3 (the user, 2026-10-22): the input as indented plain text instead of a JSON document, every value kept,
+# and without the worker-role lines. Only the input's form changes, not its content.
+ABLATE_PLAININPUT_MODE = "ablate_plaininput"
 ABLATIONS = {"normative": ABLATE_NORMATIVE_MODE, "framing": ABLATE_FRAMING_MODE,
              "notation": ABLATE_NOTATION_MODE, "order": ABLATE_ORDER_MODE, "entities": ABLATE_ENTITIES_MODE,
-             "freetext": ABLATE_FREETEXT_MODE}
+             "freetext": ABLATE_FREETEXT_MODE, "plaininput": ABLATE_PLAININPUT_MODE}
 _NOTES_FIELDS = ("interpretation", "approach")
 _PDL_NOTES = "in PDL pseudocode notation"
 _NO_MODES: frozenset[str] = frozenset()

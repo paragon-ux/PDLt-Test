@@ -24,6 +24,7 @@ from pdl_taskmaster.runtime.output_contracts import (
     ABLATE_NORMATIVE_MODE,
     ABLATE_NOTATION_MODE,
     ABLATE_ORDER_MODE,
+    ABLATE_PLAININPUT_MODE,
     NL_REPRESENTATION_MODE,
     RESULT_IR_MODE,
     UNION_WRAPPER,
@@ -103,6 +104,59 @@ def _freetext_call(request: Any) -> bool:
     if ABLATE_FREETEXT_MODE in modes and RESULT_IR_MODE in modes:
         raise ValueError("ablate_freetext: the result IR is a structured field and has no plain-text section")
     return ABLATE_FREETEXT_MODE in modes
+
+
+# The worker instructions' role lines, left out under the plaininput part (L151 step 3).
+_BOOTSTRAP_ROLE_LINES = ("You are a stateless operation worker.\n"
+                         "The supplied projection is the complete invocation for this call.\n")
+
+
+def _plaininput_call(request: Any) -> bool:
+    """Whether this call is an EXECUTE_UNCONFIRMED call under the L151 plaininput part (a measurement)."""
+    return getattr(request, "operation", None) == "EXECUTE_UNCONFIRMED" and ABLATE_PLAININPUT_MODE in _modes(request)
+
+
+def _plain_scalar(prefix: str, value: Any, continuation: str) -> list[str]:
+    if isinstance(value, str):
+        text = value
+    elif value is None:
+        text = "none"
+    elif isinstance(value, bool):
+        text = "true" if value else "false"
+    elif isinstance(value, (dict, list)):
+        text = "(empty)"
+    else:
+        text = str(value)
+    first, *rest = text.split("\n")
+    return [prefix + first] + [continuation + line for line in rest]
+
+
+def _plain_lines(value: Any, indent: int) -> list[str]:
+    pad = "  " * indent
+    lines: list[str] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if isinstance(item, (dict, list)) and item:
+                lines.append(f"{pad}{key}:")
+                lines += _plain_lines(item, indent + 1)
+            else:
+                lines += _plain_scalar(f"{pad}{key}: ", item, pad + "  ")
+    elif isinstance(value, list):
+        for item in value:
+            if isinstance(item, (dict, list)) and item:
+                nested = _plain_lines(item, indent + 1)
+                lines += [pad + "- " + nested[0].lstrip()] + nested[1:]
+            else:
+                lines += _plain_scalar(f"{pad}- ", item, pad + "  ")
+    else:
+        lines += _plain_scalar(pad, value, pad)
+    return lines
+
+
+def plain_document(document_json: str) -> str:
+    """The projection document as indented plain text (L151 step 3): every key and every value, in the document's
+    order; lists as '- ' items; multi-line strings continue on indented lines. Nothing is added or left out."""
+    return "\n".join(_plain_lines(json.loads(document_json), 0))
 
 
 def _freetext_heading(line: str) -> tuple[str, str] | None:
@@ -1111,6 +1165,12 @@ class ApiWorker:
         instructions, input_text = self._split_prompt(request.prompt)
         if self.reorder_keys_for_cache:
             input_text = self._reorder_for_cache(input_text.lstrip())
+        if _plaininput_call(request):
+            # L151 step 3, a measurement: the same content as plain text, without the worker-role lines.
+            if _BOOTSTRAP_ROLE_LINES not in instructions:
+                raise ValueError("ablate_plaininput: the worker instructions no longer carry the role lines")
+            instructions = instructions.replace(_BOOTSTRAP_ROLE_LINES, "")
+            input_text = plain_document(input_text)
         freetext = _freetext_call(request)
         if freetext:
             # L151 step 2, a measurement: the same call with every JSON-format instruction replaced or left out.
@@ -1324,8 +1384,9 @@ class ApiWorker:
         body, union_wrapped, effort = self.build_request_body(request)
         freetext = _freetext_call(request)
         if self.agent_tools and getattr(request, "tools", None) is not None:
-            if freetext:
-                raise ValueError("ablate_freetext: the tool loop ends in a JSON submission; run it without agent tools")
+            if freetext or _plaininput_call(request):
+                raise ValueError("ablate_freetext, ablate_plaininput: the tool loop reads and ends in JSON; run them "
+                                 "without agent tools")
             return self._tool_loop_call(request, body, union_wrapped, effort)
 
         api_key = self._resolve_api_key()
