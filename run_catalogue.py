@@ -377,6 +377,8 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
         setting_args.append("--draft-execute")
     if settings.get("agent_tools"):
         setting_args.append("--agent-tools")
+        if settings.get("agent_tools_exclude"):
+            setting_args += ["--agent-tools-exclude", ",".join(settings["agent_tools_exclude"])]
     if settings.get("representation", "pdl") != "pdl":
         setting_args += ["--representation", settings["representation"]]
     if settings.get("route") != "control" and settings.get("tier_d1") is not None:
@@ -1022,6 +1024,8 @@ def main():
     parser.add_argument("--agent-tools", action="store_true",
                         help="ADR-0029: checked submissions on BOOTSTRAP_ANALYSIS, DRAFT_PROMPT, DRAFT_PLAN and "
                              "EXECUTE_UNCONFIRMED, and in-call tools on EXECUTE_UNCONFIRMED; default off")
+    parser.add_argument("--agent-tools-exclude", default=None, metavar="TOOL[,TOOL]",
+                        help="with --agent-tools, withhold these tools (an ablation, L145); passed to the harness")
     parser.add_argument("--draft-execute", action="store_true",
                         help="run DRAFT_EXECUTE (a typed execution brief) before EXECUTE on tasks that are or need an algorithm or a calculation (A/B option)")
     parser.add_argument("--representation", choices=["pdl", "nl"], default="pdl",
@@ -1074,10 +1078,21 @@ def main():
         parser.error("--repeat must be at least 1")
     if args.representation != "pdl" and args.route != "confirmed":
         parser.error("--representation applies to the confirmed route's artifacts; use --route confirmed")
+    excluded: list[str] = []
+    if args.agent_tools_exclude is not None:
+        from pdl_taskmaster.runtime.agent_tools import parse_exclusions
+
+        if not args.agent_tools:
+            parser.error("--agent-tools-exclude applies with --agent-tools")
+        try:
+            excluded = sorted(parse_exclusions(args.agent_tools_exclude))
+        except ValueError as exc:
+            parser.error(str(exc))
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
                     "providers": args.providers, "draft_execute": args.draft_execute,
-                    "agent_tools": args.agent_tools, "representation": args.representation,
+                    "agent_tools": args.agent_tools, "agent_tools_exclude": excluded or None,
+                    "representation": args.representation,
                     "tier_d1": args.tier_d1 and args.route != "control",  # what the child will run with
                     # likewise: Control sends no output format, whatever the option says
                     "structured_output": args.api_structured_output and args.route != "control",
@@ -1123,6 +1138,8 @@ def main():
         route_tag += "-draft-execute"
     if args.agent_tools:
         route_tag += "-agent-tools"
+    for name in excluded:
+        route_tag += f"-no-{name.replace('_', '-')}"
     if args.representation != "pdl":
         route_tag += f"-{args.representation}"
     if run_settings["tier_d1"]:
@@ -1158,6 +1175,7 @@ def main():
             "exit_on_close": True,
             "dev_mode": True,
             "structured_output": run_settings["structured_output"],  # the effective value (Control: false)
+            "agent_tools_exclude": excluded,
             "gate_policy": "evaluator_confirms_via_stdin",
         },
     }

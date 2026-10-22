@@ -31,7 +31,8 @@ def outcome(body: str) -> dict:
             "result_ir": IR}
 
 
-def _engine(tmp_path: Path, execute, *, agent_tools_on: bool, problem_class: str = "VERIFIED_EXECUTION"):
+def _engine(tmp_path: Path, execute, *, agent_tools_on: bool, problem_class: str = "VERIFIED_EXECUTION",
+            exclude: str | None = None):
     requests: list = []
 
     def model_call(req):
@@ -44,6 +45,7 @@ def _engine(tmp_path: Path, execute, *, agent_tools_on: bool, problem_class: str
 
     engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=Sys1(problem_class), no_review=True)
     engine.agent_tools = agent_tools_on
+    engine.agent_tools_exclude = agent_tools.parse_exclusions(exclude)
     response = engine.handle_user_message("Count the subsets of 1..10 that sum to 20.")
     return engine, response, requests, list(engine.workspace.read_events())
 

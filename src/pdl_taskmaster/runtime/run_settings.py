@@ -18,6 +18,7 @@ class RunSettings:
     max_repairs: int | None = None  # None: the routed tier's repairs; 0: stop at the first failed EXECUTE
     draft_execute: bool = False  # DRAFT_EXECUTE brief before EXECUTE (ADR-0013 P6)
     agent_tools: bool = False  # in-call tools and checked submissions (ADR-0029)
+    agent_tools_exclude: tuple[str, ...] = ()  # tools withheld from agent_tools, for ablations (L145)
     representation: str = "pdl"  # the confirmed route's artifacts: "pdl", or natural language "nl" (L97)
     tier_d1: bool | None = None  # feed back the model's own test failures in standard mode; None: the engine's default
     no_review: bool = False  # the unconfirmed route: no prompt or plan review
@@ -32,6 +33,12 @@ class RunSettings:
             problems.append(f"representation: one of {list(REPRESENTATIONS)}, got {self.representation!r}")
         if self.sandbox_mode is not None and not isinstance(self.sandbox_mode, str):
             problems.append(f"sandbox_mode: None or a mode name, got {self.sandbox_mode!r}")
+        try:
+            from pdl_taskmaster.runtime.agent_tools import parse_exclusions
+
+            parse_exclusions(self.agent_tools_exclude)
+        except (ValueError, TypeError) as exc:
+            problems.append(f"agent_tools_exclude: {exc}")
         for name in ("draft_execute", "agent_tools", "no_review"):
             if not isinstance(getattr(self, name), bool):
                 problems.append(f"{name}: a bool, got {getattr(self, name)!r}")
@@ -55,6 +62,9 @@ class RunSettings:
         engine.max_repairs = self.max_repairs
         engine.draft_execute = self.draft_execute
         engine.agent_tools = self.agent_tools
+        from pdl_taskmaster.runtime.agent_tools import parse_exclusions
+
+        engine.agent_tools_exclude = parse_exclusions(self.agent_tools_exclude)
         engine.representation = self.representation
         if self.tier_d1 is not None:
             engine.tier_d1 = self.tier_d1

@@ -130,3 +130,23 @@ def test_a_declared_incomplete_outcome_needs_an_attempt_in_the_call_as_after_it(
                              problem_class="VERIFIED_EXECUTION")
     host_rejected = len(executes) > 1 and "this attempt runs no program" in executes[1].prompt
     assert host_rejected is rejected
+
+
+# L145 (L139's third disagreement, decided by the user): requirements declared open whose program the step budget
+# stopped were accepted in the call and returned by the host, which adds the run's failures to a declared-incomplete
+# deliverable's errors. The in-call check now applies the host's rule.
+STOPPED = "i = 0\nwhile True:\n    i += 1\n"
+
+
+def test_a_declared_open_outcome_whose_program_hit_the_step_budget_is_returned_in_the_call_as_after_it(tmp_path):
+    errors, _ = _validator()({**outcome(STOPPED), "result_ir": OPEN})
+    assert _codes(errors) == ["STEP_BUDGET_EXCEEDED"]
+    _, _, executes, _ = _run(tmp_path, [{"kind": "RESULT", "body": STOPPED, "result_ir": OPEN}] * 3,
+                             problem_class="VERIFIED_EXECUTION")
+    assert len(executes) > 1 and "steps without finishing" in executes[1].prompt
+
+
+def test_a_declared_open_outcome_with_a_witness_printed_keeps_the_hosts_waiver():
+    body = _blocks(STOPPED, COMPUTED)
+    errors, _ = _validator()({**outcome(body), "result_ir": OPEN})
+    assert "STEP_BUDGET_EXCEEDED" not in _codes(errors)

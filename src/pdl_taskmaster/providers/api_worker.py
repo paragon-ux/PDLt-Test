@@ -1349,6 +1349,8 @@ class ApiWorker:
             return
         usage = data.get("usage") or {}
         details = data.get("incomplete_details") or {}
+        if data.get("id"):  # L145: every generation of the call (a tool loop has one per round)
+            self.current_call.reply.setdefault("response_ids", []).append(data.get("id"))
         self.current_call.reply.update({
             "response_id": data.get("id"),
             "model": data.get("model"),

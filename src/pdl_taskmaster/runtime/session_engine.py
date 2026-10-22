@@ -476,6 +476,7 @@ class SessionEngine:
         self.max_repairs: int | None = None
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
         self.agent_tools = False  # ADR-0029: in-call tools and checked submissions (--agent-tools)
+        self.agent_tools_exclude: frozenset[str] = frozenset()  # L145: tools withheld (--agent-tools-exclude)
         self._last_unconfirmed_body: str | None = None
         self._unconfirmed_attempts = 0
         self.representation = PDL  # the confirmed route's artifacts: PDL, or prose in the L97 pilot
@@ -769,8 +770,9 @@ class SessionEngine:
         )
         if tools is None and self.agent_tools and operation in _SUBMIT_ONLY_OPERATIONS:
             tools = lambda: self._submit_tool_host(operation)  # noqa: E731
-        if tools is not None:
-            request = dataclasses.replace(request, tools=tools())
+        host = tools() if tools is not None else None
+        if host is not None and host.tool_names():  # L145: a call whose tools are all withheld is a plain call
+            request = dataclasses.replace(request, tools=host)
         try:
             model_text = self._invoke(request, traces)
             return model_text if parser is None else parser(model_text)
@@ -801,8 +803,9 @@ class SessionEngine:
                 operator_correction=correction,
                 modes=modes,
             )
-            if tools is not None:
-                retry_request = dataclasses.replace(retry_request, tools=tools())
+            retry_host = tools() if tools is not None else None
+            if retry_host is not None and retry_host.tool_names():
+                retry_request = dataclasses.replace(retry_request, tools=retry_host)
             try:
                 return parser(self._invoke(retry_request, traces))
             except Exception as retry_error:
@@ -2461,7 +2464,7 @@ class SessionEngine:
             _python_blocks(previous) if previous else [], correction or "",
             agent_tools.make_validator(self.bridge, self.sandbox, budget, witness_required, _python_blocks,
                                        _parse_sandbox_witness, _witness_written_in_program),
-            attempt=self._unconfirmed_attempts, on_record=self._record_tool_call,
+            attempt=self._unconfirmed_attempts, on_record=self._record_tool_call, excluded=self.agent_tools_exclude,
         )
 
     def _submit_tool_host(self, operation: str) -> Any:
@@ -2483,7 +2486,7 @@ class SessionEngine:
             validate = agent_tools.make_lint_validator(
                 self.bridge.parse_plan_body, lambda body: ("neutral_plan_body", body), lint)
         return agent_tools.ToolHost(None, 0, 0.0, 0, [], "", validate, on_record=self._record_tool_call,
-                                    operation=operation)
+                                    operation=operation, excluded=self.agent_tools_exclude)
 
     def _record_tool_call(self, record: dict[str, Any]) -> None:
         from pdl_taskmaster.runtime import agent_tools

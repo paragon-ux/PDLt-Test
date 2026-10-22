@@ -366,6 +366,16 @@ def _provider_settings(args) -> dict:
     return settings
 
 
+def _tool_exclusions(text: str) -> frozenset:
+    """--agent-tools-exclude: the comma-separated tool names, each one of the agent tools."""
+    from pdl_taskmaster.runtime.agent_tools import parse_exclusions
+
+    try:
+        return parse_exclusions(text)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+
+
 def _run_settings(args, worker):
     """The engine's run settings from CLI flags (L124 D7). The flags' run settings reach the API worker's sessions;
     a recorded replay and the codex worker run with the defaults their recordings were made with."""
@@ -379,6 +389,7 @@ def _run_settings(args, worker):
     run = _api_run_settings(args)
     return RunSettings(max_repairs=run["max_repairs"], draft_execute=run["draft_execute"],
                        agent_tools=run["agent_tools"], representation=run["representation"], tier_d1=run["tier_d1"],
+                       agent_tools_exclude=tuple(sorted(getattr(args, "agent_tools_exclude", None) or ())),
                        **session)
 
 
@@ -983,6 +994,15 @@ def _build_parser() -> argparse.ArgumentParser:
         help="ADR-0029: model calls submit replies the host checks before accepting them (BOOTSTRAP_ANALYSIS, "
         "DRAFT_PROMPT, DRAFT_PLAN, EXECUTE_UNCONFIRMED); EXECUTE_UNCONFIRMED may also run Python in the session "
         "sandbox and read the previous attempt (default off; also PDLT_AGENT_TOOLS=1)",
+    )
+    parser.add_argument(
+        "--agent-tools-exclude",
+        type=_tool_exclusions,
+        default=None,
+        metavar="TOOL[,TOOL]",
+        help="with --agent-tools, withhold these tools for an ablation (L145): read_attempt, run_python, "
+        "submit_execute_unconfirmed, submit_bootstrap_analysis, submit_draft_prompt, submit_draft_plan. A withheld "
+        "submission tool means that operation answers in its message, checked by the host after the call",
     )
     parser.add_argument(
         "--draft-execute",
