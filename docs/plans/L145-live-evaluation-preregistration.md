@@ -39,7 +39,8 @@ Historical reanalysis is never presented as a new ablation. A live result is lab
 | L: L139 live check | `experiments/studies/L145-L.json` | `6849b3af…654088d` | 6 | $0.05 |
 | A: diagnostic | `experiments/studies/L145-A.json` | `f262c701…ab23fb6` | 264 | $1.43 |
 | B: confirmatory, tools off | `experiments/studies/L145-B.json` | `75c5c33e…14dbccdf` | 744 | $1.82 |
-| B: confirmatory, tools on (only if the B rule selects it) | `experiments/studies/L145-B-tools.json` | the same | 744 | $3.65 |
+| B: confirmatory, tools on (if the B rule selects C-ON) | `experiments/studies/L145-B-tools.json` | the same | 744 | ~$2.8 |
+| B: confirmatory, no provider format (if the B rule selects C-OFF-NF) | `experiments/studies/L145-B-nf.json` | the same | 744 | ~$1.8 |
 
 **Order.** Each schedule is fixed by its seed (`experiments/schedule.py`): every repeat-1 block, then every repeat-2
 block, and so on, each pass in its own random prompt order. Within a block the arms run in a random order.
@@ -114,11 +115,14 @@ is the base):
 - Tool-use counts are correlational.
 - External MCP clients are not tested here: a claim about them needs its own study.
 
-**The B rule (fixed now).** Study B runs `L145-B.json` (tools off), unless both of these hold in Study A's report:
-- C-ON beats C-OFF on passes by the prompt-level exact sign-flip test, p < 0.05, with a positive effect;
-- C-ON's silent false positives are at most C-OFF's.
-
-In that case, and only then, B runs `L145-B-tools.json`. No other Study A result changes Study B.
+**The B rule** (revised before Study A was analysed; see Deviations). Study B runs the strongest of the three
+full-repeat Claude configurations in Study A: C-OFF (`L145-B.json`), C-ON (`L145-B-tools.json`) and C-OFF-NF
+(`L145-B-nf.json`).
+- **Order:** the most passes over Study A's 36 runs, then the fewest silent false positives, then the lowest cost.
+- **Not candidates:** Gemini's arms (not the corrected implementation) and the one-repeat screens (12 runs each).
+- **No other Study A result changes Study B.**
+- This is a two-stage design: Study A selects, Study B confirms. A selection on 12 prompts may pick on noise, but it
+  does not bias B's primary test. B's analysis without the 12 panel prompts covers their overlap.
 
 ## Study B: confirmatory benchmark
 
@@ -130,7 +134,7 @@ In that case, and only then, B runs `L145-B-tools.json`. No other Study A result
 - 372 blocks, each running PDLt and CTRL-L in random order.
 
 **Arms.**
-- **PDLt:** the configuration the B rule picks.
+- **PDLt:** the Study A configuration the B rule picks.
 - **CTRL-L:** the same model, provider, reasoning, time and output cap, as one call with the raw prompt.
 
 **Primary analysis**, PDLt against CTRL-L over the 57 machine-graded catalogue prompts (`ground_truth_status:
@@ -182,8 +186,8 @@ verified`), with all 3 repeats. The unit is the prompt.
 - The cap is $10, the user's single authorization.
 - The central estimate is about $3.30 (L, A, and B with tools off), within the $3.85 left on the key.
 - The driver stops cleanly when the key's remainder falls below the reserve plus the next block's estimate.
-- If the B rule selects tools, B is estimated at $3.65 more, which does not fit. The study then stops before B and
-  asks for a key limit raise.
+- If the B rule selects C-ON, B is estimated at about $2.8, which may not fit what is left after Study A. The driver
+  then stops cleanly at the reserve, and B resumes from its ledger when the key limit is raised.
 
 ## Known limitations, stated in advance
 
@@ -193,3 +197,13 @@ verified`), with all 3 repeats. The unit is the prompt.
 - Control publishes every answer as a success, so silent false positives favour any arm that can abstain.
 - Study A's panel was chosen when L132 was planned, not pre-registered then. Study A is a replication, not a
   confirmation.
+
+## Deviations
+
+- **2026-10-22, the B rule (the user).** The rule fixed at F switched B to tools-on only if C-ON beat C-OFF at
+  p < 0.05 with no more silent false positives; otherwise it defaulted to tools off. The user directed that B run the
+  strongest configuration from Study A. The rule became the ranking above.
+  - Made while Study A was running, before any Study A analysis. The only Study A output seen was one driver result
+    line (13-01 r1, C-OFF) and per-arm costs.
+  - The schedules are unchanged (the PDLt arm's name and seed are the same in all three B configs).
+  - `experiments/study_report.py` implements the ranking (commit after F, reporting only).

@@ -212,7 +212,8 @@ def test_the_report_from_a_ledger_and_its_run_folders(tmp_path, monkeypatch):
                      analysis={"contrasts": [{"label": "tools", "a": "ON", "b": "OFF"}],
                                "screens": [{"label": "x", "arm": "ON-x", "reference": "ON"}],
                                "primary": {"a": "ON", "b": "OFF", "prompt_set": "all",
-                                           "endpoints": {"H1": "pass", "H2": "sfp"}}})
+                                           "endpoints": {"H1": "pass", "H2": "sfp"}},
+                               "b_rule": {"candidates": ["OFF", "ON"], "configs": {"OFF": "b.json", "ON": "b-on.json"}}})
     ledger = Ledger(matched_study.out_dir(config) / "ledger.jsonl")
     outcome = {"ON": ("CLOSED_SUCCESS", "PASS"), "OFF": ("CLOSED_SUCCESS", "FAIL"), "ON-x": ("CLOSED_CANCELLED", "FAIL")}
     for block in matched_study.schedule(config):
@@ -235,6 +236,8 @@ def test_the_report_from_a_ledger_and_its_run_folders(tmp_path, monkeypatch):
     assert h1["effect"] == 1.0 and h2["effect"] == -1.0 and h1["p"] == pytest.approx(0.5)
     screen = next(s for s in report["screens"] if s["endpoint"] == "pass")
     assert screen["screen_total"] == 0 and screen["reference_same_block_total"] == 2
+    assert report["b_rule"]["chosen"] == "ON" and report["b_rule"]["chosen_config"] == "b-on.json"
+    assert [c["arm"] for c in report["b_rule"]["ranking"]] == ["ON", "OFF"]
     assert "Data problems" in study_report.markdown(config, report, problems, [])
 
 

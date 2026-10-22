@@ -354,13 +354,19 @@ def build(config: dict, *, lookup: bool) -> tuple[dict, list[str], dict[str, lis
                                                   for name, t in tests.items()}}
     rule = analysis.get("b_rule")
     if rule:
+        # The strongest candidate (L145, revised by the user before Study A was analysed): the most passes over the
+        # study's runs, then the fewest silent false positives, then the lowest cost.
         prompts = sets[rule.get("prompt_set", "all")]
-        passes = contrast(runs.get(rule["a"], []), runs.get(rule["b"], []), "pass", prompts, repeats, seed)
-        sfp_a = sum(r["sfp"] for r in runs.get(rule["a"], []) if r["id"] in prompts)
-        sfp_b = sum(r["sfp"] for r in runs.get(rule["b"], []) if r["id"] in prompts)
-        switch = passes["p"] < 0.05 and passes["effect"] > 0 and sfp_a <= sfp_b
-        report["b_rule"] = {**rule, "p": passes["p"], "effect": passes["effect"], "sfp_a": sfp_a, "sfp_b": sfp_b,
-                            "switch_to_a": switch}
+        ranking = []
+        for arm in rule["candidates"]:
+            arm_runs = [r for r in runs.get(arm, []) if r["id"] in prompts]
+            summary = report["arms"][arm]
+            ranking.append({"arm": arm, "runs": len(arm_runs), "passes": sum(r["pass"] for r in arm_runs),
+                            "sfp": sum(r["sfp"] for r in arm_runs), "cost_usd": summary["cost_usd"],
+                            "config": rule["configs"][arm]})
+        ranking.sort(key=lambda c: (-c["passes"], c["sfp"], c["cost_usd"]))
+        report["b_rule"] = {**rule, "ranking": ranking, "chosen": ranking[0]["arm"] if ranking else None,
+                            "chosen_config": ranking[0]["config"] if ranking else None}
     return report, problems, runs
 
 
@@ -424,9 +430,11 @@ def markdown(config: dict, report: dict, problems: list[str], traces: list[str])
                          f"{', '.join(s['differs_from_same_block']) or '-'} |")
     if report.get("b_rule"):
         r = report["b_rule"]
-        lines += ["", f"## The B rule ({r['a']} against {r['b']})", "",
-                  f"Passes: effect {r['effect']:+.3f}, exact sign-flip p {_fmt_p(r['p'])}; silent false positives "
-                  f"{r['sfp_a']} against {r['sfp_b']}. Switch B to {r['a']}: **{r['switch_to_a']}**."]
+        lines += ["", "## The B rule: the strongest candidate", "",
+                  "| Rank | Arm | Runs | Passes | Silent false positives | Cost | Study B config |", "|---|---|---|---|---|---|---|"]
+        lines += [f"| {i} | {c['arm']} | {c['runs']} | {c['passes']} | {c['sfp']} | ${c['cost_usd']:.3f} | "
+                  f"`{c['config']}` |" for i, c in enumerate(r["ranking"], 1)]
+        lines += ["", f"Study B runs **{r['chosen']}** (`{r['chosen_config']}`)."]
     if report["contrasts"] or report.get("primary"):
         lines += ["", "## Per-prompt differences (a - b)", ""]
         for c in report["contrasts"] + [dict(t, label=n, a=report['primary']['a'], b=report['primary']['b'],

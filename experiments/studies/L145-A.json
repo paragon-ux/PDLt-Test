@@ -218,9 +218,17 @@
    }
   ],
   "b_rule": {
-   "a": "C-ON",
-   "b": "C-OFF",
-   "prompt_set": "all"
+   "candidates": [
+    "C-OFF",
+    "C-ON",
+    "C-OFF-NF"
+   ],
+   "prompt_set": "all",
+   "configs": {
+    "C-OFF": "experiments/studies/L145-B.json",
+    "C-ON": "experiments/studies/L145-B-tools.json",
+    "C-OFF-NF": "experiments/studies/L145-B-nf.json"
+   }
   }
  }
 }

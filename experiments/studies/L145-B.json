@@ -1,5 +1,5 @@
 {
- "_comment": "L145 Study B, tools off: the pre-registered confirmatory benchmark (docs/plans/L145-live-evaluation-preregistration.md). The B rule, applied to Study A's report before B starts, picks this config or L145-B-tools.json; nothing else about B depends on Study A.",
+ "_comment": "L145 Study B with Study A's C-OFF configuration (tools off): the pre-registered confirmatory benchmark (docs/plans/L145-live-evaluation-preregistration.md). The B rule picks the strongest of C-OFF, C-ON and C-OFF-NF in Study A (most passes, then fewest silent false positives, then lowest cost) and so one of L145-B.json, L145-B-tools.json and L145-B-nf.json; nothing else about B depends on Study A.",
  "study": "L145-B",
  "seed": 20261024,
  "repeats": 3,
