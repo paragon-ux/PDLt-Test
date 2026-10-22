@@ -1,0 +1,86 @@
+{
+ "_comment": "L151 step 1b (the user, 2026-10-22, 'Replicate the full frame'): does L149's frame-walk result replicate? Control against Control with the full frame (worker instructions, the request in the projection document, JSON-mode output) and with the worker instructions alone, on 16-06. A measurement.",
+ "study": "L151-frame-rep",
+ "seed": 20261029,
+ "repeats": 24,
+ "prompts": [
+  "16-06"
+ ],
+ "out_dir": "C:/Users/USER/Desktop/Frameworks/PDLt-Catalogue-Archive/L151-frame-rep",
+ "shared_args": [
+  "--model",
+  "openai/gpt-oss-120b",
+  "--reasoning",
+  "low",
+  "--providers",
+  "Cerebras",
+  "--timeout",
+  "300",
+  "--route",
+  "unconfirmed",
+  "--tier-d1",
+  "--api-structured-output"
+ ],
+ "same_files": [
+  "prompts/CATALOGUE_MANIFEST.jsonl",
+  "contracts/CONTRACT_MANIFEST.json",
+  "src/pdl_taskmaster/runtime/worker-bootstrap.txt",
+  "prompts/16_logic_and_reasoning/sibling_count.txt",
+  "src/pdl_taskmaster/host/control_cli.py"
+ ],
+ "arms": {
+  "CTRL": {
+   "worktree": "C:/Users/USER/Desktop/Frameworks/PDLt-L149-worktree",
+   "commit": "self",
+   "args": [
+    "--route",
+    "control"
+   ]
+  },
+  "C-ALL": {
+   "worktree": "C:/Users/USER/Desktop/Frameworks/PDLt-L149-worktree",
+   "commit": "self",
+   "args": [
+    "--route",
+    "control",
+    "--control-frame",
+    "worker,wrap,json"
+   ]
+  },
+  "C-WORKER": {
+   "worktree": "C:/Users/USER/Desktop/Frameworks/PDLt-L149-worktree",
+   "commit": "self",
+   "args": [
+    "--route",
+    "control",
+    "--control-frame",
+    "worker"
+   ]
+  }
+ },
+ "budget": {
+  "cap_usd": 0.2,
+  "reserve_usd": 0.25,
+  "per_run_usd": {
+   "CTRL": 0.0015,
+   "C-ALL": 0.0015,
+   "C-WORKER": 0.0015
+  }
+ },
+ "analysis": {
+  "provider": "Cerebras",
+  "seed": 20261029,
+  "contrasts": [
+   {
+    "label": "C-ALL below CTRL",
+    "a": "CTRL",
+    "b": "C-ALL"
+   },
+   {
+    "label": "C-WORKER below CTRL",
+    "a": "CTRL",
+    "b": "C-WORKER"
+   }
+  ]
+ }
+}
