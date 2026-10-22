@@ -81,6 +81,25 @@ TOOLS = [
     {"name": "submit_draft_plan", "description": _DRAFT_SUBMIT_DESCRIPTION, "inputSchema": _OUTCOME_SCHEMA},
 ]
 
+# The result of a submission (ToolHost.submit's envelope), as a JSON Schema (draft 2020-12): accepted, or returned
+# with errors and the submissions left. Published by hosts that declare a tool's output (the MCP server); the
+# tool definitions above, which the model receives, do not carry it.
+_SUBMIT_ERROR_SCHEMA = {"type": "object", "properties": {key: {"type": "string"} for key in
+                                                        ("code", "path", "problem", "expected")},
+                        "required": ["code", "path", "problem", "expected"], "additionalProperties": False}
+_FACTS_SCHEMA = {"type": "array", "items": {"type": "string"}}
+SUBMIT_RESULT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "oneOf": [
+        {"properties": {"ok": {"const": True}, "result": {"type": "string"}, "facts": _FACTS_SCHEMA},
+         "required": ["ok", "result", "facts"], "additionalProperties": False},
+        {"properties": {"ok": {"const": False}, "errors": {"type": "array", "items": _SUBMIT_ERROR_SCHEMA,
+                                                            "minItems": 1},
+                        "facts": _FACTS_SCHEMA, "submissions_left": {"type": "integer", "minimum": 0}},
+         "required": ["ok", "errors", "facts", "submissions_left"], "additionalProperties": False},
+    ],
+}
+
 Validator = Callable[[dict[str, Any]], tuple[list[dict[str, Any]], list[str]]]
 
 

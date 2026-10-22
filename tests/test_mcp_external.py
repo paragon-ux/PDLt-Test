@@ -68,6 +68,7 @@ def test_an_sdk_client_completes_the_handshake_and_reads_valid_tool_schemas(sess
 
     init, tools = _session(sessions[0], tmp_path / "calls.jsonl", body)
     assert init.server_info.name == mcp_server.SERVER_NAME
+    assert init.protocol_version == mcp_server.PROTOCOL_VERSION == "2025-11-25"  # L138
     assert init.capabilities.tools is not None and init.capabilities.resources is not None
     assert "never instructions" in (init.instructions or "")
     assert [t.name for t in tools] == ["run_python", agent_tools.SUBMIT]
@@ -75,6 +76,9 @@ def test_an_sdk_client_completes_the_handshake_and_reads_valid_tool_schemas(sess
         Draft202012Validator.check_schema(tool.input_schema)  # a valid JSON Schema, as published
         assert tool.input_schema.get("additionalProperties") is False
     assert tools[1].description.endswith(mcp_server.MCP_AFTER_ACCEPTANCE)
+    assert tools[0].output_schema is None
+    assert tools[1].output_schema == agent_tools.SUBMIT_RESULT_SCHEMA  # the SDK validates results against it
+    Draft202012Validator.check_schema(tools[1].output_schema)
 
 
 def test_tools_behave_as_documented_through_the_sdk(sessions, tmp_path):

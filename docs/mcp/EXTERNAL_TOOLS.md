@@ -6,6 +6,8 @@
 
 **Transport and permissions:** stdio only. The client is the process that starts the server, running as the local user. There is no network listener and no authentication beyond the right to start the process. The server needs read access to the sessions folder (`--sessions`, by default the REPL's `runs/live-sessions`); programs need the sandbox's confinement backend. It writes nothing outside the sandbox's run directories and its call log (`--log`, by default a new file in `mcp-server/` beside the sessions folder). Programs run only under OS-native confinement: `--sandbox` accepts `auto`, `native` or `container`, never `audit-only`.
 
+**What the server is, and is not.** It is a narrow execution and submission service: two in-call tools (`run_python`, `submit_execute_unconfirmed`) and read-only access to closed sessions (`resources/list`, `resources/read`). It does not run a PDLt session: no System 1 routing, bootstrap analysis, review gates or verification after an accepted submission. Inside the harness, `--agent-tools` gives the model the same tools within selected operations (`EXECUTE_UNCONFIRMED`, `BOOTSTRAP_ANALYSIS`, `DRAFT_PROMPT`, `DRAFT_PLAN`), and the host then verifies the deliverable itself; here nothing does.
+
 ## Run and check the server
 
 The server needs no API key: it runs programs and reads closed sessions, and never calls a model. An MCP client starts it as `python -m pdl_taskmaster.host.mcp_server`, using the Python of the environment PDLt is installed in; the client configuration for each host is on the host pages ([Windows](../hosts/windows.md#use-the-mcp-server-from-another-agent), [Linux](../hosts/linux.md#use-the-mcp-server-from-another-agent), [macOS](../hosts/macos.md#use-the-mcp-server-from-another-agent)).
@@ -16,7 +18,7 @@ bash (Linux, macOS):
 
 ```bash
 printf '%s\n' \
-  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"setup-check","version":"0"}}}' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"setup-check","version":"0"}}}' \
   '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"run_python","arguments":{"code":"print(6 * 7)"}}}' \
   | python -m pdl_taskmaster.host.mcp_server
 ```
@@ -25,7 +27,7 @@ PowerShell (Windows):
 
 ```powershell
 @'
-{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"setup-check","version":"0"}}}
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"setup-check","version":"0"}}}
 {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"run_python","arguments":{"code":"print(6 * 7)"}}}
 '@ | python -m pdl_taskmaster.host.mcp_server
 ```
@@ -40,6 +42,17 @@ Expected: two JSON lines. The first names the server (`"serverInfo": {"name": "p
 | `--sandbox auto\|native\|container` | The sandbox backend; the audit-only opt-out is not offered (default `auto`) |
 | `--log FILE` | The JSON-lines call log (default: a new file in `mcp-server/` beside the sessions folder) |
 
+## Session lifecycle and protocol versions
+
+One server process is one MCP session, with one tool host, one sandbox and one set of budgets (L121, L138):
+
+- **`initialize` comes first, once.** Before it, only `ping` is answered; `tools/*` and `resources/*` get the JSON-RPC error `-32600` ("not initialized"), so nothing can run a program before the version is negotiated. A second `initialize` gets `-32600` ("already initialized"): it neither resets the budgets nor starts a new sandbox. A new task that needs fresh budgets needs a new server process, which is also the pattern for scripts: one process per task.
+- **The budgets last as long as the process:** 6 work calls (`run_python`) and 3 submissions. Spent, a call returns a tool result with `isError: true` and "the tool-call budget is spent" or "the submission budget is spent".
+- **Protocol revisions** (`SUPPORTED_PROTOCOL_VERSIONS`): `2025-11-25` (the newest), `2025-06-18`, `2025-03-26` and `2024-11-05`. A supported request is echoed; any other is offered `2025-11-25`, as the MCP lifecycle requires, and a client that cannot use it disconnects. **Not supported:** the stateless `2026-07-28` revision, whose per-request envelope (`server/discover`, no `initialize`) this server does not implement. A client asking for it in `initialize` is offered `2025-11-25`, never `2026-07-28`.
+- **What depends on the revision:** `outputSchema` (in `tools/list`) and `structuredContent` (in submission results) are sent only from `2025-06-18` on. JSON-RPC batches are accepted only under `2025-03-26`, the one revision that has them: at most 32 messages, each handled and logged as if sent alone under the same budgets, with one response per request in order and none for notifications. A batch before `initialize`, under another revision, empty, too large, or holding `initialize` is refused whole with one `-32600` and nothing in it runs.
+- **Errors.** A tool that runs and fails, arguments that do not match a tool's input schema, a rejected submission and a spent budget are tool results with `isError: true`. JSON-RPC errors are for the protocol: `-32700` unparseable JSON, `-32600` an invalid request (not an object, a null or non-scalar `id`, before `initialize`, a second `initialize`, a refused batch), `-32601` an unknown method, `-32602` an unknown or unoffered tool or non-object `params`, `-32002` an unknown resource, `-32603` a call log that cannot be written.
+- **At exit** (end of standard input), the server closes its sandbox, deleting its run directories, and closes the call log.
+
 ## Tools
 
 | Tool | Returns | Verification evidence with it | What the client needs |
@@ -48,6 +61,8 @@ Expected: two JSON lines. The first names the server (`"serverInfo": {"name": "p
 | `submit_execute_unconfirmed {outcome}` | `{ok, result or errors, facts}`. Errors name the path, what was found and what is required. Facts give each program's exit status and whether it printed a WITNESS line. An accepted submission says "the structural checks passed; nothing verifies the deliverable afterwards here", and so does the tool's description. | Structural checks only: the wire model, the programs run as the host would run them, and a WITNESS line when `--witness-required`. **No verification follows.** | The same. At most 3 submissions per server process. |
 
 `read_attempt` is not offered externally (there is no previous attempt), and neither are the submit-only tools.
+
+**Structured results.** From `2025-06-18` on, `submit_execute_unconfirmed` publishes an `outputSchema` (`agent_tools.SUBMIT_RESULT_SCHEMA`, JSON Schema 2020-12): either `{ok: true, result, facts}` or `{ok: false, errors: [{code, path, problem, expected}], facts, submissions_left}`, with no other fields. Each submission result carries that envelope as `structuredContent` and as JSON text in `content`; under older revisions, the text only. A spent submission budget is a plain `isError` text result. MCP's `structuredContent` is tool-result data; it is unrelated to `pdlt --api-structured-output`, which constrains how a provider decodes a model's reply.
 
 ## Resources (read-only, L117)
 
@@ -77,6 +92,10 @@ Every read of a turn's `response` or `program-output` returns the turn's provena
 - **E-1 to E-4, as fixed:** the `provenance` resource and the provenance returned with every read; the MCP-specific acceptance text and description; the JSON-lines call log, written before each request runs and after (a log that cannot be written stops the request; one that cannot be opened stops the server); `audit-only` refused.
 - **E-5 Arguments not validated.** Fixed in L122, as internal flag I-2: arguments outside `inputSchema` are refused and nothing runs.
 
+## Call log
+
+Every request is written to a JSON-lines call log (`--log`, default `mcp-server/calls-<time>-<pid>.jsonl` beside the sessions folder): an entry before the request runs (`event: request`: the id, method and parameters) and one after (`event: response`: the duration, any JSON-RPC error and `isError`), plus each tool call and submission as the tool host records it (the code, the output, the envelope and the outcome). Strings are cut at 20,000 characters. A refused batch is recorded as one `event: batch` entry. A log that cannot be opened at start stops the server (exit status 1); one that cannot be written refuses the request with `-32603`, and nothing runs. The log keeps submitted code and outputs in plain text and the server never deletes it: protect and rotate the folder as the code and data it will hold require.
+
 ## Tested from outside
 
-`tests/test_mcp_external.py` (L123) starts the server process and drives it with the official MCP Python SDK client: the handshake, the published schemas, tool calls and their errors, budgets, resources with provenance, the call log and the refused `audit-only` start.
+`tests/test_mcp_external.py` (L123) starts the server process and drives it with the official MCP Python SDK client: the handshake (which lands on `2025-11-25`), the published schemas (the SDK checks `structuredContent` against the `outputSchema`), tool calls and their errors, budgets, resources with provenance, the call log and the refused `audit-only` start. `tests/test_mcp_server.py` covers the lifecycle, version negotiation, the revision-dependent fields, batches, error codes, the result schema and the cleanup at exit (L138).

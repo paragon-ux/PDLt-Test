@@ -210,10 +210,22 @@ def _manifest_tag_patterns() -> list[str]:
     ]
 
 
+# A catalogue prompt ID (category 01-16, prompt 01-07). Not when it is the month and day of an ISO date such as an
+# MCP protocol revision (2024-11-05): the date context is the only exception (L138).
+PROMPT_ID_PATTERN = re.compile(r"(?<!\d{4}-)\b(0[1-9]|1[0-6])-(0[1-7])\b")
+
+
+def test_the_prompt_id_scan_tells_ids_from_dates():
+    for text in ("01-03", "case 11-05", "see 16-07.", "(03-02)", "id=09-04", "2024 11-05", "run-11-05"):
+        assert PROMPT_ID_PATTERN.search(text), text
+    for text in ("2024-11-05", "2025-03-26", '"2024-11-05",', "17-01", "01-08", "101-03"):
+        assert not PROMPT_ID_PATTERN.search(text), text
+
+
 def test_benchmark_contamination_scan():
     """GUARD-01/02/04/05: harness plane has ZERO benchmark IDs, prompt stems, or problem vocabulary."""
     src_dir = ROOT / "src" / "pdl_taskmaster"
-    prompt_id_pattern = re.compile(r"\b(0[1-9]|1[0-6])-(0[1-7])\b")
+    prompt_id_pattern = PROMPT_ID_PATTERN
     word_tokens = [
         r"frostbite", r"schur", r"\bdlx\b", r"dancing\s+link", r"algorithm\s+x", r"backtrack",
         r"\bmrv\b", r"nobel", r"hamiltonian", r"palindrome", r"wheel\s+graph", r"\bcolou?ring\b", r"alice\s+has",

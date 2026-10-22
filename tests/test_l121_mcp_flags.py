@@ -98,6 +98,7 @@ def test_every_served_artifact_comes_with_its_provenance(tmp_path):
                       problem_class=VERIFIED)
     server = mcp_server.AgentToolServer(mcp_server.build_host("STANDARD", False, repo_root=ROOT),
                                         mcp_server.ClosedSessions(sessions))
+    _rpc(server, "initialize")
     base = f"pdlt://sessions/s-1/{engine.workspace.path.name}/{engine.workspace.turn_id}/"
     for part in ("response", "program-output"):
         contents = _rpc(server, "resources/read", {"uri": base + part})["result"]["contents"]
@@ -125,11 +126,11 @@ def test_tool_results_are_named_data_never_instructions():
 # E-3: the call log.
 
 def test_every_request_and_tool_call_is_logged(tmp_path):
-    log = mcp_server.CallLog(tmp_path / "log" / "calls.jsonl")
-    server = mcp_server.AgentToolServer(mcp_server.build_host("STANDARD", False, repo_root=ROOT), None, log)
-    _rpc(server, "initialize")
-    _rpc(server, "tools/call", {"name": "run_python", "arguments": {"code": "print(6 * 7)"}}, mid=2)
-    server.handle({"jsonrpc": "2.0", "method": "notifications/initialized"})
+    with mcp_server.CallLog(tmp_path / "log" / "calls.jsonl") as log:
+        server = mcp_server.AgentToolServer(mcp_server.build_host("STANDARD", False, repo_root=ROOT), None, log)
+        _rpc(server, "initialize")
+        _rpc(server, "tools/call", {"name": "run_python", "arguments": {"code": "print(6 * 7)"}}, mid=2)
+        server.handle({"jsonrpc": "2.0", "method": "notifications/initialized"})
     records = [json.loads(line) for line in (tmp_path / "log" / "calls.jsonl").read_text(encoding="utf-8").splitlines()]
     assert [(r["event"], r.get("method") or r.get("tool")) for r in records] == [
         ("request", "initialize"), ("response", "initialize"),
@@ -145,8 +146,10 @@ def test_a_request_that_cannot_be_logged_does_not_run(tmp_path):
             raise OSError("disk full")
 
     host = mcp_server.build_host("STANDARD", False, repo_root=ROOT)
-    server = mcp_server.AgentToolServer(host, None, Broken(tmp_path / "calls.jsonl"))
-    response = _rpc(server, "tools/call", {"name": "run_python", "arguments": {"code": "print(1)"}})
+    with Broken(tmp_path / "calls.jsonl") as log:
+        server = mcp_server.AgentToolServer(host, None, log)
+        server.protocol_version = mcp_server.PROTOCOL_VERSION  # initialized: only the log stands in the way
+        response = _rpc(server, "tools/call", {"name": "run_python", "arguments": {"code": "print(1)"}})
     assert response["error"]["code"] == mcp_server.INTERNAL_ERROR and "nothing ran" in response["error"]["message"]
     assert host.calls == []
 
