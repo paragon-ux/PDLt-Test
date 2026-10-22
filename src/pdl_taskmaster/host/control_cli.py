@@ -17,6 +17,59 @@ from typing import Any
 from pdl_taskmaster.host.console import COLOR_NAMES, THEME_NAMES, paint, resolve_colors
 from pdl_taskmaster.providers.api_worker import ApiWorker
 
+# L149, a measurement (the user, 2026-10-22): one element of the protocol's frame added to the Control call, to walk
+# Control towards the protocol's stripped execution call. worker: the stateless-worker instructions; wrap: the
+# request as SOURCE_REQUEST inside a JSON projection document; json: JSON-mode output, the answer in a body field.
+FRAME_PARTS = ("worker", "wrap", "json")
+_OPERATION = "EXECUTE_UNCONFIRMED"
+_BODY_SCHEMA = {"additionalProperties": False, "type": "object", "required": ["body"],
+                "properties": {"body": {"type": "string", "description": "The complete deliverable content.",
+                                        "minLength": 1}}}
+_HIGHER_PRIORITY = "Obey applicable provider/platform safety, privacy, permission, and tool constraints."
+_JSON_ONLY = "Return only a JSON object. Do not include markdown fences, commentary, or extra text."
+
+
+def frame_parts(value: str | None) -> frozenset[str]:
+    parts = frozenset(part.strip() for part in (value or "").split(",") if part.strip())
+    unknown = parts - set(FRAME_PARTS)
+    if unknown:
+        raise SystemExit(f"--frame: unknown parts {sorted(unknown)}; choose from {list(FRAME_PARTS)}")
+    return parts
+
+
+def framed_request(prompt_text: str, frame: frozenset[str], worker_instructions: str) -> dict[str, Any]:
+    """The Control call's instructions, input and output format with the frame's parts added (none: the plain
+    request, as Control has always sent it)."""
+    fields: dict[str, Any] = {"input": prompt_text}
+    if "wrap" in frame:
+        document: dict[str, Any] = {"operation": _OPERATION}
+        if "json" in frame:
+            document.update(output_kind="UNCONFIRMED_EXECUTION_OUTCOME", output_schema=_BODY_SCHEMA)
+        document["operation_inputs"] = {"OPERATION_ID": _OPERATION, "SOURCE_REQUEST": prompt_text,
+                                        "HIGHER_PRIORITY_CONSTRAINTS": _HIGHER_PRIORITY}
+        fields["input"] = json.dumps(document, ensure_ascii=False, separators=(",", ":"))
+    if "json" in frame:
+        if "wrap" not in frame:
+            fields["input"] += ("\n\nRespond with one JSON object matching this output_schema: "
+                                + json.dumps(_BODY_SCHEMA, ensure_ascii=False, separators=(",", ":")))
+        fields["input"] += "\n\n" + _JSON_ONLY
+        fields["text"] = {"format": {"type": "json_object"}}
+    if "worker" in frame:
+        fields["instructions"] = worker_instructions.strip()
+    return fields
+
+
+def deliverable(output_text: str, frame: frozenset[str]) -> str:
+    """What is graded: the body field under JSON output when it parses, otherwise the text as returned."""
+    if "json" not in frame:
+        return output_text
+    try:
+        value = json.loads(output_text.strip(), strict=False)
+    except json.JSONDecodeError:
+        return output_text
+    body = value.get("body") if isinstance(value, dict) else None
+    return body if isinstance(body, str) and body.strip() else output_text
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="PDLt Direct Control Runner")
@@ -34,6 +87,8 @@ def main() -> int:
     parser.add_argument("--dev", action="store_true")
     parser.add_argument("--new-session", action="store_true")
     parser.add_argument("--api-structured-output", action="store_true")
+    parser.add_argument("--frame", default=None, metavar="PART[,PART]",
+                        help="L149 measurement: add protocol frame parts to the Control call (worker, wrap, json)")
     parser.add_argument(
         "--sandbox",
         choices=["auto", "native", "container", "audit-only"],
@@ -65,6 +120,7 @@ def main() -> int:
         os.environ["PDLT_SANDBOX"] = args.sandbox
 
     prompt_text = args.prompt_file.read_text(encoding="utf-8-sig")
+    frame = frame_parts(args.frame)
 
     providers = [p.strip() for p in args.api_providers.split(",")] if args.api_providers else None
     provider_pinning = {"order": providers, "allow_fallbacks": False} if providers else None
@@ -78,7 +134,7 @@ def main() -> int:
 
     body: dict[str, Any] = {
         "model": worker.model,
-        "input": prompt_text,
+        **framed_request(prompt_text, frame, worker._bootstrap),
     }
     if worker.max_output_tokens:
         body["max_output_tokens"] = worker.max_output_tokens
@@ -119,9 +175,10 @@ def main() -> int:
     # Ensure stage directories match standard execution deliverable paths
     out_dir = args.workspace_root / "stages" / "50_execution" / "output"
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "current.md").write_text(output_text, encoding="utf-8")
+    graded = deliverable(output_text, frame)
+    (out_dir / "current.md").write_text(graded, encoding="utf-8")
     (out_dir / "current.json").write_text(
-        json.dumps({"kind": "RESULT", "body": output_text}, indent=2), encoding="utf-8"
+        json.dumps({"kind": "RESULT", "body": graded}, indent=2), encoding="utf-8"
     )
 
     # Record event log for call_accounting
