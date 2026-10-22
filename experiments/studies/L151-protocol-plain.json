@@ -1,0 +1,83 @@
+{
+ "_comment": "L151 step 3 (the user, 2026-10-22, 'Strip the input frame too'): the protocol with nothing in the execution call as JSON (freetext and plaininput: plain-text input, no worker-role lines, plain-text answer, all content kept) against the protocol answering in free text only, against Control, on 16-06. A measurement.",
+ "study": "L151-protocol-plain",
+ "seed": 20261031,
+ "repeats": 24,
+ "prompts": [
+  "16-06"
+ ],
+ "out_dir": "C:/Users/USER/Desktop/Frameworks/PDLt-Catalogue-Archive/L151-protocol-plain",
+ "shared_args": [
+  "--model",
+  "openai/gpt-oss-120b",
+  "--reasoning",
+  "low",
+  "--providers",
+  "Cerebras",
+  "--timeout",
+  "300",
+  "--route",
+  "unconfirmed",
+  "--tier-d1",
+  "--api-structured-output"
+ ],
+ "same_files": [
+  "contracts/CONTRACT_MANIFEST.json",
+  "prompts/16_logic_and_reasoning/sibling_count.txt",
+  "prompts/CATALOGUE_MANIFEST.jsonl",
+  "src/pdl_taskmaster/host/control_cli.py",
+  "src/pdl_taskmaster/providers/api_worker.py",
+  "src/pdl_taskmaster/runtime/worker-bootstrap.txt"
+ ],
+ "arms": {
+  "P-TEXT": {
+   "worktree": "C:/Users/USER/Desktop/Frameworks/PDLt-L149-worktree",
+   "commit": "self",
+   "args": [
+    "--ablate-unconfirmed",
+    "freetext"
+   ]
+  },
+  "P-PLAIN": {
+   "worktree": "C:/Users/USER/Desktop/Frameworks/PDLt-L149-worktree",
+   "commit": "self",
+   "args": [
+    "--ablate-unconfirmed",
+    "freetext,plaininput"
+   ]
+  },
+  "CTRL": {
+   "worktree": "C:/Users/USER/Desktop/Frameworks/PDLt-L149-worktree",
+   "commit": "self",
+   "args": [
+    "--route",
+    "control"
+   ]
+  }
+ },
+ "budget": {
+  "cap_usd": 0.4,
+  "reserve_usd": 0.25,
+  "per_run_usd": {
+   "P-TEXT": 0.004,
+   "P-PLAIN": 0.004,
+   "CTRL": 0.0015
+  }
+ },
+ "analysis": {
+  "provider": "Cerebras",
+  "seed": 20261031,
+  "contrasts": [
+   {
+    "label": "P-PLAIN above P-TEXT",
+    "a": "P-PLAIN",
+    "b": "P-TEXT"
+   },
+   {
+    "label": "P-PLAIN against CTRL",
+    "a": "CTRL",
+    "b": "P-PLAIN"
+   }
+  ]
+ }
+}
