@@ -1,0 +1,80 @@
+{
+ "_comment": "L149 generality check (the user, 2026-10-22): does answering inside a JSON object (all three frame parts) cost accuracy on other reasoning items, or is 16-06 a quirk? Control against Control with the full frame. A measurement.",
+ "study": "L149-general",
+ "seed": 20261027,
+ "repeats": 6,
+ "prompts": [
+  "14-01",
+  "16-01",
+  "16-02",
+  "16-03",
+  "16-04",
+  "16-05",
+  "16-07"
+ ],
+ "out_dir": "C:/Users/USER/Desktop/Frameworks/PDLt-Catalogue-Archive/L149-general",
+ "shared_args": [
+  "--model",
+  "openai/gpt-oss-120b",
+  "--reasoning",
+  "low",
+  "--providers",
+  "Cerebras",
+  "--timeout",
+  "300",
+  "--route",
+  "unconfirmed",
+  "--tier-d1",
+  "--api-structured-output"
+ ],
+ "same_files": [
+  "prompts/CATALOGUE_MANIFEST.jsonl",
+  "src/pdl_taskmaster/runtime/worker-bootstrap.txt",
+  "prompts/14_formal_verification/loop_invariant_proof.txt",
+  "prompts/16_logic_and_reasoning/three_gods.txt",
+  "prompts/16_logic_and_reasoning/missing_dollar.txt",
+  "prompts/16_logic_and_reasoning/knights_and_knaves.txt",
+  "prompts/16_logic_and_reasoning/elevator_riddle.txt",
+  "prompts/16_logic_and_reasoning/masked_men.txt",
+  "prompts/16_logic_and_reasoning/house_grid.txt"
+ ],
+ "arms": {
+  "CTRL": {
+   "worktree": "C:/Users/USER/Desktop/Frameworks/PDLt-L149-worktree",
+   "commit": "self",
+   "args": [
+    "--route",
+    "control"
+   ]
+  },
+  "C-ALL": {
+   "worktree": "C:/Users/USER/Desktop/Frameworks/PDLt-L149-worktree",
+   "commit": "self",
+   "args": [
+    "--route",
+    "control",
+    "--control-frame",
+    "worker,wrap,json"
+   ]
+  }
+ },
+ "budget": {
+  "cap_usd": 0.2,
+  "reserve_usd": 0.25,
+  "per_run_usd": {
+   "CTRL": 0.0015,
+   "C-ALL": 0.0015
+  }
+ },
+ "analysis": {
+  "provider": "Cerebras",
+  "seed": 20261027,
+  "contrasts": [
+   {
+    "label": "C-ALL below CTRL, pooled and per item",
+    "a": "CTRL",
+    "b": "C-ALL"
+   }
+  ]
+ }
+}
