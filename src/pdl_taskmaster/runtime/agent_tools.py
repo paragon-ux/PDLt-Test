@@ -365,10 +365,13 @@ def run_loop(body: dict[str, Any], send: Callable[[dict[str, Any]], dict[str, An
 
 
 def make_validator(bridge: Any, sandbox: Any, budget: Any, witness_required: bool,
-                   python_blocks: Callable[[str], list[str]], parse_witness: Callable[[str], Any]) -> Validator:
+                   python_blocks: Callable[[str], list[str]], parse_witness: Callable[[str], Any],
+                   witness_written: Callable[[dict[str, Any], str], bool]) -> Validator:
     """The host's existing checks, run before an outcome is accepted: the wire model (the operation bridge's parse,
-    Pydantic), then the deliverable's programs run as the host runs them (``python_blocks``). Structural facts only;
-    the witness itself is checked by the host's verification afterwards."""
+    Pydantic), then the deliverable's programs run as the host runs them (``python_blocks``), and, where a witness
+    is required, the host's rule for a witness the program writes out itself (``witness_written``, applied as the
+    host applies it: to the last block that printed a witness, as written). Structural facts only; the witness itself
+    is checked by the host's verification afterwards."""
 
     def validate(outcome: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str]]:
         try:
@@ -387,6 +390,7 @@ def make_validator(bridge: Any, sandbox: Any, budget: Any, witness_required: boo
         errors: list[dict[str, Any]] = []
         facts: list[str] = []
         printed = False
+        last_witness: tuple[int, str, Any] | None = None  # the block whose witness the host would check
         if not blocks and witness_required and not open_defects and not argued:
             errors.append({"code": "NO_PROGRAM", "path": "outcome.body",
                            "problem": "the host would run no program from body: it is not a Python program and "
@@ -398,6 +402,8 @@ def make_validator(bridge: Any, sandbox: Any, budget: Any, witness_required: boo
             parsed_witness = parse_witness(run.stdout or "") if run.success else None
             witness = parsed_witness is not None
             printed |= witness
+            if witness:
+                last_witness = (index, block, parsed_witness)
             facts.append(f"python block {index}: exit status {run.exit_code}, steps used {run.steps_used}, "
                          f"step budget exceeded {bool(run.step_budget_exceeded)}, printed a WITNESS line {witness}")
             if isinstance(parsed_witness, dict) and parsed_witness.get("polarity") == "negative":
@@ -413,6 +419,19 @@ def make_validator(bridge: Any, sandbox: Any, budget: Any, witness_required: boo
                 errors.append({"code": "PROGRAM_FAILED", "path": f"outcome.body block {index}",
                                "problem": f"exit status {run.exit_code}; standard error: {(run.stderr or '')[-1200:]}",
                                "expected": "exit status 0"})
+        if witness_required and last_witness is not None and witness_written(last_witness[2], last_witness[1]):
+            # L113, L119, L139: the host flags this witness after the call (session_engine.py); one rule for both.
+            from pdl_taskmaster.verification.error_registry import REGISTRY
+
+            spec = REGISTRY["WITNESS_WRITTEN_IN_PROGRAM"]
+            errors.append({"code": spec.code, "path": f"outcome.body block {last_witness[0]}",
+                           "problem": spec.observed.format(block=last_witness[0]),
+                           "expected": f"{spec.rule} {spec.next_attempt}"})
+        if argued and not printed:
+            # L119, ADR-0030: a fact about the host, not a rejection
+            facts.append("the result_ir witness rests on its argument (basis proof) and no program printed a WITNESS "
+                         "line: the host cannot check an argument, so it publishes the result as unverified "
+                         "(exit status 5)")
         if witness_required and blocks and not printed and not open_defects and not errors and not argued:
             errors.append({"code": "WITNESS_NOT_PRINTED", "path": "outcome.body",
                            "problem": "the programs ran, and none printed a line starting with 'WITNESS: '",

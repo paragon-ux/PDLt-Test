@@ -18,7 +18,7 @@ from pdl_taskmaster.runtime import agent_tools
 from pdl_taskmaster.runtime.agent_tools import SUBMIT
 
 ROOT = Path(__file__).resolve().parents[1]
-GOOD = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'x': 42}}))"
+GOOD = "import json\nprint('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'x': 6 * 7}}))"  # computed (L139)
 IR = {"files": [], "reconciliation": [], "open_defects": []}
 
 

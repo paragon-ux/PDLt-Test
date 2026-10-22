@@ -13,7 +13,8 @@ from pdl_taskmaster.providers.api_worker import ApiWorker
 from pdl_taskmaster.runtime import agent_tools
 from pdl_taskmaster.runtime.agent_tools import MAX_SUBMISSIONS, MAX_TOOL_CALLS, SUBMIT, TOOLS, ToolHost, run_loop
 from pdl_taskmaster.runtime.operation_bridge import OperationBridge
-from pdl_taskmaster.runtime.session_engine import SessionEngine, _parse_sandbox_witness, _python_blocks
+from pdl_taskmaster.runtime.session_engine import (SessionEngine, _parse_sandbox_witness, _python_blocks,
+                                                   _witness_written_in_program)
 from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS, ExecutionSandbox
 
 from test_computation_recipe import Sys1, _bootstrap
@@ -54,7 +55,7 @@ def _host(validate=None, programs=(), correction=""):
 
 def _validator(witness_required=True):
     return agent_tools.make_validator(OperationBridge(ROOT), ExecutionSandbox(), BUDGET, witness_required,
-                                      _python_blocks, _parse_sandbox_witness)
+                                      _python_blocks, _parse_sandbox_witness, _witness_written_in_program)
 
 
 def _call(name, args, cid):

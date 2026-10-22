@@ -319,7 +319,8 @@ def build_host(tier: str = "STANDARD", witness_required: bool = False, sandbox_m
     confinement: the audit-only opt-out is refused (L121 flag E-4)."""
     from pdl_taskmaster.api.session import default_repo_root
     from pdl_taskmaster.runtime.operation_bridge import OperationBridge
-    from pdl_taskmaster.runtime.session_engine import _parse_sandbox_witness, _python_blocks
+    from pdl_taskmaster.runtime.session_engine import (_parse_sandbox_witness, _python_blocks,
+                                                       _witness_written_in_program)
     from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS
 
     budget = EXECUTION_BUDGETS[tier]
@@ -330,7 +331,7 @@ def build_host(tier: str = "STANDARD", witness_required: bool = False, sandbox_m
                          f"--sandbox {sandbox_mode} is refused") from None
     root = repo_root or default_repo_root()
     validate = agent_tools.make_validator(OperationBridge(root), sandbox, budget, witness_required, _python_blocks,
-                                          _parse_sandbox_witness)
+                                          _parse_sandbox_witness, _witness_written_in_program)
     return agent_tools.ToolHost(sandbox, budget.step_limit, budget.timeout_seconds, budget.memory_limit_bytes,
                                 [], "", validate, accepted_note=MCP_ACCEPTED)
 

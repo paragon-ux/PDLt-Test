@@ -2460,7 +2460,7 @@ class SessionEngine:
             self.sandbox, budget.step_limit, budget.timeout_seconds, budget.memory_limit_bytes,
             _python_blocks(previous) if previous else [], correction or "",
             agent_tools.make_validator(self.bridge, self.sandbox, budget, witness_required, _python_blocks,
-                                       _parse_sandbox_witness),
+                                       _parse_sandbox_witness, _witness_written_in_program),
             attempt=self._unconfirmed_attempts, on_record=self._record_tool_call,
         )
 
