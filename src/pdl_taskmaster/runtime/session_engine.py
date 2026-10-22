@@ -2621,6 +2621,7 @@ class SessionEngine:
                     deliverable_sha256=result_body_hash,
                     closed_at_utc=datetime.now(timezone.utc).isoformat(),
                     model=self.model_name() if callable(self.model_name) else None,
+                    run_failures_not_fed_back=getattr(self, "_run_failures_not_fed_back", None),
                 ))
 
     def _check_witness(self, verifier: Any, witness: Any, constraints: dict[str, Any], body: str) -> Any:
@@ -2667,6 +2668,7 @@ class SessionEngine:
         self._unverified_reason: str | None = None  # L116: set when the result rests on an unchecked claim
         self._last_verification: dict[str, Any] | None = None  # E-1: the VERIFICATION_PASSED facts
         self._last_witness: Any = None
+        self._run_failures_not_fed_back: list[str] = []  # L140: disclosed in the provenance
         certificate = declared_certificate(getattr(outcome, "result_ir", None)) if verified else None  # L119
         sandbox_witness, run_failures = self._run_deliverable_code(body, certificate=certificate)
         payload_findings = self._payload_token_findings(body)
@@ -2682,6 +2684,12 @@ class SessionEngine:
                 ]
                 if genuine_failures:
                     return payload_findings + genuine_failures, body
+            # L140: the programs that failed or were stopped and are not fed back; a turn that closes on this
+            # attempt says so in its provenance rather than only that the host ran its programs.
+            self._run_failures_not_fed_back = [
+                getattr(f, "code", "UNREGISTERED") + (" (environment denial)" if getattr(f, "is_environment_denial",
+                                                                                         False) else "")
+                for f in run_failures]
             return payload_findings, body
 
         errors: list[str] = list(payload_findings)

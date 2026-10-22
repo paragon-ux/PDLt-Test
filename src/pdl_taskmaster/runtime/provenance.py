@@ -18,6 +18,10 @@ from typing import Any
 SCHEMA = "pdlt.provenance/1"
 STANDARD_CAVEAT = ("The host checked the reply against its contract and ran its programs, but ran no test of the "
                    "behaviour the request asks for; a code deliverable's correctness is not established (ledger L115).")
+# L140: added when programs the host ran failed or were stopped and the reply was published without that being fed
+# back to the model (standard execution feeds back only a program's own failures under Tier D1).
+NOT_FED_BACK_CAVEAT = ("Programs the host ran did not succeed ({codes}), and this was not returned to the model "
+                       "before the result was published.")
 
 
 def witness_form(witness: Any, verification: dict[str, Any] | None) -> str:
@@ -36,10 +40,13 @@ def witness_form(witness: Any, verification: dict[str, Any] | None) -> str:
 
 def verification_basis(status: str, requires_verified_execution: bool | None, verification: dict[str, Any] | None,
                        witness: Any, unverified_reason: str | None, *, task_type: str | None = None,
-                       verifier: str | None = None) -> dict[str, Any]:
+                       verifier: str | None = None,
+                       run_failures_not_fed_back: list[str] | None = None) -> dict[str, Any]:
     """None for requires_verified_execution: the turn's routing is not recorded, so the problem class is unknown and
     the level is never host_verified. ``task_type`` names the problem class (L124); a task type bound to no verifier
-    ("none") is never host_verified, whatever the verification record says."""
+    ("none") is never host_verified, whatever the verification record says. ``run_failures_not_fed_back`` (L140):
+    the registry codes of programs that failed or were stopped without that being fed back; when there are any they
+    are listed and the caveat says so. Turns closed before L140 do not record them."""
     form = witness_form(witness, verification)
     reproduced = bool((verification or {}).get("sandbox_reproduced")) and form in ("computed", "certificate")
     if status != "CLOSED_SUCCESS":
@@ -56,16 +63,24 @@ def verification_basis(status: str, requires_verified_execution: bool | None, ve
         "witness_form": form,
         "reproduced_by_host": reproduced,
         "unverified_reason": unverified_reason if status != "CLOSED_SUCCESS" else None,
-        "caveat": STANDARD_CAVEAT if level == "contract_checked" else None,
+        "caveat": _caveat(level, run_failures_not_fed_back),
+        **({"run_failures_not_fed_back": list(run_failures_not_fed_back)} if run_failures_not_fed_back else {}),
         # A registered domain checker judged the witness (L124); the structural fallback is not named.
         **({"checker": (verification or {})["checker"]} if (verification or {}).get("checker") else {}),
     }
 
 
+def _caveat(level: str, run_failures_not_fed_back: list[str] | None) -> str | None:
+    parts = [STANDARD_CAVEAT] if level == "contract_checked" else []
+    if run_failures_not_fed_back:
+        parts.append(NOT_FED_BACK_CAVEAT.format(codes=", ".join(run_failures_not_fed_back)))
+    return " ".join(parts) or None
+
+
 def record(*, status: str, requires_verified_execution: bool, verification: dict[str, Any] | None, witness: Any,
            unverified_reason: str | None, deliverable_sha256: str, closed_at_utc: str, model: Any = None,
            pdlt_version: str | None = None, task_type: str | None = None,
-           verifier: str | None = None) -> dict[str, Any]:
+           verifier: str | None = None, run_failures_not_fed_back: list[str] | None = None) -> dict[str, Any]:
     """The provenance the host writes when it closes a turn with a result."""
     if pdlt_version is None:
         from pdl_taskmaster import __version__ as pdlt_version
@@ -74,7 +89,8 @@ def record(*, status: str, requires_verified_execution: bool, verification: dict
         "recorded_by": "host at closure",
         "status": status,
         "verification": verification_basis(status, requires_verified_execution, verification, witness,
-                                           unverified_reason, task_type=task_type, verifier=verifier),
+                                           unverified_reason, task_type=task_type, verifier=verifier,
+                                           run_failures_not_fed_back=run_failures_not_fed_back),
         "deliverable_sha256": deliverable_sha256,
         "model": model,
         "pdlt_version": pdlt_version,
