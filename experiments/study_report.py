@@ -63,19 +63,23 @@ def manifest_entries(config: dict) -> dict[str, dict]:
     return entries
 
 
-def generation_ids(result_dir: Path) -> list[str]:
-    ids: list[str] = []
+def generation_ids(result_dir: Path) -> dict[str, str]:
+    """Each generation of the run and its source: ``system1`` (System 1's decisions, its own model by design) or
+    ``task`` (the configured model)."""
+    ids: dict[str, str] = {}
     for trace in sorted(result_dir.glob("session/**/call-trace.jsonl")):
         for record in _jsonl(trace):
             reply = record.get("reply") or {}
-            ids += reply.get("response_ids") or ([reply["response_id"]] if reply.get("response_id") else [])
+            source = "system1" if str(record.get("operation", "")).startswith("SYSTEM1:") else "task"
+            for gid in reply.get("response_ids") or ([reply["response_id"]] if reply.get("response_id") else []):
+                ids.setdefault(gid, source)
     for events in sorted(result_dir.glob("**/events.jsonl")):
         for e in _jsonl(events):
             payload = e.get("payload") or {}
             if e.get("kind") == "MODEL_OUTPUT_RECORDED" and payload.get("operation") == "CONTROL_EXECUTE" \
                     and payload.get("response_id"):
-                ids.append(payload["response_id"])
-    return list(dict.fromkeys(ids))
+                ids.setdefault(payload["response_id"], "task")
+    return ids
 
 
 def load_unit(row: dict, entries: dict[str, dict], problems: list[str]) -> dict | None:
@@ -170,6 +174,7 @@ def _pct(num: float, den: float) -> str:
 
 def arm_summary(runs: list[dict], generations: dict[str, dict]) -> dict:
     gens = [generations[g] for r in runs for g in r["generations"] if g in generations]
+    task = [generations[g] for r in runs for g, src in r["generations"].items() if g in generations and src == "task"]
     cost = sum(float(g.get("total_cost") or 0.0) for g in gens)
     passes = sum(r["pass"] for r in runs)
     elapsed = sorted(float(r["elapsed"]) for r in runs if r["elapsed"] is not None)
@@ -194,8 +199,11 @@ def arm_summary(runs: list[dict], generations: dict[str, dict]) -> dict:
         "levels": dict(Counter(str(r["level"]) for r in runs)), "outcomes": dict(Counter(r["outcome"] for r in runs)),
         "harness_errors": dict(Counter(r["harness_error"] for r in runs if r["harness_error"])),
         "refused": sum(r["refused"] for r in runs), "kept_after_reruns": sum(r["kept_after_reruns"] for r in runs),
-        "generations": len(gens), "providers": dict(Counter(str(g.get("provider_name")) for g in gens)),
-        "models": dict(Counter(str(g.get("model")) for g in gens)),
+        "generations": len(gens), "system1_generations": len(gens) - len(task),
+        "system1_cost_usd": round(sum(float(g.get("total_cost") or 0.0) for g in gens)
+                                  - sum(float(g.get("total_cost") or 0.0) for g in task), 4),
+        "providers": dict(Counter(str(g.get("provider_name")) for g in task)),
+        "models": dict(Counter(str(g.get("model")) for g in task)),
         "cost_usd": round(cost, 4), "cost_per_pass_usd": round(cost / passes, 5) if passes else None,
         "tokens_prompt": sum(int(g.get("tokens_prompt") or 0) for g in gens),
         "tokens_completion": sum(int(g.get("tokens_completion") or 0) for g in gens),
@@ -316,8 +324,9 @@ def build(config: dict, *, lookup: bool) -> tuple[dict, list[str], dict[str, lis
     if expected_provider:
         report["other_providers"] = sorted(
             f"{r['arm']} {r['id']} r{r['rep']}: {generations[g].get('provider_name')}"
-            for a in runs.values() for r in a for g in r["generations"]
-            if g in generations and str(generations[g].get("provider_name") or "").lower() != expected_provider)
+            for a in runs.values() for r in a for g, src in r["generations"].items()
+            if src == "task" and g in generations
+            and str(generations[g].get("provider_name") or "").lower() != expected_provider)
     report["contrasts"] = []
     for c in analysis.get("contrasts", []):
         prompts = sets[c.get("prompt_set", "all")]
@@ -370,11 +379,12 @@ def markdown(config: dict, report: dict, problems: list[str], traces: list[str])
                      f" | {_pct(s['sfp'], s['decided'])} | {s['stage_passes']} | {s['published_success']} | "
                      f"${s['cost_usd']:.3f} | {s['cost_per_pass_usd'] if s['cost_per_pass_usd'] is not None else '-'} | "
                      f"{s['seconds_median']} | {s['seconds_p90']} |")
-    lines += ["", "| Arm | Verdicts | Grades | Levels | Harness errors | Providers (generations) | Tokens in / out / "
-                  "reasoning |", "|---|---|---|---|---|---|---|"]
+    lines += ["", "| Arm | Verdicts | Grades | Levels | Harness errors | Task-model providers (generations) | "
+                  "System 1 generations (cost) | Tokens in / out / reasoning |", "|---|---|---|---|---|---|---|---|"]
     for arm, s in report["arms"].items():
         lines.append(f"| {arm} | {s['verdicts']} | {s['grades']} | {s['levels']} | {s['harness_errors'] or '-'} | "
-                     f"{s['providers']} | {s['tokens_prompt']} / {s['tokens_completion']} / {s['tokens_reasoning']} |")
+                     f"{s['providers']} | {s['system1_generations']} (${s['system1_cost_usd']:.4f}) | "
+                     f"{s['tokens_prompt']} / {s['tokens_completion']} / {s['tokens_reasoning']} |")
     tool_arms = {arm: s for arm, s in report["arms"].items() if s["tools"]}
     if tool_arms:
         lines += ["", "**In-call tool use (correlational).**", "", "| Arm | Tool | Calls | Runs | Accepted | Rejected |",
@@ -428,7 +438,7 @@ def markdown(config: dict, report: dict, problems: list[str], traces: list[str])
     lines += ["", "## Grade changes against the grades recorded at run time", ""]
     lines += [f"- {g}" for g in report["grade_changes"]] or ["None."]
     if "other_providers" in report:
-        lines += ["", "## Generations served by another provider", ""]
+        lines += ["", "## Task-model generations served by another provider", ""]
         lines += [f"- {g}" for g in report["other_providers"]] or ["None."]
     if traces:
         lines += ["", "## Traces", "", "```"] + traces + ["```"]
