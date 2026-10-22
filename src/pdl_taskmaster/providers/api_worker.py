@@ -20,10 +20,12 @@ from pdl_taskmaster.providers.base import ATTRIBUTION_HEADERS, TransportError, W
 from pdl_taskmaster.providers.call_trace import AttemptTrace, CallTrace, tracking
 from pdl_taskmaster.runtime.output_contracts import (
     ABLATE_FRAMING_MODE,
+    ABLATE_FREETEXT_MODE,
     ABLATE_NORMATIVE_MODE,
     ABLATE_NOTATION_MODE,
     ABLATE_ORDER_MODE,
     NL_REPRESENTATION_MODE,
+    RESULT_IR_MODE,
     UNION_WRAPPER,
     ContractForm,
     contract_schema,
@@ -78,8 +80,84 @@ _UNCONFIRMED_WITNESS = (
 )
 
 
+_FREETEXT_SECTIONS = ("INTERPRETATION", "APPROACH", "KIND", "EXPECTED_TYPE", "BODY")
+_FREETEXT_KINDS = ("RESULT", "BLOCKED_BY_HIGHER_PRIORITY", "REQUEST_INPUT")
+_UNCONFIRMED_FREETEXT = (
+    "- Reply in plain text, not JSON. Write these headings, each at the start of its own line, in this order: "
+    "`INTERPRETATION:`, `APPROACH:`, `KIND:` (RESULT, BLOCKED_BY_HIGHER_PRIORITY or REQUEST_INPUT; with REQUEST_INPUT "
+    "also `EXPECTED_TYPE:`), and last `BODY:`, followed by the deliverable to the end of the reply. Each heading "
+    "carries the output_schema field of that name."
+)
+# The worker instructions' format lines, replaced under the freetext part (L151 step 2).
+_BOOTSTRAP_JSON_LINES = ("Return exactly one JSON object matching the declared output_schema.\n"
+                         "Do not add fields that the selected schema variant does not define.")
+_BOOTSTRAP_FREETEXT_LINES = ("Reply in plain text, not JSON, in the headed sections the operation guidance names; "
+                             "they carry the declared output_schema's fields.")
+
+
+def _freetext_call(request: Any) -> bool:
+    """Whether this call is an EXECUTE_UNCONFIRMED call under the L151 freetext part (a measurement)."""
+    if getattr(request, "operation", None) != "EXECUTE_UNCONFIRMED":
+        return False
+    modes = _modes(request)
+    if ABLATE_FREETEXT_MODE in modes and RESULT_IR_MODE in modes:
+        raise ValueError("ablate_freetext: the result IR is a structured field and has no plain-text section")
+    return ABLATE_FREETEXT_MODE in modes
+
+
+def _freetext_heading(line: str) -> tuple[str, str] | None:
+    """A section heading at the start of ``line`` (markdown bold or # marks around it allowed): its name and the
+    text after it on the same line."""
+    stripped = line.strip().lstrip("#").strip()
+    bare = stripped.replace("*", "")
+    for name in _FREETEXT_SECTIONS:
+        if bare.startswith(name + ":"):
+            return name, stripped.split(":", 1)[1].lstrip("*").strip()
+    return None
+
+
+def freetext_outcome(text: str) -> tuple[str, str]:
+    """The outcome object, as JSON text, from a reply in headed plain-text sections (L151 step 2), and how it was
+    read: ``sections`` or ``no_body_heading`` (the whole reply is the body). Everything after the first BODY heading
+    is the body, verbatim. The object is validated as any reply is; nothing here judges its content."""
+    sections: dict[str, list[str]] = {}
+    current: str | None = None
+    body_lines: list[str] | None = None
+    for line in text.splitlines():
+        if body_lines is not None:
+            body_lines.append(line)
+            continue
+        heading = _freetext_heading(line)
+        if heading is None:
+            if current is not None:
+                sections[current].append(line)
+            continue
+        current, rest = heading
+        if current == "BODY":
+            body_lines = [rest] if rest else []
+        else:
+            sections.setdefault(current, []).append(rest)
+    read = "sections" if body_lines is not None else "no_body_heading"
+    body = "\n".join(body_lines).strip("\n") if body_lines is not None else text.strip()
+
+    def section(name: str) -> str:
+        return "\n".join(sections.get(name, [])).strip()
+
+    kind_words = section("KIND").replace("`", "").split()
+    kind = kind_words[0].strip(".,;").upper() if kind_words else "RESULT"
+    outcome: dict[str, Any] = {"kind": kind if kind in _FREETEXT_KINDS else section("KIND"),
+                               "interpretation": section("INTERPRETATION"), "approach": section("APPROACH"),
+                               "body": body}
+    if outcome["kind"] == "REQUEST_INPUT":
+        outcome["expected_type"] = section("EXPECTED_TYPE")
+    return json.dumps(outcome, ensure_ascii=False), read
+
+
 def _unconfirmed_guidance(modes: frozenset[str]) -> str:
     """The EXECUTE_UNCONFIRMED guidance; under an L149 ablation mode (a measurement) one part is removed or changed."""
+    if ABLATE_FREETEXT_MODE in modes:
+        rest = _unconfirmed_guidance(modes - {ABLATE_FREETEXT_MODE})
+        return (rest or "\n\nNORMATIVE GUIDELINES FOR EXECUTE_UNCONFIRMED:") + "\n" + _UNCONFIRMED_FREETEXT
     if ABLATE_NORMATIVE_MODE in modes:
         return ""
     framing = ABLATE_FRAMING_MODE not in modes
@@ -1033,7 +1111,13 @@ class ApiWorker:
         instructions, input_text = self._split_prompt(request.prompt)
         if self.reorder_keys_for_cache:
             input_text = self._reorder_for_cache(input_text.lstrip())
-        if operation_name != "BYPASS_ORDINARY":
+        freetext = _freetext_call(request)
+        if freetext:
+            # L151 step 2, a measurement: the same call with every JSON-format instruction replaced or left out.
+            if _BOOTSTRAP_JSON_LINES not in instructions:
+                raise ValueError("ablate_freetext: the worker instructions no longer carry the JSON format lines")
+            instructions = instructions.replace(_BOOTSTRAP_JSON_LINES, _BOOTSTRAP_FREETEXT_LINES)
+        elif operation_name != "BYPASS_ORDINARY":
             # A direct reply is plain text: the suffix made it answer in JSON
             # ({"message": "Hello! ..."} printed raw in the REPL).
             input_text = input_text.rstrip() + _JSON_ONLY_SUFFIX
@@ -1106,7 +1190,9 @@ class ApiWorker:
         # model, in the same form (contract_form; ADR-0028 rules 1 and 5), so it holds
         # in the host's modes for this call too.
         union_wrapped = False
-        if form.grammar == "schema":
+        if freetext:
+            pass  # plain text: no output format is sent
+        elif form.grammar == "schema":
             output_kind = (getattr(request, "manifest", None) or {}).get("output_kind", "json_object")
             shown = (getattr(getattr(request, "projection", None), "document", None) or {}).get("output_schema")
             sent_schema = grammar_view(shown) if shown is not None else grammar_schema(operation_name, form)
@@ -1236,7 +1322,10 @@ class ApiWorker:
                     pass
 
         body, union_wrapped, effort = self.build_request_body(request)
+        freetext = _freetext_call(request)
         if self.agent_tools and getattr(request, "tools", None) is not None:
+            if freetext:
+                raise ValueError("ablate_freetext: the tool loop ends in a JSON submission; run it without agent tools")
             return self._tool_loop_call(request, body, union_wrapped, effort)
 
         api_key = self._resolve_api_key()
@@ -1306,6 +1395,10 @@ class ApiWorker:
                 raise ProviderError("PROVIDER_RESPONSE_UNREADABLE", "no output text after empty-output retries")
         if union_wrapped:
             text = _unwrap_union_reply(text)
+        freetext_read = None
+        if freetext:
+            # The provider's reply stays in the call trace; the engine receives the outcome object.
+            text, freetext_read = freetext_outcome(text)
 
         usage_raw = data.get("usage") or {}
         usage: dict[str, Any] = {}
@@ -1332,6 +1425,8 @@ class ApiWorker:
             "latency_ms": round(latency_ms, 3),
             "token_telemetry": "enabled" if self.capture_tokens else "disabled",
         }
+        if freetext_read is not None:
+            metadata["freetext_read"] = freetext_read
         if self.capture_tokens and usage:
             metadata["usage"] = usage
             metadata["usage_source"] = "responses_api"

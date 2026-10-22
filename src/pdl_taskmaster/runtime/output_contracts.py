@@ -47,8 +47,12 @@ ABLATE_FRAMING_MODE = "ablate_framing"  # no execution environment, EXEC-* claus
 ABLATE_NOTATION_MODE = "ablate_notation"  # the working notes in plain prose instead of PDL notation
 ABLATE_ORDER_MODE = "ablate_order"  # the deliverable before the working notes
 ABLATE_ENTITIES_MODE = "ablate_entities"  # no TASK_ENTITIES (the bootstrap's extraction)
+# L151 step 2 (the user, 2026-10-22): the reply in headed plain-text sections instead of a JSON object; the host
+# converts it to the outcome object before validation. Only the answer's format changes, not what is asked.
+ABLATE_FREETEXT_MODE = "ablate_freetext"
 ABLATIONS = {"normative": ABLATE_NORMATIVE_MODE, "framing": ABLATE_FRAMING_MODE,
-             "notation": ABLATE_NOTATION_MODE, "order": ABLATE_ORDER_MODE, "entities": ABLATE_ENTITIES_MODE}
+             "notation": ABLATE_NOTATION_MODE, "order": ABLATE_ORDER_MODE, "entities": ABLATE_ENTITIES_MODE,
+             "freetext": ABLATE_FREETEXT_MODE}
 _NOTES_FIELDS = ("interpretation", "approach")
 _PDL_NOTES = "in PDL pseudocode notation"
 _NO_MODES: frozenset[str] = frozenset()
