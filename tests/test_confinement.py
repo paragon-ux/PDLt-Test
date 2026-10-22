@@ -452,7 +452,14 @@ def _blocked(configuration, result) -> bool:
     container without the hook, a host path simply does not exist there (or the
     root is read-only): only the host-side effect, asserted by each test, counts."""
     mode, hooks = configuration
-    return _denied(result) or (mode == "container" and not hooks)
+    return _denied(result) or (mode == "container" and not hooks) or _host_path_is_foreign(configuration)
+
+
+def _host_path_is_foreign(configuration) -> bool:
+    """A container on a Windows host (Docker Desktop) runs a Linux program: a host path such as C:\\... is no
+    path there, only a file name in the run's own directory, so the hook has nothing to deny. Only the
+    host-side effect, asserted by each test, counts."""
+    return configuration[0] == "container" and _IS_WINDOWS
 
 
 def _open(configuration, **kwargs) -> ExecutionSandbox:
@@ -511,7 +518,7 @@ def test_escape_native_code_cannot_read_the_secret_without_the_audit_hook(mode, 
     """With the audit hook off, ctypes loads: only the native layer stands."""
     if mode == "audit-only":
         pytest.skip("audit-only has no native layer")
-    if _IS_WINDOWS:
+    if _IS_WINDOWS and mode != "container":  # a container runs Linux
         opener = "ctypes.cdll.msvcrt._open"
     else:
         opener = "ctypes.CDLL(None).open"
@@ -603,7 +610,8 @@ def test_escape_modifying_a_harness_owned_deliverable_is_denied(configuration, t
                      f"import os\nos.replace('program.py', {str(current)!r})",
                      f"import os\nos.remove({str(current)!r})"):
             result = sandbox.run_code(code)
-            assert _blocked(configuration, result) and not result.success, (code, result.stderr)
+            assert _blocked(configuration, result), (code, result.stderr)
+            assert not result.success or _host_path_is_foreign(configuration), (code, result.stderr)
     assert current.read_text(encoding="utf-8") == "harness-owned"
 
 
