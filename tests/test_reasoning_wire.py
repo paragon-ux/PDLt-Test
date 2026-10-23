@@ -68,8 +68,8 @@ def _stub_server(seen: list[tuple[str, object]], bodies: list | None = None):
     ("high", [], {"BOOTSTRAP_ANALYSIS": "high", "DRAFT_PROMPT": "high", "DRAFT_PLAN": "high", "EXECUTE": "high"}),
     ("low", ["EXECUTE=high"], {"BOOTSTRAP_ANALYSIS": "low", "DRAFT_PLAN": "low", "EXECUTE": "high"}),
     ("high", ["EXECUTE=low"], {"BOOTSTRAP_ANALYSIS": "high", "DRAFT_PLAN": "high", "EXECUTE": "low"}),
-    # No effort: the harness default, the same as a live session (ADR-0022).
-    (None, [], {"BOOTSTRAP_ANALYSIS": "high", "DRAFT_PROMPT": "high", "DRAFT_PLAN": "high", "EXECUTE": "low"}),
+    # No effort: the harness default, the same as a live session (L155: low for every operation).
+    (None, [], {"BOOTSTRAP_ANALYSIS": "low", "DRAFT_PROMPT": "low", "DRAFT_PLAN": "low", "EXECUTE": "low"}),
 ])
 def test_runner_command_sends_the_requested_effort_per_operation(tmp_path, effort, ops, expected):
     import run_catalogue
@@ -206,6 +206,6 @@ def test_run_meta_records_the_effective_reasoning_per_operation():
 
     default = run_catalogue.effective_reasoning("openai/gpt-oss-120b", None)
     assert default["default"] == "low"
-    assert default["by_operation"]["DRAFT_PLAN"] == "high" and default["by_operation"]["EXECUTE"] == "low"
+    assert default["by_operation"]["DRAFT_PLAN"] == "low" and default["by_operation"]["EXECUTE"] == "low"  # L155
     explicit = run_catalogue.effective_reasoning("openai/gpt-oss-120b", "high", ["EXECUTE=low"])
     assert explicit == {"default": "high", "by_operation": {"EXECUTE": "low"}}
