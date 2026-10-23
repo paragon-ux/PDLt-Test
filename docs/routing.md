@@ -177,7 +177,7 @@ A session runs in one of three modes: `protocol` (the default, sections 2 to 6),
 
 **SECURE_GATEWAY** guards both modes. It only passes or blocks, and adds nothing to what the model receives (L151: added content costs accuracy). It fails closed: a missing or unusable judgement refuses.
 1. First layer: System 1's activation check, then its budget check. Neither makes a model call.
-2. Second layer: the poisoned-input check (`GATEWAY_CHECK` in `runtime/session_engine.py`). The candidates were System 1's `PoisonedInputRecipe`, Bootstrap's refusal judgement alone, or both. They were measured on `experiments/gateway/` (L153). None met the pre-registered bar, and the user chose both. System 1 refuses at P(POISONED) ≥ 0.42, the least aggressive threshold that blocks every catalogue category 09 attack; Bootstrap's judgement follows, and saver's protocol branch reuses it. Held-out recall is 32/40, with no false refusal.
+2. Second layer: the poisoned-input check (`GATEWAY_CHECK` in `runtime/session_engine.py`). The candidates were System 1's `PoisonedInputRecipe`, Bootstrap's refusal judgement alone, or both. They were measured on `experiments/gateway/` (L153). None met the pre-registered bar, and the user chose both, then (L155) System 1 alone: a direct answer gets the guard and no Bootstrap, whose output it never used. System 1 refuses at P(POISONED) ≥ 0.42, the least aggressive threshold that blocks every catalogue category 09 attack. Held-out recall is 28/40 (32/40 with Bootstrap), with no false refusal; a remeasurement is due before the merge (L155). Saver's protocol branch runs Bootstrap as the route's own call.
 
 The gateway also sets the closure:
 - a refusal closes REFUSED (exit 0);

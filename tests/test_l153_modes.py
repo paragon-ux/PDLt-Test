@@ -94,13 +94,22 @@ class BootstrapRefusingWorker(DirectWorker):
         return super().call(request)
 
 
-def test_the_gateway_refuses_on_bootstrap_judgement_when_system1_passes(tmp_path):
+def test_a_direct_answer_has_the_guard_alone_and_no_bootstrap(tmp_path):
+    # L155 (the user): "Control should not have bootstrap, only the guard ... I meant direct".
     worker = BootstrapRefusingWorker()
     with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, mode="direct") as session:
         result = session.send(REQUEST)
+    assert not result.refused and worker.operations == ["DIRECT_ANSWER"]
+    assert worker.sys1_client.asked.count("poisoned_input") == 1
+
+
+def test_saver_protocol_branch_refuses_on_its_own_bootstrap(tmp_path):
+    worker = BootstrapRefusingWorker(problem_class="VERIFIED_EXECUTION")
+    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, mode="saver") as session:
+        result = session.send(REQUEST)
         events = _events(session)
     assert result.refused and "DIRECT_ANSWER" not in worker.operations
-    assert any(e["kind"] == "PROTOCOL_REFUSED" and e["payload"]["phase"] == "gateway" for e in events)
+    assert any(e["kind"] == "PROTOCOL_REFUSED" and e["payload"]["phase"] == "bootstrap" for e in events)
 
 
 def test_the_gateway_refuses_on_activation_before_any_model_call(tmp_path):
@@ -138,7 +147,7 @@ def test_saver_mode_sends_verified_requests_through_the_protocol_classified_once
     assert "DIRECT_ANSWER" not in worker.operations
     assert worker.operations[0] == "BOOTSTRAP_ANALYSIS" and "EXECUTE_UNCONFIRMED" in worker.operations
     assert worker.sys1_client.asked.count("problem_class") == 1
-    assert worker.operations.count("BOOTSTRAP_ANALYSIS") == 1  # the gateway's Bootstrap call is reused
+    assert worker.operations.count("BOOTSTRAP_ANALYSIS") == 1  # the protocol route's own; the gateway makes none
     assert sum(e["kind"] == "PROBLEM_CLASS_CLASSIFIED" for e in events) == 1
     assert any(e["kind"] == "SAVER_ROUTED" and e["payload"]["route"] == "protocol" for e in events)
 

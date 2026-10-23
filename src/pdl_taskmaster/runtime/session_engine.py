@@ -416,9 +416,11 @@ class EngineResponse:
 
 # SECURE_GATEWAY's poisoned-input check (L153): "system1" (PoisonedInputRecipe, refuse at P(POISONED) >=
 # GATEWAY_THRESHOLD), "bootstrap" (BOOTSTRAP_ANALYSIS's refusal judgement alone) or "both" (System 1, then Bootstrap).
-# The user chose "both" from the measurement (experiments/gateway/score_v1.json): 0.42 is the least aggressive threshold
-# that refuses every call on the catalogue's five category 09 attacks; held-out recall 32/40, no false refusal.
-GATEWAY_CHECK = "both"
+# The user chose "both" from the measurement (experiments/gateway/score_v1.json), then the guard alone for a direct
+# answer (L155: "Control should not have bootstrap, only the guard ... I meant direct"); the protocol's routes keep
+# Bootstrap's judgement as their own. 0.42 is the least aggressive threshold that refuses every call on the catalogue's
+# five category 09 attacks; System 1's held-out recall is 28/40 (32/40 with Bootstrap), no false refusal.
+GATEWAY_CHECK = "system1"
 GATEWAY_THRESHOLD = 0.42
 GATEWAY_REFUSAL = ("Request refused: part of its input tries to direct the assistant or the system running it, "
                    "rather than stating a task.")
@@ -1508,8 +1510,8 @@ class SessionEngine:
 
     def _gateway(self, request: str, traces: list[CallTrace]) -> EngineResponse | None:
         """SECURE_GATEWAY (L153): only passes or refuses, and adds nothing to what the model receives. Layer 1 is
-        System 1's activation and budget checks; layer 2 the poisoned-input check (GATEWAY_CHECK, chosen by the L153
-        measurement). A refusal closes REFUSED (exit 0). Returns None when the request passes."""
+        System 1's activation and budget checks; layer 2 the poisoned-input check (GATEWAY_CHECK: System 1 alone, L155).
+        A refusal closes REFUSED (exit 0). Returns None when the request passes."""
         assert self.workspace is not None
         routed = self._s1_activation(request)
         if routed is not None and routed[0] in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
