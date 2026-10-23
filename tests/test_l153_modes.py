@@ -180,3 +180,43 @@ def test_repl_mode_flag_reaches_the_run_settings():
     args = repl.build_parser().parse_args(["--mode", "saver"]) if hasattr(repl, "build_parser") else Namespace(
         mode="saver", no_review=True, sandbox=None, task_type=None)
     assert repl._run_settings(args, object()).mode == "saver"
+
+
+# L155: the opt-in gateway in protocol mode, and saver as a catalogue route.
+
+
+def test_protocol_mode_with_the_gateway_refuses_poisoned_input_before_its_route(tmp_path):
+    worker = DirectWorker(p_poisoned=0.97)
+    settings = RunSettings(no_review=True, gateway=True)
+    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, settings=settings) as session:
+        result = session.send(REQUEST)
+        events = _events(session)
+    assert result.refused and result.exit_status == outcome.EXIT_SUCCESS and worker.operations == []
+    assert any(e["kind"] == "PROTOCOL_REFUSED" and e["payload"]["phase"] == "gateway" for e in events)
+
+
+def test_protocol_mode_with_the_gateway_passes_clean_input_to_its_own_route(tmp_path):
+    worker = DirectWorker()
+    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, settings=RunSettings(no_review=True, gateway=True)) as s:
+        result = s.send(REQUEST)
+    assert result.stage == "CLOSED_SUCCESS"
+    assert worker.operations == ["BOOTSTRAP_ANALYSIS", "EXECUTE_UNCONFIRMED"]  # Bootstrap once: the route's own
+    assert worker.sys1_client.asked.count("poisoned_input") == 1
+
+
+def test_confirmed_route_with_the_gateway_refuses_before_drafting(tmp_path):
+    worker = DirectWorker(p_poisoned=0.97)
+    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, settings=RunSettings(gateway=True)) as session:
+        result = session.send(REQUEST)
+    assert result.refused and "DRAFT_PROMPT" not in worker.operations
+
+
+def test_the_runner_runs_saver_and_the_gateway(tmp_path):
+    import run_catalogue
+
+    def command(route, gateway=False):
+        return run_catalogue.build_harness_command(tmp_path / "p.txt", "s", tmp_path / "t", tmp_path / "d", "m", "low",
+                                                   run_settings={"route": route, "gateway": gateway})
+    saver = command("saver")
+    assert saver[saver.index("--mode") + 1] == "saver" and "--no-review" in saver
+    assert "--gateway" in command("unconfirmed", gateway=True) and "--gateway" not in command("unconfirmed")

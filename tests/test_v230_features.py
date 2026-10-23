@@ -166,18 +166,14 @@ def test_explicit_reasoning_effort_reaches_every_operation():
     assert default._reasoning_for("EXECUTE") == "low"  # the model mapping, when no effort is given
 
 
-def test_gpt_oss_default_reasoning_is_high_except_execute():
-    """ADR-0022: the configuration the catalogue validated (high everywhere,
-    EXECUTE=low) is the live default; at all-LOW, plans echoed the prompt."""
+def test_gpt_oss_default_reasoning_is_low_for_every_operation():
+    """L155 (the user): one effort, low, for every operation and route; ADR-0022's high table is retired."""
     mapping = get_proportional_reasoning_mapping("openai/gpt-oss-120b")
-    assert mapping["EXECUTE"] == "low"
-    # Ultrafast decision U4: the unconfirmed execution call gets at least the model's default.
-    assert mapping["EXECUTE_UNCONFIRMED"] == "medium"
-    assert {effort for op, effort in mapping.items() if op not in ("EXECUTE", "EXECUTE_UNCONFIRMED")} == {"high"}
-    assert mapping["INTERPRET_EXECUTION_INPUT"] == "high"
+    assert set(mapping.values()) == {"low"}
+    assert {"BOOTSTRAP_ANALYSIS", "DRAFT_PLAN", "EXECUTE", "EXECUTE_UNCONFIRMED", "EMIT_RESULT_IR"} <= set(mapping)
     worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT)
-    for op in ("BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN", "INTERPRET_PROMPT_REVIEW"):
-        assert worker._reasoning_for(op) == "high", op
+    for op in ("BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN", "INTERPRET_PROMPT_REVIEW", "EXECUTE_UNCONFIRMED"):
+        assert worker._reasoning_for(op) == "low", op
     for op in ("ANSWER_PROTOCOL_DISCUSSION", "BYPASS_ORDINARY"):
         assert worker._reasoning_for(op) == "low", op  # outside the mapping: the worker default
 
@@ -188,5 +184,5 @@ def test_session_start_records_the_effective_reasoning():
     worker = ApiWorker(model="openai/gpt-oss-120b", repo_root=ROOT)
     line = _reasoning_record(worker)
     assert line.startswith("default=low per_operation=")
-    assert '"DRAFT_PLAN": "high"' in line and '"EXECUTE": "low"' in line
+    assert '"DRAFT_PLAN": "low"' in line and '"EXECUTE": "low"' in line
     assert _reasoning_record(object()) is None

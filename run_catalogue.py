@@ -398,7 +398,11 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
         setting_args += ["--ablate-unconfirmed", ",".join(settings["ablate_unconfirmed"])]
     if settings.get("route") == "control" and settings.get("control_frame"):
         setting_args += ["--frame", ",".join(settings["control_frame"])]
-    if settings.get("route") == "unconfirmed":
+    if settings.get("gateway"):
+        setting_args.append("--gateway")
+    if settings.get("route") == "saver":
+        setting_args += ["--mode", "saver", "--no-review"]  # saver's protocol branch is the unconfirmed route (L153)
+    elif settings.get("route") == "unconfirmed":
         setting_args.append("--no-review")
     elif settings.get("route") == "confirmed":
         setting_args.append("--review")  # the REPL's default is no review (L94), so the confirmed route asks for it
@@ -1011,8 +1015,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="PDLt Prompt Catalogue Test Runner - no retries, no shortcuts"
     )
-    parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b:free",
-                        help="Model to test (default: nvidia/nemotron-3-super-120b-a12b:free)")
+    parser.add_argument("--model", default="openai/gpt-oss-120b",
+                        help="Model to test (default: openai/gpt-oss-120b, the model of every recorded baseline; L155)")
     parser.add_argument("--reasoning", default=None,
                         choices=["none", "low", "medium", "high"],
                         help="reasoning effort for every operation (default: the harness's per-model default, "
@@ -1074,7 +1078,10 @@ def main():
                         help=f"memory cap for one prompt's harness process tree (default: {HARNESS_MEMORY_MB})")
     parser.add_argument("--repeat", type=int, default=1, metavar="N",
                         help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
-    parser.add_argument("--route", choices=["confirmed", "unconfirmed", "control"], default="unconfirmed",
+    parser.add_argument("--gateway", action="store_true",
+                        help="L155: SECURE_GATEWAY's poisoned-input check on the protocol routes too (saver always runs "
+                             "it). Not applicable to --route control")
+    parser.add_argument("--route", choices=["confirmed", "unconfirmed", "saver", "control"], default="unconfirmed",
                         help="execution route: 'unconfirmed' (default: --no-review / ultrafast), 'confirmed' (multi-stage with review), or 'control' (unharnessed direct model baseline)")
     parser.add_argument("--theme", choices=THEME_NAMES, default=None,
                         help="Color theme for runner output and child process (default: $PDLT_THEME)")
@@ -1130,6 +1137,7 @@ def main():
                     # likewise: Control sends no output format, whatever the option says
                     "structured_output": args.api_structured_output and args.route != "control",
                     "sandbox": args.sandbox, "route": args.route,
+                    "gateway": args.gateway and args.route in ("confirmed", "unconfirmed"),
                     "theme": args.theme, "user_color": args.user_color, "assistant_color": args.assistant_color}
     if args.sandbox:
         # The graders run deliverable code in this process: the same confinement.
@@ -1175,6 +1183,8 @@ def main():
         route_tag += f"-no-{name.replace('_', '-')}"
     if args.representation != "pdl":
         route_tag += f"-{args.representation}"
+    if run_settings["gateway"]:
+        route_tag += "-gateway"
     if run_settings["tier_d1"]:
         route_tag += "-tier-d1"
     if args.route != "control" and not run_settings["structured_output"]:

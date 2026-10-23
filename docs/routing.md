@@ -13,7 +13,7 @@ Sections 1-6 describe what PDLt does today. Section 7 describes what is planned 
 | REPL | `pdlt --new-session` | launch flags, and some modes per turn with slash commands ([REPL](repl.md)) |
 | Headless | `pdlt --non-interactive` | launch flags; the run ends with an exit code (section 5) |
 | Python API | `pdl_taskmaster.api.Session` | `RunSettings` ([Python API](api.md)) |
-| Catalogue runner | `python run_catalogue.py --route ...` | `--route control`, `unconfirmed` or `confirmed`, plus measurement switches (section 6.2) |
+| Catalogue runner | `python run_catalogue.py --route ...` | `--route control`, `unconfirmed`, `confirmed` or `saver`; `--gateway` adds SECURE_GATEWAY's poisoned-input check to the protocol routes (L155); `--manifest prompts/TARGETED_MANIFEST.jsonl` runs the targeted set (30 prompts: each category's first and its most failed, 09 excluded); plus measurement switches (section 6.2) |
 
 The control route exists only in the catalogue runner today: `--route control` sends the raw request to the model through `host/control_cli.py`, with no activation check, no Bootstrap and no verification. It is the measurement baseline.
 

@@ -513,6 +513,9 @@ class SessionEngine:
         # L153: "protocol" (the default), or "direct" / "saver" behind SECURE_GATEWAY (run_settings.MODES). Set from
         # the control channel only (a flag, a slash command, an API argument), never from a message.
         self.mode: str = "protocol"
+        # L155: protocol mode runs SECURE_GATEWAY's poisoned-input check too (System 1's part: its routes already
+        # run the activation, budget and Bootstrap checks). Off by default until the L155 study decides.
+        self.gateway: bool = False
         # The direct answer's model call (L153), set by the host: the user's request -> the worker's result. The
         # model receives the request alone (DIRECT_ANSWER, providers/api_worker.PLAIN_OPERATIONS).
         self.direct_reply: Callable[[str], Any] | None = None
@@ -1522,7 +1525,14 @@ class SessionEngine:
         self.workspace.append_event("GATEWAY_PASSED", {"mode": self.mode, "check": GATEWAY_CHECK})
         return None
 
-    def _poisoned_input(self, request: str, traces: list[CallTrace]) -> bool:
+    def _protocol_gateway_refuses(self, request: str, traces: list[CallTrace]) -> bool:
+        """L155: with ``gateway`` set, protocol mode asks System 1's poisoned-input question before its route.
+        Bootstrap's judgement is the route's own (its refusal closes there, phase bootstrap)."""
+        if not self.gateway or not (request or "").strip():
+            return False
+        return self._poisoned_input(request, traces, bootstrap=False)
+
+    def _poisoned_input(self, request: str, traces: list[CallTrace], *, bootstrap: bool = True) -> bool:
         """The gateway's second layer. It fails closed: no usable judgement refuses."""
         assert self.workspace is not None
         refused = False
@@ -1539,7 +1549,7 @@ class SessionEngine:
                     p = None
             self.workspace.append_event("POISONED_INPUT_CHECKED", {"p_poisoned": p, "threshold": GATEWAY_THRESHOLD})
             refused = p is None or p >= GATEWAY_THRESHOLD
-        if not refused and GATEWAY_CHECK in ("bootstrap", "both"):
+        if not refused and bootstrap and GATEWAY_CHECK in ("bootstrap", "both"):
             refused = self._semantic_read(request, traces) is None
         return refused
 
@@ -1661,6 +1671,8 @@ class SessionEngine:
                 if route == "PROTOCOL_DISCUSSION":
                     return self._discuss_protocol(observation.substantive_request, traces)
                 return EngineResponse(None, traces, bypass=True)
+            if self._protocol_gateway_refuses(observation.substantive_request, traces):
+                return self._refuse(GATEWAY_REFUSAL, traces, "gateway")
             return self._draft_initial_prompt(
                 observation.substantive_request,
                 traces,
@@ -1676,6 +1688,8 @@ class SessionEngine:
                 if route == "PROTOCOL_DISCUSSION":
                     return self._discuss_protocol(user_message.strip(), traces)
                 return EngineResponse(None, traces, bypass=True)
+            if self._protocol_gateway_refuses(user_message.strip(), traces):
+                return self._refuse(GATEWAY_REFUSAL, traces, "gateway")
             return self._run_unconfirmed(user_message.strip(), traces)
         decision = self._call(
             "INTERPRET_ACTIVATION", {"RAW_USER_MESSAGE": user_message}, traces,
@@ -1687,6 +1701,8 @@ class SessionEngine:
             return EngineResponse(None, traces, bypass=True)
         if decision.route == ActivationRoute.PROTOCOL_DISCUSSION:
             return self._discuss_protocol(user_message, traces)
+        if self._protocol_gateway_refuses(user_message.strip(), traces):
+            return self._refuse(GATEWAY_REFUSAL, traces, "gateway")
         return self._draft_initial_prompt(
             user_message.strip(),
             traces,
