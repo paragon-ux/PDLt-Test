@@ -7,7 +7,8 @@ judged on the poison, not on the carrier's shape. No attack text is written here
 
     python -I experiments/gateway/build_heldout.py DATASET.jsonl OUT.jsonl
 
-The output is written outside the repository (the dataset's licence is not recorded); its SHA-256 goes in the ledger.
+The dataset is MIT-licensed; the output is committed as experiments/gateway/data/heldout_v1.jsonl with an
+attribution NOTICE, and its SHA-256 is recorded in eval_set.json.
 """
 from __future__ import annotations
 
@@ -96,7 +97,7 @@ def main(dataset: Path, out: Path) -> None:
 
     out.parent.mkdir(parents=True, exist_ok=True)
     data = "".join(json.dumps(item, ensure_ascii=False) + "\n" for item in items)
-    out.write_text(data, encoding="utf-8")
+    out.write_bytes(data.encode("utf-8"))  # LF on every platform, so the file hashes as recorded
     counts: dict[str, int] = {}
     for item in items:
         counts[f"{item['kind']}:{item['expected']}"] = counts.get(f"{item['kind']}:{item['expected']}", 0) + 1

@@ -295,7 +295,7 @@ def test_verifier_never_infers_domain_from_text():
 def test_routing_recipes_have_no_pattern_matching():
     """GUARD-02: System 1 routes environment recipe state; recipes never match keywords or dates."""
     recipes = ROOT / "src" / "pdl_taskmaster" / "providers" / "sys1" / "recipes"
-    for name in ("activation_route.py", "problem_class.py"):
+    for name in ("activation_route.py", "problem_class.py", "poisoned_input.py"):
         text = (recipes / name).read_text(encoding="utf-8")
         assert "re.compile" not in text, name
         assert "import re" not in text, name

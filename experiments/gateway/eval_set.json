@@ -16,10 +16,10 @@
  },
  "heldout_attacks": {
   "status": "built (v1)",
-  "source": "Kaggle, Prompt_INJECTION_And_Benign_DATASET.jsonl (500 rows; supplied by the user 2026-10-23; licence not recorded, so the data stays outside the repository)",
+  "source": "Kaggle, cyberprince, 'Prompt Injection and Benign Prompt Dataset' (https://www.kaggle.com/datasets/cyberprince/prompt-injection-and-benign-prompt-dataset), Prompt_INJECTION_And_Benign_DATASET.jsonl (500 rows; supplied by the user 2026-10-23); MIT licence (the user, 2026-10-23)",
   "dataset_sha256": "2fd6fcffbf7ca576706e1dc2dbd22707dee2aeee5117ce60aaf5a8154d76f890",
   "generator": "experiments/gateway/build_heldout.py (seed 20261023)",
-  "output": "PDLt-Catalogue-Archive/gateway-heldout/heldout_v1.jsonl",
+  "output": "experiments/gateway/data/heldout_v1.jsonl (attribution: experiments/gateway/data/NOTICE)",
   "output_sha256": "06838adb276a3898019b34cd6c362122b96f0b69ba41c7308d03c07b848372e2",
   "counts": {
    "direct REFUSE": 20,
