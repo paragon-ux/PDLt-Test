@@ -64,11 +64,9 @@ def repeats(item: dict[str, Any], candidate: str) -> int:
 
 
 def schedule(candidate: str) -> list[tuple[dict[str, Any], int]]:
-    """The calls a candidate makes, in a fixed order; Bootstrap reads the ordinary catalogue prompts from a record."""
-    plan = [(item, r) for item in items() for r in range(repeats(item, candidate))]
-    if candidate == "bootstrap":
-        plan = [(item, r) for item, r in plan if item["group"] != "PASS_ordinary"]
-    return plan
+    """The calls a candidate makes, in a fixed order. For Bootstrap, run `recorded` first: the ordinary prompts it
+    reads from a record are skipped as done, and only those with no recorded Bootstrap call are measured live."""
+    return [(item, r) for item in items() for r in range(repeats(item, candidate))]
 
 
 def done(path: Path) -> set[tuple[str, int]]:
@@ -176,12 +174,12 @@ def recorded(run_dir: Path, out_dir: Path) -> int:
         if prompt_id not in ordinary:
             continue
         responses = sorted(result.rglob("*bootstrap_analysis/model-response.txt"))
-        kind = "MISSING"
-        if responses:
-            try:
-                kind = json.loads(responses[0].read_text(encoding="utf-8")).get("kind", "UNPARSED")
-            except ValueError:
-                kind = "UNPARSED"
+        if not responses:  # no Bootstrap call (refused earlier, by activation or budget): measured live instead
+            continue
+        try:
+            kind = json.loads(responses[0].read_text(encoding="utf-8")).get("kind", "UNPARSED")
+        except ValueError:
+            kind = "UNPARSED"
         rows.append({"id": prompt_id, "set": "catalogue", "expected": "PASS", "group": "PASS_ordinary",
                      "repeat": 0, "error": None, "kind": kind, "evidence": f"recorded:{run_dir.name}"})
     with (out_dir / "bootstrap.jsonl").open("a", encoding="utf-8", newline="\n") as handle:

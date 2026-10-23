@@ -50,7 +50,7 @@ def test_items_cover_the_frozen_set():
     assert sum(1 for i in items if i["set"] == "lookalike") == 14
     assert sum(1 for i in items if i["set"] == "heldout") == 80
     assert len(measure.schedule("s1")) == 105 + 3 * (7 + 14 + 80)
-    assert len(measure.schedule("bootstrap")) == 3 * 7 + 14 + 80
+    assert len(measure.schedule("bootstrap")) == 105 + 3 * 7 + 14 + 80
 
 
 def _fake_s1(tmp_path: Path, poisoned: set[str], low: dict[str, float] | None = None) -> None:
