@@ -45,7 +45,7 @@ def _default_session_base() -> Path:
     return Path.home() / ".pdlt" / "runs" / "live-sessions"
 
 from pdl_taskmaster.api import outcome, providers as api_providers
-from pdl_taskmaster.api.session import POINTER, prepare_worker, stored_workspace, write_pointer
+from pdl_taskmaster.api.session import POINTER, check_session_mode, prepare_worker, stored_workspace, write_pointer
 from pdl_taskmaster.host.app import PDLtHost
 from pdl_taskmaster.host.console import (
     COLOR_NAMES,
@@ -245,6 +245,7 @@ def open_session(
     pointer = session_dir / POINTER
     if restore_path is None:
         restore_path = stored_workspace(session_dir, lambda line: print(f"[warn] {line}", flush=True))
+    check_session_mode(session_dir, getattr(args, "mode", None) or "protocol", restore_path is not None)
     host = PDLtHost(
         args.candidate_repo,
         worker=worker,
@@ -388,7 +389,7 @@ def _run_settings(args, worker):
     from pdl_taskmaster.runtime.run_settings import RunSettings
 
     session = {"no_review": bool(getattr(args, "no_review", False)), "sandbox_mode": getattr(args, "sandbox", None),
-               "task_type": getattr(args, "task_type", None)}
+               "task_type": getattr(args, "task_type", None), "mode": getattr(args, "mode", None) or "protocol"}
     if not isinstance(worker, ApiWorker):
         return RunSettings(**session)
     run = _api_run_settings(args)
@@ -1216,6 +1217,14 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.set_defaults(no_review=True)  # the unconfirmed route is the standard (ledger L94)
     parser.add_argument(
+        "--mode",
+        choices=("protocol", "direct", "saver"),
+        default="protocol",
+        help="protocol (the default); direct: answered directly behind SECURE_GATEWAY, closing CLOSED_UNVERIFIED "
+        "(exit 5) or REFUSED (exit 0); saver: the protocol for what System 1 classifies VERIFIED_EXECUTION, direct "
+        "for the rest (L153, docs/routing.md). Switch in the REPL with /mode, which opens a new session",
+    )
+    parser.add_argument(
         "--provider-setting",
         action="append",
         default=[],
@@ -1545,6 +1554,7 @@ def main() -> int:
                     "/session -> current session directory\n"
                     "/fast [on|off] -> fast mode: accept reviews without findings on your advance confirmation\n"
                     "/no-review [on|off] -> no-review mode: execute without confirmation gates (ledger L94)\n"
+                    "/mode [protocol|direct|saver] -> switch mode; opens a new session (L153)\n"
                     "/tokens [on|off] -> toggle token telemetry\n"
                     "/timeout [seconds] -> show/set worker timeout\n"
                     "/model [name] -> show/set worker model\n"
@@ -1702,6 +1712,7 @@ def main() -> int:
                         runtime.host.engine.no_review = no_review
                     if hasattr(runtime.host, "no_review"):
                         runtime.host.no_review = no_review
+                    args.no_review = no_review  # kept by /new, /resume and /worker, which reopen from args
                     _write_transcript(f"NO-REVIEW MODE: {'ON' if no_review else 'OFF'}")
                     print(f"no-review mode: {'on' if no_review else 'off'}", flush=True)
                 elif cmd == "/tokens":
@@ -1760,6 +1771,16 @@ def main() -> int:
                     )
                     worker = new_worker
                     print(f"worker switched to {target}", flush=True)
+                elif cmd == "/mode":
+                    if arg not in {"protocol", "direct", "saver"}:
+                        print(f"mode: {getattr(args, 'mode', None) or 'protocol'} (usage: /mode protocol|direct|saver; "
+                              "a mode change opens a new session)", flush=True)
+                        continue
+                    args.mode = arg
+                    runtime = switch_session(runtime, args, session_base, worker, _new_session_name())
+                    _write_transcript(f"MODE: {arg.upper()}")
+                    print(f"mode: {arg}; new session: {runtime.session_dir}", flush=True)
+                    continue
                 elif cmd == "/new":
                     runtime = switch_session(
                         runtime, args, session_base, worker, _new_session_name()

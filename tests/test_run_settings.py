@@ -39,7 +39,7 @@ def test_a_session_applies_its_settings_and_refuses_them_twice(tmp_path):
     with api.Session.open(ScriptedWorker({"body": "x"}), tmp_path / "s", repo_root=ROOT, settings=settings) as session:
         engine = session.host.engine
         assert (engine.max_repairs, engine.draft_execute, engine.tier_d1, engine.no_review) == (0, True, True, True)
-    with pytest.raises(ValueError, match="pass no_review, sandbox_mode and task_type in settings"):
+    with pytest.raises(ValueError, match="pass no_review, sandbox_mode, task_type and mode in settings"):
         api.Session.open(ScriptedWorker({"body": "x"}), tmp_path / "t", settings=settings, no_review=True)
 
 

@@ -41,6 +41,22 @@ def prepare_worker(worker: Any, session_dir: Path, workdir: Path | None = None) 
         worker.trace_path = session_dir / "call-trace.jsonl"
 
 
+MODE_FILE = "mode.json"
+
+
+def check_session_mode(session_dir: Path, mode: str, restoring: bool) -> None:
+    """A session runs in one mode for its whole life (L153): a mode change opens a new session, so no turn history
+    crosses modes. A session with history and no mode file ran in protocol mode."""
+    path = Path(session_dir) / MODE_FILE
+    stored = json.loads(path.read_text(encoding="utf-8")).get("mode") if path.is_file() else None
+    if stored is None and restoring:
+        stored = "protocol"
+    if stored is not None and stored != mode:
+        raise ValueError(f"session {Path(session_dir).name} runs in {stored} mode; a mode change opens a new session")
+    if mode != "protocol" and not path.is_file():
+        path.write_text(json.dumps({"mode": mode}) + "\n", encoding="utf-8")
+
+
 def stored_workspace(session_dir: Path, warn: Callable[[str], None] | None = None) -> Path | None:
     """The workspace the session's pointer names, when it still exists."""
     pointer = session_dir / POINTER
@@ -89,7 +105,7 @@ class Session:
     def open(cls, worker: Any, session_dir: str | Path, *, repo_root: str | Path | None = None,
              sandbox_mode: str | None = None, no_review: bool = False, restore: bool = True,
              output_verifier: Any = None, run_id: str = "api", task_type: str | None = None,
-             settings: Any = None, sys1: Any = None) -> "Session":
+             settings: Any = None, sys1: Any = None, mode: str = "protocol") -> "Session":
         """Open the session in ``session_dir``, resuming its workspace when ``restore`` and it has one.
 
         ``no_review`` runs the standard route (no prompt or plan review). ``output_verifier`` replaces the host's
@@ -105,9 +121,9 @@ class Session:
 
         if settings is None:
             settings = RunSettings.from_worker(worker, no_review=no_review, sandbox_mode=sandbox_mode,
-                                               task_type=task_type)
-        elif (no_review, sandbox_mode, task_type) != (False, None, None):
-            raise ValueError("pass no_review, sandbox_mode and task_type in settings when settings is given")
+                                               task_type=task_type, mode=mode)
+        elif (no_review, sandbox_mode, task_type, mode) != (False, None, None, "protocol"):
+            raise ValueError("pass no_review, sandbox_mode, task_type and mode in settings when settings is given")
         no_review, task_type = settings.no_review, settings.task_type
         if task_type is not None:
             route = "unconfirmed" if no_review else "confirmed"
@@ -119,9 +135,11 @@ class Session:
         session_dir = Path(session_dir).resolve()
         session_dir.mkdir(parents=True, exist_ok=True)
         prepare_worker(worker, session_dir)
+        restore_path = stored_workspace(session_dir) if restore else None
+        check_session_mode(session_dir, settings.mode, restore_path is not None)
         host = PDLtHost(repo_root or default_repo_root(), worker=worker,
                         workspace_root=session_dir / "workspaces",
-                        restore_path=stored_workspace(session_dir) if restore else None,
+                        restore_path=restore_path,
                         run_id=run_id, observation_dir=session_dir / "observations",
                         settings=settings, sys1_client=sys1).start()
         if output_verifier is not None:

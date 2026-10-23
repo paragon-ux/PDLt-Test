@@ -414,6 +414,16 @@ class EngineResponse:
     host_findings: bool = False  # the reviewed artifact carries host findings (lint notes)
 
 
+# SECURE_GATEWAY's poisoned-input check (L153): "system1" (PoisonedInputRecipe, refuse at P(POISONED) >=
+# GATEWAY_THRESHOLD), "bootstrap" (BOOTSTRAP_ANALYSIS's refusal judgement alone) or "both" (System 1, then Bootstrap).
+# The user chose "both" from the measurement (experiments/gateway/score_v1.json): 0.42 is the least aggressive threshold
+# that refuses every call on the catalogue's five category 09 attacks; held-out recall 32/40, no false refusal.
+GATEWAY_CHECK = "both"
+GATEWAY_THRESHOLD = 0.42
+GATEWAY_REFUSAL = ("Request refused: part of its input tries to direct the assistant or the system running it, "
+                   "rather than stating a task.")
+
+
 class SessionEngine:
     """Condition C session orchestrator.
 
@@ -500,6 +510,12 @@ class SessionEngine:
         # The direct reply to a request System 1 routes away from the protocol (L124 D7): set by the host to
         # (the user's own text, the execution environment) -> text; None leaves the reply to the caller.
         self.plain_reply: Callable[[str, str | None], str | None] | None = None
+        # L153: "protocol" (the default), or "direct" / "saver" behind SECURE_GATEWAY (run_settings.MODES). Set from
+        # the control channel only (a flag, a slash command, an API argument), never from a message.
+        self.mode: str = "protocol"
+        # The direct answer's model call (L153), set by the host: the user's request -> the worker's result. The
+        # model receives the request alone (DIRECT_ANSWER, providers/api_worker.PLAIN_OPERATIONS).
+        self.direct_reply: Callable[[str], Any] | None = None
         self._problem_domain: Any = None
         self.refused: bool = False
         # The model that serves the session, for the result's provenance (E-1); set by the host.
@@ -1428,11 +1444,8 @@ class SessionEngine:
         return EngineResponse(presentation.prompt_artifact(outcome.prompt_body, host_note), traces,
                               review="prompt", host_findings=bool(host_note))
 
-    def _run_unconfirmed(
-        self,
-        substantive_request: str,
-        traces: list[CallTrace],
-    ) -> EngineResponse:
+    def _take_request(self, substantive_request: str) -> str:
+        """The turn's request: a follow-up is joined to the previous request; the source is written."""
         assert self.workspace is not None
         previous_request = (getattr(self, "_previous_turn", None) or {}).get("request")
         if previous_request and self._is_follow_up(previous_request, substantive_request):
@@ -1444,11 +1457,23 @@ class SessionEngine:
             self._previous_deliverable = None
         self._source_request = substantive_request
         self.workspace.write_turn_source(substantive_request)
+        return substantive_request
 
-        self._select_task_type(substantive_request, "unconfirmed")
-        budget_refusal = self._budget_refusal()
-        if budget_refusal is not None:
-            return self._refuse(budget_refusal, traces, "budget")
+    def _run_unconfirmed(
+        self,
+        substantive_request: str,
+        traces: list[CallTrace],
+        *,
+        classified: bool = False,
+    ) -> EngineResponse:
+        """``classified``: saver mode already took the request, classified it and passed the gateway."""
+        assert self.workspace is not None
+        if not classified:
+            substantive_request = self._take_request(substantive_request)
+            self._select_task_type(substantive_request, "unconfirmed")
+            budget_refusal = self._budget_refusal()
+            if budget_refusal is not None:
+                return self._refuse(budget_refusal, traces, "budget")
 
         compiled = self._semantic_read(substantive_request, traces)
         if compiled is None:
@@ -1462,6 +1487,88 @@ class SessionEngine:
 
         self.controller = self._bind_new_controller(self.workspace, instance_kind="UNCONFIRMED")
         return self._execute_unconfirmed(substantive_request, traces)
+
+    def _run_mode(self, request: str, traces: list[CallTrace]) -> EngineResponse:
+        """L153, direct and saver modes: SECURE_GATEWAY passes or refuses the request; a passed request is answered
+        directly, or in saver mode goes through the protocol when System 1 classifies it VERIFIED_EXECUTION."""
+        assert self.workspace is not None
+        refusal = self._gateway(request, traces)
+        if refusal is not None:
+            return refusal
+        request = self._source_request or request
+        if self.mode == "saver" and self._requires_verified_execution:
+            self.workspace.append_event("SAVER_ROUTED", {"route": "protocol"})
+            return self._run_unconfirmed(request, traces, classified=True)
+        if self.mode == "saver":
+            self.workspace.append_event("SAVER_ROUTED", {"route": "direct"})
+        return self._run_direct(request, traces)
+
+    def _gateway(self, request: str, traces: list[CallTrace]) -> EngineResponse | None:
+        """SECURE_GATEWAY (L153): only passes or refuses, and adds nothing to what the model receives. Layer 1 is
+        System 1's activation and budget checks; layer 2 the poisoned-input check (GATEWAY_CHECK, chosen by the L153
+        measurement). A refusal closes REFUSED (exit 0). Returns None when the request passes."""
+        assert self.workspace is not None
+        routed = self._s1_activation(request)
+        if routed is not None and routed[0] in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
+            return self._refuse(routed[1], traces, "activation")
+        request = self._take_request(request)
+        self._select_task_type(request, "unconfirmed")
+        budget_refusal = self._budget_refusal()
+        if budget_refusal is not None:
+            return self._refuse(budget_refusal, traces, "budget")
+        self._blocked_response = None
+        if self._poisoned_input(request, traces):
+            return self._refuse(getattr(self, "_blocked_response", None) or GATEWAY_REFUSAL, traces, "gateway")
+        self.workspace.append_event("GATEWAY_PASSED", {"mode": self.mode, "check": GATEWAY_CHECK})
+        return None
+
+    def _poisoned_input(self, request: str, traces: list[CallTrace]) -> bool:
+        """The gateway's second layer. It fails closed: no usable judgement refuses."""
+        assert self.workspace is not None
+        refused = False
+        if GATEWAY_CHECK in ("system1", "both"):
+            from pdl_taskmaster.providers.sys1.recipes.poisoned_input import PoisonedInputRecipe
+
+            recipe, p = PoisonedInputRecipe(), None
+            client = self.sys1_client
+            if client is not None and client.is_configured:
+                try:
+                    body, duration_ms = client.call(recipe.build_request({"request": request}))
+                    p = recipe.poisoned_probability(recipe.parse_response(body, duration_ms=duration_ms))
+                except Exception:
+                    p = None
+            self.workspace.append_event("POISONED_INPUT_CHECKED", {"p_poisoned": p, "threshold": GATEWAY_THRESHOLD})
+            refused = p is None or p >= GATEWAY_THRESHOLD
+        if not refused and GATEWAY_CHECK in ("bootstrap", "both"):
+            refused = self._semantic_read(request, traces) is None
+        return refused
+
+    def _run_direct(self, request: str, traces: list[CallTrace]) -> EngineResponse:
+        """The direct answer (L153): the model receives the request alone, as Control's call does. Nothing checks
+        the answer, so it closes CLOSED_UNVERIFIED (exit 5) with the reason direct_answer."""
+        assert self.workspace is not None
+        if self.direct_reply is None:
+            raise WorkspaceError("direct_reply_unavailable")
+        self.controller = self._bind_new_controller(self.workspace, instance_kind="UNCONFIRMED")
+        reply = self.direct_reply(request)
+        text = (getattr(reply, "text", reply) or "").strip()
+        usage = (getattr(reply, "metadata", None) or {}).get("usage")
+        self.workspace.append_event("DIRECT_ANSWER_RECORDED", {"mode": self.mode, "chars": len(text),
+                                                               **({"usage": usage} if usage else {})})
+        if not text:
+            self.controller.cancel()
+            if self.workspace.turn_id is not None:
+                self.workspace.mark_turn_status("CLOSED_CANCELLED")
+            return EngineResponse(presentation.cancelled(), traces, closed=True)
+        result_body_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        self._unverified_reason = "direct_answer"
+        self._close_with_result(result_body_hash)
+        self._unverified_reason = None
+        self.workspace.publish_execution_outcome("RESULT", text, {
+            "source_prompt_id": None, "source_plan_id": None, "result_body_hash": result_body_hash,
+            "route": "direct",
+        })
+        return EngineResponse(text, traces, closed=True)
 
     def _republish_unpublished(self) -> bool:
         """Durability: a review gate whose artifact never reached the workspace (Ctrl+C
@@ -1536,6 +1643,8 @@ class SessionEngine:
             self._previous_turn = None
             self._previous_deliverable = None
             self._source_request = None
+        if self.mode != "protocol":
+            return self._run_mode(user_message.strip(), traces)
         observation = observe_invocation(user_message)
         if observation.explicit:
             self.workspace.append_event(

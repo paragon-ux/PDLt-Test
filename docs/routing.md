@@ -150,6 +150,7 @@ Exit 4 is a harness or provider error, never a protocol result; 130 is an interr
 | Structured output | `--api-structured-output`, `--no-structured-output` | launch only | on |
 | Artifact representation | `--representation pdl` or `nl` | launch only | pdl |
 | Pinned task type | `--task-type NAME` | launch only | System 1 classifies |
+| Session mode: protocol, direct, saver (section 7) | `--mode` | `/mode` (opens a new session) | protocol |
 | Model, worker, sandbox | `--model`, `--worker`, `--sandbox` | `/model`, `/worker`, `/sandbox` | see [REPL](repl.md) |
 
 A mode switch is accepted only from the control channel: a slash command typed in the REPL, a launch flag, or a `RunSettings` field. Text inside a request never changes a mode.
@@ -167,27 +168,33 @@ These exist for studies and are not user modes. Each changes what one call recei
 
 ---
 
-## 7. Planned, not built (L153)
+## 7. Direct and saver modes (L153)
 
-The user's routing plan replaces category-based routing (L152, withdrawn) with modes chosen by the user or agent:
+A session runs in one of three modes: `protocol` (the default, sections 2 to 6), `direct` or `saver`. Choose it with `--mode`, `/mode` in the REPL or `Session.open(mode=...)`.
 
-1. **A mode change starts a new session.** No turn history carries over, so no draft is left half-reviewed and every session runs in one mode.
-2. **A direct mode with an opt-in SECURE_GATEWAY.** The gateway is bespoke. It only passes or blocks, and adds nothing to what the model receives (L151: added content costs accuracy).
-   - First layer: System 1's activation and budget checks, at no model call.
-   - Second layer: a poisoned-input check, chosen by measurement between a new System 1 recipe and a call that makes only Bootstrap's refusal judgement.
-   - Bar: the least aggressive setting that blocks every category 09 prompt, confirmed on held-out attacks. Tasks mixed with poisoned input are refused by design. False refusals are reported, and System 1's other classes must not shift.
+- **A mode change starts a new session.** `/mode` opens a new session, and reopening a session in another mode is refused (`api.session.check_session_mode`). No turn history crosses modes, so no draft is left half-reviewed.
+- **Bootstrap stays as it is.**
 
-   The gateway also sets the closure: a refusal closes as REFUSED (exit 0); a request it passes is answered directly and closes as CLOSED_UNVERIFIED (exit 5). Raw `--route control` stays the measurement baseline.
-3. **Saver mode.** Requests System 1 predicts as VERIFIED_EXECUTION go through the protocol; all others are answered in direct mode behind the gateway. It trades the protocol's smaller, unestablished gains on unverified tasks for a direct answer's cost: about 40% of an unconfirmed run's spend and a third of its time (L94).
-4. **Bootstrap stays as it is.**
+**SECURE_GATEWAY** guards both modes. It only passes or blocks, and adds nothing to what the model receives (L151: added content costs accuracy). It fails closed: a missing or unusable judgement refuses.
+1. First layer: System 1's activation check, then its budget check. Neither makes a model call.
+2. Second layer: the poisoned-input check (`GATEWAY_CHECK` in `runtime/session_engine.py`). The candidates were System 1's `PoisonedInputRecipe`, Bootstrap's refusal judgement alone, or both. They were measured on `experiments/gateway/` (L153). None met the pre-registered bar, and the user chose both. System 1 refuses at P(POISONED) ≥ 0.42, the least aggressive threshold that blocks every catalogue category 09 attack; Bootstrap's judgement follows, and saver's protocol branch reuses it. Held-out recall is 32/40, with no false refusal.
+
+The gateway also sets the closure:
+- a refusal closes REFUSED (exit 0);
+- a passed request is answered directly, as `DIRECT_ANSWER`: the model receives the request alone, with no instructions, like Control's call. Nothing checks the answer, so it closes CLOSED_UNVERIFIED (exit 5) with the reason `direct_answer`.
+
+Raw `--route control` stays the measurement baseline.
+
+**Saver mode** sends a request the gateway passes on by its System 1 problem class. VERIFIED_EXECUTION goes through the protocol's unconfirmed route, classified once. Everything else is answered directly. It trades the protocol's smaller, unestablished gains on unverified tasks for a direct answer's cost: about 40% of an unconfirmed run's spend and a third of its time (L94).
 
 ```mermaid
 flowchart TD
-    U["Request (saver mode)"] --> G{"SECURE_GATEWAY<br/>System 1 activation and budget checks<br/>+ poisoned-input check"}
+    U["Request (direct or saver mode)"] --> G{"SECURE_GATEWAY<br/>System 1 activation and budget checks<br/>+ poisoned-input check"}
     G -->|refuse| R["REFUSED (exit 0)"]
-    G -->|pass| K{"System 1: ProblemClassRecipe"}
+    G -->|"pass, direct mode"| D["Direct answer"]
+    G -->|"pass, saver mode"| K{"System 1: ProblemClassRecipe"}
     K -->|VERIFIED_EXECUTION| P["Protocol (unconfirmed route)"]
-    K -->|STANDARD_EXECUTION| D["Direct answer"]
+    K -->|STANDARD_EXECUTION| D
     P --> C0["Closure as in section 5"]
     D --> C5["CLOSED_UNVERIFIED (exit 5)"]
 ```

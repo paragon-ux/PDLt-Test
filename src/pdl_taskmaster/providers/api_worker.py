@@ -336,6 +336,10 @@ def unknown_provider_warnings(names: list[str]) -> list[str]:
     ]
 
 
+# Operations answered as plain text, with no JSON suffix and no output schema. DIRECT_ANSWER (L153, direct and saver
+# modes) also gets no instructions at all: the model receives the user's request alone, as Control's does.
+PLAIN_OPERATIONS = ("BYPASS_ORDINARY", "DIRECT_ANSWER")
+
 DEFAULT_PROVIDER_PINNING: dict[str, Any] = {
     "order": _default_provider_order(),
     "allow_fallbacks": True,
@@ -833,7 +837,7 @@ class ApiWorker:
         from pdl_taskmaster.runtime.agent_tools import TOOL_OPERATIONS
         from pdl_taskmaster.runtime.wire_payloads import OPERATION_PAYLOAD_MODELS
 
-        operations = sorted(set(OPERATION_PAYLOAD_MODELS) | {"BYPASS_ORDINARY"} | set(self.reasoning_by_operation)
+        operations = sorted(set(OPERATION_PAYLOAD_MODELS) | set(PLAIN_OPERATIONS) | set(self.reasoning_by_operation)
                             | set(self.model_by_operation))
         needs: dict[str, dict[str, list[str]]] = {}
         for operation in operations:
@@ -1177,7 +1181,7 @@ class ApiWorker:
             if _BOOTSTRAP_JSON_LINES not in instructions:
                 raise ValueError("ablate_freetext: the worker instructions no longer carry the JSON format lines")
             instructions = instructions.replace(_BOOTSTRAP_JSON_LINES, _BOOTSTRAP_FREETEXT_LINES)
-        elif operation_name != "BYPASS_ORDINARY":
+        elif operation_name not in PLAIN_OPERATIONS:
             # A direct reply is plain text: the suffix made it answer in JSON
             # ({"message": "Hello! ..."} printed raw in the REPL).
             input_text = input_text.rstrip() + _JSON_ONLY_SUFFIX

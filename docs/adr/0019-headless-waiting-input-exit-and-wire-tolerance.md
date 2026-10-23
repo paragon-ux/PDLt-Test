@@ -52,6 +52,9 @@ The event `CLOSED_UNVERIFIED` records the reason. A failed verification and a ma
 
 The catalogue scores `CLOSED_UNVERIFIED` as the expected stage only where the manifest names it: 13-01, whose correct answer is a negative claim. There a host-verified closure is also accepted, as `WAITING_INPUT` accepts an answer.
 
+### Amendment (L153): a direct answer closes CLOSED_UNVERIFIED with exit 5
+In the opt-in `direct` and `saver` modes, SECURE_GATEWAY passes or refuses a request ([routing.md](../routing.md), section 7). A refusal closes REFUSED (exit 0), as the boundary-refusal amendment above says. A passed request is answered directly and nothing checks the answer, so it closes `CLOSED_UNVERIFIED` (exit 5) with the reason `direct_answer`. A direct answer never closes `CLOSED_SUCCESS`. An empty reply closes `CLOSED_CANCELLED` (exit 1).
+
 ## Consequences
 
 ### Positive

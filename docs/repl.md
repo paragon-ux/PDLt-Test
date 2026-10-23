@@ -55,6 +55,12 @@ What comes back depends on the request:
 | Review | `--review` | `/no-review off` | Stops at the prompt pseudocode and again at the plan. Answer `/confirm` to go on, `/revise <what to change>` for a new draft, or `/stop` to cancel. |
 | Fast | `--fast` (implies `--review`) | `/fast on` | Both artifacts are shown; one the host has no findings on is accepted without waiting, and one with findings stops for you. |
 
+### Session modes
+
+`--mode protocol` is the default. `--mode direct` answers each request directly, behind SECURE_GATEWAY; `--mode saver` uses the protocol only for what System 1 classifies VERIFIED_EXECUTION and answers the rest directly ([routing.md](routing.md), section 7).
+- A direct answer closes `CLOSED_UNVERIFIED` (exit 5); a gateway refusal closes REFUSED (exit 0).
+- `/mode direct` (or `protocol`, `saver`) opens a new session in that mode; a session never changes mode.
+
 ## Commands at the `>` prompt
 
 | Command | Effect |
@@ -69,6 +75,7 @@ What comes back depends on the request:
 | `/no-review [on\|off]`, `/fast [on\|off]` | Switch review mode (above) |
 | `/model [name]` | Show or change the model |
 | `/timeout [seconds]` | Show or change the time limit for one model call |
+| `/mode [protocol\|direct\|saver]` | Switch session mode; opens a new session (above) |
 | `/tokens [on\|off]` | Show token counts per call |
 | `/sessions [prune <days>]` | List sessions, or delete those older than the given number of days |
 | `/new`, `/resume <session-id>` | Start a new session, or switch to another |
@@ -133,7 +140,7 @@ printf '%s\n' "Count the primes below 1000 and print the count." /confirm /confi
 | 2 | Stopped at a review gate, or at another non-terminal stage | Pipe `/confirm` lines, or run without `--review` |
 | 3 | Waiting for input the task needs (`WAITING_INPUT`) | Supply it in a follow-up message |
 | 4 | Harness or provider error: never a task outcome. A `[harness-error]` JSON line on standard error says where | See [Reference: when something fails](reference.md#when-something-fails) |
-| 5 | Published, but the host could not establish it (`CLOSED_UNVERIFIED`) | Treat the result as unverified; its `provenance.json` says what is missing |
+| 5 | Published, but the host could not establish it (`CLOSED_UNVERIFIED`), including every direct answer in `--mode direct` or `saver` | Treat the result as unverified; its `provenance.json` says what is missing |
 | 130 | Interrupted (Ctrl+C) | Nothing |
 
 A headless run that ends anywhere but `CLOSED_SUCCESS` also prints a `[headless halt]` or `[headless close]` line on standard error naming the stage.

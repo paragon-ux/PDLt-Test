@@ -12,6 +12,10 @@ from typing import Any
 
 from pdl_taskmaster.runtime.representation import REPRESENTATIONS
 
+# L153: protocol (the default); direct, answered behind SECURE_GATEWAY; saver, the protocol only for what System 1
+# classifies VERIFIED_EXECUTION. A mode is chosen when a session opens: changing it opens a new session.
+MODES = ("protocol", "direct", "saver")
+
 
 @dataclass(frozen=True)
 class RunSettings:
@@ -26,11 +30,14 @@ class RunSettings:
     task_type: str | None = None  # a registered task type pinned for every request; None: System 1 classifies
     withhold_execution_context: bool = False  # L148 A/B: earlier stages without EXECUTE's instructions
     ablate_unconfirmed: tuple[str, ...] = ()  # L149 ablation: parts of what EXECUTE_UNCONFIRMED receives
+    mode: str = "protocol"  # L153: one of MODES
 
     def __post_init__(self) -> None:
         problems = []
         if self.max_repairs is not None and (not isinstance(self.max_repairs, int) or self.max_repairs < 0):
             problems.append(f"max_repairs: None or a non-negative integer, got {self.max_repairs!r}")
+        if self.mode not in MODES:
+            problems.append(f"mode: one of {list(MODES)}, got {self.mode!r}")
         if self.representation not in REPRESENTATIONS:
             problems.append(f"representation: one of {list(REPRESENTATIONS)}, got {self.representation!r}")
         if self.sandbox_mode is not None and not isinstance(self.sandbox_mode, str):
@@ -77,6 +84,7 @@ class RunSettings:
         engine.pinned_task_type = self.task_type
         engine.withhold_execution_context = self.withhold_execution_context
         engine.ablate_unconfirmed = self.ablate_unconfirmed
+        engine.mode = self.mode
 
     def as_dict(self) -> dict[str, Any]:
         return {f.name: getattr(self, f.name) for f in fields(self)}
