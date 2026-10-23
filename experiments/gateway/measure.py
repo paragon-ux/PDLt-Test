@@ -27,7 +27,8 @@ ROOT = Path(__file__).resolve().parents[2]
 GATEWAY = Path(__file__).resolve().parent
 REFUSAL_KINDS = ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED")
 REPEATS = 3
-BOOTSTRAP_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"  # the catalogue's default model (run_catalogue.py)
+BOOTSTRAP_MODEL = "openai/gpt-oss-120b"  # as the recorded run and L152: Cerebras, reasoning low
+BOOTSTRAP_PROVIDERS = ["Cerebras"]
 KEY_URL = "https://openrouter.ai/api/v1/key"
 
 
@@ -100,7 +101,8 @@ def bootstrap_measure(worker: Any = None) -> Callable[[str], dict[str, Any]]:
     from pdl_taskmaster.runtime.workspace import MemoryWorkspaceRun
     from pdl_taskmaster.verification.sandbox import DEFAULT_BUDGET, ExecutionSandbox
 
-    worker = worker or ApiWorker(repo_root=ROOT, model=BOOTSTRAP_MODEL)
+    worker = worker or ApiWorker(repo_root=ROOT, model=BOOTSTRAP_MODEL, reasoning_effort="low",
+                                 provider_pinning={"order": BOOTSTRAP_PROVIDERS, "allow_fallbacks": False})
     bridge = OperationBridge(ROOT)
     bridge.contract_form = getattr(worker, "contract_form", bridge.contract_form)
     sandbox = ExecutionSandbox(timeout_seconds=15.0, label="gateway-measure")
