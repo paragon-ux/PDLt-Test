@@ -22,7 +22,7 @@ A rejected alternative added a new controller stage, bypassed `EXECUTE`, and cla
 
 | Code | Meaning |
 |---|---|
-| 0 | `CLOSED_SUCCESS`: a verified deliverable, **or** a published boundary refusal (`closure=REFUSED`) |
+| 0 | `CLOSED_SUCCESS`: a deliverable that passed every check the host applies (for STANDARD_EXECUTION only the contract checks, `contract_checked`: not a correctness claim, L140), **or** a published boundary refusal (`closure=REFUSED`) |
 | 1 | `CLOSED_CANCELLED`: cancellation, verification failure after repair, or a fatal error |
 | 2 | `UNCONFIRMED_GATE`: halted at a review gate |
 | 3 | `WAITING_INPUT`: paused for required input |

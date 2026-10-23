@@ -4,6 +4,7 @@ it with every artifact of the turn, and derives it from the turn's recorded file
 
 Verification levels:
   host_verified     the host reproduced the result: a program it ran printed the witness (computed or certificate);
+                    with no domain checker registered it does not judge that witness correct (L140)
   contract_checked  the reply passed the host's contract checks, but no check of the task's own result ran
                     (STANDARD_EXECUTION: for code, the requested behaviour was not tested; ledger L115);
   unverified        published without the host establishing it (CLOSED_UNVERIFIED: a negative claim, a deliverable

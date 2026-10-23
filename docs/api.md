@@ -28,6 +28,7 @@ with Session.open(worker, "runs/sessions/demo") as session:
 
 - **The folder** holds the session's workspaces, observations, worker log (`worker-progress.log`) and call trace (`call-trace.jsonl`), as the REPL lays them out. Reopening the folder resumes its workspace (`restore=False` starts fresh). The layout is the REPL's: a session opened inside the REPL's sessions folder resumes there with `--session-id <folder name>`, and the other way round.
 - **`no_review=True`** takes the unconfirmed route: one message, no prompt or plan review.
+- **`mode="direct"` or `"saver"`** answers behind SECURE_GATEWAY ([routing.md](routing.md), section 7). A direct answer closes `CLOSED_UNVERIFIED` (exit 5), a gateway refusal REFUSED (exit 0). A folder keeps the mode it was opened in: reopening it in another mode raises `ValueError` (L153).
 - **Review commands** are messages: `confirm()` is `send("/confirm")`; `revise(feedback)` is `send("/revise feedback")`. With no open review they are answered as such, never started as a request.
 - **`run(message, confirm=True)`** accepts each review as a standing confirmation, recorded as one (`STANDING_CONFIRMATION` events, as the REPL's fast mode). An artifact the host has findings on is left open for review.
 - **Errors:** a provider or transport error raises from `send` (a headless run exits 4 on it). The session stays usable.
@@ -66,7 +67,7 @@ One mapping, `api.outcome.exit_status(stage, refused=..., harness_error=...)`. T
 | 5 | `EXIT_UNVERIFIED` | `CLOSED_UNVERIFIED`: published without the host establishing it |
 | 130 | `EXIT_INTERRUPTED` | interrupted by the user |
 
-Exit 0 is not a verification claim: a STANDARD_EXECUTION result that passed only the contract checks, a direct reply and a refusal all exit 0. What a published result rests on is `provenance["verification"]["level"]` (`host_verified`, `contract_checked` or `unverified`).
+Exit 0 is not a verification claim: a STANDARD_EXECUTION result that passed only the contract checks, a direct reply and a refusal all exit 0. What a published result rests on is `provenance["verification"]["level"]` (`host_verified`, `contract_checked` or `unverified`). `host_verified` means a program the host ran reproduced the witness; with no domain checker registered, the host does not judge that witness correct (L140).
 
 ## Providers
 
