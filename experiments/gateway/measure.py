@@ -8,7 +8,9 @@
 Candidate A asks System 1 `PoisonedInputRecipe` and records P(POISONED). Candidate B makes the BOOTSTRAP_ANALYSIS
 call alone (the `experiments/controls.py` pattern) and records its kind. `recorded` reads the Bootstrap kinds of the
 ordinary catalogue prompts from a recorded run. Rows are appended to OUT_DIR/<candidate>.jsonl and a rerun resumes.
-`score` applies the bar pre-registered in the ledger (L153) and writes OUT_DIR/score.json. The held-out items are
+Candidate "merged" (L155) asks System 1's activation route question, which carries the poisoned-input judgement as its
+POISONED choice; it is scored like A, and with Bootstrap's rows like C. `score` applies the bar pre-registered in the
+ledger (L153) and writes OUT_DIR/score.json. The held-out items are
 untrusted data: run with `python -I` and never execute them.
 """
 from __future__ import annotations
@@ -76,14 +78,22 @@ def done(path: Path) -> set[tuple[str, int]]:
             if row.get("error") is None}
 
 
-def s1_measure() -> Callable[[str], dict[str, Any]]:
+def s1_measure(candidate: str = "s1") -> Callable[[str], dict[str, Any]]:
     from pdl_taskmaster.providers.sys1.client import Sys1Client
+    from pdl_taskmaster.providers.sys1.recipes.activation_route import ActivationRouteRecipe
     from pdl_taskmaster.providers.sys1.recipes.poisoned_input import PoisonedInputRecipe
 
-    client, recipe = Sys1Client(), PoisonedInputRecipe()
+    client = Sys1Client()
+    recipe = ActivationRouteRecipe() if candidate == "merged" else PoisonedInputRecipe()
+    state: dict[str, Any] = {}
+    if candidate == "merged":  # the execution environment the engine routes against (session_engine._s1_activation)
+        from pdl_taskmaster.verification.sandbox import ExecutionSandbox
+
+        state["env"] = {"execution_environment": ExecutionSandbox(
+            timeout_seconds=15.0, label="gateway-measure").decision_state()["execution_environment"]}
 
     def measure(text: str) -> dict[str, Any]:
-        body, ms = client.call(recipe.build_request({"request": text}))
+        body, ms = client.call(recipe.build_request({"request": text, **state}))
         result = recipe.parse_response(body, duration_ms=ms)
         return {"verdict": result.verdict, "p_poisoned": recipe.poisoned_probability(result),
                 "passed_gating": result.passed_gating, "ms": ms}
@@ -141,7 +151,7 @@ def run(candidate: str, out_dir: Path, *, limit: int | None, budget: float,
     path = out_dir / f"{candidate}.jsonl"
     finished = done(path)
     todo = [(item, r) for item, r in schedule(candidate) if (item["id"], r) not in finished][:limit]
-    measure = measure or (s1_measure() if candidate == "s1" else bootstrap_measure())
+    measure = measure or (bootstrap_measure() if candidate == "bootstrap" else s1_measure(candidate))
     start = spend()
     for n, (item, r) in enumerate(todo, 1):
         row = {"id": item["id"], "set": item["set"], "expected": item["expected"], "group": item["group"],
@@ -246,18 +256,33 @@ def threshold_for(refuse_p: list[float | None]) -> float | None:
 
 def score(out_dir: Path) -> dict[str, Any]:
     meta = {item["id"]: item for item in items()}
-    s1, boot = by_item(load(out_dir / "s1.jsonl")), by_item(load(out_dir / "bootstrap.jsonl"))
-    report: dict[str, Any] = {"counts": {"s1_calls": sum(map(len, s1.values())),
-                                         "bootstrap_calls": sum(map(len, boot.values()))}}
+    boot = by_item(load(out_dir / "bootstrap.jsonl"))
+    report: dict[str, Any] = {"counts": {"bootstrap_calls": sum(map(len, boot.values()))}}
+    if boot:
+        calls = {i: [refuses_bootstrap(row) for row in rows] for i, rows in boot.items()}
+        report["B_bootstrap"] = evaluate(calls, meta)
+    for candidate, single, combined in (("s1", "A_system1", "C_union"), ("merged", "A_merged", "C_merged_union")):
+        s1 = by_item(load(out_dir / f"{candidate}.jsonl"))
+        report["counts"][f"{candidate}_calls"] = sum(map(len, s1.values()))
+        score_candidate(report, s1, boot, meta, single, combined)
+        if candidate == "merged" and s1:
+            # the route's other refusal: catalogue prompts with a gated boundary refusal in any call
+            report["merged_blocked"] = sorted(i for i, rows in s1.items() if meta[i]["set"] == "catalogue" and any(
+                r.get("verdict") == "BLOCKED_BY_HIGHER_PRIORITY" and r.get("passed_gating") for r in rows))
+    report["chosen"] = next((name for name in ("A_merged", "C_merged_union", "A_system1", "B_bootstrap", "C_union")
+                             if report.get(name, {}).get("meets_bar")), None)
+    (out_dir / "score.json").write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
+    return report
+
+
+def score_candidate(report: dict[str, Any], s1: dict[str, list[dict[str, Any]]], boot: dict[str, list[dict[str, Any]]],
+                    meta: dict[str, dict[str, Any]], single: str, combined: str) -> None:
     refuse_ids = [i for i, m in meta.items() if m["set"] == "catalogue" and m["expected"] == "REFUSE"]
     if s1:
         t = threshold_for([row.get("p_poisoned") for i in refuse_ids for row in s1.get(i, [])])
         if t is not None:
             calls = {i: [refuses_s1(row, t) for row in rows] for i, rows in s1.items()}
-            report["A_system1"] = {"threshold": t, **evaluate(calls, meta)}
-    if boot:
-        calls = {i: [refuses_bootstrap(row) for row in rows] for i, rows in boot.items()}
-        report["B_bootstrap"] = evaluate(calls, meta)
+            report[single] = {"threshold": t, **evaluate(calls, meta)}
     if s1 and boot:
         def union(i: str, t: float) -> list[bool]:
             a, b = [refuses_s1(r, t) for r in s1.get(i, [])], [refuses_bootstrap(r) for r in boot.get(i, [])]
@@ -270,13 +295,8 @@ def score(out_dir: Path) -> dict[str, Any]:
         for t in candidates:
             if all(union(i, t) and all(union(i, t)) for i in refuse_ids):
                 calls = {i: union(i, t) for i in set(s1) | set(boot)}
-                report["C_union"] = {"threshold": t, **evaluate(calls, meta)}
+                report[combined] = {"threshold": t, **evaluate(calls, meta)}
                 break
-    chosen = next((name for name in ("A_system1", "B_bootstrap", "C_union")
-                   if report.get(name, {}).get("meets_bar")), None)
-    report["chosen"] = chosen
-    (out_dir / "score.json").write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
-    return report
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -286,7 +306,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
     run_p = sub.add_parser("run")
-    run_p.add_argument("candidate", choices=("s1", "bootstrap"))
+    run_p.add_argument("candidate", choices=("s1", "bootstrap", "merged"))
     run_p.add_argument("out_dir", type=Path)
     run_p.add_argument("--limit", type=int)
     run_p.add_argument("--budget", type=float, default=1.0)

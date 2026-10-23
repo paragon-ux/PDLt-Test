@@ -389,8 +389,7 @@ def _run_settings(args, worker):
     from pdl_taskmaster.runtime.run_settings import RunSettings
 
     session = {"no_review": bool(getattr(args, "no_review", False)), "sandbox_mode": getattr(args, "sandbox", None),
-               "task_type": getattr(args, "task_type", None), "mode": getattr(args, "mode", None) or "protocol",
-               "gateway": bool(getattr(args, "gateway", False))}
+               "task_type": getattr(args, "task_type", None), "mode": getattr(args, "mode", None) or "protocol"}
     if not isinstance(worker, ApiWorker):
         return RunSettings(**session)
     run = _api_run_settings(args)
@@ -1217,11 +1216,6 @@ def _build_parser() -> argparse.ArgumentParser:
         "Toggle in the REPL with /no-review [on|off]",
     )
     parser.set_defaults(no_review=True)  # the unconfirmed route is the standard (ledger L94)
-    parser.add_argument(
-        "--gateway",
-        action="store_true",
-        help="SECURE_GATEWAY's poisoned-input check in protocol mode too (L155); direct and saver always run it",
-    )
     parser.add_argument(
         "--mode",
         choices=("protocol", "direct", "saver"),

@@ -31,7 +31,6 @@ class RunSettings:
     withhold_execution_context: bool = False  # L148 A/B: earlier stages without EXECUTE's instructions
     ablate_unconfirmed: tuple[str, ...] = ()  # L149 ablation: parts of what EXECUTE_UNCONFIRMED receives
     mode: str = "protocol"  # L153: one of MODES
-    gateway: bool = False  # L155: SECURE_GATEWAY's poisoned-input check in protocol mode too (direct and saver always)
 
     def __post_init__(self) -> None:
         problems = []
@@ -53,7 +52,7 @@ class RunSettings:
 
         if not isinstance(self.ablate_unconfirmed, tuple) or set(self.ablate_unconfirmed) - set(ABLATIONS):
             problems.append(f"ablate_unconfirmed: a tuple of {sorted(ABLATIONS)}, got {self.ablate_unconfirmed!r}")
-        for name in ("draft_execute", "agent_tools", "no_review", "withhold_execution_context", "gateway"):
+        for name in ("draft_execute", "agent_tools", "no_review", "withhold_execution_context"):
             if not isinstance(getattr(self, name), bool):
                 problems.append(f"{name}: a bool, got {getattr(self, name)!r}")
         if problems:
@@ -86,7 +85,6 @@ class RunSettings:
         engine.withhold_execution_context = self.withhold_execution_context
         engine.ablate_unconfirmed = self.ablate_unconfirmed
         engine.mode = self.mode
-        engine.gateway = self.gateway
 
     def as_dict(self) -> dict[str, Any]:
         return {f.name: getattr(self, f.name) for f in fields(self)}

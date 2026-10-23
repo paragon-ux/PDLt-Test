@@ -398,10 +398,9 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
         setting_args += ["--ablate-unconfirmed", ",".join(settings["ablate_unconfirmed"])]
     if settings.get("route") == "control" and settings.get("control_frame"):
         setting_args += ["--frame", ",".join(settings["control_frame"])]
-    if settings.get("gateway"):
-        setting_args.append("--gateway")
-    if settings.get("route") == "saver":
-        setting_args += ["--mode", "saver", "--no-review"]  # saver's protocol branch is the unconfirmed route (L153)
+    if settings.get("route") in ("saver", "direct"):
+        # saver's protocol branch is the unconfirmed route (L153); direct mode answers the request alone
+        setting_args += ["--mode", settings["route"], "--no-review"]
     elif settings.get("route") == "unconfirmed":
         setting_args.append("--no-review")
     elif settings.get("route") == "confirmed":
@@ -1078,11 +1077,11 @@ def main():
                         help=f"memory cap for one prompt's harness process tree (default: {HARNESS_MEMORY_MB})")
     parser.add_argument("--repeat", type=int, default=1, metavar="N",
                         help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
-    parser.add_argument("--gateway", action="store_true",
-                        help="L155: SECURE_GATEWAY's poisoned-input check on the protocol routes too (saver always runs "
-                             "it). Not applicable to --route control")
-    parser.add_argument("--route", choices=["confirmed", "unconfirmed", "saver", "control"], default="unconfirmed",
-                        help="execution route: 'unconfirmed' (default: --no-review / ultrafast), 'confirmed' (multi-stage with review), or 'control' (unharnessed direct model baseline)")
+    parser.add_argument("--route", choices=["confirmed", "unconfirmed", "saver", "direct", "control"],
+                        default="unconfirmed",
+                        help="execution route: 'unconfirmed' (default: --no-review / ultrafast), 'confirmed' (multi-stage with review), "
+                             "'saver' or 'direct' (the L153 modes, behind SECURE_GATEWAY), or 'control' (unharnessed "
+                             "direct model baseline)")
     parser.add_argument("--theme", choices=THEME_NAMES, default=None,
                         help="Color theme for runner output and child process (default: $PDLT_THEME)")
     parser.add_argument("--user-color", choices=COLOR_NAMES, default=None,
@@ -1137,7 +1136,6 @@ def main():
                     # likewise: Control sends no output format, whatever the option says
                     "structured_output": args.api_structured_output and args.route != "control",
                     "sandbox": args.sandbox, "route": args.route,
-                    "gateway": args.gateway and args.route in ("confirmed", "unconfirmed"),
                     "theme": args.theme, "user_color": args.user_color, "assistant_color": args.assistant_color}
     if args.sandbox:
         # The graders run deliverable code in this process: the same confinement.
@@ -1151,6 +1149,9 @@ def main():
     print(f"{'=' * 50}")
     print(f"Model:      {args.model}")
     reasoning_effective = effective_reasoning(args.model, args.reasoning, args.reasoning_op)
+    if args.route == "control":
+        # Control makes one call at the default effort (control_cli, L155); the per-operation mapping does not apply.
+        reasoning_effective["by_operation"] = {}
     print(f"Reasoning:  {args.reasoning or 'harness default'}"
           + (f" (per operation: {', '.join(args.reasoning_op)})" if args.reasoning_op else ""))
     print(f"            effective: default={reasoning_effective['default']}, "
@@ -1183,8 +1184,6 @@ def main():
         route_tag += f"-no-{name.replace('_', '-')}"
     if args.representation != "pdl":
         route_tag += f"-{args.representation}"
-    if run_settings["gateway"]:
-        route_tag += "-gateway"
     if run_settings["tier_d1"]:
         route_tag += "-tier-d1"
     if args.route != "control" and not run_settings["structured_output"]:

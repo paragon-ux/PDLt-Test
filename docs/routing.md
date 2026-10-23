@@ -13,7 +13,7 @@ Sections 1-6 describe what PDLt does today. Section 7 describes what is planned 
 | REPL | `pdlt --new-session` | launch flags, and some modes per turn with slash commands ([REPL](repl.md)) |
 | Headless | `pdlt --non-interactive` | launch flags; the run ends with an exit code (section 5) |
 | Python API | `pdl_taskmaster.api.Session` | `RunSettings` ([Python API](api.md)) |
-| Catalogue runner | `python run_catalogue.py --route ...` | `--route control`, `unconfirmed`, `confirmed` or `saver`; `--gateway` adds SECURE_GATEWAY's poisoned-input check to the protocol routes (L155); `--manifest prompts/TARGETED_MANIFEST.jsonl` runs the targeted set (30 prompts: each category's first and its most failed, 09 excluded); plus measurement switches (section 6.2) |
+| Catalogue runner | `python run_catalogue.py --route ...` | `--route control`, `unconfirmed`, `confirmed`, `saver` or `direct`; `--manifest prompts/TARGETED_MANIFEST.jsonl` runs the targeted set (30 prompts: each category's first and its most failed, 09 excluded); plus measurement switches (section 6.2) |
 
 The control route exists only in the catalogue runner today: `--route control` sends the raw request to the model through `host/control_cli.py`, with no activation check, no Bootstrap and no verification. It is the measurement baseline.
 
@@ -44,7 +44,7 @@ flowchart TD
     V --> C["Closure<br/>(section 5)"]
 ```
 
-**What each check guards.** The activation check refuses requests outside the environment's scope: network access the sandbox lacks, the policy scope, and anything past the knowledge cutoff (`PDLT_SANDBOX_NETWORK`, `PDLT_POLICY_SCOPE`, `PDLT_KNOWLEDGE_CUTOFF`; ADR-0020). The budget check refuses computations that cannot finish within the routed tier. Bootstrap is the only step that reads the raw request as untrusted content and can refuse it as adversarial. System 1 has no class for poisoned input today (L153).
+**What each check guards.** The activation check refuses requests outside the environment's scope: network access the sandbox lacks, the policy scope, and anything past the knowledge cutoff (`PDLT_SANDBOX_NETWORK`, `PDLT_POLICY_SCOPE`, `PDLT_KNOWLEDGE_CUTOFF`; ADR-0020). The budget check refuses computations that cannot finish within the routed tier. Bootstrap is the only step that reads the raw request as untrusted content and can refuse it as adversarial. System 1's activation question also carries SECURE_GATEWAY's poisoned-input judgement as its POISONED choice (L155), so every mode asks one System 1 judgement before any model call; the protocol's routes keep Bootstrap's own refusal judgement.
 
 ---
 
@@ -177,7 +177,7 @@ A session runs in one of three modes: `protocol` (the default, sections 2 to 6),
 
 **SECURE_GATEWAY** guards both modes. It only passes or blocks, and adds nothing to what the model receives (L151: added content costs accuracy). It fails closed: a missing or unusable judgement refuses.
 1. First layer: System 1's activation check, then its budget check. Neither makes a model call.
-2. Second layer: the poisoned-input check (`GATEWAY_CHECK` in `runtime/session_engine.py`). The candidates were System 1's `PoisonedInputRecipe`, Bootstrap's refusal judgement alone, or both. They were measured on `experiments/gateway/` (L153). None met the pre-registered bar, and the user chose both, then (L155) System 1 alone: a direct answer gets the guard and no Bootstrap, whose output it never used. System 1 refuses at P(POISONED) ≥ 0.42, the least aggressive threshold that blocks every catalogue category 09 attack. Held-out recall is 28/40 (32/40 with Bootstrap), with no false refusal; a remeasurement is due before the merge (L155). Saver's protocol branch runs Bootstrap as the route's own call.
+2. Second layer: the poisoned-input check. L153 measured System 1's `PoisonedInputRecipe`, Bootstrap's refusal judgement alone, and both, on `experiments/gateway/`; none met the pre-registered bar, and the user chose both. L155 replaced it with one System 1 judgement: the activation question's POISONED choice, asked in the same call as layer 1, in every mode (the user: the guard must not overlap anything). A direct answer gets the guard alone, with no Bootstrap, whose output it never used. The request is refused at P(POISONED) ≥ 0.64 (`GATEWAY_THRESHOLD` in `runtime/session_engine.py`), the least aggressive threshold that blocks every call on the catalogue's category 09 attacks; clean prompts score at most 0.21. Held-out recall is 26/40 for the judgement alone and 35/40 with Bootstrap, with no false refusal, so the protocol's routes keep Bootstrap's refusal judgement (it adds recall). Saver's protocol branch runs Bootstrap as the route's own call.
 
 The gateway also sets the closure:
 - a refusal closes REFUSED (exit 0);
@@ -189,7 +189,7 @@ Raw `--route control` stays the measurement baseline.
 
 ```mermaid
 flowchart TD
-    U["Request (direct or saver mode)"] --> G{"SECURE_GATEWAY<br/>System 1 activation and budget checks<br/>+ poisoned-input check"}
+    U["Request (direct or saver mode)"] --> G{"SECURE_GATEWAY<br/>one System 1 judgement (activation + POISONED)<br/>then the budget check"}
     G -->|refuse| R["REFUSED (exit 0)"]
     G -->|"pass, direct mode"| D["Direct answer"]
     G -->|"pass, saver mode"| K{"System 1: ProblemClassRecipe"}

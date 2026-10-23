@@ -22,7 +22,7 @@ REQUEST = "Explain why the sky is blue in two sentences."
 
 
 class GatewaySys1(ClassifyingSys1):
-    """Answers the activation route, the problem class and the poisoned-input question as configured."""
+    """Answers the activation route (with L155's POISONED choice) and the problem class as configured."""
 
     def __init__(self, problem_class="STANDARD_EXECUTION", route="APPLY_PROTOCOL", p_poisoned=0.02):
         super().__init__(problem_class)
@@ -31,14 +31,20 @@ class GatewaySys1(ClassifyingSys1):
     def call(self, request):
         name = next(iter(request.questions))
         self.asked.append(name)
-        if name == "poisoned_input":
-            p = self.p_poisoned
-            choice = "POISONED" if p >= 0.5 else "CLEAN"
-            return {"answers": {name: {"choice": choice, "confidence": max(p, 1 - p),
-                                       "probabilities": {"POISONED": p, "CLEAN": 1 - p}}}}, 1.0
         if name == "route":
-            return {"answers": {name: {"choice": self.route, "confidence": 0.97,
-                                       "probabilities": {self.route: 0.97, "BYPASS": 0.03}}}}, 1.0
+            p = self.p_poisoned
+            choice = "POISONED" if p >= 0.5 else self.route
+            return {"answers": {name: {"choice": choice, "confidence": max(p, 1 - p),
+                                       "probabilities": {self.route: 1 - p, "POISONED": p}}}}, 1.0
+        return super().call(request)
+
+
+class SilentSys1(ClassifyingSys1):
+    """Gives no answer to the activation route question."""
+
+    def call(self, request):
+        if next(iter(request.questions)) == "route":
+            return {"answers": {}}, 1.0
         return super().call(request)
 
 
@@ -100,7 +106,7 @@ def test_a_direct_answer_has_the_guard_alone_and_no_bootstrap(tmp_path):
     with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, mode="direct") as session:
         result = session.send(REQUEST)
     assert not result.refused and worker.operations == ["DIRECT_ANSWER"]
-    assert worker.sys1_client.asked.count("poisoned_input") == 1
+    assert worker.sys1_client.asked.count("route") == 1 and "poisoned_input" not in worker.sys1_client.asked
 
 
 def test_saver_protocol_branch_refuses_on_its_own_bootstrap(tmp_path):
@@ -124,7 +130,7 @@ def test_the_gateway_refuses_on_activation_before_any_model_call(tmp_path):
 
 def test_the_gateway_fails_closed_without_a_usable_judgement(tmp_path):
     worker = DirectWorker()
-    worker.sys1_client = ClassifyingSys1()  # answers the poisoned-input question with an unknown choice
+    worker.sys1_client = SilentSys1()  # no answer to the activation route question
     with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, mode="direct") as session:
         result = session.send(REQUEST)
     assert result.refused and "DIRECT_ANSWER" not in worker.operations
@@ -152,11 +158,15 @@ def test_saver_mode_sends_verified_requests_through_the_protocol_classified_once
     assert any(e["kind"] == "SAVER_ROUTED" and e["payload"]["route"] == "protocol" for e in events)
 
 
-def test_protocol_mode_never_asks_the_gateway_question(tmp_path):
-    worker = DirectWorker()
+def test_protocol_mode_refuses_poisoned_input_in_its_one_system1_judgement(tmp_path):
+    # L155: the guard is the activation route's POISONED choice, asked once, in every mode.
+    worker = DirectWorker(p_poisoned=0.97)
     with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, no_review=True) as session:
-        session.send(REQUEST)
-    assert "poisoned_input" not in worker.sys1_client.asked
+        result = session.send(REQUEST)
+        events = _events(session)
+    assert result.refused and result.exit_status == outcome.EXIT_SUCCESS and worker.operations == []
+    assert worker.sys1_client.asked.count("route") == 1 and "poisoned_input" not in worker.sys1_client.asked
+    assert any(e["kind"] == "PROTOCOL_REFUSED" and e["payload"]["phase"] == "gateway" for e in events)
 
 
 def test_a_session_keeps_its_mode(tmp_path):
@@ -191,41 +201,31 @@ def test_repl_mode_flag_reaches_the_run_settings():
     assert repl._run_settings(args, object()).mode == "saver"
 
 
-# L155: the opt-in gateway in protocol mode, and saver as a catalogue route.
+# L155: the guard in every mode, and saver and direct as catalogue routes.
 
 
-def test_protocol_mode_with_the_gateway_refuses_poisoned_input_before_its_route(tmp_path):
-    worker = DirectWorker(p_poisoned=0.97)
-    settings = RunSettings(no_review=True, gateway=True)
-    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, settings=settings) as session:
-        result = session.send(REQUEST)
-        events = _events(session)
-    assert result.refused and result.exit_status == outcome.EXIT_SUCCESS and worker.operations == []
-    assert any(e["kind"] == "PROTOCOL_REFUSED" and e["payload"]["phase"] == "gateway" for e in events)
-
-
-def test_protocol_mode_with_the_gateway_passes_clean_input_to_its_own_route(tmp_path):
+def test_protocol_mode_passes_clean_input_to_its_own_route(tmp_path):
     worker = DirectWorker()
-    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, settings=RunSettings(no_review=True, gateway=True)) as s:
+    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, settings=RunSettings(no_review=True)) as s:
         result = s.send(REQUEST)
     assert result.stage == "CLOSED_SUCCESS"
     assert worker.operations == ["BOOTSTRAP_ANALYSIS", "EXECUTE_UNCONFIRMED"]  # Bootstrap once: the route's own
-    assert worker.sys1_client.asked.count("poisoned_input") == 1
+    assert worker.sys1_client.asked.count("route") == 1
 
 
-def test_confirmed_route_with_the_gateway_refuses_before_drafting(tmp_path):
+def test_confirmed_route_refuses_poisoned_input_before_any_model_call(tmp_path):
     worker = DirectWorker(p_poisoned=0.97)
-    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, settings=RunSettings(gateway=True)) as session:
+    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, settings=RunSettings()) as session:
         result = session.send(REQUEST)
-    assert result.refused and "DRAFT_PROMPT" not in worker.operations
+    assert result.refused and "INTERPRET_ACTIVATION" not in worker.operations and "DRAFT_PROMPT" not in worker.operations
 
 
-def test_the_runner_runs_saver_and_the_gateway(tmp_path):
+def test_the_runner_runs_saver_and_direct(tmp_path):
     import run_catalogue
 
-    def command(route, gateway=False):
+    def command(route):
         return run_catalogue.build_harness_command(tmp_path / "p.txt", "s", tmp_path / "t", tmp_path / "d", "m", "low",
-                                                   run_settings={"route": route, "gateway": gateway})
-    saver = command("saver")
-    assert saver[saver.index("--mode") + 1] == "saver" and "--no-review" in saver
-    assert "--gateway" in command("unconfirmed", gateway=True) and "--gateway" not in command("unconfirmed")
+                                                   run_settings={"route": route})
+    for route in ("saver", "direct"):
+        args = command(route)
+        assert args[args.index("--mode") + 1] == route and "--no-review" in args and "--gateway" not in args

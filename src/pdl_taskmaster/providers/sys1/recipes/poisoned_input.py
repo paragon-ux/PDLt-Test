@@ -4,8 +4,9 @@ Decides whether a request's input tries to direct the assistant or the harness i
 stating a task: overriding instructions, posing as system or protocol state, rewriting the
 rules, exhausting resources, smuggling commands, or extracting hidden material. A task whose
 data carries such text is poisoned too (the user, L153). Unusual form alone (nested code,
-JSON, Unicode, recursion, a security topic) is not poison. Only the gateway of the opt-in
-direct and saver modes asks this question; the default routes never do.
+JSON, Unicode, recursion, a security topic) is not poison. L155 moved the judgement into the
+activation route question (its POISONED choice, activation_route.py); this recipe is kept as the
+candidate L153 measured (experiments/gateway/measure.py, candidate "s1"), and no route asks it.
 """
 
 from __future__ import annotations

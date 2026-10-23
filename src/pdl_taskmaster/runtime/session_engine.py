@@ -414,14 +414,14 @@ class EngineResponse:
     host_findings: bool = False  # the reviewed artifact carries host findings (lint notes)
 
 
-# SECURE_GATEWAY's poisoned-input check (L153): "system1" (PoisonedInputRecipe, refuse at P(POISONED) >=
-# GATEWAY_THRESHOLD), "bootstrap" (BOOTSTRAP_ANALYSIS's refusal judgement alone) or "both" (System 1, then Bootstrap).
-# The user chose "both" from the measurement (experiments/gateway/score_v1.json), then the guard alone for a direct
-# answer (L155: "Control should not have bootstrap, only the guard ... I meant direct"); the protocol's routes keep
-# Bootstrap's judgement as their own. 0.42 is the least aggressive threshold that refuses every call on the catalogue's
-# five category 09 attacks; System 1's held-out recall is 28/40 (32/40 with Bootstrap), no false refusal.
-GATEWAY_CHECK = "system1"
-GATEWAY_THRESHOLD = 0.42
+# SECURE_GATEWAY's poisoned-input check (L153), merged in L155 into System 1's activation route question as the
+# refusal choice POISONED: one System 1 judgement, asked once, in every mode (the user: the guard must not overlap
+# anything; a direct answer has the guard alone, no Bootstrap). A request is refused at P(POISONED) >= GATEWAY_THRESHOLD,
+# the least aggressive threshold that refuses every call on the catalogue's five category 09 attacks
+# (experiments/gateway/measure.py, candidate "merged", 2026-10-23: attack calls 0.64 to 1.0, clean prompts at most 0.21;
+# held-out recall 26/40, 35/40 with Bootstrap, no false refusal).
+GATEWAY_THRESHOLD = 0.64
+REFUSING_ROUTES = ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED", "POISONED")
 GATEWAY_REFUSAL = ("Request refused: part of its input tries to direct the assistant or the system running it, "
                    "rather than stating a task.")
 
@@ -515,9 +515,8 @@ class SessionEngine:
         # L153: "protocol" (the default), or "direct" / "saver" behind SECURE_GATEWAY (run_settings.MODES). Set from
         # the control channel only (a flag, a slash command, an API argument), never from a message.
         self.mode: str = "protocol"
-        # L155: protocol mode runs SECURE_GATEWAY's poisoned-input check too (System 1's part: its routes already
-        # run the activation, budget and Bootstrap checks). Off by default until the L155 study decides.
-        self.gateway: bool = False
+        # Whether the last System 1 activation call gave a usable judgement (direct and saver fail closed without one).
+        self._guard_judged: bool = False
         # The direct answer's model call (L153), set by the host: the user's request -> the worker's result. The
         # model receives the request alone (DIRECT_ANSWER, providers/api_worker.PLAIN_OPERATIONS).
         self.direct_reply: Callable[[str], Any] | None = None
@@ -884,9 +883,12 @@ class SessionEngine:
 
         System 1 only: System 2 never sees the environment settings, and nothing here
         matches keywords or dates. Returns (route, refusal text) for a gated decision
-        other than APPLY_PROTOCOL; System 1 absent, uncertain, or failing yields None
-        (no System 1 evidence: the explicit invocation stands).
+        other than APPLY_PROTOCOL, or ("POISONED", GATEWAY_REFUSAL) at P(POISONED) >=
+        GATEWAY_THRESHOLD (L155: SECURE_GATEWAY's judgement, the same call); System 1
+        absent, uncertain, or failing yields None (no System 1 evidence: the explicit
+        invocation stands) and leaves ``_guard_judged`` False.
         """
+        self._guard_judged = False
         client = self.sys1_client
         if not (text or "").strip() or client is None or not client.is_configured:
             return None
@@ -900,17 +902,23 @@ class SessionEngine:
         except Exception:
             return None
         assert self.workspace is not None
+        p_poisoned = recipe.poisoned_probability(result)
+        self._guard_judged = p_poisoned is not None
         self.workspace.append_event(
             "ACTIVATION_ROUTED",
             {
                 "verdict": result.verdict,
                 "passed_gating": result.passed_gating,
                 "confidence": result.confidence,
+                "p_poisoned": p_poisoned,
+                "threshold": GATEWAY_THRESHOLD,
             },
         )
-        if not result.passed_gating or result.verdict == "APPLY_PROTOCOL":
+        if p_poisoned is not None and p_poisoned >= GATEWAY_THRESHOLD:
+            return "POISONED", GATEWAY_REFUSAL
+        if not result.passed_gating or result.verdict in ("APPLY_PROTOCOL", "POISONED"):
             return None
-        if result.verdict in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
+        if result.verdict in REFUSING_ROUTES:
             resp = recipe.map_to_wire(result)["response"] if hasattr(recipe, "map_to_wire") else None
             return result.verdict, resp or "Request refused by safety and boundary policy."
         return result.verdict, None
@@ -1509,51 +1517,28 @@ class SessionEngine:
         return self._run_direct(request, traces)
 
     def _gateway(self, request: str, traces: list[CallTrace]) -> EngineResponse | None:
-        """SECURE_GATEWAY (L153): only passes or refuses, and adds nothing to what the model receives. Layer 1 is
-        System 1's activation and budget checks; layer 2 the poisoned-input check (GATEWAY_CHECK: System 1 alone, L155).
-        A refusal closes REFUSED (exit 0). Returns None when the request passes."""
+        """SECURE_GATEWAY (L153): only passes or refuses, and adds nothing to what the model receives. One System 1
+        judgement (L155: the activation route with its POISONED choice), then the budget check; no Bootstrap. It fails
+        closed: no usable judgement refuses. A refusal closes REFUSED (exit 0). Returns None when the request passes."""
         assert self.workspace is not None
-        routed = self._s1_activation(request)
-        if routed is not None and routed[0] in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
-            return self._refuse(routed[1], traces, "activation")
+        refusal = self._guard_refusal(self._s1_activation(request), traces)
+        if refusal is not None:
+            return refusal
+        if not self._guard_judged:
+            return self._refuse(GATEWAY_REFUSAL, traces, "gateway")
         request = self._take_request(request)
         self._select_task_type(request, "unconfirmed")
         budget_refusal = self._budget_refusal()
         if budget_refusal is not None:
             return self._refuse(budget_refusal, traces, "budget")
-        self._blocked_response = None
-        if self._poisoned_input(request, traces):
-            return self._refuse(getattr(self, "_blocked_response", None) or GATEWAY_REFUSAL, traces, "gateway")
-        self.workspace.append_event("GATEWAY_PASSED", {"mode": self.mode, "check": GATEWAY_CHECK})
+        self.workspace.append_event("GATEWAY_PASSED", {"mode": self.mode})
         return None
 
-    def _protocol_gateway_refuses(self, request: str, traces: list[CallTrace]) -> bool:
-        """L155: with ``gateway`` set, protocol mode asks System 1's poisoned-input question before its route.
-        Bootstrap's judgement is the route's own (its refusal closes there, phase bootstrap)."""
-        if not self.gateway or not (request or "").strip():
-            return False
-        return self._poisoned_input(request, traces, bootstrap=False)
-
-    def _poisoned_input(self, request: str, traces: list[CallTrace], *, bootstrap: bool = True) -> bool:
-        """The gateway's second layer. It fails closed: no usable judgement refuses."""
-        assert self.workspace is not None
-        refused = False
-        if GATEWAY_CHECK in ("system1", "both"):
-            from pdl_taskmaster.providers.sys1.recipes.poisoned_input import PoisonedInputRecipe
-
-            recipe, p = PoisonedInputRecipe(), None
-            client = self.sys1_client
-            if client is not None and client.is_configured:
-                try:
-                    body, duration_ms = client.call(recipe.build_request({"request": request}))
-                    p = recipe.poisoned_probability(recipe.parse_response(body, duration_ms=duration_ms))
-                except Exception:
-                    p = None
-            self.workspace.append_event("POISONED_INPUT_CHECKED", {"p_poisoned": p, "threshold": GATEWAY_THRESHOLD})
-            refused = p is None or p >= GATEWAY_THRESHOLD
-        if not refused and bootstrap and GATEWAY_CHECK in ("bootstrap", "both"):
-            refused = self._semantic_read(request, traces) is None
-        return refused
+    def _guard_refusal(self, routed: tuple[str, str | None] | None, traces: list[CallTrace]) -> EngineResponse | None:
+        """The refusal a System 1 activation decision calls for: phase gateway for POISONED, activation otherwise."""
+        if routed is None or routed[0] not in REFUSING_ROUTES:
+            return None
+        return self._refuse(routed[1], traces, "gateway" if routed[0] == "POISONED" else "activation")
 
     def _run_direct(self, request: str, traces: list[CallTrace]) -> EngineResponse:
         """The direct answer (L153): the model receives the request alone, as Control's call does. Nothing checks
@@ -1666,15 +1651,13 @@ class SessionEngine:
             routed = self._s1_activation(observation.substantive_request)
             if routed is not None:
                 route, refusal = routed
-                if route in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
-                    return self._refuse(refusal, traces, "activation")
+                if route in REFUSING_ROUTES:
+                    return self._guard_refusal(routed, traces)
                 # BYPASS / PROTOCOL_DISCUSSION: a direct answer, no protocol instance (§3).
                 self.workspace.append_event("DIRECT_ANSWER_ROUTED", {"route": route})
                 if route == "PROTOCOL_DISCUSSION":
                     return self._discuss_protocol(observation.substantive_request, traces)
                 return EngineResponse(None, traces, bypass=True)
-            if self._protocol_gateway_refuses(observation.substantive_request, traces):
-                return self._refuse(GATEWAY_REFUSAL, traces, "gateway")
             return self._draft_initial_prompt(
                 observation.substantive_request,
                 traces,
@@ -1684,15 +1667,17 @@ class SessionEngine:
             routed = self._s1_activation(user_message.strip())
             if routed is not None:
                 route, refusal = routed
-                if route in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
-                    return self._refuse(refusal, traces, "activation")
+                if route in REFUSING_ROUTES:
+                    return self._guard_refusal(routed, traces)
                 self.workspace.append_event("DIRECT_ANSWER_ROUTED", {"route": route})
                 if route == "PROTOCOL_DISCUSSION":
                     return self._discuss_protocol(user_message.strip(), traces)
                 return EngineResponse(None, traces, bypass=True)
-            if self._protocol_gateway_refuses(user_message.strip(), traces):
-                return self._refuse(GATEWAY_REFUSAL, traces, "gateway")
             return self._run_unconfirmed(user_message.strip(), traces)
+        # The confirmed route: System 1's judgement guards it too (L155), before INTERPRET_ACTIVATION's call.
+        refusal = self._guard_refusal(self._s1_activation(user_message.strip()), traces)
+        if refusal is not None:
+            return refusal
         decision = self._call(
             "INTERPRET_ACTIVATION", {"RAW_USER_MESSAGE": user_message}, traces,
             parser=self.bridge.parse_activation,
@@ -1703,8 +1688,6 @@ class SessionEngine:
             return EngineResponse(None, traces, bypass=True)
         if decision.route == ActivationRoute.PROTOCOL_DISCUSSION:
             return self._discuss_protocol(user_message, traces)
-        if self._protocol_gateway_refuses(user_message.strip(), traces):
-            return self._refuse(GATEWAY_REFUSAL, traces, "gateway")
         return self._draft_initial_prompt(
             user_message.strip(),
             traces,

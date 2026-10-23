@@ -138,8 +138,13 @@ def main() -> int:
     }
     if worker.max_output_tokens:
         body["max_output_tokens"] = worker.max_output_tokens
-    if args.api_reasoning_effort:
-        body["reasoning"] = {"effort": args.api_reasoning_effort}
+    # L155: with no effort given, the harness's default for the model (low for gpt-oss), the effort a direct answer
+    # receives; before, nothing was sent and the provider's own default applied while RUN_META recorded low.
+    from pdl_taskmaster.runtime.model_classification import resolve_reasoning
+
+    effort = resolve_reasoning(worker.model, args.api_reasoning_effort or None)[0]
+    if effort:
+        body["reasoning"] = {"effort": effort}
     # The harness sends this same provider order (ApiWorker.build_request_body). Without it OpenRouter picks
     # any provider, and the control is no longer the same model served the same way.
     if worker.provider_pinning:
