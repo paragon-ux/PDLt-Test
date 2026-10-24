@@ -41,13 +41,13 @@
   - Analytical derivations, symbolic mathematics, word problems, and logical deductions are first-class deliverables (`GUARD-03`). The harness MUST NOT coerce symbolic or reasoning tasks into executable Python scripts or force models to fabricate concrete values for symbolic variables.
 - **System 1 Boundary Refusal (ADR-0020, GUARD-02)**: Out-of-bounds, network-dependent, or mathematically impossible tasks MUST be intercepted and refused fail-closed by System 1 in <2s conditioned on runtime environment variables (`PDLT_SANDBOX_NETWORK`, `PDLT_POLICY_SCOPE`); the knowledge cutoff (`PDLT_KNOWLEDGE_CUTOFF`) is injected into System 1's state, never matched by a year regex. NEVER hardcode prompt-specific benchmark tokens or entity names into production regex traps.
 - **Headless Automation & Exit Codes (ADR-0019)**:
-  - `0`: `CLOSED_SUCCESS` (deliverable verified).
+  - `0`: `CLOSED_SUCCESS` (deliverable verified: the host reproduced it, `host_verified`; L164).
   - `0` also covers a published boundary refusal (`closure=REFUSED`, ADR-0019 amendment).
   - `1`: `CLOSED_CANCELLED` / fail-closed error.
   - `2`: `UNCONFIRMED_GATE` (execution stalled at review gate).
   - `3`: `WAITING_INPUT` (legitimate pause awaiting external input).
   - `4`: harness or provider error (`EXIT_HARNESS_ERROR`); never a protocol result.
-  - `5`: `CLOSED_UNVERIFIED`: a published result the host could not establish (a negative claim, a deliverable declaring requirements open, or a positive result established by an argument; ADR-0019 amendment, L116, ADR-0030).
+  - `5`: `CLOSED_UNVERIFIED`: a published result the host could not establish (a negative claim, a deliverable declaring requirements open, a positive result established by an argument, or a result checked only against the contract; ADR-0019 amendments, L116, L164, ADR-0030).
   - `130`: interrupted by the user.
 - **Catalogue Verification**: Before merging a PR that changes behaviour (what the model receives, routing, stage logic, verification or grading), run `python run_catalogue.py --fail-fast` from the repository root to check for regressions across all 16 categories. It is not a per-pass check. Never loosen `is_prompt_pass` or `graders.py` to obtain a green result.
 - **Runs live outside the repository**: catalogue and experiment runs are written to `$PDLT_CATALOGUE_RUNS`, else `PDLt-Catalogue-Archive` beside the checkout (`catalogue_runs.py`). Never commit run output.

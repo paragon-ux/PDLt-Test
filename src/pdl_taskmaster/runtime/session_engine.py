@@ -24,7 +24,9 @@ from pdl_taskmaster.controller.mechanical_controller import (
     Transition,
 )
 from pdl_taskmaster.runtime.operation_bridge import ActivationRoute, ModelRequest, OperationBridge, WireError
-from pdl_taskmaster.runtime.output_contracts import EXECUTION_BRIEF_MODE, NL_REPRESENTATION_MODE, RESULT_IR_MODE
+from pdl_taskmaster.runtime.output_contracts import (
+    ABLATIONS, EXECUTION_BRIEF_MODE, NL_REPRESENTATION_MODE, RESULT_IR_MODE, WITHHOLD_EXECUTION_MODE,
+)
 from pdl_taskmaster.runtime.representation import NL, PDL, REPRESENTATIONS
 from pdl_taskmaster.runtime.quarantine import compile_bootstrap_output, isolate_untrusted_input
 from pdl_taskmaster.runtime.wire_payloads import (
@@ -412,6 +414,18 @@ class EngineResponse:
     host_findings: bool = False  # the reviewed artifact carries host findings (lint notes)
 
 
+# SECURE_GATEWAY's poisoned-input check (L153), merged in L155 into System 1's activation route question as the
+# refusal choice POISONED: one System 1 judgement, asked once, in every mode (the user: the guard must not overlap
+# anything; a direct answer has the guard alone, no Bootstrap). A request is refused at P(POISONED) >= GATEWAY_THRESHOLD,
+# the least aggressive threshold that refuses every call on the catalogue's five category 09 attacks
+# (experiments/gateway/measure.py, candidate "merged", 2026-10-23: attack calls 0.64 to 1.0, clean prompts at most 0.21;
+# held-out recall 26/40, 35/40 with Bootstrap, no false refusal).
+GATEWAY_THRESHOLD = 0.64
+REFUSING_ROUTES = ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED", "POISONED")
+GATEWAY_REFUSAL = ("Request refused: part of its input tries to direct the assistant or the system running it, "
+                   "rather than stating a task.")
+
+
 class SessionEngine:
     """Condition C session orchestrator.
 
@@ -476,8 +490,16 @@ class SessionEngine:
         self.max_repairs: int | None = None
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
         self.agent_tools = False  # ADR-0029: in-call tools and checked submissions (--agent-tools)
+        # L168: the confirmed route's EXECUTE gets its in-call tools (L163) only when asked; its drafts and Bootstrap
+        # keep their submission checks under agent_tools.
+        self.confirmed_execute_tools = False
+        self.agent_tools_exclude: frozenset[str] = frozenset()  # L145: tools withheld (--agent-tools-exclude)
+        self._withhold_execution_context = False  # L148 A/B: earlier stages without EXECUTE's environment and clauses
+        self._ablate_unconfirmed: frozenset[str] = frozenset()  # L149 ablation of what EXECUTE_UNCONFIRMED receives
         self._last_unconfirmed_body: str | None = None
         self._unconfirmed_attempts = 0
+        self._last_execute_body: str | None = None  # the confirmed route's previous EXECUTE attempt (read_attempt)
+        self._execute_attempts = 0
         self.representation = PDL  # the confirmed route's artifacts: PDL, or prose in the L97 pilot
         # Tier D1 (feed back the model's own test failures in standard mode): off for a bare engine. The host sets it
         # from the worker (App), whose default is on ($PDLT_TIER_D1, --no-tier-d1); the env var is read only there.
@@ -495,6 +517,14 @@ class SessionEngine:
         # The direct reply to a request System 1 routes away from the protocol (L124 D7): set by the host to
         # (the user's own text, the execution environment) -> text; None leaves the reply to the caller.
         self.plain_reply: Callable[[str, str | None], str | None] | None = None
+        # L153: "protocol" (the default), or "direct" / "saver" behind SECURE_GATEWAY (run_settings.MODES). Set from
+        # the control channel only (a flag, a slash command, an API argument), never from a message.
+        self.mode: str = "protocol"
+        # Whether the last System 1 activation call gave a usable judgement (direct and saver fail closed without one).
+        self._guard_judged: bool = False
+        # The direct answer's model call (L153), set by the host: the user's request -> the worker's result. The
+        # model receives the request alone (DIRECT_ANSWER, providers/api_worker.PLAIN_OPERATIONS).
+        self.direct_reply: Callable[[str], Any] | None = None
         self._problem_domain: Any = None
         self.refused: bool = False
         # The model that serves the session, for the result's provenance (E-1); set by the host.
@@ -626,7 +656,39 @@ class SessionEngine:
         if value not in REPRESENTATIONS:
             raise ValueError(f"representation:{value}")
         self._representation = value
-        self.bridge.session_modes = frozenset({NL_REPRESENTATION_MODE}) if value == NL else frozenset()
+        self._refresh_session_modes()
+
+    @property
+    def withhold_execution_context(self) -> bool:
+        return self._withhold_execution_context
+
+    @withhold_execution_context.setter
+    def withhold_execution_context(self, value: bool) -> None:
+        """L148 A/B: BOOTSTRAP, DRAFT_PROMPT and DRAFT_PLAN (and their revisions) receive only their own
+        instructions, without EXECUTE's environment (AVAILABLE_EXECUTION_TOOLS) or its clauses (EXEC-*)."""
+        self._withhold_execution_context = bool(value)
+        self._refresh_session_modes()
+
+    @property
+    def ablate_unconfirmed(self) -> frozenset[str]:
+        return self._ablate_unconfirmed
+
+    @ablate_unconfirmed.setter
+    def ablate_unconfirmed(self, parts: Any) -> None:
+        """L149 ablation (a measurement): the parts of what EXECUTE_UNCONFIRMED receives that are removed or
+        changed, from output_contracts.ABLATIONS."""
+        unknown = set(parts) - set(ABLATIONS)
+        if unknown:
+            raise ValueError(f"ablate_unconfirmed: unknown parts {sorted(unknown)}")
+        self._ablate_unconfirmed = frozenset(parts)
+        self._refresh_session_modes()
+
+    def _refresh_session_modes(self) -> None:
+        modes = {NL_REPRESENTATION_MODE} if getattr(self, "_representation", PDL) == NL else set()
+        if getattr(self, "_withhold_execution_context", False):
+            modes.add(WITHHOLD_EXECUTION_MODE)
+        modes |= {ABLATIONS[part] for part in getattr(self, "_ablate_unconfirmed", ())}
+        self.bridge.session_modes = frozenset(modes)
 
     def _direct_reply_environment(self) -> str | None:
         """The factual execution environment for a direct reply (the sandbox's own System 1 routing state), and
@@ -769,8 +831,9 @@ class SessionEngine:
         )
         if tools is None and self.agent_tools and operation in _SUBMIT_ONLY_OPERATIONS:
             tools = lambda: self._submit_tool_host(operation)  # noqa: E731
-        if tools is not None:
-            request = dataclasses.replace(request, tools=tools())
+        host = tools() if tools is not None else None
+        if host is not None and host.tool_names():  # L145: a call whose tools are all withheld is a plain call
+            request = dataclasses.replace(request, tools=host)
         try:
             model_text = self._invoke(request, traces)
             return model_text if parser is None else parser(model_text)
@@ -801,8 +864,9 @@ class SessionEngine:
                 operator_correction=correction,
                 modes=modes,
             )
-            if tools is not None:
-                retry_request = dataclasses.replace(retry_request, tools=tools())
+            retry_host = tools() if tools is not None else None
+            if retry_host is not None and retry_host.tool_names():
+                retry_request = dataclasses.replace(retry_request, tools=retry_host)
             try:
                 return parser(self._invoke(retry_request, traces))
             except Exception as retry_error:
@@ -824,9 +888,12 @@ class SessionEngine:
 
         System 1 only: System 2 never sees the environment settings, and nothing here
         matches keywords or dates. Returns (route, refusal text) for a gated decision
-        other than APPLY_PROTOCOL; System 1 absent, uncertain, or failing yields None
-        (no System 1 evidence: the explicit invocation stands).
+        other than APPLY_PROTOCOL, or ("POISONED", GATEWAY_REFUSAL) at P(POISONED) >=
+        GATEWAY_THRESHOLD (L155: SECURE_GATEWAY's judgement, the same call); System 1
+        absent, uncertain, or failing yields None (no System 1 evidence: the explicit
+        invocation stands) and leaves ``_guard_judged`` False.
         """
+        self._guard_judged = False
         client = self.sys1_client
         if not (text or "").strip() or client is None or not client.is_configured:
             return None
@@ -840,17 +907,23 @@ class SessionEngine:
         except Exception:
             return None
         assert self.workspace is not None
+        p_poisoned = recipe.poisoned_probability(result)
+        self._guard_judged = p_poisoned is not None
         self.workspace.append_event(
             "ACTIVATION_ROUTED",
             {
                 "verdict": result.verdict,
                 "passed_gating": result.passed_gating,
                 "confidence": result.confidence,
+                "p_poisoned": p_poisoned,
+                "threshold": GATEWAY_THRESHOLD,
             },
         )
-        if not result.passed_gating or result.verdict == "APPLY_PROTOCOL":
+        if p_poisoned is not None and p_poisoned >= GATEWAY_THRESHOLD:
+            return "POISONED", GATEWAY_REFUSAL
+        if not result.passed_gating or result.verdict in ("APPLY_PROTOCOL", "POISONED"):
             return None
-        if result.verdict in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
+        if result.verdict in REFUSING_ROUTES:
             resp = recipe.map_to_wire(result)["response"] if hasattr(recipe, "map_to_wire") else None
             return result.verdict, resp or "Request refused by safety and boundary policy."
         return result.verdict, None
@@ -1389,11 +1462,8 @@ class SessionEngine:
         return EngineResponse(presentation.prompt_artifact(outcome.prompt_body, host_note), traces,
                               review="prompt", host_findings=bool(host_note))
 
-    def _run_unconfirmed(
-        self,
-        substantive_request: str,
-        traces: list[CallTrace],
-    ) -> EngineResponse:
+    def _take_request(self, substantive_request: str) -> str:
+        """The turn's request: a follow-up is joined to the previous request; the source is written."""
         assert self.workspace is not None
         previous_request = (getattr(self, "_previous_turn", None) or {}).get("request")
         if previous_request and self._is_follow_up(previous_request, substantive_request):
@@ -1405,11 +1475,23 @@ class SessionEngine:
             self._previous_deliverable = None
         self._source_request = substantive_request
         self.workspace.write_turn_source(substantive_request)
+        return substantive_request
 
-        self._select_task_type(substantive_request, "unconfirmed")
-        budget_refusal = self._budget_refusal()
-        if budget_refusal is not None:
-            return self._refuse(budget_refusal, traces, "budget")
+    def _run_unconfirmed(
+        self,
+        substantive_request: str,
+        traces: list[CallTrace],
+        *,
+        classified: bool = False,
+    ) -> EngineResponse:
+        """``classified``: saver mode already took the request, classified it and passed the gateway."""
+        assert self.workspace is not None
+        if not classified:
+            substantive_request = self._take_request(substantive_request)
+            self._select_task_type(substantive_request, "unconfirmed")
+            budget_refusal = self._budget_refusal()
+            if budget_refusal is not None:
+                return self._refuse(budget_refusal, traces, "budget")
 
         compiled = self._semantic_read(substantive_request, traces)
         if compiled is None:
@@ -1423,6 +1505,72 @@ class SessionEngine:
 
         self.controller = self._bind_new_controller(self.workspace, instance_kind="UNCONFIRMED")
         return self._execute_unconfirmed(substantive_request, traces)
+
+    def _run_mode(self, request: str, traces: list[CallTrace]) -> EngineResponse:
+        """L153, direct and saver modes: SECURE_GATEWAY passes or refuses the request; a passed request is answered
+        directly, or in saver mode goes through the protocol when System 1 classifies it VERIFIED_EXECUTION."""
+        assert self.workspace is not None
+        refusal = self._gateway(request, traces)
+        if refusal is not None:
+            return refusal
+        request = self._source_request or request
+        if self.mode == "saver" and self._requires_verified_execution:
+            self.workspace.append_event("SAVER_ROUTED", {"route": "protocol"})
+            return self._run_unconfirmed(request, traces, classified=True)
+        if self.mode == "saver":
+            self.workspace.append_event("SAVER_ROUTED", {"route": "direct"})
+        return self._run_direct(request, traces)
+
+    def _gateway(self, request: str, traces: list[CallTrace]) -> EngineResponse | None:
+        """SECURE_GATEWAY (L153): only passes or refuses, and adds nothing to what the model receives. One System 1
+        judgement (L155: the activation route with its POISONED choice), then the budget check; no Bootstrap. It fails
+        closed: no usable judgement refuses. A refusal closes REFUSED (exit 0). Returns None when the request passes."""
+        assert self.workspace is not None
+        refusal = self._guard_refusal(self._s1_activation(request), traces)
+        if refusal is not None:
+            return refusal
+        if not self._guard_judged:
+            return self._refuse(GATEWAY_REFUSAL, traces, "gateway")
+        request = self._take_request(request)
+        self._select_task_type(request, "unconfirmed")
+        budget_refusal = self._budget_refusal()
+        if budget_refusal is not None:
+            return self._refuse(budget_refusal, traces, "budget")
+        self.workspace.append_event("GATEWAY_PASSED", {"mode": self.mode})
+        return None
+
+    def _guard_refusal(self, routed: tuple[str, str | None] | None, traces: list[CallTrace]) -> EngineResponse | None:
+        """The refusal a System 1 activation decision calls for: phase gateway for POISONED, activation otherwise."""
+        if routed is None or routed[0] not in REFUSING_ROUTES:
+            return None
+        return self._refuse(routed[1], traces, "gateway" if routed[0] == "POISONED" else "activation")
+
+    def _run_direct(self, request: str, traces: list[CallTrace]) -> EngineResponse:
+        """The direct answer (L153): the model receives the request alone, as Control's call does. Nothing checks
+        the answer, so it closes CLOSED_UNVERIFIED (exit 5) with the reason direct_answer."""
+        assert self.workspace is not None
+        if self.direct_reply is None:
+            raise WorkspaceError("direct_reply_unavailable")
+        self.controller = self._bind_new_controller(self.workspace, instance_kind="UNCONFIRMED")
+        reply = self.direct_reply(request)
+        text = (getattr(reply, "text", reply) or "").strip()
+        usage = (getattr(reply, "metadata", None) or {}).get("usage")
+        self.workspace.append_event("DIRECT_ANSWER_RECORDED", {"mode": self.mode, "chars": len(text),
+                                                               **({"usage": usage} if usage else {})})
+        if not text:
+            self.controller.cancel()
+            if self.workspace.turn_id is not None:
+                self.workspace.mark_turn_status("CLOSED_CANCELLED")
+            return EngineResponse(presentation.cancelled(), traces, closed=True)
+        result_body_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        self._unverified_reason = "direct_answer"
+        self._close_with_result(result_body_hash)
+        self._unverified_reason = None
+        self.workspace.publish_execution_outcome("RESULT", text, {
+            "source_prompt_id": None, "source_plan_id": None, "result_body_hash": result_body_hash,
+            "route": "direct",
+        })
+        return EngineResponse(text, traces, closed=True)
 
     def _republish_unpublished(self) -> bool:
         """Durability: a review gate whose artifact never reached the workspace (Ctrl+C
@@ -1497,6 +1645,8 @@ class SessionEngine:
             self._previous_turn = None
             self._previous_deliverable = None
             self._source_request = None
+        if self.mode != "protocol":
+            return self._run_mode(user_message.strip(), traces)
         observation = observe_invocation(user_message)
         if observation.explicit:
             self.workspace.append_event(
@@ -1506,8 +1656,8 @@ class SessionEngine:
             routed = self._s1_activation(observation.substantive_request)
             if routed is not None:
                 route, refusal = routed
-                if route in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
-                    return self._refuse(refusal, traces, "activation")
+                if route in REFUSING_ROUTES:
+                    return self._guard_refusal(routed, traces)
                 # BYPASS / PROTOCOL_DISCUSSION: a direct answer, no protocol instance (§3).
                 self.workspace.append_event("DIRECT_ANSWER_ROUTED", {"route": route})
                 if route == "PROTOCOL_DISCUSSION":
@@ -1522,13 +1672,17 @@ class SessionEngine:
             routed = self._s1_activation(user_message.strip())
             if routed is not None:
                 route, refusal = routed
-                if route in ("BLOCKED_BY_HIGHER_PRIORITY", "REFUSAL", "ADVERSARIAL", "REFUSED"):
-                    return self._refuse(refusal, traces, "activation")
+                if route in REFUSING_ROUTES:
+                    return self._guard_refusal(routed, traces)
                 self.workspace.append_event("DIRECT_ANSWER_ROUTED", {"route": route})
                 if route == "PROTOCOL_DISCUSSION":
                     return self._discuss_protocol(user_message.strip(), traces)
                 return EngineResponse(None, traces, bypass=True)
             return self._run_unconfirmed(user_message.strip(), traces)
+        # The confirmed route: System 1's judgement guards it too (L155), before INTERPRET_ACTIVATION's call.
+        refusal = self._guard_refusal(self._s1_activation(user_message.strip()), traces)
+        if refusal is not None:
+            return refusal
         decision = self._call(
             "INTERPRET_ACTIVATION", {"RAW_USER_MESSAGE": user_message}, traces,
             parser=self.bridge.parse_activation,
@@ -1893,6 +2047,8 @@ class SessionEngine:
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
         repairs_used = 0
         unmeasured_repairs = 0  # repairs after an attempt that ran no program (at most one)
+        self._last_execute_body = None
+        self._execute_attempts = 0
         outcome, errors, final_body, ran_program = self._execute_attempt(
             execute_context, traces, prompt_body, plan_body, requirements, result_ir_mode,
         )
@@ -2205,11 +2361,15 @@ class SessionEngine:
         publish, ran_program). Exactly one model call: a response cut off at the
         output-token cap or one that does not parse is a counted failed attempt
         with a registry finding, never a hidden retry (each attempt cost up to two
-        calls before, so a repair could cost four)."""
+        calls before, so a repair could cost four). With agent tools and confirmed_execute_tools on, the call carries
+        EXECUTE's in-call tools (ADR-0029 amendment, L163; off by default, L168)."""
+        self._execute_attempts += 1
         try:
             modes = _execution_modes(execute_context, result_ir_mode)
-            outcome = self.bridge.parse_execution(self._call("EXECUTE", execute_context, traces,
-                                                             operator_correction=correction, modes=modes))
+            outcome = self.bridge.parse_execution(self._call(
+                "EXECUTE", execute_context, traces, operator_correction=correction, modes=modes,
+                tools=(lambda: self._agent_tool_host(execute_context, correction, operation="EXECUTE"))
+                if self.agent_tools and self.confirmed_execute_tools else None))
         except Exception as exc:
             limit = getattr(exc, "output_limit", None)
             if limit is None and not _is_wire_failure(exc):
@@ -2231,6 +2391,7 @@ class SessionEngine:
             return _FailedExecution(), [finding], "", True
         if outcome.kind != "RESULT":
             return outcome, [], outcome.body, False
+        self._last_execute_body = outcome.body
         errors, final_body = self._verify_result(outcome, prompt_body, plan_body, requirements, result_ir_mode)
         return outcome, errors, final_body, getattr(self, "_last_programs_run", 0) > 0
 
@@ -2448,20 +2609,24 @@ class SessionEngine:
         )
         return outcome, errors, final_body, getattr(self, "_last_programs_run", 0) > 0
 
-    def _agent_tool_host(self, execute_context: dict[str, Any], correction: str | None) -> Any:
-        """ADR-0029: the in-call tools of one EXECUTE_UNCONFIRMED attempt. They run in the session sandbox at the
-        attempt's budget; the submission is checked by this engine's own checks; every call is an event."""
+    def _agent_tool_host(self, execute_context: dict[str, Any], correction: str | None,
+                         operation: str = "EXECUTE_UNCONFIRMED") -> Any:
+        """ADR-0029: the in-call tools of one EXECUTE_UNCONFIRMED or EXECUTE attempt. They run in the session sandbox
+        at the attempt's budget; the submission is checked by this engine's own checks; every call is an event."""
         from pdl_taskmaster.runtime import agent_tools
 
         budget = self._execution_budget
         witness_required = "WITNESS" in (execute_context.get("REQUIRED_TASK_INPUTS") or {})
-        previous = self._last_unconfirmed_body if correction else None
+        confirmed = operation == "EXECUTE"
+        previous = (self._last_execute_body if confirmed else self._last_unconfirmed_body) if correction else None
         return agent_tools.ToolHost(
             self.sandbox, budget.step_limit, budget.timeout_seconds, budget.memory_limit_bytes,
             _python_blocks(previous) if previous else [], correction or "",
             agent_tools.make_validator(self.bridge, self.sandbox, budget, witness_required, _python_blocks,
-                                       _parse_sandbox_witness),
-            attempt=self._unconfirmed_attempts, on_record=self._record_tool_call,
+                                       _parse_sandbox_witness, _witness_written_in_program,
+                                       parse=self.bridge.parse_execution if confirmed else None),
+            attempt=self._execute_attempts if confirmed else self._unconfirmed_attempts,
+            on_record=self._record_tool_call, operation=operation, excluded=self.agent_tools_exclude,
         )
 
     def _submit_tool_host(self, operation: str) -> Any:
@@ -2483,7 +2648,7 @@ class SessionEngine:
             validate = agent_tools.make_lint_validator(
                 self.bridge.parse_plan_body, lambda body: ("neutral_plan_body", body), lint)
         return agent_tools.ToolHost(None, 0, 0.0, 0, [], "", validate, on_record=self._record_tool_call,
-                                    operation=operation)
+                                    operation=operation, excluded=self.agent_tools_exclude)
 
     def _record_tool_call(self, record: dict[str, Any]) -> None:
         from pdl_taskmaster.runtime import agent_tools
@@ -2593,10 +2758,17 @@ class SessionEngine:
         return [Finding("PAYLOAD_TOKEN_REPEATED", count=len(echoed))]
 
     def _close_with_result(self, result_body_hash: str) -> None:
-        """Close the instance with its published result. CLOSED_SUCCESS means the host's checks established it;
-        a result resting on a claim the host cannot check closes CLOSED_UNVERIFIED (ADR-0019 amendment, L116)."""
+        """Close the instance with its published result. CLOSED_SUCCESS means the host reproduced it (host_verified);
+        a result resting on a claim the host cannot check closes CLOSED_UNVERIFIED (ADR-0019 amendment, L116), and so
+        does one the host checked only against its contract (L164)."""
+        from pdl_taskmaster.runtime import provenance
+
         assert self.controller is not None and self.workspace is not None
         reason = getattr(self, "_unverified_reason", None)
+        if reason is None and not provenance.host_established(
+                self._requires_verified_execution, getattr(self, "_last_verification", None),
+                getattr(self, "_last_witness", None), verifier=self.task_type.verifier):
+            reason = provenance.CONTRACT_ONLY
         self.controller.complete_success(result_body_hash, verified=reason is None)
         if reason is not None:
             self.workspace.append_event("CLOSED_UNVERIFIED", {"reason": reason})
@@ -2607,8 +2779,6 @@ class SessionEngine:
                 self.workspace.write_program_output(runs)
             if hasattr(self.workspace, "write_provenance"):
                 from datetime import datetime, timezone
-
-                from pdl_taskmaster.runtime import provenance
 
                 self.workspace.write_provenance(provenance.record(
                     status=self.controller.state.stage.value,
@@ -2621,6 +2791,7 @@ class SessionEngine:
                     deliverable_sha256=result_body_hash,
                     closed_at_utc=datetime.now(timezone.utc).isoformat(),
                     model=self.model_name() if callable(self.model_name) else None,
+                    run_failures_not_fed_back=getattr(self, "_run_failures_not_fed_back", None),
                 ))
 
     def _check_witness(self, verifier: Any, witness: Any, constraints: dict[str, Any], body: str) -> Any:
@@ -2667,6 +2838,7 @@ class SessionEngine:
         self._unverified_reason: str | None = None  # L116: set when the result rests on an unchecked claim
         self._last_verification: dict[str, Any] | None = None  # E-1: the VERIFICATION_PASSED facts
         self._last_witness: Any = None
+        self._run_failures_not_fed_back: list[str] = []  # L140: disclosed in the provenance
         certificate = declared_certificate(getattr(outcome, "result_ir", None)) if verified else None  # L119
         sandbox_witness, run_failures = self._run_deliverable_code(body, certificate=certificate)
         payload_findings = self._payload_token_findings(body)
@@ -2682,6 +2854,12 @@ class SessionEngine:
                 ]
                 if genuine_failures:
                     return payload_findings + genuine_failures, body
+            # L140: the programs that failed or were stopped and are not fed back; a turn that closes on this
+            # attempt says so in its provenance rather than only that the host ran its programs.
+            self._run_failures_not_fed_back = [
+                getattr(f, "code", "UNREGISTERED") + (" (environment denial)" if getattr(f, "is_environment_denial",
+                                                                                         False) else "")
+                for f in run_failures]
             return payload_findings, body
 
         errors: list[str] = list(payload_findings)

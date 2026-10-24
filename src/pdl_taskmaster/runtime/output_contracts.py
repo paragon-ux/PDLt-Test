@@ -34,6 +34,30 @@ EXECUTION_BRIEF_MODE = "execution_brief"
 # The confirmed route's artifacts are natural-language prose in this mode (representation.py, ledger L97):
 # descriptions name them as that arm does.
 NL_REPRESENTATION_MODE = "nl_representation"
+# L148 A/B: the stages before EXECUTE receive only their own instructions (no execution environment or clauses).
+WITHHOLD_EXECUTION_MODE = "withhold_execution_context"
+EARLIER_STAGE_OPERATIONS = frozenset({"BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "REVISE_PROMPT", "DRAFT_PLAN",
+                                      "REVISE_PLAN"})
+EXECUTION_CONTEXT_SYMBOLS = frozenset({"AVAILABLE_EXECUTION_TOOLS"})
+# L149 ablation, a measurement that ships nothing (the user, 2026-10-22): one part of what EXECUTE_UNCONFIRMED
+# receives is removed or changed per arm.
+ABLATION_OPERATION = "EXECUTE_UNCONFIRMED"
+ABLATE_NORMATIVE_MODE = "ablate_normative"  # no standard clauses and no provider guidance block
+ABLATE_FRAMING_MODE = "ablate_framing"  # no execution environment, EXEC-* clauses, or code, tool and witness wording
+ABLATE_NOTATION_MODE = "ablate_notation"  # the working notes in plain prose instead of PDL notation
+ABLATE_ORDER_MODE = "ablate_order"  # the deliverable before the working notes
+ABLATE_ENTITIES_MODE = "ablate_entities"  # no TASK_ENTITIES (the bootstrap's extraction)
+# L151 step 2 (the user, 2026-10-22): the reply in headed plain-text sections instead of a JSON object; the host
+# converts it to the outcome object before validation. Only the answer's format changes, not what is asked.
+ABLATE_FREETEXT_MODE = "ablate_freetext"
+# L151 step 3 (the user, 2026-10-22): the input as indented plain text instead of a JSON document, every value kept,
+# and without the worker-role lines. Only the input's form changes, not its content.
+ABLATE_PLAININPUT_MODE = "ablate_plaininput"
+ABLATIONS = {"normative": ABLATE_NORMATIVE_MODE, "framing": ABLATE_FRAMING_MODE,
+             "notation": ABLATE_NOTATION_MODE, "order": ABLATE_ORDER_MODE, "entities": ABLATE_ENTITIES_MODE,
+             "freetext": ABLATE_FREETEXT_MODE, "plaininput": ABLATE_PLAININPUT_MODE}
+_NOTES_FIELDS = ("interpretation", "approach")
+_PDL_NOTES = "in PDL pseudocode notation"
 _NO_MODES: frozenset[str] = frozenset()
 
 # Keywords a decoding engine does not take; the grammar view drops them (the prompt
@@ -140,10 +164,44 @@ def _active(spec: Any, modes: frozenset[str]) -> bool:
     return when is None or when in modes
 
 
+def _ablated(node: Any, modes: frozenset[str]) -> Any:
+    """L149: an EXECUTE_UNCONFIRMED outcome schema with the active ablations applied to each branch that carries
+    the working notes; property names are data."""
+    if isinstance(node, list):
+        return [_ablated(item, modes) for item in node]
+    if not isinstance(node, dict):
+        return node
+    out = {key: {name: _ablated(spec, modes) for name, spec in value.items()}
+           if key == "properties" and isinstance(value, dict) else _ablated(value, modes)
+           for key, value in node.items()}
+    props = out.get("properties")
+    if not (isinstance(props, dict) and all(name in props for name in _NOTES_FIELDS)):
+        return out
+    if ABLATE_NOTATION_MODE in modes:
+        for name in _NOTES_FIELDS:
+            description = props[name].get("description", "")
+            if _PDL_NOTES not in description:
+                raise ValueError(f"ablate_notation: {name} has no PDL wording to replace")
+            props[name] = {**props[name], "description": description.replace(_PDL_NOTES, "in plain prose")}
+    if ABLATE_FRAMING_MODE in modes:
+        out.pop("description", None)
+        if isinstance(props.get("body"), dict) and "description" in props["body"]:
+            props["body"] = {**props["body"], "description": "The complete deliverable content."}
+    if ABLATE_ORDER_MODE in modes:
+        first = [name for name in ("kind", "body") if name in props]
+        out["properties"] = {name: props[name] for name in first + [n for n in props if n not in first]}
+        if isinstance(out.get("required"), list):
+            out["required"] = ([name for name in first if name in out["required"]]
+                               + [name for name in out["required"] if name not in first])
+    return out
+
+
 def prompt_schema(operation: str, form: ContractForm = DEFAULT_FORM,
                   modes: frozenset[str] = _NO_MODES) -> dict[str, Any] | None:
     """The output_schema the model reads, in the structural form of this call."""
     schema = contract_schema(operation, modes)
+    if schema is not None and operation == ABLATION_OPERATION and modes & set(ABLATIONS.values()):
+        schema = _ablated(schema, modes)
     if schema is not None and NL_REPRESENTATION_MODE in modes:
         from pdl_taskmaster.runtime.representation import nl_terms
 

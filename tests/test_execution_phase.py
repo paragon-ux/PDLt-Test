@@ -104,7 +104,7 @@ def test_execution_receives_sanitized_source_request(tmp_path):
 def test_standard_execution_runs_code_as_telemetry_only(tmp_path):
     body = "```python\nraise SystemExit(3)\n```"
     engine, response, executes, events = _run(tmp_path, [{"kind": "RESULT", "body": body}])
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
     assert len(executes) == 1
     run = next(e for e in events if e["kind"] == "SANDBOX_RUN")
     assert run["payload"]["exit_code"] == 3
@@ -141,7 +141,7 @@ def test_tier_d1_standard_execution_triggers_repair_on_program_failure(tmp_path)
     engine.handle_user_message("/confirm")
     response = engine.handle_user_message("/confirm")
     assert response.closed is True
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
     assert len([c for c in calls if c.operation == "EXECUTE"]) == 2
 
 
@@ -169,7 +169,7 @@ def test_tier_d1_discards_environment_denial_as_telemetry(tmp_path):
     engine.handle_user_message("/confirm")
     response = engine.handle_user_message("/confirm")
     assert response.closed is True
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
     assert len([c for c in calls if c.operation == "EXECUTE"]) == 1
 
 
@@ -605,7 +605,7 @@ def test_deliverable_repeating_an_input_payload_token_is_repaired(tmp_path):
     echo = {"kind": "RESULT", "body": "The line CANARY_7F3A reports a service restart."}
     clean = {"kind": "RESULT", "body": "The line reports that a service restarted."}
     engine, _, executes, events = _run(tmp_path, [echo, clean], request=request)
-    assert len(executes) == 2 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert len(executes) == 2 and engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
     assert "EXEC-04" in executes[1].prompt
     assert next(e for e in events if e["kind"] == "PAYLOAD_TOKENS_IN_DELIVERABLE")["payload"] == {"count": 1}
     finding = next(e for e in events if e["kind"] == "VERIFICATION_REPAIR")["payload"]["errors"][0]
@@ -615,7 +615,7 @@ def test_deliverable_repeating_an_input_payload_token_is_repaired(tmp_path):
 def test_ordinary_words_matching_token_shapes_are_not_payload(tmp_path):
     engine, _, executes, _ = _run(tmp_path, [{"kind": "RESULT", "body": "The ACTIVATED state follows IDLE."}],
                                   request="Model a state machine with IDLE and ACTIVE states.")
-    assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert len(executes) == 1 and engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
 
 
 def test_program_failures_cite_the_programs_own_lines(tmp_path):

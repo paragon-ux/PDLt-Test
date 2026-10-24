@@ -25,7 +25,7 @@
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -50,8 +50,8 @@
   ],
   "steps": [
    {
-    "stage": "CLOSED_SUCCESS",
-    "exit_status": 0,
+    "stage": "CLOSED_UNVERIFIED",
+    "exit_status": 5,
     "closed": true,
     "review": null,
     "refused": false
@@ -83,19 +83,20 @@
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
    "EXECUTION_ATTEMPTS",
+   "CLOSED_UNVERIFIED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
   ],
   "provenance": {
    "schema": "pdlt.provenance/1",
    "recorded_by": "host at closure",
-   "status": "CLOSED_SUCCESS",
+   "status": "CLOSED_UNVERIFIED",
    "verification": {
     "level": "contract_checked",
     "problem_class": "STANDARD_EXECUTION",
     "witness_form": "none",
     "reproduced_by_host": false,
-    "unverified_reason": null,
+    "unverified_reason": "contract_checked",
     "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
@@ -119,7 +120,7 @@
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -168,14 +169,14 @@
    },
    {
     "operation": "EXECUTE_UNCONFIRMED",
-    "prompt": "009a223a26ac7e5e",
-    "manifest": "89d3b03ba1f1d35f"
+    "prompt": "8cdfd33d9c66e6f5",
+    "manifest": "5acd5d344b28295e"
    }
   ],
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -192,8 +193,8 @@
   ],
   "steps": [
    {
-    "stage": "CLOSED_SUCCESS",
-    "exit_status": 0,
+    "stage": "CLOSED_UNVERIFIED",
+    "exit_status": 5,
     "closed": true,
     "review": null,
     "refused": false
@@ -210,19 +211,20 @@
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
    "PLAN_PROFILE_ROUTED",
+   "CLOSED_UNVERIFIED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
   ],
   "provenance": {
    "schema": "pdlt.provenance/1",
    "recorded_by": "host at closure",
-   "status": "CLOSED_SUCCESS",
+   "status": "CLOSED_UNVERIFIED",
    "verification": {
     "level": "contract_checked",
     "problem_class": "STANDARD_EXECUTION",
     "witness_form": "none",
     "reproduced_by_host": false,
-    "unverified_reason": null,
+    "unverified_reason": "contract_checked",
     "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
@@ -256,8 +258,8 @@
   "sys1": null,
   "steps": [
    {
-    "stage": "CLOSED_SUCCESS",
-    "exit_status": 0,
+    "stage": "CLOSED_UNVERIFIED",
+    "exit_status": 5,
     "closed": true,
     "review": null,
     "refused": false
@@ -288,19 +290,20 @@
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
    "EXECUTION_ATTEMPTS",
+   "CLOSED_UNVERIFIED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
   ],
   "provenance": {
    "schema": "pdlt.provenance/1",
    "recorded_by": "host at closure",
-   "status": "CLOSED_SUCCESS",
+   "status": "CLOSED_UNVERIFIED",
    "verification": {
     "level": "contract_checked",
     "problem_class": "STANDARD_EXECUTION",
     "witness_form": "none",
     "reproduced_by_host": false,
-    "unverified_reason": null,
+    "unverified_reason": "contract_checked",
     "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
@@ -334,7 +337,7 @@
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -359,8 +362,8 @@
   ],
   "steps": [
    {
-    "stage": "CLOSED_SUCCESS",
-    "exit_status": 0,
+    "stage": "CLOSED_UNVERIFIED",
+    "exit_status": 5,
     "closed": true,
     "review": null,
     "refused": false
@@ -392,19 +395,20 @@
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
    "EXECUTION_ATTEMPTS",
+   "CLOSED_UNVERIFIED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
   ],
   "provenance": {
    "schema": "pdlt.provenance/1",
    "recorded_by": "host at closure",
-   "status": "CLOSED_SUCCESS",
+   "status": "CLOSED_UNVERIFIED",
    "verification": {
     "level": "contract_checked",
     "problem_class": "STANDARD_EXECUTION",
     "witness_form": "none",
     "reproduced_by_host": false,
-    "unverified_reason": null,
+    "unverified_reason": "contract_checked",
     "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
@@ -438,7 +442,7 @@
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -547,7 +551,7 @@
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -668,7 +672,7 @@
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -755,14 +759,14 @@
    },
    {
     "operation": "EXECUTE_UNCONFIRMED",
-    "prompt": "f938af74b3e0c858",
-    "manifest": "b79a9ea82e8238b0"
+    "prompt": "58ee3bccbf06e5f9",
+    "manifest": "87d994bef9d7e48e"
    }
   ],
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -856,7 +860,7 @@
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",

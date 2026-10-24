@@ -7,8 +7,15 @@ from typing import Any
 import json
 
 from pdl_taskmaster.runtime.output_contracts import (
+    ABLATE_ENTITIES_MODE,
+    ABLATE_FRAMING_MODE,
+    ABLATE_NORMATIVE_MODE,
+    ABLATION_OPERATION,
     DEFAULT_FORM,
+    EARLIER_STAGE_OPERATIONS,
+    EXECUTION_CONTEXT_SYMBOLS,
     NL_REPRESENTATION_MODE,
+    WITHHOLD_EXECUTION_MODE,
     ContractForm,
     prompt_schema,
 )
@@ -71,13 +78,26 @@ class ContextCompiler:
             raise ValueError(f"operation:{operation}")
         spec = operations[operation]
         include = tuple(spec["include"])
+        # L148 A/B: the stages before EXECUTE without EXECUTE's environment and clauses.
+        withheld = set(EXECUTION_CONTEXT_SYMBOLS if WITHHOLD_EXECUTION_MODE in modes
+                       and operation in EARLIER_STAGE_OPERATIONS else ())
+        drop_exec_clauses = bool(withheld)
+        # L149 ablation (a measurement): EXECUTE_UNCONFIRMED without its standard clauses, or its execution framing.
+        if operation == ABLATION_OPERATION and ABLATE_NORMATIVE_MODE in modes:
+            withheld.add("APPLICABLE_STANDARD_CLAUSES")
+        if operation == ABLATION_OPERATION and ABLATE_ENTITIES_MODE in modes:
+            withheld.add("TASK_ENTITIES")
+        if operation == ABLATION_OPERATION and ABLATE_FRAMING_MODE in modes:
+            withheld |= EXECUTION_CONTEXT_SYMBOLS
+            drop_exec_clauses = True
+        include = tuple(symbol for symbol in include if symbol not in withheld)
         # Optional symbols (Phase 9 S4): supplied by the engine only when the
         # session provides them (e.g. PREVIOUS_DELIVERABLE on chained turns);
         # absent optional symbols are omitted from the projection entirely so
         # single-turn projections stay byte-identical (fixture replay safe).
         optional = tuple(spec.get("optional_include", ()))
         expected = set(include) - _AUTO_SYMBOLS
-        provided = set(values)
+        provided = set(values) - withheld
         missing = expected - provided
         extra = (provided - expected) - set(optional)
         if missing:
@@ -90,6 +110,8 @@ class ContextCompiler:
             for mode, ids in (spec.get("mode_requirements") or {}).items() if mode in modes
             for requirement_id in ids
         ]
+        if drop_exec_clauses:
+            requirement_ids = [rid for rid in requirement_ids if not rid.startswith("EXEC-")]
         nl = NL_REPRESENTATION_MODE in modes
         if nl:
             # The natural-language arm (representation.py): no notation clauses, artifacts named as prose.

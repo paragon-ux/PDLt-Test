@@ -31,7 +31,9 @@ def test_invalid_settings_are_refused_naming_each_field():
 def test_settings_read_from_a_worker_match_what_the_host_used_to_copy():
     carrying = SimpleNamespace(max_repairs=0, draft_execute=1, agent_tools=True, representation=None, tier_d1=None)
     assert RunSettings.from_worker(carrying) == RunSettings(max_repairs=0, draft_execute=True, agent_tools=True)
-    assert RunSettings.from_worker(object(), no_review=True) == RunSettings(no_review=True)
+    # A worker that carries no settings runs as its recordings were made: protocol mode, no in-call tools (ADR-0031).
+    assert RunSettings.from_worker(object(), no_review=True) == RunSettings(no_review=True, agent_tools=False,
+                                                                            mode="protocol")
 
 
 def test_a_session_applies_its_settings_and_refuses_them_twice(tmp_path):
@@ -39,8 +41,8 @@ def test_a_session_applies_its_settings_and_refuses_them_twice(tmp_path):
     with api.Session.open(ScriptedWorker({"body": "x"}), tmp_path / "s", repo_root=ROOT, settings=settings) as session:
         engine = session.host.engine
         assert (engine.max_repairs, engine.draft_execute, engine.tier_d1, engine.no_review) == (0, True, True, True)
-    with pytest.raises(ValueError, match="pass no_review, sandbox_mode and task_type in settings"):
-        api.Session.open(ScriptedWorker({"body": "x"}), tmp_path / "t", settings=settings, no_review=True)
+    with pytest.raises(ValueError, match="pass no_review, sandbox_mode, task_type and mode in settings"):
+        api.Session.open(ScriptedWorker({"body": "x"}), tmp_path / "t", settings=settings, no_review=False)
 
 
 def test_the_repl_builds_typed_settings_from_its_flags(monkeypatch):
@@ -53,7 +55,8 @@ def test_the_repl_builds_typed_settings_from_its_flags(monkeypatch):
     assert (settings.task_type, settings.max_repairs, settings.draft_execute, settings.no_review) == (
         "STANDARD_EXECUTION", 0, True, False)
     # A recorded replay keeps the defaults its recordings were made with.
-    assert repl._run_settings(args, ScriptedWorker({})) == RunSettings(task_type="STANDARD_EXECUTION")
+    assert repl._run_settings(args, ScriptedWorker({})) == RunSettings(task_type="STANDARD_EXECUTION", agent_tools=False,
+                                                                       mode="protocol", no_review=False)
 
 
 # System 1 as its own provider.
@@ -61,7 +64,7 @@ def test_the_repl_builds_typed_settings_from_its_flags(monkeypatch):
 def test_a_session_takes_system_1_apart_from_the_worker(tmp_path):
     worker = ScriptedWorker(POSITIVE_SAMPLE, sys1=None)
     sys1 = ScriptedSys1({"problem_class": ("VERIFIED_EXECUTION", 0.97)})
-    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, sys1=sys1) as session:
+    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, sys1=sys1, mode="protocol") as session:
         result = session.run("Find the largest product.", confirm=True)
     assert result.provenance["verification"]["problem_class"] == "VERIFIED_EXECUTION"
     assert worker.sys1_client is sys1  # the worker uses the same System 1
@@ -91,7 +94,7 @@ class Plain(ScriptedWorker):
 
 def test_a_direct_reply_comes_back_from_the_session(tmp_path):
     worker = Plain({"body": "x"}, Bypassing())
-    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, no_review=True) as session:
+    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, no_review=True, mode="protocol") as session:
         result = session.send("What is PDLt?")
     assert (result.text, result.stage, result.exit_status) == ("PDLt runs tasks under a protocol.", None, 0)
     assert worker.requests == [("BYPASS_ORDINARY", "What is PDLt?")]

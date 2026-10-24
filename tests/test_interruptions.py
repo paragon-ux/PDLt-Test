@@ -238,7 +238,7 @@ def test_interrupted_before_any_protocol_marks_the_turn_and_the_next_message_sta
 
 @pytest.mark.parametrize("operation, stage_after, next_stage", [
     ("DRAFT_PLAN", "PLAN_REQUIRED", "PLAN_REVIEW"),
-    ("EXECUTE", "EXECUTION_READY", "CLOSED_SUCCESS"),
+    ("EXECUTE", "EXECUTION_READY", "CLOSED_UNVERIFIED"),  # a contract-checked result (L164)
 ])
 def test_interrupted_inside_a_bound_protocol_keeps_its_state_and_resumes(tmp_path, operation, stage_after, next_stage):
     worker = Worker(operation)
@@ -265,7 +265,7 @@ def test_interrupted_follow_up_never_replaces_the_previous_turn(tmp_path):
     engine.handle_user_message("$confirm-with-pseudocode a task")
     engine.handle_user_message("/confirm")
     engine.handle_user_message("/confirm")
-    assert engine.controller.state.stage.value == "CLOSED_SUCCESS"
+    assert engine.controller.state.stage.value == "CLOSED_UNVERIFIED"
     worker.interrupt_at = "BOOTSTRAP_ANALYSIS"
     info = _interrupted(engine, "$confirm-with-pseudocode now explain it")
     assert info["turn"] == "turn_002" and "INTERRUPTED" in info["action"]
@@ -274,7 +274,7 @@ def test_interrupted_follow_up_never_replaces_the_previous_turn(tmp_path):
     assert ws.turn_id == "turn_003"
     assert ws.read_turn_status("turn_002")["status"] == "INTERRUPTED"
     (chained,) = _events(engine, "TURN_CHAINED")
-    assert chained["payload"]["previous_status"] == "CLOSED_SUCCESS" and chained["payload"]["previous_deliverable"]
+    assert chained["payload"]["previous_status"] == "CLOSED_UNVERIFIED" and chained["payload"]["previous_deliverable"]
     assert engine._previous_turn["turn_id"] == "turn_001"
 
 

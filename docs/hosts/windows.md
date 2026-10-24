@@ -107,10 +107,10 @@ On Windows, when the current window does not have the key, PDLt also reads one s
 | Setting | Required? | Where |
 |---|---|---|
 | `OPENROUTER_API_KEY` | Yes, for any live run | Environment variable, as above. Never put it in a file you commit. |
-| The task model | No. The default is `nvidia/nemotron-3-super-120b-a12b:free` | `--model` (REPL, headless) or `create_worker("api", model=...)` (Python) |
+| The task model | No. The default is `openai/gpt-oss-120b`, the model the defaults were measured on (L167); `nvidia/nemotron-3-super-120b-a12b:free` costs nothing | `--model` (REPL, headless) or `create_worker("api", model=...)` (Python) |
 | Everything else | No | [Reference: environment variables](../reference.md#environment-variables) |
 
-**Credits.** Models whose name ends in `:free` cost nothing but are rate-limited, and OpenRouter can withdraw them. Other models, such as `openai/gpt-oss-120b`, need credit on your OpenRouter account.
+**Credits.** Models whose name ends in `:free` cost nothing but are rate-limited, and OpenRouter can withdraw them. Other models, such as the default `openai/gpt-oss-120b`, need credit on your OpenRouter account. The first task below names the free model, so it runs without credit.
 
 ## 6. Run a first task
 
@@ -172,7 +172,9 @@ Backslashes are doubled in JSON. Find the path with `(Get-Command python).Source
 
 ## Run programs in a container instead (optional)
 
-Install Docker Desktop, start it, and pull the image matching your Python version (for Python 3.12: `docker pull python:3.12-slim`). Then pass `--sandbox container`, or set `$env:PDLT_SANDBOX = "container"`. The sandbox check in step 4 with `'container'` in place of `'auto'` should print `container 0 42`. CI tests the container backend on Linux only; on Windows it has not been verified.
+Install Docker Desktop, start it, and pull the image matching your Python version (for Python 3.12: `docker pull python:3.12-slim`). Then pass `--sandbox container`, or set `$env:PDLT_SANDBOX = "container"`. The sandbox check in step 4 with `'container'` in place of `'auto'` should print `container 0 42`. CI (`sandbox.yml`) tests the container backend on Linux only; on Windows 11 with Docker Desktop (Linux engine) the confinement suite passed locally (L135). The program runs on Linux in the container, so Windows paths and APIs are not its own. `PDLT_CONTAINER_RUNTIME` and `PDLT_CONTAINER_IMAGE` choose the runtime and the image ([Sandbox guide](../SANDBOX.md#container-mode)).
+
+To run without the OS sandbox, for diagnostics only, pass `--sandbox audit-only` or set `$env:PDLT_SANDBOX = "audit-only"`: programs then run with the in-process audit hook and the resource limits only, and PDLt prints a warning. There is no `off` mode.
 
 ## Troubleshooting
 

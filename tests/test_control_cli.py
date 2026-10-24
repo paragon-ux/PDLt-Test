@@ -29,11 +29,12 @@ def sent(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
     return bodies
 
 
-def _run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *extra: str) -> None:
+def _run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *extra: str, effort: tuple[str, ...] = (
+        "--api-reasoning-effort", "low")) -> None:
     prompt = tmp_path / "prompt.txt"
     prompt.write_text("What is 2 + 2?", encoding="utf-8")
     argv = ["control_cli", "--prompt-file", str(prompt), "--workspace-root", str(tmp_path / "ws"),
-            "--non-interactive", "--api-reasoning-effort", "low", *extra]
+            "--non-interactive", *effort, *extra]
     monkeypatch.setattr(sys, "argv", argv)
     assert control_cli.main() == 0
 
@@ -44,6 +45,12 @@ def test_the_control_sends_the_harness_default_provider_order(tmp_path, monkeypa
     assert sent[0]["provider"] == DEFAULT_PROVIDER_PINNING
     assert sent[0]["reasoning"] == {"effort": "low"}
     assert sent[0]["input"] == "What is 2 + 2?"
+
+
+def test_with_no_effort_given_the_control_sends_the_harness_default(tmp_path, monkeypatch, sent) -> None:
+    # L155: before, no reasoning field was sent (the provider's default) while RUN_META recorded low.
+    _run(tmp_path, monkeypatch, effort=())
+    assert sent[0]["reasoning"] == {"effort": "low"}
 
 
 def test_explicit_providers_are_sent_without_fallbacks(tmp_path, monkeypatch, sent) -> None:

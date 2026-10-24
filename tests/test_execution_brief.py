@@ -298,7 +298,7 @@ def test_the_validated_brief_reaches_execute_as_its_own_input_under_exec06(tmp_p
     assert "DRAFT_EXECUTE" not in (_inputs(execute).get("REQUIRED_TASK_INPUTS") or {})
     drafted = _event(events, "EXECUTION_BRIEF_DRAFTED")[0]
     assert drafted["estimated_steps"] == 30 and drafted["entities_kept"] == 2 and drafted["entities_dropped"] == 0
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
 
 
 def test_an_invented_entity_never_reaches_execute(tmp_path):
@@ -351,7 +351,7 @@ def test_an_invalid_brief_is_retried_once_then_skipped_and_never_reaches_execute
     assert len(skipped) == 1 and skipped[0]["reason"] and skipped[0]["feedback"]
     execute = calls[-1]
     assert "EXECUTION_BRIEF" not in _inputs(execute) and "EXEC-06" not in _clauses(execute)
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
 
 
 def test_a_brief_over_the_step_budget_is_redrafted_once_with_the_fact(tmp_path):
@@ -506,7 +506,7 @@ def test_04_01_an_error_message_the_task_never_states_is_not_imposed_on_execute(
     assert run["exit_code"] == 1 and not run["step_budget_exceeded"]
     repair = [c for c in calls if c.operation == "EXECUTE"][1]
     assert "AssertionError" in repair.prompt and "EXECUTION_BRIEF" in _inputs(repair)
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
 
 
 # --- review fixes (LEDGER L93) ----------------------------------------------------------------------------
@@ -588,7 +588,7 @@ def test_a_brief_cut_off_at_the_output_cap_is_skipped_not_a_harness_error(tmp_pa
         engine.handle_user_message(message)
     events = list(engine.workspace.read_events())
     assert _event(events, "EXECUTION_BRIEF_SKIPPED")[0]["reason"] == "output_limit"
-    assert "EXECUTION_BRIEF" not in _inputs(calls[-1]) and engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert "EXECUTION_BRIEF" not in _inputs(calls[-1]) and engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
 
 
 def test_entities_are_grounded_in_input_the_user_supplied_to_the_task(tmp_path):

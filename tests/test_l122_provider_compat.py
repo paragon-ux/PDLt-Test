@@ -97,7 +97,7 @@ def test_an_explicit_effort_is_sent():
 
 def test_recorded_profiles_are_unchanged():
     assert get_proportional_reasoning_mapping(NEMOTRON) == get_proportional_reasoning_mapping("openai/gpt-oss-120b")
-    assert get_proportional_reasoning_mapping(NEMOTRON)["BOOTSTRAP_ANALYSIS"] == "high"
+    assert get_proportional_reasoning_mapping(NEMOTRON)["BOOTSTRAP_ANALYSIS"] == "low"  # L155
     default, _ = resolve_reasoning(NEMOTRON)
     assert default == "low"
 

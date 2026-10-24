@@ -118,7 +118,8 @@ def run_session(category: str | None, route: str, execute: Mapping[str, Any], *,
     worker = ScriptedWorker(execute, sys1 if sys1 is not None else ScriptedSys1(), **worker_attributes)
     with ExitStack() as stack:
         folder = session_dir or Path(stack.enter_context(tempfile.TemporaryDirectory())) / "session"
-        with Session.open(worker, folder, no_review=route == "unconfirmed", task_type=category) as session:
+        with Session.open(worker, folder, no_review=route == "unconfirmed", task_type=category,
+                          mode="protocol") as session:
             return session.run(PROBE_REQUEST, confirm=True), worker
 
 

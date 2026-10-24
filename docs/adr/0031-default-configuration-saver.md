@@ -1,0 +1,86 @@
+# ADR-0031: Default Configuration: Saver Mode, In-Call Tools, Low Reasoning
+
+## Status
+**Accepted** (the user, 2026-10-23: "Accept ADR-0031 with option (b): Cerebras first for saver only, the other modes keep Baseten, Crusoe"). The decision is the user's in L158: "Saver with tools enabled is the clear default", and "Low reasoning should unquestionably be the default". It was made on the user's condition, measured in L159: met on Cerebras, not met on the default provider order. Ledger L160.
+
+- Supersedes [ADR-0022](0022-default-reasoning-high-pre-execution.md)'s per-operation reasoning table, which L155 already retired in code: every gpt-oss operation runs at low.
+- Replaces L94's standard default for the REPL and the API, the unconfirmed route, with saver mode.
+- Turns on by default the in-call tools of [ADR-0029](0029-in-call-agent-tools.md), which were off by default until then.
+- Keeps [ADR-0019](0019-headless-waiting-input-exit-and-wire-tolerance.md)'s exit codes: a direct answer closes `CLOSED_UNVERIFIED` (exit 5).
+
+## Context
+The user's ranking (L158): **Saver > Confirmed > Unconfirmed > Control.**
+- **Saver** is the default today: it beats Control on completion while staying competitive on speed and cost.
+- **Confirmed** is the mode PDLt is built to win. Its stages give the user explicit control over interpretation, approach, inputs and outputs.
+- **Unconfirmed** is an intermediate configuration. Its interpretation and approach are post hoc.
+- **Control** is the evaluation baseline, not a product mode.
+
+Recorded measurements (gpt-oss-120b, low reasoning, Tier D1 and structured output on; the targeted set is `prompts/TARGETED_MANIFEST.jsonl`):
+
+| Ledger | Set | Saver | Unconfirmed | Confirmed | Control |
+|---|---|---|---|---|---|
+| L155 | targeted, 270 runs | 78.7% decided passes, 0 silent false positives | 70.2%, 12/47 | 62.5%, 15/48 | – |
+| L157, tools off | targeted | 70.2%, 0 | – | – | 63.0% (direct 67.4%) |
+| L157, tools on | targeted | 78.7%, 0; +0.089 [+0.000, +0.189] against Control | 66.7%, 13/45; +0.011 | 67.4%, 11/46; +0.022 | – |
+
+L159 measured the 10 catalogue prompts System 1 classes VERIFIED_EXECUTION (01-01 to 01-07, 13-01, 13-02, 16-07), 3 repeats each, with saver's tools on:
+
+| Arm | Graded passes | Silent false positives | Median time | Condition |
+|---|---|---|---|---|
+| Saver, Cerebras | 28/29 (96.6%) | 0 | 9.1 s | met |
+| Saver, default order (Baseten, Crusoe) | 27/29 (93.1%) | 1 | 16.8 s | not met |
+| Control, default order | 14/30 (46.7%) | – | 7.4 s | – |
+
+The one silent false positive is 16-07, run 3, on the default order. The deliverable's program encodes a clue wrongly, and the host verified that the program printed its witness. That shows where the answer came from, not that it is correct (ADR-0030, known limit). Both MANUAL grades are correct on a spot check.
+
+## Decision
+1. **The default mode is saver** in the REPL (`--mode`) and in the API (`Session.open(mode=)`). No review is the default in both; review (`--review`, `no_review=False`) is the confirmed route and selects protocol mode (L165). The catalogue runner keeps its measurement default, the unconfirmed route, because its stage grading expects protocol closures.
+2. **In-call tools are on by default**, and `--no-agent-tools` turns them off. L166 (the user, 2026-10-24) makes one exception: the unconfirmed route in protocol mode defaults to tools off, where they measured no better and cost 49% more (L157). Saver's protocol branch keeps them.
+   - They act on saver's protocol branch and on the unconfirmed route's execution: `run_python` and the submission check.
+   - The drafts and Bootstrap get their submission checks.
+   - The confirmed route's EXECUTE can get `run_python`, `read_attempt` and its submission check (ADR-0029 amendment 1, L163), with `--confirmed-execute-tools`. They are off by default (L168), as they were before L163.
+3. **Every operation runs at low reasoning effort** (L155, L158).
+4. **Provider order: option (b), Cerebras first for saver only** (`providers/api_worker.py`, `SAVER_PROVIDER_PINNING`: Cerebras, then Baseten and Crusoe as fallbacks). It applies when saver runs with in-call tools; without them saver's execution is sent in JSON mode, so it keeps the default order, as the other modes do. A configured order (`--api-providers`, `OPENROUTER_PROVIDER_ORDER`) wins.
+   - **Measured:** saver met the condition with Cerebras first, and missed it on the default order by one host-verified false positive.
+   - **Recorded constraint:** Cerebras, anywhere in the order, closes every free-form object in a JSON schema and drops the positive witness ([api_worker.py](../../src/pdl_taskmaster/providers/api_worker.py), `_default_provider_order`; PROVIDERS.md). With tools on, saver's execution carries its schema in the submission tool, and its witnesses survived: 22 host-verified closures in L159. When this was decided, the confirmed route's EXECUTE had no tools and was sent in JSON mode. Since L163, with tools on, it also carries its schema in the submission tool; Cerebras for the confirmed route is unmeasured.
+   - **Options:**
+     - (a) Cerebras first for every call. This breaks the confirmed route's witness until its EXECUTE gets tools.
+     - (b) Cerebras first for saver only, as a per-mode order.
+     - (c) Keep Baseten, Crusoe, and accept the default-order result.
+5. **The modes, as a flowchart** ([docs/routing.md](../routing.md) holds the routing design):
+
+```mermaid
+flowchart TD
+    R["Request"] --> G{"SECURE_GATEWAY<br/>one System 1 judgement (activation + POISONED), budget"}
+    G -->|refuse| X["REFUSED (exit 0)"]
+    G -->|"saver (default)"| K{"System 1: problem class"}
+    K -->|VERIFIED_EXECUTION| P["Protocol, unconfirmed route, tools on<br/>host verification"]
+    K -->|otherwise| D["Direct answer, the request alone<br/>CLOSED_UNVERIFIED (exit 5)"]
+    G -->|"confirmed (user-directed control)"| C["Interpretation and plan reviewed by the user<br/>then EXECUTE"]
+    G -->|"unconfirmed (intermediate)"| U["Protocol, unconfirmed route"]
+    P --> Z["Closure (ADR-0019)"]
+    C --> Z
+    U --> Z
+```
+
+6. **Which workers and tools follow these defaults** (`runtime/run_settings.default_mode`):
+   - The defaults apply to the API worker, the one that carries run settings.
+   - A recorded replay and the codex worker run in protocol mode with no in-call tools, as their recordings were made.
+   - With no mode given, a resumed session keeps the mode it ran in.
+   - The catalogue runner and the experiment runner name the mode and the tools in every harness command, so recorded baselines keep their settings: unconfirmed and confirmed in protocol mode, tools off unless asked for.
+
+## Options considered
+- **Keep the unconfirmed route as the default (L94).** At low reasoning it shows no measurable gain over Control (L157: +0.011), with 12 of 47 graded runs a silent false positive (L155).
+- **Make Confirmed the default.** It is the strategic mode, but today it loses on every measure (L155). All 11 of its silent false positives in L157 are contract-checked closures (L140 (1)).
+- **Higher reasoning effort.** ADR-0022's table scored better on the unconfirmed route: 82% against 70% of graded runs, one run per prompt (L155). It took 4.7 times as long, Bootstrap alone 50.8 s against 5.5 s. The user: low "unquestionably".
+- **Saver with tools at low reasoning (chosen).**
+
+## Consequences
+- **Headless callers see exit 5 for most requests.** Every direct answer closes `CLOSED_UNVERIFIED` with the reason `direct_answer`; in L157, 86 to 88 of 90 saver runs did. Exit 0 then means a verified task closed by the protocol, or a published refusal; since L164 that holds on every route.
+- **Zero silent false positives is structural for every result the host did not reproduce** (direct answers; since L164 also contract-checked results). On verified tasks, a host-verified closure can still be wrong. The host runs the deliverable's program, and a wrong program gives a host-verified wrong answer (L159).
+- **Latency.**
+  - Saver on verified tasks: a median of 9.1 s on Cerebras (model calls 4.0 s; host verification and harness 4.6 s), 16.8 s on the default order.
+  - Saver's direct answers: about 12 to 15 s on the default order (L157). On Cerebras they are unmeasured for saver; Control's call there is recorded at 1.0 to 2.0 s.
+  - The user's expectation of 2 to 3 s would need the harness overhead and the three System 1 calls cut (L158).
+- **The Confirmed priority (L158) remains.** Reduce its silent false positives (the contract-checked closure rule, L140 (1)) and give its EXECUTE in-call tools (an ADR-0029 amendment), keeping the control that sets it apart.
+- **It changes what the provider receives:** tools on by default, and the provider order under options (a) or (b). L159's Cerebras arm is the live check for saver. The pre-merge catalogue check (`run_catalogue.py --fail-fast`) is still due.

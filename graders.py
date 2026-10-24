@@ -698,6 +698,11 @@ GRADERS: dict[str, Callable[[str, str], tuple[str, str]]] = {
 }
 
 
+# A manifest entry outside the catalogue (the held-out instances of L145) names the grader of its family; only graders
+# that read their instance from the prompt are meant for this.
+GRADERS_BY_NAME: dict[str, Callable[[str, str], tuple[str, str]]] = {fn.__name__: fn for fn in GRADERS.values()}
+
+
 def grade_hidden(prompt_id: str, kind: str, text: str | None, *, run_code: bool = True) -> dict:
     """Grade a coding deliverable by the prompt's hidden tests (``hidden_tests.py``).
 
@@ -726,7 +731,7 @@ def grade(entry: dict, result_dir: Path, prompts_dir: Path, *, run_code: bool = 
             return grade_hidden(entry["id"], kind, text, run_code=run_code)
         except Exception as exc:  # a grader bug must never mask a run
             return {"grade": "ERROR", "reason": f"{type(exc).__name__}: {exc}"}
-    fn = GRADERS.get(entry["id"])
+    fn = GRADERS.get(entry["id"]) or GRADERS_BY_NAME.get(entry.get("grader") or "")
     if fn is None:
         return {"grade": MANUAL, "reason": "needs GOAL.md Step 5 human spot check"}
     try:

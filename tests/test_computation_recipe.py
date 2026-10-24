@@ -110,7 +110,9 @@ def _unconfirmed(tmp_path: Path, sys1: Sys1, *, draft_execute: bool = True):
     engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=sys1, no_review=True)
     engine.draft_execute = draft_execute
     response = engine.handle_user_message("Count the subsets of 1..10 that sum to 20.")
-    assert response.closed and engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    # L164: a standard result is contract-checked, so it closes CLOSED_UNVERIFIED
+    assert response.closed and engine.controller.state.stage == (
+        Stage.CLOSED_SUCCESS if sys1.problem_class == "VERIFIED_EXECUTION" else Stage.CLOSED_UNVERIFIED)
     return calls, engine
 
 
@@ -190,4 +192,4 @@ def test_the_confirmed_route_follows_the_same_gate(tmp_path) -> None:
         for message in ("$confirm-with-pseudocode Count the subsets of 1..10 that sum to 20.", "/confirm", "/confirm"):
             engine.handle_user_message(message)
         assert calls.count("DRAFT_EXECUTE") == expected_drafts
-        assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+        assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED  # contract-checked (L164)

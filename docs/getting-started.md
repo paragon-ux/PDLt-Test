@@ -4,7 +4,7 @@ Setting PDLt up takes five steps. Each step ends with a check, so you, or an age
 
 1. **Install** PDLt in a Python virtual environment.
 2. **Verify offline**: the version command, and the test suite if you installed from source.
-3. **Check the sandbox**: PDLt runs model-written programs only under the operating system's own confinement. If it is not available, PDLt runs no program at all.
+3. **Check the sandbox**: PDLt runs model-written programs only under confinement: the operating system's own, or a container you opt into. If it is not available, PDLt runs no program at all. See the [Sandbox guide](SANDBOX.md).
 4. **Configure a model**: one OpenRouter API key.
 5. **Run a first task** through the Python API, the REPL or a headless command.
 
@@ -14,11 +14,11 @@ The commands and the sandbox differ by operating system, so each one has its own
 
 | Host | Sandbox backend | Shell used on the page | Tested in CI | Page |
 |---|---|---|---|---|
-| **Windows** 10 or 11 | AppContainer (built into Windows) | PowerShell | Full offline suite and confinement suite, Python 3.10 to 3.14 | [Windows](hosts/windows.md) |
-| **Linux** (kernel 5.13 or later) | Landlock (built into the kernel) | bash | Full offline suite and confinement suite, including the container backend, Python 3.10 to 3.14 | [Linux](hosts/linux.md) |
-| **macOS** | Seatbelt (`sandbox-exec`, built into macOS) | zsh or bash | Confinement and sandbox tests only, Python 3.10 to 3.14 | [macOS](hosts/macos.md) |
+| **Windows** 10 or 11 | AppContainer (built into Windows) | PowerShell | Full offline suite (`ci.yml`) and confinement suite (`sandbox.yml`), Python 3.10 to 3.14 | [Windows](hosts/windows.md) |
+| **Linux** (kernel 5.13 or later) | Landlock (built into the kernel) | bash | Full offline suite (`ci.yml`) and confinement suite, including the container backend (`sandbox.yml`), Python 3.10 to 3.14 | [Linux](hosts/linux.md) |
+| **macOS** | Seatbelt (`sandbox-exec`, built into macOS) | zsh or bash | Confinement and sandbox tests only (`sandbox.yml`), Python 3.10 to 3.14 | [macOS](hosts/macos.md) |
 
-On any of them you can run programs in a Docker or Podman container instead of the native backend (`--sandbox container`). That is a sandbox mode, not a separate host: it is described on each host page.
+On any of them you can run programs in a Docker or Podman container instead of the native backend (`--sandbox container`). That is a sandbox mode, not a separate host: it is described on each host page and in the [Sandbox guide](SANDBOX.md#container-mode), with the `audit-only` opt-out.
 
 ## What you have at the end
 

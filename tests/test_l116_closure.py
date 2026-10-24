@@ -112,9 +112,11 @@ def test_a_witness_its_program_writes_out_is_never_a_verified_success(tmp_path):
     assert engine.controller.state.stage == Stage.CLOSED_CANCELLED and not _unverified_reasons(events)
 
 
-def test_a_task_without_verified_execution_closes_success_on_its_contract_checks(tmp_path):
+def test_a_task_without_verified_execution_closes_unverified_on_its_contract_checks(tmp_path):
+    """L164: only a result the host reproduced closes CLOSED_SUCCESS; one checked against the contract alone is
+    published and closes CLOSED_UNVERIFIED with the reason contract_checked."""
     engine, _, _, events = _run(tmp_path, [{"kind": "RESULT", "body": "42"}])
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS and not _unverified_reasons(events)
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED and _unverified_reasons(events) == ["contract_checked"]
 
 
 # The closure is terminal like the others, and it carries a published result.
@@ -178,7 +180,10 @@ def test_catalogue_scores_an_unverified_closure_against_the_expected_stage():
     assert run_catalogue.outcome_class(_result("CLOSED_UNVERIFIED", "CLOSED_UNVERIFIED", "FAIL")) == "FAIL"
 
 
-def test_the_manifest_expects_an_unverified_closure_only_where_the_answer_is_negative():
+def test_the_manifest_expects_an_unverified_closure_where_the_answer_is_negative_or_contract_checked():
+    """13-01, whose answer is a negative claim, and since L164 every prompt routed STANDARD_EXECUTION."""
     rows = [json.loads(line) for line in run_catalogue.MANIFEST_PATH.read_text(encoding="utf-8-sig").splitlines()
             if line.strip()]
-    assert {r["id"] for r in rows if r["expected_stage"] == "CLOSED_UNVERIFIED"} == {"13-01"}
+    standard = {r["id"] for r in rows if r["expected_routing"] == "STANDARD_EXECUTION"
+                and r["expected_stage"] != "WAITING_INPUT"}
+    assert {r["id"] for r in rows if r["expected_stage"] == "CLOSED_UNVERIFIED"} == {"13-01"} | standard

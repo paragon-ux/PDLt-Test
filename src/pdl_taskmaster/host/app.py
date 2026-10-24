@@ -155,7 +155,12 @@ class PDLtHost:
         settings = self.settings or RunSettings.from_worker(self.worker, no_review=self.no_review,
                                                             sandbox_mode=self.sandbox_mode)
         settings.apply(engine)
+        if hasattr(self.worker, "mode_pinning"):  # ADR-0031: the session mode's provider order
+            from pdl_taskmaster.providers.api_worker import mode_pinning
+
+            self.worker.mode_pinning = mode_pinning(settings.mode, settings.agent_tools)
         engine.plain_reply = self._plain_reply  # a direct reply is the engine's turn too (L124 D7)
+        engine.direct_reply = self._direct_reply  # direct and saver modes' answer (L153)
         engine.model_name = lambda: getattr(self.worker, "model", None)  # the result's provenance (E-1)
         if self.observation_dir is not None:
             session_id = f"{self.run_id}-{self.case_id or 'session'}"
@@ -201,6 +206,10 @@ class PDLtHost:
         """The worker's direct reply to the user's own text (no invocation prefix), as text."""
         return _plain_reply_text(self.worker.call(_PlainRequest(user_text, environment=environment)).text)
 
+    def _direct_reply(self, request: str) -> Any:
+        """The direct answer (L153): the request alone, with no instructions (DIRECT_ANSWER)."""
+        return self.worker.call(_PlainRequest(request, operation="DIRECT_ANSWER"))
+
     def _at_protocol_entry(self) -> bool:
         """No protocol instance is open: the next request starts one."""
         if self.engine is None or self.engine.controller is None:
@@ -209,7 +218,7 @@ class PDLtHost:
 
     def _ensure_protocol_entry(self, user_message: str) -> str:
         if self._at_protocol_entry():
-            if self.no_review or getattr(self.engine, "no_review", False):
+            if self.no_review or getattr(self.engine, "no_review", False) or getattr(self.engine, "mode", "protocol") != "protocol":
                 return user_message
             return self._with_invocation(user_message)
         return user_message

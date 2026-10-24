@@ -4,7 +4,10 @@ check are runtime/agent_tools.py's, unchanged; this module only speaks JSON-RPC 
 
     python -m pdl_taskmaster.host.mcp_server [--tier STANDARD] [--witness-required] [--sandbox auto] [--log PATH]
 
-Served: initialize, ping, tools/list, tools/call. Every program runs in one confined session sandbox (ADR-0021) at
+Served: initialize, ping, tools/list, tools/call. One server process is one session: initialize comes first and
+once (only ping is answered before it), and the tool budgets and the sandbox last as long as the process. The
+protocol revisions negotiated are SUPPORTED_PROTOCOL_VERSIONS; the stateless 2026-07-28 revision, which has no
+initialize handshake, is not served. Every program runs in one confined session sandbox (ADR-0021) at
 the tier's limits; the audit-only opt-out is refused. No tool returns a verdict; a submission is checked
 structurally and accepted or returned with errors, and nothing verifies it afterwards here. Nothing here reads or
 writes the user's project.
@@ -34,7 +37,15 @@ from pdl_taskmaster.api import closed_sessions
 from pdl_taskmaster.api.sandbox import SandboxNotConfined, create_sandbox
 from pdl_taskmaster.runtime import agent_tools
 
-PROTOCOL_VERSION = "2025-06-18"
+# The protocol revisions initialize negotiates, newest first. A client asking for any other (2026-07-28 included:
+# its stateless per-request envelope has no initialize handshake and is not served here) is offered the newest, as
+# the lifecycle requires; a client that cannot use it disconnects.
+SUPPORTED_PROTOCOL_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05")
+PROTOCOL_VERSION = SUPPORTED_PROTOCOL_VERSIONS[0]
+STRUCTURED_RESULTS_SINCE = "2025-06-18"  # the revision that added outputSchema and structuredContent
+BATCH_VERSIONS = ("2025-03-26",)  # the one revision with JSON-RPC batches: 2025-06-18 removed them
+MAX_BATCH = 32
+INVALID_REQUEST = -32600
 SERVER_NAME = "pdlt-agent-tools"
 URI_SCHEME = "pdlt://sessions/"
 PAGE_SIZE = 100
@@ -112,6 +123,15 @@ class CallLog:
                                     ensure_ascii=False, default=str) + "\n")
         self._file.flush()
 
+    def close(self) -> None:
+        self._file.close()
+
+    def __enter__(self) -> "CallLog":
+        return self
+
+    def __exit__(self, *exc_info: Any) -> None:
+        self.close()
+
 
 def _clip(value: Any) -> Any:
     if isinstance(value, str):
@@ -132,6 +152,7 @@ class AgentToolServer:
         self.host = host
         self.sessions = sessions
         self.log = log
+        self.protocol_version: str | None = None  # negotiated by initialize
         if log is not None and host.on_record is None:
             host.on_record = lambda record: log.write({"event": "tool", **record})
 
@@ -142,7 +163,14 @@ class AgentToolServer:
             if tool["name"] == agent_tools.SUBMIT:
                 tool["description"] = tool["description"].replace(agent_tools.VERIFIED_AFTER_ACCEPTANCE,
                                                                   MCP_AFTER_ACCEPTANCE)
+                if self.structured:
+                    tool["outputSchema"] = agent_tools.SUBMIT_RESULT_SCHEMA
         return tools
+
+    @property
+    def structured(self) -> bool:
+        """Whether the negotiated revision has outputSchema and structuredContent."""
+        return self.protocol_version is not None and self.protocol_version >= STRUCTURED_RESULTS_SINCE
 
     def call_tool(self, name: str, arguments: dict[str, Any] | None) -> dict[str, Any]:
         text = json.dumps(arguments or {})
@@ -150,8 +178,8 @@ class AgentToolServer:
             if len(self.host.submissions) >= agent_tools.MAX_SUBMISSIONS:
                 return _content("error: the submission budget is spent", error=True)
             envelope, _accepted = self.host.submit(text)
-            return {**_content(json.dumps(envelope, ensure_ascii=False), error=not envelope["ok"]),
-                    "structuredContent": envelope}
+            result = _content(json.dumps(envelope, ensure_ascii=False), error=not envelope["ok"])
+            return {**result, "structuredContent": envelope} if self.structured else result
         if name in agent_tools.WORK_TOOLS and self.host.work_calls() >= agent_tools.MAX_TOOL_CALLS:
             return _content("error: the tool-call budget is spent", error=True)
         output = self.host.dispatch(name, text)
@@ -164,11 +192,12 @@ class AgentToolServer:
             try:
                 self.log.write({"event": "request", "id": mid, "method": method, "params": message.get("params")})
             except (OSError, ValueError) as exc:
-                return None if mid is None else _error(
-                    mid, INTERNAL_ERROR, f"the call log cannot be written ({exc}); nothing ran")
+                return None if "id" not in message else _error(
+                    mid if _valid_id(mid) else None, INTERNAL_ERROR,
+                    f"the call log cannot be written ({exc}); nothing ran")
         started = time.perf_counter()
         response = self._handle(message)
-        if self.log is not None and mid is not None:
+        if self.log is not None and response is not None:
             result = (response or {}).get("result")
             self.log.write({"event": "response", "id": mid, "method": method,
                             "ms": round((time.perf_counter() - started) * 1000, 1),
@@ -177,18 +206,32 @@ class AgentToolServer:
         return response
 
     def _handle(self, message: dict[str, Any]) -> dict[str, Any] | None:
-        method, mid, params = message.get("method"), message.get("id"), message.get("params") or {}
-        if mid is None:
+        method, params = message.get("method"), message.get("params") or {}
+        if "id" not in message:
             return None  # notifications (notifications/initialized, cancellations) need no answer
+        mid = message["id"]
+        if not _valid_id(mid):
+            return _error(None, INVALID_REQUEST, "a request id must be a string or an integer")
+        if not isinstance(params, dict):
+            return _error(mid, -32602, "params must be an object")
         if method == "initialize":
+            if self.protocol_version is not None:
+                return _error(mid, INVALID_REQUEST, "already initialized: a new session needs a new server process")
+            requested = params.get("protocolVersion")
+            self.protocol_version = requested if requested in SUPPORTED_PROTOCOL_VERSIONS else PROTOCOL_VERSION
             capabilities: dict[str, Any] = {"tools": {"listChanged": False}}
             if self.sessions is not None:
                 capabilities["resources"] = {"listChanged": False, "subscribe": False}
-            result: Any = {"protocolVersion": PROTOCOL_VERSION, "capabilities": capabilities,
+            result: Any = {"protocolVersion": self.protocol_version, "capabilities": capabilities,
                            "serverInfo": {"name": SERVER_NAME, "version": __version__},
                            "instructions": self.host.capability_note()}
         elif method == "ping":
             result = {}
+        elif method not in self._methods():
+            return _error(mid, -32601, f"method not found: {method!r}")
+        elif self.protocol_version is None:
+            # Nothing that can run a program is served before the version is negotiated.
+            return _error(mid, INVALID_REQUEST, "not initialized: send initialize first")
         elif method == "tools/list":
             result = {"tools": self.tools()}
         elif method == "tools/call":
@@ -196,15 +239,49 @@ class AgentToolServer:
             if name not in self.host.tool_names():
                 return _error(mid, -32602, f"unknown tool: {name!r}")
             result = self.call_tool(name, params.get("arguments"))
-        elif method == "resources/list" and self.sessions is not None:
+        elif method == "resources/list":
             result = self.sessions.list(params.get("cursor"))
-        elif method == "resources/read" and self.sessions is not None:
+        else:  # resources/read
             result = self.sessions.read(str(params.get("uri", "")))
             if result is None:
                 return _error(mid, RESOURCE_NOT_FOUND, f"resource not found: {params.get('uri')!r}")
-        else:
-            return _error(mid, -32601, f"method not found: {method!r}")
         return {"jsonrpc": "2.0", "id": mid, "result": result}
+
+    def _methods(self) -> set[str]:
+        """The methods served after initialize, besides ping."""
+        return {"tools/list", "tools/call"} | ({"resources/list", "resources/read"} if self.sessions else set())
+
+    def handle_batch(self, messages: list[Any]) -> list[dict[str, Any]] | dict[str, Any] | None:
+        """A JSON-RPC batch, served only under 2025-03-26, the one revision with batches: the responses to its
+        requests, in order, or None when it holds only notifications. Each element is handled and logged as if sent
+        alone, under the session's budgets. The whole batch is refused with one error, and nothing in it runs, when
+        it comes before initialize or under another revision, is empty or larger than MAX_BATCH, or holds
+        initialize."""
+        if self.protocol_version is None:
+            problem = "not initialized: send initialize first, on its own"
+        elif self.protocol_version not in BATCH_VERSIONS:
+            problem = f"protocol version {self.protocol_version} has no batches"
+        elif not messages:
+            problem = "an empty batch"
+        elif len(messages) > MAX_BATCH:
+            problem = f"a batch of {len(messages)} messages; at most {MAX_BATCH}"
+        elif any(isinstance(m, dict) and m.get("method") == "initialize" for m in messages):
+            problem = "initialize cannot be part of a batch"
+        else:
+            responses = [self.handle(m) if isinstance(m, dict) else _error(None, INVALID_REQUEST, "invalid request")
+                         for m in messages]
+            return [r for r in responses if r is not None] or None
+        if self.log is not None:
+            try:
+                self.log.write({"event": "batch", "size": len(messages), "error": problem})
+            except (OSError, ValueError):
+                pass  # nothing in the batch runs either way
+        return _error(None, INVALID_REQUEST, problem)
+
+
+def _valid_id(mid: Any) -> bool:
+    """A request id: a string or an integer, never null (MCP)."""
+    return isinstance(mid, (str, int)) and not isinstance(mid, bool)
 
 
 def _content(text: str, *, error: bool) -> dict[str, Any]:
@@ -224,7 +301,12 @@ def serve(server: AgentToolServer, stdin: TextIO, stdout: TextIO) -> None:
         except ValueError:
             response: dict[str, Any] | None = _error(None, -32700, "parse error")
         else:
-            response = server.handle(message) if isinstance(message, dict) else _error(None, -32600, "invalid request")
+            if isinstance(message, dict):
+                response = server.handle(message)
+            elif isinstance(message, list):
+                response = server.handle_batch(message)
+            else:
+                response = _error(None, INVALID_REQUEST, "invalid request")
         if response is not None:
             stdout.write(json.dumps(response, ensure_ascii=False) + "\n")
             stdout.flush()
@@ -237,7 +319,8 @@ def build_host(tier: str = "STANDARD", witness_required: bool = False, sandbox_m
     confinement: the audit-only opt-out is refused (L121 flag E-4)."""
     from pdl_taskmaster.api.session import default_repo_root
     from pdl_taskmaster.runtime.operation_bridge import OperationBridge
-    from pdl_taskmaster.runtime.session_engine import _parse_sandbox_witness, _python_blocks
+    from pdl_taskmaster.runtime.session_engine import (_parse_sandbox_witness, _python_blocks,
+                                                       _witness_written_in_program)
     from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS
 
     budget = EXECUTION_BUDGETS[tier]
@@ -248,7 +331,7 @@ def build_host(tier: str = "STANDARD", witness_required: bool = False, sandbox_m
                          f"--sandbox {sandbox_mode} is refused") from None
     root = repo_root or default_repo_root()
     validate = agent_tools.make_validator(OperationBridge(root), sandbox, budget, witness_required, _python_blocks,
-                                          _parse_sandbox_witness)
+                                          _parse_sandbox_witness, _witness_written_in_program)
     return agent_tools.ToolHost(sandbox, budget.step_limit, budget.timeout_seconds, budget.memory_limit_bytes,
                                 [], "", validate, accepted_note=MCP_ACCEPTED)
 
@@ -288,8 +371,12 @@ def main(argv: list[str] | None = None) -> int:
             stream.reconfigure(encoding=encoding)
         except Exception:
             pass
-    serve(AgentToolServer(build_host(args.tier, args.witness_required, args.sandbox), ClosedSessions(args.sessions),
-                          log), sys.stdin, sys.stdout)
+    with log:
+        host = build_host(args.tier, args.witness_required, args.sandbox)
+        try:
+            serve(AgentToolServer(host, ClosedSessions(args.sessions), log), sys.stdin, sys.stdout)
+        finally:
+            host.sandbox.close()  # the session sandbox's root and backend state
     return 0
 
 

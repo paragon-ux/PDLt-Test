@@ -210,10 +210,22 @@ def _manifest_tag_patterns() -> list[str]:
     ]
 
 
+# A catalogue prompt ID (category 01-16, prompt 01-07). Not when it is the month and day of an ISO date such as an
+# MCP protocol revision (2024-11-05): the date context is the only exception (L138).
+PROMPT_ID_PATTERN = re.compile(r"(?<!\d{4}-)\b(0[1-9]|1[0-6])-(0[1-7])\b")
+
+
+def test_the_prompt_id_scan_tells_ids_from_dates():
+    for text in ("01-03", "case 11-05", "see 16-07.", "(03-02)", "id=09-04", "2024 11-05", "run-11-05"):
+        assert PROMPT_ID_PATTERN.search(text), text
+    for text in ("2024-11-05", "2025-03-26", '"2024-11-05",', "17-01", "01-08", "101-03"):
+        assert not PROMPT_ID_PATTERN.search(text), text
+
+
 def test_benchmark_contamination_scan():
     """GUARD-01/02/04/05: harness plane has ZERO benchmark IDs, prompt stems, or problem vocabulary."""
     src_dir = ROOT / "src" / "pdl_taskmaster"
-    prompt_id_pattern = re.compile(r"\b(0[1-9]|1[0-6])-(0[1-7])\b")
+    prompt_id_pattern = PROMPT_ID_PATTERN
     word_tokens = [
         r"frostbite", r"schur", r"\bdlx\b", r"dancing\s+link", r"algorithm\s+x", r"backtrack",
         r"\bmrv\b", r"nobel", r"hamiltonian", r"palindrome", r"wheel\s+graph", r"\bcolou?ring\b", r"alice\s+has",
@@ -283,7 +295,7 @@ def test_verifier_never_infers_domain_from_text():
 def test_routing_recipes_have_no_pattern_matching():
     """GUARD-02: System 1 routes environment recipe state; recipes never match keywords or dates."""
     recipes = ROOT / "src" / "pdl_taskmaster" / "providers" / "sys1" / "recipes"
-    for name in ("activation_route.py", "problem_class.py"):
+    for name in ("activation_route.py", "problem_class.py", "poisoned_input.py"):
         text = (recipes / name).read_text(encoding="utf-8")
         assert "re.compile" not in text, name
         assert "import re" not in text, name
@@ -304,7 +316,8 @@ def test_agent_tools_state_capabilities_and_return_no_verdict():
     names = [t["name"] for t in agent_tools.TOOLS]
     assert not any(word in name for name in names for word in ("verify", "check", "grade", "witness", "judge"))
     # in-call work tools only where the host can run something; elsewhere only a checked submission
-    assert agent_tools.TOOL_OPERATIONS == ("EXECUTE_UNCONFIRMED", "BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN")
+    assert agent_tools.TOOL_OPERATIONS == ("EXECUTE_UNCONFIRMED", "EXECUTE", "BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT",
+                                           "DRAFT_PLAN")  # EXECUTE: the confirmed route (ADR-0029 amendment, L163)
     for operation in agent_tools.SUBMIT_ONLY_OPERATIONS:
         assert agent_tools.ToolHost(None, 0, 0.0, 0, [], "", lambda o: ([], []), operation=operation).tool_names() == [
             agent_tools.SUBMITS[operation]]

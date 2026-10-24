@@ -251,9 +251,9 @@ def classify_model(
 def get_proportional_reasoning_mapping(model_id: str) -> dict[str, str | int]:
     """Return the normative operational reasoning mapping per model family (ADR-0006).
 
-    Only families with a recorded profile have one. For gpt-oss (ADR-0022,
-    amending ADR-0006) every pre-execution operation is HIGH and EXECUTE is LOW;
-    operations the mapping does not list use the worker's default effort. Any
+    Only families with a recorded profile have one. For gpt-oss every operation is LOW (L155, replacing
+    ADR-0022's high pre-execution effort): one effort for every operation and every route, so no arm
+    gets more reasoning than another; operations the mapping does not list use the worker's default effort. Any
     other model: an empty mapping, so no reasoning setting is sent (L122).
     """
     mid = model_id.lower()
@@ -262,25 +262,15 @@ def get_proportional_reasoning_mapping(model_id: str) -> dict[str, str | int]:
     # model inherits gpt-oss's profile by accident. Not tuned for Nemotron: its
     # EXECUTE reasoning at "low" ranged from 0.6K to 8K tokens.
     if "gpt-oss" in mid or "nemotron-3-super" in mid:
-        # OpenAI gpt-oss-120b, the System 2 production model (ADR-0022): the
-        # configuration validated by the catalogue (run-20261001-221930). At
-        # all-LOW, plans copied the prompt verbatim and prompts carried PDL-08
-        # drafting meta-rules. ANSWER_PROTOCOL_DISCUSSION and BYPASS_ORDINARY are
-        # not listed and stay at the worker default (low).
-        return {
-            "BOOTSTRAP_ANALYSIS": "high",
-            "DRAFT_PROMPT": "high",
-            "REVISE_PROMPT": "high",
-            "INTERPRET_PROMPT_REVIEW": "high",
-            "DRAFT_PLAN": "high",
-            "REVISE_PLAN": "high",
-            "INTERPRET_PLAN_REVIEW": "high",
-            "INTERPRET_EXECUTION_INPUT": "high",
-            "DRAFT_EXECUTE": "high",
-            "EXECUTE": "low",
-            "EXECUTE_UNCONFIRMED": "medium",
-            "EMIT_RESULT_IR": "high",
-        }
+        # OpenAI gpt-oss-120b, the System 2 production model. The user (L155, 2026-10-23): "all low. any
+        # reasoning is an unfair advantage and or uncomparable for any arm." ADR-0022's table (high before
+        # execution, EXECUTE low, EXECUTE_UNCONFIRMED medium) is retired; its recorded risk, that at all-LOW
+        # plans copied the prompt verbatim (run-20261001-221930), is checked by the L155 mode study.
+        # ANSWER_PROTOCOL_DISCUSSION, BYPASS_ORDINARY and DIRECT_ANSWER are not listed: the worker default (low).
+        return {operation: "low" for operation in (
+            "BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "REVISE_PROMPT", "INTERPRET_PROMPT_REVIEW", "DRAFT_PLAN",
+            "REVISE_PLAN", "INTERPRET_PLAN_REVIEW", "INTERPRET_EXECUTION_INPUT", "DRAFT_EXECUTE", "EXECUTE",
+            "EXECUTE_UNCONFIRMED", "EMIT_RESULT_IR")}
     elif "glm-4.7" in mid:
         # Class A: Native effort tiers (Zhipu GLM-4.7 - benchmark baseline)
         # ADR-0006 as amended by the ADR-0009 benchmark (2026-09-18): EXECUTE

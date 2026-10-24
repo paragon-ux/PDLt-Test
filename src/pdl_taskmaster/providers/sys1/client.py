@@ -109,7 +109,11 @@ class Sys1Client:
                 attempt.mark("response_complete")
                 attempt.response_bytes, attempt.outcome = len(raw), "completed"
                 trace.final = "completed"
-            return json.loads(raw.decode("utf-8")), elapsed_ms
+            data = json.loads(raw.decode("utf-8"))
+            if trace is not None and isinstance(data, dict):
+                # L145: the generation id, for the per-call provider and cost lookup (OpenRouter's /generation)
+                trace.reply.update({"response_id": data.get("id"), "model": data.get("model")})
+            return data, elapsed_ms
         except KeyboardInterrupt:
             if attempt:
                 attempt.outcome, attempt.interrupted_by, trace.final = "interrupted", "local", "interrupted"

@@ -38,7 +38,7 @@ def test_repl_does_not_import_codex_worker_at_startup() -> None:
 
 
 def test_repl_default_arguments() -> None:
-    """Verify that the REPL parser defaults to worker='api' and model='nvidia/nemotron-3-super-120b-a12b:free'."""
+    """Verify that the REPL parser defaults to worker='api' and model='openai/gpt-oss-120b'."""
     proc = subprocess.run(
         [sys.executable, "-m", "pdl_taskmaster.host.repl", "--help"],
         cwd=ROOT,
@@ -51,7 +51,7 @@ def test_repl_default_arguments() -> None:
     assert proc.returncode == 0
     assert re.search(r"default:\s*api", proc.stdout)
     # argparse may wrap the help text at the hyphens, so ignore whitespace.
-    assert "default:nvidia/nemotron-3-super-120b-a12b:free" in re.sub(r"\s+", "", proc.stdout)
+    assert "default:openai/gpt-oss-120b" in re.sub(r"\s+", "", proc.stdout)
     assert "(codex worker only)" in proc.stdout
 
 
@@ -84,6 +84,7 @@ def test_cross_platform_workspace_restore(tmp_path: Path) -> None:
         run_id="test",
         transcript=None,
         render_compact=False,
+        no_review=False,  # the live stub serves the confirmed route; no review is the default (L165)
     )
 
     # 1. Start a session and execute one turn with LiveStubWorker to materialize a real workspace
