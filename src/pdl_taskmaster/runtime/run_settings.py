@@ -18,21 +18,38 @@ MODES = ("protocol", "direct", "saver")
 DEFAULT_MODE = "saver"  # ADR-0031 (L158, L159): saver is the default; protocol, direct and saver are chosen explicitly
 
 
-def default_mode(worker: Any) -> str:
+def default_mode(worker: Any, *, review: bool = False) -> str:
     """ADR-0031: saver for a worker that carries run settings (the API worker); a worker that carries none (a recorded
-    replay, the codex worker) runs in protocol mode, as its recordings were made."""
+    replay, the codex worker) runs in protocol mode, as its recordings were made. Review (L165) is the confirmed route,
+    which runs in protocol mode."""
+    if review:
+        return "protocol"
     return DEFAULT_MODE if hasattr(worker, "agent_tools") else "protocol"
+
+
+def default_agent_tools(mode: str, no_review: bool) -> bool:
+    """L166: in-call tools are on, except on the unconfirmed route in protocol mode (protocol, no review), where they
+    measured no better and cost 49% more (L157). Saver's protocol branch and the confirmed route keep them."""
+    return not (mode == "protocol" and no_review)
+
+
+def check_review_mode(mode: str, no_review: bool) -> None:
+    """L165: no review is the default everywhere; review is the confirmed route, in protocol mode. Direct and saver
+    have no review, so asking for review in either is refused rather than ignored."""
+    if not no_review and mode != "protocol":
+        raise ValueError(f"review runs the confirmed route, in protocol mode; {mode} mode has no review")
 
 
 @dataclass(frozen=True)
 class RunSettings:
     max_repairs: int | None = None  # None: the routed tier's repairs; 0: stop at the first failed EXECUTE
     draft_execute: bool = False  # DRAFT_EXECUTE brief before EXECUTE (ADR-0013 P6)
+    confirmed_execute_tools: bool = False  # L168: the confirmed route's EXECUTE in-call tools (L163), off by default
     agent_tools: bool = True  # in-call tools and checked submissions (ADR-0029), on by default (ADR-0031)
     agent_tools_exclude: tuple[str, ...] = ()  # tools withheld from agent_tools, for ablations (L145)
     representation: str = "pdl"  # the confirmed route's artifacts: "pdl", or natural language "nl" (L97)
     tier_d1: bool | None = None  # feed back the model's own test failures in standard mode; None: the engine's default
-    no_review: bool = False  # the unconfirmed route: no prompt or plan review
+    no_review: bool = True  # L165: no prompt or plan review by default; False is the confirmed route (protocol mode)
     sandbox_mode: str | None = None  # None: $PDLT_SANDBOX, else auto; the sandbox resolves and announces it
     task_type: str | None = None  # a registered task type pinned for every request; None: System 1 classifies
     withhold_execution_context: bool = False  # L148 A/B: earlier stages without EXECUTE's instructions
@@ -59,7 +76,8 @@ class RunSettings:
 
         if not isinstance(self.ablate_unconfirmed, tuple) or set(self.ablate_unconfirmed) - set(ABLATIONS):
             problems.append(f"ablate_unconfirmed: a tuple of {sorted(ABLATIONS)}, got {self.ablate_unconfirmed!r}")
-        for name in ("draft_execute", "agent_tools", "no_review", "withhold_execution_context"):
+        for name in ("draft_execute", "agent_tools", "confirmed_execute_tools", "no_review",
+                     "withhold_execution_context"):
             if not isinstance(getattr(self, name), bool):
                 problems.append(f"{name}: a bool, got {getattr(self, name)!r}")
         if problems:
@@ -71,17 +89,21 @@ class RunSettings:
         carried = {
             "max_repairs": getattr(worker, "max_repairs", None),
             "draft_execute": bool(getattr(worker, "draft_execute", False)),
-            "agent_tools": bool(getattr(worker, "agent_tools", False)),
+            "agent_tools": getattr(worker, "agent_tools", False),  # None: the session's default (L166)
             "representation": getattr(worker, "representation", None) or "pdl",
             "tier_d1": (bool(worker.tier_d1) if getattr(worker, "tier_d1", None) is not None else None),
             "mode": default_mode(worker),
         }
-        return cls(**{**carried, **settings})
+        merged = {**carried, **settings}
+        if merged["agent_tools"] is None:
+            merged["agent_tools"] = default_agent_tools(merged["mode"], merged.get("no_review", True))
+        return cls(**merged)
 
     def apply(self, engine: Any) -> None:
         """Set the engine's run settings (no_review and sandbox_mode are given when the engine is built)."""
         engine.max_repairs = self.max_repairs
         engine.draft_execute = self.draft_execute
+        engine.confirmed_execute_tools = self.confirmed_execute_tools
         engine.agent_tools = self.agent_tools
         from pdl_taskmaster.runtime.agent_tools import parse_exclusions
 

@@ -130,7 +130,7 @@ stateDiagram-v2
     WAITING_INPUT --> [*]: exit 3
 ```
 
-Exit 4 is a harness or provider error, never a protocol result; 130 is an interrupt (ADR-0019 and its amendments). A result is CLOSED_UNVERIFIED when it is a negative claim, declares requirements open, or is a positive result established only by an argument (L116, ADR-0030). The catalogue's control route always exits 0: it is graded, not closed.
+Exit 4 is a harness or provider error, never a protocol result; 130 is an interrupt (ADR-0019 and its amendments). A result is CLOSED_UNVERIFIED when it is a negative claim, declares requirements open, is a positive result established only by an argument (L116, ADR-0030), or was checked only against the contract (`contract_checked`, L164): exit 0 means the host reproduced the result. The catalogue's control route always exits 0: it is graded, not closed.
 
 ---
 
@@ -140,13 +140,14 @@ Exit 4 is a harness or provider error, never a protocol result; 130 is an interr
 
 | Mode | Launch flag | Per turn in the REPL | Default |
 | :--- | :--- | :--- | :--- |
-| No review (unconfirmed route) | `--no-review`, `--ultrafast` | `/no-review on`, `/ultrafast` | on |
-| Review (confirmed route) | `--review` | `/no-review off` | off |
+| No review (the unconfirmed route in protocol mode) | `--no-review`, `--ultrafast` | `/no-review on`, `/ultrafast` | on (L165) |
+| Review (the confirmed route; selects protocol mode, L165) | `--review` | `/no-review off`, in a protocol session | off |
 | Fast (reviews confirmed in advance) | `--fast` | `/fast` | off |
 | Execution brief | `--draft-execute` | launch only | off |
 | Tier D1 repairs | `--tier-d1`, `--no-tier-d1` | launch only | on |
 | Repair limit | `--max-repairs N` | launch only | the routed tier's |
-| In-call tools | `--agent-tools`, `--no-agent-tools` (`PDLT_AGENT_TOOLS=0`) | launch only | on (ADR-0031) |
+| In-call tools | `--agent-tools`, `--no-agent-tools` (`PDLT_AGENT_TOOLS`) | launch only | on (ADR-0031), except off on the unconfirmed route in protocol mode (L166) |
+| The confirmed route's EXECUTE tools | `--confirmed-execute-tools` | launch only | off (L168) |
 | Structured output | `--api-structured-output`, `--no-structured-output` | launch only | on |
 | Artifact representation | `--representation pdl` or `nl` | launch only | pdl |
 | Pinned task type | `--task-type NAME` | launch only | System 1 classifies |
@@ -170,7 +171,7 @@ These exist for studies and are not user modes. Each changes what one call recei
 
 ## 7. Direct and saver modes (L153)
 
-A session runs in one of three modes: `saver` (the default since ADR-0031), `protocol` (sections 2 to 6) or `direct`. Choose it with `--mode`, `/mode` in the REPL or `Session.open(mode=...)`. With no mode given, a resumed session keeps the mode it ran in, and a new one runs in saver; a recorded replay and the codex worker run in protocol mode, as their recordings were made (`run_settings.default_mode`). Saver with in-call tools sends Cerebras first in its provider order (ADR-0031, option (b)); the other modes keep the default order, Baseten then Crusoe.
+A session runs in one of three modes: `saver` (the default since ADR-0031), `protocol` (sections 2 to 6) or `direct`. Choose it with `--mode`, `/mode` in the REPL or `Session.open(mode=...)`. With no mode given, a resumed session keeps the mode it ran in, a new one runs in saver, and one with review runs in protocol mode (L165: direct and saver have no review, so review with either is refused); a recorded replay and the codex worker run in protocol mode, as their recordings were made (`run_settings.default_mode`). Saver with in-call tools sends Cerebras first in its provider order (ADR-0031, option (b)); the other modes keep the default order, Baseten then Crusoe.
 
 - **A mode change starts a new session.** `/mode` opens a new session, and reopening a session in another mode is refused (`api.session.check_session_mode`). No turn history crosses modes, so no draft is left half-reviewed.
 - **Bootstrap stays as it is.**

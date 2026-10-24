@@ -17,7 +17,7 @@ Commands below are shown for **bash** (Linux, macOS) and **PowerShell** (Windows
 | `pdlt --new-session` | Starts a new session without asking |
 | `pdlt --session-id my-work` | Opens the session named `my-work`, creating it if it does not exist |
 | `pdlt --review` | Stops at the prompt and the plan for your review before anything runs (see "Review modes") |
-| `pdlt --model openai/gpt-oss-120b` | Uses another model (the default is `nvidia/nemotron-3-super-120b-a12b:free`) |
+| `pdlt --model nvidia/nemotron-3-super-120b-a12b:free` | Uses another model (the default is `openai/gpt-oss-120b`, L167) |
 
 On start it prints:
 
@@ -51,13 +51,14 @@ What comes back depends on the request:
 
 | Mode | Start with | Toggle in the REPL | What happens |
 |---|---|---|---|
-| No review (the default) | `pdlt` or `--no-review` | `/no-review on` | Runs straight through. The interpretation is shown as an unconfirmed working note. |
-| Review | `--review` | `/no-review off` | Stops at the prompt pseudocode and again at the plan. Answer `/confirm` to go on, `/revise <what to change>` for a new draft, or `/stop` to cancel. |
+| No review (the default) | `pdlt` or `--no-review` | `/no-review on` | Runs straight through. In protocol mode the interpretation is shown as an unconfirmed working note. |
+| Review | `--review` | `/no-review off` (protocol mode) | The confirmed route, in protocol mode: with no `--mode`, `--review` selects protocol. Stops at the prompt pseudocode and again at the plan. Answer `/confirm` to go on, `/revise <what to change>` for a new draft, or `/stop` to cancel. |
 | Fast | `--fast` (implies `--review`) | `/fast on` | Both artifacts are shown; one the host has no findings on is accepted without waiting, and one with findings stops for you. |
 
 ### Session modes
 
-`--mode protocol` is the default. `--mode direct` answers each request directly, behind SECURE_GATEWAY; `--mode saver` uses the protocol only for what System 1 classifies VERIFIED_EXECUTION and answers the rest directly ([routing.md](routing.md), section 7).
+`--mode saver` is the default (ADR-0031): it uses the protocol only for what System 1 classifies VERIFIED_EXECUTION and answers the rest directly. `--mode protocol` runs every request through the protocol; `--mode direct` answers each request directly, behind SECURE_GATEWAY ([routing.md](routing.md), section 7).
+- Review needs protocol mode (L165): `--review` with no `--mode` selects it, `--review` with `--mode direct` or `saver` is refused, and `/no-review off` in a direct or saver session points to `/mode protocol`.
 - A direct answer closes `CLOSED_UNVERIFIED` (exit 5); a gateway refusal closes REFUSED (exit 0).
 - `/mode direct` (or `protocol`, `saver`) opens a new session in that mode; a session never changes mode.
 
@@ -197,8 +198,9 @@ From Python, the same level is `result.provenance["verification"]["level"]` ([Py
 | `--workspace-root PATH` | Where sessions are kept (default below) |
 | `--transcript PATH` | Where the transcript is written |
 | `--dev` | Developer mode: per-call telemetry |
-| `--agent-tools` | In-call tools inside model operations: `run_python` and `read_attempt` on EXECUTE_UNCONFIRMED, and checked submissions ([MCP and in-call tools](mcp/EXTERNAL_TOOLS.md)) |
-| `--agent-tools-exclude TOOL[,TOOL]` | With `--agent-tools`, withhold the named tools, for an ablation. A withheld submission tool means the operation answers in its message, and the host checks the reply after the call; an operation with every tool withheld makes a plain call |
+| `--agent-tools`, `--no-agent-tools` | In-call tools inside model operations. On by default, except on the unconfirmed route (protocol mode without review), where they are off (ADR-0031, L166); a flag or `PDLT_AGENT_TOOLS` wins: `run_python` and `read_attempt` on EXECUTE_UNCONFIRMED (and on the confirmed route's EXECUTE with `--confirmed-execute-tools`), and checked submissions ([MCP and in-call tools](mcp/EXTERNAL_TOOLS.md)) |
+| `--confirmed-execute-tools` | Give the confirmed route's EXECUTE its in-call tools (`run_python`, `read_attempt`, `submit_execute`; L163). Off by default (L168): measured no more correct, 25% faster, 15% more cost |
+| `--agent-tools-exclude TOOL[,TOOL]` | With tools on, withhold the named tools, for an ablation. A withheld submission tool means the operation answers in its message, and the host checks the reply after the call; an operation with every tool withheld makes a plain call |
 | `--withhold-execution-context` | L148 A/B: BOOTSTRAP_ANALYSIS, DRAFT_PROMPT and DRAFT_PLAN (and their revisions) receive only their own instructions, without the execution environment or EXEC-* clauses |
 | `--ablate-unconfirmed PART[,PART]` | L149 ablation, a measurement: change what EXECUTE_UNCONFIRMED receives. `normative`: no standard clauses or guidance block; `framing`: no execution environment, EXEC-* clauses, or code, tool and witness wording; `notation`: the working notes in plain prose; `order`: the deliverable before the working notes; `entities`: no TASK_ENTITIES (the bootstrap's extraction); `freetext` (L151): the same fields as headed plain-text sections instead of a JSON object, converted by the host before validation (not with agent tools or the result IR); `plaininput` (L151): the projection as indented plain text instead of a JSON document, every value kept, and the worker instructions without their two role lines (not with agent tools). Other operations are unchanged |
 | `--draft-execute` | Draft a typed execution brief before EXECUTE on tasks that are or need an algorithm or a calculation |

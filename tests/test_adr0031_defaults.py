@@ -49,7 +49,7 @@ def test_an_explicit_mode_wins():
 
 
 def test_the_api_worker_runs_saver_with_tools_and_a_worker_with_no_settings_runs_as_recorded():
-    assert default_mode(_api_worker()) == "saver" and _api_worker().agent_tools is True
+    assert default_mode(_api_worker()) == "saver" and _api_worker().agent_tools is None  # the session's default
     assert (RunSettings.from_worker(_api_worker()).mode, RunSettings.from_worker(_api_worker()).agent_tools) == (
         "saver", True)
     recorded = RunSettings.from_worker(ScriptedWorker())
@@ -112,5 +112,6 @@ def test_experiment_arms_run_as_before_unless_they_name_a_mode_or_tools():
     import runner
 
     spec = runner.ArmSpec(name="P", kind="protocol", worktree=ROOT)
-    assert runner._default_args(spec, ()) == ["--mode", "protocol", "--no-agent-tools"]
+    assert runner._default_args(spec, ()) == ["--mode", "protocol", "--agent-tools"]  # reviewed: the confirmed route
+    assert runner._default_args(spec, ("--no-review",)) == ["--mode", "protocol", "--no-agent-tools"]  # L166
     assert runner._default_args(spec, ("--mode", "saver", "--agent-tools")) == []

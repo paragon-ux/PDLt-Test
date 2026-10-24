@@ -160,8 +160,8 @@ def test_the_repl_defaults_to_no_review() -> None:
 @pytest.mark.parametrize("argv, expected, suffix", [
     ([], True, "-unconfirmed-tier-d1"),
     (["--no-tier-d1"], False, "-unconfirmed"),
-    (["--route", "confirmed"], True, "-confirmed-tier-d1"),
-    (["--route", "confirmed", "--representation", "nl"], True, "-confirmed-nl-tier-d1"),
+    (["--route", "confirmed"], True, "-confirmed-agent-tools-tier-d1"),  # tools on by default but unconfirmed (L166)
+    (["--route", "confirmed", "--representation", "nl"], True, "-confirmed-agent-tools-nl-tier-d1"),
     (["--route", "control"], False, "-control"),
     (["--route", "unconfirmed", "--draft-execute"], True, "-unconfirmed-draft-execute-tier-d1"),
 ])
@@ -201,7 +201,7 @@ def test_control_gets_no_structured_output_option(tmp_path: Path) -> None:
     ([], True, "-unconfirmed-tier-d1"),
     (["--no-api-structured-output"], False, "-unconfirmed-tier-d1-no-structured-output"),
     (["--no-structured-output"], False, "-unconfirmed-tier-d1-no-structured-output"),
-    (["--route", "confirmed", "--api-structured-output"], True, "-confirmed-tier-d1"),
+    (["--route", "confirmed", "--api-structured-output"], True, "-confirmed-agent-tools-tier-d1"),
     (["--route", "control"], False, "-control"),
     (["--route", "control", "--no-structured-output"], False, "-control"),
 ])

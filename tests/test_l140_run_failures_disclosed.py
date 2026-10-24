@@ -31,7 +31,7 @@ def _with_tier_d1(monkeypatch):
 
 def test_a_failure_not_fed_back_is_disclosed_in_the_provenance(tmp_path):
     engine, _, executes, events = _run(tmp_path, [{"kind": "RESULT", "body": FAILING}])  # Tier D1 off
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS and len(executes) == 1  # unchanged: no repair
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED and len(executes) == 1  # unchanged: no repair
     verification = _recorded(engine)["verification"]
     assert verification["level"] == "contract_checked"
     assert verification["run_failures_not_fed_back"] == ["PROGRAM_FAILED"]
@@ -42,11 +42,11 @@ def test_a_failure_not_fed_back_is_disclosed_in_the_provenance(tmp_path):
 def test_with_tier_d1_an_environment_denial_is_disclosed_and_a_program_failure_is_repaired(tmp_path, monkeypatch):
     _with_tier_d1(monkeypatch)
     engine, _, executes, _ = _run(tmp_path / "denied", [{"kind": "RESULT", "body": DENIED}])
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS and len(executes) == 1
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED and len(executes) == 1
     assert _recorded(engine)["verification"]["run_failures_not_fed_back"] == ["PROGRAM_FAILED (environment denial)"]
     engine, _, executes, _ = _run(tmp_path / "failed", [{"kind": "RESULT", "body": FAILING},
                                                          {"kind": "RESULT", "body": RUNS}])
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS and len(executes) == 2  # fed back, then repaired
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED and len(executes) == 2  # fed back, then repaired
     verification = _recorded(engine)["verification"]
     assert "run_failures_not_fed_back" not in verification and verification["caveat"] == provenance.STANDARD_CAVEAT
 

@@ -245,7 +245,7 @@ def _two_turns(tmp_path, sys1, second=SECOND):
     engine = engine_with(tmp_path, worker, sys1)
     for message in ("$confirm-with-pseudocode " + FIRST, "/confirm", "/confirm"):
         engine.handle_user_message(message)
-    assert engine.controller.state.stage.value == "CLOSED_SUCCESS"
+    assert engine.controller.state.stage.value == "CLOSED_UNVERIFIED"
     first_calls = len(worker.requests)
     ask(engine, second)
     return engine, worker, worker.requests[first_calls:]

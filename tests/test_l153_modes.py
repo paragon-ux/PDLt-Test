@@ -208,7 +208,7 @@ def test_protocol_mode_passes_clean_input_to_its_own_route(tmp_path):
     worker = DirectWorker()
     with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, settings=RunSettings(no_review=True, mode="protocol")) as s:
         result = s.send(REQUEST)
-    assert result.stage == "CLOSED_SUCCESS"
+    assert result.stage == "CLOSED_UNVERIFIED"
     assert worker.operations == ["BOOTSTRAP_ANALYSIS", "EXECUTE_UNCONFIRMED"]  # Bootstrap once: the route's own
     assert worker.sys1_client.asked.count("route") == 1
 

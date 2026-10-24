@@ -60,7 +60,7 @@ with Session.open(worker, "pdlt-sessions/demo", no_review=True) as session:
         print(result.provenance["verification"]["level"])
 ```
 
-`Session.open` defaults to the review route (`no_review=False`): `send` then stops at the prompt review, and `confirm()` moves on, or `run(message, confirm=True)` accepts each review for you. **`pdlt` defaults the other way**, to no review (ledger L94), so a script moved between the two should name its route (`no_review=True`, or `pdlt --review`). [docs/api.md](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/api.md) covers results, exit codes, providers, run settings, closed sessions and the sandbox.
+`Session.open` and `pdlt` share their defaults: saver mode with no review, on `openai/gpt-oss-120b` (ADR-0031, L165, L167; the example names the free model). Saver runs the protocol for what System 1 classes VERIFIED_EXECUTION and answers the rest directly. Review is the confirmed route, in protocol mode: `no_review=False` or `pdlt --review`. There `send` stops at the prompt review, and `confirm()` moves on, or `run(message, confirm=True)` accepts each review for you. [docs/api.md](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/api.md) covers results, exit codes, providers, run settings, closed sessions and the sandbox.
 
 ## Extensions SDK
 
@@ -72,8 +72,8 @@ bash (Linux, macOS):
 
 ```bash
 export OPENROUTER_API_KEY="sk-or-v1-your-key"
-pdlt --new-session                 # no review gates (the default)
-pdlt --new-session --review        # stop at the prompt and the plan for review
+pdlt --new-session                 # saver mode, no review gates (the default)
+pdlt --new-session --review        # the confirmed route: stop at the prompt and the plan for review
 ```
 
 PowerShell (Windows):

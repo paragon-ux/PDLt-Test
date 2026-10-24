@@ -283,10 +283,9 @@ def test_draft_submissions_are_checked_by_the_lint(tmp_path):
         if req.operation == "DRAFT_PLAN":
             seen["plan"] = req.tools.tool_names()
             return json.dumps(req.tools.submit(json.dumps({"outcome": {"neutral_plan_body": PLAN}}))[1])
-        if req.operation == "EXECUTE":  # L163: the confirmed route's EXECUTE has the loop too
-            seen["execute"] = req.tools.tool_names()
-            return json.dumps(req.tools.submit(json.dumps({"outcome": {"kind": "RESULT", "body": "42",
-                                                                       "result_ir": _ir()}}))[1])
+        if req.operation == "EXECUTE":
+            assert req.tools is None  # L168: the confirmed route's EXECUTE has its loop only when asked
+            return json.dumps({"kind": "RESULT", "body": "42", "result_ir": _ir()})
         raise AssertionError(req.operation)
 
     engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=Sys1())
@@ -294,7 +293,6 @@ def test_draft_submissions_are_checked_by_the_lint(tmp_path):
     engine.handle_user_message("$confirm-with-pseudocode Solve the stated task.")
     engine.handle_user_message("/confirm")
     engine.handle_user_message("/confirm")
-    assert seen == {"prompt": ["submit_draft_prompt"], "codes": ["PDL_LINT"], "plan": ["submit_draft_plan"],
-                    "execute": ["run_python", "submit_execute"]}
+    assert seen == {"prompt": ["submit_draft_prompt"], "codes": ["PDL_LINT"], "plan": ["submit_draft_plan"]}
     kinds = [e["kind"] for e in engine.workspace.read_events()]
     assert "PROMPT_LINT_RETRY" not in kinds  # the lint found nothing after the call: it was met inside it

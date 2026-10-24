@@ -103,10 +103,10 @@ echo 'export OPENROUTER_API_KEY="sk-or-v1-your-key"' >> ~/.bashrc
 | Setting | Required? | Where |
 |---|---|---|
 | `OPENROUTER_API_KEY` | Yes, for any live run | Environment variable, as above. Never put it in a file you commit. |
-| The task model | No. The default is `nvidia/nemotron-3-super-120b-a12b:free` | `--model` (REPL, headless) or `create_worker("api", model=...)` (Python) |
+| The task model | No. The default is `openai/gpt-oss-120b`, the model the defaults were measured on (L167); `nvidia/nemotron-3-super-120b-a12b:free` costs nothing | `--model` (REPL, headless) or `create_worker("api", model=...)` (Python) |
 | Everything else | No | [Reference: environment variables](../reference.md#environment-variables) |
 
-**Credits.** Models whose name ends in `:free` cost nothing but are rate-limited, and OpenRouter can withdraw them. Other models, such as `openai/gpt-oss-120b`, need credit on your OpenRouter account.
+**Credits.** Models whose name ends in `:free` cost nothing but are rate-limited, and OpenRouter can withdraw them. Other models, such as the default `openai/gpt-oss-120b`, need credit on your OpenRouter account. The first task below names the free model, so it runs without credit.
 
 ## 6. Run a first task
 

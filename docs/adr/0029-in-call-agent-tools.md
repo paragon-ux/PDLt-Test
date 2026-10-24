@@ -1,7 +1,7 @@
 # ADR-0029: In-Call Agent Tools: Validated Submission and Sandbox Inspection
 
 ## Status
-**Proposed.** Date: 2026-10-10. Deciders: project maintainers.
+**Accepted** (the user, 2026-10-24, L166; on by default under [ADR-0031](0031-default-configuration-saver.md), off on the unconfirmed route, L166). Proposed 2026-10-10. Deciders: project maintainers.
 
 - Amends [ADR-0025](0025-agentic-capability-boundary.md): a tool with no effect outside the confined sandbox, used inside one model call, is not an effect and does not go through the tool broker or a change set. The broker stays the route for every tool with an effect.
 - Amends the worker premise in `worker-bootstrap.txt` ("The supplied projection is the complete invocation for this call") for the operations that get tools: the projection stays the complete statement of the task; tool results are inspection inside the call, never new task content.
@@ -26,7 +26,7 @@ Provider fact: Cerebras rejects `tools` together with `response_format`, so a to
 4. **Inspection only.** `run_python` runs in the session's confined sandbox under the attempt's limits; it has no network, no project access and no effect that outlives the run. `read_attempt` returns the previous attempt's programs as the host ran them, numbered, with the host's correction.
 5. **Capabilities are stated, not taught** (ADR-0025 §6, GUARD-01). Tool descriptions and the capability note say what each tool does and its budget; they never suggest a method.
 6. **Budgets and records.** At most 6 calls of `run_python` and `read_attempt` per model call. Every tool call and submission is an event and is written to the call trace.
-7. **Off by default.** A run setting (`agent_tools`, CLI `--agent-tools`, environment `PDLT_AGENT_TOOLS=1`) turns the loop on. With it off, every request is byte-identical to today's.
+7. **Off by default.** A run setting (`agent_tools`, CLI `--agent-tools`, environment `PDLT_AGENT_TOOLS=1`) turns the loop on. With it off, every request is byte-identical to today's. *Superseded by [ADR-0031](0031-default-configuration-saver.md): on by default since 2026-10-23; `--no-agent-tools` or `PDLT_AGENT_TOOLS=0` turns it off.*
 8. **Provider handling.** Tool turns carry the tools and no response format; when the provider refuses the full output schema in the submission's parameters, the submission falls back to a plain object, still checked by the host. When the budgets are spent, the last submission stands as the reply (the host verifies and corrects it as any reply); with no submission, one final call goes with the operation's own format and no tools.
 9. **Replay.** The prompt hash is taken before the loop; a recorded replay returns the accepted reply. Loop rounds are recorded in the trace, not replayed.
 10. **MCP.** EXECUTE_UNCONFIRMED's tools (`run_python` and its checked submission) are served over MCP's stdio transport for agents outside PDLt (`python -m pdl_taskmaster.host.mcp_server`; ADR-0023 section 7): a thin adapter with the same definitions, budgets, sandbox confinement and submission check, and no verdict.
@@ -52,6 +52,7 @@ The user (2026-10-24): 'give its EXECUTE in-call tools (an ADR-0029 amendment)',
 - **Same checks:** the submission is checked as decision 2 says, by EXECUTE's own wire model (the operation bridge's `parse_execution`), then the deliverable's programs as the host will run them and the host's witness rules (`agent_tools.make_validator`, `parse=`). The host verifies the accepted reply after the call, as it does today.
 - **Unchanged:** the confirmed prompt, the confirmed plan and the user's two reviews, decisions 3 to 9, and the prompt hash (replay). MCP (decision 10) still serves EXECUTE_UNCONFIRMED's tools.
 - **It changes what the provider receives**, for the confirmed route's EXECUTE with tools on: the tools, the capability note, and no response format. The measurement in L163 is its live check.
+- **Off by default (L168).** L163 measured them: no gain in correctness, a 25% shorter median time, fewer repairs and cancellations, and 15% more cost. The user (2026-10-24): 'clearly EXECUTE tools are not helping. we should remove them by default for confirmed.' `--confirmed-execute-tools` (`RunSettings.confirmed_execute_tools`) turns them on. Bootstrap and the drafts keep their submission checks.
 
 ## Consequences
 - **Easier:** a failed program, an exhausted budget or a missing WITNESS line is found inside the call, before an attempt is counted.

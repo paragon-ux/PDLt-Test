@@ -50,8 +50,8 @@
   ],
   "steps": [
    {
-    "stage": "CLOSED_SUCCESS",
-    "exit_status": 0,
+    "stage": "CLOSED_UNVERIFIED",
+    "exit_status": 5,
     "closed": true,
     "review": null,
     "refused": false
@@ -83,19 +83,20 @@
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
    "EXECUTION_ATTEMPTS",
+   "CLOSED_UNVERIFIED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
   ],
   "provenance": {
    "schema": "pdlt.provenance/1",
    "recorded_by": "host at closure",
-   "status": "CLOSED_SUCCESS",
+   "status": "CLOSED_UNVERIFIED",
    "verification": {
     "level": "contract_checked",
     "problem_class": "STANDARD_EXECUTION",
     "witness_form": "none",
     "reproduced_by_host": false,
-    "unverified_reason": null,
+    "unverified_reason": "contract_checked",
     "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
@@ -192,8 +193,8 @@
   ],
   "steps": [
    {
-    "stage": "CLOSED_SUCCESS",
-    "exit_status": 0,
+    "stage": "CLOSED_UNVERIFIED",
+    "exit_status": 5,
     "closed": true,
     "review": null,
     "refused": false
@@ -210,19 +211,20 @@
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
    "PLAN_PROFILE_ROUTED",
+   "CLOSED_UNVERIFIED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
   ],
   "provenance": {
    "schema": "pdlt.provenance/1",
    "recorded_by": "host at closure",
-   "status": "CLOSED_SUCCESS",
+   "status": "CLOSED_UNVERIFIED",
    "verification": {
     "level": "contract_checked",
     "problem_class": "STANDARD_EXECUTION",
     "witness_form": "none",
     "reproduced_by_host": false,
-    "unverified_reason": null,
+    "unverified_reason": "contract_checked",
     "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
@@ -256,8 +258,8 @@
   "sys1": null,
   "steps": [
    {
-    "stage": "CLOSED_SUCCESS",
-    "exit_status": 0,
+    "stage": "CLOSED_UNVERIFIED",
+    "exit_status": 5,
     "closed": true,
     "review": null,
     "refused": false
@@ -288,19 +290,20 @@
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
    "EXECUTION_ATTEMPTS",
+   "CLOSED_UNVERIFIED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
   ],
   "provenance": {
    "schema": "pdlt.provenance/1",
    "recorded_by": "host at closure",
-   "status": "CLOSED_SUCCESS",
+   "status": "CLOSED_UNVERIFIED",
    "verification": {
     "level": "contract_checked",
     "problem_class": "STANDARD_EXECUTION",
     "witness_form": "none",
     "reproduced_by_host": false,
-    "unverified_reason": null,
+    "unverified_reason": "contract_checked",
     "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
@@ -359,8 +362,8 @@
   ],
   "steps": [
    {
-    "stage": "CLOSED_SUCCESS",
-    "exit_status": 0,
+    "stage": "CLOSED_UNVERIFIED",
+    "exit_status": 5,
     "closed": true,
     "review": null,
     "refused": false
@@ -392,19 +395,20 @@
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
    "EXECUTION_ATTEMPTS",
+   "CLOSED_UNVERIFIED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
   ],
   "provenance": {
    "schema": "pdlt.provenance/1",
    "recorded_by": "host at closure",
-   "status": "CLOSED_SUCCESS",
+   "status": "CLOSED_UNVERIFIED",
    "verification": {
     "level": "contract_checked",
     "problem_class": "STANDARD_EXECUTION",
     "witness_form": "none",
     "reproduced_by_host": false,
-    "unverified_reason": null,
+    "unverified_reason": "contract_checked",
     "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",

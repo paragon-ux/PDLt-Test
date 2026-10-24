@@ -167,8 +167,9 @@ def _review_args(spec: ArmSpec, extra_args: tuple[str, ...]) -> list[str]:
 
 
 def _default_args(spec: ArmSpec, extra_args: tuple[str, ...]) -> list[str]:
-    """ADR-0031 made saver the harness's default mode and turned its in-call tools on. An arm that names neither runs
-    as before: protocol mode, no tools; the flags go only to a worktree that knows them."""
+    """ADR-0031 made saver the harness's default mode. An arm that names no mode runs in protocol mode; one that names
+    no tools gets L166's rule: off on the unconfirmed route (protocol mode with --no-review), on otherwise. The flags go
+    only to a worktree that knows them."""
     given = (*spec.args, *extra_args)
     repl = spec.worktree / "src" / "pdl_taskmaster" / "host" / "repl.py" if spec.worktree else None
     text = repl.read_text(encoding="utf-8") if repl is not None and repl.is_file() else ""
@@ -176,7 +177,8 @@ def _default_args(spec: ArmSpec, extra_args: tuple[str, ...]) -> list[str]:
     if "--mode" not in given and '"--mode"' in text:
         args += ["--mode", "protocol"]
     if "--agent-tools" not in given and "--no-agent-tools" not in given and "--no-agent-tools" in text:
-        args.append("--no-agent-tools")
+        mode = given[given.index("--mode") + 1] if "--mode" in given[:-1] else "protocol"
+        args.append("--no-agent-tools" if mode == "protocol" and "--no-review" in given else "--agent-tools")
     return args
 
 

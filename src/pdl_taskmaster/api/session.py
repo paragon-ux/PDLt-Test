@@ -110,31 +110,34 @@ class Session:
 
     @classmethod
     def open(cls, worker: Any, session_dir: str | Path, *, repo_root: str | Path | None = None,
-             sandbox_mode: str | None = None, no_review: bool = False, restore: bool = True,
+             sandbox_mode: str | None = None, no_review: bool = True, restore: bool = True,
              output_verifier: Any = None, run_id: str = "api", task_type: str | None = None,
              settings: Any = None, sys1: Any = None, mode: str | None = None) -> "Session":
         """Open the session in ``session_dir``, resuming its workspace when ``restore`` and it has one.
 
-        ``no_review`` runs the standard route (no prompt or plan review). ``output_verifier`` replaces the host's
+        ``no_review`` (the default, L165) runs without prompt or plan review; False runs the confirmed route, in
+        protocol mode (direct and saver have no review, so review in either raises ValueError). ``output_verifier`` replaces the host's
         verifier registry (``verification.output_verifier.OutputVerifier``), for callers that register their own
         domain checkers. ``sandbox_mode`` None means $PDLT_SANDBOX, else auto. ``task_type`` pins a registered task
         type for every request (extensions/task_types.py); None lets System 1 classify each one. ``settings`` is a
         RunSettings (runtime/run_settings.py) carrying these and the other run settings; without it they are read
         from the arguments and the worker's attributes. ``sys1`` is a System 1 client (api.create_system1); None:
         the worker's. ``mode`` is one of run_settings.MODES; None: a resumed session's own, else run_settings.default_mode
-        (saver for the API worker, ADR-0031)."""
+        (saver for the API worker, ADR-0031; protocol under review, L165)."""
         from pdl_taskmaster.extensions import task_types
         from pdl_taskmaster.host.app import PDLtHost
-        from pdl_taskmaster.runtime.run_settings import RunSettings, default_mode
+        from pdl_taskmaster.runtime.run_settings import RunSettings, check_review_mode, default_mode
 
         if settings is None:
             if mode is None:  # ADR-0031: a resumed session keeps its own mode; a new one runs in the worker's default
                 folder = Path(session_dir).resolve()
-                mode = stored_session_mode(folder, restore and stored_workspace(folder) is not None) or default_mode(worker)
+                mode = (stored_session_mode(folder, restore and stored_workspace(folder) is not None)
+                        or default_mode(worker, review=not no_review))
             settings = RunSettings.from_worker(worker, no_review=no_review, sandbox_mode=sandbox_mode,
                                                task_type=task_type, mode=mode)
-        elif (no_review, sandbox_mode, task_type, mode) != (False, None, None, None):
+        elif (no_review, sandbox_mode, task_type, mode) != (True, None, None, None):
             raise ValueError("pass no_review, sandbox_mode, task_type and mode in settings when settings is given")
+        check_review_mode(settings.mode, settings.no_review)
         no_review, task_type = settings.no_review, settings.task_type
         if task_type is not None:
             route = "unconfirmed" if no_review else "confirmed"

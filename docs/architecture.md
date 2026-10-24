@@ -38,7 +38,7 @@ The authored deliverable is executed in the isolated sandbox. If errors or asser
 
 ## The Execution Routes
 
-PDLt runs a request through the unconfirmed route (the default), the confirmed route (gated prompt and plan pseudocode), or, in the catalogue runner, the unharnessed control route used as the measurement baseline. Which route runs, the System 1 decisions along the way, the modes a user or agent can set, and how a run closes are in [Routing](routing.md).
+By default PDLt runs a request in saver mode (ADR-0031): the protocol's unconfirmed route for what System 1 classes VERIFIED_EXECUTION, a direct answer for the rest. Protocol mode runs every request through the unconfirmed route, or, with review, the confirmed route (gated prompt and plan pseudocode). The catalogue runner adds the unharnessed control route, used as the measurement baseline. Which route runs, the System 1 decisions along the way, the modes a user or agent can set, and how a run closes are in [Routing](routing.md).
 
 
 ---

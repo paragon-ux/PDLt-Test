@@ -490,6 +490,9 @@ class SessionEngine:
         self.max_repairs: int | None = None
         self.draft_execute = False  # A/B option: DRAFT_EXECUTE brief before the first EXECUTE
         self.agent_tools = False  # ADR-0029: in-call tools and checked submissions (--agent-tools)
+        # L168: the confirmed route's EXECUTE gets its in-call tools (L163) only when asked; its drafts and Bootstrap
+        # keep their submission checks under agent_tools.
+        self.confirmed_execute_tools = False
         self.agent_tools_exclude: frozenset[str] = frozenset()  # L145: tools withheld (--agent-tools-exclude)
         self._withhold_execution_context = False  # L148 A/B: earlier stages without EXECUTE's environment and clauses
         self._ablate_unconfirmed: frozenset[str] = frozenset()  # L149 ablation of what EXECUTE_UNCONFIRMED receives
@@ -2358,15 +2361,15 @@ class SessionEngine:
         publish, ran_program). Exactly one model call: a response cut off at the
         output-token cap or one that does not parse is a counted failed attempt
         with a registry finding, never a hidden retry (each attempt cost up to two
-        calls before, so a repair could cost four). With agent tools on, the call carries EXECUTE's in-call tools
-        (ADR-0029 amendment, L163)."""
+        calls before, so a repair could cost four). With agent tools and confirmed_execute_tools on, the call carries
+        EXECUTE's in-call tools (ADR-0029 amendment, L163; off by default, L168)."""
         self._execute_attempts += 1
         try:
             modes = _execution_modes(execute_context, result_ir_mode)
             outcome = self.bridge.parse_execution(self._call(
                 "EXECUTE", execute_context, traces, operator_correction=correction, modes=modes,
                 tools=(lambda: self._agent_tool_host(execute_context, correction, operation="EXECUTE"))
-                if self.agent_tools else None))
+                if self.agent_tools and self.confirmed_execute_tools else None))
         except Exception as exc:
             limit = getattr(exc, "output_limit", None)
             if limit is None and not _is_wire_failure(exc):
@@ -2755,10 +2758,17 @@ class SessionEngine:
         return [Finding("PAYLOAD_TOKEN_REPEATED", count=len(echoed))]
 
     def _close_with_result(self, result_body_hash: str) -> None:
-        """Close the instance with its published result. CLOSED_SUCCESS means the host's checks established it;
-        a result resting on a claim the host cannot check closes CLOSED_UNVERIFIED (ADR-0019 amendment, L116)."""
+        """Close the instance with its published result. CLOSED_SUCCESS means the host reproduced it (host_verified);
+        a result resting on a claim the host cannot check closes CLOSED_UNVERIFIED (ADR-0019 amendment, L116), and so
+        does one the host checked only against its contract (L164)."""
+        from pdl_taskmaster.runtime import provenance
+
         assert self.controller is not None and self.workspace is not None
         reason = getattr(self, "_unverified_reason", None)
+        if reason is None and not provenance.host_established(
+                self._requires_verified_execution, getattr(self, "_last_verification", None),
+                getattr(self, "_last_witness", None), verifier=self.task_type.verifier):
+            reason = provenance.CONTRACT_ONLY
         self.controller.complete_success(result_body_hash, verified=reason is None)
         if reason is not None:
             self.workspace.append_event("CLOSED_UNVERIFIED", {"reason": reason})
@@ -2769,8 +2779,6 @@ class SessionEngine:
                 self.workspace.write_program_output(runs)
             if hasattr(self.workspace, "write_provenance"):
                 from datetime import datetime, timezone
-
-                from pdl_taskmaster.runtime import provenance
 
                 self.workspace.write_provenance(provenance.record(
                     status=self.controller.state.stage.value,

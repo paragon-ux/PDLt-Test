@@ -377,6 +377,8 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
             setting_args += [flag, str(settings[key])]
     if settings.get("draft_execute"):
         setting_args.append("--draft-execute")
+    if settings.get("confirmed_execute_tools"):
+        setting_args.append("--confirmed-execute-tools")
     if settings.get("route") != "control":
         # Always explicit: the harness's own default is on (ADR-0031), so leaving the flag out does not mean off.
         setting_args.append("--agent-tools" if settings.get("agent_tools") else "--no-agent-tools")
@@ -674,6 +676,19 @@ HOLD_VERDICT = "UNCONFIRMED_GATE"  # exit 2: a gate left for a human (ADR-0019; 
 ADVERSARIAL_CATEGORY = "adversarial_and_injection"
 
 
+def default_agent_tools(route):
+    """L166: in-call tools on for every harness route but unconfirmed, the harness's own rule; control has no tool
+    path."""
+    return route not in ("unconfirmed", "control")
+
+
+def _awaits_human_check(r):
+    """L164 (the user): where clarification is the ground truth, an answer the host could not verify needs its answer
+    determined before it can be judged, so it is MANUAL (pending); a grader's FAIL stays a failure."""
+    return (r.get("expected_stage") == "WAITING_INPUT" and r.get("verdict") == "CLOSED_UNVERIFIED"
+            and gt_grade(r) != graders.FAIL)
+
+
 def outcome_class(r):
     """One outcome per result (TARGET_ARCHITECTURE I-11; LEDGER L49d, D3).
 
@@ -684,6 +699,8 @@ def outcome_class(r):
     """
     if r.get("verdict") == HOLD_VERDICT and r.get("expected_stage") != HOLD_VERDICT:
         return "HELD"
+    if _awaits_human_check(r):
+        return "PENDING"
     if not stage_pass(r):
         return "FAIL"
     grade = gt_grade(r)
@@ -1043,11 +1060,13 @@ def main():
                         help="EXECUTE repairs after a failed verification; 0 stops at the first failure (no retries)")
     parser.add_argument("--providers", default=None, metavar="A,B,C",
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
-    parser.add_argument("--agent-tools", action="store_true",
-                        help="ADR-0029: checked submissions on BOOTSTRAP_ANALYSIS, DRAFT_PROMPT, DRAFT_PLAN and "
-                             "EXECUTE_UNCONFIRMED, and in-call tools on EXECUTE_UNCONFIRMED; default off here, the "
-                             "recorded baselines' setting (the harness's own default is on, ADR-0031); always passed "
+    parser.add_argument("--agent-tools", action=argparse.BooleanOptionalAction, default=None,
+                        help="ADR-0029: checked submissions on BOOTSTRAP_ANALYSIS, DRAFT_PROMPT, DRAFT_PLAN, "
+                             "EXECUTE_UNCONFIRMED and EXECUTE, and in-call tools on the two EXECUTE operations; default "
+                             "on, except on the unconfirmed route (L166, the harness's own rule); always passed "
                              "explicitly")
+    parser.add_argument("--confirmed-execute-tools", action="store_true",
+                        help="the confirmed route's EXECUTE gets its in-call tools (L163); off by default (L168)")
     parser.add_argument("--agent-tools-exclude", default=None, metavar="TOOL[,TOOL]",
                         help="with --agent-tools, withhold these tools (an ablation, L145); passed to the harness")
     parser.add_argument("--ablate-unconfirmed", default=None, metavar="PART[,PART]",
@@ -1117,6 +1136,8 @@ def main():
         parser.error("--repeat must be at least 1")
     if args.representation != "pdl" and args.route != "confirmed":
         parser.error("--representation applies to the confirmed route's artifacts; use --route confirmed")
+    if args.agent_tools is None:
+        args.agent_tools = default_agent_tools(args.route)
     excluded: list[str] = []
     if args.agent_tools_exclude is not None:
         from pdl_taskmaster.runtime.agent_tools import parse_exclusions
@@ -1131,6 +1152,7 @@ def main():
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
                     "providers": args.providers, "draft_execute": args.draft_execute,
                     "agent_tools": args.agent_tools, "agent_tools_exclude": excluded or None,
+                    "confirmed_execute_tools": args.confirmed_execute_tools,
                     "withhold_execution_context": args.withhold_execution_context and args.route != "control",
                     "ablate_unconfirmed": ([p.strip() for p in (args.ablate_unconfirmed or "").split(",") if p.strip()]
                                            if args.route != "control" else []),
@@ -1185,6 +1207,8 @@ def main():
         route_tag += "-draft-execute"
     if args.agent_tools:
         route_tag += "-agent-tools"
+    if args.confirmed_execute_tools:
+        route_tag += "-execute-tools"
     for name in excluded:
         route_tag += f"-no-{name.replace('_', '-')}"
     if args.representation != "pdl":

@@ -22,7 +22,7 @@ A rejected alternative added a new controller stage, bypassed `EXECUTE`, and cla
 
 | Code | Meaning |
 |---|---|
-| 0 | `CLOSED_SUCCESS`: a deliverable that passed every check the host applies (for STANDARD_EXECUTION only the contract checks, `contract_checked`: not a correctness claim, L140), **or** a published boundary refusal (`closure=REFUSED`) |
+| 0 | `CLOSED_SUCCESS`: a deliverable the host reproduced (`host_verified`: provenance, not a correctness claim, L140; amendment L164 below), **or** a published boundary refusal (`closure=REFUSED`) |
 | 1 | `CLOSED_CANCELLED`: cancellation, verification failure after repair, or a fatal error |
 | 2 | `UNCONFIRMED_GATE`: halted at a review gate |
 | 3 | `WAITING_INPUT`: paused for required input |
@@ -50,10 +50,17 @@ A result resting on a claim the host cannot check is still published, with its n
 
 The event `CLOSED_UNVERIFIED` records the reason. A failed verification and a malformed reply still close `CLOSED_CANCELLED` (exit 1).
 
-The catalogue scores `CLOSED_UNVERIFIED` as the expected stage only where the manifest names it: 13-01, whose correct answer is a negative claim. There a host-verified closure is also accepted, as `WAITING_INPUT` accepts an answer.
+The catalogue scores `CLOSED_UNVERIFIED` as the expected stage only where the manifest names it: 13-01, whose correct answer is a negative claim (and, since L164, every prompt it routes `STANDARD_EXECUTION`). There a host-verified closure is also accepted, as `WAITING_INPUT` accepts an answer.
 
 ### Amendment (L153): a direct answer closes CLOSED_UNVERIFIED with exit 5
 In the opt-in `direct` and `saver` modes, SECURE_GATEWAY passes or refuses a request ([routing.md](../routing.md), section 7). A refusal closes REFUSED (exit 0), as the boundary-refusal amendment above says. A passed request is answered directly and nothing checks the answer, so it closes `CLOSED_UNVERIFIED` (exit 5) with the reason `direct_answer`. A direct answer never closes `CLOSED_SUCCESS`. An empty reply closes `CLOSED_CANCELLED` (exit 1).
+
+### Amendment (L164): a result checked only against the contract closes CLOSED_UNVERIFIED with exit 5
+The user (2026-10-24) decided this for every protocol route. It supersedes L140 (1), under which exit 0 also covered a result the host had checked only against its contract (`contract_checked`).
+- **Exit 0 means host-verified.** A result closes `CLOSED_SUCCESS` only when the host reproduced it, at the level `host_verified`. That is a `VERIFIED_EXECUTION` result whose witness a program the host ran computed or checked. The rule is `runtime/provenance.host_established`.
+- **Every other published result closes `CLOSED_UNVERIFIED` (exit 5).** That covers every `STANDARD_EXECUTION` deliverable, and a verified task whose witness the host did not reproduce. The event `CLOSED_UNVERIFIED` records the reason `contract_checked`, and the provenance keeps the level `contract_checked` and its caveat.
+- **Unchanged:** the checks themselves, the published deliverable, its notes, and exit 1 for a failed verification.
+- **The catalogue:** the expected stage of every prompt the manifest routes `STANDARD_EXECUTION` is `CLOSED_UNVERIFIED`, where a host-verified closure is also accepted. The graders are unchanged.
 
 ## Consequences
 

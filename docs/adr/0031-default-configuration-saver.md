@@ -5,7 +5,7 @@
 
 - Supersedes [ADR-0022](0022-default-reasoning-high-pre-execution.md)'s per-operation reasoning table, which L155 already retired in code: every gpt-oss operation runs at low.
 - Replaces L94's standard default for the REPL and the API, the unconfirmed route, with saver mode.
-- Turns on by default the in-call tools of [ADR-0029](0029-in-call-agent-tools.md), which are off by default today.
+- Turns on by default the in-call tools of [ADR-0029](0029-in-call-agent-tools.md), which were off by default until then.
 - Keeps [ADR-0019](0019-headless-waiting-input-exit-and-wire-tolerance.md)'s exit codes: a direct answer closes `CLOSED_UNVERIFIED` (exit 5).
 
 ## Context
@@ -34,11 +34,11 @@ L159 measured the 10 catalogue prompts System 1 classes VERIFIED_EXECUTION (01-0
 The one silent false positive is 16-07, run 3, on the default order. The deliverable's program encodes a clue wrongly, and the host verified that the program printed its witness. That shows where the answer came from, not that it is correct (ADR-0030, known limit). Both MANUAL grades are correct on a spot check.
 
 ## Decision
-1. **The default mode is saver** in the REPL (`--mode`) and in the API (`Session.open(mode=)`). The catalogue runner keeps its measurement default, the unconfirmed route, because its stage grading expects protocol closures.
-2. **In-call tools are on by default** in every mode, and `--no-agent-tools` turns them off.
+1. **The default mode is saver** in the REPL (`--mode`) and in the API (`Session.open(mode=)`). No review is the default in both; review (`--review`, `no_review=False`) is the confirmed route and selects protocol mode (L165). The catalogue runner keeps its measurement default, the unconfirmed route, because its stage grading expects protocol closures.
+2. **In-call tools are on by default**, and `--no-agent-tools` turns them off. L166 (the user, 2026-10-24) makes one exception: the unconfirmed route in protocol mode defaults to tools off, where they measured no better and cost 49% more (L157). Saver's protocol branch keeps them.
    - They act on saver's protocol branch and on the unconfirmed route's execution: `run_python` and the submission check.
    - The drafts and Bootstrap get their submission checks.
-   - The confirmed route's EXECUTE gets `run_python`, `read_attempt` and its submission check (ADR-0029 amendment 1, L163). Until then, it got none (L157).
+   - The confirmed route's EXECUTE can get `run_python`, `read_attempt` and its submission check (ADR-0029 amendment 1, L163), with `--confirmed-execute-tools`. They are off by default (L168), as they were before L163.
 3. **Every operation runs at low reasoning effort** (L155, L158).
 4. **Provider order: option (b), Cerebras first for saver only** (`providers/api_worker.py`, `SAVER_PROVIDER_PINNING`: Cerebras, then Baseten and Crusoe as fallbacks). It applies when saver runs with in-call tools; without them saver's execution is sent in JSON mode, so it keeps the default order, as the other modes do. A configured order (`--api-providers`, `OPENROUTER_PROVIDER_ORDER`) wins.
    - **Measured:** saver met the condition with Cerebras first, and missed it on the default order by one host-verified false positive.
@@ -76,8 +76,8 @@ flowchart TD
 - **Saver with tools at low reasoning (chosen).**
 
 ## Consequences
-- **Headless callers see exit 5 for most requests.** Every direct answer closes `CLOSED_UNVERIFIED` with the reason `direct_answer`; in L157, 86 to 88 of 90 saver runs did. Exit 0 then means a verified task closed by the protocol, or a published refusal.
-- **Zero silent false positives is structural only for direct answers.** On verified tasks, a host-verified closure can still be wrong. The host runs the deliverable's program, and a wrong program gives a host-verified wrong answer (L159).
+- **Headless callers see exit 5 for most requests.** Every direct answer closes `CLOSED_UNVERIFIED` with the reason `direct_answer`; in L157, 86 to 88 of 90 saver runs did. Exit 0 then means a verified task closed by the protocol, or a published refusal; since L164 that holds on every route.
+- **Zero silent false positives is structural for every result the host did not reproduce** (direct answers; since L164 also contract-checked results). On verified tasks, a host-verified closure can still be wrong. The host runs the deliverable's program, and a wrong program gives a host-verified wrong answer (L159).
 - **Latency.**
   - Saver on verified tasks: a median of 9.1 s on Cerebras (model calls 4.0 s; host verification and harness 4.6 s), 16.8 s on the default order.
   - Saver's direct answers: about 12 to 15 s on the default order (L157). On Cerebras they are unmeasured for saver; Control's call there is recorded at 1.0 to 2.0 s.

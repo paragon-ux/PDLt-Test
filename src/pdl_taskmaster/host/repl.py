@@ -249,8 +249,12 @@ def open_session(
     if getattr(args, "mode", None) is None:  # ADR-0031: a resumed session keeps its own mode, else the worker's default
         from pdl_taskmaster.runtime.run_settings import default_mode
 
-        args.mode = stored_session_mode(session_dir, restore_path is not None) or default_mode(worker)
+        args.mode = (stored_session_mode(session_dir, restore_path is not None)
+                     or default_mode(worker, review=not getattr(args, "no_review", True)))
     check_session_mode(session_dir, args.mode, restore_path is not None)
+    from pdl_taskmaster.runtime.run_settings import check_review_mode
+
+    check_review_mode(args.mode, getattr(args, "no_review", True))  # L165: review is the confirmed route
     host = PDLtHost(
         args.candidate_repo,
         worker=worker,
@@ -391,15 +395,21 @@ def _run_settings(args, worker):
     """The engine's run settings from CLI flags (L124 D7). The flags' run settings reach the API worker's sessions;
     a recorded replay and the codex worker run with the defaults their recordings were made with."""
     from pdl_taskmaster.providers.api_worker import ApiWorker
-    from pdl_taskmaster.runtime.run_settings import RunSettings, default_mode
+    from pdl_taskmaster.runtime.run_settings import RunSettings, default_agent_tools, default_mode
 
-    session = {"no_review": bool(getattr(args, "no_review", False)), "sandbox_mode": getattr(args, "sandbox", None),
-               "task_type": getattr(args, "task_type", None), "mode": getattr(args, "mode", None) or default_mode(worker)}
+    no_review = bool(getattr(args, "no_review", True))
+    session = {"no_review": no_review, "sandbox_mode": getattr(args, "sandbox", None),
+               "task_type": getattr(args, "task_type", None),
+               "mode": getattr(args, "mode", None) or default_mode(worker, review=not no_review)}
     if not isinstance(worker, ApiWorker):
         return RunSettings(agent_tools=False, **session)  # recordings were made without in-call tools
     run = _api_run_settings(args)
+    agent_tools = run["agent_tools"]
+    if agent_tools is None:  # L166: on, except on the unconfirmed route in protocol mode
+        agent_tools = default_agent_tools(session["mode"], no_review)
     return RunSettings(max_repairs=run["max_repairs"], draft_execute=run["draft_execute"],
-                       agent_tools=run["agent_tools"], representation=run["representation"], tier_d1=run["tier_d1"],
+                       confirmed_execute_tools=bool(getattr(args, "confirmed_execute_tools", False)),
+                       agent_tools=agent_tools, representation=run["representation"], tier_d1=run["tier_d1"],
                        agent_tools_exclude=tuple(sorted(getattr(args, "agent_tools_exclude", None) or ())),
                        withhold_execution_context=bool(getattr(args, "withhold_execution_context", False)),
                        ablate_unconfirmed=_ablation_parts(getattr(args, "ablate_unconfirmed", None)),
@@ -442,11 +452,14 @@ def _api_run_settings(args) -> dict:
     return settings
 
 
-def _agent_tools(args) -> bool:
-    """ADR-0031: in-call tools are on by default. --agent-tools / --no-agent-tools win; otherwise
-    $PDLT_AGENT_TOOLS ("0" turns them off)."""
+def _agent_tools(args) -> bool | None:
+    """--agent-tools / --no-agent-tools win; otherwise $PDLT_AGENT_TOOLS ("0" off, anything else on); otherwise None,
+    the session's default (L166: on, except on the unconfirmed route in protocol mode)."""
     flag = getattr(args, "agent_tools", None)
-    return bool(flag) if flag is not None else os.environ.get("PDLT_AGENT_TOOLS", "1") != "0"
+    if flag is not None:
+        return bool(flag)
+    env = os.environ.get("PDLT_AGENT_TOOLS")
+    return None if env is None else env != "0"
 
 
 def _warn_unknown_providers(args) -> None:
@@ -1042,6 +1055,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "instructions, without the execution environment (AVAILABLE_EXECUTION_TOOLS) or EXEC-* clauses",
     )
     parser.add_argument(
+        "--confirmed-execute-tools",
+        action="store_true",
+        help="give the confirmed route's EXECUTE its in-call tools (run_python, read_attempt, submit_execute; L163); off "
+        "by default (L168): measured no more correct, 25%% faster, 15%% more cost. Needs in-call tools on",
+    )
+    parser.add_argument(
         "--draft-execute",
         action="store_true",
         help="draft a typed execution brief (DRAFT_EXECUTE) before EXECUTE on tasks that are or need an algorithm or a calculation; one extra call per execution (A/B option)",
@@ -1073,8 +1092,8 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--model",
-        default="nvidia/nemotron-3-super-120b-a12b:free",
-        help="model name to request from the worker (default: nvidia/nemotron-3-super-120b-a12b:free)",
+        default="openai/gpt-oss-120b",
+        help="model name to request from the worker (default: openai/gpt-oss-120b, L167)",
     )
     parser.add_argument("--eval-root", type=Path, default=None, help="recorded worker only: the evaluation root")
     parser.add_argument("--evidence", type=Path, default=None,
@@ -1219,23 +1238,24 @@ def _build_parser() -> argparse.ArgumentParser:
         "--ultrafast",
         dest="no_review",
         action="store_true",
-        help="No-review mode (the default): run through the governor in 2 task-model calls without review gates "
-        "(ledger L94). The interpretation is presented as unconfirmed. Toggle in the REPL with /no-review [on|off]",
+        help="No review (the default, L165): no prompt or plan review gates. In protocol mode this is the "
+        "unconfirmed route (ledger L94), whose interpretation is presented as unconfirmed. Toggle in the REPL with "
+        "/no-review [on|off]",
     )
     parser.add_argument(
         "--review",
         dest="no_review",
         action="store_false",
-        help="Review mode: stop at the prompt and plan pseudocode for /confirm or /revise (the confirmed route). "
-        "Toggle in the REPL with /no-review [on|off]",
+        help="Review mode: stop at the prompt and plan pseudocode for /confirm or /revise (the confirmed route, in "
+        "protocol mode; with no --mode, --review selects protocol, L165). Toggle in the REPL with /no-review [on|off]",
     )
     parser.set_defaults(no_review=True)  # the unconfirmed route is the standard (ledger L94)
     parser.add_argument(
         "--mode",
         choices=("protocol", "direct", "saver"),
         default=None,
-        help="saver (the default, ADR-0031): the protocol for what System 1 classifies VERIFIED_EXECUTION, direct "
-        "for the rest; protocol: the staged protocol (--review for the confirmed route); direct: answered directly "
+        help="saver (the default, ADR-0031; protocol under --review, L165): the protocol for what System 1 classifies "
+        "VERIFIED_EXECUTION, direct for the rest; protocol: the staged protocol (--review for the confirmed route); direct: answered directly "
         "behind SECURE_GATEWAY, closing CLOSED_UNVERIFIED (exit 5) or REFUSED (exit 0) (L153, docs/routing.md). "
         "Switch in the REPL with /mode, which opens a new session",
     )
@@ -1282,6 +1302,8 @@ def main() -> int:
     args = _build_parser().parse_args()
     if args.fast:
         args.no_review = False  # fast mode accepts reviews in advance, so it runs with review on
+    if not args.no_review and args.mode in ("direct", "saver"):  # L165: review is the confirmed route
+        raise SystemExit(f"pdlt: --review runs the confirmed route, in protocol mode; {args.mode} mode has no review")
     if args.representation != "pdl" and args.no_review:
         raise SystemExit("pdlt: --representation applies to the confirmed route's artifacts; add --review")
 
@@ -1717,12 +1739,17 @@ def main() -> int:
                               flush=True)
                 elif cmd in {"/no-review", "/ultrafast"}:
                     if arg in {"on", "off"}:
-                        no_review = arg == "on"
+                        wanted = arg == "on"
                     elif arg:
                         print("usage: /no-review [on|off]", flush=True)
                         continue
                     else:
-                        no_review = not no_review
+                        wanted = not no_review
+                    if not wanted and getattr(args, "mode", "protocol") != "protocol":  # L165
+                        print(f"review runs the confirmed route, in protocol mode; this session runs in {args.mode} "
+                              "mode (/mode protocol opens a protocol session)", flush=True)
+                        continue
+                    no_review = wanted
                     if hasattr(runtime.host, "engine") and runtime.host.engine:
                         runtime.host.engine.no_review = no_review
                     if hasattr(runtime.host, "no_review"):
@@ -1791,6 +1818,9 @@ def main() -> int:
                         print(f"mode: {getattr(args, 'mode', None)} (usage: /mode protocol|direct|saver; "
                               "a mode change opens a new session)", flush=True)
                         continue
+                    if arg != "protocol" and not no_review:  # L165: direct and saver have no review
+                        no_review = args.no_review = True
+                        print(f"review off: {arg} mode has no review", flush=True)
                     args.mode = arg
                     runtime = switch_session(runtime, args, session_base, worker, _new_session_name())
                     _write_transcript(f"MODE: {arg.upper()}")

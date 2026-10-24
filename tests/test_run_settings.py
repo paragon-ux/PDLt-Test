@@ -42,7 +42,7 @@ def test_a_session_applies_its_settings_and_refuses_them_twice(tmp_path):
         engine = session.host.engine
         assert (engine.max_repairs, engine.draft_execute, engine.tier_d1, engine.no_review) == (0, True, True, True)
     with pytest.raises(ValueError, match="pass no_review, sandbox_mode, task_type and mode in settings"):
-        api.Session.open(ScriptedWorker({"body": "x"}), tmp_path / "t", settings=settings, no_review=True)
+        api.Session.open(ScriptedWorker({"body": "x"}), tmp_path / "t", settings=settings, no_review=False)
 
 
 def test_the_repl_builds_typed_settings_from_its_flags(monkeypatch):
@@ -56,7 +56,7 @@ def test_the_repl_builds_typed_settings_from_its_flags(monkeypatch):
         "STANDARD_EXECUTION", 0, True, False)
     # A recorded replay keeps the defaults its recordings were made with.
     assert repl._run_settings(args, ScriptedWorker({})) == RunSettings(task_type="STANDARD_EXECUTION", agent_tools=False,
-                                                                       mode="protocol")
+                                                                       mode="protocol", no_review=False)
 
 
 # System 1 as its own provider.

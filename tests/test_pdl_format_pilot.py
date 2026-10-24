@@ -61,7 +61,8 @@ def test_a_replay_executes_the_frozen_artifacts_in_its_arm(tmp_path, monkeypatch
             workspace = next((execution / "session").glob("W-*"))
             run = runner.run_cli(pilot.spec("N"), pilot.MODEL, execution, prompt_file=None, restore=workspace,
                                  stdin=runner.FORCE_CONFIRM, extra_args=(*pilot.SETTINGS, *stub), timeout=120)
-            assert run["exit_code"] == 0 and runner.controller_stage(execution / "session") == "CLOSED_SUCCESS"
+            # a contract-checked result closes CLOSED_UNVERIFIED, exit 5 (L164)
+            assert run["exit_code"] == 5 and runner.controller_stage(execution / "session") == "CLOSED_UNVERIFIED"
             assert [op for op, _ in seen] == ["EXECUTE"]
             assert "Prompt Interpretation" in bodies[0]["input"]  # the replay runs in its arm
             command = json.loads((execution / "command.json").read_text(encoding="utf-8"))["cmd"]

@@ -6,7 +6,8 @@ Verification levels:
   host_verified     the host reproduced the result: a program it ran printed the witness (computed or certificate);
                     with no domain checker registered it does not judge that witness correct (L140)
   contract_checked  the reply passed the host's contract checks, but no check of the task's own result ran
-                    (STANDARD_EXECUTION: for code, the requested behaviour was not tested; ledger L115);
+                    (STANDARD_EXECUTION: for code, the requested behaviour was not tested; ledger L115); it closes
+                    CLOSED_UNVERIFIED with the reason contract_checked (L164);
   unverified        published without the host establishing it (CLOSED_UNVERIFIED: a negative claim, a deliverable
                     declaring requirements open, or a result resting on its argument; ADR-0019 amendment, L116).
 """
@@ -17,6 +18,9 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA = "pdlt.provenance/1"
+# L164: the reason a result the host checked only against its contract closes CLOSED_UNVERIFIED (exit 0 means
+# host-verified, ADR-0019 amendment).
+CONTRACT_ONLY = "contract_checked"
 STANDARD_CAVEAT = ("The host checked the reply against its contract and ran its programs, but ran no test of the "
                    "behaviour the request asks for; a code deliverable's correctness is not established (ledger L115).")
 # L140: added when programs the host ran failed or were stopped and the reply was published without that being fed
@@ -39,6 +43,16 @@ def witness_form(witness: Any, verification: dict[str, Any] | None) -> str:
     return "computed" if verification.get("sandbox_reproduced") else "none"
 
 
+def host_established(requires_verified_execution: bool | None, verification: dict[str, Any] | None, witness: Any,
+                     *, verifier: str | None = None) -> bool:
+    """Whether the host reproduced the result (the level host_verified): a verified task whose bound verifier is not
+    "none", with a computed or certificate witness a program the host ran printed, not provisional."""
+    reproduced = (bool((verification or {}).get("sandbox_reproduced"))
+                  and witness_form(witness, verification) in ("computed", "certificate"))
+    return bool(requires_verified_execution and verifier != "none" and reproduced
+                and not (verification or {}).get("provisional"))
+
+
 def verification_basis(status: str, requires_verified_execution: bool | None, verification: dict[str, Any] | None,
                        witness: Any, unverified_reason: str | None, *, task_type: str | None = None,
                        verifier: str | None = None,
@@ -51,11 +65,10 @@ def verification_basis(status: str, requires_verified_execution: bool | None, ve
     form = witness_form(witness, verification)
     reproduced = bool((verification or {}).get("sandbox_reproduced")) and form in ("computed", "certificate")
     if status != "CLOSED_SUCCESS":
-        level = "unverified"
-    elif (requires_verified_execution and verifier != "none" and reproduced
-          and not (verification or {}).get("provisional")):
+        level = "contract_checked" if unverified_reason == CONTRACT_ONLY else "unverified"
+    elif host_established(requires_verified_execution, verification, witness, verifier=verifier):
         level = "host_verified"
-    else:
+    else:  # closed before L164, when a contract-checked result closed CLOSED_SUCCESS
         level = "contract_checked"
     return {
         "level": level,

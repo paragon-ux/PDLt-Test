@@ -1,6 +1,7 @@
-"""L163, ADR-0029 amendment: the confirmed route's EXECUTE gets EXECUTE_UNCONFIRMED's in-call tools (run_python,
+"""L163, ADR-0029 amendment: the confirmed route's EXECUTE can get EXECUTE_UNCONFIRMED's in-call tools (run_python,
 read_attempt on a repair, and its own checked submission, submit_execute). The submission is checked by EXECUTE's
-wire model and the host's program checks; the host verifies the accepted reply as any reply. Offline: the worker is
+wire model and the host's program checks; the host verifies the accepted reply as any reply. L168: they are off by
+default (--confirmed-execute-tools turns them on); the drafts keep their submission checks. Offline: the worker is
 scripted."""
 from __future__ import annotations
 
@@ -14,7 +15,8 @@ from test_agent_tools import GOOD, outcome
 from test_execution_phase import PLAN, PROMPT, ROOT, ClassifyingSys1, _ir
 
 
-def _confirmed(tmp_path, execute, *, agent_tools_on: bool, problem_class: str = "VERIFIED_EXECUTION"):
+def _confirmed(tmp_path, execute, *, agent_tools_on: bool, problem_class: str = "VERIFIED_EXECUTION",
+               execute_tools: bool = True):
     requests: list = []
 
     def model_call(req):
@@ -32,6 +34,7 @@ def _confirmed(tmp_path, execute, *, agent_tools_on: bool, problem_class: str = 
 
     engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=ClassifyingSys1(problem_class))
     engine.agent_tools = agent_tools_on
+    engine.confirmed_execute_tools = execute_tools
     engine.handle_user_message("$confirm-with-pseudocode Solve the stated task.")
     engine.handle_user_message("/confirm")
     engine.handle_user_message("/confirm")
@@ -84,3 +87,11 @@ def test_tools_off_execute_carries_none_and_its_prompt_is_the_same_either_way(tm
         assert (executes[0].tools is not None) is on
         prompts[on] = executes[0].prompt
     assert prompts[True] == prompts[False]  # the prompt hash, and so replay, are unchanged
+
+
+def test_by_default_execute_is_a_plain_call_and_the_drafts_keep_their_checks(tmp_path):
+    engine, executes, events = _confirmed(tmp_path, lambda req: json.dumps(_result(GOOD)), agent_tools_on=True,
+                                          execute_tools=False)
+    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS and executes[0].tools is None  # L168
+    tools = {e["payload"]["tool"] for e in events if e["kind"] == "AGENT_TOOL_CALL"}
+    assert SUBMIT_EXECUTE not in tools

@@ -15,7 +15,7 @@ Only `OPENROUTER_API_KEY` is required, and only for live runs. Every other varia
 | `PDLT_CONTAINER_RUNTIME`, `PDLT_CONTAINER_IMAGE` | No | The container backend's runtime (default: the first of `docker`, `podman` on `PATH`) and image (default `python:<major.minor>-slim`) |
 | `PDLT_SANDBOX_NETWORK`, `PDLT_POLICY_SCOPE`, `PDLT_KNOWLEDGE_CUTOFF` | No | What System 1 is told about the environment when it decides whether a request is in bounds (ADR-0020). `PDLT_SANDBOX_NETWORK` never gives programs network access. |
 | `PDLT_TIER_D1` | No | `0` stops feeding the model its own sandbox failures as repairs (default on) |
-| `PDLT_AGENT_TOOLS` | No | `1` turns on in-call tools (ADR-0029) |
+| `PDLT_AGENT_TOOLS` | No | `0` turns in-call tools off and any other value on, in every mode. Unset, they are on except on the unconfirmed route (ADR-0031, L166). `--agent-tools` or `--no-agent-tools` wins |
 | `PDLT_RESULT_IR` | No | `1` asks for a Result IR on every task, not only verified ones |
 | `PDLT_STANDARDS_PATH` | No | A folder of operation contracts to use instead of the repository's, the `pdlt init` store or the bundled copies (it must hold `CONTRACT_MANIFEST.json`) |
 | `PDLT_CATALOGUE_RUNS` | No | Where catalogue runs are written (default: `PDLt-Catalogue-Archive` beside the checkout) |

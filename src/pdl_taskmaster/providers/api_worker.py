@@ -363,6 +363,11 @@ def mode_pinning(mode: str, agent_tools: bool) -> dict[str, Any] | None:
 RECORDED_REQUEST_FAMILIES = ("gpt-oss", "nemotron-3-super")
 
 
+# L167: the model every recorded measurement of the defaults ran on (ADR-0031); Nemotron 3 Super free is unmeasured
+# with them.
+DEFAULT_MODEL = "openai/gpt-oss-120b"
+
+
 def _recorded_family(model: str) -> bool:
     return any(family in model.lower() for family in RECORDED_REQUEST_FAMILIES)
 
@@ -625,7 +630,7 @@ class ApiWorker:
     def __init__(
         self,
         *,
-        model: str = "nvidia/nemotron-3-super-120b-a12b:free",
+        model: str = DEFAULT_MODEL,
         repo_root: str | Path,
         base_url: str = "https://openrouter.ai/api/v1",
         api_key_env: str = "OPENROUTER_API_KEY",
@@ -635,7 +640,7 @@ class ApiWorker:
         max_output_tokens: int | None = 16384,
         max_repairs: int | None = None,
         draft_execute: bool = False,
-        agent_tools: bool = True,
+        agent_tools: bool | None = None,
         representation: str = "pdl",
         tier_d1: bool | None = None,
         capture_tokens: bool = True,
@@ -663,7 +668,9 @@ class ApiWorker:
         self.max_output_tokens = int(max_output_tokens) if max_output_tokens else None
         self.max_repairs = max_repairs  # run setting read by the host (0 = stop at the first failure)
         self.draft_execute = draft_execute  # run setting read by the host (A/B option)
-        self.agent_tools = agent_tools  # ADR-0029: run the in-call tool loop for requests that carry tools (ADR-0031: on)
+        # ADR-0029: run the in-call tool loop for requests that carry tools. None: the session's default (L166: on,
+        # except on the unconfirmed route in protocol mode); the engine attaches tools only when its session has them.
+        self.agent_tools = agent_tools
         self.representation = representation  # run setting read by the host (representation.py, L97)
         # run setting read by the host (Tier D1): an explicit value wins, $PDLT_TIER_D1 (default on) is only the default
         self.tier_d1 = (os.environ.get("PDLT_TIER_D1", "1") == "1") if tier_d1 is None else bool(tier_d1)
@@ -864,7 +871,7 @@ class ApiWorker:
             fmt = model_capabilities.FORMAT_PARAMETERS.get(self.contract_form(operation).grammar)
             if fmt:
                 wanted.append(fmt)
-            if self.agent_tools and operation in TOOL_OPERATIONS:
+            if self.agent_tools is not False and operation in TOOL_OPERATIONS:
                 wanted.append("tools")
             for parameter in wanted:
                 needs.setdefault(self._model_for(operation), {}).setdefault(parameter, []).append(operation)
@@ -1404,7 +1411,7 @@ class ApiWorker:
 
         body, union_wrapped, effort = self.build_request_body(request)
         freetext = _freetext_call(request)
-        if self.agent_tools and getattr(request, "tools", None) is not None:
+        if self.agent_tools is not False and getattr(request, "tools", None) is not None:
             if freetext or _plaininput_call(request):
                 raise ValueError("ablate_freetext, ablate_plaininput: the tool loop reads and ends in JSON; run them "
                                  "without agent tools")

@@ -20,20 +20,21 @@ The REPL, headless runs and the MCP server go through this layer (ledger L120). 
 from pdl_taskmaster.api import Session, create_worker
 
 worker = create_worker("api", model="...")  # any model; the settings are ApiWorker's keywords
-with Session.open(worker, "runs/sessions/demo") as session:
+with Session.open(worker, "runs/sessions/demo", no_review=False) as session:  # review: the confirmed route
     review = session.send("...")              # stops at the prompt review: review.review == "prompt", exit 2
     result = session.run("...", confirm=True)  # or accept each review on a standing confirmation
     print(result.stage, result.exit_status, result.provenance["verification"]["level"])
 ```
 
 - **The folder** holds the session's workspaces, observations, worker log (`worker-progress.log`) and call trace (`call-trace.jsonl`), as the REPL lays them out. Reopening the folder resumes its workspace (`restore=False` starts fresh). The layout is the REPL's: a session opened inside the REPL's sessions folder resumes there with `--session-id <folder name>`, and the other way round.
-- **`no_review=True`** takes the unconfirmed route: one message, no prompt or plan review.
+- **`no_review`** is True by default (L165): no prompt or plan review. `no_review=False` runs the confirmed route, in protocol mode; with no `mode` it selects protocol, and with `mode="direct"` or `"saver"` it raises `ValueError`, since neither has review.
+- **`mode`** defaults to saver for the API worker (ADR-0031): the protocol's unconfirmed route for what System 1 classes VERIFIED_EXECUTION, a direct answer for the rest. `mode="protocol"` with `no_review=True` is the unconfirmed route for every request.
 - **`mode="direct"` or `"saver"`** answers behind SECURE_GATEWAY ([routing.md](routing.md), section 7). A direct answer closes `CLOSED_UNVERIFIED` (exit 5), a gateway refusal REFUSED (exit 0). A folder keeps the mode it was opened in: reopening it in another mode raises `ValueError` (L153).
 - **Review commands** are messages: `confirm()` is `send("/confirm")`; `revise(feedback)` is `send("/revise feedback")`. With no open review they are answered as such, never started as a request.
 - **`run(message, confirm=True)`** accepts each review as a standing confirmation, recorded as one (`STANDING_CONFIRMATION` events, as the REPL's fast mode). An artifact the host has findings on is left open for review.
 - **Errors:** a provider or transport error raises from `send` (a headless run exits 4 on it). The session stays usable.
 - **One thread at a time.** A `Session` holds one engine and one workspace and has no locking: never call `send` or `run` on the same session from two threads or tasks at once. Concurrent tasks each get their own `Session.open`, with their own folder.
-- **Review defaults differ by interface:** `Session.open` reviews (`no_review=False`), while `pdlt` starts without review (ledger L94). Name the route when moving a task between them.
+- **The defaults are the same in every interface:** saver mode, no review, in-call tools on except on the unconfirmed route, and `openai/gpt-oss-120b` (ADR-0031, L165 to L167). `ApiWorker(agent_tools=None)` takes the session's default; True or False sets it.
 - **`repo_root`** defaults to the folder this package runs from: the checkout's root in a source install. `create_worker("api", ...)` defaults it the same way. The Standard, the operations and their schemas resolve from `$PDLT_STANDARDS_PATH`, else `<repo_root>/contracts/`, else contracts seeded with `pdlt init`, else the copies bundled in the package, so a PyPI install needs nothing here.
 - **`task_type`** pins a registered task type for every request; without it System 1 classifies each request, and an unclassified one gets the default (STANDARD_EXECUTION).
 - **`settings`** is a `RunSettings`: `max_repairs`, `draft_execute`, `agent_tools`, `representation`, `tier_d1`, `no_review`, `sandbox_mode`, `task_type`. It is validated when made, and every invalid field is named. Without it, `no_review`, `sandbox_mode` and `task_type` come from the arguments and the rest from the worker's attributes (`RunSettings.from_worker`). With it, pass those three inside it, not as arguments. Left unset, `sandbox_mode` comes from `$PDLT_SANDBOX` (default `auto`), and an API worker's `tier_d1` from `$PDLT_TIER_D1` (default on).
@@ -64,10 +65,10 @@ One mapping, `api.outcome.exit_status(stage, refused=..., harness_error=...)`. T
 | 2 | `EXIT_UNCONFIRMED` | stopped at a review gate or any other non-terminal stage |
 | 3 | `EXIT_WAITING_INPUT` | `WAITING_INPUT` |
 | 4 | `EXIT_HARNESS_ERROR` | a harness or provider error; never a protocol result |
-| 5 | `EXIT_UNVERIFIED` | `CLOSED_UNVERIFIED`: published without the host establishing it |
+| 5 | `EXIT_UNVERIFIED` | `CLOSED_UNVERIFIED`: published without the host establishing it (every result short of `host_verified`, L164) |
 | 130 | `EXIT_INTERRUPTED` | interrupted by the user |
 
-Exit 0 is not a verification claim: a STANDARD_EXECUTION result that passed only the contract checks, a direct reply and a refusal all exit 0. What a published result rests on is `provenance["verification"]["level"]` (`host_verified`, `contract_checked` or `unverified`). `host_verified` means a program the host ran reproduced the witness; with no domain checker registered, the host does not judge that witness correct (L140).
+Exit 0 is a provenance claim, not a correctness claim: a result the host reproduced (`host_verified`), or a refusal. Since L164 a STANDARD_EXECUTION result that passed only the contract checks closes CLOSED_UNVERIFIED (exit 5). What a published result rests on is `provenance["verification"]["level"]` (`host_verified`, `contract_checked` or `unverified`). `host_verified` means a program the host ran reproduced the witness; with no domain checker registered, the host does not judge that witness correct (L140).
 
 ## Providers
 
