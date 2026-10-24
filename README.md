@@ -106,7 +106,7 @@ echo $?
 
 | Exit | Meaning |
 |---|---|
-| 0 | Closed with a result the host established or contract-checked; a direct reply; a published boundary refusal |
+| 0 | Host-reproduced result (`CLOSED_SUCCESS`); a protocol bypass reply; a published boundary refusal |
 | 1 | Cancelled, or failed closed |
 | 2 | Stopped at a review gate |
 | 3 | Waiting for input the task needs |
@@ -114,7 +114,7 @@ echo $?
 | 5 | Published, but not established by the host (`CLOSED_UNVERIFIED`) |
 | 130 | Interrupted |
 
-Exit 0 is not by itself a verification: it also covers a result that passed only the contract checks, a direct reply and a refusal. When a CI step needs a verified result, check the provenance level too ([CI recipe](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/repl.md#check-the-verification-level-in-ci)). The PowerShell form and file input are in [docs/repl.md](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/repl.md#headless-runs).
+Contract-only published results and direct/saver answers exit 5. Exit 0 also covers a protocol bypass reply and a published refusal, so CI that requires a host-reproduced deliverable checks provenance too ([CI recipe](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/repl.md#check-the-verification-level-in-ci)). `host_verified` establishes reproduction, not general correctness. The PowerShell form and file input are in [docs/repl.md](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/repl.md#headless-runs).
 
 **The MCP server** (`python -m pdl_taskmaster.host.mcp_server`, stdio) lets another agent run programs in PDLt's sandbox, have a deliverable checked, and read closed sessions' results with their provenance. It is a narrow service, not a remote session: it runs no PDLt session, and nothing verifies an accepted submission afterwards. One server process is one MCP session with its own budgets. Client configuration for each host is on the host pages; tools and resources are in [docs/mcp/EXTERNAL_TOOLS.md](https://github.com/paragon-ux/PDLt-Test/blob/main/docs/mcp/EXTERNAL_TOOLS.md).
 

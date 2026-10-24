@@ -289,6 +289,7 @@ def timeline(run: dict) -> list[str]:
 
 
 def build(config: dict, *, lookup: bool) -> tuple[dict, list[str], dict[str, list[dict]]]:
+    matched_study.validate_study(config)
     problems: list[str] = []
     out = matched_study.out_dir(config)
     ledger = Ledger(out / "ledger.jsonl")
@@ -463,7 +464,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--trace", action="append", default=[], metavar="ARM:ID:REPEAT")
     args = parser.parse_args(argv)
     config = matched_study.load_config(args.config)
-    report, problems, runs = build(config, lookup=not args.no_lookup)
+    try:
+        report, problems, runs = build(config, lookup=not args.no_lookup)
+    except ValueError as exc:
+        print(f"REPORT: {exc}", file=sys.stderr)
+        return 1
     traces: list[str] = []
     for spec in args.trace:
         arm, pid, rep = spec.rsplit(":", 2)

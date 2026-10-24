@@ -32,9 +32,9 @@ Two planes. The **harness** (`src/pdl_taskmaster/`) is a deterministic protocol 
 | Runner, graders, contract | `run_catalogue.py`, `graders.py`, `GOAL.md`, `prompts/CATALOGUE_MANIFEST.jsonl` |
 | Agent rules | `AGENTS.md` |
 
-## 3. Ignore
+## 3. Follow affected contracts; skip unrelated material
 
-`docs/adr/` (frozen history; the guardrail wins on conflict), `contracts/` and `src/pdl_taskmaster/contracts/` (hash-pinned data), `__pycache__/`, `.venv/`.
+Read the affected normative ADRs and operation/standard contracts in `docs/adr/`, `contracts/` and `src/pdl_taskmaster/contracts/` when they define the behavior under review. Follow their amendments and the canonical ledger; hash pinning does not make a contract irrelevant. Apply the guardrails when assessing a conflicting implementation. Unrelated historical decisions, `__pycache__/` and `.venv/` can be skipped.
 
 ## 4. Invariants
 

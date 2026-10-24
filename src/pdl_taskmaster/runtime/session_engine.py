@@ -496,16 +496,10 @@ class SessionEngine:
         self.agent_tools_exclude: frozenset[str] = frozenset()  # L145: tools withheld (--agent-tools-exclude)
         self._withhold_execution_context = False  # L148 A/B: earlier stages without EXECUTE's environment and clauses
         self._ablate_unconfirmed: frozenset[str] = frozenset()  # L149 ablation of what EXECUTE_UNCONFIRMED receives
-        self._last_unconfirmed_body: str | None = None
-        self._unconfirmed_attempts = 0
-        self._last_execute_body: str | None = None  # the confirmed route's previous EXECUTE attempt (read_attempt)
-        self._execute_attempts = 0
         self.representation = PDL  # the confirmed route's artifacts: PDL, or prose in the L97 pilot
         # Tier D1 (feed back the model's own test failures in standard mode): off for a bare engine. The host sets it
         # from the worker (App), whose default is on ($PDLT_TIER_D1, --no-tier-d1); the env var is read only there.
         self.tier_d1 = False
-        self._active_task_entities: tuple[str, ...] = ()
-        self._active_typed_task_entities: list[dict[str, Any]] = []
         # AUTH-04: the user's original request is source data for execution; the
         # confirmed prompt governs task semantics where the two differ.
         self._source_request: str | None = None
@@ -523,9 +517,8 @@ class SessionEngine:
         # Whether the last System 1 activation call gave a usable judgement (direct and saver fail closed without one).
         self._guard_judged: bool = False
         # The direct answer's model call (L153), set by the host: the user's request -> the worker's result. The
-        # model receives the request alone (DIRECT_ANSWER, providers/api_worker.PLAIN_OPERATIONS).
+        # First/unrelated turns receive the request alone; follow-ups also receive the published prior answer.
         self.direct_reply: Callable[[str], Any] | None = None
-        self._problem_domain: Any = None
         self.refused: bool = False
         # The model that serves the session, for the result's provenance (E-1); set by the host.
         self.model_name: Callable[[], Any] | None = None
@@ -539,6 +532,25 @@ class SessionEngine:
         else:
             self.workspace_root = Path(workspace_root)
             self.workspace_root.mkdir(parents=True, exist_ok=True)
+        self._reset_turn_evidence()
+
+    def _reset_turn_evidence(self) -> None:
+        """Only new turns reset evidence; review, input, restore and repair retain their own lifetimes."""
+        self._last_program_outputs: list[str] = []
+        self._last_program_runs: list[dict[str, Any]] = []
+        self._last_programs_run = 0
+        self._last_witness_block: tuple[int, str] | None = None
+        self._unverified_reason: str | None = None
+        self._last_verification: dict[str, Any] | None = None
+        self._last_witness: Any = None
+        self._run_failures_not_fed_back: list[str] = []
+        self._last_unconfirmed_body: str | None = None
+        self._unconfirmed_attempts = 0
+        self._last_execute_body: str | None = None
+        self._execute_attempts = 0
+        self._active_task_entities: tuple[str, ...] = ()
+        self._active_typed_task_entities: list[dict[str, Any]] = []
+        self._problem_domain: Any = None
 
     @classmethod
     def restore(
@@ -1546,12 +1558,15 @@ class SessionEngine:
         return self._refuse(routed[1], traces, "gateway" if routed[0] == "POISONED" else "activation")
 
     def _run_direct(self, request: str, traces: list[CallTrace]) -> EngineResponse:
-        """The direct answer (L153): the model receives the request alone, as Control's call does. Nothing checks
-        the answer, so it closes CLOSED_UNVERIFIED (exit 5) with the reason direct_answer."""
+        """The direct answer (L153), with published reference on follow-up (F4). Nothing checks the answer,
+        so it closes CLOSED_UNVERIFIED (exit 5) with the reason direct_answer."""
         assert self.workspace is not None
         if self.direct_reply is None:
             raise WorkspaceError("direct_reply_unavailable")
         self.controller = self._bind_new_controller(self.workspace, instance_kind="UNCONFIRMED")
+        previous = self._previous_turn or {}
+        if self._previous_deliverable and previous.get("status") in {"CLOSED_SUCCESS", "CLOSED_UNVERIFIED"}:
+            request = f"Previous published answer (reference only):\n{previous['result']}\n\nUser request:\n{request}"
         reply = self.direct_reply(request)
         text = (getattr(reply, "text", reply) or "").strip()
         usage = (getattr(reply, "metadata", None) or {}).get("usage")
@@ -1645,6 +1660,7 @@ class SessionEngine:
             self._previous_turn = None
             self._previous_deliverable = None
             self._source_request = None
+        self._reset_turn_evidence()
         if self.mode != "protocol":
             return self._run_mode(user_message.strip(), traces)
         observation = observe_invocation(user_message)

@@ -300,21 +300,97 @@ def _manifest(config: dict[str, Any], blocks: list[Block], key: dict[str, Any]) 
             "started_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "key_at_start": key}
 
 
+def unit_identity(row: dict[str, Any], frozen: dict[str, Any]) -> dict[str, Any] | None:
+    """Recorded source/settings only: historical analysis never queries the old worktree."""
+    if not row.get("result_dir"):
+        if not row.get("outage"):
+            raise ValueError("accepted unit has no result or recorded outage")
+        return None  # the report retains missing-result/outage diagnostics
+    result_dir = Path(row["result_dir"])
+    run_dir = Path(row["run_dir"]) if row.get("run_dir") else result_dir.parent.parent
+    meta = json.loads((run_dir / "RUN_META.json").read_text(encoding="utf-8"))
+    result = json.loads((result_dir / "result.json").read_text(encoding="utf-8"))
+    if not isinstance(meta, dict) or not isinstance(result, dict) or not isinstance(meta.get("code"), dict):
+        raise ValueError("unit has malformed source/result metadata")
+    code = meta["code"]
+    if (code.get("commit") != frozen["arms"][row["arm"]]["commit"] or code.get("dirty") is not False
+            or meta.get("repeat") != 1 or meta.get("prompt_id_filter") != row["item"]
+            or result.get("id") != row["item"]):
+        raise ValueError(f"{row['block_id']} {row['arm']}: recorded unit identity differs from the frozen study")
+    if not isinstance(meta.get("model"), str) or not isinstance(meta.get("run_settings"), dict):
+        raise ValueError("unit has no recorded model or execution settings")
+    return {key: meta.get(key) for key in ("model", "route", "reasoning_effort", "reasoning_by_operation",
+            "reasoning_effective", "run_settings", "sandbox", "timeout_per_prompt", "harness_memory_mb")}
+
+
+def validate_study(config: dict[str, Any], *, executing: bool = False) -> tuple[dict[str, Any], dict[str, dict]]:
+    """Refuse identity drift before reusing measurements; execution also checks the live checkouts."""
+    path = out_dir(config) / "STUDY_MANIFEST.json"
+    try:
+        frozen = json.loads(path.read_text(encoding="utf-8"))
+        blocks = schedule(config)
+        if (frozen["study"] != config["study"]
+                or frozen["config_sha256"] != sha256(Path(config["_path"]).read_bytes())
+                or frozen["schedule_sha256"] != sha256(schedule_json(blocks))
+                or set(frozen["arms"]) != set(config["arms"])):
+            raise ValueError("configuration, schedule or arm set changed")
+        snapshot = schedule_path(config)
+        if snapshot.is_file() and sha256(snapshot.read_text(encoding="utf-8")) != frozen["schedule_sha256"]:
+            raise ValueError("preserved schedule differs from the frozen identity")
+        if executing and not isinstance((frozen.get("key_at_start") or {}).get("usage"), (int, float)):
+            raise ValueError("manifest has no starting key usage")
+        for arm, spec in config["arms"].items():
+            recorded = frozen["arms"][arm]
+            if recorded["args"] != [*config.get("shared_args", []), *spec["args"]]:
+                raise ValueError(f"{arm}: arguments changed")
+            if not isinstance(recorded["commit"], str) or not recorded["commit"]:
+                raise ValueError(f"{arm}: missing frozen source commit")
+            if executing and recorded["commit"] != git(worktree(config, arm), "rev-parse", "HEAD"):
+                raise ValueError(f"{arm}: source commit changed")
+        if executing and frozen["driver_commit"] != git(ROOT, "rev-parse", "HEAD"):
+            raise ValueError("study driver commit changed")
+        expected = {(b.block_id, arm): (b.item_id, b.rep) for b in blocks for arm in b.arms}
+        seen, settings = set(), {}
+        for row in Ledger(out_dir(config) / "ledger.jsonl").results():
+            key = row["block_id"], row["arm"]
+            if (key in seen or key not in expected or row.get("branch") is not None
+                    or (row["item"], row["rep"]) != expected[key]):
+                raise ValueError(f"duplicate or unscheduled accepted unit {key}")
+            seen.add(key)
+            identity = unit_identity(row, frozen)
+            if identity is not None:
+                if row["arm"] in settings and settings[row["arm"]] != identity:
+                    raise ValueError(f"{row['arm']}: recorded execution settings changed between accepted units")
+                settings[row["arm"]] = identity
+        return frozen, settings
+    except (OSError, ValueError, KeyError, TypeError, subprocess.CalledProcessError) as exc:
+        raise ValueError(f"study identity invalid ({path}): {exc}; preserve these records and use a fresh output "
+                         "directory for a changed study") from exc
+
+
 def cmd_run(config: dict[str, Any], args: argparse.Namespace) -> int:
+    out = out_dir(config)
+    manifest_path = out / "STUDY_MANIFEST.json"
+    frozen, identities = None, {}
+    if manifest_path.exists() or (out / "ledger.jsonl").exists():
+        try:
+            frozen, identities = validate_study(config, executing=True)
+        except ValueError as exc:
+            print(f"IDENTITY: {exc}", flush=True)
+            return 1
     problems = preflight(config)
     if problems:
         for problem in problems:
             print(f"PREFLIGHT: {problem}", flush=True)
         return 1
     blocks = schedule(config)
-    out = out_dir(config)
     logs = out / "logs"
     logs.mkdir(parents=True, exist_ok=True)
     ledger = Ledger(out / "ledger.jsonl")
-    manifest_path = out / "STUDY_MANIFEST.json"
-    if not manifest_path.is_file():
-        manifest_path.write_text(json.dumps(_manifest(config, blocks, key_state()), indent=1), encoding="utf-8")
-    start_usage = json.loads(manifest_path.read_text(encoding="utf-8"))["key_at_start"]["usage"]
+    if frozen is None:
+        frozen = _manifest(config, blocks, key_state())
+        manifest_path.write_text(json.dumps(frozen, indent=1), encoding="utf-8")
+    start_usage = frozen["key_at_start"]["usage"]
     budget = config.get("budget") or {}
     per_run = budget.get("per_run_usd", {})
     failed_in_a_row = 0
@@ -342,6 +418,16 @@ def cmd_run(config: dict[str, Any], args: argparse.Namespace) -> int:
                 if arm in done:
                     continue
                 row = run_unit(config, block, arm, attempt, logs)
+                try:
+                    identity = unit_identity(row, frozen)
+                    if identity is not None:
+                        if arm in identities and identities[arm] != identity:
+                            raise ValueError(f"{arm}: new unit has different execution settings")
+                        identities[arm] = identity
+                except (ValueError, OSError, KeyError, TypeError) as exc:
+                    ledger.append({**row, "status": "void_unit", "identity_error": str(exc)})
+                    print(f"IDENTITY: {exc}", flush=True)
+                    return 1
                 last = attempt > MAX_BLOCK_RERUNS
                 if row.get("outage") and not last:
                     outage = f"{arm}: {row['outage']}"

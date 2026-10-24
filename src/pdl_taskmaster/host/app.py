@@ -152,8 +152,9 @@ class PDLtHost:
         self.engine = engine
         # Show each operation's output schema in the form the worker will enforce it.
         engine.bridge.contract_form = getattr(self.worker, "contract_form", None)
-        settings = self.settings or RunSettings.from_worker(self.worker, no_review=self.no_review,
-                                                            sandbox_mode=self.sandbox_mode)
+        settings = (self.settings or RunSettings.from_worker(self.worker, no_review=self.no_review,
+                                                            sandbox_mode=self.sandbox_mode)).resolved(self.worker)
+        self.settings = settings
         settings.apply(engine)
         if hasattr(self.worker, "mode_pinning"):  # ADR-0031: the session mode's provider order
             from pdl_taskmaster.providers.api_worker import mode_pinning

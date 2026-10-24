@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import subprocess
+from contextlib import ExitStack
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -240,58 +241,58 @@ def open_session(
     session_dir.mkdir(parents=True, exist_ok=True)
     workspace_root = args.workspace_root or session_dir / "workspaces"
     observation_dir = args.observation_dir or session_dir / "observations"
-    # The worker's progress lines (provider rejections included) and every model call's lifecycle (sent,
-    # acknowledged, received; interrupted ones included) go to this session's folder, the paths the REPL announces.
-    prepare_worker(worker, session_dir, args.workdir)
     pointer = session_dir / POINTER
     if restore_path is None:
         restore_path = stored_workspace(session_dir, lambda line: print(f"[warn] {line}", flush=True))
-    if getattr(args, "mode", None) is None:  # ADR-0031: a resumed session keeps its own mode, else the worker's default
-        from pdl_taskmaster.runtime.run_settings import default_mode
-
-        args.mode = (stored_session_mode(session_dir, restore_path is not None)
-                     or default_mode(worker, review=not getattr(args, "no_review", True)))
-    check_session_mode(session_dir, args.mode, restore_path is not None)
+    mode = getattr(args, "mode", None) or stored_session_mode(session_dir, restore_path is not None)
+    settings = _run_settings(args, worker, mode=mode)
     from pdl_taskmaster.runtime.run_settings import check_review_mode
 
-    check_review_mode(args.mode, getattr(args, "no_review", True))  # L165: review is the confirmed route
-    host = PDLtHost(
-        args.candidate_repo,
-        worker=worker,
-        workspace_root=workspace_root,
-        restore_path=restore_path,
-        run_id=args.run_id,
-        observation_dir=observation_dir,
-        render_compact=bool(getattr(args, "render_compact", False)),
-        settings=_run_settings(args, worker),
-    ).start()
-    if getattr(host, "restore_notice", None):
-        print(f"[warn] {host.restore_notice}", flush=True)
-    _announce_sandbox(host)
-    write_pointer(session_dir, session_id, host.status().get("workspace_path"))
-    transcript_path = args.transcript or session_dir / "transcript.log"
-    transcript_path.parent.mkdir(parents=True, exist_ok=True)
-    # A session's own transcript holds its conversation verbatim; a --transcript
-    # file may be shared by several sessions, so it is not replayed.
-    prior_transcript = None
-    if args.transcript is None and transcript_path.is_file():
-        prior_transcript = transcript_path.read_text(encoding="utf-8") or None
-    transcript = transcript_path.open("a", encoding="utf-8", newline="\n")
-    if prior_transcript:
-        transcript.write("=== PDLt session resumed ===\n")
-        transcript.flush()
-    return SessionRuntime(
-        session_id=session_id,
-        session_dir=session_dir,
-        host=host,
-        session_pointer=pointer,
-        transcript=transcript,
-        transcript_path=transcript_path,
-        workspace_root=workspace_root,
-        observation_dir=observation_dir,
-        exit_on_close=bool(getattr(args, "exit_on_close", False)),
-        prior_transcript=prior_transcript,
-    )
+    check_review_mode(settings.mode, settings.no_review)  # L165: review is the confirmed route
+    check_session_mode(session_dir, settings.mode, restore_path is not None)
+    # Destination validation must precede changing the active worker's log/trace bindings.
+    prepare_worker(worker, session_dir, args.workdir)
+    with ExitStack() as cleanup:
+        host = PDLtHost(
+            args.candidate_repo,
+            worker=worker,
+            workspace_root=workspace_root,
+            restore_path=restore_path,
+            run_id=args.run_id,
+            observation_dir=observation_dir,
+            render_compact=bool(getattr(args, "render_compact", False)),
+            settings=settings,
+        )
+        cleanup.callback(host.close)
+        host.start()
+        if getattr(host, "restore_notice", None):
+            print(f"[warn] {host.restore_notice}", flush=True)
+        _announce_sandbox(host)
+        write_pointer(session_dir, session_id, host.status().get("workspace_path"))
+        transcript_path = args.transcript or session_dir / "transcript.log"
+        transcript_path.parent.mkdir(parents=True, exist_ok=True)
+        # An explicitly shared transcript is not replayed as this session's history.
+        prior_transcript = None
+        if args.transcript is None and transcript_path.is_file():
+            prior_transcript = transcript_path.read_text(encoding="utf-8") or None
+        transcript = cleanup.enter_context(transcript_path.open("a", encoding="utf-8", newline="\n"))
+        if prior_transcript:
+            transcript.write("=== PDLt session resumed ===\n")
+            transcript.flush()
+        destination = SessionRuntime(
+            session_id=session_id,
+            session_dir=session_dir,
+            host=host,
+            session_pointer=pointer,
+            transcript=transcript,
+            transcript_path=transcript_path,
+            workspace_root=workspace_root,
+            observation_dir=observation_dir,
+            exit_on_close=bool(getattr(args, "exit_on_close", False)),
+            prior_transcript=prior_transcript,
+        )
+        cleanup.pop_all()  # the completed runtime owns its host and transcript
+        return destination
 
 
 _HISTORY_LINE_LIMIT = 400
@@ -351,9 +352,26 @@ def switch_session(
     worker,
     session_id: str,
 ) -> SessionRuntime:
-    """Close the active host and open another session in one operation."""
+    """Open the destination before retiring the active session; reject without disrupting it."""
+    if (resolve_session_dir(session_base, session_id) == runtime.session_dir
+            and worker is runtime.host.worker):
+        # /resume of the active session needs no second host against the same workspace.
+        settings = _run_settings(args, worker, mode=getattr(args, "mode", None) or runtime.host.engine.mode)
+        from pdl_taskmaster.runtime.run_settings import check_review_mode
+
+        check_review_mode(settings.mode, settings.no_review)
+        check_session_mode(runtime.session_dir, settings.mode, runtime.host.engine.workspace is not None)
+        return runtime
+    bindings = {name: getattr(worker, name) for name in ("workdir", "progress_path", "trace_path", "mode_pinning")
+                if hasattr(worker, name)}
+    try:
+        destination = open_session(args, session_base, worker, session_id)
+    except BaseException:
+        for name, value in bindings.items():
+            setattr(worker, name, value)
+        raise
     runtime.close()
-    return open_session(args, session_base, worker, session_id)
+    return destination
 
 
 def _worker_profile(worker: Any) -> str:
@@ -391,29 +409,27 @@ def _ablation_parts(value: str | None) -> tuple[str, ...]:
     return tuple(part.strip() for part in (value or "").split(",") if part.strip())
 
 
-def _run_settings(args, worker):
+def _run_settings(args, worker, *, mode=None):
     """The engine's run settings from CLI flags (L124 D7). The flags' run settings reach the API worker's sessions;
     a recorded replay and the codex worker run with the defaults their recordings were made with."""
     from pdl_taskmaster.providers.api_worker import ApiWorker
-    from pdl_taskmaster.runtime.run_settings import RunSettings, default_agent_tools, default_mode
+    from pdl_taskmaster.runtime.run_settings import RunSettings
 
     no_review = bool(getattr(args, "no_review", True))
     session = {"no_review": no_review, "sandbox_mode": getattr(args, "sandbox", None),
                "task_type": getattr(args, "task_type", None),
-               "mode": getattr(args, "mode", None) or default_mode(worker, review=not no_review)}
+               "mode": mode if mode is not None else getattr(args, "mode", None)}
     if not isinstance(worker, ApiWorker):
-        return RunSettings(agent_tools=False, **session)  # recordings were made without in-call tools
+        return RunSettings(agent_tools=False, **session).resolved(worker)  # recordings have no in-call tools
     run = _api_run_settings(args)
     agent_tools = run["agent_tools"]
-    if agent_tools is None:  # L166: on, except on the unconfirmed route in protocol mode
-        agent_tools = default_agent_tools(session["mode"], no_review)
     return RunSettings(max_repairs=run["max_repairs"], draft_execute=run["draft_execute"],
                        confirmed_execute_tools=bool(getattr(args, "confirmed_execute_tools", False)),
                        agent_tools=agent_tools, representation=run["representation"], tier_d1=run["tier_d1"],
                        agent_tools_exclude=tuple(sorted(getattr(args, "agent_tools_exclude", None) or ())),
                        withhold_execution_context=bool(getattr(args, "withhold_execution_context", False)),
                        ablate_unconfirmed=_ablation_parts(getattr(args, "ablate_unconfirmed", None)),
-                       **session)
+                       **session).resolved(worker)
 
 
 def _api_worker_settings(args, capture_tokens: bool) -> dict:
@@ -1808,28 +1824,41 @@ def main() -> int:
                     else:
                         print(f"unknown worker: {target}", flush=True)
                         continue
-                    runtime = switch_session(
-                        runtime, args, session_base, new_worker, runtime.session_id
-                    )
+                    try:
+                        runtime = switch_session(runtime, args, session_base, new_worker, runtime.session_id)
+                    except (ValueError, OSError) as exc:
+                        print(f"could not switch worker: {exc}", flush=True)
+                        continue
                     worker = new_worker
                     print(f"worker switched to {target}", flush=True)
                 elif cmd == "/mode":
                     if arg not in {"protocol", "direct", "saver"}:
-                        print(f"mode: {getattr(args, 'mode', None)} (usage: /mode protocol|direct|saver; "
+                        print(f"mode: {runtime.host.engine.mode} (usage: /mode protocol|direct|saver; "
                               "a mode change opens a new session)", flush=True)
                         continue
-                    if arg != "protocol" and not no_review:  # L165: direct and saver have no review
+                    previous_mode, previous_no_review = args.mode, args.no_review
+                    review_disabled = arg != "protocol" and not no_review
+                    if review_disabled:  # L165: direct and saver have no review
                         no_review = args.no_review = True
-                        print(f"review off: {arg} mode has no review", flush=True)
                     args.mode = arg
-                    runtime = switch_session(runtime, args, session_base, worker, _new_session_name())
+                    try:
+                        runtime = switch_session(runtime, args, session_base, worker, _new_session_name())
+                    except (ValueError, OSError) as exc:
+                        args.mode, args.no_review = previous_mode, previous_no_review
+                        no_review = previous_no_review
+                        print(f"could not switch mode: {exc}", flush=True)
+                        continue
+                    if review_disabled:
+                        print(f"review off: {arg} mode has no review", flush=True)
                     _write_transcript(f"MODE: {arg.upper()}")
                     print(f"mode: {arg}; new session: {runtime.session_dir}", flush=True)
                     continue
                 elif cmd == "/new":
-                    runtime = switch_session(
-                        runtime, args, session_base, worker, _new_session_name()
-                    )
+                    try:
+                        runtime = switch_session(runtime, args, session_base, worker, _new_session_name())
+                    except (ValueError, OSError) as exc:
+                        print(f"could not open new session: {exc}", flush=True)
+                        continue
                     print(f"new session: {runtime.session_dir}", flush=True)
                     continue
                 elif cmd == "/resume":
@@ -1841,7 +1870,11 @@ def main() -> int:
                     except ValueError as exc:
                         print(f"invalid session name: {exc}", flush=True)
                         continue
-                    runtime = switch_session(runtime, args, session_base, worker, safe_id)
+                    try:
+                        runtime = switch_session(runtime, args, session_base, worker, safe_id)
+                    except (ValueError, OSError) as exc:
+                        print(f"could not resume {safe_id}: {exc}", flush=True)
+                        continue
                     print(f"resumed session: {runtime.session_dir}", flush=True)
                     show_resumed_history(runtime, colors)
                     continue

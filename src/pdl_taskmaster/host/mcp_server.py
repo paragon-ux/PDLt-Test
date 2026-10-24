@@ -212,6 +212,8 @@ class AgentToolServer:
         mid = message["id"]
         if not _valid_id(mid):
             return _error(None, INVALID_REQUEST, "a request id must be a string or an integer")
+        if not isinstance(method, str):
+            return _error(mid, INVALID_REQUEST, "method must be a string")
         if not isinstance(params, dict):
             return _error(mid, -32602, "params must be an object")
         if method == "initialize":

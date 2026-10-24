@@ -30,7 +30,8 @@ def test_invalid_settings_are_refused_naming_each_field():
 
 def test_settings_read_from_a_worker_match_what_the_host_used_to_copy():
     carrying = SimpleNamespace(max_repairs=0, draft_execute=1, agent_tools=True, representation=None, tier_d1=None)
-    assert RunSettings.from_worker(carrying) == RunSettings(max_repairs=0, draft_execute=True, agent_tools=True)
+    assert RunSettings.from_worker(carrying) == RunSettings(max_repairs=0, draft_execute=True,
+                                                          agent_tools=True, mode="saver")
     # A worker that carries no settings runs as its recordings were made: protocol mode, no in-call tools (ADR-0031).
     assert RunSettings.from_worker(object(), no_review=True) == RunSettings(no_review=True, agent_tools=False,
                                                                             mode="protocol")

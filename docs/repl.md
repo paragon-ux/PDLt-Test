@@ -136,7 +136,7 @@ printf '%s\n' "Count the primes below 1000 and print the count." /confirm /confi
 
 | Code | Meaning | What to do |
 |---|---|---|
-| 0 | Closed with a result the host established or contract-checked (`CLOSED_SUCCESS`); a direct reply; or a published boundary refusal | Nothing, unless the result must be verified: then check its provenance (below) |
+| 0 | Host-reproduced result (`CLOSED_SUCCESS`); a protocol bypass reply; or a published boundary refusal | Check provenance when a host-reproduced deliverable is required (below) |
 | 1 | Cancelled, or failed closed after its repairs (`CLOSED_CANCELLED`) | Read the transcript for the findings |
 | 2 | Stopped at a review gate, or at another non-terminal stage | Pipe `/confirm` lines, or run without `--review` |
 | 3 | Waiting for input the task needs (`WAITING_INPUT`) | Supply it in a follow-up message |
@@ -148,7 +148,7 @@ A headless run that ends anywhere but `CLOSED_SUCCESS` also prints a `[headless 
 
 ### Check the verification level in CI
 
-Exit 0 also covers a result that passed only the contract checks, a direct reply and a refusal. A CI step that needs more checks the published result's `provenance.json` as well: its `verification.level` is `host_verified`, `contract_checked` or `unverified`, and a direct reply or a refusal publishes none. Run one task per process in a fresh `--workspace-root`, so the folder holds that task's provenance only. These steps require `host_verified`; use the level your step needs.
+Contract-only published results and direct/saver answers exit 5. Exit 0 also covers protocol bypass replies and published refusals, which publish no result provenance. A CI step requiring a reproduced deliverable checks its `provenance.json`: `verification.level` is `host_verified`, `contract_checked` or `unverified`. Direct/saver answers publish `unverified` provenance. `host_verified` establishes host reproduction, not general correctness. Run one task per process in a fresh `--workspace-root`, so the folder holds that task's provenance only. These steps require `host_verified`; use the level your step needs.
 
 bash:
 

@@ -177,14 +177,16 @@ A session runs in one of three modes: `saver` (the default since ADR-0031), `pro
 - **Bootstrap stays as it is.**
 
 **SECURE_GATEWAY** guards both modes. It only passes or blocks, and adds nothing to what the model receives (L151: added content costs accuracy). It fails closed: a missing or unusable judgement refuses.
-1. First layer: System 1's activation check, then its budget check. Neither makes a model call.
+1. First layer: System 1's activation check, then its budget check. Neither calls System 2.
 2. Second layer: the poisoned-input check. L153 measured System 1's `PoisonedInputRecipe`, Bootstrap's refusal judgement alone, and both, on `experiments/gateway/`; none met the pre-registered bar, and the user chose both. L155 replaced it with one System 1 judgement: the activation question's POISONED choice, asked in the same call as layer 1, in every mode (the user: the guard must not overlap anything). A direct answer gets the guard alone, with no Bootstrap, whose output it never used. The request is refused at P(POISONED) ≥ 0.64 (`GATEWAY_THRESHOLD` in `runtime/session_engine.py`), the least aggressive threshold that blocks every call on the catalogue's category 09 attacks; clean prompts score at most 0.21. Held-out recall is 26/40 for the judgement alone and 35/40 with Bootstrap, with no false refusal, so the protocol's routes keep Bootstrap's refusal judgement (it adds recall). Saver's protocol branch runs Bootstrap as the route's own call.
 
 The gateway also sets the closure:
 - a refusal closes REFUSED (exit 0);
-- a passed request is answered directly, as `DIRECT_ANSWER`: the model receives the request alone, with no instructions, like Control's call. Nothing checks the answer, so it closes CLOSED_UNVERIFIED (exit 5) with the reason `direct_answer`.
+- a passed request is answered directly, as `DIRECT_ANSWER`: first and unrelated turns receive the request alone, with no extra instructions, like Control's call. A referring follow-up also receives the previous published answer as labelled reference; that reference is kept separate from the user's stored source and current verification evidence. Nothing checks the answer, so it closes CLOSED_UNVERIFIED (exit 5) with the reason `direct_answer`.
 
 Raw `--route control` stays the measurement baseline.
+
+In protocol mode, a missing or unusable System 1 activation judgment does not itself refuse an explicit protocol invocation: the existing protocol fallback continues. Direct/saver's gateway requires a usable judgment. This describes the current mode contract; it does not adopt a uniform missing-judgment policy.
 
 **Saver mode** sends a request the gateway passes on by its System 1 problem class. VERIFIED_EXECUTION goes through the protocol's unconfirmed route, classified once. Everything else is answered directly. It trades the protocol's smaller, unestablished gains on unverified tasks for a direct answer's cost: about 40% of an unconfirmed run's spend and a third of its time (L94).
 

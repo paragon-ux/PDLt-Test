@@ -337,7 +337,7 @@ def unknown_provider_warnings(names: list[str]) -> list[str]:
 
 
 # Operations answered as plain text, with no JSON suffix and no output schema. DIRECT_ANSWER (L153, direct and saver
-# modes) also gets no instructions at all: the model receives the user's request alone, as Control's does.
+# modes) also gets no instructions; referring follow-ups include the published prior answer as reference.
 PLAIN_OPERATIONS = ("BYPASS_ORDINARY", "DIRECT_ANSWER")
 
 DEFAULT_PROVIDER_PINNING: dict[str, Any] = {
@@ -685,10 +685,8 @@ class ApiWorker:
         self.model_by_operation = dict(model_by_operation or {})
         self.reorder_keys_for_cache = reorder_keys_for_cache
         self.structured_output = structured_output
-        # L122: before its first call, each model's supported parameters are checked against what the
-        # session will send it (providers/model_capabilities.py).
+        # L122/F5: load selected metadata, then validate each outgoing round's actual parameters.
         self.capability_check = capability_check
-        self._checked_models: set[str] = set()
         self._model_entries: dict[str, dict[str, Any]] = {}  # OpenRouter's metadata per model, once read
         # None: each model's own order (pinning_for); a configured order applies to every model.
         self._configured_pinning = provider_pinning if provider_pinning is not None else _env_pinning()
@@ -855,62 +853,45 @@ class ApiWorker:
                             strict_all_required=bool(keys & _STRICT_ALL_REQUIRED_PROVIDERS),
                             free_form_objects=_accepts_free_form_objects(pinning))
 
-    def session_needs(self) -> dict[str, dict[str, list[str]]]:
-        """Every request parameter this session may send, per model, with the operations that send it:
-        reasoning (an effort other than 'none'), the output format, and tools under --agent-tools."""
-        from pdl_taskmaster.runtime.agent_tools import TOOL_OPERATIONS
-        from pdl_taskmaster.runtime.wire_payloads import OPERATION_PAYLOAD_MODELS
-
-        operations = sorted(set(OPERATION_PAYLOAD_MODELS) | set(PLAIN_OPERATIONS) | set(self.reasoning_by_operation)
-                            | set(self.model_by_operation))
-        needs: dict[str, dict[str, list[str]]] = {}
-        for operation in operations:
-            wanted = []
-            if self._reasoning_for(operation) not in (None, "none"):
-                wanted.append("reasoning")
-            fmt = model_capabilities.FORMAT_PARAMETERS.get(self.contract_form(operation).grammar)
-            if fmt:
-                wanted.append(fmt)
-            if self.agent_tools is not False and operation in TOOL_OPERATIONS:
-                wanted.append("tools")
-            for parameter in wanted:
-                needs.setdefault(self._model_for(operation), {}).setdefault(parameter, []).append(operation)
-        return needs
-
-    def _check_capabilities(self, operation: str | None) -> None:
-        """Fail closed before the first call to each model (L122): the model must be in OpenRouter's list and
-        support every parameter the session will send it. Nothing is sent when it does not."""
+    def _load_capabilities(self, model: str, operation: str | None) -> dict[str, Any] | None:
+        """Load the selected model before adapting its format; no unused model blocks this call."""
         if not self.capability_check or not model_capabilities.is_openrouter(self.base_url):
-            return
-        from pdl_taskmaster.runtime.wire_payloads import OPERATION_PAYLOAD_MODELS
-
-        names = {self._model_for(op) for op in set(OPERATION_PAYLOAD_MODELS) | set(self.model_by_operation)}
-        pending = sorted((names | {self._model_for(operation)}) - self._checked_models)
-        if not pending:
-            return
+            return None
+        if model in self._model_entries:
+            return self._model_entries[model]
         try:
             models = model_capabilities.model_list(self.base_url, self.timeout)
         except (OSError, ValueError) as exc:
             raise ProviderError("MODEL_CAPABILITY_UNKNOWN",
-                                f"could not read OpenRouter's model list to check {', '.join(pending)} "
+                                f"could not read OpenRouter's model list to check {model} "
                                 f"({exc}); no request was sent", operation=operation) from exc
-        problems = []
-        for name in pending:
-            entry = model_capabilities.lookup(models, name)
-            if entry is None:
-                problems.append(f"{name} is not in OpenRouter's model list; check the model name")
-            else:
-                self._model_entries[name] = entry
-        needs = self.session_needs()  # the output formats follow the metadata just read
-        for name in pending:
-            if name in self._model_entries:
-                problems += [model_capabilities.describe(name, parameter, ops) for parameter, ops
-                             in sorted(model_capabilities.unsupported(self._model_entries[name],
-                                                                      needs.get(name, {})).items())]
+        entry = model_capabilities.lookup(models, model)
+        if entry is None:
+            raise ProviderError("MODEL_UNSUPPORTED",
+                                f"{model} is not in OpenRouter's model list; check the model name. No request was sent.",
+                                operation=operation)
+        self._model_entries[model] = entry
+        return entry
+
+    def _check_capabilities(self, body: dict[str, Any], operation: str | None) -> None:
+        """Validate each outgoing round, including tool and formatted fallback rounds (L122, F5)."""
+        entry = self._load_capabilities(body["model"], operation)
+        if entry is None:
+            return
+        wanted = []
+        if "reasoning" in body:
+            wanted.append("reasoning")
+        fmt = (body.get("text") or {}).get("format", {}).get("type")
+        if fmt in ("json_schema", "json_object"):
+            wanted.append("structured_outputs" if fmt == "json_schema" else "response_format")
+        if body.get("tools"):
+            wanted.append("tools")
+        needs = {parameter: [operation or "UNKNOWN"] for parameter in wanted}
+        problems = [model_capabilities.describe(body["model"], parameter, ops) for parameter, ops
+                    in sorted(model_capabilities.unsupported(entry, needs).items())]
         if problems:
             raise ProviderError("MODEL_UNSUPPORTED", "; ".join(problems) + ". No request was sent.",
                                 operation=operation)
-        self._checked_models.update(pending)
 
     def _split_prompt(self, prompt: str) -> tuple[str, str]:
         """Split a rendered request.prompt back into (instructions, input).
@@ -1089,7 +1070,6 @@ class ApiWorker:
     def call(self, request: Any) -> WorkerResult:
         trace = self.begin_call(str(getattr(request, "operation", None) or "UNKNOWN"))
         try:
-            self._check_capabilities(getattr(request, "operation", None))
             result = self._call(request)
             trace.final = "completed"
             return result
@@ -1409,16 +1389,19 @@ class ApiWorker:
                 except Exception:
                     pass
 
+        self._load_capabilities(self._model_for(operation_name), operation_name)
         body, union_wrapped, effort = self.build_request_body(request)
         freetext = _freetext_call(request)
-        if self.agent_tools is not False and getattr(request, "tools", None) is not None:
+        # Session settings resolve the worker's default before the engine attaches
+        # an operation's tools. An explicit session override must survive here.
+        if getattr(request, "tools", None) is not None:
             if freetext or _plaininput_call(request):
                 raise ValueError("ablate_freetext, ablate_plaininput: the tool loop reads and ends in JSON; run them "
                                  "without agent tools")
             return self._tool_loop_call(request, body, union_wrapped, effort)
 
         api_key = self._resolve_api_key()
-        req = self._responses_request(body, api_key)
+        req = self._checked_responses_request(body, api_key)
 
         started = time.perf_counter()
         call_deadline = time.monotonic() + self.max_call_seconds
@@ -1533,7 +1516,7 @@ class ApiWorker:
         observed: dict[str, Any] = {}
 
         def send(round_body: dict[str, Any]) -> dict[str, Any]:
-            data = self._send_json_with_retries(self._responses_request(round_body, api_key), deadline)
+            data = self._send_json_with_retries(self._checked_responses_request(round_body, api_key), deadline)
             if data.get("error"):
                 raise ProviderError("PROVIDER_REJECTED_REQUEST", f"provider reported an error: {data['error']}")
             self._record_reply(data, schema_constrained=False)
@@ -1589,6 +1572,10 @@ class ApiWorker:
             "reasoning_tokens": (usage.get("output_tokens_details") or {}).get("reasoning_tokens"),
             "schema_constrained": schema_constrained,
         })
+
+    def _checked_responses_request(self, body: dict[str, Any], api_key: str) -> urllib.request.Request:
+        self._check_capabilities(body, getattr(self.current_call, "operation", None))
+        return self._responses_request(body, api_key)
 
     def _responses_request(self, body: dict[str, Any], api_key: str) -> urllib.request.Request:
         return urllib.request.Request(
@@ -1653,7 +1640,7 @@ class ApiWorker:
             self._progress(f"{provider or 'the provider'} rejected the output against the schema; "
                            f"retrying on {remaining[0]}")
             trial = {**body, "provider": {**pinning, "order": remaining, "ignore": list(rejected)}}
-            req = self._responses_request(trial, api_key)
+            req = self._checked_responses_request(trial, api_key)
             try:
                 return self._send_json_with_retries(req, deadline), req, union_wrapped
             except ProviderError as exc:
@@ -1666,7 +1653,7 @@ class ApiWorker:
         provider = {k: v for k, v in (body.get("provider") or {}).items() if k != "require_parameters"}
         if provider:
             trial["provider"] = provider
-        req = self._responses_request(trial, api_key)
+        req = self._checked_responses_request(trial, api_key)
         try:
             return self._send_json_with_retries(req, deadline), req, False
         except ProviderError as exc:

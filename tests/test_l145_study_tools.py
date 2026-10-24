@@ -123,6 +123,25 @@ def test_only_failures_that_are_never_model_outcomes_are_outages(tmp_path):
     assert matched_study.classify(None, [])["outage"] == "no run folder"
 
 
+def _freeze(monkeypatch, config):
+    monkeypatch.setattr(matched_study, "git", lambda *args: "frozen-source")
+    manifest = matched_study._manifest(config, matched_study.schedule(config), {"usage": 1.0})
+    path = matched_study.out_dir(config) / "STUDY_MANIFEST.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    return manifest
+
+
+def _unit(folder, item, arm_args):
+    result_dir = folder / "results" / item
+    result_dir.mkdir(parents=True, exist_ok=True)
+    (result_dir / "result.json").write_text(json.dumps({"id": item}), encoding="utf-8")
+    (folder / "RUN_META.json").write_text(json.dumps({"code": {"commit": "frozen-source", "dirty": False},
+        "model": "fixture/model", "route": "unconfirmed", "repeat": 1, "prompt_id_filter": item,
+        "run_settings": {"args": arm_args}}), encoding="utf-8")
+    return result_dir
+
+
 def _scripted_run(monkeypatch, config, outcomes):
     """run_unit replaced by a script: ``outcomes`` maps (block_id, arm, attempt) to an outage reason."""
     calls = []
@@ -130,15 +149,18 @@ def _scripted_run(monkeypatch, config, outcomes):
     def run_unit(config, block, arm, attempt, logs):
         calls.append((block.block_id, arm, attempt))
         reason = outcomes.get((block.block_id, arm, attempt))
+        folder = matched_study.out_dir(config) / "units" / block.block_id.replace(":", "_") / arm / str(attempt)
+        result_dir = _unit(folder, block.item_id, config["arms"][arm]["args"])
         row = {"block_id": block.block_id, "attempt": attempt, "arm": arm, "branch": None, "item": block.item_id,
-               "rep": block.rep, "status": "done", "run_dir": "x", "wall_s": 0.0, "verdict": "CLOSED_SUCCESS",
+               "rep": block.rep, "status": "done", "run_dir": str(folder), "result_dir": str(result_dir),
+               "wall_s": 0.0, "verdict": "CLOSED_SUCCESS",
                "grade": "PASS"}
         return {**row, "outage": reason} if reason else row
 
     monkeypatch.setattr(matched_study, "run_unit", run_unit)
     monkeypatch.setattr(matched_study, "preflight", lambda config, **kw: [])
     monkeypatch.setattr(matched_study, "OUTAGE_BACKOFF_S", 0)
-    monkeypatch.setattr(matched_study, "_manifest", lambda config, blocks, key: {"key_at_start": key})
+    _freeze(monkeypatch, config)
     monkeypatch.setattr(matched_study, "key_state", lambda: {"usage": 1.0, "limit": 25, "limit_remaining": 20.0})
     return calls
 
@@ -219,13 +241,15 @@ def test_the_report_from_a_ledger_and_its_run_folders(tmp_path, monkeypatch):
     for block in matched_study.schedule(config):
         for arm in block.arms:
             verdict, grade = outcome[arm]
-            folder = tmp_path / "runs" / block.block_id.replace(":", "_") / arm
-            folder.mkdir(parents=True)
+            run_dir = tmp_path / "runs" / block.block_id.replace(":", "_") / arm
+            folder = _unit(run_dir, block.item_id, config["arms"][arm]["args"])
             (folder / "result.json").write_text(json.dumps({
                 "id": block.item_id, "verdict": verdict, "expected_stage": "CLOSED_SUCCESS",
                 "ground_truth_grade": {"grade": grade}, "elapsed_seconds": 2.0}), encoding="utf-8")
             ledger.append({"block_id": block.block_id, "attempt": 1, "arm": arm, "branch": None, "status": "done",
-                           "item": block.item_id, "rep": block.rep, "result_dir": str(folder)})
+                           "item": block.item_id, "rep": block.rep, "result_dir": str(folder), "run_dir": str(run_dir)})
+    _freeze(monkeypatch, config)
+    monkeypatch.setattr(matched_study, "git", lambda *args: pytest.fail("historical reporting must not query Git"))
     monkeypatch.setattr(study_report.graders, "grade",
                         lambda entry, folder, prompts: json.loads((Path(folder) / "result.json").read_text())
                         ["ground_truth_grade"])

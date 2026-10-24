@@ -41,6 +41,29 @@ def _rpc(server, method, params=None, mid=1):
     return server.handle({"jsonrpc": "2.0", "id": mid, "method": method, "params": params or {}})
 
 
+@pytest.mark.parametrize("method", [[], {}, None, 42, True])
+def test_malformed_method_does_not_stop_later_stream_requests(method):
+    server = _server(version=None)
+    messages = [
+        {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-03-26"}},
+        {"jsonrpc": "2.0", "id": 2, "method": method},
+        {"jsonrpc": "2.0", "method": method},
+        {"jsonrpc": "2.0", "id": 3, "method": "ping"},
+        {"jsonrpc": "2.0", "id": 4},
+        [{"jsonrpc": "2.0", "id": 5, "method": method}, {"jsonrpc": "2.0", "id": 6, "method": "ping"}],
+        {"jsonrpc": "2.0", "id": 7, "method": "unknown/string"},
+    ]
+    output = io.StringIO()
+    mcp_server.serve(server, io.StringIO("".join(json.dumps(m) + "\n" for m in messages)), output)
+    responses = [json.loads(line) for line in output.getvalue().splitlines()]
+    assert [r["id"] for r in responses if isinstance(r, dict)] == [1, 2, 3, 4, 7]
+    assert responses[1]["error"]["code"] == responses[3]["error"]["code"] == mcp_server.INVALID_REQUEST
+    assert responses[2]["result"] == {}
+    assert responses[4][0]["error"]["code"] == mcp_server.INVALID_REQUEST
+    assert responses[4][1] == {"jsonrpc": "2.0", "id": 6, "result": {}}
+    assert responses[-1]["error"]["code"] == -32601
+
+
 def test_initialize_names_the_tools_capability_and_states_the_budgets():
     result = _rpc(_server(version=None), "initialize", {"protocolVersion": mcp_server.PROTOCOL_VERSION, "capabilities": {},
                                             "clientInfo": {"name": "t", "version": "0"}})["result"]

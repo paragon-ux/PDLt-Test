@@ -315,6 +315,25 @@ def test_headless_interrupt_ends_the_run(monkeypatch, tmp_path: Path) -> None:
     assert runtime.handled == ["solve it"]
 
 
+@pytest.mark.parametrize("command", ["/resume another", "/new", "/mode saver", "/worker api"])
+def test_failed_session_command_keeps_the_repl_usable(monkeypatch, capsys, tmp_path: Path, command):
+    from pdl_taskmaster.host.app import HostTurn
+
+    repl, runtime = _headless_runtime(monkeypatch, tmp_path,
+        lambda line: HostTurn("still usable", False, True, {"stage": "CLOSED_UNVERIFIED"}), "CLOSED_UNVERIFIED")
+    runtime.session_id = "mock-headless"
+    lines = iter([command, "solve it"])
+    monkeypatch.setattr(repl, "_read_repl_input", lambda prompt="> ": next(lines))
+
+    def reject(*args):
+        raise OSError("destination unavailable")
+
+    monkeypatch.setattr(repl, "switch_session", reject)
+    assert repl.main() == 5
+    assert runtime.handled == ["solve it"]
+    assert "could not" in capsys.readouterr().out
+
+
 def test_headless_stops_reading_at_waiting_input(monkeypatch, tmp_path: Path) -> None:
     from types import SimpleNamespace
 

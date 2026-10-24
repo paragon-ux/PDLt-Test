@@ -169,8 +169,10 @@ def test_the_check_follows_the_settings(monkeypatch):
     with pytest.raises(ProviderError, match="'reasoning'.*--api-reasoning-effort"):
         no_reasoning.call(_request())
     no_tools, _ = _worker(monkeypatch, "plain/no-tools", agent_tools=True)
+    request = _request()
+    request.tools = _host(_Sandbox())
     with pytest.raises(ProviderError, match="'tools'.*without --agent-tools"):
-        no_tools.call(_request())
+        no_tools.call(request)
 
 
 def test_an_unlisted_model_fails_closed(monkeypatch):

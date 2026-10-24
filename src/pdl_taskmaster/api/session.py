@@ -137,6 +137,9 @@ class Session:
                                                task_type=task_type, mode=mode)
         elif (no_review, sandbox_mode, task_type, mode) != (True, None, None, None):
             raise ValueError("pass no_review, sandbox_mode, task_type and mode in settings when settings is given")
+        folder = Path(session_dir).resolve()
+        settings = settings.resolved(worker, stored_mode=stored_session_mode(
+            folder, restore and stored_workspace(folder) is not None))
         check_review_mode(settings.mode, settings.no_review)
         no_review, task_type = settings.no_review, settings.task_type
         if task_type is not None:
@@ -148,9 +151,9 @@ class Session:
 
         session_dir = Path(session_dir).resolve()
         session_dir.mkdir(parents=True, exist_ok=True)
-        prepare_worker(worker, session_dir)
         restore_path = stored_workspace(session_dir) if restore else None
         check_session_mode(session_dir, settings.mode, restore_path is not None)
+        prepare_worker(worker, session_dir)
         host = PDLtHost(repo_root or default_repo_root(), worker=worker,
                         workspace_root=session_dir / "workspaces",
                         restore_path=restore_path,

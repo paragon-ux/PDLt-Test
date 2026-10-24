@@ -168,14 +168,16 @@ def _worker(monkeypatch, replies, *, on):
     return ApiWorker(repo_root=ROOT, model="openai/gpt-oss-120b", agent_tools=on), sent
 
 
-def test_the_worker_with_tools_off_sends_todays_request(tmp_path, monkeypatch):
+def test_attached_tools_override_worker_default_and_omitted_host_stays_plain(tmp_path, monkeypatch):
     request = _request(tmp_path)
     message = [{"type": "message", "content": [{"type": "output_text", "text": json.dumps(outcome(GOOD))}]}]
     worker, sent = _worker(monkeypatch, [message, list(message)], on=False)
-    worker._call(request)
+    tool_result = worker._call(request)
     import dataclasses
-    worker._call(dataclasses.replace(request, tools=None))
-    assert sent[0] == sent[1] and "tools" not in sent[0]
+    plain_result = worker._call(dataclasses.replace(request, tools=None))
+    assert sent[0]["tools"] and "text" not in sent[0]
+    assert "tools" not in sent[1] and "text" in sent[1]
+    assert json.loads(tool_result.text) == json.loads(plain_result.text) == outcome(GOOD)
 
 
 def test_the_worker_with_tools_on_runs_the_loop(tmp_path, monkeypatch):
