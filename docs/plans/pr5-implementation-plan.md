@@ -302,6 +302,12 @@ The six PENDING cases (14-02, 14-04, 14-06, 16-01, 16-03, 16-06) still require t
 
 Detailed local evidence is in `%TEMP%/pdlt-pr5-final-65cd94e4ede74662be1808be0856d558/`: `pytest-full-candidate.log`, `candidate-python-identity.json`, immutable `L161-baseline/source-inventory.json`, `catalogue-diagnostics.json`, `catalogue-dispositions.json` and `L161-current-contract-comparison.json`. The final failure-ID set exactly matches the eleven disposition records.
 
+### Subsequent retrospective assessment
+
+After this plan's completed implementation/evaluation, the user requested grading of its ungraded and pending results (L173). The [separate assessment](pr5-retrospective-grading.md) records 18 PASS, 35 FAIL and seven UNASSESSABLE across those 60 cases, with a separate document revision ledger. GPT-6.1 Sol high reviewed only the six pending proof/logic cases (two PASS/four FAIL); the parent independently adjudicated them and assessed the other cases. Original automated scores and run artifacts are unchanged.
+
+The seven intended multi-turn scenarios were not executed beyond their initial requests, and four recorded unittest runs exited 0 after running zero tests. L174/PGAP-01–04 preserve these newly found gaps and related recommendations as open; they are not completed fixes or a routing proposal adoption. The earlier S0–S14 completion is a bounded historical record, not evidence that these newly inspected properties passed.
+
 ### S14: handoff
 
 Each F1-F10 has final disposition **fixed**, with code/tests in `8294bdb9`; each source document retains its own revision ledger. PM1-PM5's bounded implementation/evaluation actions are complete. PR #5's title/body have been refreshed; it remains draft, with eleven catalogue failures, six manual judgments and the failed live end-to-end follow-up explicitly retained. Completion of this work does not approve a merge. The future routing/verifier proposal remains unadopted, and L167's separate Nemotron measurement remains open.

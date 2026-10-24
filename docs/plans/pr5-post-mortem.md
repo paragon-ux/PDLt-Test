@@ -125,6 +125,14 @@ The live follow-up case shows why branch coverage must be named: System 1 refuse
 
 Comparisons need the current contract too: the raw-history driver finds one regression, but L164's accepted historical stage/manual adjustments make 06-02 and 16-07 regressions. Both views are retained. The remedy is explicit evidence scope and valid comparison identity, not another score-tuning pass.
 
+## Subsequent grading: execution coverage needs its own evidence
+
+The user's subsequent grading request is recorded in L173 and the [retrospective assessment](pr5-retrospective-grading.md), with its own revision ledger. The 60 previously ungraded/pending cases received AI-assisted judgments: 18 PASS, 35 FAIL and seven UNASSESSABLE. Sol high reviewed only the six pending proof/logic submissions; the parent independently adjudicated them. The original 41/11/54/6 automated score remains unchanged. These are retrospective judgments, not human sign-off or a new calibrated grader.
+
+Two concrete process gaps remain after PM1-PM5's bounded completed work. All seven category-10 scenarios recorded only an initial request: their revision/restart/follow-up notes were metadata, not executed actions (`run_catalogue.py:451,546-548`). Separately, recorded sandbox output for 07-01, 07-02, 11-04 and 11-05 says `Ran 0 tests` with exit 0. Static tracing points to the detached `__main__` globals dictionary in `verification/sandbox.py:903-904`; default unittest discovery sees a different module. The successful program exit did not establish that submitted tests ran, even where those tests contain clear failures. The existing exit-5 closure correctly avoided a correctness claim.
+
+L174 retains these as open follow-ups, with independent code triage still required before implementation. Coverage must identify the actions actually sent and assertions actually executed, alongside prompt counts and process exits. Adversarial evaluation also needs separate containment and benign-completion measurements: all five recorded refusals contained the diversion, but none delivered the benign task. The quoted-data refusal in 09-04 is especially relevant to the already failed live follow-up. No new guard threshold, benchmark relaxation or routing architecture is adopted by this assessment.
+
 ## Process actions and current status
 
 PM1-PM5 were recommendations at the original review snapshot. L172 now authorizes their bounded execution through the detailed implementation plan. They use the existing ledger/CI/review process and do not introduce permanent policy or adopt the routing proposal. The parent implementation agent owns execution and evidence; the completed evidence below is bounded to this PR and does not assert general model correctness.

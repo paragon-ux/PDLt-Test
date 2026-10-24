@@ -1,0 +1,15 @@
+# Revision ledger: PR #5 retrospective content grading
+
+Source document: [pr5-retrospective-grading.md](pr5-retrospective-grading.md). Created 2026-10-24 for the user's request to grade all ungraded/pending cases using Sol high for reasoning only. This is the document's own revision ledger; it does not recursively require another ledger.
+
+| ID | Source / evidence | Revision or acceptance condition | Status | Acceptance evidence |
+|---|---|---|---|---|
+| RG-01 | User requested grading of the 54 ungraded and six pending cases. | Pin the exact candidate and complete 60-ID assessment without changing raw grades. | done (this commit) | Identity/method and all 60 rows; external inventory/hash audit. |
+| RG-02 | Stage success, task correctness and human review are distinct. | Define PASS/FAIL/UNASSESSABLE, separate refusal containment and task delivery, and disclose retrospective AI limits. | done (this commit) | Method and adversarial rubric; no pooled machine/AI pass rate or host verification claim. |
+| RG-03 | User requests targeted Sol high for reasoning only. | Delegate only the six proof/logic pending cases and independently adjudicate them. | done (this commit) | GPT-6.1 Sol high reviewed 14-02/04/06 and 16-01/03/06; parent read original submissions and agreed. Reasoning sidecars retain evidence. |
+| RG-04 | Original score is 41/11/54/6. | Record 18 PASS, 35 FAIL and seven UNASSESSABLE for the assessed subset, preserving original counts/stages. | done (this commit) | Per-case and category totals reconcile; six pending judgments are 2 PASS/4 FAIL. |
+| RG-05 | Recorded multi-turn actions are absent; four unittest executions ran zero tests. | Report missing coverage honestly and preserve newly found engineering gaps as open. | done (this commit) | PGAP-01/02 link runner/wrapper paths and recorded transcripts/program-output evidence; no claim that new fixes are complete. |
+| RG-06 | Assessments must be inspectable without committing raw model output. | Keep full sidecars outside Git, pin hashes, verify lines and leave original artifacts untouched. | done (this commit) | External assessment pins 382 artifacts; repository contains only curated report/ledger revisions. |
+| RG-07 | User asks what else is needed; routing remains evaluation only. | Rank concrete follow-ups and retain boundaries between recommendations, accepted policy and completed PR work. | done (this commit) | PGAP-01–04, canonical L174 and references to failed live observation/Nemotron; no routing consolidation. |
+
+Completion is recorded by the commit containing this source document and ledger. Canonical decisions remain in [LEDGER.md](LEDGER.md); raw evidence remains in the sibling archive.
