@@ -146,11 +146,11 @@ Exit 4 is a harness or provider error, never a protocol result; 130 is an interr
 | Execution brief | `--draft-execute` | launch only | off |
 | Tier D1 repairs | `--tier-d1`, `--no-tier-d1` | launch only | on |
 | Repair limit | `--max-repairs N` | launch only | the routed tier's |
-| In-call tools | `--agent-tools` | launch only | off |
+| In-call tools | `--agent-tools`, `--no-agent-tools` (`PDLT_AGENT_TOOLS=0`) | launch only | on (ADR-0031) |
 | Structured output | `--api-structured-output`, `--no-structured-output` | launch only | on |
 | Artifact representation | `--representation pdl` or `nl` | launch only | pdl |
 | Pinned task type | `--task-type NAME` | launch only | System 1 classifies |
-| Session mode: protocol, direct, saver (section 7) | `--mode` | `/mode` (opens a new session) | protocol |
+| Session mode: protocol, direct, saver (section 7) | `--mode` | `/mode` (opens a new session) | saver (ADR-0031); a resumed session keeps its own |
 | Model, worker, sandbox | `--model`, `--worker`, `--sandbox` | `/model`, `/worker`, `/sandbox` | see [REPL](repl.md) |
 
 A mode switch is accepted only from the control channel: a slash command typed in the REPL, a launch flag, or a `RunSettings` field. Text inside a request never changes a mode.
@@ -170,7 +170,7 @@ These exist for studies and are not user modes. Each changes what one call recei
 
 ## 7. Direct and saver modes (L153)
 
-A session runs in one of three modes: `protocol` (the default, sections 2 to 6), `direct` or `saver`. Choose it with `--mode`, `/mode` in the REPL or `Session.open(mode=...)`.
+A session runs in one of three modes: `saver` (the default since ADR-0031), `protocol` (sections 2 to 6) or `direct`. Choose it with `--mode`, `/mode` in the REPL or `Session.open(mode=...)`. With no mode given, a resumed session keeps the mode it ran in, and a new one runs in saver; a recorded replay and the codex worker run in protocol mode, as their recordings were made (`run_settings.default_mode`). Saver with in-call tools sends Cerebras first in its provider order (ADR-0031, option (b)); the other modes keep the default order, Baseten then Crusoe.
 
 - **A mode change starts a new session.** `/mode` opens a new session, and reopening a session in another mode is refused (`api.session.check_session_mode`). No turn history crosses modes, so no draft is left half-reviewed.
 - **Bootstrap stays as it is.**

@@ -166,6 +166,20 @@ def _review_args(spec: ArmSpec, extra_args: tuple[str, ...]) -> list[str]:
     return ["--review"] if knows else []
 
 
+def _default_args(spec: ArmSpec, extra_args: tuple[str, ...]) -> list[str]:
+    """ADR-0031 made saver the harness's default mode and turned its in-call tools on. An arm that names neither runs
+    as before: protocol mode, no tools; the flags go only to a worktree that knows them."""
+    given = (*spec.args, *extra_args)
+    repl = spec.worktree / "src" / "pdl_taskmaster" / "host" / "repl.py" if spec.worktree else None
+    text = repl.read_text(encoding="utf-8") if repl is not None and repl.is_file() else ""
+    args = []
+    if "--mode" not in given and '"--mode"' in text:
+        args += ["--mode", "protocol"]
+    if "--agent-tools" not in given and "--no-agent-tools" not in given and "--no-agent-tools" in text:
+        args.append("--no-agent-tools")
+    return args
+
+
 def run_cli(spec: ArmSpec, model: dict[str, Any], out: Path, *, prompt_file: Path | None, restore: Path | None,
             stdin: str, extra_args: tuple[str, ...], timeout: float, exit_on_close: bool = True) -> dict[str, Any]:
     out.mkdir(parents=True, exist_ok=True)
@@ -177,7 +191,7 @@ def run_cli(spec: ArmSpec, model: dict[str, Any], out: Path, *, prompt_file: Pat
            "--workspace-root", str(session_dir), "--workdir", str(session_dir),
            "--candidate-repo", str(spec.worktree), "--model", model["model"],
            "--api-providers", ",".join(model["providers"]), "--api-structured-output",
-           *_review_args(spec, extra_args), *spec.args, *extra_args]
+           *_review_args(spec, extra_args), *_default_args(spec, extra_args), *spec.args, *extra_args]
     cmd += ["--restore", str(restore)] if restore is not None else ["--prompt-file", str(prompt_file)]
     env = {**os.environ, "PYTHONPATH": str(spec.worktree / "src"), "PYTHONIOENCODING": "utf-8"}
     started = time.monotonic()

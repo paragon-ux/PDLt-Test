@@ -161,7 +161,7 @@ def test_saver_mode_sends_verified_requests_through_the_protocol_classified_once
 def test_protocol_mode_refuses_poisoned_input_in_its_one_system1_judgement(tmp_path):
     # L155: the guard is the activation route's POISONED choice, asked once, in every mode.
     worker = DirectWorker(p_poisoned=0.97)
-    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, no_review=True) as session:
+    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, no_review=True, mode="protocol") as session:
         result = session.send(REQUEST)
         events = _events(session)
     assert result.refused and result.exit_status == outcome.EXIT_SUCCESS and worker.operations == []
@@ -174,7 +174,7 @@ def test_a_session_keeps_its_mode(tmp_path):
         session.send(REQUEST)
     with pytest.raises(ValueError, match="a mode change opens a new session"):
         api.Session.open(DirectWorker(), tmp_path / "s", repo_root=ROOT, mode="saver")
-    with api.Session.open(DirectWorker(), tmp_path / "p", repo_root=ROOT, no_review=True) as session:
+    with api.Session.open(DirectWorker(), tmp_path / "p", repo_root=ROOT, no_review=True, mode="protocol") as session:
         session.send(REQUEST)
     with pytest.raises(ValueError, match="runs in protocol mode"):
         api.Session.open(DirectWorker(), tmp_path / "p", repo_root=ROOT, mode="direct")
@@ -206,7 +206,7 @@ def test_repl_mode_flag_reaches_the_run_settings():
 
 def test_protocol_mode_passes_clean_input_to_its_own_route(tmp_path):
     worker = DirectWorker()
-    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, settings=RunSettings(no_review=True)) as s:
+    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, settings=RunSettings(no_review=True, mode="protocol")) as s:
         result = s.send(REQUEST)
     assert result.stage == "CLOSED_SUCCESS"
     assert worker.operations == ["BOOTSTRAP_ANALYSIS", "EXECUTE_UNCONFIRMED"]  # Bootstrap once: the route's own
@@ -215,7 +215,7 @@ def test_protocol_mode_passes_clean_input_to_its_own_route(tmp_path):
 
 def test_confirmed_route_refuses_poisoned_input_before_any_model_call(tmp_path):
     worker = DirectWorker(p_poisoned=0.97)
-    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, settings=RunSettings()) as session:
+    with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, settings=RunSettings(mode="protocol")) as session:
         result = session.send(REQUEST)
     assert result.refused and "INTERPRET_ACTIVATION" not in worker.operations and "DRAFT_PROMPT" not in worker.operations
 

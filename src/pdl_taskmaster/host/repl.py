@@ -45,7 +45,8 @@ def _default_session_base() -> Path:
     return Path.home() / ".pdlt" / "runs" / "live-sessions"
 
 from pdl_taskmaster.api import outcome, providers as api_providers
-from pdl_taskmaster.api.session import POINTER, check_session_mode, prepare_worker, stored_workspace, write_pointer
+from pdl_taskmaster.api.session import (POINTER, check_session_mode, prepare_worker, stored_session_mode, stored_workspace,
+                                         write_pointer)
 from pdl_taskmaster.host.app import PDLtHost
 from pdl_taskmaster.host.console import (
     COLOR_NAMES,
@@ -245,7 +246,11 @@ def open_session(
     pointer = session_dir / POINTER
     if restore_path is None:
         restore_path = stored_workspace(session_dir, lambda line: print(f"[warn] {line}", flush=True))
-    check_session_mode(session_dir, getattr(args, "mode", None) or "protocol", restore_path is not None)
+    if getattr(args, "mode", None) is None:  # ADR-0031: a resumed session keeps its own mode, else the worker's default
+        from pdl_taskmaster.runtime.run_settings import default_mode
+
+        args.mode = stored_session_mode(session_dir, restore_path is not None) or default_mode(worker)
+    check_session_mode(session_dir, args.mode, restore_path is not None)
     host = PDLtHost(
         args.candidate_repo,
         worker=worker,
@@ -386,12 +391,12 @@ def _run_settings(args, worker):
     """The engine's run settings from CLI flags (L124 D7). The flags' run settings reach the API worker's sessions;
     a recorded replay and the codex worker run with the defaults their recordings were made with."""
     from pdl_taskmaster.providers.api_worker import ApiWorker
-    from pdl_taskmaster.runtime.run_settings import RunSettings
+    from pdl_taskmaster.runtime.run_settings import RunSettings, default_mode
 
     session = {"no_review": bool(getattr(args, "no_review", False)), "sandbox_mode": getattr(args, "sandbox", None),
-               "task_type": getattr(args, "task_type", None), "mode": getattr(args, "mode", None) or "protocol"}
+               "task_type": getattr(args, "task_type", None), "mode": getattr(args, "mode", None) or default_mode(worker)}
     if not isinstance(worker, ApiWorker):
-        return RunSettings(**session)
+        return RunSettings(agent_tools=False, **session)  # recordings were made without in-call tools
     run = _api_run_settings(args)
     return RunSettings(max_repairs=run["max_repairs"], draft_execute=run["draft_execute"],
                        agent_tools=run["agent_tools"], representation=run["representation"], tier_d1=run["tier_d1"],
@@ -427,7 +432,7 @@ def _api_run_settings(args) -> dict:
         "max_call_seconds": getattr(args, "api_call_deadline", 300.0),
         "max_repairs": getattr(args, "max_repairs", None),
         "draft_execute": bool(getattr(args, "draft_execute", False)),
-        "agent_tools": bool(getattr(args, "agent_tools", False)) or os.environ.get("PDLT_AGENT_TOOLS") == "1",
+        "agent_tools": _agent_tools(args),
         "representation": getattr(args, "representation", None) or "pdl",
         "tier_d1": bool(getattr(args, "tier_d1", True) if getattr(args, "tier_d1", None) is not None else (os.environ.get("PDLT_TIER_D1", "1") == "1")),
     }
@@ -435,6 +440,13 @@ def _api_run_settings(args) -> dict:
     if providers:
         settings["provider_pinning"] = {"order": providers, "allow_fallbacks": False}
     return settings
+
+
+def _agent_tools(args) -> bool:
+    """ADR-0031: in-call tools are on by default. --agent-tools / --no-agent-tools win; otherwise
+    $PDLT_AGENT_TOOLS ("0" turns them off)."""
+    flag = getattr(args, "agent_tools", None)
+    return bool(flag) if flag is not None else os.environ.get("PDLT_AGENT_TOOLS", "1") != "0"
 
 
 def _warn_unknown_providers(args) -> None:
@@ -998,10 +1010,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--agent-tools",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
+        default=None,
         help="ADR-0029: model calls submit replies the host checks before accepting them (BOOTSTRAP_ANALYSIS, "
         "DRAFT_PROMPT, DRAFT_PLAN, EXECUTE_UNCONFIRMED); EXECUTE_UNCONFIRMED may also run Python in the session "
-        "sandbox and read the previous attempt (default off; also PDLT_AGENT_TOOLS=1)",
+        "sandbox and read the previous attempt (default on, ADR-0031; --no-agent-tools or PDLT_AGENT_TOOLS=0 "
+        "turns them off)",
     )
     parser.add_argument(
         "--agent-tools-exclude",
@@ -1219,10 +1233,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--mode",
         choices=("protocol", "direct", "saver"),
-        default="protocol",
-        help="protocol (the default); direct: answered directly behind SECURE_GATEWAY, closing CLOSED_UNVERIFIED "
-        "(exit 5) or REFUSED (exit 0); saver: the protocol for what System 1 classifies VERIFIED_EXECUTION, direct "
-        "for the rest (L153, docs/routing.md). Switch in the REPL with /mode, which opens a new session",
+        default=None,
+        help="saver (the default, ADR-0031): the protocol for what System 1 classifies VERIFIED_EXECUTION, direct "
+        "for the rest; protocol: the staged protocol (--review for the confirmed route); direct: answered directly "
+        "behind SECURE_GATEWAY, closing CLOSED_UNVERIFIED (exit 5) or REFUSED (exit 0) (L153, docs/routing.md). "
+        "Switch in the REPL with /mode, which opens a new session",
     )
     parser.add_argument(
         "--provider-setting",
@@ -1773,7 +1788,7 @@ def main() -> int:
                     print(f"worker switched to {target}", flush=True)
                 elif cmd == "/mode":
                     if arg not in {"protocol", "direct", "saver"}:
-                        print(f"mode: {getattr(args, 'mode', None) or 'protocol'} (usage: /mode protocol|direct|saver; "
+                        print(f"mode: {getattr(args, 'mode', None)} (usage: /mode protocol|direct|saver; "
                               "a mode change opens a new session)", flush=True)
                         continue
                     args.mode = arg

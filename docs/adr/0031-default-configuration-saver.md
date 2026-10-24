@@ -1,7 +1,7 @@
 # ADR-0031: Default Configuration: Saver Mode, In-Call Tools, Low Reasoning
 
 ## Status
-**Proposed.** The user's decision in L158: "Saver with tools enabled is the clear default", and "Low reasoning should unquestionably be the default". It was made on the user's condition, measured in L159: met on Cerebras, not met on the default provider order. Acceptance, and the provider order in decision 4, are the user's.
+**Accepted** (the user, 2026-10-23: "Accept ADR-0031 with option (b): Cerebras first for saver only, the other modes keep Baseten, Crusoe"). The decision is the user's in L158: "Saver with tools enabled is the clear default", and "Low reasoning should unquestionably be the default". It was made on the user's condition, measured in L159: met on Cerebras, not met on the default provider order. Ledger L160.
 
 - Supersedes [ADR-0022](0022-default-reasoning-high-pre-execution.md)'s per-operation reasoning table, which L155 already retired in code: every gpt-oss operation runs at low.
 - Replaces L94's standard default for the REPL and the API, the unconfirmed route, with saver mode.
@@ -40,7 +40,7 @@ The one silent false positive is 16-07, run 3, on the default order. The deliver
    - The drafts and Bootstrap get their submission checks.
    - The confirmed route's EXECUTE gets no tool from ADR-0029's registry (L157).
 3. **Every operation runs at low reasoning effort** (L155, L158).
-4. **Provider order: open.**
+4. **Provider order: option (b), Cerebras first for saver only** (`providers/api_worker.py`, `SAVER_PROVIDER_PINNING`: Cerebras, then Baseten and Crusoe as fallbacks). It applies when saver runs with in-call tools; without them saver's execution is sent in JSON mode, so it keeps the default order, as the other modes do. A configured order (`--api-providers`, `OPENROUTER_PROVIDER_ORDER`) wins.
    - **Measured:** saver met the condition with Cerebras first, and missed it on the default order by one host-verified false positive.
    - **Recorded constraint:** Cerebras, anywhere in the order, closes every free-form object in a JSON schema and drops the positive witness ([api_worker.py](../../src/pdl_taskmaster/providers/api_worker.py), `_default_provider_order`; PROVIDERS.md). With tools on, saver's execution carries its schema in the submission tool, and its witnesses survived: 22 host-verified closures in L159. The confirmed route's EXECUTE has no tools and is sent in JSON mode.
    - **Options:**
@@ -62,6 +62,12 @@ flowchart TD
     C --> Z
     U --> Z
 ```
+
+6. **Which workers and tools follow these defaults** (`runtime/run_settings.default_mode`):
+   - The defaults apply to the API worker, the one that carries run settings.
+   - A recorded replay and the codex worker run in protocol mode with no in-call tools, as their recordings were made.
+   - With no mode given, a resumed session keeps the mode it ran in.
+   - The catalogue runner and the experiment runner name the mode and the tools in every harness command, so recorded baselines keep their settings: unconfirmed and confirmed in protocol mode, tools off unless asked for.
 
 ## Options considered
 - **Keep the unconfirmed route as the default (L94).** At low reasoning it shows no measurable gain over Control (L157: +0.011), with 12 of 47 graded runs a silent false positive (L155).

@@ -155,6 +155,10 @@ class PDLtHost:
         settings = self.settings or RunSettings.from_worker(self.worker, no_review=self.no_review,
                                                             sandbox_mode=self.sandbox_mode)
         settings.apply(engine)
+        if hasattr(self.worker, "mode_pinning"):  # ADR-0031: the session mode's provider order
+            from pdl_taskmaster.providers.api_worker import mode_pinning
+
+            self.worker.mode_pinning = mode_pinning(settings.mode, settings.agent_tools)
         engine.plain_reply = self._plain_reply  # a direct reply is the engine's turn too (L124 D7)
         engine.direct_reply = self._direct_reply  # direct and saver modes' answer (L153)
         engine.model_name = lambda: getattr(self.worker, "model", None)  # the result's provenance (E-1)

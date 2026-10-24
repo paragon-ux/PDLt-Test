@@ -122,7 +122,7 @@ def test_a_provider_can_be_registered_and_an_unknown_one_is_named(registry):
 # Session: the confirmed route, the unconfirmed route, resumption.
 
 def test_a_session_walks_the_confirmed_route_to_a_result_with_its_provenance(tmp_path):
-    with api.Session.open(ScriptedWorker(), tmp_path / "s-1", repo_root=ROOT) as session:
+    with api.Session.open(ScriptedWorker(), tmp_path / "s-1", repo_root=ROOT, mode="protocol") as session:
         prompt = session.send(REQUEST)
         assert (prompt.stage, prompt.review, prompt.exit_status, prompt.closed) == ("PROMPT_REVIEW", "prompt", 2, False)
         assert PROMPT.splitlines()[0] in prompt.text and prompt.provenance is None
@@ -138,7 +138,7 @@ def test_a_session_walks_the_confirmed_route_to_a_result_with_its_provenance(tmp
 
 def test_run_with_confirm_accepts_each_review_as_a_standing_confirmation(tmp_path):
     worker = ScriptedWorker(POSITIVE, VERIFIED)
-    with api.Session.open(worker, tmp_path / "s-1", repo_root=ROOT) as session:
+    with api.Session.open(worker, tmp_path / "s-1", repo_root=ROOT, mode="protocol") as session:
         result = session.run(REQUEST, confirm=True)
         recorded = list(session.host.engine.workspace.read_events())
         events = [e["kind"] for e in recorded]
@@ -149,32 +149,32 @@ def test_run_with_confirm_accepts_each_review_as_a_standing_confirmation(tmp_pat
 
 
 def test_run_without_confirm_stops_at_the_review(tmp_path):
-    with api.Session.open(ScriptedWorker(), tmp_path / "s-1", repo_root=ROOT) as session:
+    with api.Session.open(ScriptedWorker(), tmp_path / "s-1", repo_root=ROOT, mode="protocol") as session:
         result = session.run(REQUEST)
     assert (result.stage, result.exit_status) == ("PROMPT_REVIEW", outcome.EXIT_UNCONFIRMED)
 
 
 def test_no_review_takes_the_unconfirmed_route_in_one_message(tmp_path):
     worker = ScriptedWorker()
-    with api.Session.open(worker, tmp_path / "s-1", repo_root=ROOT, no_review=True) as session:
+    with api.Session.open(worker, tmp_path / "s-1", repo_root=ROOT, no_review=True, mode="protocol") as session:
         result = session.send(REQUEST)
     assert (result.stage, result.exit_status, result.closed) == ("CLOSED_SUCCESS", 0, True)
     assert worker.operations == ["BOOTSTRAP_ANALYSIS", "EXECUTE_UNCONFIRMED"]
 
 
 def test_reopening_a_session_resumes_its_workspace(tmp_path):
-    with api.Session.open(ScriptedWorker(), tmp_path / "s-1", repo_root=ROOT) as session:
+    with api.Session.open(ScriptedWorker(), tmp_path / "s-1", repo_root=ROOT, mode="protocol") as session:
         first = session.send(REQUEST)
-    with api.Session.open(ScriptedWorker(), tmp_path / "s-1", repo_root=ROOT) as resumed:
+    with api.Session.open(ScriptedWorker(), tmp_path / "s-1", repo_root=ROOT, mode="protocol") as resumed:
         assert resumed.status()["workspace_path"] == first.workspace_path
         assert resumed.status()["controller_state"]["stage"] == "PROMPT_REVIEW"
-    with api.Session.open(ScriptedWorker(), tmp_path / "s-1", repo_root=ROOT, restore=False) as fresh:
+    with api.Session.open(ScriptedWorker(), tmp_path / "s-1", repo_root=ROOT, restore=False, mode="protocol") as fresh:
         assert fresh.status()["workspace_path"] is None
 
 
 def test_a_review_command_with_no_open_review_is_not_a_request(tmp_path):
     worker = ScriptedWorker()
-    with api.Session.open(worker, tmp_path / "s-1", repo_root=ROOT) as session:
+    with api.Session.open(worker, tmp_path / "s-1", repo_root=ROOT, mode="protocol") as session:
         result = session.confirm()
     assert result.stage is None and result.exit_status == 0 and worker.operations == []
 
@@ -193,7 +193,7 @@ def test_a_caller_supplied_verifier_is_the_one_the_result_is_checked_against(tmp
 
     verifier = Recording()
     with api.Session.open(ScriptedWorker(POSITIVE, VERIFIED), tmp_path / "s-1", repo_root=ROOT,
-                          output_verifier=verifier) as session:
+                          output_verifier=verifier, mode="protocol") as session:
         assert session.host.engine.output_verifier is verifier
         result = session.run(REQUEST, confirm=True)
     assert result.stage == "CLOSED_SUCCESS" and verifier.checked >= 1
@@ -203,7 +203,7 @@ def test_a_caller_supplied_verifier_is_the_one_the_result_is_checked_against(tmp
 
 def test_closed_turns_and_the_mcp_resources_agree(tmp_path):
     sessions = tmp_path / "sessions"
-    with api.Session.open(ScriptedWorker(POSITIVE, VERIFIED), sessions / "s-1", repo_root=ROOT) as session:
+    with api.Session.open(ScriptedWorker(POSITIVE, VERIFIED), sessions / "s-1", repo_root=ROOT, mode="protocol") as session:
         result = session.run(REQUEST, confirm=True)
         session.send("Solve another stated task.")  # left open at its review: not served
     turns = api.closed_turns(sessions)

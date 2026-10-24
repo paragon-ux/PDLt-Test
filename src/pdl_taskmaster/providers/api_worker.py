@@ -345,6 +345,18 @@ DEFAULT_PROVIDER_PINNING: dict[str, Any] = {
     "allow_fallbacks": True,
 }
 
+# ADR-0031 (option (b), the user, 2026-10-23): saver mode with in-call tools sends Cerebras first. Saver met its
+# condition there (L159), and with tools its execution carries the output schema in the submission tool, so
+# Cerebras closing free-form objects does not drop the witness. Without tools, and in the other modes (the confirmed
+# route's EXECUTE is sent in JSON mode), the default order above applies.
+SAVER_PROVIDER_PINNING: dict[str, Any] = {"order": ["Cerebras", "Baseten", "Crusoe"], "allow_fallbacks": True}
+
+
+def mode_pinning(mode: str, agent_tools: bool) -> dict[str, Any] | None:
+    """The provider order a session mode sends (ApiWorker.mode_pinning); None: the default order."""
+    return dict(SAVER_PROVIDER_PINNING) if mode == "saver" and agent_tools else None
+
+
 # Model families whose request settings were recorded with their runs (L122): the provider order above and
 # JSON mode at EXECUTE (IMPL-0001's whitespace stall; IMPL-0003 keeps gpt-oss's EXECUTE on json). Any other
 # model gets no provider order unless one is configured, and its output format from OpenRouter's metadata.
@@ -623,7 +635,7 @@ class ApiWorker:
         max_output_tokens: int | None = 16384,
         max_repairs: int | None = None,
         draft_execute: bool = False,
-        agent_tools: bool = False,
+        agent_tools: bool = True,
         representation: str = "pdl",
         tier_d1: bool | None = None,
         capture_tokens: bool = True,
@@ -651,7 +663,7 @@ class ApiWorker:
         self.max_output_tokens = int(max_output_tokens) if max_output_tokens else None
         self.max_repairs = max_repairs  # run setting read by the host (0 = stop at the first failure)
         self.draft_execute = draft_execute  # run setting read by the host (A/B option)
-        self.agent_tools = agent_tools  # ADR-0029: run the in-call tool loop for requests that carry tools
+        self.agent_tools = agent_tools  # ADR-0029: run the in-call tool loop for requests that carry tools (ADR-0031: on)
         self.representation = representation  # run setting read by the host (representation.py, L97)
         # run setting read by the host (Tier D1): an explicit value wins, $PDLT_TIER_D1 (default on) is only the default
         self.tier_d1 = (os.environ.get("PDLT_TIER_D1", "1") == "1") if tier_d1 is None else bool(tier_d1)
@@ -673,6 +685,8 @@ class ApiWorker:
         self._model_entries: dict[str, dict[str, Any]] = {}  # OpenRouter's metadata per model, once read
         # None: each model's own order (pinning_for); a configured order applies to every model.
         self._configured_pinning = provider_pinning if provider_pinning is not None else _env_pinning()
+        # The session mode's order (mode_pinning), set by the host when a session opens; None: the default order.
+        self.mode_pinning: dict[str, Any] | None = None
         self.safety_settings = list(safety_settings) if safety_settings is not None else []
         self.on_progress = on_progress
         self.progress_path = Path(progress_path) if progress_path else None
@@ -763,11 +777,14 @@ class ApiWorker:
         self._configured_pinning = value
 
     def pinning_for(self, model: str) -> dict[str, Any]:
-        """A configured order for every model; otherwise the order recorded with the model's family; otherwise
-        none, so OpenRouter routes by its own defaults (L122)."""
+        """A configured order for every model; otherwise, for a model family with recorded settings, the session
+        mode's order (ADR-0031) or the recorded default; otherwise none, so OpenRouter routes by its own defaults
+        (L122)."""
         if self._configured_pinning is not None:
             return dict(self._configured_pinning)
-        return dict(DEFAULT_PROVIDER_PINNING) if _recorded_family(model) else {}
+        if not _recorded_family(model):
+            return {}
+        return dict(self.mode_pinning or DEFAULT_PROVIDER_PINNING)
 
     def _model_entry(self, model: str) -> dict[str, Any] | None:
         """OpenRouter's metadata for ``model``: read with the capability check, or here when a request is built

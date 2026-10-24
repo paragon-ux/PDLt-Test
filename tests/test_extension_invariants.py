@@ -122,7 +122,7 @@ def test_a_failing_checker_publishes_nothing(tmp_path, checker, message):
         verifiers.register_verifier(verifier("faulty", checker))
         api.register_task_type(witness_type("FAULTY_CHECKED", "faulty"))
         worker = ScriptedWorker(POSITIVE_SAMPLE, ScriptedSys1())
-        with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, task_type="FAULTY_CHECKED") as session:
+        with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, task_type="FAULTY_CHECKED", mode="protocol") as session:
             session.send("Carry out the stated task.")
             session.confirm()
             with pytest.raises(ExtensionFailure, match=message):
@@ -183,8 +183,8 @@ def test_a_turn_of_an_unregistered_task_type_is_never_resumed_under_another(tmp_
     with scoped():
         api.register_task_type(no_witness_type())
         worker = ScriptedWorker(TEXT, ScriptedSys1())
-        with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, task_type="LABELLED_LIST") as session:
+        with api.Session.open(worker, tmp_path / "s", repo_root=ROOT, task_type="LABELLED_LIST", mode="protocol") as session:
             assert session.send("Carry out the stated task.").stage == "PROMPT_REVIEW"
-    with api.Session.open(ScriptedWorker(TEXT, ScriptedSys1()), tmp_path / "s", repo_root=ROOT) as resumed:
+    with api.Session.open(ScriptedWorker(TEXT, ScriptedSys1()), tmp_path / "s", repo_root=ROOT, mode="protocol") as resumed:
         assert "'LABELLED_LIST', which is not registered here" in resumed.restore_notice
         assert resumed.status()["workspace_path"] is None  # fresh protocol state, nothing resumed

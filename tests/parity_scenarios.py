@@ -152,7 +152,7 @@ def run(name: str, session_dir: Path) -> dict:
     sys1 = Sys1(problem_class, confidence) if problem_class else None
     worker = Worker(execute, sys1, **attributes)
     steps = []
-    with Session.open(worker, session_dir, repo_root=ROOT, no_review=not review) as session:
+    with Session.open(worker, session_dir, repo_root=ROOT, no_review=not review, mode="protocol") as session:
         for message in messages:
             result = session.run(REQUEST, confirm=True) if message == "run" else session.send(REQUEST)
             steps.append({"stage": result.stage, "exit_status": result.exit_status, "closed": result.closed,

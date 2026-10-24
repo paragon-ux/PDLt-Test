@@ -44,13 +44,20 @@ def prepare_worker(worker: Any, session_dir: Path, workdir: Path | None = None) 
 MODE_FILE = "mode.json"
 
 
+def stored_session_mode(session_dir: Path, restoring: bool) -> str | None:
+    """The mode a session already runs in: its mode file, or protocol for a session with history and none (it
+    predates the mode file); None for a new session."""
+    path = Path(session_dir) / MODE_FILE
+    if path.is_file():
+        return json.loads(path.read_text(encoding="utf-8")).get("mode")
+    return "protocol" if restoring else None
+
+
 def check_session_mode(session_dir: Path, mode: str, restoring: bool) -> None:
     """A session runs in one mode for its whole life (L153): a mode change opens a new session, so no turn history
-    crosses modes. A session with history and no mode file ran in protocol mode."""
+    crosses modes."""
     path = Path(session_dir) / MODE_FILE
-    stored = json.loads(path.read_text(encoding="utf-8")).get("mode") if path.is_file() else None
-    if stored is None and restoring:
-        stored = "protocol"
+    stored = stored_session_mode(session_dir, restoring)
     if stored is not None and stored != mode:
         raise ValueError(f"session {Path(session_dir).name} runs in {stored} mode; a mode change opens a new session")
     if mode != "protocol" and not path.is_file():
@@ -105,7 +112,7 @@ class Session:
     def open(cls, worker: Any, session_dir: str | Path, *, repo_root: str | Path | None = None,
              sandbox_mode: str | None = None, no_review: bool = False, restore: bool = True,
              output_verifier: Any = None, run_id: str = "api", task_type: str | None = None,
-             settings: Any = None, sys1: Any = None, mode: str = "protocol") -> "Session":
+             settings: Any = None, sys1: Any = None, mode: str | None = None) -> "Session":
         """Open the session in ``session_dir``, resuming its workspace when ``restore`` and it has one.
 
         ``no_review`` runs the standard route (no prompt or plan review). ``output_verifier`` replaces the host's
@@ -114,15 +121,19 @@ class Session:
         type for every request (extensions/task_types.py); None lets System 1 classify each one. ``settings`` is a
         RunSettings (runtime/run_settings.py) carrying these and the other run settings; without it they are read
         from the arguments and the worker's attributes. ``sys1`` is a System 1 client (api.create_system1); None:
-        the worker's."""
+        the worker's. ``mode`` is one of run_settings.MODES; None: a resumed session's own, else run_settings.default_mode
+        (saver for the API worker, ADR-0031)."""
         from pdl_taskmaster.extensions import task_types
         from pdl_taskmaster.host.app import PDLtHost
-        from pdl_taskmaster.runtime.run_settings import RunSettings
+        from pdl_taskmaster.runtime.run_settings import RunSettings, default_mode
 
         if settings is None:
+            if mode is None:  # ADR-0031: a resumed session keeps its own mode; a new one runs in the worker's default
+                folder = Path(session_dir).resolve()
+                mode = stored_session_mode(folder, restore and stored_workspace(folder) is not None) or default_mode(worker)
             settings = RunSettings.from_worker(worker, no_review=no_review, sandbox_mode=sandbox_mode,
                                                task_type=task_type, mode=mode)
-        elif (no_review, sandbox_mode, task_type, mode) != (False, None, None, "protocol"):
+        elif (no_review, sandbox_mode, task_type, mode) != (False, None, None, None):
             raise ValueError("pass no_review, sandbox_mode, task_type and mode in settings when settings is given")
         no_review, task_type = settings.no_review, settings.task_type
         if task_type is not None:

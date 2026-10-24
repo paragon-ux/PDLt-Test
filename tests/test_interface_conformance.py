@@ -87,7 +87,7 @@ class Typed(io.StringIO):
 def run_session(name: str, sessions: Path, sid: str, lines: list[str]) -> dict:
     review = SCENARIOS[name][1]
     worker = api.create_worker("conformance", scenario=name)
-    with api.Session.open(worker, sessions / sid, repo_root=ROOT, no_review=not review) as session:
+    with api.Session.open(worker, sessions / sid, repo_root=ROOT, no_review=not review, mode="protocol") as session:
         for line in lines:
             result = session.send(line)
     return {"exit_status": result.exit_status, "text": result.text}
@@ -108,7 +108,7 @@ def run_repl(name: str, sessions: Path, sid: str, lines: list[str], monkeypatch,
 def outcome(sessions: Path, sid: str) -> dict:
     """What the session folder holds, read back through the library: the stage, and the provenance of its turn
     closed with a result."""
-    with api.Session.open(ScriptedWorker({}), sessions / sid, repo_root=ROOT) as session:
+    with api.Session.open(ScriptedWorker({}), sessions / sid, repo_root=ROOT, mode="protocol") as session:
         state = session.status().get("controller_state")
     turns = [t for t in api.closed_turns(sessions) if t.session == sid]
     record = turns[-1].provenance() if turns else None

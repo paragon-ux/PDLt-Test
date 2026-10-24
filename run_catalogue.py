@@ -377,8 +377,10 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
             setting_args += [flag, str(settings[key])]
     if settings.get("draft_execute"):
         setting_args.append("--draft-execute")
+    if settings.get("route") != "control":
+        # Always explicit: the harness's own default is on (ADR-0031), so leaving the flag out does not mean off.
+        setting_args.append("--agent-tools" if settings.get("agent_tools") else "--no-agent-tools")
     if settings.get("agent_tools"):
-        setting_args.append("--agent-tools")
         if settings.get("agent_tools_exclude"):
             setting_args += ["--agent-tools-exclude", ",".join(settings["agent_tools_exclude"])]
     if settings.get("representation", "pdl") != "pdl":
@@ -402,9 +404,10 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
         # saver's protocol branch is the unconfirmed route (L153); direct mode answers the request alone
         setting_args += ["--mode", settings["route"], "--no-review"]
     elif settings.get("route") == "unconfirmed":
-        setting_args.append("--no-review")
+        setting_args += ["--mode", "protocol", "--no-review"]  # explicit: the harness's default mode is saver (ADR-0031)
     elif settings.get("route") == "confirmed":
-        setting_args.append("--review")  # the REPL's default is no review (L94), so the confirmed route asks for it
+        # the REPL's default is no review (L94), so the confirmed route asks for it
+        setting_args += ["--mode", "protocol", "--review"]
     if settings.get("theme"):
         setting_args += ["--theme", settings["theme"]]
     if settings.get("user_color"):
@@ -1042,7 +1045,9 @@ def main():
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
     parser.add_argument("--agent-tools", action="store_true",
                         help="ADR-0029: checked submissions on BOOTSTRAP_ANALYSIS, DRAFT_PROMPT, DRAFT_PLAN and "
-                             "EXECUTE_UNCONFIRMED, and in-call tools on EXECUTE_UNCONFIRMED; default off")
+                             "EXECUTE_UNCONFIRMED, and in-call tools on EXECUTE_UNCONFIRMED; default off here, the "
+                             "recorded baselines' setting (the harness's own default is on, ADR-0031); always passed "
+                             "explicitly")
     parser.add_argument("--agent-tools-exclude", default=None, metavar="TOOL[,TOOL]",
                         help="with --agent-tools, withhold these tools (an ablation, L145); passed to the harness")
     parser.add_argument("--ablate-unconfirmed", default=None, metavar="PART[,PART]",

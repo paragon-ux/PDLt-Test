@@ -15,13 +15,20 @@ from pdl_taskmaster.runtime.representation import REPRESENTATIONS
 # L153: protocol (the default); direct, answered behind SECURE_GATEWAY; saver, the protocol only for what System 1
 # classifies VERIFIED_EXECUTION. A mode is chosen when a session opens: changing it opens a new session.
 MODES = ("protocol", "direct", "saver")
+DEFAULT_MODE = "saver"  # ADR-0031 (L158, L159): saver is the default; protocol, direct and saver are chosen explicitly
+
+
+def default_mode(worker: Any) -> str:
+    """ADR-0031: saver for a worker that carries run settings (the API worker); a worker that carries none (a recorded
+    replay, the codex worker) runs in protocol mode, as its recordings were made."""
+    return DEFAULT_MODE if hasattr(worker, "agent_tools") else "protocol"
 
 
 @dataclass(frozen=True)
 class RunSettings:
     max_repairs: int | None = None  # None: the routed tier's repairs; 0: stop at the first failed EXECUTE
     draft_execute: bool = False  # DRAFT_EXECUTE brief before EXECUTE (ADR-0013 P6)
-    agent_tools: bool = False  # in-call tools and checked submissions (ADR-0029)
+    agent_tools: bool = True  # in-call tools and checked submissions (ADR-0029), on by default (ADR-0031)
     agent_tools_exclude: tuple[str, ...] = ()  # tools withheld from agent_tools, for ablations (L145)
     representation: str = "pdl"  # the confirmed route's artifacts: "pdl", or natural language "nl" (L97)
     tier_d1: bool | None = None  # feed back the model's own test failures in standard mode; None: the engine's default
@@ -30,7 +37,7 @@ class RunSettings:
     task_type: str | None = None  # a registered task type pinned for every request; None: System 1 classifies
     withhold_execution_context: bool = False  # L148 A/B: earlier stages without EXECUTE's instructions
     ablate_unconfirmed: tuple[str, ...] = ()  # L149 ablation: parts of what EXECUTE_UNCONFIRMED receives
-    mode: str = "protocol"  # L153: one of MODES
+    mode: str = DEFAULT_MODE  # L153: one of MODES
 
     def __post_init__(self) -> None:
         problems = []
@@ -67,6 +74,7 @@ class RunSettings:
             "agent_tools": bool(getattr(worker, "agent_tools", False)),
             "representation": getattr(worker, "representation", None) or "pdl",
             "tier_d1": (bool(worker.tier_d1) if getattr(worker, "tier_d1", None) is not None else None),
+            "mode": default_mode(worker),
         }
         return cls(**{**carried, **settings})
 
