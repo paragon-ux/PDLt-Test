@@ -34,6 +34,8 @@ Historical reanalysis is never presented as a new ablation. A live result is lab
 
 ## Study configurations and schedules
 
+The paths below identify the historical snapshots. L169 untracks the local `experiments/studies/` artifacts; they remain available at commit `aa4e92d9` (for example, `git show aa4e92d9:experiments/studies/L145-A.json`). The pre-registration and recorded schedule hashes are unchanged.
+
 | Study | Config | Schedule SHA-256 | Units | Estimate |
 |---|---|---|---|---|
 | L: L139 live check | `experiments/studies/L145-L.json` | `6849b3af…654088d` | 6 | $0.05 |
