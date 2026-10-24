@@ -46,6 +46,13 @@ Provider fact: Cerebras rejects `tools` together with `response_format`, so a to
 ### D. Expose the tools through an external MCP server only
 **Pros:** standard protocol. **Cons:** the worker's own model calls would still commit blind. An MCP server over the same registry stays possible (TOOL_EXTRACTION_PLAN.md step 6).
 
+## Amendment 1: the confirmed route's EXECUTE (2026-10-24, ledger L163)
+The user (2026-10-24): 'give its EXECUTE in-call tools (an ADR-0029 amendment)', for the confirmed route (L158 (4), L162). Until now, decision 1's registry gave work tools to EXECUTE_UNCONFIRMED only. With tools on, the confirmed route's EXECUTE had a submission check on its drafts and none on its own call (none in 108 of 108 recorded EXECUTE requests, L157).
+- **Registry:** EXECUTE gets the same tools as EXECUTE_UNCONFIRMED. These are `run_python`, `read_attempt` (only on a repair, showing the previous EXECUTE attempt as the host ran it, with its correction) and its own submission, `submit_execute`.
+- **Same checks:** the submission is checked as decision 2 says, by EXECUTE's own wire model (the operation bridge's `parse_execution`), then the deliverable's programs as the host will run them and the host's witness rules (`agent_tools.make_validator`, `parse=`). The host verifies the accepted reply after the call, as it does today.
+- **Unchanged:** the confirmed prompt, the confirmed plan and the user's two reviews, decisions 3 to 9, and the prompt hash (replay). MCP (decision 10) still serves EXECUTE_UNCONFIRMED's tools.
+- **It changes what the provider receives**, for the confirmed route's EXECUTE with tools on: the tools, the capability note, and no response format. The measurement in L163 is its live check.
+
 ## Consequences
 - **Easier:** a failed program, an exhausted budget or a missing WITNESS line is found inside the call, before an attempt is counted.
 - **Harder:** a model call is several provider rounds; latency and token use grow with tool use (01-01 full runs: about $0.012 a run).

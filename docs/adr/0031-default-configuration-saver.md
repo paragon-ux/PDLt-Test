@@ -38,11 +38,11 @@ The one silent false positive is 16-07, run 3, on the default order. The deliver
 2. **In-call tools are on by default** in every mode, and `--no-agent-tools` turns them off.
    - They act on saver's protocol branch and on the unconfirmed route's execution: `run_python` and the submission check.
    - The drafts and Bootstrap get their submission checks.
-   - The confirmed route's EXECUTE gets no tool from ADR-0029's registry (L157).
+   - The confirmed route's EXECUTE gets `run_python`, `read_attempt` and its submission check (ADR-0029 amendment 1, L163). Until then, it got none (L157).
 3. **Every operation runs at low reasoning effort** (L155, L158).
 4. **Provider order: option (b), Cerebras first for saver only** (`providers/api_worker.py`, `SAVER_PROVIDER_PINNING`: Cerebras, then Baseten and Crusoe as fallbacks). It applies when saver runs with in-call tools; without them saver's execution is sent in JSON mode, so it keeps the default order, as the other modes do. A configured order (`--api-providers`, `OPENROUTER_PROVIDER_ORDER`) wins.
    - **Measured:** saver met the condition with Cerebras first, and missed it on the default order by one host-verified false positive.
-   - **Recorded constraint:** Cerebras, anywhere in the order, closes every free-form object in a JSON schema and drops the positive witness ([api_worker.py](../../src/pdl_taskmaster/providers/api_worker.py), `_default_provider_order`; PROVIDERS.md). With tools on, saver's execution carries its schema in the submission tool, and its witnesses survived: 22 host-verified closures in L159. The confirmed route's EXECUTE has no tools and is sent in JSON mode.
+   - **Recorded constraint:** Cerebras, anywhere in the order, closes every free-form object in a JSON schema and drops the positive witness ([api_worker.py](../../src/pdl_taskmaster/providers/api_worker.py), `_default_provider_order`; PROVIDERS.md). With tools on, saver's execution carries its schema in the submission tool, and its witnesses survived: 22 host-verified closures in L159. When this was decided, the confirmed route's EXECUTE had no tools and was sent in JSON mode. Since L163, with tools on, it also carries its schema in the submission tool; Cerebras for the confirmed route is unmeasured.
    - **Options:**
      - (a) Cerebras first for every call. This breaks the confirmed route's witness until its EXECUTE gets tools.
      - (b) Cerebras first for saver only, as a per-mode order.

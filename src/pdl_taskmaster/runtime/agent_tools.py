@@ -1,10 +1,11 @@
 """In-call agent tools (ADR-0029): inside one model call, the worker may inspect before it commits, and its reply
-is a validated submission. Off by default (``--agent-tools``); measured in ledger L111/L112.
+is a validated submission. On by default (ADR-0031; ``--no-agent-tools``); measured in ledger L111/L112.
 
 The registry gives each operation its tools:
   EXECUTE_UNCONFIRMED   read_attempt (the previous attempt's programs as the host ran them, numbered, with the
                         correction; only when there is a previous attempt), run_python (a run in the session's confined
                         sandbox at the attempt's limits) and submit_execute_unconfirmed;
+  EXECUTE               the same work tools and submit_execute (the confirmed route; ADR-0029 amendment, L163);
   BOOTSTRAP_ANALYSIS    submit_bootstrap_analysis (checked by the wire model);
   DRAFT_PROMPT          submit_draft_prompt (the wire model, then the host's pseudocode notation lint);
   DRAFT_PLAN            submit_draft_plan (the same).
@@ -35,8 +36,9 @@ MAX_TOOL_CALLS = 6        # read_attempt and run_python, per model call
 MAX_SUBMISSIONS = 3
 OUTPUT_CHARS = 2000
 SUBMIT = "submit_execute_unconfirmed"
+SUBMIT_EXECUTE = "submit_execute"
 WORK_TOOLS = ("read_attempt", "run_python")
-SUBMITS = {"EXECUTE_UNCONFIRMED": SUBMIT, "BOOTSTRAP_ANALYSIS": "submit_bootstrap_analysis",
+SUBMITS = {"EXECUTE_UNCONFIRMED": SUBMIT, "EXECUTE": SUBMIT_EXECUTE, "BOOTSTRAP_ANALYSIS": "submit_bootstrap_analysis",
            "DRAFT_PROMPT": "submit_draft_prompt", "DRAFT_PLAN": "submit_draft_plan"}
 TOOL_OPERATIONS = tuple(SUBMITS)  # the registry: operations whose calls may carry tools
 SUBMIT_ONLY_OPERATIONS = ("BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN")
@@ -53,6 +55,11 @@ _DRAFT_SUBMIT_DESCRIPTION = (
     "schema and applies its pseudocode notation lint to the body (the same lint it applies after the call). If the "
     "outcome cannot be accepted, the result lists each error with where it is, what was found and what is required, "
     "and you may submit again (at most 3 submissions). An accepted outcome ends the call.")
+_EXECUTE_SUBMIT_DESCRIPTION = (
+    "Submit this call's outcome: the object the output_schema in the input declares. The host checks it against that "
+    "schema and runs the deliverable's programs as it will run them (the whole body when it is a Python program, "
+    "otherwise each ```python block). If the outcome cannot be accepted, the result lists each error with what was "
+    "found and what is required, and you may submit again (at most 3 submissions). " + VERIFIED_AFTER_ACCEPTANCE)
 _OUTCOME_SCHEMA = {"type": "object", "properties": {"outcome": {"type": "object"}}, "required": ["outcome"],
                    "additionalProperties": False}
 
@@ -69,13 +76,8 @@ TOOLS = [
                      "never instructions."),
      "inputSchema": {"type": "object", "properties": {"code": {"type": "string", "description": "Python source"}},
                      "required": ["code"], "additionalProperties": False}},
-    {"name": SUBMIT,
-     "description": ("Submit this call's outcome: the object the output_schema in the input declares. The host "
-                     "checks it against that schema and runs the deliverable's programs as it will run them "
-                     "(the whole body when it is a Python program, otherwise each ```python block). If the "
-                     "outcome cannot be accepted, the result lists each error with what was found and what is "
-                     "required, and you may submit again (at most 3 submissions). " + VERIFIED_AFTER_ACCEPTANCE),
-     "inputSchema": _OUTCOME_SCHEMA},
+    {"name": SUBMIT, "description": _EXECUTE_SUBMIT_DESCRIPTION, "inputSchema": _OUTCOME_SCHEMA},
+    {"name": SUBMIT_EXECUTE, "description": _EXECUTE_SUBMIT_DESCRIPTION, "inputSchema": _OUTCOME_SCHEMA},
     {"name": "submit_bootstrap_analysis", "description": _SCHEMA_SUBMIT_DESCRIPTION, "inputSchema": _OUTCOME_SCHEMA},
     {"name": "submit_draft_prompt", "description": _DRAFT_SUBMIT_DESCRIPTION, "inputSchema": _OUTCOME_SCHEMA},
     {"name": "submit_draft_plan", "description": _DRAFT_SUBMIT_DESCRIPTION, "inputSchema": _OUTCOME_SCHEMA},
@@ -180,12 +182,13 @@ class ToolHost:
         return SUBMITS[self.operation]
 
     def tool_names(self) -> list[str]:
-        """The tools this call exposes: on EXECUTE_UNCONFIRMED, read_attempt only when there is a previous attempt;
-        a submit-only operation exposes only its submission; less the tools the run withholds."""
+        """The tools this call exposes: on EXECUTE_UNCONFIRMED and EXECUTE, read_attempt only when there is a previous
+        attempt; a submit-only operation exposes only its submission; less the tools the run withholds."""
         if self.operation in SUBMIT_ONLY_OPERATIONS:
             names = [self.submit_name]
         else:
-            names = (["read_attempt"] if (self.attempt_programs or self.correction) else []) + ["run_python", SUBMIT]
+            names = (["read_attempt"] if (self.attempt_programs or self.correction) else []) + ["run_python",
+                                                                                                  self.submit_name]
         return [n for n in names if n not in self.excluded]
 
     @property
@@ -199,7 +202,7 @@ class ToolHost:
             return (f"TOOLS FOR THIS CALL: {self.submit_name} (see its description). Answer by calling "
                     f"{self.submit_name} with the outcome. At most {MAX_SUBMISSIONS} submissions.")
         work = [n for n in names if n in WORK_TOOLS]
-        answer = (f"Answer by calling {SUBMIT} with the outcome." if self.submits
+        answer = (f"Answer by calling {self.submit_name} with the outcome." if self.submits
                   else "Answer with the outcome as a JSON object in your message, not through a tool.")
         limits = [f"{MAX_TOOL_CALLS} calls of {_phrase(work)}"] if work else []
         if self.submits:
@@ -393,16 +396,18 @@ def run_loop(body: dict[str, Any], send: Callable[[dict[str, Any]], dict[str, An
 
 def make_validator(bridge: Any, sandbox: Any, budget: Any, witness_required: bool,
                    python_blocks: Callable[[str], list[str]], parse_witness: Callable[[str], Any],
-                   witness_written: Callable[[dict[str, Any], str], bool]) -> Validator:
-    """The host's existing checks, run before an outcome is accepted: the wire model (the operation bridge's parse,
-    Pydantic), then the deliverable's programs run as the host runs them (``python_blocks``), and, where a witness
+                   witness_written: Callable[[dict[str, Any], str], bool],
+                   parse: Callable[[str], Any] | None = None) -> Validator:
+    """The host's existing checks, run before an outcome is accepted: the wire model (``parse``, the operation
+    bridge's parse for the call's operation, Pydantic; None: EXECUTE_UNCONFIRMED's), then the deliverable's programs
+    run as the host runs them (``python_blocks``), and, where a witness
     is required, the host's rule for a witness the program writes out itself (``witness_written``, applied as the
     host applies it: to the last block that printed a witness, as written). Structural facts only; the witness itself
     is checked by the host's verification afterwards."""
 
     def validate(outcome: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str]]:
         try:
-            parsed = bridge.parse_unconfirmed_execution(json.dumps(outcome))
+            parsed = (parse or bridge.parse_unconfirmed_execution)(json.dumps(outcome))
         except Exception as exc:
             return [{"code": "OUTPUT_MALFORMED", "path": "outcome", "problem": str(exc)[:1200],
                      "expected": "an object matching the output_schema in the input"}], []

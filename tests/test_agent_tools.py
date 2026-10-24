@@ -193,12 +193,13 @@ def test_the_worker_with_tools_on_runs_the_loop(tmp_path, monkeypatch):
 # ---- the loop
 
 def test_tools_are_mcp_shaped_and_none_returns_a_verdict():
-    assert [t["name"] for t in TOOLS] == ["read_attempt", "run_python", SUBMIT, "submit_bootstrap_analysis",
-                                         "submit_draft_prompt", "submit_draft_plan"]
+    assert [t["name"] for t in TOOLS] == ["read_attempt", "run_python", SUBMIT, "submit_execute",
+                                         "submit_bootstrap_analysis", "submit_draft_prompt", "submit_draft_plan"]
     assert all(set(t) == {"name", "description", "inputSchema"} for t in TOOLS)
     text = json.dumps(TOOLS).lower().replace("verifies", "")
     assert "witness" not in text and "verif" not in text
-    assert agent_tools.TOOL_OPERATIONS == ("EXECUTE_UNCONFIRMED", "BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN")
+    assert agent_tools.TOOL_OPERATIONS == ("EXECUTE_UNCONFIRMED", "EXECUTE", "BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT",
+                                           "DRAFT_PLAN")
 
 
 def test_budgets_hold(tmp_path):
@@ -282,9 +283,10 @@ def test_draft_submissions_are_checked_by_the_lint(tmp_path):
         if req.operation == "DRAFT_PLAN":
             seen["plan"] = req.tools.tool_names()
             return json.dumps(req.tools.submit(json.dumps({"outcome": {"neutral_plan_body": PLAN}}))[1])
-        if req.operation == "EXECUTE":
-            assert req.tools is None  # the confirmed route's EXECUTE has no loop
-            return json.dumps({"kind": "RESULT", "body": "42", "result_ir": _ir()})
+        if req.operation == "EXECUTE":  # L163: the confirmed route's EXECUTE has the loop too
+            seen["execute"] = req.tools.tool_names()
+            return json.dumps(req.tools.submit(json.dumps({"outcome": {"kind": "RESULT", "body": "42",
+                                                                       "result_ir": _ir()}}))[1])
         raise AssertionError(req.operation)
 
     engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=Sys1())
@@ -292,6 +294,7 @@ def test_draft_submissions_are_checked_by_the_lint(tmp_path):
     engine.handle_user_message("$confirm-with-pseudocode Solve the stated task.")
     engine.handle_user_message("/confirm")
     engine.handle_user_message("/confirm")
-    assert seen == {"prompt": ["submit_draft_prompt"], "codes": ["PDL_LINT"], "plan": ["submit_draft_plan"]}
+    assert seen == {"prompt": ["submit_draft_prompt"], "codes": ["PDL_LINT"], "plan": ["submit_draft_plan"],
+                    "execute": ["run_python", "submit_execute"]}
     kinds = [e["kind"] for e in engine.workspace.read_events()]
     assert "PROMPT_LINT_RETRY" not in kinds  # the lint found nothing after the call: it was met inside it

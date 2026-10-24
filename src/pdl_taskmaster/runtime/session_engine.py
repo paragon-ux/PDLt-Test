@@ -495,6 +495,8 @@ class SessionEngine:
         self._ablate_unconfirmed: frozenset[str] = frozenset()  # L149 ablation of what EXECUTE_UNCONFIRMED receives
         self._last_unconfirmed_body: str | None = None
         self._unconfirmed_attempts = 0
+        self._last_execute_body: str | None = None  # the confirmed route's previous EXECUTE attempt (read_attempt)
+        self._execute_attempts = 0
         self.representation = PDL  # the confirmed route's artifacts: PDL, or prose in the L97 pilot
         # Tier D1 (feed back the model's own test failures in standard mode): off for a bare engine. The host sets it
         # from the worker (App), whose default is on ($PDLT_TIER_D1, --no-tier-d1); the env var is read only there.
@@ -2042,6 +2044,8 @@ class SessionEngine:
         repairs_allowed = self._execution_budget.repairs if self.max_repairs is None else self.max_repairs
         repairs_used = 0
         unmeasured_repairs = 0  # repairs after an attempt that ran no program (at most one)
+        self._last_execute_body = None
+        self._execute_attempts = 0
         outcome, errors, final_body, ran_program = self._execute_attempt(
             execute_context, traces, prompt_body, plan_body, requirements, result_ir_mode,
         )
@@ -2354,11 +2358,15 @@ class SessionEngine:
         publish, ran_program). Exactly one model call: a response cut off at the
         output-token cap or one that does not parse is a counted failed attempt
         with a registry finding, never a hidden retry (each attempt cost up to two
-        calls before, so a repair could cost four)."""
+        calls before, so a repair could cost four). With agent tools on, the call carries EXECUTE's in-call tools
+        (ADR-0029 amendment, L163)."""
+        self._execute_attempts += 1
         try:
             modes = _execution_modes(execute_context, result_ir_mode)
-            outcome = self.bridge.parse_execution(self._call("EXECUTE", execute_context, traces,
-                                                             operator_correction=correction, modes=modes))
+            outcome = self.bridge.parse_execution(self._call(
+                "EXECUTE", execute_context, traces, operator_correction=correction, modes=modes,
+                tools=(lambda: self._agent_tool_host(execute_context, correction, operation="EXECUTE"))
+                if self.agent_tools else None))
         except Exception as exc:
             limit = getattr(exc, "output_limit", None)
             if limit is None and not _is_wire_failure(exc):
@@ -2380,6 +2388,7 @@ class SessionEngine:
             return _FailedExecution(), [finding], "", True
         if outcome.kind != "RESULT":
             return outcome, [], outcome.body, False
+        self._last_execute_body = outcome.body
         errors, final_body = self._verify_result(outcome, prompt_body, plan_body, requirements, result_ir_mode)
         return outcome, errors, final_body, getattr(self, "_last_programs_run", 0) > 0
 
@@ -2597,20 +2606,24 @@ class SessionEngine:
         )
         return outcome, errors, final_body, getattr(self, "_last_programs_run", 0) > 0
 
-    def _agent_tool_host(self, execute_context: dict[str, Any], correction: str | None) -> Any:
-        """ADR-0029: the in-call tools of one EXECUTE_UNCONFIRMED attempt. They run in the session sandbox at the
-        attempt's budget; the submission is checked by this engine's own checks; every call is an event."""
+    def _agent_tool_host(self, execute_context: dict[str, Any], correction: str | None,
+                         operation: str = "EXECUTE_UNCONFIRMED") -> Any:
+        """ADR-0029: the in-call tools of one EXECUTE_UNCONFIRMED or EXECUTE attempt. They run in the session sandbox
+        at the attempt's budget; the submission is checked by this engine's own checks; every call is an event."""
         from pdl_taskmaster.runtime import agent_tools
 
         budget = self._execution_budget
         witness_required = "WITNESS" in (execute_context.get("REQUIRED_TASK_INPUTS") or {})
-        previous = self._last_unconfirmed_body if correction else None
+        confirmed = operation == "EXECUTE"
+        previous = (self._last_execute_body if confirmed else self._last_unconfirmed_body) if correction else None
         return agent_tools.ToolHost(
             self.sandbox, budget.step_limit, budget.timeout_seconds, budget.memory_limit_bytes,
             _python_blocks(previous) if previous else [], correction or "",
             agent_tools.make_validator(self.bridge, self.sandbox, budget, witness_required, _python_blocks,
-                                       _parse_sandbox_witness, _witness_written_in_program),
-            attempt=self._unconfirmed_attempts, on_record=self._record_tool_call, excluded=self.agent_tools_exclude,
+                                       _parse_sandbox_witness, _witness_written_in_program,
+                                       parse=self.bridge.parse_execution if confirmed else None),
+            attempt=self._execute_attempts if confirmed else self._unconfirmed_attempts,
+            on_record=self._record_tool_call, operation=operation, excluded=self.agent_tools_exclude,
         )
 
     def _submit_tool_host(self, operation: str) -> Any:
