@@ -18,7 +18,7 @@ The reviewer statically inspected the relevant implementation paths, repository 
 | [pr5-review-triage.md](pr5-review-triage.md) | One canonical row per production finding F1-F10, including its final disposition and evidence. |
 | [pr5-review-triage-revision-ledger.md](pr5-review-triage-revision-ledger.md) | Revisions TR-01 through TR-08 to the triage document only. |
 | [routing-proposal-evaluation-revision-ledger.md](routing-proposal-evaluation-revision-ledger.md) | Revisions RP-01 through RP-06 to the routing assessment only. |
-| [pr5-post-mortem-revision-ledger.md](pr5-post-mortem-revision-ledger.md) | Revisions PMR-01 through PMR-07 to the post-mortem only. |
+| [pr5-post-mortem-revision-ledger.md](pr5-post-mortem-revision-ledger.md) | Revisions PMR-01 through PMR-08 to the post-mortem only. |
 | [pr5-implementation-plan-revision-ledger.md](pr5-implementation-plan-revision-ledger.md) | Material revisions to this implementation plan; no recursive ledger for ledger documents. |
 | This plan, steps S0-S14 | Ordered execution and acceptance checklist. Update step status and link results; do not duplicate F-ID status ownership. |
 
@@ -30,25 +30,27 @@ At plan creation all production findings remain unfixed. PM4 already has parent-
 
 | Step | Work | Depends on | Current status |
 |---|---|---|---|
-| S0 | Establish scope, evidence and environment | None | done; scope/links and eight-test preflight recorded in L172 |
-| S1 | Resolve dependent settings consistently (F6) | S0 | implemented; parity/default tests passed; integrated verification pending |
-| S2 | Make session switching transactional (F1) | S1 | implemented; resume/REPL tests passed; integrated verification pending |
-| S3 | Check actual outgoing capabilities (F5) | S1 | implemented; focused provider plus actual public-route/confirmed-EXECUTE flag/exclusion integration passed; S11 pending |
-| S4 | Isolate turn evidence (F3) | S0 | implemented; mixed-turn/connected/integrity round: 50 passed under `-W error` |
-| S5 | Carry prior published answer on follow-up (F4) | S4 | implemented; follow-up/evidence/integrity round: 31 passed under `-W error`; S12 live check pending |
-| S6 | Keep MCP alive after malformed methods (F2) | S0 | implemented; connected MCP round: 44 passed under `-W error` |
-| S7 | Enforce catalogue discovery and coverage (F7) | S0 | implemented; 19 scripted driver tests plus connected study checks passed; IP-10 interruption handling included; final integration pending |
-| S8 | Enforce frozen study identity (F8) | S0 | implemented; study/premerge suites: 43 passed under `-W error`; historical L155 identity accepted |
-| S9 | Consume current gateway evidence (F10) | S0 | implemented; real-emitter/consumer and connected measurement tests: 19 passed under `-W error` |
-| S10 | Correct docs and review handoff (F9, PM3, document revisions) | S1-S9 behavior settled | public API/closure/routing docs and reviewer navigation revised; document dispositions/PR handoff in progress |
-| S11 | Verify integrated candidate offline (PM1/PM2/PM4/PM5) | S1-S10 | done: final combined candidate 1,663 passed/42 platform-container skips; integrity 19 passed under `-W error`; dry-run 112/16 and whitespace checks passed |
-| S12 | Check changed model/provider input once | S11; actual trigger inventory | pending |
-| S13 | Final catalogue gate and regression diagnosis | S7, S11-S12; stable behavior | pending |
-| S14 | Final evidence, dispositions and goal closeout | S0-S13 | pending |
+| S0 | Establish scope, evidence and environment | None | done; scope and preflight recorded in L172 |
+| S1 | Resolve dependent settings consistently (F6) | S0 | done in `8294bdb9`; parity/defaults and full local/remote suites passed |
+| S2 | Make session switching transactional (F1) | S1 | done in `8294bdb9`; public resume/rejection/rollback journeys passed |
+| S3 | Check actual outgoing capabilities (F5) | S1 | done in `8294bdb9`; actual-round, exclusion and live settings/provider evidence below |
+| S4 | Isolate turn evidence (F3) | S0 | done in `8294bdb9`; mixed-turn evidence and unfinished restore coverage passed |
+| S5 | Carry prior published answer on follow-up (F4) | S4 | done in `8294bdb9`; offline boundary verified; failed/limited live observations retained in S12 |
+| S6 | Keep MCP alive after malformed methods (F2) | S0 | done in `8294bdb9`; malformed-message/later-ping streams passed |
+| S7 | Enforce catalogue discovery and coverage (F7) | S0 | done in `8294bdb9`; 19 driver cases plus actual 112-ID coverage and zero-call completed resume |
+| S8 | Enforce frozen study identity (F8) | S0 | done in `8294bdb9`; identity/resume/report tests and preserved L155 compatibility passed |
+| S9 | Consume current gateway evidence (F10) | S0 | done in `8294bdb9`; current emitter/consumer and historical-evidence tests passed |
+| S10 | Correct docs and review handoff (F9, PM3, document revisions) | S1-S9 behavior settled | done; public docs/reviewer navigation, separate document revisions and PR handoff updated |
+| S11 | Verify integrated candidate offline (PM1/PM2/PM4/PM5) | S1-S10 | done; 1,663 passed/42 local skips, integrity 19 under `-W error`, all 35 remote jobs passed |
+| S12 | Check changed model/provider input once | S11; actual trigger inventory | done with recorded limits; tools precedence accepted, original follow-up guard-refused, isolated input accepted |
+| S13 | Final catalogue gate and regression diagnosis | S7, S11-S12; stable behavior | done; 112/16 complete, 41 PASS/11 FAIL/54 UNGRADED/6 PENDING; all failures and both qualified regressions diagnosed |
+| S14 | Final evidence, dispositions and goal closeout | S0-S13 | done for authorized implementation/evaluation; closeout documents this evidence; PR remains draft |
 
 Follow this sequence by default. Independent steps can be reordered without changing scope; document material design/verification changes in this plan's own revision ledger. No additional agents are necessary to execute it. For each code step: inspect the relevant path independently, establish a regression that exercises the original defect, make the smallest complete fix, run focused tests, then record evidence. Run the mandatory integrity suite after each implementation round touching session engine, prompts, gates or checkers; do not postpone it until the end of several unverified rounds.
 
-### Execution evidence (parent, uncommitted worktree based on `0b625d79`)
+### Execution evidence
+
+The rounds below were executed in the parent's worktree based on `0b625d79`; the combined implementation was committed and pushed as `8294bdb9`. Later closeout edits affect documentation only.
 
 - S1 new public parity regressions reproduced three original failures, then the settings/default suite passed 53 tests under `-W error` with native confinement. `RunSettings.mode`/`agent_tools` now retain `None` until resolved against the worker/destination; explicit values still win. The first attempted connected run inside the outer sandbox had one confinement-dependent failure; the same 53 tests passed in the established native context.
 - S2 three new tests reproduced argument mutation, active transcript closure and worker-binding damage before the fix. The completed transactional implementation plus parity/provider/REPL coverage passed 83 tests under `-W error`. This includes successful implicit resume in both directions, preserved review state, self-resume without a competing host, rejected-switch usability and startup-failure rollback/cleanup.
@@ -63,7 +65,7 @@ Follow this sequence by default. Independent steps can be reordered without chan
 - Additional integration: the actual public-route/confirmed-EXECUTE flag/exclusion matrix, evidence lifetimes and mandatory integrity suite passed 42 under `-W error`. The expanded REPL/parity round passed 41. A previous aggregate round had 193 passes and one error in a new test that passed unsupported `Session.open(max_repairs=...)`; that test now configures the equivalent worker attribute, and its complete parity/REPL round passed. This was test setup, not a product failure.
 - Provider-body compatibility (offline, baseline `0b625d79`): 34 pure comparisons across 17 operations with structured output on/off were identical. Capability checks were disabled for the pure comparison; existing metadata-adaptation tests and the new actual-round matrix cover that boundary. Static `git diff --quiet 0b625d79 -- src/pdl_taskmaster/runtime/agent_tools.py` also returned 0. The new validation changes when an unsupported request is rejected, not the accepted payload builder/tool-loop content. That comparison covered the existing matching-settings paths. IP-09 additionally changes tool-loop selection when explicit typed tools-on overrides a worker's tools-off default; that provider-boundary case joins F4 in S12.
 - First full offline run: 1,650 passed, 42 platform/container skips, two failed direct `RunSettings.apply` compatibility cases (`test_l148_execution_context.py`, `test_l149_ablation.py`). Log: `%TEMP%/pdlt-pr5-final-65cd94e4ede74662be1808be0856d558/pytest-full.log`. Standalone apply now resolves defaults without a worker, while public sessions resolve against their actual worker/destination. A further scripted S7 regression rejected an unexplained nonzero child exit. The affected settings/ablation/premerge/default/integrity round passed 114 under `-W error`, with all 19 integrity cases and no warning/skip. IP-07/IP-08 record the corrections.
-- The complete suite after IP-07/IP-08 passed 1,657 tests with 42 platform/unavailable-container skips in 425.07 seconds. Astra's subsequent focused static review confirmed IP-09: the worker's tools-off default must not veto explicit typed tools-on. Two new public-session regressions failed before removing that second veto; captured request/default/confirmed/integrity coverage then passed 109 under `-W error`. The IP-09 integrated run had 1,659 passes/42 skips and one older synthetic worker-veto assertion. That direct-boundary test now asserts the corrected attached-tools/no-host contract and equal returned outcomes, while public-session tests establish precedence. The connected agent-tools/provider/premerge/integrity round passed 74 under `-W error`. The final complete suite after that test correction and IP-10 passed 1,663 tests with 42 platform/unavailable-container skips in 463.25 seconds, under the established native context. `pytest-full-rerun.log` and `python-source-identity.json` share the verification directory above. The manifest dry-run loads all 112 prompts across 16 categories; `git diff --check` passes. Final log: `pytest-full-candidate.log`; exact 485-Python-file identity: `candidate-python-identity.json`, SHA-256 `fcd7aab76a86f0bdc105f5561fb93085155b79bf9f8fb5f5909ae9af73225a21`. Logs/identities stay in the external verification directory. Native AppContainer cases passed; skips are off-platform or unavailable Docker. This is Windows/Python 3.11 evidence, not the whole remote CI matrix. All 35 local links in the four documents/four revision ledgers resolve. No live call has yet been made for these fixes.
+- The complete suite after IP-07/IP-08 passed 1,657 tests with 42 platform/unavailable-container skips in 425.07 seconds. Astra's subsequent focused static review confirmed IP-09: the worker's tools-off default must not veto explicit typed tools-on. Two new public-session regressions failed before removing that second veto; captured request/default/confirmed/integrity coverage then passed 109 under `-W error`. The IP-09 integrated run had 1,659 passes/42 skips and one older synthetic worker-veto assertion. That direct-boundary test now asserts the corrected attached-tools/no-host contract and equal returned outcomes, while public-session tests establish precedence. The connected agent-tools/provider/premerge/integrity round passed 74 under `-W error`. The final complete suite after that test correction and IP-10 passed 1,663 tests with 42 platform/unavailable-container skips in 463.25 seconds, under the established native context. `pytest-full-rerun.log` and `python-source-identity.json` share the verification directory above. The manifest dry-run loads all 112 prompts across 16 categories; `git diff --check` passes. Final log: `pytest-full-candidate.log`; exact 485-Python-file identity: `candidate-python-identity.json`, SHA-256 `fcd7aab76a86f0bdc105f5561fb93085155b79bf9f8fb5f5909ae9af73225a21`. Logs/identities stay in the external verification directory. Native AppContainer cases passed; skips are off-platform or unavailable Docker. This is Windows/Python 3.11 evidence, not the whole remote CI matrix. All 35 local links in the four documents/four revision ledgers resolve. At that offline checkpoint no live call had yet been made; final live/evaluation observations are recorded below.
 
 ### S0. Establish the working contract and evidence
 
@@ -241,3 +243,65 @@ Done when the required run/continuations establish complete final-candidate cove
 5. Close the active goal only after authorized document revisions, all validated fixes/process actions and applicable S11-S13 verification are actually complete. If a genuine model benchmark failure is fully diagnosed, report it without calling the gate green; evaluation completion and merge approval are distinct. If required evidence is unavailable, state the concrete unresolved requirement and retain an unfinished status under the goal tool's rules.
 
 The final user-facing report should state what changed, how it was tested, every unresolved limitation and the PR status. It must be self-contained. Completion of this plan does not authorize merging the PR or implementing the future routing proposal.
+
+## Final evidence and dispositions
+
+Implementation commit: `8294bdb918baadb83d7ef0184327895f4bdcca5a`, pushed to draft PR #5. This closeout changes documentation only. The tested 485-Python-file identity remains `fcd7aab76a86f0bdc105f5561fb93085155b79bf9f8fb5f5909ae9af73225a21`. F1-F10 are fixed; this records completed implementation/evaluation, not a green benchmark or merge approval.
+
+### Offline and CI
+
+- **Offline:** Python 3.11.9, this checkout's editable package, pytest 9.0.3/Pydantic 2.13.4: `python -m pytest -q -rs` finished **1,663 passed, 42 skipped**, 463.25 seconds. Native AppContainer cases passed; skips were off-platform or unavailable Docker. Integrity: all **19 passed under `-W error`**, without warnings/skips. Dry-run loaded 112 prompts/16 categories.
+- **Remote clean checkouts:** all **35 jobs passed** at the implementation candidate: ten Linux/Windows test jobs, five distribution/wheel-smoke jobs and twenty native/container sandbox jobs, across configured Python 3.10-3.14. [CI run](https://github.com/paragon-ux/PDLt-Test/actions/runs/40138290678), [sandbox run](https://github.com/paragon-ux/PDLt-Test/actions/runs/40138290607). These also establish that required tracked files survive a fresh checkout; the earlier L169 export is historical evidence, not a substitute for these candidate checks.
+- **Tracking/static integrity:** 620 experiment code/fixture files remain tracked; the PR diff has no `experiments/studies/` or generated gateway score JSON. Local studies remain present. `graders.py`, `run_catalogue.py` and `runtime/agent_tools.py` are unchanged from `0b625d79`. The accepted defaults, thresholds, contracts and separate routing assessment remain unchanged.
+
+### S12: actual live observations
+
+Each check used the default model/settings, from repository root, with the real REPL dev diagnostics. Original observations were preserved; no end-to-end case was resampled to obtain a pass.
+
+| Check | Recorded result | Scope and limit |
+|---|---|---|
+| Explicit session tools-on over worker tools-off (IP-09) | BOOTSTRAP_ANALYSIS and DRAFT_PROMPT requests carried their submission tools, no output format; both HTTP 200. Reached PROMPT_REVIEW, exit 2; no EXECUTE. | Confirms this settings/provider case; not task-correctness evidence. |
+| Original two-turn direct follow-up (F4) | First answer published unverified with no host reproduction. Second turn was refused by System 1: p=0.78, recorded threshold=0.64; no second DIRECT_ANSWER request. | **End-to-end observation failed.** It did not exercise the changed second-answer provider input. No threshold/policy change was made. |
+| One additional provider-only F4 diagnostic (IP-11) | The exact reference-bearing input was accepted (HTTP 200), with no tools, format or instructions added. Body SHA-256 `46ad3b7755eedd872034392622ce64de0a7730546fc6e308f53d5eac73db47b3`. | Provider acceptance only. Strict repetition failed because the first published answer ended with U+0005 and the new reply omitted it. This does not establish an end-to-end follow-up pass. |
+
+Live evidence: sibling archive `pr5-fix-verification/{followup,tools,followup-provider}/`, session traces under `pr5-fix-verification/sessions/`. IP-11's `preregistration.json` records its narrower question/expectation/falsifiers before its single provider call. The real dev REPL was opened/closed without submitting a replacement task; the configured worker then made the isolated diagnostic call. No fake System 1 judgment was presented as live evidence.
+
+### S13: complete catalogue and qualified comparison
+
+Recorded state: sibling archive `premerge-pr5-fixes-8294bdb9.json`; logs in its `.logs` directory; child roots under `premerge/e4c4773a8a31db6d/`. The repaired driver ran **37 children, 21 continuations**, collecting exactly **112 distinct expected IDs across 16 categories**, all with clean commit `8294bdb9` and identical settings. Every child was validated; no harness/provider error outcome was accepted. A completed-checkpoint resume revalidated its records and reproduced the summary with child launch and budget lookup forbidden.
+
+Settings were the prescribed runner defaults: unconfirmed protocol, gpt-oss-120b, all-low effort, tools off, Tier D1/structured output on, native auto sandbox, 600 seconds per prompt and the existing 4096 MB harness cap. The existing budget stop was retained. Post-evaluation key usage was $28.01547876 of its $30 limit; this is an account-level snapshot, not a separately audited generation bill.
+
+| Collection | PASS | FAIL | UNGRADED | PENDING |
+|---|---:|---:|---:|---:|
+| Final candidate | 41 | 11 | 54 | 6 |
+| Immutable raw L161 history | 37 | 18 | 52 | 5 |
+| L161 under accepted current L164 closure/stage/manual rules | 37 | 17 | 52 | 6 |
+
+The qualified offline comparison changes exactly the two entries already described in L164: historical 13-06 PASS becomes PENDING, and historical 16-07 FAIL becomes PASS. It changes neither raw files nor content grades. The driver retains the raw-history comparison (one regression, 06-02); under the current contract the regressions are **06-02 and 16-07**. Raw-history improvements are 02-05, 03-02, 05-07, 06-06 and 06-07. These are historical, unpaired observations, not a causal performance claim for the fixes.
+
+All eleven failed cases were diagnosed from existing result, event, projection, model-response and request artifacts, without live reproduction:
+
+| ID | Recorded failure and disposition |
+|---|---|
+| 01-03 | Correct coloring/content grade PASS, but a proof-based result has no host reproduction: CLOSED_UNVERIFIED/argued_result instead of required CLOSED_SUCCESS. Retain the stage failure. |
+| 04-02 | Final model code contains an unescaped Unicode escape in a Python string; both native attempts fail. Host cancels after its permitted repair. |
+| 04-03 | Final model code contains an unescaped quote; recorded SyntaxError persists after repair. Host cancels. |
+| 04-05 | Hidden tests expose Markdown emphasis applied inside a code span. Published only at contract_checked/exit 5, without a correctness claim. |
+| 04-06 | Model's top-level test setup has unexpected indentation. Host cancels after repair. |
+| 04-07 | Model uses Python weekday numbering without converting its declared Sunday-zero convention; hidden calendar tests fail. Contract-only/exit 5 remains honest. |
+| 05-05 | Model hull traversal walks the square clockwise despite the requested counter-clockwise order; square/boundary/random hidden tests fail. Contract-only/exit 5. |
+| 06-02 | Model's demonstration leaves non-daemon deadlocked original threads alive; recorded wall-clock failure is disclosed. The corrected functions use consistent ordering but append `fixed_results`, while hidden tests inspect only `results` (`prompts/hidden_tests/06-02.py:106-119,126-138`). Retain FAIL and disclose this grading-interface limit; it is not proof that the corrected lock ordering is wrong. |
+| 13-04 | Correct impossibility explanation/content grade PASS, but model chooses BLOCKED_BY_HIGHER_PRIORITY, which the unchanged unconfirmed handler cancels (`session_engine.py:2510`). Same executor-refusal stage mismatch as L161. |
+| 15-05 | Six indented illustrative Python snippets fail native execution with line-1 indentation errors after repair. Existing snippet/host-format interaction; substantive grade N/A, stage FAIL retained. |
+| 16-07 | Final answer names the fish owner but declares a certificate with no checking/printing program and no proof argument. WITNESS_NOT_PRINTED after three attempts; correct fail-closed cancellation. Content grader PASS does not establish the certificate. This regresses against the qualified historical argued result. |
+
+For all eleven, the first recorded Bootstrap provider body is byte-equivalent to L161's; subsequent sent non-input configuration is unchanged and no call-trace error was recorded. Execution input differs with the model's Bootstrap/repair output. This bounded evidence supports the diagnoses; it is not a universal absence-of-regressions proof. No graders, budgets, thresholds or solver hints were adjusted.
+
+The six PENDING cases (14-02, 14-04, 14-06, 16-01, 16-03, 16-06) still require the documented human judgment; 54 UNGRADED cases have no substantive ground-truth grade. They are not passes. Raw evaluation output stays outside Git.
+
+Detailed local evidence is in `%TEMP%/pdlt-pr5-final-65cd94e4ede74662be1808be0856d558/`: `pytest-full-candidate.log`, `candidate-python-identity.json`, immutable `L161-baseline/source-inventory.json`, `catalogue-diagnostics.json`, `catalogue-dispositions.json` and `L161-current-contract-comparison.json`. The final failure-ID set exactly matches the eleven disposition records.
+
+### S14: handoff
+
+Each F1-F10 has final disposition **fixed**, with code/tests in `8294bdb9`; each source document retains its own revision ledger. PM1-PM5's bounded implementation/evaluation actions are complete. PR #5's title/body have been refreshed; it remains draft, with eleven catalogue failures, six manual judgments and the failed live end-to-end follow-up explicitly retained. Completion of this work does not approve a merge. The future routing/verifier proposal remains unadopted, and L167's separate Nemotron measurement remains open.
