@@ -3,8 +3,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -18,8 +18,8 @@
    },
    {
     "operation": "EXECUTE",
-    "prompt": "9034951104d186e2",
-    "manifest": "7ff2b92c3dc508b6"
+    "prompt": "088a783db0b2471a",
+    "manifest": "376bcc2819a12855"
    }
   ],
   "sys1": [
@@ -108,8 +108,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -164,13 +164,13 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "EXECUTE_UNCONFIRMED",
-    "prompt": "8cdfd33d9c66e6f5",
-    "manifest": "5acd5d344b28295e"
+    "prompt": "1d2ce46d322f3414",
+    "manifest": "aa1cf8be195d17ee"
    }
   ],
   "sys1": [
@@ -236,8 +236,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -251,8 +251,8 @@
    },
    {
     "operation": "EXECUTE",
-    "prompt": "9034951104d186e2",
-    "manifest": "7ff2b92c3dc508b6"
+    "prompt": "088a783db0b2471a",
+    "manifest": "376bcc2819a12855"
    }
   ],
   "sys1": null,
@@ -315,8 +315,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -330,8 +330,8 @@
    },
    {
     "operation": "EXECUTE",
-    "prompt": "9034951104d186e2",
-    "manifest": "7ff2b92c3dc508b6"
+    "prompt": "088a783db0b2471a",
+    "manifest": "376bcc2819a12855"
    }
   ],
   "sys1": [
@@ -420,8 +420,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -435,8 +435,8 @@
    },
    {
     "operation": "EXECUTE",
-    "prompt": "f8d1eb4d5caedbff",
-    "manifest": "345c8aa052b651a2"
+    "prompt": "7c7d346725048615",
+    "manifest": "d6048d4a6cacd6b7"
    }
   ],
   "sys1": [
@@ -529,8 +529,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -544,8 +544,8 @@
    },
    {
     "operation": "EXECUTE",
-    "prompt": "f8d1eb4d5caedbff",
-    "manifest": "345c8aa052b651a2"
+    "prompt": "7c7d346725048615",
+    "manifest": "d6048d4a6cacd6b7"
    }
   ],
   "sys1": [
@@ -640,8 +640,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -655,18 +655,18 @@
    },
    {
     "operation": "EXECUTE",
-    "prompt": "f8d1eb4d5caedbff",
-    "manifest": "345c8aa052b651a2"
+    "prompt": "7c7d346725048615",
+    "manifest": "d6048d4a6cacd6b7"
    },
    {
     "operation": "EXECUTE",
-    "prompt": "f13855667e76cb1c",
-    "manifest": "345c8aa052b651a2"
+    "prompt": "1025794c84b9afd0",
+    "manifest": "d6048d4a6cacd6b7"
    },
    {
     "operation": "EXECUTE",
-    "prompt": "f13855667e76cb1c",
-    "manifest": "345c8aa052b651a2"
+    "prompt": "1025794c84b9afd0",
+    "manifest": "d6048d4a6cacd6b7"
    }
   ],
   "sys1": [
@@ -749,18 +749,18 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_EXECUTE",
-    "prompt": "654f2d71d1df56a0",
-    "manifest": "fe8561917134d4c7"
+    "prompt": "c321d444e5a84264",
+    "manifest": "30e6e70c302e7214"
    },
    {
     "operation": "EXECUTE_UNCONFIRMED",
-    "prompt": "58ee3bccbf06e5f9",
-    "manifest": "87d994bef9d7e48e"
+    "prompt": "d9979946771dbebe",
+    "manifest": "43e4de4e517b6bb4"
    }
   ],
   "sys1": [
@@ -833,8 +833,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -848,13 +848,13 @@
    },
    {
     "operation": "DRAFT_EXECUTE",
-    "prompt": "0c29288abda69b82",
-    "manifest": "642ccbe15e3b6b86"
+    "prompt": "e35809836be6f2b7",
+    "manifest": "f004604af997ba06"
    },
    {
     "operation": "EXECUTE",
-    "prompt": "42356eda2103ba54",
-    "manifest": "04b89f7370657daa"
+    "prompt": "8ca9398d68c6fc83",
+    "manifest": "eb3152e404636008"
    }
   ],
   "sys1": [

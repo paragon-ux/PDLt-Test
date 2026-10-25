@@ -1,6 +1,9 @@
-"""L124 D2: every built-in task type, registered through its profile, behaves exactly as before task types existed:
-the same worker and System 1 requests, stages, exit statuses, events and provenance (tests/parity_scenarios.py;
-the fixture was recorded from the engine before the migration and matches the pre-B2 main tree). Offline."""
+"""Frozen built-in task-type requests, stages, exits, events and provenance (L124 D2).
+
+The baseline predates the task-type migration. SG-02 refreshed only worker fingerprints for
+the authorized CommonMark declaration, after reversing that exact text reproduced all ten
+historical records. System 1, stages, events, provenance and scripted responses are unchanged.
+"""
 from __future__ import annotations
 
 import json

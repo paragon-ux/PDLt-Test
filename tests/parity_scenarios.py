@@ -1,7 +1,10 @@
 """Scenarios for the task-type parity check (L124 D2): each runs one built-in task type through a session and
 records what the worker and System 1 received, the stage and exit status after each message, the events and the
-provenance. ``tests/fixtures/task_type_parity.json`` holds the record made before task types were wired into the
-engine; ``python tests/parity_scenarios.py`` rewrites it (only ever from that code)."""
+provenance. ``tests/fixtures/task_type_parity.json`` originated before task types were wired into the engine.
+SG-02 refreshes only worker fingerprints for the authorized CommonMark capability text, after verifying exact
+historical equivalence with only that text reversed. Other baseline fields remain unchanged. Regeneration
+requires reviewing intentional request changes; it is not an automatic response to a failing parity test.
+"""
 from __future__ import annotations
 
 import hashlib
