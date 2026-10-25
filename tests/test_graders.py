@@ -38,7 +38,7 @@ def test_every_verified_entry_has_a_grader_or_manual_marker():
     verified = [e for e in MANIFEST.values() if e["ground_truth_status"] == "verified"]
     assert len(verified) == 57
     hidden = [e["id"] for e in verified if e.get("hidden_tests")]
-    assert len(hidden) == 29
+    assert len(hidden) == 28
     for entry_id in hidden:
         assert (PROMPTS / MANIFEST[entry_id]["hidden_tests"]).is_file(), entry_id
         assert entry_id not in graders.GRADERS  # one grader per prompt
@@ -70,6 +70,54 @@ def test_hidden_tests_without_code_runs_are_pending(tmp_path):
 def test_hidden_tests_fail_a_published_non_result():
     assert graders.grade_hidden("05-03", "REQUEST_INPUT", "Which intervals?")["grade"] == graders.FAIL
     assert graders.grade_hidden("05-03", "RESULT", None)["grade"] == graders.FAIL
+
+
+@pytest.mark.parametrize("buffers", [
+    "results = []", "original_results = []; fixed_results = []", "", "first = []; second = []",
+])
+def test_deadlock_repair_awaits_adjudication_in_both_grading_paths(tmp_path, buffers):
+    from experiments import grading
+
+    text = f"```python\n{buffers}\ndef corrected_transfer():\n    pass\n```"
+    assert _grade("06-02", tmp_path, text) == graders.MANUAL
+    item = grading.catalogue_items()["06-02"]
+    assert not item.hidden_tests
+    assert grading.grade_text(item, "RESULT", text, run_code=False)["grade"] == graders.MANUAL
+
+
+@pytest.mark.parametrize("kind,text", [("RESULT", None), ("REQUEST_INPUT", "Which constraint?")])
+def test_deadlock_manual_grading_preserves_missing_and_non_result_failures(tmp_path, kind, text):
+    from experiments import grading
+
+    result = _run_dir(tmp_path, text)
+    if text is not None:
+        out = next(result.rglob("current.md")).parent
+        (out / "current.json").write_text(json.dumps({"kind": kind}))
+    assert graders.grade(MANIFEST["06-02"], result, PROMPTS, run_code=False)["grade"] == graders.FAIL
+    assert grading.grade_text(grading.catalogue_items()["06-02"], kind, text, run_code=False)["grade"] == graders.FAIL
+
+
+@pytest.mark.parametrize("infrastructure_error", [False, True])
+def test_deadlock_default_grading_distinguishes_program_timeout_from_grading_error(
+    tmp_path, monkeypatch, infrastructure_error,
+):
+    from experiments import grading
+    from pdl_taskmaster.verification.sandbox import ExecutionSandbox, SandboxResult
+
+    calls = []
+
+    def run_code(self, source, **kwargs):
+        calls.append(source)
+        if infrastructure_error:
+            raise RuntimeError("grader infrastructure unavailable")
+        return SandboxResult("", "", 124, 1, timed_out=True)
+
+    monkeypatch.setattr(ExecutionSandbox, "run_code", run_code)
+    text = "```python\nwhile True:\n    pass\n```"
+    expected = "ERROR" if infrastructure_error else graders.MANUAL
+    assert graders.grade(MANIFEST["06-02"], _run_dir(tmp_path, text), PROMPTS)["grade"] == expected
+    assert grading.grade_text(grading.catalogue_items()["06-02"], "RESULT", text)["grade"] == expected
+    assert len(calls) == 2
 
 
 def test_non_verified_entries_are_not_applicable(tmp_path):

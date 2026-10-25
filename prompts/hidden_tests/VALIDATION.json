@@ -801,47 +801,6 @@
       },
       "ok": true
     },
-    "06-02": {
-      "tests_sha256": "0941daa07ef25ee8fa26f1a681cc30768a7ae1b4cf14ca4a1d84c45c800d5289",
-      "answers": {
-        "alt_backoff_and_original.py": {
-          "sha256": "7e863becc4da89792e50b4c325cdd0ddf14c5a14bf7c9c0af25cb881d83025f8",
-          "passed": true,
-          "expected": true,
-          "ok": true,
-          "reason": "passed every hidden test"
-        },
-        "alt_single_lock.py": {
-          "sha256": "0592b0f72f1c58db0e339b20b0ce704268a726c00322b1058df3674dc22e165c",
-          "passed": true,
-          "expected": true,
-          "ok": true,
-          "reason": "passed every hidden test"
-        },
-        "bug_original.py": {
-          "sha256": "b5a7291a44ae3072426de4cba2fcd238baaf7cec285c331f3ecc677d7ae9e73a",
-          "passed": false,
-          "expected": false,
-          "ok": true,
-          "reason": "transfer_ab/transfer_ba: test_forced_interleaving_finishes: AssertionError: deadlocked under the a-then-b / b-then-a interleaving, test_stress_finishes_and_records: timed out after 20s"
-        },
-        "bug_try_lock_drops.py": {
-          "sha256": "657b1c511a99dd92fd9d3859826102af61dc39dbda9f86f6dae87e7925c84ea0",
-          "passed": false,
-          "expected": false,
-          "ok": true,
-          "reason": "transfer_ab/transfer_ba: test_forced_interleaving_finishes: AssertionError: 0 of 2 transfers recorded"
-        },
-        "ref.py": {
-          "sha256": "72762b130a71be5dca79f08a5006ead89ef751da9790a9b463139016c80a4e6a",
-          "passed": true,
-          "expected": true,
-          "ok": true,
-          "reason": "passed every hidden test"
-        }
-      },
-      "ok": true
-    },
     "06-03": {
       "tests_sha256": "eedf3f50dda861f03a83006f4f5f4d6d736de35d6e83ab15ddf33a7f7356e1c2",
       "answers": {

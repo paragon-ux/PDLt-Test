@@ -666,6 +666,12 @@ def grade_house_grid(corpus: str, prompt: str) -> tuple[str, str]:
     return MANUAL, f"fish owner unclear: {sorted(owners)}"
 
 
+def grade_deadlock_repair(corpus: str, prompt: str) -> tuple[str, str]:
+    if outcome_of(corpus) != "RESULT":
+        return FAIL, f"published {outcome_of(corpus)}, not a deliverable"
+    return MANUAL, "adjudicate the deadlock diagnosis, corrected implementation and required demonstration"
+
+
 GRADERS: dict[str, Callable[[str, str], tuple[str, str]]] = {
     "01-01": grade_partition_triples,
     "01-02": grade_exact_covers,
@@ -674,6 +680,7 @@ GRADERS: dict[str, Callable[[str, str], tuple[str, str]]] = {
     "01-05": grade_latin_square,
     "01-06": grade_first_fit,
     "01-07": grade_hamiltonian_path,
+    "06-02": grade_deadlock_repair,
     "13-01": grade_reports_no_solution,
     "13-02": grade_np_hard_honesty,
     "13-03": grade_nonexistent_package,

@@ -2119,6 +2119,8 @@ class SessionEngine:
         if outcome.kind == "BLOCKED_BY_HIGHER_PRIORITY":
             self.controller.cancel()
             self.workspace.publish_execution_outcome(outcome.kind, outcome.body)
+            if self.workspace.turn_id is not None:
+                self.workspace.mark_turn_status("CLOSED_CANCELLED")
             return EngineResponse(outcome.body, traces, closed=True)
         if errors:
             self.workspace.append_event("VERIFICATION_FAILED", {"errors": errors, "codes": finding_codes(errors)})
@@ -2509,7 +2511,10 @@ class SessionEngine:
 
         if outcome.kind == "BLOCKED_BY_HIGHER_PRIORITY":
             self.controller.cancel()
-            return self._refuse(outcome.body, traces, "execute_unconfirmed")
+            response = self._refuse(outcome.body, traces, "execute_unconfirmed")
+            if self.workspace.turn_id is not None:
+                self.workspace.mark_turn_status("CLOSED_CANCELLED")
+            return response
 
         if outcome.kind == "REQUEST_INPUT":
             assert outcome.expected_type and outcome.description
