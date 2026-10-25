@@ -115,7 +115,9 @@ from pdl_taskmaster.api.outcome import (EXIT_CANCELLED, EXIT_HARNESS_ERROR, EXIT
                                         EXIT_UNCONFIRMED, EXIT_UNVERIFIED, EXIT_WAITING_INPUT)
 
 
-def load_manifest(category_filter=None):
+def load_manifest(category_filter=None, path=None):
+    """The manifest's entries (``path``: another manifest of the same form, such as the held-out set of L145;
+    its prompt files are relative to the prompts folder like the catalogue's)."""
     entries = []
     cats = set()
     if category_filter:
@@ -126,7 +128,7 @@ def load_manifest(category_filter=None):
                 if c.isdigit():
                     cats.add(f"{int(c):02d}")
 
-    with open(MANIFEST_PATH, encoding="utf-8-sig") as f:
+    with open(path or MANIFEST_PATH, encoding="utf-8-sig") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -375,19 +377,39 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
             setting_args += [flag, str(settings[key])]
     if settings.get("draft_execute"):
         setting_args.append("--draft-execute")
+    if settings.get("confirmed_execute_tools"):
+        setting_args.append("--confirmed-execute-tools")
+    if settings.get("route") != "control":
+        # Always explicit: the harness's own default is on (ADR-0031), so leaving the flag out does not mean off.
+        setting_args.append("--agent-tools" if settings.get("agent_tools") else "--no-agent-tools")
     if settings.get("agent_tools"):
-        setting_args.append("--agent-tools")
+        if settings.get("agent_tools_exclude"):
+            setting_args += ["--agent-tools-exclude", ",".join(settings["agent_tools_exclude"])]
     if settings.get("representation", "pdl") != "pdl":
         setting_args += ["--representation", settings["representation"]]
     if settings.get("route") != "control" and settings.get("tier_d1") is not None:
         # Always explicit: the harness's own default is on, so leaving the flag out does not mean off.
         setting_args.append("--tier-d1" if settings["tier_d1"] else "--no-tier-d1")
+    if settings.get("route") != "control":
+        # Always explicit, for the same reason. Control parses the flag but sends no output format, so it gets none.
+        setting_args.append("--api-structured-output" if settings.get("structured_output", True)
+                            else "--no-api-structured-output")
     if settings.get("sandbox"):
         setting_args += ["--sandbox", settings["sandbox"]]
-    if settings.get("route") == "unconfirmed":
-        setting_args.append("--no-review")
+    if settings.get("route") != "control" and settings.get("withhold_execution_context"):
+        setting_args.append("--withhold-execution-context")
+    if settings.get("route") != "control" and settings.get("ablate_unconfirmed"):
+        setting_args += ["--ablate-unconfirmed", ",".join(settings["ablate_unconfirmed"])]
+    if settings.get("route") == "control" and settings.get("control_frame"):
+        setting_args += ["--frame", ",".join(settings["control_frame"])]
+    if settings.get("route") in ("saver", "direct"):
+        # saver's protocol branch is the unconfirmed route (L153); direct mode answers the request alone
+        setting_args += ["--mode", settings["route"], "--no-review"]
+    elif settings.get("route") == "unconfirmed":
+        setting_args += ["--mode", "protocol", "--no-review"]  # explicit: the harness's default mode is saver (ADR-0031)
     elif settings.get("route") == "confirmed":
-        setting_args.append("--review")  # the REPL's default is no review (L94), so the confirmed route asks for it
+        # the REPL's default is no review (L94), so the confirmed route asks for it
+        setting_args += ["--mode", "protocol", "--review"]
     if settings.get("theme"):
         setting_args += ["--theme", settings["theme"]]
     if settings.get("user_color"):
@@ -408,7 +430,6 @@ def build_harness_command(prompt_file, session_id, transcript_path, session_dir,
         "--model", model,
         *reasoning_args,
         *setting_args,
-        "--api-structured-output",
         "--prompt-file", str(prompt_file),
     ]
     return cmd
@@ -655,6 +676,19 @@ HOLD_VERDICT = "UNCONFIRMED_GATE"  # exit 2: a gate left for a human (ADR-0019; 
 ADVERSARIAL_CATEGORY = "adversarial_and_injection"
 
 
+def default_agent_tools(route):
+    """L166: in-call tools on for every harness route but unconfirmed, the harness's own rule; control has no tool
+    path."""
+    return route not in ("unconfirmed", "control")
+
+
+def _awaits_human_check(r):
+    """L164 (the user): where clarification is the ground truth, an answer the host could not verify needs its answer
+    determined before it can be judged, so it is MANUAL (pending); a grader's FAIL stays a failure."""
+    return (r.get("expected_stage") == "WAITING_INPUT" and r.get("verdict") == "CLOSED_UNVERIFIED"
+            and gt_grade(r) != graders.FAIL)
+
+
 def outcome_class(r):
     """One outcome per result (TARGET_ARCHITECTURE I-11; LEDGER L49d, D3).
 
@@ -665,6 +699,8 @@ def outcome_class(r):
     """
     if r.get("verdict") == HOLD_VERDICT and r.get("expected_stage") != HOLD_VERDICT:
         return "HELD"
+    if _awaits_human_check(r):
+        return "PENDING"
     if not stage_pass(r):
         return "FAIL"
     grade = gt_grade(r)
@@ -946,9 +982,18 @@ def generate_scoreboard(results, run_dir, run_meta):
     return scoreboard
 
 
+def _manifest_path(name):
+    """A manifest named relative to this checkout (as RUN_META records it), or None for the catalogue's."""
+    if not name:
+        return None
+    path = Path(name)
+    return path if path.is_absolute() else PDLT_TEST_ROOT / path
+
+
 def regrade_run(run_dir: Path) -> int:
     """Apply the current graders to a finished run (no model calls)."""
-    manifest = {e["id"]: e for e in load_manifest()}
+    run_meta = json.loads((run_dir / "RUN_META.json").read_text(encoding="utf-8"))
+    manifest = {e["id"]: e for e in load_manifest(path=_manifest_path(run_meta.get("manifest")))}
     results = []
     for result_file in sorted((run_dir / "results").glob("*/result.json")):
         result = json.loads(result_file.read_text(encoding="utf-8"))
@@ -960,7 +1005,6 @@ def regrade_run(run_dir: Path) -> int:
         result["model_calls"] = call_accounting(result_file.parent)
         result_file.write_text(json.dumps(result, indent=2), encoding="utf-8")
         results.append(result)
-    run_meta = json.loads((run_dir / "RUN_META.json").read_text(encoding="utf-8"))
     scoreboard = generate_scoreboard(results, run_dir, run_meta)
     for r in results:
         icon = outcome_label(r)
@@ -990,8 +1034,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="PDLt Prompt Catalogue Test Runner - no retries, no shortcuts"
     )
-    parser.add_argument("--model", default="nvidia/nemotron-3-super-120b-a12b:free",
-                        help="Model to test (default: nvidia/nemotron-3-super-120b-a12b:free)")
+    parser.add_argument("--model", default="openai/gpt-oss-120b",
+                        help="Model to test (default: openai/gpt-oss-120b, the model of every recorded baseline; L155)")
     parser.add_argument("--reasoning", default=None,
                         choices=["none", "low", "medium", "high"],
                         help="reasoning effort for every operation (default: the harness's per-model default, "
@@ -1016,9 +1060,24 @@ def main():
                         help="EXECUTE repairs after a failed verification; 0 stops at the first failure (no retries)")
     parser.add_argument("--providers", default=None, metavar="A,B,C",
                         help="provider order for the model calls, only these are used (e.g. Cerebras,Groq,SambaNova)")
-    parser.add_argument("--agent-tools", action="store_true",
-                        help="ADR-0029: checked submissions on BOOTSTRAP_ANALYSIS, DRAFT_PROMPT, DRAFT_PLAN and "
-                             "EXECUTE_UNCONFIRMED, and in-call tools on EXECUTE_UNCONFIRMED; default off")
+    parser.add_argument("--agent-tools", action=argparse.BooleanOptionalAction, default=None,
+                        help="ADR-0029: checked submissions on BOOTSTRAP_ANALYSIS, DRAFT_PROMPT, DRAFT_PLAN, "
+                             "EXECUTE_UNCONFIRMED and EXECUTE, and in-call tools on the two EXECUTE operations; default "
+                             "on, except on the unconfirmed route (L166, the harness's own rule); always passed "
+                             "explicitly")
+    parser.add_argument("--confirmed-execute-tools", action="store_true",
+                        help="the confirmed route's EXECUTE gets its in-call tools (L163); off by default (L168)")
+    parser.add_argument("--agent-tools-exclude", default=None, metavar="TOOL[,TOOL]",
+                        help="with --agent-tools, withhold these tools (an ablation, L145); passed to the harness")
+    parser.add_argument("--ablate-unconfirmed", default=None, metavar="PART[,PART]",
+                        help="L149 ablation (a measurement): change what EXECUTE_UNCONFIRMED receives (normative, "
+                             "framing, notation, order, entities); passed to the harness")
+    parser.add_argument("--control-frame", default=None, metavar="PART[,PART]",
+                        help="L149 measurement, Control only: add protocol frame parts to the Control call (worker, "
+                             "wrap, json); passed to the Control client")
+    parser.add_argument("--withhold-execution-context", action="store_true",
+                        help="L148 A/B: the stages before EXECUTE receive only their own instructions; passed to "
+                             "the harness")
     parser.add_argument("--draft-execute", action="store_true",
                         help="run DRAFT_EXECUTE (a typed execution brief) before EXECUTE on tasks that are or need an algorithm or a calculation (A/B option)")
     parser.add_argument("--representation", choices=["pdl", "nl"], default="pdl",
@@ -1029,6 +1088,12 @@ def main():
                         help="Tier D1 in standard execution: feed sandbox failures back as repairs "
                              "(default: on, as the harness ships; --no-tier-d1 turns it off, PDLT_TIER_D1=0 flips the "
                              "default). Not applicable to --route control")
+    parser.add_argument("--api-structured-output", action=argparse.BooleanOptionalAction, default=True,
+                        help="the API worker's output constraint for each operation, a JSON schema or JSON mode as "
+                             "the worker chooses it (default: on, as pdlt ships). Not applicable to --route control, "
+                             "which sends no output format")
+    parser.add_argument("--no-structured-output", action="store_false", dest="api_structured_output",
+                        help="alias for --no-api-structured-output, as in pdlt")
     parser.add_argument("--sandbox", choices=["auto", "native", "container", "audit-only"], default=None,
                         help="confinement for model-authored programs, in the harness and the graders (default: "
                              "$PDLT_SANDBOX, else auto = native); audit-only opts out of OS-native confinement")
@@ -1036,8 +1101,11 @@ def main():
                         help=f"memory cap for one prompt's harness process tree (default: {HARNESS_MEMORY_MB})")
     parser.add_argument("--repeat", type=int, default=1, metavar="N",
                         help="run each selected prompt N times in one run (pass rate per prompt on the scoreboard)")
-    parser.add_argument("--route", choices=["confirmed", "unconfirmed", "control"], default="unconfirmed",
-                        help="execution route: 'unconfirmed' (default: --no-review / ultrafast), 'confirmed' (multi-stage with review), or 'control' (unharnessed direct model baseline)")
+    parser.add_argument("--route", choices=["confirmed", "unconfirmed", "saver", "direct", "control"],
+                        default="unconfirmed",
+                        help="execution route: 'unconfirmed' (default: --no-review / ultrafast), 'confirmed' (multi-stage with review), "
+                             "'saver' or 'direct' (the L153 modes, behind SECURE_GATEWAY), or 'control' (unharnessed "
+                             "direct model baseline)")
     parser.add_argument("--theme", choices=THEME_NAMES, default=None,
                         help="Color theme for runner output and child process (default: $PDLT_THEME)")
     parser.add_argument("--user-color", choices=COLOR_NAMES, default=None,
@@ -1047,6 +1115,9 @@ def main():
     parser.add_argument("--allow-dirty", action="store_true",
                         help="run from a working tree with uncommitted changes; the difference is stored with "
                              "the run as WORKTREE.diff (without it, such a run is refused)")
+    parser.add_argument("--manifest", default=None, metavar="PATH",
+                        help="another prompt manifest of the catalogue's form, relative to this checkout (the "
+                             "held-out set of L145, prompts/HELDOUT_MANIFEST.jsonl); default the catalogue")
     parser.add_argument("--regrade", metavar="RUN_DIR", default=None,
                         help="re-grade a finished run with the current graders and rewrite its scoreboard")
     args = parser.parse_args()
@@ -1057,7 +1128,7 @@ def main():
     if args.regrade:
         sys.exit(regrade_run(Path(args.regrade)))
 
-    entries = load_manifest(category_filter=args.category)
+    entries = load_manifest(category_filter=args.category, path=_manifest_path(args.manifest))
     if args.prompt_id:
         target_pids = {p.strip() for p in args.prompt_id.split(",") if p.strip()}
         entries = [e for e in entries if e["id"] in target_pids]
@@ -1065,11 +1136,32 @@ def main():
         parser.error("--repeat must be at least 1")
     if args.representation != "pdl" and args.route != "confirmed":
         parser.error("--representation applies to the confirmed route's artifacts; use --route confirmed")
+    if args.agent_tools is None:
+        args.agent_tools = default_agent_tools(args.route)
+    excluded: list[str] = []
+    if args.agent_tools_exclude is not None:
+        from pdl_taskmaster.runtime.agent_tools import parse_exclusions
+
+        if not args.agent_tools:
+            parser.error("--agent-tools-exclude applies with --agent-tools")
+        try:
+            excluded = sorted(parse_exclusions(args.agent_tools_exclude))
+        except ValueError as exc:
+            parser.error(str(exc))
     runs = [(e, k if args.repeat > 1 else None) for e in entries for k in range(1, args.repeat + 1)]
     run_settings = {"max_output_tokens": args.max_output_tokens, "max_repairs": args.max_repairs,
                     "providers": args.providers, "draft_execute": args.draft_execute,
-                    "agent_tools": args.agent_tools, "representation": args.representation,
+                    "agent_tools": args.agent_tools, "agent_tools_exclude": excluded or None,
+                    "confirmed_execute_tools": args.confirmed_execute_tools,
+                    "withhold_execution_context": args.withhold_execution_context and args.route != "control",
+                    "ablate_unconfirmed": ([p.strip() for p in (args.ablate_unconfirmed or "").split(",") if p.strip()]
+                                           if args.route != "control" else []),
+                    "control_frame": ([p.strip() for p in (args.control_frame or "").split(",") if p.strip()]
+                                      if args.route == "control" else []),
+                    "representation": args.representation,
                     "tier_d1": args.tier_d1 and args.route != "control",  # what the child will run with
+                    # likewise: Control sends no output format, whatever the option says
+                    "structured_output": args.api_structured_output and args.route != "control",
                     "sandbox": args.sandbox, "route": args.route,
                     "theme": args.theme, "user_color": args.user_color, "assistant_color": args.assistant_color}
     if args.sandbox:
@@ -1084,6 +1176,9 @@ def main():
     print(f"{'=' * 50}")
     print(f"Model:      {args.model}")
     reasoning_effective = effective_reasoning(args.model, args.reasoning, args.reasoning_op)
+    if args.route == "control":
+        # Control makes one call at the default effort (control_cli, L155); the per-operation mapping does not apply.
+        reasoning_effective["by_operation"] = {}
     print(f"Reasoning:  {args.reasoning or 'harness default'}"
           + (f" (per operation: {', '.join(args.reasoning_op)})" if args.reasoning_op else ""))
     print(f"            effective: default={reasoning_effective['default']}, "
@@ -1112,10 +1207,16 @@ def main():
         route_tag += "-draft-execute"
     if args.agent_tools:
         route_tag += "-agent-tools"
+    if args.confirmed_execute_tools:
+        route_tag += "-execute-tools"
+    for name in excluded:
+        route_tag += f"-no-{name.replace('_', '-')}"
     if args.representation != "pdl":
         route_tag += f"-{args.representation}"
     if run_settings["tier_d1"]:
         route_tag += "-tier-d1"
+    if args.route != "control" and not run_settings["structured_output"]:
+        route_tag += "-no-structured-output"
     run_id = f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{route_tag}"
     run_dir = RUNS_DIR / run_id
     (run_dir / "results").mkdir(parents=True)
@@ -1131,6 +1232,7 @@ def main():
         "run_settings": run_settings,
         "category_filter": args.category,
         "prompt_id_filter": args.prompt_id,
+        "manifest": args.manifest,
         "total_prompts": len(runs),
         "repeat": args.repeat,
         "timeout_per_prompt": args.timeout,
@@ -1144,7 +1246,11 @@ def main():
             "non_interactive": True,
             "exit_on_close": True,
             "dev_mode": True,
-            "structured_output": True,
+            "structured_output": run_settings["structured_output"],  # the effective value (Control: false)
+            "agent_tools_exclude": excluded,
+            "withhold_execution_context": run_settings["withhold_execution_context"],
+            "ablate_unconfirmed": run_settings["ablate_unconfirmed"],
+            "control_frame": run_settings["control_frame"],
             "gate_policy": "evaluator_confirms_via_stdin",
         },
     }

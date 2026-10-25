@@ -798,7 +798,8 @@ class ExecutionSandbox:
                 "description": (
                     f"{python_declaration(version)}; third-party packages are not installed. "
                     "The host runs the deliverable as a script when the whole deliverable is Python source; otherwise it "
-                    "runs every ```python fenced block as a separate script, each in its own empty directory. A script "
+                    "runs every CommonMark fenced code block whose first language word is python or py as a separate "
+                    "script, each in its own empty directory. Code indentation within the block is preserved. A script "
                     "may read and write files only in that directory (it can also read the Python standard library); "
                     + ("other files and starting other processes are denied. " if self.allow_network else
                        "other files, network access and starting other processes are denied. ")

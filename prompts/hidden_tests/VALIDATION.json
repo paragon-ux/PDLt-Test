@@ -740,33 +740,6 @@
       },
       "ok": true
     },
-    "05-07": {
-      "tests_sha256": "65052c1bf0f5daea2bf7d7255b0df9204985648cd5add6e0581d74af01607f1e",
-      "answers": {
-        "alt_pattern_first.py": {
-          "sha256": "81941af8987ef9e796236c22407a4d6ad7ef0c75fa13369cced84731c36e8f48",
-          "passed": true,
-          "expected": true,
-          "ok": true,
-          "reason": "passed every hidden test"
-        },
-        "bug_no_overlaps.py": {
-          "sha256": "378030c29d1fccd2d87e20879b13fdd10d317f9cee0486837cc3e506517244b9",
-          "passed": false,
-          "expected": false,
-          "ok": true,
-          "reason": "kmp_search: test_overlapping_and_edge_matches: AssertionError: , test_random_against_naive: AssertionError: ('AAAABAABBAABBBBBABBABBBABBAAAABBAAABBABABBABABBBAA', 'AA')"
-        },
-        "ref.py": {
-          "sha256": "04c55fbdbead06416a76dadf71e22db2ed7a63322f626dbc9dadebe71eab72f0",
-          "passed": true,
-          "expected": true,
-          "ok": true,
-          "reason": "passed every hidden test"
-        }
-      },
-      "ok": true
-    },
     "06-01": {
       "tests_sha256": "584ed34e79af09418e9a21370ac2b269ff3ff7d9f27bb69ac4c7dce0984e7eea",
       "answers": {
@@ -793,47 +766,6 @@
         },
         "ref.py": {
           "sha256": "eb43df04d8d1942f8c796f32e9367d6593febee770f3a5561b6bb5fdec20c06a",
-          "passed": true,
-          "expected": true,
-          "ok": true,
-          "reason": "passed every hidden test"
-        }
-      },
-      "ok": true
-    },
-    "06-02": {
-      "tests_sha256": "0941daa07ef25ee8fa26f1a681cc30768a7ae1b4cf14ca4a1d84c45c800d5289",
-      "answers": {
-        "alt_backoff_and_original.py": {
-          "sha256": "7e863becc4da89792e50b4c325cdd0ddf14c5a14bf7c9c0af25cb881d83025f8",
-          "passed": true,
-          "expected": true,
-          "ok": true,
-          "reason": "passed every hidden test"
-        },
-        "alt_single_lock.py": {
-          "sha256": "0592b0f72f1c58db0e339b20b0ce704268a726c00322b1058df3674dc22e165c",
-          "passed": true,
-          "expected": true,
-          "ok": true,
-          "reason": "passed every hidden test"
-        },
-        "bug_original.py": {
-          "sha256": "b5a7291a44ae3072426de4cba2fcd238baaf7cec285c331f3ecc677d7ae9e73a",
-          "passed": false,
-          "expected": false,
-          "ok": true,
-          "reason": "transfer_ab/transfer_ba: test_forced_interleaving_finishes: AssertionError: deadlocked under the a-then-b / b-then-a interleaving, test_stress_finishes_and_records: timed out after 20s"
-        },
-        "bug_try_lock_drops.py": {
-          "sha256": "657b1c511a99dd92fd9d3859826102af61dc39dbda9f86f6dae87e7925c84ea0",
-          "passed": false,
-          "expected": false,
-          "ok": true,
-          "reason": "transfer_ab/transfer_ba: test_forced_interleaving_finishes: AssertionError: 0 of 2 transfers recorded"
-        },
-        "ref.py": {
-          "sha256": "72762b130a71be5dca79f08a5006ead89ef751da9790a9b463139016c80a4e6a",
           "passed": true,
           "expected": true,
           "ok": true,

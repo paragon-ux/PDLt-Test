@@ -4,6 +4,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
+from pdl_taskmaster import api
+from pdl_taskmaster.providers.base import WorkerResult
 from pdl_taskmaster.runtime.session_engine import SessionEngine
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -112,3 +116,53 @@ def test_untrusted_input_boundary_in_drafting_context(tmp_path):
     assert "<untrusted_user_input>" in prompt_text
     assert "</untrusted_user_input>" in prompt_text
     assert "Reverse the string" in prompt_text
+
+
+@pytest.mark.parametrize("no_review", [False, True])
+@pytest.mark.parametrize("reopen", [False, True])
+def test_execution_refusal_persists_terminal_turn_before_followup(tmp_path, no_review, reopen):
+    from test_api import ScriptedWorker
+
+    worker = ScriptedWorker()
+    original_call = worker.call
+
+    def refuse_execution(request):
+        if request.operation in {"EXECUTE", "EXECUTE_UNCONFIRMED"}:
+            reply = {
+                "kind": "BLOCKED_BY_HIGHER_PRIORITY", "body": "Cannot satisfy the constraint.",
+            }
+            if request.operation == "EXECUTE_UNCONFIRMED":
+                reply.update(interpretation="SOLVE the stated task", approach="ASSESS the constraint")
+            return WorkerResult(json.dumps(reply))
+        return original_call(request)
+
+    worker.call = refuse_execution
+    folder = tmp_path / "session"
+    session = api.Session.open(worker, folder, repo_root=ROOT, mode="protocol", no_review=no_review)
+    try:
+        result = session.send("Solve the stated task.")
+        if not no_review:
+            session.confirm()
+            result = session.confirm()
+        assert (result.stage, result.exit_status, result.closed) == ("CLOSED_CANCELLED", 1, True)
+        assert result.refused is False  # The public API maps a late refusal to cancellation.
+        assert session.host.engine.refused is no_review
+        assert result.text == "Cannot satisfy the constraint."
+        workspace = session.host.engine.workspace
+        turn = workspace.turn_id
+        assert workspace.read_turn_status(turn)["status"] == "CLOSED_CANCELLED"
+        archive = json.loads((workspace.path / "turns" / turn / "turn_archive.json").read_text())
+        assert archive["status"] == "CLOSED_CANCELLED"
+        expected = "PROTOCOL_REFUSED" if no_review else "EXECUTION_OUTCOME_PUBLISHED"
+        assert expected in [event["kind"] for event in archive["events"]]
+        if reopen:
+            session.close()
+            session = api.Session.open(worker, folder, repo_root=ROOT, no_review=no_review)
+        worker.call = original_call
+        session.send("Explain another task.")
+        assert session.host.engine.workspace.turn_id == "turn_002"
+        assert session.host.engine._previous_turn["status"] == "CLOSED_CANCELLED"
+        assert session.host.engine._previous_turn["result"] == "The result was not obtained."
+        assert "Cannot satisfy the constraint." not in session.host.engine._previous_deliverable
+    finally:
+        session.close()

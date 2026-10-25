@@ -41,7 +41,7 @@ Each execution produces an authoritative verdict and grade:
 
 ### Ground-truth coverage
 
-57 of the 112 prompts have a machine grader (`verified` in `prompts/CATALOGUE_MANIFEST.jsonl`): categories 01, 02, 05, 13, 14 and 16 in full, and 03 (4 of 7), 04 (6 of 7) and 06 (5 of 7). The other 55 are checked only for reaching the expected terminal stage, and benchmark reports show them at stage level. A *decided* pass rate counts PASS and FAIL and leaves MANUAL out; a prompt that is ungraded or awaiting a human check is never a pass.
+57 of the 112 prompts are designated for ground-truth grading (`verified` in `prompts/CATALOGUE_MANIFEST.jsonl`), including entries awaiting MANUAL adjudication: categories 01, 02, 05, 13, 14 and 16 in full, and 03 (4 of 7), 04 (6 of 7) and 06 (5 of 7). The other 55 are checked only for reaching the expected terminal stage, and benchmark reports show them at stage level. A *decided* pass rate counts PASS and FAIL and leaves MANUAL out; a prompt that is ungraded or awaiting a human check is never a pass.
 
 ---
 
@@ -51,3 +51,5 @@ To prevent benchmark overfitting:
 1. **Zero Ground-Truth Leaks**: The execution harness (`src/pdl_taskmaster/`) contains zero prompt text, keyword regexes, or solutions.
 2. **Automated Verification Probes**: `tests/test_harness_anti_overfitting.py` statically inspects the codebase to ensure no catalogue answers are hardcoded.
 3. **Refusal Invariants**: Adversarial prompts (`09-01`) must execute benign tasks while containing injections in passive data; impossible prompts (`13-01`) must identify contradictions without spurious solver loops.
+
+The active coding-checker inventory contains 28 prompts. Deadlock repair (06-02) now uses MANUAL adjudication in both catalogue and experiment grading because its former checker could observe the wrong output buffer or skip assertions. Review its diagnosis, corrected implementation and required demonstration separately. This coverage correction does not award a pass or rewrite historical scores. Corpus construction may still run the published code; its ordinary execution status alone does not settle the manual task judgment.

@@ -560,17 +560,10 @@ def grade_merge_sort_proof(corpus: str, prompt: str) -> tuple[str, str]:
 
 
 def grade_amortized_cost(corpus: str, prompt: str) -> tuple[str, str]:
-    kind, low = outcome_of(corpus), corpus.lower()
+    kind = outcome_of(corpus)
     if kind != "RESULT":
         return FAIL, f"no analysis delivered (outcome {kind})"
-    stated = re.findall(r"(?:amortized cost|charge|charged|assign)[^.\n]{0,40}?\b(\d+)\b", low)
-    if "3" in stated:
-        if _says(low, ("never negative", "never goes negative", "non-negative", "nonnegative", ">= 0", "≥ 0")):
-            return PASS, "charges 3 per push and shows the balance never goes negative"
-        return FAIL, "charges 3 per push but does not show the balance stays non-negative"
-    if stated:
-        return FAIL, f"states amortized cost {stated[0]}, expected 3"
-    return MANUAL, "no explicit per-push charge found"
+    return MANUAL, "adjudicate the per-push charge, accounting proof and nonnegative bank balance"
 
 
 def grade_invariant_induction(corpus: str, prompt: str) -> tuple[str, str]:
@@ -617,16 +610,10 @@ def grade_missing_dollar(corpus: str, prompt: str) -> tuple[str, str]:
 
 
 def grade_knights_and_knaves(corpus: str, prompt: str) -> tuple[str, str]:
-    low = corpus.lower()
-    said = {name: {role for role in ("knight", "knave")
-                   if re.search(rf"\b{name}\b\s*(?:is|:|=|-)\s*(?:a\s+)?{role}\b", low)} for name in "abc"}
-    if said == {"a": {"knight"}, "b": {"knave"}, "c": {"knave"}}:
-        return PASS, "A knight, B knave, C knave"
-    expected = {"a": "knight", "b": "knave", "c": "knave"}
-    if any(roles == {other} for name, roles in said.items()
-           for other in ("knight", "knave") if other != expected[name]):
-        return FAIL, f"wrong role stated: {said}"
-    return MANUAL, f"roles stated: {said}"
+    kind = outcome_of(corpus)
+    if kind != "RESULT":
+        return FAIL, f"no deduction delivered (outcome {kind})"
+    return MANUAL, "adjudicate the final roles and reasoning excluding every other assignment"
 
 
 def grade_elevator_riddle(corpus: str, prompt: str) -> tuple[str, str]:
@@ -666,6 +653,18 @@ def grade_house_grid(corpus: str, prompt: str) -> tuple[str, str]:
     return MANUAL, f"fish owner unclear: {sorted(owners)}"
 
 
+def grade_kmp(corpus: str, prompt: str) -> tuple[str, str]:
+    if outcome_of(corpus) != "RESULT":
+        return FAIL, f"published {outcome_of(corpus)}, not a deliverable"
+    return MANUAL, "adjudicate the failure function, all-match search, construction trace and example positions"
+
+
+def grade_deadlock_repair(corpus: str, prompt: str) -> tuple[str, str]:
+    if outcome_of(corpus) != "RESULT":
+        return FAIL, f"published {outcome_of(corpus)}, not a deliverable"
+    return MANUAL, "adjudicate the deadlock diagnosis, corrected implementation and required demonstration"
+
+
 GRADERS: dict[str, Callable[[str, str], tuple[str, str]]] = {
     "01-01": grade_partition_triples,
     "01-02": grade_exact_covers,
@@ -674,6 +673,8 @@ GRADERS: dict[str, Callable[[str, str], tuple[str, str]]] = {
     "01-05": grade_latin_square,
     "01-06": grade_first_fit,
     "01-07": grade_hamiltonian_path,
+    "05-07": grade_kmp,
+    "06-02": grade_deadlock_repair,
     "13-01": grade_reports_no_solution,
     "13-02": grade_np_hard_honesty,
     "13-03": grade_nonexistent_package,
@@ -696,6 +697,11 @@ GRADERS: dict[str, Callable[[str, str], tuple[str, str]]] = {
     "16-06": grade_sibling_count,
     "16-07": grade_house_grid,
 }
+
+
+# A manifest entry outside the catalogue (the held-out instances of L145) names the grader of its family; only graders
+# that read their instance from the prompt are meant for this.
+GRADERS_BY_NAME: dict[str, Callable[[str, str], tuple[str, str]]] = {fn.__name__: fn for fn in GRADERS.values()}
 
 
 def grade_hidden(prompt_id: str, kind: str, text: str | None, *, run_code: bool = True) -> dict:
@@ -726,7 +732,7 @@ def grade(entry: dict, result_dir: Path, prompts_dir: Path, *, run_code: bool = 
             return grade_hidden(entry["id"], kind, text, run_code=run_code)
         except Exception as exc:  # a grader bug must never mask a run
             return {"grade": "ERROR", "reason": f"{type(exc).__name__}: {exc}"}
-    fn = GRADERS.get(entry["id"])
+    fn = GRADERS.get(entry["id"]) or GRADERS_BY_NAME.get(entry.get("grader") or "")
     if fn is None:
         return {"grade": MANUAL, "reason": "needs GOAL.md Step 5 human spot check"}
     try:

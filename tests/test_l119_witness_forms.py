@@ -108,11 +108,11 @@ def test_the_in_call_check_accepts_an_argued_result_and_gives_programs_the_certi
             data = json.loads(text)
             return SimpleNamespace(kind=data["kind"], body=data["body"], result_ir=data.get("result_ir"))
 
-    from pdl_taskmaster.runtime.session_engine import _parse_sandbox_witness, _python_blocks
+    from pdl_taskmaster.runtime.session_engine import _parse_sandbox_witness, _python_blocks, _witness_written_in_program
     from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS, ExecutionSandbox
 
     validate = agent_tools.make_validator(Bridge(), ExecutionSandbox(label="l119"), EXECUTION_BUDGETS["STANDARD"],
-                                          True, _python_blocks, _parse_sandbox_witness)
+                                          True, _python_blocks, _parse_sandbox_witness, _witness_written_in_program)
     argued = {"polarity": "positive", "basis": "proof", "data": {"n": 19}, "argument": "m + n = 7 + 12."}
     errors, _ = validate({"kind": "RESULT", "body": "The answer is 19.", "result_ir": {"witness": argued}})
     assert errors == []

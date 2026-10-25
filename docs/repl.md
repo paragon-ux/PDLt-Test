@@ -17,7 +17,7 @@ Commands below are shown for **bash** (Linux, macOS) and **PowerShell** (Windows
 | `pdlt --new-session` | Starts a new session without asking |
 | `pdlt --session-id my-work` | Opens the session named `my-work`, creating it if it does not exist |
 | `pdlt --review` | Stops at the prompt and the plan for your review before anything runs (see "Review modes") |
-| `pdlt --model openai/gpt-oss-120b` | Uses another model (the default is `nvidia/nemotron-3-super-120b-a12b:free`) |
+| `pdlt --model nvidia/nemotron-3-super-120b-a12b:free` | Uses another model (the default is `openai/gpt-oss-120b`, L167) |
 
 On start it prints:
 
@@ -51,9 +51,16 @@ What comes back depends on the request:
 
 | Mode | Start with | Toggle in the REPL | What happens |
 |---|---|---|---|
-| No review (the default) | `pdlt` or `--no-review` | `/no-review on` | Runs straight through. The interpretation is shown as an unconfirmed working note. |
-| Review | `--review` | `/no-review off` | Stops at the prompt pseudocode and again at the plan. Answer `/confirm` to go on, `/revise <what to change>` for a new draft, or `/stop` to cancel. |
+| No review (the default) | `pdlt` or `--no-review` | `/no-review on` | Runs straight through. In protocol mode the interpretation is shown as an unconfirmed working note. |
+| Review | `--review` | `/no-review off` (protocol mode) | The confirmed route, in protocol mode: with no `--mode`, `--review` selects protocol. Stops at the prompt pseudocode and again at the plan. Answer `/confirm` to go on, `/revise <what to change>` for a new draft, or `/stop` to cancel. |
 | Fast | `--fast` (implies `--review`) | `/fast on` | Both artifacts are shown; one the host has no findings on is accepted without waiting, and one with findings stops for you. |
+
+### Session modes
+
+`--mode saver` is the default (ADR-0031): it uses the protocol only for what System 1 classifies VERIFIED_EXECUTION and answers the rest directly. `--mode protocol` runs every request through the protocol; `--mode direct` answers each request directly, behind SECURE_GATEWAY ([routing.md](routing.md), section 7).
+- Review needs protocol mode (L165): `--review` with no `--mode` selects it, `--review` with `--mode direct` or `saver` is refused, and `/no-review off` in a direct or saver session points to `/mode protocol`.
+- A direct answer closes `CLOSED_UNVERIFIED` (exit 5); a gateway refusal closes REFUSED (exit 0).
+- `/mode direct` (or `protocol`, `saver`) opens a new session in that mode; a session never changes mode.
 
 ## Commands at the `>` prompt
 
@@ -69,6 +76,7 @@ What comes back depends on the request:
 | `/no-review [on\|off]`, `/fast [on\|off]` | Switch review mode (above) |
 | `/model [name]` | Show or change the model |
 | `/timeout [seconds]` | Show or change the time limit for one model call |
+| `/mode [protocol\|direct\|saver]` | Switch session mode; opens a new session (above) |
 | `/tokens [on\|off]` | Show token counts per call |
 | `/sessions [prune <days>]` | List sessions, or delete those older than the given number of days |
 | `/new`, `/resume <session-id>` | Start a new session, or switch to another |
@@ -82,7 +90,7 @@ What comes back depends on the request:
 
 ## Headless runs
 
-Headless mode never asks a question. It reads lines from standard input, treats each as a message, and exits when the input ends. The exit code is the outcome of the last task.
+Headless mode never asks a question. It reads lines from standard input, treats each as a message, and exits when the input ends. The exit code is the outcome of the last task: an earlier task that was cancelled does not change it. A harness or provider error ends the run at once (exit 4), and so does a pause the input does not answer (a review gate, exit 2; a request for input, exit 3). When each task must pass on its own, run one task per process.
 
 **One task from a pipe:**
 
@@ -128,15 +136,46 @@ printf '%s\n' "Count the primes below 1000 and print the count." /confirm /confi
 
 | Code | Meaning | What to do |
 |---|---|---|
-| 0 | Closed with a result the host established or contract-checked (`CLOSED_SUCCESS`); a direct reply; or a published boundary refusal | Nothing |
+| 0 | Host-reproduced result (`CLOSED_SUCCESS`); a protocol bypass reply; or a published boundary refusal | Check provenance when a host-reproduced deliverable is required (below) |
 | 1 | Cancelled, or failed closed after its repairs (`CLOSED_CANCELLED`) | Read the transcript for the findings |
 | 2 | Stopped at a review gate, or at another non-terminal stage | Pipe `/confirm` lines, or run without `--review` |
 | 3 | Waiting for input the task needs (`WAITING_INPUT`) | Supply it in a follow-up message |
 | 4 | Harness or provider error: never a task outcome. A `[harness-error]` JSON line on standard error says where | See [Reference: when something fails](reference.md#when-something-fails) |
-| 5 | Published, but the host could not establish it (`CLOSED_UNVERIFIED`) | Treat the result as unverified; its `provenance.json` says what is missing |
+| 5 | Published, but the host could not establish it (`CLOSED_UNVERIFIED`), including every direct answer in `--mode direct` or `saver` | Treat the result as unverified; its `provenance.json` says what is missing |
 | 130 | Interrupted (Ctrl+C) | Nothing |
 
 A headless run that ends anywhere but `CLOSED_SUCCESS` also prints a `[headless halt]` or `[headless close]` line on standard error naming the stage.
+
+### Check the verification level in CI
+
+Contract-only published results and direct/saver answers exit 5. Exit 0 also covers protocol bypass replies and published refusals, which publish no result provenance. A CI step requiring a reproduced deliverable checks its `provenance.json`: `verification.level` is `host_verified`, `contract_checked` or `unverified`. Direct/saver answers publish `unverified` provenance. `host_verified` establishes host reproduction, not general correctness. Run one task per process in a fresh `--workspace-root`, so the folder holds that task's provenance only. These steps require `host_verified`; use the level your step needs.
+
+bash:
+
+```bash
+root=$(mktemp -d)
+printf '%s\n' "Count the primes below 1000 and print the count." | pdlt --non-interactive --new-session --workspace-root "$root"
+code=$?
+[ "$code" -eq 0 ] || exit "$code"
+prov=$(find "$root" -name provenance.json | head -n 1)
+[ -n "$prov" ] || { echo "no published result (a direct reply or a refusal)" >&2; exit 1; }
+level=$(python -c "import json, sys; print(json.load(open(sys.argv[1], encoding='utf-8'))['verification']['level'])" "$prov")
+[ "$level" = host_verified ] || { echo "not host-verified: $level" >&2; exit 1; }
+```
+
+PowerShell:
+
+```powershell
+$root = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid())
+"Count the primes below 1000 and print the count." | pdlt --non-interactive --new-session --workspace-root $root
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+$prov = Get-ChildItem $root -Recurse -Filter provenance.json | Select-Object -First 1
+if (-not $prov) { Write-Error "no published result (a direct reply or a refusal)"; exit 1 }
+$level = (Get-Content $prov.FullName -Raw -Encoding utf8 | ConvertFrom-Json).verification.level
+if ($level -ne "host_verified") { Write-Error "not host-verified: $level"; exit 1 }
+```
+
+From Python, the same level is `result.provenance["verification"]["level"]` ([Python API](api.md)).
 
 ## Frequently used flags
 
@@ -150,7 +189,7 @@ A headless run that ends anywhere but `CLOSED_SUCCESS` also prints a `[headless 
 | `--exit-on-close` | Exit as soon as a task closes, without waiting for more input |
 | `--model NAME` | The task model (any OpenRouter model id) |
 | `--review`, `--fast`, `--no-review` | Review mode (above) |
-| `--sandbox auto\|native\|container\|audit-only` | Program confinement; `audit-only` turns the OS sandbox off and prints a warning ([Sandbox guide](SANDBOX.md)) |
+| `--sandbox auto\|native\|container\|audit-only` | Program confinement; `audit-only` turns the OS sandbox off and prints a warning; there is no `off` ([Sandbox guide](SANDBOX.md)) |
 | `--task-type NAME` | Pin a registered task type instead of letting System 1 classify each request ([Extensions SDK](extensions.md)) |
 | `--max-repairs N` | Repair attempts after a failed check; `0` stops at the first failure |
 | `--no-tier-d1` | Do not feed sandbox failures back to the model as repairs |
@@ -159,6 +198,16 @@ A headless run that ends anywhere but `CLOSED_SUCCESS` also prints a `[headless 
 | `--workspace-root PATH` | Where sessions are kept (default below) |
 | `--transcript PATH` | Where the transcript is written |
 | `--dev` | Developer mode: per-call telemetry |
+| `--agent-tools`, `--no-agent-tools` | In-call tools inside model operations. On by default, except on the unconfirmed route (protocol mode without review), where they are off (ADR-0031, L166); a flag or `PDLT_AGENT_TOOLS` wins: `run_python` and `read_attempt` on EXECUTE_UNCONFIRMED (and on the confirmed route's EXECUTE with `--confirmed-execute-tools`), and checked submissions ([MCP and in-call tools](mcp/EXTERNAL_TOOLS.md)) |
+| `--confirmed-execute-tools` | Give the confirmed route's EXECUTE its in-call tools (`run_python`, `read_attempt`, `submit_execute`; L163). Off by default (L168): measured no more correct, 25% faster, 15% more cost |
+| `--agent-tools-exclude TOOL[,TOOL]` | With tools on, withhold the named tools, for an ablation. A withheld submission tool means the operation answers in its message, and the host checks the reply after the call; an operation with every tool withheld makes a plain call |
+| `--withhold-execution-context` | L148 A/B: BOOTSTRAP_ANALYSIS, DRAFT_PROMPT and DRAFT_PLAN (and their revisions) receive only their own instructions, without the execution environment or EXEC-* clauses |
+| `--ablate-unconfirmed PART[,PART]` | L149 ablation, a measurement: change what EXECUTE_UNCONFIRMED receives. `normative`: no standard clauses or guidance block; `framing`: no execution environment, EXEC-* clauses, or code, tool and witness wording; `notation`: the working notes in plain prose; `order`: the deliverable before the working notes; `entities`: no TASK_ENTITIES (the bootstrap's extraction); `freetext` (L151): the same fields as headed plain-text sections instead of a JSON object, converted by the host before validation (not with agent tools or the result IR); `plaininput` (L151): the projection as indented plain text instead of a JSON document, every value kept, and the worker instructions without their two role lines (not with agent tools). Other operations are unchanged |
+| `--draft-execute` | Draft a typed execution brief before EXECUTE on tasks that are or need an algorithm or a calculation |
+| `--no-api-structured-output` (alias `--no-structured-output`) | Send no output-format constraint to the provider. On by default: each operation gets a JSON schema or JSON mode, as the API worker chooses |
+| `--api-reasoning-operation OP=EFFORT`, `--api-model-operation OP=MODEL` | Reasoning effort or model for one operation; repeatable |
+| `--max-output-tokens N` | Output-token cap per call, reasoning included (default 16384) |
+| `--worker-timeout SECONDS` | Worker timeout (default 600) |
 
 Two subcommands sit beside the REPL: `pdlt version` prints the version, and `pdlt init` seeds the operation contracts into `~/.pdlt` (`--local` for `./contracts`), which you only need to customise them.
 

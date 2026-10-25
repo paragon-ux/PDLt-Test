@@ -1,55 +1,28 @@
-"""Plain string operations for reading model and program text.
-
-No regular expressions: everything the harness takes from a model response or a
-program's output is read with exact, inspectable string operations, so what is
-recognised is exactly what is documented here.
-"""
+"""CommonMark code blocks and literal readers for wire wrappers and program output."""
 
 from __future__ import annotations
 
 import json
 from typing import Any
 
+from markdown_it import MarkdownIt
+
 FENCE = "```"
 
 
 def fenced_blocks(text: str, languages: tuple[str, ...]) -> list[str]:
-    """Contents of ``` fenced blocks whose info string is one of ``languages``
-    (case-insensitive), in order. A block opens on a line starting with ``` and
-    closes at the next line that starts with ```. A line that only ends with ```
-    closes it too (a fence stuck to the last line of code), unless a bare ``` line
-    follows before the next opening fence: then it is text inside the block, such
-    as a docstring that mentions a fence. A line starting with ``` and an info
-    string opens the next block, so a block that was never closed ends there."""
+    """CommonMark fence contents, in order, selected by the first info-string word.
+
+    The parser removes Markdown container/fence indentation. All remaining code
+    content, including Python indentation, is returned without rewriting.
+    """
     wanted = {language.lower() for language in languages}
-    lines = (text or "").splitlines()
-    # The next line after each one that starts with ```: "bare" (a closing fence), "info" (an opening one) or None.
-    following: list[str | None] = [None] * len(lines)
-    ahead: str | None = None
-    for index in range(len(lines) - 1, -1, -1):
-        following[index] = ahead
-        stripped = lines[index].strip()
-        if stripped.startswith(FENCE):
-            ahead = "info" if stripped[len(FENCE):].strip() else "bare"
     blocks: list[str] = []
-    current: list[str] | None = None
-    keep = False
-    for index, line in enumerate(lines):
-        stripped = line.strip()
-        if current is None:
-            if stripped.startswith(FENCE):
-                current, keep = [], stripped[len(FENCE):].strip().lower() in wanted
-            continue
-        starts = stripped.startswith(FENCE)
-        if starts or (stripped.endswith(FENCE) and following[index] != "bare"):
-            if not starts:
-                current.append(line[: line.rfind(FENCE)])
-            if keep:
-                blocks.append("\n".join(current) + "\n")
-            info = stripped[len(FENCE):].strip() if starts else ""
-            current, keep = ([], info.lower() in wanted) if info else (None, False)
-            continue
-        current.append(line)
+    for token in MarkdownIt("commonmark").parse(text or ""):
+        if token.type == "fence":
+            info = token.info.split()
+            if info and info[0].lower() in wanted:
+                blocks.append(token.content)
     return blocks
 
 

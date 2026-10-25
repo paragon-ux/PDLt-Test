@@ -101,7 +101,7 @@ def test_standard_two_call_unconfirmed_execution(tmp_path: Path):
     # Controller instance kind is UNCONFIRMED and closed with success
     assert engine.controller is not None
     assert engine.controller.state.instance_kind == "UNCONFIRMED"
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
 
     # Response is closed
     assert response.closed is True
@@ -116,7 +116,7 @@ def test_standard_two_call_unconfirmed_execution(tmp_path: Path):
     # Turn status in workspace
     assert engine.workspace is not None
     turn_status = engine.workspace.read_turn_status("turn_001")
-    assert turn_status["status"] == "CLOSED_SUCCESS"
+    assert turn_status["status"] == "CLOSED_UNVERIFIED"
 
 
 def test_explicit_confirm_with_pseudocode_bypasses_no_review(tmp_path: Path):
@@ -206,7 +206,7 @@ def test_request_input_transitions_to_waiting_input_and_resumes(tmp_path: Path):
     # Turn 2: user supplies input
     resp2 = engine.handle_user_message("God A answers 'da'")
     assert resp2.closed is True
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
     assert "Identities determined with god A response." in resp2.text
 
     # Verify no DRAFT_PROMPT or DRAFT_PLAN calls occurred anywhere
@@ -255,7 +255,7 @@ def test_task_change_in_waiting_input_restarts_execution(tmp_path: Path):
     # User sends a substantive change
     resp2 = engine.handle_user_message("Actually, forget the three gods, solve this completely different logic puzzle instead.")
     assert resp2.closed is True
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
     assert "Different deliverable for updated task." in resp2.text
 
 
@@ -433,7 +433,7 @@ def test_unconfirmed_route_with_draft_execute_bypasses_on_standard_execution(tmp
 
     response = engine.handle_user_message("Analyze the architectural tradeoffs of two cache replacement policies.")
     assert response.closed is True
-    assert engine.controller.state.stage == Stage.CLOSED_SUCCESS
+    assert engine.controller.state.stage == Stage.CLOSED_UNVERIFIED
     # DRAFT_EXECUTE bypassed: straight from BOOTSTRAP_ANALYSIS to EXECUTE_UNCONFIRMED
     assert calls == ["BOOTSTRAP_ANALYSIS", "EXECUTE_UNCONFIRMED"]
 

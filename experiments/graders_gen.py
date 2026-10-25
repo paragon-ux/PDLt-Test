@@ -1,33 +1,21 @@
 """Graders for the generated families whose catalogue graders are not parametric.
 
-G-KK and G-HG copy the catalogue graders for 16-03 and 16-07 exactly, including
-their regular expressions, with the expected answer read from the item's solution
-file instead of being hard-coded. An isomorph is then graded the way its template
-is, quirks included, and the gate's audit treats both the same way. G-SS, G-LS and
-G-HP need no copy: their catalogue graders already read the instance from the
-prompt.
+G-KK uses the catalogue's manual adjudication for final roles and exhaustive
+reasoning. G-HG copies the catalogue grader for 16-07 with the expected answer
+read from the item's solution file. G-SS, G-LS and G-HP need no copy: their
+catalogue graders already read the instance from the prompt.
 """
 from __future__ import annotations
 
 import re
 from typing import Any
 
-from graders import FAIL, MANUAL, PASS
-
-ROLES = ("knight", "knave")
+from graders import FAIL, MANUAL, PASS, grade_knights_and_knaves
 
 
 def grade_knights(corpus: str, solution: dict[str, Any]) -> tuple[str, str]:
-    """As graders.grade_knights_and_knaves, for any names and expected roles."""
-    low = corpus.lower()
-    expected = {name.lower(): role for name, role in solution["answer"].items()}
-    said = {name: {role for role in ROLES
-                   if re.search(rf"\b{name}\b\s*(?:is|:|=|-)\s*(?:a\s+)?{role}\b", low)} for name in expected}
-    if said == {name: {role} for name, role in expected.items()}:
-        return PASS, ", ".join(f"{name.upper()} {role}" for name, role in expected.items())
-    if any(roles == {other} for name, roles in said.items() for other in ROLES if other != expected[name]):
-        return FAIL, f"wrong role stated: {said}"
-    return MANUAL, f"roles stated: {said}"
+    """Keep generated deductions on the same adjudication path as the template."""
+    return grade_knights_and_knaves(corpus, "")
 
 
 def grade_house_owner(corpus: str, solution: dict[str, Any]) -> tuple[str, str]:

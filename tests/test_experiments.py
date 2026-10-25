@@ -83,10 +83,23 @@ def test_generated_items_pass_on_their_answer_and_fail_on_a_corrupted_one(set_na
         family = item_id.split("-")[1]
         solution = json.loads((grading.GENERATED / set_name / family / f"{item_id}.solution.json")
                               .read_text(encoding="utf-8"))
+        expected = graders.MANUAL if family == "KK" else graders.PASS
         assert grading.grade_text(item, "RESULT", _canonical(family, solution), run_code=False)["grade"] == \
-            graders.PASS, item_id
+            expected, item_id
         assert grading.grade_text(item, "RESULT", _corrupted(family, solution), run_code=False)["grade"] != \
             graders.PASS, item_id
+
+
+@pytest.mark.parametrize("set_name", ["gate", "dev"])
+def test_generated_knights_follow_catalogue_adjudication(set_name):
+    for item_id, item in grading.generated_items(set_name).items():
+        if "-KK-" not in item_id:
+            continue
+        for text in ("A is a knight. B is a knave. C is a knave.",
+                     "Suppose A is a knave. Reject that case. Final roles are **knight**, **knave**, **knave**."):
+            assert grading.grade_text(item, "RESULT", text, run_code=False)["grade"] == graders.MANUAL
+        assert grading.grade_text(item, "REQUEST_INPUT", "Which statements?", run_code=False)["grade"] == graders.FAIL
+        assert grading.grade_text(item, "RESULT", None, run_code=False)["grade"] == graders.FAIL
 
 
 def test_generated_logic_items_have_exactly_one_answer():

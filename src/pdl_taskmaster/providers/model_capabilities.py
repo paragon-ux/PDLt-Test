@@ -1,10 +1,10 @@
 """What a model supports, read from OpenRouter's model list before its first call (L122).
 
-Before the first call to a model, the API worker checks every parameter the session's requests to it
-will carry against the model's ``supported_parameters``. A model that lacks one fails closed there,
-before any request is sent, with one line naming the model, the parameter and the operations that
-send it, instead of a provider's HTTP error at whichever call first carries it. Only OpenRouter
-publishes this list; other endpoints are not checked.
+The API worker loads the selected model's metadata before adapting its output format, then checks
+each outgoing round's actual parameters against ``supported_parameters``. An unsupported parameter
+fails closed before that payload is sent, naming the model, parameter and operation. Cached metadata
+does not authorize different later requirements. Only OpenRouter publishes this list; other endpoints
+are not checked.
 """
 from __future__ import annotations
 

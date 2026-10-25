@@ -4,12 +4,16 @@ This is the measurement code for the one-shot acceptance gate in [`docs/plans/pr
 
 It is evaluation plane, like `graders.py` and `run_catalogue.py`: it may know the benchmark. The harness (`src/pdl_taskmaster`) never imports it, and nothing here changes what a model sees in a protocol run.
 
+Keep the tooling, example configurations, frozen prompts, rubrics and test fixtures tracked: the offline suite imports and reads them. Local study configurations, schedules and reports in `studies/`, and generated gateway `score*.json` and `e2e_score*.json` reports, are ignored. Untracking these artifacts leaves local copies on disk; a fresh checkout does not include them. Write new run output under the archive selected by `catalogue_runs.py`.
+
+Historical study snapshots remain in Git history. For example, `git show aa4e92d9:experiments/studies/L145-A.json` reads the configuration used by the L145 pre-registration. The tooling accepts a configuration path; it does not require the local `studies/` directory to exist.
+
 | File | What it is |
 |---|---|
 | `generate.py` | The generated isomorph items: the **gate set** (decides acceptance) and the **dev set** (calibration only; never decides). Fixed seeds; every answer is solver-checked. |
 | `prompts/{gate,dev}/` | The generated items, their solutions and a `MANIFEST.jsonl` per set. Frozen. |
 | `prompt_set.py`, `PROMPT_SET.lock.json` | The gate's frozen prompt list (strata T, G, S, I, Q, and DEV), with a SHA-256 per file. |
-| `graders_gen.py` | Graders for the generated families whose catalogue graders are not parametric (copies of 16-03's and 16-07's). |
+| `graders_gen.py` | Generated knights-and-knaves items share 16-03's manual adjudication; house-grid items use a parametric copy of 16-07's grader. |
 | `grading.py` | Grading every arm the same way: one code budget (HEAVY_COMPUTE), P-first extraction, the derived headless outcome, BYPASS replies, blind adjudication export. |
 | `controls.py` | The plain-call arms C0–C3, sent through the worker's own transport. |
 | `runner.py` | The gate runner: `plan`, `run` (resumable, `--smoke`), `export`, `report`. |

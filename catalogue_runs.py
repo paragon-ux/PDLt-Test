@@ -11,9 +11,9 @@ ROOT = Path(__file__).resolve().parent
 ARCHIVE_NAME = "PDLt-Catalogue-Archive"
 
 
-def runs_dir() -> Path:
+def runs_dir(repo_root: Path | None = None) -> Path:
     configured = os.environ.get("PDLT_CATALOGUE_RUNS")
-    return Path(configured).expanduser() if configured else ROOT.parent / ARCHIVE_NAME
+    return Path(configured).expanduser() if configured else (repo_root or ROOT).parent / ARCHIVE_NAME
 
 
 RUNS_DIR = runs_dir()

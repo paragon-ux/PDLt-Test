@@ -3,8 +3,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -18,14 +18,14 @@
    },
    {
     "operation": "EXECUTE",
-    "prompt": "9034951104d186e2",
-    "manifest": "7ff2b92c3dc508b6"
+    "prompt": "088a783db0b2471a",
+    "manifest": "376bcc2819a12855"
    }
   ],
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -50,8 +50,8 @@
   ],
   "steps": [
    {
-    "stage": "CLOSED_SUCCESS",
-    "exit_status": 0,
+    "stage": "CLOSED_UNVERIFIED",
+    "exit_status": 5,
     "closed": true,
     "review": null,
     "refused": false
@@ -83,19 +83,20 @@
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
    "EXECUTION_ATTEMPTS",
+   "CLOSED_UNVERIFIED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
   ],
   "provenance": {
    "schema": "pdlt.provenance/1",
    "recorded_by": "host at closure",
-   "status": "CLOSED_SUCCESS",
+   "status": "CLOSED_UNVERIFIED",
    "verification": {
     "level": "contract_checked",
     "problem_class": "STANDARD_EXECUTION",
     "witness_form": "none",
     "reproduced_by_host": false,
-    "unverified_reason": null,
+    "unverified_reason": "contract_checked",
     "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
@@ -107,8 +108,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -119,7 +120,7 @@
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -163,19 +164,19 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "EXECUTE_UNCONFIRMED",
-    "prompt": "009a223a26ac7e5e",
-    "manifest": "89d3b03ba1f1d35f"
+    "prompt": "1d2ce46d322f3414",
+    "manifest": "aa1cf8be195d17ee"
    }
   ],
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -192,8 +193,8 @@
   ],
   "steps": [
    {
-    "stage": "CLOSED_SUCCESS",
-    "exit_status": 0,
+    "stage": "CLOSED_UNVERIFIED",
+    "exit_status": 5,
     "closed": true,
     "review": null,
     "refused": false
@@ -210,19 +211,20 @@
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
    "PLAN_PROFILE_ROUTED",
+   "CLOSED_UNVERIFIED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
   ],
   "provenance": {
    "schema": "pdlt.provenance/1",
    "recorded_by": "host at closure",
-   "status": "CLOSED_SUCCESS",
+   "status": "CLOSED_UNVERIFIED",
    "verification": {
     "level": "contract_checked",
     "problem_class": "STANDARD_EXECUTION",
     "witness_form": "none",
     "reproduced_by_host": false,
-    "unverified_reason": null,
+    "unverified_reason": "contract_checked",
     "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
@@ -234,8 +236,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -249,15 +251,15 @@
    },
    {
     "operation": "EXECUTE",
-    "prompt": "9034951104d186e2",
-    "manifest": "7ff2b92c3dc508b6"
+    "prompt": "088a783db0b2471a",
+    "manifest": "376bcc2819a12855"
    }
   ],
   "sys1": null,
   "steps": [
    {
-    "stage": "CLOSED_SUCCESS",
-    "exit_status": 0,
+    "stage": "CLOSED_UNVERIFIED",
+    "exit_status": 5,
     "closed": true,
     "review": null,
     "refused": false
@@ -288,19 +290,20 @@
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
    "EXECUTION_ATTEMPTS",
+   "CLOSED_UNVERIFIED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
   ],
   "provenance": {
    "schema": "pdlt.provenance/1",
    "recorded_by": "host at closure",
-   "status": "CLOSED_SUCCESS",
+   "status": "CLOSED_UNVERIFIED",
    "verification": {
     "level": "contract_checked",
     "problem_class": "STANDARD_EXECUTION",
     "witness_form": "none",
     "reproduced_by_host": false,
-    "unverified_reason": null,
+    "unverified_reason": "contract_checked",
     "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
@@ -312,8 +315,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -327,14 +330,14 @@
    },
    {
     "operation": "EXECUTE",
-    "prompt": "9034951104d186e2",
-    "manifest": "7ff2b92c3dc508b6"
+    "prompt": "088a783db0b2471a",
+    "manifest": "376bcc2819a12855"
    }
   ],
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -359,8 +362,8 @@
   ],
   "steps": [
    {
-    "stage": "CLOSED_SUCCESS",
-    "exit_status": 0,
+    "stage": "CLOSED_UNVERIFIED",
+    "exit_status": 5,
     "closed": true,
     "review": null,
     "refused": false
@@ -392,19 +395,20 @@
    "OPERATION_MATERIALIZED",
    "MODEL_OUTPUT_RECORDED",
    "EXECUTION_ATTEMPTS",
+   "CLOSED_UNVERIFIED",
    "TURN_STATUS",
    "EXECUTION_OUTCOME_PUBLISHED"
   ],
   "provenance": {
    "schema": "pdlt.provenance/1",
    "recorded_by": "host at closure",
-   "status": "CLOSED_SUCCESS",
+   "status": "CLOSED_UNVERIFIED",
    "verification": {
     "level": "contract_checked",
     "problem_class": "STANDARD_EXECUTION",
     "witness_form": "none",
     "reproduced_by_host": false,
-    "unverified_reason": null,
+    "unverified_reason": "contract_checked",
     "caveat": "The host checked the reply against its contract and ran its programs, but ran no test of the behaviour the request asks for; a code deliverable's correctness is not established (ledger L115)."
    },
    "deliverable_sha256": "97b38b2ebda1ca4cf4ea291005d97d07c7053db2aed3ef866c04b49ecfb3448d",
@@ -416,8 +420,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -431,14 +435,14 @@
    },
    {
     "operation": "EXECUTE",
-    "prompt": "f8d1eb4d5caedbff",
-    "manifest": "345c8aa052b651a2"
+    "prompt": "7c7d346725048615",
+    "manifest": "d6048d4a6cacd6b7"
    }
   ],
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -525,8 +529,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -540,14 +544,14 @@
    },
    {
     "operation": "EXECUTE",
-    "prompt": "f8d1eb4d5caedbff",
-    "manifest": "345c8aa052b651a2"
+    "prompt": "7c7d346725048615",
+    "manifest": "d6048d4a6cacd6b7"
    }
   ],
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -636,8 +640,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -651,24 +655,24 @@
    },
    {
     "operation": "EXECUTE",
-    "prompt": "f8d1eb4d5caedbff",
-    "manifest": "345c8aa052b651a2"
+    "prompt": "7c7d346725048615",
+    "manifest": "d6048d4a6cacd6b7"
    },
    {
     "operation": "EXECUTE",
-    "prompt": "f13855667e76cb1c",
-    "manifest": "345c8aa052b651a2"
+    "prompt": "1025794c84b9afd0",
+    "manifest": "d6048d4a6cacd6b7"
    },
    {
     "operation": "EXECUTE",
-    "prompt": "f13855667e76cb1c",
-    "manifest": "345c8aa052b651a2"
+    "prompt": "1025794c84b9afd0",
+    "manifest": "d6048d4a6cacd6b7"
    }
   ],
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -745,24 +749,24 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_EXECUTE",
-    "prompt": "654f2d71d1df56a0",
-    "manifest": "fe8561917134d4c7"
+    "prompt": "c321d444e5a84264",
+    "manifest": "30e6e70c302e7214"
    },
    {
     "operation": "EXECUTE_UNCONFIRMED",
-    "prompt": "f938af74b3e0c858",
-    "manifest": "b79a9ea82e8238b0"
+    "prompt": "d9979946771dbebe",
+    "manifest": "43e4de4e517b6bb4"
    }
   ],
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",
@@ -829,8 +833,8 @@
   "worker": [
    {
     "operation": "BOOTSTRAP_ANALYSIS",
-    "prompt": "769b330d2508694d",
-    "manifest": "cc8c8f52a5ac1ce6"
+    "prompt": "ced0d6fb9cda3d74",
+    "manifest": "e017fcffed43be08"
    },
    {
     "operation": "DRAFT_PROMPT",
@@ -844,19 +848,19 @@
    },
    {
     "operation": "DRAFT_EXECUTE",
-    "prompt": "0c29288abda69b82",
-    "manifest": "642ccbe15e3b6b86"
+    "prompt": "e35809836be6f2b7",
+    "manifest": "f004604af997ba06"
    },
    {
     "operation": "EXECUTE",
-    "prompt": "42356eda2103ba54",
-    "manifest": "04b89f7370657daa"
+    "prompt": "8ca9398d68c6fc83",
+    "manifest": "eb3152e404636008"
    }
   ],
   "sys1": [
    {
     "question": "route",
-    "request": "8876f4d16453997f"
+    "request": "d512b931c1a86ade"
    },
    {
     "question": "problem_class",

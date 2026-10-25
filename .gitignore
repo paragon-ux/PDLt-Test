@@ -17,3 +17,8 @@ build/
 gate-runs/
 site/
 experiments/adjudication_cache/
+
+# Local study configurations, schedules and generated reports; keep tooling and frozen fixtures tracked.
+/experiments/studies/
+/experiments/gateway/score*.json
+/experiments/gateway/e2e_score*.json

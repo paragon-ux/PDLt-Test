@@ -29,13 +29,14 @@ CONFIRMED = [REQUEST, "/confirm", "/confirm"]
 
 # name: (System 1's problem class, or "BYPASS"; review route; EXECUTE reply; lines; final stage; provenance level)
 SCENARIOS = {
-    "confirmed-success": ("STANDARD_EXECUTION", True, TEXT, CONFIRMED, "CLOSED_SUCCESS", "contract_checked"),
+    # L164: a contract-checked result closes CLOSED_UNVERIFIED (exit 5); only a host-verified one closes CLOSED_SUCCESS
+    "confirmed-success": ("STANDARD_EXECUTION", True, TEXT, CONFIRMED, "CLOSED_UNVERIFIED", "contract_checked"),
     "at-review": ("STANDARD_EXECUTION", True, TEXT, [REQUEST], "PROMPT_REVIEW", None),
     "cancelled": ("STANDARD_EXECUTION", True, TEXT, [REQUEST, "/cancel"], "CLOSED_CANCELLED", None),
     "host-verified": ("VERIFIED_EXECUTION", True, POSITIVE_SAMPLE, CONFIRMED, "CLOSED_SUCCESS", "host_verified"),
     "unverified": ("VERIFIED_EXECUTION", True, {"body": f"```python\n{NEGATIVE}\n```", "result_ir": IR}, CONFIRMED,
                    "CLOSED_UNVERIFIED", "unverified"),
-    "unconfirmed": ("STANDARD_EXECUTION", False, TEXT, [REQUEST], "CLOSED_SUCCESS", "contract_checked"),
+    "unconfirmed": ("STANDARD_EXECUTION", False, TEXT, [REQUEST], "CLOSED_UNVERIFIED", "contract_checked"),
     "stray-confirm": ("STANDARD_EXECUTION", True, TEXT, ["/confirm"], None, None),
     "direct-reply": ("BYPASS", False, TEXT, ["What is PDLt?"], None, None),
 }
@@ -87,7 +88,7 @@ class Typed(io.StringIO):
 def run_session(name: str, sessions: Path, sid: str, lines: list[str]) -> dict:
     review = SCENARIOS[name][1]
     worker = api.create_worker("conformance", scenario=name)
-    with api.Session.open(worker, sessions / sid, repo_root=ROOT, no_review=not review) as session:
+    with api.Session.open(worker, sessions / sid, repo_root=ROOT, no_review=not review, mode="protocol") as session:
         for line in lines:
             result = session.send(line)
     return {"exit_status": result.exit_status, "text": result.text}
@@ -108,7 +109,7 @@ def run_repl(name: str, sessions: Path, sid: str, lines: list[str], monkeypatch,
 def outcome(sessions: Path, sid: str) -> dict:
     """What the session folder holds, read back through the library: the stage, and the provenance of its turn
     closed with a result."""
-    with api.Session.open(ScriptedWorker({}), sessions / sid, repo_root=ROOT) as session:
+    with api.Session.open(ScriptedWorker({}), sessions / sid, repo_root=ROOT, mode="protocol") as session:
         state = session.status().get("controller_state")
     turns = [t for t in api.closed_turns(sessions) if t.session == sid]
     record = turns[-1].provenance() if turns else None
@@ -169,7 +170,7 @@ def test_a_session_moves_between_interfaces(tmp_path, monkeypatch):
     started = drive("headless", "confirmed-success", sessions, "s-1", monkeypatch, lines=[REQUEST])
     assert (started["stage"], started["exit_status"]) == ("PROMPT_REVIEW", api.EXIT_UNCONFIRMED)
     finished = drive("interactive", "confirmed-success", sessions, "s-1", monkeypatch, lines=["/confirm", "/confirm"])
-    assert finished["stage"] == "CLOSED_SUCCESS"
+    assert finished["stage"] == "CLOSED_UNVERIFIED"
     assert finished["provenance"]["verification"]["level"] == "contract_checked"
     served = mcp_server.ClosedSessions(sessions).list(None)["resources"]
     assert [r["uri"].rsplit("/", 1)[1] for r in served] == ["provenance", "response"]  # no program ran

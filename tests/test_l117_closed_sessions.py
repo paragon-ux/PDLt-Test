@@ -15,9 +15,12 @@ PROGRAM = ("import json\nvalues = [3, 8, 5]\n"
            "print('WITNESS: ' + json.dumps({'polarity': 'positive', 'data': {'largest': max(values)}}))")
 
 
-def _server(sessions: Path | None) -> mcp_server.AgentToolServer:
+def _server(sessions: Path | None, initialize: bool = True) -> mcp_server.AgentToolServer:
     host = mcp_server.build_host("STANDARD", False, repo_root=ROOT)
-    return mcp_server.AgentToolServer(host, mcp_server.ClosedSessions(sessions) if sessions else None)
+    server = mcp_server.AgentToolServer(host, mcp_server.ClosedSessions(sessions) if sessions else None)
+    if initialize:
+        _rpc(server, "initialize")  # L138: nothing but ping before it
+    return server
 
 
 def _rpc(server, method, params=None):
@@ -49,7 +52,7 @@ def test_a_closed_result_is_listed_and_read_through_the_mcp_server(tmp_path):
     engine, response, _, _ = _run(sessions / "session-1" / "workspaces",  # the REPL's layout (repl.py)
                                   [{"kind": "RESULT", "body": PROGRAM, "result_ir": _ir()}],
                                   problem_class="VERIFIED_EXECUTION")
-    server = _server(sessions)
+    server = _server(sessions, initialize=False)
     initialized = _rpc(server, "initialize", {"protocolVersion": mcp_server.PROTOCOL_VERSION, "capabilities": {},
                                               "clientInfo": {"name": "t", "version": "0"}})["result"]
     assert initialized["capabilities"]["resources"] == {"listChanged": False, "subscribe": False}
@@ -105,6 +108,6 @@ def test_resources_are_listed_in_pages(tmp_path, monkeypatch):
 
 
 def test_without_a_sessions_folder_no_resources_are_served(tmp_path):
-    server = _server(None)
+    server = _server(None, initialize=False)
     assert "resources" not in _rpc(server, "initialize")["result"]["capabilities"]
     assert _rpc(server, "resources/list")["error"]["code"] == -32601

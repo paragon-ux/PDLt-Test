@@ -13,7 +13,8 @@ from pdl_taskmaster.providers.api_worker import ApiWorker
 from pdl_taskmaster.runtime import agent_tools
 from pdl_taskmaster.runtime.agent_tools import MAX_SUBMISSIONS, MAX_TOOL_CALLS, SUBMIT, TOOLS, ToolHost, run_loop
 from pdl_taskmaster.runtime.operation_bridge import OperationBridge
-from pdl_taskmaster.runtime.session_engine import SessionEngine, _parse_sandbox_witness, _python_blocks
+from pdl_taskmaster.runtime.session_engine import (SessionEngine, _parse_sandbox_witness, _python_blocks,
+                                                   _witness_written_in_program)
 from pdl_taskmaster.verification.sandbox import EXECUTION_BUDGETS, ExecutionSandbox
 
 from test_computation_recipe import Sys1, _bootstrap
@@ -30,7 +31,8 @@ def outcome(body: str) -> dict:
             "result_ir": IR}
 
 
-def _engine(tmp_path: Path, execute, *, agent_tools_on: bool, problem_class: str = "VERIFIED_EXECUTION"):
+def _engine(tmp_path: Path, execute, *, agent_tools_on: bool, problem_class: str = "VERIFIED_EXECUTION",
+            exclude: str | None = None):
     requests: list = []
 
     def model_call(req):
@@ -43,6 +45,7 @@ def _engine(tmp_path: Path, execute, *, agent_tools_on: bool, problem_class: str
 
     engine = SessionEngine(ROOT, model_call, workspace_root=tmp_path, sys1_client=Sys1(problem_class), no_review=True)
     engine.agent_tools = agent_tools_on
+    engine.agent_tools_exclude = agent_tools.parse_exclusions(exclude)
     response = engine.handle_user_message("Count the subsets of 1..10 that sum to 20.")
     return engine, response, requests, list(engine.workspace.read_events())
 
@@ -54,7 +57,7 @@ def _host(validate=None, programs=(), correction=""):
 
 def _validator(witness_required=True):
     return agent_tools.make_validator(OperationBridge(ROOT), ExecutionSandbox(), BUDGET, witness_required,
-                                      _python_blocks, _parse_sandbox_witness)
+                                      _python_blocks, _parse_sandbox_witness, _witness_written_in_program)
 
 
 def _call(name, args, cid):
@@ -165,14 +168,16 @@ def _worker(monkeypatch, replies, *, on):
     return ApiWorker(repo_root=ROOT, model="openai/gpt-oss-120b", agent_tools=on), sent
 
 
-def test_the_worker_with_tools_off_sends_todays_request(tmp_path, monkeypatch):
+def test_attached_tools_override_worker_default_and_omitted_host_stays_plain(tmp_path, monkeypatch):
     request = _request(tmp_path)
     message = [{"type": "message", "content": [{"type": "output_text", "text": json.dumps(outcome(GOOD))}]}]
     worker, sent = _worker(monkeypatch, [message, list(message)], on=False)
-    worker._call(request)
+    tool_result = worker._call(request)
     import dataclasses
-    worker._call(dataclasses.replace(request, tools=None))
-    assert sent[0] == sent[1] and "tools" not in sent[0]
+    plain_result = worker._call(dataclasses.replace(request, tools=None))
+    assert sent[0]["tools"] and "text" not in sent[0]
+    assert "tools" not in sent[1] and "text" in sent[1]
+    assert json.loads(tool_result.text) == json.loads(plain_result.text) == outcome(GOOD)
 
 
 def test_the_worker_with_tools_on_runs_the_loop(tmp_path, monkeypatch):
@@ -190,12 +195,13 @@ def test_the_worker_with_tools_on_runs_the_loop(tmp_path, monkeypatch):
 # ---- the loop
 
 def test_tools_are_mcp_shaped_and_none_returns_a_verdict():
-    assert [t["name"] for t in TOOLS] == ["read_attempt", "run_python", SUBMIT, "submit_bootstrap_analysis",
-                                         "submit_draft_prompt", "submit_draft_plan"]
+    assert [t["name"] for t in TOOLS] == ["read_attempt", "run_python", SUBMIT, "submit_execute",
+                                         "submit_bootstrap_analysis", "submit_draft_prompt", "submit_draft_plan"]
     assert all(set(t) == {"name", "description", "inputSchema"} for t in TOOLS)
     text = json.dumps(TOOLS).lower().replace("verifies", "")
     assert "witness" not in text and "verif" not in text
-    assert agent_tools.TOOL_OPERATIONS == ("EXECUTE_UNCONFIRMED", "BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT", "DRAFT_PLAN")
+    assert agent_tools.TOOL_OPERATIONS == ("EXECUTE_UNCONFIRMED", "EXECUTE", "BOOTSTRAP_ANALYSIS", "DRAFT_PROMPT",
+                                           "DRAFT_PLAN")
 
 
 def test_budgets_hold(tmp_path):
@@ -280,7 +286,7 @@ def test_draft_submissions_are_checked_by_the_lint(tmp_path):
             seen["plan"] = req.tools.tool_names()
             return json.dumps(req.tools.submit(json.dumps({"outcome": {"neutral_plan_body": PLAN}}))[1])
         if req.operation == "EXECUTE":
-            assert req.tools is None  # the confirmed route's EXECUTE has no loop
+            assert req.tools is None  # L168: the confirmed route's EXECUTE has its loop only when asked
             return json.dumps({"kind": "RESULT", "body": "42", "result_ir": _ir()})
         raise AssertionError(req.operation)
 

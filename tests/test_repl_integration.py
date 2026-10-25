@@ -74,14 +74,14 @@ def test_repl_command_loop_full_deterministic_session(tmp_path: Path) -> None:
     )
     proc = _run_repl(tmp_path, lines, "repltest")
     out = proc.stdout + proc.stderr
-    assert proc.returncode == 0, out[-3000:]
+    assert proc.returncode == 5, out[-3000:]  # contract-checked (L164)
     assert "PDLt REPL started" in out
     assert "/status -> read-only host state" in out
     assert "worker switched to recorded" in out
     assert "new session:" in out
     assert "resumed session:" in out
     assert out.count("[protocol closed]") >= 2
-    assert out.count("CLOSED_SUCCESS") >= 3
+    assert out.count("CLOSED_UNVERIFIED") >= 3
     assert "No such file" not in out
     assert "Traceback" not in out
     assert "[error]" not in out  # REPL commands never reach the engine; replay misses never hide
@@ -130,7 +130,7 @@ def test_headless_review_commands_after_closure_do_not_restart_the_task(tmp_path
     """Piped /confirm lines left over after CLOSED_SUCCESS are not a new request (FINDING-19)."""
     proc = _run_repl(tmp_path, _g06_turns() + ["/confirm", "/confirm"], "headless_leftover")
     out = proc.stdout + proc.stderr
-    assert proc.returncode == 0, out[-3000:]
+    assert proc.returncode == 5, out[-3000:]  # contract-checked (L164)
     assert out.count("[protocol closed]") == 1
     assert out.count("No review is open") == 2
     assert "[headless halt]" not in out
@@ -146,7 +146,7 @@ def test_resumed_session_shows_its_history_and_keeps_its_record(tmp_path: Path) 
 
     second = _run_repl(tmp_path, turns[1:] + ["/quit"], "resumable")
     out = second.stdout + second.stderr
-    assert second.returncode == 0, out[-3000:]
+    assert second.returncode == 5, out[-3000:]  # contract-checked (L164)
     history = out[out.index("--- conversation history"):out.index("--- end of history ---")]
     assert "USER> " + turns[0].splitlines()[0] in history
     assert "\n\nASSISTANT> Prompt Pseudocode" in history  # a blank line between turns
@@ -315,6 +315,25 @@ def test_headless_interrupt_ends_the_run(monkeypatch, tmp_path: Path) -> None:
     assert runtime.handled == ["solve it"]
 
 
+@pytest.mark.parametrize("command", ["/resume another", "/new", "/mode saver", "/worker api"])
+def test_failed_session_command_keeps_the_repl_usable(monkeypatch, capsys, tmp_path: Path, command):
+    from pdl_taskmaster.host.app import HostTurn
+
+    repl, runtime = _headless_runtime(monkeypatch, tmp_path,
+        lambda line: HostTurn("still usable", False, True, {"stage": "CLOSED_UNVERIFIED"}), "CLOSED_UNVERIFIED")
+    runtime.session_id = "mock-headless"
+    lines = iter([command, "solve it"])
+    monkeypatch.setattr(repl, "_read_repl_input", lambda prompt="> ": next(lines))
+
+    def reject(*args):
+        raise OSError("destination unavailable")
+
+    monkeypatch.setattr(repl, "switch_session", reject)
+    assert repl.main() == 5
+    assert runtime.handled == ["solve it"]
+    assert "could not" in capsys.readouterr().out
+
+
 def test_headless_stops_reading_at_waiting_input(monkeypatch, tmp_path: Path) -> None:
     from types import SimpleNamespace
 
@@ -359,7 +378,7 @@ def test_fast_mode_runs_every_phase_from_one_request(tmp_path: Path) -> None:
     turns = _g06_turns()
     proc = _run_repl(tmp_path, turns[:1], "fast", extra=["--fast"])
     out = proc.stdout + proc.stderr
-    assert proc.returncode == 0, out[-3000:]
+    assert proc.returncode == 5, out[-3000:]  # contract-checked (L164)
     assert "Prompt Pseudocode" in out and "Response Plan Pseudocode" in out
     assert out.count("[fast mode: confirmed in advance]") == 2
     assert out.count("[protocol closed]") == 1

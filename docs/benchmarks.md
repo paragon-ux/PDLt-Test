@@ -1,6 +1,6 @@
 # Benchmark & Four-Arm Parity Analysis
 
-One sweep of the full 112-prompt catalogue on `openai/gpt-oss-120b`: the four PDLt arms and an unharnessed **Control** (the raw model, graded by the same graders under the same sandbox). Every figure in the tables is generated from the runs' own artifacts by `experiments/five_arm_report.py`; only the commentary is written by hand.
+One sweep of the full 112-prompt catalogue on `openai/gpt-oss-120b`: the four PDLt arms and an unharnessed **Control** (the raw model, graded by the same graders under the same sandbox). Every figure in the tables is generated from the runs' own artifacts by `experiments/five_arm_report.py`; only the commentary is written by hand. Parts II to IV, after the sweep's findings, summarize the later evaluations (L94, L99, the ablations, L127 and L132) from their ledger rows and recorded runs, each with its source.
 
 ## Result in brief
 
@@ -11,7 +11,7 @@ One sweep of the full 112-prompt catalogue on `openai/gpt-oss-120b`: the four PD
 
 ## What changed since the previous version of this page
 
-The earlier page compared Arms 3 and 4 only, at a 90 s timeout, and scored 55 prompts with a rubric tier judged by `openai/gpt-oss-120b` itself: one judge, and inline rubrics for 28 of the prompts that were never frozen. This page replaces it: all five routes, one 300 s timeout, and a headline that rests only on the prompts a machine grader can check. The rubric tier is withdrawn (see the caveats). The earlier conclusion that Arm 4 passes more verified prompts than Arm 3 (44 vs 39 of 57) is not reproduced: here both pass 40.
+The earlier page compared Arms 3 and 4 only, at a 90 s timeout, and scored 55 prompts with a rubric tier judged by `openai/gpt-oss-120b` itself: one judge, and inline rubrics for 28 of the prompts that were never frozen. This page replaces it: all five routes, one 300 s timeout, and a headline that rests only on the prompts a machine grader can check. The rubric tier is withdrawn (see the caveats). The earlier conclusion that Arm 4 passes more verified prompts than Arm 3 (44 vs 39 of 57) is not reproduced: here both pass 40. Parts II to IV were added on the retrace branch (L142), replacing a draft that called one configuration "best" from runs that differ in provider, reasoning, prompts and repeats, and that read a single 02-01 run as a structured-decoding ablation.
 
 ## The five routes
 
@@ -243,6 +243,135 @@ By prompt: 15 prompts passed on 5 routes, 16 prompts passed on 4 routes, 11 prom
 
 **8. Cost.** Whole-catalogue key spend was $0.09 (Control), $0.19 (Arm 4), $0.29 (Arm 1), $0.32 (Arm 3) and $0.34 (Arm 2): $1.23 for all five sweeps. The order does not follow the call counts, and Arms 1 and 4, which run the same pipeline on 103 prompts, differ by $0.10 (a third). Probably OpenRouter routes unpinned calls across providers that price tokens differently; the runs do not record which provider served a call. Rank routes on calls and seconds and read spend as an order of magnitude.
 
+## Part II: repeated evaluations (L94, L99)
+
+Both evaluations used `openai/gpt-oss-120b` pinned to Cerebras, reasoning `low`, 3 repeats per prompt, run one arm after another. The evidence is the recorded runs: the numbers below are the ledger rows and the files they cite, and nothing here is re-measured.
+
+### L94: unconfirmed, unconfirmed without repairs, and Control on the 57 machine-graded prompts
+
+The runs are 171 per arm, from `4a73cd7a`. Sources: LEDGER L94 and `PDLt-Catalogue-Archive/sweep-logs/L94-tables.md`.
+
+| Arm | Run | Passes of 171 | Passes of decided | Seconds per prompt | Key spend |
+|---|---|---|---|---|---|
+| Unconfirmed (repairs on) | `run-20261008-223418-unconfirmed-tier-d1` | 120 (70.2%) | 120 of 151 (79.5%) | 6.8 | $0.58 |
+| Unconfirmed, repairs off (`--no-tier-d1 --max-repairs 0`) | `run-20261008-231940-unconfirmed` | 116 (67.8%) | | | $0.55 |
+| Control | `run-20261008-230639-control` | 103 (60.2%) | 103 of 153 (67.3%) | 2.2 | $0.23 |
+
+- **Unconfirmed against Control, over runs.**
+  - All runs: 36 against 19 discordant (p = 0.03).
+  - Runs decided in both arms: 118 against 99 of 149 (p = 0.0094).
+  - Categories 01-05: 72 against 54 of 93 (p = 0.0021).
+  - Categories 06-16: 48 against 49 of 78 (p = 1.0).
+  - The six witness-dependent prompts: 15 against 6 of 18 (p = 0.0039). Without them, unconfirmed leads by 5.2 points (p = 0.30).
+- **The same comparison, by prompt.** Unconfirmed is ahead on 22 prompts and Control on 11, with 24 tied (sign test p = 0.08; prompt-cluster permutation p = 0.10). The repeats of a prompt are not independent, so this is the conservative reading. **The lead holds over runs but is not established over prompts, and it sits in the search-heavy categories.**
+- **The repair loop.**
+  - All runs: repairs on beat repairs off by 2.3 points (120 against 116, p = 0.6).
+  - Runs decided in both arms: 119 against 114 of 149 (p = 0.46).
+  - Categories 01-05: 72 against 64 of 93 (p = 0.096).
+- **The protocol without repairs, against Control.**
+  - All runs: 7.6 points ahead (p = 0.10).
+  - Runs decided in both arms: 114 against 99 of 149 (p = 0.044).
+  - By the expectations written before the run (L94), neither axis met its threshold.
+
+### L99: unconfirmed against Control on six categories
+
+The categories are 01, 02, 04, 09, 12 and 16: 42 prompts and 126 runs per arm, from `a5973ae7`. Sources: LEDGER L99 and the two runs' `SCOREBOARD.json`.
+
+- **Ground-truth passes.** Unconfirmed 60, Control 35.
+  - Failed: 17 against 38.
+  - Decided pass rate: 77.9% against 47.9%.
+  - Discordant runs: 28 against 3 (p = 4.7e-6).
+  - By prompt: 13 against 3, with 26 tied (sign test p = 0.021).
+- **By category.**
+  - 01: 19 against 4 of 21.
+  - 02: 20 against 14.
+  - 04: 9 against 4.
+  - 16: 12 against 13.
+  - 09 and 12 have no ground-truth grader. On 09-04 unconfirmed closed fail-closed, where Control ran the polluted payload.
+- **Cost.** $0.449 against $0.177, and 1,194 s against 307 s.
+- **Selection.** The categories were chosen after L94 had shown where the gap lies, so this is a confirmation on the categories expected to favour the harness, not a fresh sample.
+
+## Part III: component ablations
+
+| Component | Source and evidence | Result |
+|---|---|---|
+| Repair loop (Tier D1 and verification repairs) | L94, recorded runs | Above: +2.3 points over all runs (p = 0.6), +8.6 points on categories 01-05 (p = 0.096). Not established. |
+| DRAFT-EXECUTE brief | L93, L95; recorded runs ([report](plans/L93-draft-execute-report.md)) | On the 31 prompts of categories 01-05, two repeats: no brief 51 of 62, typed brief 41 (p = 0.021), historical brief 41 (p = 0.013); by prompt, 1 ahead and 11 behind (p = 0.006). The step estimate was exceeded in 61 of 91 briefs (median ratio 2.5 to 4). The brief was dropped (L95). |
+| PDL against natural-language artifacts | L97; a three-task pilot with its decision rules fixed before it ran (`experiments/pdl_format/`) | Correctness 91.0 against 85.5 over independent executions, 91.2 against 90.1 over all five. Fidelity 71.9 against 66.3. Flip rate 19.0% against 12.1% (PDL less stable). Cost $0.130 against $0.113. One judge, who could see the format. Provisional evidence for keeping PDL. |
+| In-call tools on 01-01 repairs | L111, L112, `plans/PASS_RATE_TRACKER.md`; frozen-repair measurements on one prompt | Tool loop alone: grader PASS 18 of 35 against 15 of 36 for the previous version (not significant); host-verified 11 of 35 against 15 of 36. With the checked submission: 22 of 31 against 15 of 36 (p = 0.026). With L110: 31 of 36. Full 01-01 runs: 18 of 18 against a historical 5 of 10 (not interleaved). All of it is one prompt. |
+| In-call tools on a panel | L112 regression check (the first prompt of each of the 16 categories, both routes); L132 (Part IV) | No regression by the rule fixed before the check. On the L132 panel, no net difference. |
+| Task entities | L100; fixed-entity experiment, 180 runs | 01-01: entity block 10 of 20 against none 3 of 20 (p = 0.041); 04-06 and 16-06 in the same direction, not significant. The redesigned entity code was not merged: the user reverted to `a5973ae7`. |
+
+**Provider-side structured decoding.** This is static (`api_worker.py:619-644`, `contract_form`) and recorded (provider requests). The request a route sends depends on the operation:
+
+| Operation | Output format on `gpt-oss-120b` |
+|---|---|
+| BOOTSTRAP_ANALYSIS | none |
+| EXECUTE and EXECUTE_UNCONFIRMED | JSON mode (`json_object`), not a JSON schema |
+| DRAFT_PROMPT and DRAFT_PLAN (confirmed route) | a JSON schema |
+
+The recorded requests confirm this: `run-20261017-171943-unconfirmed-tier-d1` sent no format on 108 BOOTSTRAP_ANALYSIS calls and JSON mode on 116 EXECUTE_UNCONFIRMED calls, and `run-20261010-184828-confirmed-tier-d1` sent a schema to DRAFT_PROMPT and DRAFT_PLAN and JSON mode to EXECUTE. On the unconfirmed route no call is decoded against a schema; the host's Pydantic models check every reply.
+
+With `--agent-tools`, EXECUTE_UNCONFIRMED carries tools and no format (89 of 90 requests in `run-20261017-214832-unconfirmed-agent-tools-tier-d1`). Control sends no format.
+
+The two 02-01 runs with the option off (`run-20261017-205154-unconfirmed-tier-d1`, `run-20261017-205234-confirmed-tier-d1`) are one run each on one prompt. They check that the option removes the format from every request, which they did, and that the replies still parse. They are not an ablation: they say nothing about pass rates.
+
+## Part IV: after ADR-0030 (L127, L132)
+
+These evaluations ran under the closure rules of L104, L110, L116, L118 and L119/ADR-0030:
+
+- a positive witness must come from a program the host ran, or be declared a certificate or an argued result;
+- a negative, argued or declared-incomplete result closes CLOSED_UNVERIFIED (exit 5).
+
+### L127: the 112-prompt reference baseline
+
+Run `run-20261017-171943-unconfirmed-tier-d1` (recorded): from a clean detached worktree at `4c2e2f00`, unconfirmed route, reasoning `harness-default`, provider order Baseten then Crusoe with fallbacks, 600 s per prompt. Source: LEDGER L127, L136.
+
+| Measure | Value |
+|---|---|
+| Prompts finished | 112 of 112, in 5,674.9 s |
+| Verdicts | 103 CLOSED_SUCCESS, 4 CLOSED_CANCELLED, 3 HARNESS_ERROR, 1 CLOSED_UNVERIFIED (13-01), 1 WAITING_INPUT (13-06) |
+| Harness errors | `OUTPUT_LIMIT_REACHED` at BOOTSTRAP_ANALYSIS, which the harness default runs at high effort: 04-07, 12-04, 15-03 |
+| Ground truth | 39 PASS, 14 FAIL, 4 MANUAL, 55 without ground truth: 39 of 53 decided (73.6%) |
+| Catalogue scoreboard | 39 passed, 19 failed (the 14, plus five stage failures on prompts without ground truth): 67.2% of decided (39 of 58), 34.8% of all prompts |
+| Silent false positives | 12 (CLOSED_SUCCESS with a failing ground truth) |
+
+Of the 12 silent false positives, 11 closed at `contract_checked` (STANDARD_EXECUTION). Their provenance already says that no test of the requested behaviour ran. The twelfth, 01-07, closed `host_verified`: a failed search printed as a positive witness. Each is classified in L140.
+
+### L132: a 12-prompt panel, 3 repeats, three arms
+
+The three runs (recorded) used `--reasoning low`, Cerebras and 300 s per prompt, from `4f0760e9` with Gemini's uncommitted work in the tree. The numbers come from `experiments/tool_attribution.py`; the full report and the run narratives are in [the tool attribution analysis](plans/TOOL_ATTRIBUTION_AND_PASS_RATE_ANALYSIS.md).
+
+| Arm | Run | Ground truth (decided) | Silent false positives (of decided) |
+|---|---|---|---|
+| Unconfirmed | `run-20261017-214315-unconfirmed-tier-d1` | 28 of 32 (87.5%) | 2 of 32 |
+| Unconfirmed `--agent-tools` | `run-20261017-214832-unconfirmed-agent-tools-tier-d1` | 28 of 33 (84.8%) | 5 of 33 |
+| Control | `run-20261017-215514-control` | 21 of 33 (63.6%) | 12 of 33 |
+
+**Unconfirmed against Control.**
+
+| Test | Discordant pairs | p |
+|---|---|---|
+| Passes over runs | 8 / 1 | 0.039 |
+| Passes, both decided | 8 / 0 | 0.0078 |
+| Silent false positives | 0 / 10 | 0.0020 |
+| By prompt: 5 ahead, 1 behind, 6 tied (sign test) | | 0.22 |
+
+**Unconfirmed against `--agent-tools`.** Equal: 3 / 3 discordant passes (p = 1.0). By prompt, 2 ahead, 2 behind, 8 tied. The `--agent-tools` arm also differs in its output format (above), so the comparison does not isolate the tools.
+
+### No "best configuration"
+
+L127 and L132 differ in:
+
+- provider (Baseten and Crusoe with fallbacks, against Cerebras pinned);
+- reasoning (harness default, against `low`);
+- prompts (112, against a 12-prompt panel);
+- repeats (1, against 3);
+- time limit (600 s, against 300 s);
+- tree (clean, against dirty).
+
+Their pass rates cannot rank reasoning settings or configurations against each other. The earlier claim that `--reasoning low` on the unconfirmed route is the best-performing configuration is withdrawn. So is the claim that removing the provider's structured decoding leaves accuracy unchanged, which rested on the two 02-01 runs above.
+
 ## Caveats
 
 - **One run per prompt, one model, one provider.** Identical pipelines disagree on a quarter to a third of prompts (finding 4), so a gap of a few prompts between two routes is noise. The paired tables say which gaps are not; with 57 prompts, only large ones are.
@@ -252,6 +381,7 @@ By prompt: 15 prompts passed on 5 routes, 16 prompts passed on 4 routes, 11 prom
 - **Arms ran one after another, not interleaved.** Provider latency drifts over hours, so seconds per prompt carry that drift. Calls per prompt do not.
 - **Key spend is a counter delta.** It is the OpenRouter key's usage before and after each arm, so it includes the System 1 calls, and it is good to a few cents at best.
 - **Tier D1 is on in all four arms**, the shipped default. Runs made between `f88a247` and `7a882f10` recorded D1 as off while running it, so their `tier_d1` field and names are unreliable; the runs on this page were made after the fix.
+- **Structured output in `RUN_META.json`.** Before L137 the runner recorded `rules.structured_output: true` for every run, Control included, although Control sends no output format; the field of those Control runs is wrong. From L137 it records the effective value.
 - **The System 1 gates fail open.** Below its confidence floor the classifier lets the draft through unchanged, which happened on 43% of prompt decisions and 47% of plan decisions in this sweep.
 
 ## Reproducing the benchmark
@@ -275,6 +405,6 @@ Then build every table on this page from the finished runs:
 python experiments/five_arm_report.py --commit <sha> --md report.md --json report.json
 ```
 
-`--no-tier-d1` turns the repair loop off for a harness arm. Runs are written outside the repository, to `$PDLT_CATALOGUE_RUNS`, else `PDLt-Catalogue-Archive` beside the checkout, one folder each, with per-prompt transcripts, execution traces and a `SCOREBOARD.md`.
+`--no-tier-d1` turns the repair loop off for a harness arm, and `--no-api-structured-output` sends no output format. Runs are written outside the repository, to `$PDLT_CATALOGUE_RUNS`, else `PDLt-Catalogue-Archive` beside the checkout, one folder each, with per-prompt transcripts, execution traces and a `SCOREBOARD.md`.
 
 To record what each route costs, start it through the wrapper instead, for example `python experiments/sweep_arm.py unconfirmed`. It fixes the model, `--reasoning low` and `--timeout 300`, reads the OpenRouter key's usage counter before and after, and writes `KEY_USAGE.json` into the run folder, which the report picks up (without it the spend column shows n/a). The sweep on this page ran each route through an equivalent wrapper; `sweep_arm.py` is that wrapper tidied for the repository.

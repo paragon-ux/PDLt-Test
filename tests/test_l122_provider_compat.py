@@ -97,7 +97,7 @@ def test_an_explicit_effort_is_sent():
 
 def test_recorded_profiles_are_unchanged():
     assert get_proportional_reasoning_mapping(NEMOTRON) == get_proportional_reasoning_mapping("openai/gpt-oss-120b")
-    assert get_proportional_reasoning_mapping(NEMOTRON)["BOOTSTRAP_ANALYSIS"] == "high"
+    assert get_proportional_reasoning_mapping(NEMOTRON)["BOOTSTRAP_ANALYSIS"] == "low"  # L155
     default, _ = resolve_reasoning(NEMOTRON)
     assert default == "low"
 
@@ -169,8 +169,10 @@ def test_the_check_follows_the_settings(monkeypatch):
     with pytest.raises(ProviderError, match="'reasoning'.*--api-reasoning-effort"):
         no_reasoning.call(_request())
     no_tools, _ = _worker(monkeypatch, "plain/no-tools", agent_tools=True)
+    request = _request()
+    request.tools = _host(_Sandbox())
     with pytest.raises(ProviderError, match="'tools'.*without --agent-tools"):
-        no_tools.call(_request())
+        no_tools.call(request)
 
 
 def test_an_unlisted_model_fails_closed(monkeypatch):

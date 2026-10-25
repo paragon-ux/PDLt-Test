@@ -1,7 +1,10 @@
 """Scenarios for the task-type parity check (L124 D2): each runs one built-in task type through a session and
 records what the worker and System 1 received, the stage and exit status after each message, the events and the
-provenance. ``tests/fixtures/task_type_parity.json`` holds the record made before task types were wired into the
-engine; ``python tests/parity_scenarios.py`` rewrites it (only ever from that code)."""
+provenance. ``tests/fixtures/task_type_parity.json`` originated before task types were wired into the engine.
+SG-02 refreshes only worker fingerprints for the authorized CommonMark capability text, after verifying exact
+historical equivalence with only that text reversed. Other baseline fields remain unchanged. Regeneration
+requires reviewing intentional request changes; it is not an automatic response to a failing parity test.
+"""
 from __future__ import annotations
 
 import hashlib
@@ -12,6 +15,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests" / "fixtures" / "task_type_parity.json"
+# The interpreter the fixture was recorded under. The sandbox declares the host's own interpreter in what the
+# worker and System 1 receive (sandbox.PYTHON_VERSION feeds only those declarations, never which interpreter runs),
+# so the hashes below key that declaration to this version, as recorded replay re-keys its prompts
+# (providers/fixtures.py). Everything else in the request is hashed as sent, and the programs run on this host.
+FIXTURE_PYTHON = "3.11"
+# Provenance fields the parity comparison leaves out: the running package's version, which the test checks
+# against pdl_taskmaster.__version__ instead of against the version the fixture was recorded at.
+RELEASE_DEPENDENT = ("pdlt_version",)
 
 PROMPT = "COMPUTE the answer to the stated task\nRETURN the answer"
 PLAN = "DERIVE the answer\nEMIT the answer"
@@ -31,9 +42,34 @@ BRIEF = {"kind": "RESULT", "approach": "Multiply each pair of the given ranges a
          "self_checks": ["recompute the largest product directly"], "execution_entities": []}
 
 
+def _as_recorded(text: str) -> str:
+    """The text with this host's interpreter declaration keyed to the fixture's (FIXTURE_PYTHON)."""
+    from pdl_taskmaster.verification.sandbox import PYTHON_VERSION
+
+    return text.replace(f"Python {PYTHON_VERSION} ", f"Python {FIXTURE_PYTHON} ")
+
+
 def _sha(value) -> str:
     text = value if isinstance(value, str) else json.dumps(value, sort_keys=True, default=str)
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+    return hashlib.sha256(_as_recorded(text).encode("utf-8")).hexdigest()[:16]
+
+
+def _manifest_as_recorded(request) -> dict:
+    """The manifest with its projection digest recomputed over the re-keyed projection document. The digest the
+    engine wrote is checked first: it must be the digest of the document as sent."""
+    manifest = dict(request.manifest)
+    document = json.dumps(request.projection.document, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    assert manifest["projection_sha256"] == hashlib.sha256(document.encode("utf-8")).hexdigest()
+    manifest["projection_sha256"] = hashlib.sha256(_as_recorded(document).encode("utf-8")).hexdigest()
+    return manifest
+
+
+def comparable(record: dict) -> dict:
+    """A scenario's record without the release-dependent provenance fields."""
+    provenance = record.get("provenance")
+    if not provenance:
+        return record
+    return {**record, "provenance": {k: v for k, v in provenance.items() if k not in RELEASE_DEPENDENT}}
 
 
 class Sys1:
@@ -74,7 +110,7 @@ class Worker:
     def call(self, request):
         manifest = getattr(request, "manifest", None)
         self.requests.append({"operation": request.operation, "prompt": _sha(request.prompt),
-                              "manifest": _sha(manifest) if manifest is not None else None})
+                              "manifest": _sha(_manifest_as_recorded(request)) if manifest is not None else None})
         replies = {
             "BOOTSTRAP_ANALYSIS": {"kind": "ANALYSIS", "task_summary": "The user states a task to solve.",
                                    "approach_notes": "", "risk_notes": "", "task_entities": []},
@@ -114,28 +150,22 @@ SCENARIOS = {
 
 def run(name: str, session_dir: Path) -> dict:
     from pdl_taskmaster.api import Session
-    from pdl_taskmaster.verification import sandbox
 
-    orig_py = sandbox.PYTHON_VERSION
-    sandbox.PYTHON_VERSION = "3.11"
-    try:
-        problem_class, confidence, review, execute, attributes, messages = SCENARIOS[name]
-        sys1 = Sys1(problem_class, confidence) if problem_class else None
-        worker = Worker(execute, sys1, **attributes)
-        steps = []
-        with Session.open(worker, session_dir, repo_root=ROOT, no_review=not review) as session:
-            for message in messages:
-                result = session.run(REQUEST, confirm=True) if message == "run" else session.send(REQUEST)
-                steps.append({"stage": result.stage, "exit_status": result.exit_status, "closed": result.closed,
-                              "review": result.review, "refused": result.refused})
-            workspace = session.host.engine.workspace
-            events = [e["kind"] for e in workspace.read_events()] if workspace is not None else []
-            provenance = dict(result.provenance or {})
-        provenance.pop("closed_at_utc", None)
-        return {"worker": worker.requests, "sys1": sys1.requests if sys1 else None, "steps": steps, "events": events,
-                "provenance": provenance or None}
-    finally:
-        sandbox.PYTHON_VERSION = orig_py
+    problem_class, confidence, review, execute, attributes, messages = SCENARIOS[name]
+    sys1 = Sys1(problem_class, confidence) if problem_class else None
+    worker = Worker(execute, sys1, **attributes)
+    steps = []
+    with Session.open(worker, session_dir, repo_root=ROOT, no_review=not review, mode="protocol") as session:
+        for message in messages:
+            result = session.run(REQUEST, confirm=True) if message == "run" else session.send(REQUEST)
+            steps.append({"stage": result.stage, "exit_status": result.exit_status, "closed": result.closed,
+                          "review": result.review, "refused": result.refused})
+        workspace = session.host.engine.workspace
+        events = [e["kind"] for e in workspace.read_events()] if workspace is not None else []
+        provenance = dict(result.provenance or {})
+    provenance.pop("closed_at_utc", None)
+    return {"worker": worker.requests, "sys1": sys1.requests if sys1 else None, "steps": steps, "events": events,
+            "provenance": provenance or None}
 
 
 def run_all() -> dict:
@@ -145,6 +175,8 @@ def run_all() -> dict:
 
 if __name__ == "__main__":
     sys.path.insert(0, str(ROOT / "src"))
+    if ".".join(map(str, sys.version_info[:2])) != FIXTURE_PYTHON:
+        raise SystemExit(f"record the fixture under Python {FIXTURE_PYTHON} (FIXTURE_PYTHON), or change it with it")
     first, second = run_all(), run_all()
     assert first == second, "the scenarios are not deterministic"
     FIXTURE.parent.mkdir(parents=True, exist_ok=True)

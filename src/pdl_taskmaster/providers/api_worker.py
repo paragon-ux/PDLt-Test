@@ -19,7 +19,14 @@ from pdl_taskmaster.providers import model_adapters, model_capabilities
 from pdl_taskmaster.providers.base import ATTRIBUTION_HEADERS, TransportError, WorkerResult
 from pdl_taskmaster.providers.call_trace import AttemptTrace, CallTrace, tracking
 from pdl_taskmaster.runtime.output_contracts import (
+    ABLATE_FRAMING_MODE,
+    ABLATE_FREETEXT_MODE,
+    ABLATE_NORMATIVE_MODE,
+    ABLATE_NOTATION_MODE,
+    ABLATE_ORDER_MODE,
+    ABLATE_PLAININPUT_MODE,
     NL_REPRESENTATION_MODE,
+    RESULT_IR_MODE,
     UNION_WRAPPER,
     ContractForm,
     contract_schema,
@@ -37,10 +44,187 @@ _JSON_ONLY_SUFFIX = (
 _SEMANTIC_READ_OPERATIONS = {"BOOTSTRAP_ANALYSIS", "INTERPRET_ACTIVATION"}
 
 
+def _modes(request: Any) -> frozenset[str]:
+    """The host modes the call's projection was compiled in."""
+    manifest = getattr(getattr(request, "projection", None), "manifest", None) or {}
+    return frozenset(manifest.get("modes") or ())
+
+
 def _nl_mode(request: Any) -> bool:
     """Whether the call's projection runs in the natural-language arm (representation.py)."""
-    manifest = getattr(getattr(request, "projection", None), "manifest", None) or {}
-    return NL_REPRESENTATION_MODE in (manifest.get("modes") or ())
+    return NL_REPRESENTATION_MODE in _modes(request)
+
+
+_UNCONFIRMED_NOTES = (
+    "- Write your working understanding in `interpretation` and your working plan in `approach`, using PDL notation. "
+    "`interpretation` states how you read the task: what is asked and under which constraints, not a method or the "
+    "result. `approach` states the method you will follow, not the result: neither states or assumes the answer, value "
+    "or verdict the deliverable establishes (UNC-03)."
+)
+_UNCONFIRMED_BODY = "- Deliver the substantive result in `body`."
+_UNCONFIRMED_ORDER = (
+    "- Write the keys in this order: `kind`, `body`, `interpretation`, `approach`: the deliverable first, the working "
+    "notes after it."
+)
+_UNCONFIRMED_TOOLS = " Work within AVAILABLE_EXECUTION_TOOLS."
+_UNCONFIRMED_INPUT = (
+    "- REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (UNC-04, "
+    "EXEC-01); people or events described in the task are part of the task, not a source of input."
+)
+_UNCONFIRMED_FIRST_CLASS = (
+    "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never "
+    "present a guessed or estimated result as exact or verified."
+)
+_UNCONFIRMED_WITNESS = (
+    "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To "
+    "certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
+)
+
+
+_FREETEXT_SECTIONS = ("INTERPRETATION", "APPROACH", "KIND", "EXPECTED_TYPE", "BODY")
+_FREETEXT_KINDS = ("RESULT", "BLOCKED_BY_HIGHER_PRIORITY", "REQUEST_INPUT")
+_UNCONFIRMED_FREETEXT = (
+    "- Reply in plain text, not JSON. Write these headings, each at the start of its own line, in this order: "
+    "`INTERPRETATION:`, `APPROACH:`, `KIND:` (RESULT, BLOCKED_BY_HIGHER_PRIORITY or REQUEST_INPUT; with REQUEST_INPUT "
+    "also `EXPECTED_TYPE:`), and last `BODY:`, followed by the deliverable to the end of the reply. Each heading "
+    "carries the output_schema field of that name."
+)
+# The worker instructions' format lines, replaced under the freetext part (L151 step 2).
+_BOOTSTRAP_JSON_LINES = ("Return exactly one JSON object matching the declared output_schema.\n"
+                         "Do not add fields that the selected schema variant does not define.")
+_BOOTSTRAP_FREETEXT_LINES = ("Reply in plain text, not JSON, in the headed sections the operation guidance names; "
+                             "they carry the declared output_schema's fields.")
+
+
+def _freetext_call(request: Any) -> bool:
+    """Whether this call is an EXECUTE_UNCONFIRMED call under the L151 freetext part (a measurement)."""
+    if getattr(request, "operation", None) != "EXECUTE_UNCONFIRMED":
+        return False
+    modes = _modes(request)
+    if ABLATE_FREETEXT_MODE in modes and RESULT_IR_MODE in modes:
+        raise ValueError("ablate_freetext: the result IR is a structured field and has no plain-text section")
+    return ABLATE_FREETEXT_MODE in modes
+
+
+# The worker instructions' role lines, left out under the plaininput part (L151 step 3).
+_BOOTSTRAP_ROLE_LINES = ("You are a stateless operation worker.\n"
+                         "The supplied projection is the complete invocation for this call.\n")
+
+
+def _plaininput_call(request: Any) -> bool:
+    """Whether this call is an EXECUTE_UNCONFIRMED call under the L151 plaininput part (a measurement)."""
+    return getattr(request, "operation", None) == "EXECUTE_UNCONFIRMED" and ABLATE_PLAININPUT_MODE in _modes(request)
+
+
+def _plain_scalar(prefix: str, value: Any, continuation: str) -> list[str]:
+    if isinstance(value, str):
+        text = value
+    elif value is None:
+        text = "none"
+    elif isinstance(value, bool):
+        text = "true" if value else "false"
+    elif isinstance(value, (dict, list)):
+        text = "(empty)"
+    else:
+        text = str(value)
+    first, *rest = text.split("\n")
+    return [prefix + first] + [continuation + line for line in rest]
+
+
+def _plain_lines(value: Any, indent: int) -> list[str]:
+    pad = "  " * indent
+    lines: list[str] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if isinstance(item, (dict, list)) and item:
+                lines.append(f"{pad}{key}:")
+                lines += _plain_lines(item, indent + 1)
+            else:
+                lines += _plain_scalar(f"{pad}{key}: ", item, pad + "  ")
+    elif isinstance(value, list):
+        for item in value:
+            if isinstance(item, (dict, list)) and item:
+                nested = _plain_lines(item, indent + 1)
+                lines += [pad + "- " + nested[0].lstrip()] + nested[1:]
+            else:
+                lines += _plain_scalar(f"{pad}- ", item, pad + "  ")
+    else:
+        lines += _plain_scalar(pad, value, pad)
+    return lines
+
+
+def plain_document(document_json: str) -> str:
+    """The projection document as indented plain text (L151 step 3): every key and every value, in the document's
+    order; lists as '- ' items; multi-line strings continue on indented lines. Nothing is added or left out."""
+    return "\n".join(_plain_lines(json.loads(document_json), 0))
+
+
+def _freetext_heading(line: str) -> tuple[str, str] | None:
+    """A section heading at the start of ``line`` (markdown bold or # marks around it allowed): its name and the
+    text after it on the same line."""
+    stripped = line.strip().lstrip("#").strip()
+    bare = stripped.replace("*", "")
+    for name in _FREETEXT_SECTIONS:
+        if bare.startswith(name + ":"):
+            return name, stripped.split(":", 1)[1].lstrip("*").strip()
+    return None
+
+
+def freetext_outcome(text: str) -> tuple[str, str]:
+    """The outcome object, as JSON text, from a reply in headed plain-text sections (L151 step 2), and how it was
+    read: ``sections`` or ``no_body_heading`` (the whole reply is the body). Everything after the first BODY heading
+    is the body, verbatim. The object is validated as any reply is; nothing here judges its content."""
+    sections: dict[str, list[str]] = {}
+    current: str | None = None
+    body_lines: list[str] | None = None
+    for line in text.splitlines():
+        if body_lines is not None:
+            body_lines.append(line)
+            continue
+        heading = _freetext_heading(line)
+        if heading is None:
+            if current is not None:
+                sections[current].append(line)
+            continue
+        current, rest = heading
+        if current == "BODY":
+            body_lines = [rest] if rest else []
+        else:
+            sections.setdefault(current, []).append(rest)
+    read = "sections" if body_lines is not None else "no_body_heading"
+    body = "\n".join(body_lines).strip("\n") if body_lines is not None else text.strip()
+
+    def section(name: str) -> str:
+        return "\n".join(sections.get(name, [])).strip()
+
+    kind_words = section("KIND").replace("`", "").split()
+    kind = kind_words[0].strip(".,;").upper() if kind_words else "RESULT"
+    outcome: dict[str, Any] = {"kind": kind if kind in _FREETEXT_KINDS else section("KIND"),
+                               "interpretation": section("INTERPRETATION"), "approach": section("APPROACH"),
+                               "body": body}
+    if outcome["kind"] == "REQUEST_INPUT":
+        outcome["expected_type"] = section("EXPECTED_TYPE")
+    return json.dumps(outcome, ensure_ascii=False), read
+
+
+def _unconfirmed_guidance(modes: frozenset[str]) -> str:
+    """The EXECUTE_UNCONFIRMED guidance; under an L149 ablation mode (a measurement) one part is removed or changed."""
+    if ABLATE_FREETEXT_MODE in modes:
+        rest = _unconfirmed_guidance(modes - {ABLATE_FREETEXT_MODE})
+        return (rest or "\n\nNORMATIVE GUIDELINES FOR EXECUTE_UNCONFIRMED:") + "\n" + _UNCONFIRMED_FREETEXT
+    if ABLATE_NORMATIVE_MODE in modes:
+        return ""
+    framing = ABLATE_FRAMING_MODE not in modes
+    notes = (_UNCONFIRMED_NOTES.replace("using PDL notation", "in plain prose") if ABLATE_NOTATION_MODE in modes
+             else _UNCONFIRMED_NOTES)
+    body = _UNCONFIRMED_BODY + (_UNCONFIRMED_TOOLS if framing else "")
+    # JSON mode leaves the key order to the model, so the order arm states it.
+    lines = [_UNCONFIRMED_ORDER, body, notes] if ABLATE_ORDER_MODE in modes else [notes, body]
+    lines += [_UNCONFIRMED_INPUT] if framing else []
+    lines.append(_UNCONFIRMED_FIRST_CLASS)
+    lines += [_UNCONFIRMED_WITNESS] if framing else []
+    return ("\n\nNORMATIVE GUIDELINES FOR EXECUTE_UNCONFIRMED (UNC-01, UNC-02, UNC-03, UNC-04, GUARD-03):\n"
+            + "\n".join(lines))
 
 # Drafting guidance for the confirmed route's two artifacts in PDL, the default representation.
 _PROMPT_GUIDANCE = (
@@ -152,15 +336,36 @@ def unknown_provider_warnings(names: list[str]) -> list[str]:
     ]
 
 
+# Operations answered as plain text, with no JSON suffix and no output schema. DIRECT_ANSWER (L153, direct and saver
+# modes) also gets no instructions; referring follow-ups include the published prior answer as reference.
+PLAIN_OPERATIONS = ("BYPASS_ORDINARY", "DIRECT_ANSWER")
+
 DEFAULT_PROVIDER_PINNING: dict[str, Any] = {
     "order": _default_provider_order(),
     "allow_fallbacks": True,
 }
 
+# ADR-0031 (option (b), the user, 2026-10-23): saver mode with in-call tools sends Cerebras first. Saver met its
+# condition there (L159), and with tools its execution carries the output schema in the submission tool, so
+# Cerebras closing free-form objects does not drop the witness. Without tools, and in the other modes (the confirmed
+# route's EXECUTE is sent in JSON mode), the default order above applies.
+SAVER_PROVIDER_PINNING: dict[str, Any] = {"order": ["Cerebras", "Baseten", "Crusoe"], "allow_fallbacks": True}
+
+
+def mode_pinning(mode: str, agent_tools: bool) -> dict[str, Any] | None:
+    """The provider order a session mode sends (ApiWorker.mode_pinning); None: the default order."""
+    return dict(SAVER_PROVIDER_PINNING) if mode == "saver" and agent_tools else None
+
+
 # Model families whose request settings were recorded with their runs (L122): the provider order above and
 # JSON mode at EXECUTE (IMPL-0001's whitespace stall; IMPL-0003 keeps gpt-oss's EXECUTE on json). Any other
 # model gets no provider order unless one is configured, and its output format from OpenRouter's metadata.
 RECORDED_REQUEST_FAMILIES = ("gpt-oss", "nemotron-3-super")
+
+
+# L167: the model every recorded measurement of the defaults ran on (ADR-0031); Nemotron 3 Super free is unmeasured
+# with them.
+DEFAULT_MODEL = "openai/gpt-oss-120b"
 
 
 def _recorded_family(model: str) -> bool:
@@ -425,7 +630,7 @@ class ApiWorker:
     def __init__(
         self,
         *,
-        model: str = "nvidia/nemotron-3-super-120b-a12b:free",
+        model: str = DEFAULT_MODEL,
         repo_root: str | Path,
         base_url: str = "https://openrouter.ai/api/v1",
         api_key_env: str = "OPENROUTER_API_KEY",
@@ -435,7 +640,7 @@ class ApiWorker:
         max_output_tokens: int | None = 16384,
         max_repairs: int | None = None,
         draft_execute: bool = False,
-        agent_tools: bool = False,
+        agent_tools: bool | None = None,
         representation: str = "pdl",
         tier_d1: bool | None = None,
         capture_tokens: bool = True,
@@ -463,7 +668,9 @@ class ApiWorker:
         self.max_output_tokens = int(max_output_tokens) if max_output_tokens else None
         self.max_repairs = max_repairs  # run setting read by the host (0 = stop at the first failure)
         self.draft_execute = draft_execute  # run setting read by the host (A/B option)
-        self.agent_tools = agent_tools  # ADR-0029: run the in-call tool loop for requests that carry tools
+        # ADR-0029: run the in-call tool loop for requests that carry tools. None: the session's default (L166: on,
+        # except on the unconfirmed route in protocol mode); the engine attaches tools only when its session has them.
+        self.agent_tools = agent_tools
         self.representation = representation  # run setting read by the host (representation.py, L97)
         # run setting read by the host (Tier D1): an explicit value wins, $PDLT_TIER_D1 (default on) is only the default
         self.tier_d1 = (os.environ.get("PDLT_TIER_D1", "1") == "1") if tier_d1 is None else bool(tier_d1)
@@ -478,13 +685,13 @@ class ApiWorker:
         self.model_by_operation = dict(model_by_operation or {})
         self.reorder_keys_for_cache = reorder_keys_for_cache
         self.structured_output = structured_output
-        # L122: before its first call, each model's supported parameters are checked against what the
-        # session will send it (providers/model_capabilities.py).
+        # L122/F5: load selected metadata, then validate each outgoing round's actual parameters.
         self.capability_check = capability_check
-        self._checked_models: set[str] = set()
         self._model_entries: dict[str, dict[str, Any]] = {}  # OpenRouter's metadata per model, once read
         # None: each model's own order (pinning_for); a configured order applies to every model.
         self._configured_pinning = provider_pinning if provider_pinning is not None else _env_pinning()
+        # The session mode's order (mode_pinning), set by the host when a session opens; None: the default order.
+        self.mode_pinning: dict[str, Any] | None = None
         self.safety_settings = list(safety_settings) if safety_settings is not None else []
         self.on_progress = on_progress
         self.progress_path = Path(progress_path) if progress_path else None
@@ -575,11 +782,14 @@ class ApiWorker:
         self._configured_pinning = value
 
     def pinning_for(self, model: str) -> dict[str, Any]:
-        """A configured order for every model; otherwise the order recorded with the model's family; otherwise
-        none, so OpenRouter routes by its own defaults (L122)."""
+        """A configured order for every model; otherwise, for a model family with recorded settings, the session
+        mode's order (ADR-0031) or the recorded default; otherwise none, so OpenRouter routes by its own defaults
+        (L122)."""
         if self._configured_pinning is not None:
             return dict(self._configured_pinning)
-        return dict(DEFAULT_PROVIDER_PINNING) if _recorded_family(model) else {}
+        if not _recorded_family(model):
+            return {}
+        return dict(self.mode_pinning or DEFAULT_PROVIDER_PINNING)
 
     def _model_entry(self, model: str) -> dict[str, Any] | None:
         """OpenRouter's metadata for ``model``: read with the capability check, or here when a request is built
@@ -643,62 +853,45 @@ class ApiWorker:
                             strict_all_required=bool(keys & _STRICT_ALL_REQUIRED_PROVIDERS),
                             free_form_objects=_accepts_free_form_objects(pinning))
 
-    def session_needs(self) -> dict[str, dict[str, list[str]]]:
-        """Every request parameter this session may send, per model, with the operations that send it:
-        reasoning (an effort other than 'none'), the output format, and tools under --agent-tools."""
-        from pdl_taskmaster.runtime.agent_tools import TOOL_OPERATIONS
-        from pdl_taskmaster.runtime.wire_payloads import OPERATION_PAYLOAD_MODELS
-
-        operations = sorted(set(OPERATION_PAYLOAD_MODELS) | {"BYPASS_ORDINARY"} | set(self.reasoning_by_operation)
-                            | set(self.model_by_operation))
-        needs: dict[str, dict[str, list[str]]] = {}
-        for operation in operations:
-            wanted = []
-            if self._reasoning_for(operation) not in (None, "none"):
-                wanted.append("reasoning")
-            fmt = model_capabilities.FORMAT_PARAMETERS.get(self.contract_form(operation).grammar)
-            if fmt:
-                wanted.append(fmt)
-            if self.agent_tools and operation in TOOL_OPERATIONS:
-                wanted.append("tools")
-            for parameter in wanted:
-                needs.setdefault(self._model_for(operation), {}).setdefault(parameter, []).append(operation)
-        return needs
-
-    def _check_capabilities(self, operation: str | None) -> None:
-        """Fail closed before the first call to each model (L122): the model must be in OpenRouter's list and
-        support every parameter the session will send it. Nothing is sent when it does not."""
+    def _load_capabilities(self, model: str, operation: str | None) -> dict[str, Any] | None:
+        """Load the selected model before adapting its format; no unused model blocks this call."""
         if not self.capability_check or not model_capabilities.is_openrouter(self.base_url):
-            return
-        from pdl_taskmaster.runtime.wire_payloads import OPERATION_PAYLOAD_MODELS
-
-        names = {self._model_for(op) for op in set(OPERATION_PAYLOAD_MODELS) | set(self.model_by_operation)}
-        pending = sorted((names | {self._model_for(operation)}) - self._checked_models)
-        if not pending:
-            return
+            return None
+        if model in self._model_entries:
+            return self._model_entries[model]
         try:
             models = model_capabilities.model_list(self.base_url, self.timeout)
         except (OSError, ValueError) as exc:
             raise ProviderError("MODEL_CAPABILITY_UNKNOWN",
-                                f"could not read OpenRouter's model list to check {', '.join(pending)} "
+                                f"could not read OpenRouter's model list to check {model} "
                                 f"({exc}); no request was sent", operation=operation) from exc
-        problems = []
-        for name in pending:
-            entry = model_capabilities.lookup(models, name)
-            if entry is None:
-                problems.append(f"{name} is not in OpenRouter's model list; check the model name")
-            else:
-                self._model_entries[name] = entry
-        needs = self.session_needs()  # the output formats follow the metadata just read
-        for name in pending:
-            if name in self._model_entries:
-                problems += [model_capabilities.describe(name, parameter, ops) for parameter, ops
-                             in sorted(model_capabilities.unsupported(self._model_entries[name],
-                                                                      needs.get(name, {})).items())]
+        entry = model_capabilities.lookup(models, model)
+        if entry is None:
+            raise ProviderError("MODEL_UNSUPPORTED",
+                                f"{model} is not in OpenRouter's model list; check the model name. No request was sent.",
+                                operation=operation)
+        self._model_entries[model] = entry
+        return entry
+
+    def _check_capabilities(self, body: dict[str, Any], operation: str | None) -> None:
+        """Validate each outgoing round, including tool and formatted fallback rounds (L122, F5)."""
+        entry = self._load_capabilities(body["model"], operation)
+        if entry is None:
+            return
+        wanted = []
+        if "reasoning" in body:
+            wanted.append("reasoning")
+        fmt = (body.get("text") or {}).get("format", {}).get("type")
+        if fmt in ("json_schema", "json_object"):
+            wanted.append("structured_outputs" if fmt == "json_schema" else "response_format")
+        if body.get("tools"):
+            wanted.append("tools")
+        needs = {parameter: [operation or "UNKNOWN"] for parameter in wanted}
+        problems = [model_capabilities.describe(body["model"], parameter, ops) for parameter, ops
+                    in sorted(model_capabilities.unsupported(entry, needs).items())]
         if problems:
             raise ProviderError("MODEL_UNSUPPORTED", "; ".join(problems) + ". No request was sent.",
                                 operation=operation)
-        self._checked_models.update(pending)
 
     def _split_prompt(self, prompt: str) -> tuple[str, str]:
         """Split a rendered request.prompt back into (instructions, input).
@@ -877,7 +1070,6 @@ class ApiWorker:
     def call(self, request: Any) -> WorkerResult:
         trace = self.begin_call(str(getattr(request, "operation", None) or "UNKNOWN"))
         try:
-            self._check_capabilities(getattr(request, "operation", None))
             result = self._call(request)
             trace.final = "completed"
             return result
@@ -981,7 +1173,19 @@ class ApiWorker:
         instructions, input_text = self._split_prompt(request.prompt)
         if self.reorder_keys_for_cache:
             input_text = self._reorder_for_cache(input_text.lstrip())
-        if operation_name != "BYPASS_ORDINARY":
+        if _plaininput_call(request):
+            # L151 step 3, a measurement: the same content as plain text, without the worker-role lines.
+            if _BOOTSTRAP_ROLE_LINES not in instructions:
+                raise ValueError("ablate_plaininput: the worker instructions no longer carry the role lines")
+            instructions = instructions.replace(_BOOTSTRAP_ROLE_LINES, "")
+            input_text = plain_document(input_text)
+        freetext = _freetext_call(request)
+        if freetext:
+            # L151 step 2, a measurement: the same call with every JSON-format instruction replaced or left out.
+            if _BOOTSTRAP_JSON_LINES not in instructions:
+                raise ValueError("ablate_freetext: the worker instructions no longer carry the JSON format lines")
+            instructions = instructions.replace(_BOOTSTRAP_JSON_LINES, _BOOTSTRAP_FREETEXT_LINES)
+        elif operation_name not in PLAIN_OPERATIONS:
             # A direct reply is plain text: the suffix made it answer in JSON
             # ({"message": "Hello! ..."} printed raw in the REPL).
             input_text = input_text.rstrip() + _JSON_ONLY_SUFFIX
@@ -1026,14 +1230,7 @@ class ApiWorker:
                 "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
             )
         elif operation_name == "EXECUTE_UNCONFIRMED":
-            extra_guidance = (
-                "\n\nNORMATIVE GUIDELINES FOR EXECUTE_UNCONFIRMED (UNC-01, UNC-02, UNC-03, UNC-04, GUARD-03):\n"
-                "- Write your working understanding in `interpretation` and your working plan in `approach`, using PDL notation.\n"
-                "- Deliver the substantive result in `body`. Work within AVAILABLE_EXECUTION_TOOLS.\n"
-                "- REQUEST_INPUT is only for non-semantic data that the user holds and the task cannot proceed without (UNC-04, EXEC-01); people or events described in the task are part of the task, not a source of input.\n"
-                "- A deliverable may be code, an analytical derivation, a proof, or a direct answer; all are first-class. Never present a guessed or estimated result as exact or verified.\n"
-                "- When the deliverable includes Python code, the host runs it as described in AVAILABLE_EXECUTION_TOOLS. To certify a computed result, print exactly one line `WITNESS: <json>` to stdout."
-            )
+            extra_guidance = _unconfirmed_guidance(_modes(request))
 
         if instructions:
             body["instructions"] = instructions + extra_guidance
@@ -1061,7 +1258,9 @@ class ApiWorker:
         # model, in the same form (contract_form; ADR-0028 rules 1 and 5), so it holds
         # in the host's modes for this call too.
         union_wrapped = False
-        if form.grammar == "schema":
+        if freetext:
+            pass  # plain text: no output format is sent
+        elif form.grammar == "schema":
             output_kind = (getattr(request, "manifest", None) or {}).get("output_kind", "json_object")
             shown = (getattr(getattr(request, "projection", None), "document", None) or {}).get("output_schema")
             sent_schema = grammar_view(shown) if shown is not None else grammar_schema(operation_name, form)
@@ -1190,12 +1389,19 @@ class ApiWorker:
                 except Exception:
                     pass
 
+        self._load_capabilities(self._model_for(operation_name), operation_name)
         body, union_wrapped, effort = self.build_request_body(request)
-        if self.agent_tools and getattr(request, "tools", None) is not None:
+        freetext = _freetext_call(request)
+        # Session settings resolve the worker's default before the engine attaches
+        # an operation's tools. An explicit session override must survive here.
+        if getattr(request, "tools", None) is not None:
+            if freetext or _plaininput_call(request):
+                raise ValueError("ablate_freetext, ablate_plaininput: the tool loop reads and ends in JSON; run them "
+                                 "without agent tools")
             return self._tool_loop_call(request, body, union_wrapped, effort)
 
         api_key = self._resolve_api_key()
-        req = self._responses_request(body, api_key)
+        req = self._checked_responses_request(body, api_key)
 
         started = time.perf_counter()
         call_deadline = time.monotonic() + self.max_call_seconds
@@ -1261,6 +1467,10 @@ class ApiWorker:
                 raise ProviderError("PROVIDER_RESPONSE_UNREADABLE", "no output text after empty-output retries")
         if union_wrapped:
             text = _unwrap_union_reply(text)
+        freetext_read = None
+        if freetext:
+            # The provider's reply stays in the call trace; the engine receives the outcome object.
+            text, freetext_read = freetext_outcome(text)
 
         usage_raw = data.get("usage") or {}
         usage: dict[str, Any] = {}
@@ -1287,6 +1497,8 @@ class ApiWorker:
             "latency_ms": round(latency_ms, 3),
             "token_telemetry": "enabled" if self.capture_tokens else "disabled",
         }
+        if freetext_read is not None:
+            metadata["freetext_read"] = freetext_read
         if self.capture_tokens and usage:
             metadata["usage"] = usage
             metadata["usage_source"] = "responses_api"
@@ -1304,7 +1516,7 @@ class ApiWorker:
         observed: dict[str, Any] = {}
 
         def send(round_body: dict[str, Any]) -> dict[str, Any]:
-            data = self._send_json_with_retries(self._responses_request(round_body, api_key), deadline)
+            data = self._send_json_with_retries(self._checked_responses_request(round_body, api_key), deadline)
             if data.get("error"):
                 raise ProviderError("PROVIDER_REJECTED_REQUEST", f"provider reported an error: {data['error']}")
             self._record_reply(data, schema_constrained=False)
@@ -1349,6 +1561,8 @@ class ApiWorker:
             return
         usage = data.get("usage") or {}
         details = data.get("incomplete_details") or {}
+        if data.get("id"):  # L145: every generation of the call (a tool loop has one per round)
+            self.current_call.reply.setdefault("response_ids", []).append(data.get("id"))
         self.current_call.reply.update({
             "response_id": data.get("id"),
             "model": data.get("model"),
@@ -1358,6 +1572,10 @@ class ApiWorker:
             "reasoning_tokens": (usage.get("output_tokens_details") or {}).get("reasoning_tokens"),
             "schema_constrained": schema_constrained,
         })
+
+    def _checked_responses_request(self, body: dict[str, Any], api_key: str) -> urllib.request.Request:
+        self._check_capabilities(body, getattr(self.current_call, "operation", None))
+        return self._responses_request(body, api_key)
 
     def _responses_request(self, body: dict[str, Any], api_key: str) -> urllib.request.Request:
         return urllib.request.Request(
@@ -1422,7 +1640,7 @@ class ApiWorker:
             self._progress(f"{provider or 'the provider'} rejected the output against the schema; "
                            f"retrying on {remaining[0]}")
             trial = {**body, "provider": {**pinning, "order": remaining, "ignore": list(rejected)}}
-            req = self._responses_request(trial, api_key)
+            req = self._checked_responses_request(trial, api_key)
             try:
                 return self._send_json_with_retries(req, deadline), req, union_wrapped
             except ProviderError as exc:
@@ -1435,7 +1653,7 @@ class ApiWorker:
         provider = {k: v for k, v in (body.get("provider") or {}).items() if k != "require_parameters"}
         if provider:
             trial["provider"] = provider
-        req = self._responses_request(trial, api_key)
+        req = self._checked_responses_request(trial, api_key)
         try:
             return self._send_json_with_retries(req, deadline), req, False
         except ProviderError as exc:

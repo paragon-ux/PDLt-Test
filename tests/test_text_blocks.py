@@ -1,8 +1,10 @@
-"""String-only readers for model and program text (no regular expressions)."""
+"""CommonMark code extraction and literal wire/output readers."""
 from __future__ import annotations
 
 import ast
 from pathlib import Path
+
+import pytest
 
 from pdl_taskmaster.runtime.text_blocks import fenced_blocks, split_published_ir, unfence_json, witness_payload
 
@@ -10,10 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_fenced_blocks_by_language():
-    text = "Intro\n```python\nprint(1)\n```\nmid\n```json\n{}\n```\n```py\nx = 2```\n"
+    text = "Intro\n```python\nprint(1)\n```\nmid\n```json\n{}\n```\n```py\nx = 2\n```\n"
     assert fenced_blocks(text, ("python", "py")) == ["print(1)\n", "x = 2\n"]
     assert fenced_blocks(text, ("json",)) == ["{}\n"]
-    assert fenced_blocks("```python\nunterminated", ("python",)) == []
+    assert fenced_blocks("```python\nunterminated", ("python",)) == ["unterminated"]
 
 
 def test_witness_payload_and_unfence():
@@ -41,12 +43,12 @@ def test_model_facing_runtime_code_uses_no_regex():
         assert len(calls) <= allowed.get(name, 0), (name, [ast.unparse(c)[:60] for c in calls])
 
 
-def test_a_block_that_was_never_closed_ends_where_the_next_one_opens():
+def test_info_strings_inside_an_open_fence_do_not_reopen_it():
     text = "Notes\n```text\nexplanation\n```python\nprint(1)\n```\nmore\n```python\nprint(2)\n```\n"
-    assert fenced_blocks(text, ("python",)) == ["print(1)\n", "print(2)\n"]
-    assert fenced_blocks(text, ("text",)) == ["explanation\n"]
-    # An unclosed block of a wanted language is kept as far as it went, and the next one is read too.
-    assert fenced_blocks("```python\nA = 1\n```python\nB = 2\n```\n", ("python",)) == ["A = 1\n", "B = 2\n"]
+    assert fenced_blocks(text, ("python",)) == ["print(2)\n"]
+    assert fenced_blocks(text, ("text",)) == ["explanation\n```python\nprint(1)\n"]
+    assert fenced_blocks("```python\nA = 1\n```python\nB = 2\n```\n", ("python",)) == [
+        "A = 1\n```python\nB = 2\n"]
 
 
 def test_a_line_that_mentions_a_fence_does_not_end_a_block_that_is_closed_later():
@@ -56,7 +58,36 @@ def test_a_line_that_mentions_a_fence_does_not_end_a_block_that_is_closed_later(
         '"""Converts text.\n    7. Code blocks: indented or fenced with ```\n"""\ndef convert(text):\n    return text\n']
 
 
-def test_a_fence_stuck_to_the_last_line_still_closes_when_nothing_closes_it_properly():
-    assert fenced_blocks("```py\nx = 2```\n", ("py",)) == ["x = 2\n"]
-    # ... also when a later block follows, whose own closing fence must not be taken for this one's
-    assert fenced_blocks("```python\nx = 1```\ntext\n```python\ny = 2\n```\n", ("python",)) == ["x = 1\n", "y = 2\n"]
+def test_a_fence_attached_to_code_is_literal_content():
+    assert fenced_blocks("```py\nx = 2```\n", ("py",)) == ["x = 2```\n"]
+
+
+@pytest.mark.parametrize("indent", range(4))
+def test_opening_fence_indentation_is_removed_without_dedenting_code(indent):
+    pad = " " * indent
+    text = f'{pad}```python\n{pad}if True:\n{pad}    print("ok")\n```\n'
+    assert fenced_blocks(text, ("python",)) == ['if True:\n    print("ok")\n']
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("    ```python\n    print(1)\n    ```\n", []),
+    ("\t```python\n\tprint(1)\n\t```\n", []),
+    ("~~~Py extra\nprint(1)\n~~~~\n", ["print(1)\n"]),
+    ("````python\n```\nprint(1)\n````\n", ["```\nprint(1)\n"]),
+    ("```python\n~~~\nprint(1)\n```\n", ["~~~\nprint(1)\n"]),
+    ("- Example:\n\n  ```python\n  if True:\n      print(1)\n  ```\n", ["if True:\n    print(1)\n"]),
+    ("1. Example:\n\n   > ~~~py\n   > print(1)\n   > ~~~\n", ["print(1)\n"]),
+    ("```python\n\tprint(1)\n```\n", ["\tprint(1)\n"]),
+    ('```python\ns = """first\n  second\n"""\n```\n', ['s = """first\n  second\n"""\n']),
+])
+def test_commonmark_fence_and_container_rules(text, expected):
+    assert fenced_blocks(text, ("python", "py")) == expected
+
+
+def test_whole_python_modules_are_not_rewritten_as_markdown():
+    from pdl_taskmaster.runtime.session_engine import _python_blocks
+
+    source = 'if True:\n    print("literal ```python")\n'
+    assert _python_blocks(source) == [source]
+    broken = 'import sys\nif True:\nprint("indentation error")\n'
+    assert _python_blocks(broken) == [broken]
