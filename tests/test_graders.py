@@ -38,7 +38,7 @@ def test_every_verified_entry_has_a_grader_or_manual_marker():
     verified = [e for e in MANIFEST.values() if e["ground_truth_status"] == "verified"]
     assert len(verified) == 57
     hidden = [e["id"] for e in verified if e.get("hidden_tests")]
-    assert len(hidden) == 28
+    assert len(hidden) == 27
     for entry_id in hidden:
         assert (PROMPTS / MANIFEST[entry_id]["hidden_tests"]).is_file(), entry_id
         assert entry_id not in graders.GRADERS  # one grader per prompt
@@ -85,21 +85,23 @@ def test_deadlock_repair_awaits_adjudication_in_both_grading_paths(tmp_path, buf
     assert grading.grade_text(item, "RESULT", text, run_code=False)["grade"] == graders.MANUAL
 
 
+@pytest.mark.parametrize("entry_id", ["05-07", "06-02", "14-05", "16-03"])
 @pytest.mark.parametrize("kind,text", [("RESULT", None), ("REQUEST_INPUT", "Which constraint?")])
-def test_deadlock_manual_grading_preserves_missing_and_non_result_failures(tmp_path, kind, text):
+def test_manual_grading_preserves_missing_and_non_result_failures(tmp_path, entry_id, kind, text):
     from experiments import grading
 
     result = _run_dir(tmp_path, text)
     if text is not None:
         out = next(result.rglob("current.md")).parent
         (out / "current.json").write_text(json.dumps({"kind": kind}))
-    assert graders.grade(MANIFEST["06-02"], result, PROMPTS, run_code=False)["grade"] == graders.FAIL
-    assert grading.grade_text(grading.catalogue_items()["06-02"], kind, text, run_code=False)["grade"] == graders.FAIL
+    assert graders.grade(MANIFEST[entry_id], result, PROMPTS, run_code=False)["grade"] == graders.FAIL
+    assert grading.grade_text(grading.catalogue_items()[entry_id], kind, text, run_code=False)["grade"] == graders.FAIL
 
 
+@pytest.mark.parametrize("entry_id", ["05-07", "06-02", "14-05", "16-03"])
 @pytest.mark.parametrize("infrastructure_error", [False, True])
-def test_deadlock_default_grading_distinguishes_program_timeout_from_grading_error(
-    tmp_path, monkeypatch, infrastructure_error,
+def test_manual_default_grading_distinguishes_program_timeout_from_grading_error(
+    tmp_path, monkeypatch, entry_id, infrastructure_error,
 ):
     from experiments import grading
     from pdl_taskmaster.verification.sandbox import ExecutionSandbox, SandboxResult
@@ -115,8 +117,8 @@ def test_deadlock_default_grading_distinguishes_program_timeout_from_grading_err
     monkeypatch.setattr(ExecutionSandbox, "run_code", run_code)
     text = "```python\nwhile True:\n    pass\n```"
     expected = "ERROR" if infrastructure_error else graders.MANUAL
-    assert graders.grade(MANIFEST["06-02"], _run_dir(tmp_path, text), PROMPTS)["grade"] == expected
-    assert grading.grade_text(grading.catalogue_items()["06-02"], "RESULT", text)["grade"] == expected
+    assert graders.grade(MANIFEST[entry_id], _run_dir(tmp_path, text), PROMPTS)["grade"] == expected
+    assert grading.grade_text(grading.catalogue_items()[entry_id], "RESULT", text)["grade"] == expected
     assert len(calls) == 2
 
 
@@ -366,9 +368,9 @@ def test_14_03_two_phase_commit(tmp_path):
 
 def test_14_05_amortized_cost(tmp_path):
     good = "Assign amortized cost 3 to each push. The bank balance never goes negative."
-    assert _g("14-05", _published(tmp_path / "a", "RESULT", good)) == graders.PASS
+    assert _g("14-05", _published(tmp_path / "a", "RESULT", good)) == graders.MANUAL
     wrong = "Assign amortized cost 2 to each push. The balance never goes negative."
-    assert _g("14-05", _published(tmp_path / "b", "RESULT", wrong)) == graders.FAIL
+    assert _g("14-05", _published(tmp_path / "b", "RESULT", wrong)) == graders.MANUAL
 
 
 def test_14_proofs_need_every_component_and_stay_manual(tmp_path):
@@ -467,8 +469,23 @@ def test_16_02_missing_dollar(tmp_path):
 
 
 def test_16_03_knights_and_knaves(tmp_path):
-    assert _grade("16-03", tmp_path / "a", "A is a knight, B is a knave and C is a knave.") == graders.PASS
-    assert _grade("16-03", tmp_path / "b", "A is a knave, B is a knight, C is a knave.") == graders.FAIL
+    assert _grade("16-03", tmp_path / "a", "A is a knight, B is a knave and C is a knave.") == graders.MANUAL
+    assert _grade("16-03", tmp_path / "b", "A is a knave, B is a knight, C is a knave.") == graders.MANUAL
+
+
+@pytest.mark.parametrize("entry_id,text", [
+    ("05-07", "```python\ndef build_failure(pattern):\n    return [], []\n"
+     "def kmp_search(text, pattern, failure):\n    return []\n```"),
+    ("14-05", "An ordinary push costs 1. Assign amortized cost 2. Total cost <= 2n."),
+    ("16-03", "If A is a knave, discard that case. Final: **A** is a knight; **B** and **C** are knaves."),
+])
+def test_uncontracted_interfaces_and_reasoning_require_adjudication_in_both_paths(tmp_path, entry_id, text):
+    from experiments import grading
+
+    assert _grade(entry_id, tmp_path, text) == graders.MANUAL
+    item = grading.catalogue_items()[entry_id]
+    assert not item.hidden_tests
+    assert grading.grade_text(item, "RESULT", text, run_code=False)["grade"] == graders.MANUAL
 
 
 def test_16_04_elevator(tmp_path):

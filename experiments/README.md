@@ -13,7 +13,7 @@ Historical study snapshots remain in Git history. For example, `git show aa4e92d
 | `generate.py` | The generated isomorph items: the **gate set** (decides acceptance) and the **dev set** (calibration only; never decides). Fixed seeds; every answer is solver-checked. |
 | `prompts/{gate,dev}/` | The generated items, their solutions and a `MANIFEST.jsonl` per set. Frozen. |
 | `prompt_set.py`, `PROMPT_SET.lock.json` | The gate's frozen prompt list (strata T, G, S, I, Q, and DEV), with a SHA-256 per file. |
-| `graders_gen.py` | Graders for the generated families whose catalogue graders are not parametric (copies of 16-03's and 16-07's). |
+| `graders_gen.py` | Generated knights-and-knaves items share 16-03's manual adjudication; house-grid items use a parametric copy of 16-07's grader. |
 | `grading.py` | Grading every arm the same way: one code budget (HEAVY_COMPUTE), P-first extraction, the derived headless outcome, BYPASS replies, blind adjudication export. |
 | `controls.py` | The plain-call arms C0–C3, sent through the worker's own transport. |
 | `runner.py` | The gate runner: `plan`, `run` (resumable, `--smoke`), `export`, `report`. |
