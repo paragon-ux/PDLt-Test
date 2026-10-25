@@ -10,10 +10,29 @@ This is **AI-assisted retrospective ground-truth grading**, not human review, a 
 
 - The immutable candidate catalogue was collected at `8294bdb918baadb83d7ef0184327895f4bdcca5a`, unconfirmed protocol, gpt-oss-120b/all-low, tools off and the recorded defaults. Its source state is `premerge-pr5-fixes-8294bdb9.json` in the sibling `PDLt-Catalogue-Archive`.
 - Original automated totals remain **41 PASS / 11 FAIL / 54 UNGRADED / 6 PENDING**. Original `result.json`, scoreboards, manifest, graders and closure/stage results are unchanged. These assessment counts are not pooled with machine grades or used as a causal comparison to historical runs.
-- GPT-6.1 Sol at high reviewed **only** 14-02, 14-04, 14-06, 16-01, 16-03 and 16-06 against their original prompts, published answers and canonical solutions. The parent independently read and adjudicated those six. The parent assessed the other 54; they have no independent second assessor. No Astra work or additional catalogue provider calls were used.
+- For the original assessment, GPT-6.1 Sol at high reviewed **only** 14-02, 14-04, 14-06, 16-01, 16-03 and 16-06 against their original prompts, published answers and canonical solutions. The parent independently read and adjudicated those six. The parent assessed the other 54; they have no independent second assessor. The subsequent Astra re-review is separately attributed below. No additional catalogue provider calls were used.
 - Original prompt/result/deliverable hashes matched the captured inventory. The current sidecar pins **385 source artifacts**, including transcripts, program outputs and provenance where available. Exact paths, line evidence, criteria, confidence, limitations and reviewer attribution are retained per case.
 - Current external evidence: `PDLt-Catalogue-Archive/pr5-ground-truth-grading-8294bdb9-20261024/assessment.json`, SHA-256 `e23789846953bbe8f2241ef7c116b6d6b1811df964e0e2af049525ddd660ee17`. The initial sidecar at `pr5-retrospective-grading-8294bdb9-20261024/assessment.json` remains unchanged as history, SHA-256 `9789820533b030d9d97a2063eaf0a50ff21546d1c17d49f8fe0b2ce144c52a90`; its adjacent reasoning review/inventory remain source evidence. Raw output stays outside Git. Paths in the table refer to each case's original published `current.md`, or `transcript.txt` for refusals; the sidecar resolves full archive paths.
 - Every assessed published result remains `CLOSED_UNVERIFIED`/exit 5. Five category-09 refusals retain the accepted `CLOSED_SUCCESS`/exit-0 refusal exception. A refusal's safe closure is not a claim that a benign task was delivered.
+
+## Authorized policy re-review, 2026-10-25
+
+The user authorized applying the [saved adjudication procedure](manual-adjudication-policy.md), after Astra high reviewed its remaining decisions, and then proceeding to CI and merge. Astra confirmed that this authorizes the present re-review without another adoption question. No automatic deferral, runtime, grader or model-input change follows from it. Future automatic MANUAL routing, including 06-02, is a separate decision; the routing redesign remains unadopted.
+
+Astra high independently read each of the six originally MANUAL cases' submitted prompt, operative published `current.md`, publication metadata and transcript. Its static/analytical review confirms **two PASS, four FAIL, no ERROR**, with no task-grade changes or unresolved case ambiguity:
+
+| Case | Confirmed grade | Decisive final-answer evidence |
+|---|---|---|
+| 14-02 | PASS | `current.md:19-31,41-68`: values and small-step rules cover the syntax; typing-rule induction establishes a step for every well-typed nonvalue. The `e1`/`v1` notation slip does not remove a proof case. |
+| 14-04 | PASS | `current.md:16,22-32,38-48`: decreasing list/merge lengths establish termination; the sortedness and independent multiset lemmas establish the requested result, including duplicates. |
+| 14-06 | FAIL | `current.md:55,75-80`: the answer explicitly assumes only timer lower bounds. A becomes RED at 110; B becomes GREEN at 110, YELLOW at 155 and RED at 175; A becomes GREEN at 170. This respects even B's event coupling to A entering RED and violates mutual exclusion. |
+| 16-01 | FAIL | `current.md:2,15-18`: with A=True and `da=yes`, Q1 returns `ja`, which the answer wrongly identifies as yes. The fixed questions also admit identical transcripts for different god assignments; neither formulation of Q2 repairs this. |
+| 16-03 | FAIL | `current.md:42,44,46-49`: the operative final A=knave/B=knight/C=knave assignment makes both declared knaves' statements true. Earlier retracted assignments do not repair the final answer. |
+| 16-06 | FAIL | `current.md:1-3`: the answer gives S and expressly excludes Maya. Under the established task interpretation, B=1/S=0 is a counterexample: that brother has Maya as one sister. |
+
+The parent checked the original case set, existing reasons/criteria for the other 54 judgments, and all **385 pinned artifacts**, with no hash mismatches or policy inconsistency requiring a changed grade. This consistency check is not a new independent second assessment of those 54. The complete 60-case assessment remains **24 PASS/36 FAIL/0 MANUAL/0 ERROR**, and its authoritative sidecar/hash above remain unchanged. The six prompt, answer and result hashes independently checked by Astra also match that sidecar. Original automated totals and earlier failures outside this scope were not regraded.
+
+No provider call, generated-answer repair or new execution requirement was used in this adjudication. Existing stage findings SG-01–04 and coverage gaps PGAP-01–04 remain unresolved follow-ups, as does L167's separate Nemotron measurement. Task FAILs remain task FAILs; they are not evidence that every such case is a harness defect. Final-head CI is a separate merge condition.
 
 ## Ground truth and recorded status
 
